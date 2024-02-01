@@ -16,7 +16,7 @@
     "html-validator": "npx html-validator --continue",
     "unlighthouse-guest": "cross-env UNLIGHTHOUSE_MODE=guest npx unlighthouse",
     "unlighthouse-authenticated": "cross-env UNLIGHTHOUSE_MODE=authenticated npx unlighthouse",
-    "quickstart": "npx prisma db push --schema=./prisma/schema.prisma.sqlite && npx prisma generate --schema=./prisma/schema.prisma.sqlite && cross-env VITE_QUICKSTART=1 npm run build -- --mode quickstart && cross-env VITE_QUICKSTART=1 npm run preview -- --mode quickstart"
+    "quickstart": "npx prisma db push --schema=./prisma/schema.prisma.sqlite && npx prisma generate --schema=./prisma/schema.prisma.sqlite && cross-env VITE_QUICKSTART=1 npm run build && cross-env VITE_QUICKSTART=1 npm run preview"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
