@@ -1,0 +1,23 @@
+@use 'sass:map';
+@use 'system' as *;
+@use 'buttons' as *;
+@use 'themes' as *;
+@use 'utils' as *;
+@use 'svg';
+
+.search-stays-page {
+  padding-left: var(--#{$prefix}-page-padding-x);
+  padding-right: var(--#{$prefix}-page-padding-x);
+  padding-top: var(--#{$prefix}-page-padding-y);
+  padding-bottom: var(--#{$prefix}-page-padding-y);
+  @include for-extra-large-only() {
+    padding-top: 40px;
+  }
+
+  .search-stays-offers-box {
+    width: 100%;
+    max-width: unset;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

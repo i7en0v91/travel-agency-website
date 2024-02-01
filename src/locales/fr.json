@@ -1,0 +1,519 @@
+{
+  "appErrors": {
+    "unknown": "une erreur inattendue est apparue",
+    "sessionInitFailed": "Erreur lors de la création d'une nouvelle session",
+    "badRequest": "Requête invalide",
+    "objectNotFound": "Objet non trouvé",
+    "helm": "Erreur",
+    "pageNotFound": "Ce n'est pas la page que vous recherchez",
+    "unauthorized": "La connexion est requise pour continuer",
+    "captchaError": "Erreur de vérification d'accès. Vérifiez votre connectivité réseau, puis rechargez la page et réessayez",
+    "emailingDisabled": "L'opération ne peut pas être effectuée car elle nécessite l'activation de la fonction Emailing sur le site Web",
+    "forbidden": "L'accès est interdit"
+  },
+  "httpCodes": {
+    "401": "Non autorisé",
+    "404": "Pas trouvé",
+    "500": "Erreur inattendue"
+  },
+  "errorBox": {
+    "homeLink": "Rentrer à la maison"
+  },
+  "notAvailableInDemo": "Non disponible en démo",
+  "nav": {
+    "findFlights": "Trouver des vols",
+    "findStays": "Trouver des séjours",
+    "login": "Connecter",
+    "signUp": "S'inscrire",
+    "navToggler": "basculeur de liens de navigation",
+    "userBox": {
+      "navAvatarAlt": "avatar de l'utilisateur",
+      "favourites": "Favoris",
+      "myAccount": "Mon compte",
+      "payments": "Paiements",
+      "settings": "Paramètres",
+      "support": "Soutien",
+      "logout": "Se déconnecter"
+    }
+  },
+  "subscribeBox": {
+    "title": "S'abonner à la newsletter",
+    "heading": "Le Voyage",
+    "text": "Laissez-vous inspirer ! Recevez des réductions sur les voyages, des conseils et des histoires en coulisses.",
+    "emailPlaceholder": "Votre adresse email",
+    "subscribeBtn": "S'abonner",
+    "subscribeNotification": "Vous êtes abonné"
+  },
+  "editableImage": {
+    "btnUpload": "Télécharger",
+    "btnCancel": "Annuler",
+    "editImgAlt": "modifier l'image avant de la télécharger",
+    "croppingBoxTitle": "Sélectionner une zone",
+    "uploading": "Téléchargement en cours...",
+    "issues": {
+      "noFilesSelected": "Aucun fichier n'a été sélectionné",
+      "fileSizeExceeded": "Le fichier est trop volumineux. Sa taille ne peut pas dépasser {maxSizeMb} mégaoctets",
+      "fileIsNotAnImage": "Le fichier sélectionné n'est pas une image",
+      "imageLoadFailed": "Échec du chargement de l'image",
+      "imageLoadAborted": "Chargement de l'image annulé",
+      "imageProcessingFailed": "Échec du traitement de l'image",
+      "unsupported": "Navigateur non pris en charge"
+    }
+  },
+  "propertyGrid": {
+    "controlButtons": {
+      "change": "Changer",
+      "apply": "Prêt",
+      "cancel": "Annuler",
+      "delete": "Supprimer",
+      "add": "Ajouter"
+    },
+    "deleteConfirmMsg": "Etes-vous sûr de vouloir supprimer {itemText} ?"
+  },
+  "confirmBox": {
+    "btnYes": "Oui",
+    "btnNo": "Non",
+    "btnCancel": "Annuler"
+  },
+  "searchOffers": {
+    "addPromoCode": "Ajouter un code promotionnel",
+    "showFlights": "Afficher les vols",
+    "showStays": "Afficher les lieux",
+    "flightsTab": "Vols",
+    "staysTab": "Séjours",
+    "whereToFly": "Où volez-vous ?"
+  },
+  "searchFlights": {
+    "destinationCaption": "De - À",
+    "fromPlaceholder": "Ville de départ",
+    "toPlaceholder": "Ville d'arrivée",
+    "tripCaption": "Voyage",
+    "tripOneway": "Aller simple",
+    "tripReturn": "Retour",
+    "dateSingle": "Date",
+    "dateRange": "Départ - Retour",
+    "flightParamsCaption": "Passager - Classe",
+    "passenger": "passager | passagers",
+    "class": {
+      "economy": "Économie",
+      "comfort": "Confort",
+      "business": "Entreprise"
+    },
+    "fieldPassengers": "Passagers",
+    "fieldClass": "Classe de vol",
+    "ariaLabelFrom": "ville de départ",
+    "ariaLabelTo": "ville d'arrivée",
+    "ariaLabelSwap": "échanger la ville d'arrivée et de départ"
+  },
+  "searchStays": {
+    "destinationCaption": "Entrez la destination",
+    "destinationPlaceholder": "Ville de destination",
+    "checkInCaption": "Enregistrer",
+    "checkOutCaption": "Extraire",
+    "roomsGuestsCaption": "Chambres et invités",
+    "numberOfRooms": "Chambres",
+    "numberOfGuests": "Invités",
+    "numRooms": "chambre | chambres",
+    "numGuests": "invité | invités",
+    "ariaLabelDestination": "ville de destination"
+  },
+  "ariaLabels": {
+    "btnThemeSwitcher": "changeur de thème",
+    "imgLinkMainPage": "lien vers l'image de la page principale",
+    "footerSocialLinkTwitter": "lien image Twitter",
+    "footerSocialLinkYoutube": "lien de l'image YouTube",
+    "btnGithubLogin": "connexion via GitHub",
+    "btnGoogleLogin": "connexion via Google",
+    "btnTestLocalLogin": "connexion via le fournisseur Test Local"
+  },
+  "footer": {
+    "destinations": {
+      "title": "Nos destinations",
+      "canada": "Canada",
+      "alaska": "Alaska",
+      "france": "France",
+      "iceland": "Islande"
+    },
+    "activities": {
+      "title": "Nos activités",
+      "northernLights": "Aurores boréales",
+      "cruisingSailing": "Croisière et voile",
+      "multiactivities": "Multi-activités",
+      "kayaking": "Kayaking"
+    },
+    "travelBlogs": {
+      "title": "Blogs de voyage",
+      "bali": "Guide de voyage à Bali",
+      "sriLanka": "Guide de voyage au Sri Lanka",
+      "peru": "Guide de voyage au Pérou"
+    },
+    "aboutUs": {
+      "title": "À propos de nous",
+      "ourStory": "Notre histoire",
+      "workWithUs": "Travailler avec nous"
+    },
+    "contactUs": {
+      "title": "Contactez-nous",
+      "email": "E-mail"
+    }
+  },
+  "site": {
+    "name": "Site Web de test (dev)",
+    "description": "De Test (dev)"
+  },
+  "indexPage": {
+    "title": "Maison",
+    "heading": {
+      "pre": "Aider les autres",
+      "main": "VIVRE & VOYAGE",
+      "sub": "Offres spéciales adaptées à votre forfait"
+    },
+    "perfectTripSection": {
+      "title": "Planifiez votre voyage parfait",
+      "subtext": "Rechercher des vols et des lieux de location vers nos destinations les plus populaires",
+      "btn": "D'autres lieux"
+    },
+    "popularCity": {
+      "imgAlt": "image de la ville",
+      "flights": "Vols",
+      "stays": "Hôtels"
+    },
+    "imgLinkAlt": "image du lien vers la page",
+    "flightsImgLink": {
+      "title": "Vols",
+      "sub": "Rechercher des vols et des lieux de location vers nos destinations les plus populaires",
+      "btn": "Afficher les vols"
+    },
+    "staysImgLink": {
+      "title": "Hôtels",
+      "sub": "Rechercher des hôtels et des lieux de location vers nos destinations les plus populaires",
+      "btn": "Afficher les hôtels"
+    },
+    "companyReviewSection": {
+      "title": "Critiques",
+      "subtext": "Ce que les gens disent des installations de Golobe",
+      "btn": "Voir tout",
+      "expandBtn": "Voir plus",
+      "collapseBtn": "Voir moins",
+      "imgAlt": "examiner l'image",
+      "userCompany": "Weave Studios"
+    }
+  },
+  "flightsPage": {
+    "title": "Vols",
+    "heading": {
+      "main": "Faites votre liste de souhaits de voyage, nous nous occupons du reste",
+      "sub": "Offres spéciales adaptées à votre forfait"
+    },
+    "letsGoPlacesSection": {
+      "title": "Allons ensemble",
+      "subtext": "Découvrez les dernières offres et actualités et commencez à planifier votre prochain voyage avec nous.",
+      "btn": "Voir tout"
+    },
+    "worldMap": {
+      "cityImgAlt": "image de la ville",
+      "cityTravelInfoAria": "accéder aux informations de voyage de la ville"
+    }
+  },
+  "findFlightsPage": {
+    "title": "Trouver des vols"
+  },
+  "staysPage": {
+    "title": "Hôtels"
+  },
+  "findStaysPage": {
+    "title": "Trouver des séjours"
+  },
+  "travelCities": {
+    "title": "Tombez dans le voyage",
+    "subtext": "Vous allez quelque part pour célébrer cette saison ? Que vous rentriez chez vous ou quelque part en itinérance, nous avons les outils de voyage pour vous amener à votre destination.",
+    "btn": "Voir tout",
+    "card": {
+      "btnBook": "Réserver un vol"
+    }
+  },
+  "travelDetails": {
+    "title": "Tombez dans le voyage",
+    "subtext": "Vous allez quelque part pour célébrer cette saison ? Que vous rentriez chez vous ou quelque part en itinérance, nous avons les outils de voyage pour vous amener à votre destination.",
+    "btn": "Voir tout",
+    "travelImgAlt": "une des photos de la ville",
+    "bookBtn": "Réserver un vol",
+    "priceFrom": "De"
+  },
+  "loginPage": {
+    "title": "Connecter",
+    "subTitle": "Connectez-vous pour accéder à votre compte Golobe",
+    "forms": {
+      "forgotPassword": "Mot de passe oublié"
+    },
+    "havingAccount": "Vous n'avez pas de compte?",
+    "invalidCredentials": "La connexion avec l'e-mail et le mot de passe fournis a échoué"
+  },
+  "accountPageCommon": {
+    "emailLabel": "E-mail",
+    "emailPlaceholder": "Entrez votre email ici",
+    "passwordLabel": "Mot de passe",
+    "passwordPlaceholder": "Entrez votre mot de passe ici",
+    "confirmPasswordLabel": "Confirmer le mot de passe",
+    "confirmPasswordPlaceholder": "Confirmer le mot de passe saisi",
+    "login": "Connexion",
+    "loginWith": "Ou connectez-vous avec",
+    "toHome": "À la maison",
+    "toLogin": "Pour vous connecter",
+    "backToHome": "Retour à la maison",
+    "backToLogin": "Retour à la connexion",
+    "toAccount": "Vers le compte",
+    "signUp": "Inscrivez-vous"
+  },
+  "signUpPage": {
+    "title": "Inscription",
+    "subTitle": "Veuillez fournir les informations requises pour obtenir un compte personnel.",
+    "forms": {
+      "firstNameLabel": "Nom",
+      "firstNamePlaceholder": "Entrez votre nom",
+      "lastNameLabel": "Nom de famille",
+      "lastNamePlaceholder": "Entrez votre nom de famille",
+      "createAccount": "Enregistrement du compte"
+    },
+    "agreeWithPolicy": "J'accepte {privacyLink}",
+    "privacyLinkText": "politique de confidentialité",
+    "alreadyHaveAccount": "Vous avez déjà un compte?",
+    "signUpWith": "Ou inscrivez-vous avec",
+    "emailWasAutoverified": "DEVELOPMENT ONLY: l'e-mail fourni a été automatiquement vérifié par le système et vous pouvez désormais vous connecter en utilisant vos informations d'identification. Vous pouvez également activer l'envoi d'e-mails dans la configuration du serveur pour utiliser les e-mails réels à des fins de vérification dans le flux d'inscription."
+  },
+  "signUpVerifyPage": {
+    "title": "Terminer l'enregistrement du compte",
+    "text": "Un e-mail a été envoyé à l'adresse e-mail que vous avez fournie. Veuillez vérifier votre boîte de réception et suivre les instructions contenues dans l'e-mail pour terminer le processus d'inscription"
+  },
+  "signUpCompletePage": {
+    "title": "Finalisation de l'enregistrement du compte",
+    "text": {
+      "success": "Félicitations ! Le processus d'inscription a été terminé avec succès et vous pouvez désormais vous connecter avec les informations d'identification fournies.",
+      "alreadyConsumed": "Le lien a déjà été utilisé pour la confirmation par e-mail. Vous devriez pouvoir vous connecter en utilisant l'e-mail.",
+      "linkInvalid": "Le lien est invalide ou rompu. Veuillez vérifier son exactitude. Vous pouvez également essayer de vous inscrire à nouveau en utilisant une autre adresse e-mail ou en contactant l'assistance pour vous aider à résoudre le problème.",
+      "linkExpired": "Le lien a expiré. Veuillez recommencer le processus d'inscription pour en obtenir un nouveau."
+    }
+  },
+  "emailVerifyCompletePage": {
+    "title": "Terminer la vérification de l'e-mail",
+    "text": {
+      "success": "Félicitations! Votre adresse e-mail a été vérifiée avec succès et vous pouvez désormais vous connecter en utilisant cette adresse e-mail.",
+      "alreadyConsumed": "Le lien a déjà été utilisé pour la confirmation par e-mail. Vous devriez pouvoir vous connecter en utilisant l'e-mail.",
+      "linkInvalid": "Le lien est invalide ou rompu. Veuillez vérifier son exactitude. Vous pouvez également réessayer de mettre à jour les informations de courrier électronique sur la page du compte de l'utilisateur pour obtenir un nouveau lien.",
+      "linkExpired": "Le lien a expiré. Veuillez mettre à jour à nouveau les informations de courrier électronique sur la page du compte de l'utilisateur pour obtenir un nouveau lien."
+    }
+  },
+  "forgotPasswordPage": {
+    "title": "Mot de passe oublié?",
+    "subTitle": "Ne vous inquiétez pas, cela nous arrive à tous. Entrez votre email ci-dessous pour récupérer votre mot de passe",
+    "forms": {
+      "submit": "Soumettre"
+    },
+    "loginWith": "Ou connectez-vous avec",
+    "userNotFound": "L'utilisateur avec l'e-mail spécifié n'est pas enregistré dans le système",
+    "emailNotVerified": "L'e-mail de l'utilisateur n'a pas été vérifié. Veuillez vérifier votre boîte de réception pour le lien de confirmation"
+  },
+  "forgotPasswordVerifyPage": {
+    "title": "Confirmation de réinitialisation du mot de passe",
+    "text": "Un e-mail vous a été envoyé. Veuillez vérifier votre boîte de réception et suivre le lien de récupération de mot de passe dans l'e-mail. Le lien sera valide pendant { tokenExpirationHours } heures"
+  },
+  "forgotPasswordSetPage": {
+    "title": "Définir le mot de passe",
+    "subTitle": "Votre mot de passe précédent a été réinitialisé. Définissez un nouveau mot de passe pour votre compte.",
+    "setPassword": "Définir le mot de passe"
+  },
+  "forgotPasswordCompletePage": {
+    "title": "Terminer la réinitialisation du mot de passe",
+    "text": {
+      "success": "Le mot de passe a été modifié avec succès et vous pouvez maintenant vous connecter avec.",
+      "alreadyConsumed": "Le lien a déjà été utilisé pour réinitialiser votre mot de passe. Vous pouvez vous connecter avec votre nouveau mot de passe ou le réinitialiser à nouveau pour obtenir un autre lien de récupération.",
+      "linkInvalid": "Le lien est invalide ou rompu. Veuillez vérifier qu'il est correct. Vous pouvez également réessayer de réinitialiser votre mot de passe.",
+      "linkExpired": "Le lien a expiré. Veuillez relancer le processus de récupération de mot de passe pour en obtenir un nouveau."
+    },
+    "resetPassword": "Réinitialiser le mot de passe"
+  },
+  "accountPage": {
+    "title": "Compte",
+    "uploadCover": "Télécharger",
+    "coverAlt": "couverture de l'utilisateur",
+    "btnAddEmail": "Ajouter un autre email",
+    "tabAccount": {
+      "title": "Compte",
+      "firstNameCaption": "Prénom",
+      "firstNamePlaceholder": "Entrez le prénom",
+      "lastNameCaption": "Nom",
+      "lastNamePlaceholder": "Entrez votre nom",
+      "passwordLabel": "Mot de passe",
+      "passwordPlaceholder": "Entrez le mot de passe",
+      "emailPlaceholder": "Entrez l'e-mail",
+      "emailVerifyNotification": "Un lien de confirmation a été envoyé à {email}. Veuillez vérifier votre boîte de réception et suivre le lien pour vérifier l'e-mail ajouté.",
+      "emailWasAutoverified": "DEVELOPMENT ONLY: L'e-mail fourni a été automatiquement vérifié par le système et vous pouvez désormais vous connecter en l'utilisant. Vous pouvez également activer l'envoi d'e-mails dans la configuration du serveur pour utiliser les e-mails réels à des fins de vérification dans le flux d'inscription."
+    },
+    "tabHistory": {
+      "title": "Historique"
+    },
+    "tabPayments": {
+      "title": "Paiements"
+    },
+    "avatarAlt": "avatar de l'utilisateur"
+  },
+  "authFormsPhotoAlt": "photo de la page",
+  "validations": {
+    "required": "Ce champ est requis",
+    "email": "La valeur n'est pas une adresse e-mail valide",
+    "minLength": "La valeur du champ doit avoir une longueur minimale de {min}",
+    "password": "Le mot de passe doit comporter au moins 8 caractères, doit contenir des lettres majuscules et minuscules, au moins un chiffre et un caractère spécial",
+    "sameAsPassword": "Les mots de passe doivent correspondre",
+    "emailAlreadyRegistered": "L'utilisateur avec l'email spécifié est déjà enregistré",
+    "emailIsUsed": "L'adresse email est déjà utilisée",
+    "deletingLastEmail": "Le seul email ne peut pas être supprimé, vous ne pourrez pas vous connecter !",
+    "mustAgreeToPolicies": "Vous devez accepter les politiques de confidentialité",
+    "maximumNumberOfRecordsReached": "Nombre maximum autorisé d'enregistrements atteint"
+  },
+  "emails": {
+    "registerAccount": {
+      "subject": "Complétez l'enregistrement de votre compte",
+      "title": "Confirmez votre adresse email"
+    },
+    "emailVerify": {
+      "subject": "Confirmez votre adresse email",
+      "title": "Confirmez votre adresse email"
+    },
+    "passwordRecovery": {
+      "subject": "Demande de réinitialisation du mot de passe",
+      "title": "Réinitialisation du mot de passe"
+    }
+  },
+  "privacyPage": {
+    "title": "Politique de confidentialité",
+    "documentHeader": "Politique relative au traitement des données personnelles",
+    "section1": {
+      "header": "1. Dispositions générales",
+      "text": "Cette politique de traitement des données personnelles est établie conformément aux exigences de la loi fédérale du 27 juillet 2006. &#8470; 152-FZ &laquo;Sur les données personnelles&raquo; (ci-après dénommée la loi sur les données personnelles ) et détermine la procédure de traitement des données personnelles et les mesures visant à assurer la sécurité des données personnelles par le système d'information du site Web (ci-après dénommé l'Exploitant).",
+      "paragraph1": "1.1. L'opérateur fixe comme objectif et condition les plus importants pour l'exercice de ses activités le respect des droits et libertés de l'homme et du citoyen lors du traitement de ses données personnelles, y compris la protection des droits à la vie privée, personnelle et secrets de famille.",
+      "paragraph2": "1.2. La politique de cet Opérateur concernant le traitement des données personnelles (ci-après &mdash; Politique) s'applique à toutes les informations que l'Opérateur peut recevoir sur les visiteurs du site Web {siteUrl}"
+    },
+    "section2": {
+      "header": "2. Concepts de base utilisés dans la Politique",
+      "paragraph1": "2.1. Traitement automatisé de données personnelles - traitement de données personnelles utilisant la technologie informatique.",
+      "paragraph2": "2.2. Blocage des données personnelles - cessation temporaire du traitement des données personnelles (sauf dans les cas où le traitement est nécessaire pour clarifier les données personnelles).",
+      "paragraph3": "2.3. Site Web - une collection de matériel graphique et d'information, ainsi que des programmes informatiques et des bases de données qui assurent leur disponibilité sur Internet à l'adresse réseau {siteUrl}",
+      "paragraph4": "2.4. Système d'information sur les données personnelles - un ensemble de données personnelles contenues dans des bases de données et des technologies de l'information et des moyens techniques qui assurent leur traitement.",
+      "paragraph5": "2.5. Dépersonnalisation des données personnelles - actions à la suite desquelles il est impossible de déterminer sans l'utilisation d'informations supplémentaires la propriété des données personnelles d'un utilisateur spécifique ou d'un autre sujet de données personnelles.",
+      "paragraph6": "2.6. Traitement des données personnelles - toute action (opération) ou ensemble d'actions (opérations) effectuée à l'aide d'outils d'automatisation ou sans l'utilisation de tels moyens avec des données personnelles, y compris la collecte, l'enregistrement, la systématisation, l'accumulation, le stockage, clarification (mise à jour, modification), extraction, utilisation, transfert (diffusion, mise à disposition, accès), dépersonnalisation, blocage, suppression, destruction des données personnelles.",
+      "paragraph7": "2.7. Opérateur - organisme public, organisme municipal, personne morale ou personne physique, indépendamment ou conjointement avec d'autres personnes organisant et/ou effectuant le traitement des données personnelles, ainsi que déterminant les finalités du traitement des données personnelles, le composition des données personnelles à traiter, actions (opérations) effectuées avec des données personnelles.",
+      "paragraph8": "2.8. Données personnelles &mdash; toute information relative directement ou indirectement à un Utilisateur spécifique ou identifiable du site {siteUrl}",
+      "paragraph9": "2.9. Données personnelles autorisées par le sujet des données personnelles pour la distribution, &mdash; données personnelles, dont l'accès à un nombre illimité de personnes est fourni par le sujet des données personnelles en donnant son consentement au traitement des données personnelles autorisé par le sujet des données personnelles à distribuer de la manière prescrite par la loi sur les données personnelles (ci-après - données personnelles dont la distribution est autorisée).",
+      "paragraph10": "2.10. Utilisateur &mdash; tout visiteur du site Web {siteUrl}",
+      "paragraph11": "2.11. Fourniture de données personnelles - actions visant à divulguer des données personnelles à une certaine personne ou à un certain cercle de personnes.",
+      "paragraph12": "2.12. Distribution de données personnelles - toute action visant à divulguer des données personnelles à un nombre indéfini de personnes (transfert de données personnelles) ou à prendre connaissance des données personnelles à un nombre illimité de personnes, y compris la publication de données personnelles dans le médias, publication sur des réseaux d'information et de télécommunication ou fourniture d'un accès à des données personnelles de toute autre manière.",
+      "paragraph13": "2.13. Transfert transfrontalier de données personnelles - transfert de données personnelles vers le territoire d'un État étranger vers une autorité d'un État étranger, une personne physique étrangère ou une personne morale étrangère.",
+      "paragraph14": "2.14. Destruction des données personnelles - toute action à la suite de laquelle les données personnelles sont détruites de manière irrévocable avec l'impossibilité de restaurer davantage le contenu des données personnelles dans le système d'information sur les données personnelles et/ou les supports matériels des données personnelles les données sont détruites."
+    },
+    "section3": {
+      "header": "3. Droits et obligations fondamentaux de l'Opérateur",
+      "paragraph1Header": "3.1. L'opérateur a le droit :",
+      "paragraph1Item1": "&mdash; recevoir du sujet des données personnelles des informations fiables et/ou des documents contenant des données personnelles ;",
+      "paragraph1Item2": "&mdash; dans le cas où le sujet des données personnelles retire son consentement au traitement des données personnelles et envoie une demande d'arrêt du traitement des données personnelles, l'Opérateur a le droit de continuer à traiter les données personnelles sans le consentement du sujet des données personnelles s'il existe des motifs spécifiés dans la loi sur les données personnelles ;",
+      "paragraph1Item3": "&mdash; déterminer de manière indépendante la composition et la liste des mesures nécessaires et suffisantes pour assurer le respect des obligations prévues par la loi sur les données personnelles et les règlements adoptés conformément à celle-ci, sauf disposition contraire de la loi sur les données personnelles ou d'autres lois fédérales. ",
+      "paragraph2Header": "3.2. L'opérateur doit :",
+      "paragraph2Item1": "&mdash; fournir à la personne concernée, à sa demande, des informations concernant le traitement de ses données personnelles ;",
+      "paragraph2Item2": "&mdash; organiser le traitement des données personnelles de la manière établie par la législation en vigueur de la Fédération de Russie ;",
+      "paragraph2Item3": "&mdash; répondre aux demandes et demandes des personnes concernées et de leurs représentants légaux conformément aux exigences de la loi sur les données personnelles ;",
+      "paragraph2Item4": "&mdash; communiquer à l'organisme habilité pour la protection des droits des personnes concernées, à la demande de cet organisme, les informations nécessaires dans un délai de 10 jours à compter de la date de réception d'une telle demande ;",
+      "paragraph2Item5": "&mdash; publier ou fournir un accès illimité à cette politique concernant le traitement des données personnelles ;",
+      "paragraph2Item6": "&mdash; prendre des mesures juridiques, organisationnelles et techniques pour protéger les données personnelles contre tout accès non autorisé ou accidentel, destruction, modification, blocage, copie, fourniture, distribution de données personnelles, ainsi que contre d'autres actions illégales en relation avec les données personnelles. données ;",
+      "paragraph2Item7": "&mdash; arrêter le transfert (distribution, fourniture, accès) des données personnelles, arrêter le traitement et détruire les données personnelles de la manière et dans les cas prévus par la loi sur les données personnelles ;",
+      "paragraph2Item8": "&mdash; effectuer d'autres tâches prévues par la loi sur les données personnelles."
+    },
+    "section4": {
+      "header": "4. Droits et obligations fondamentaux des personnes concernées",
+      "paragraph1Header": "4.1. Les personnes concernées ont le droit :",
+      "paragraph1Item1": "&mdash; recevoir des informations concernant le traitement de ses données personnelles, sauf dans les cas prévus par les lois fédérales. Les informations sont fournies au sujet des données personnelles par l'Opérateur sous une forme accessible et ne doivent pas contenir de données personnelles liés à d'autres sujets de données personnelles, sauf dans les cas où il existe des motifs juridiques pour la divulgation de ces données personnelles. La liste des informations et la procédure pour les obtenir sont établies par la loi sur les données personnelles ;",
+      "paragraph1Item2": "&mdash; exiger de l'opérateur qu'il clarifie ses données personnelles, les bloque ou les détruit si les données personnelles sont incomplètes, obsolètes, inexactes, obtenues illégalement ou ne sont pas nécessaires à la finalité déclarée du traitement, ainsi que prendre les mesures prévues par la loi à la protection de vos droits ;",
+      "paragraph1Item3": "&mdash; mettre en avant une condition de consentement préalable lors du traitement de données personnelles en vue de promouvoir des biens, des travaux et des services sur le marché ;",
+      "paragraph1Item4": "&mdash; retirer le consentement au traitement des données personnelles, ainsi qu'envoyer une demande d'arrêt du traitement des données personnelles ;",
+      "paragraph1Item5": "&mdash; recours auprès de l'organisme autorisé pour la protection des droits des personnes concernées ou devant les tribunaux contre des actions illégales ou l'inaction de l'Opérateur lors du traitement de ses données personnelles ;",
+      "paragraph1Item6": "&mdash; exercer d'autres droits prévus par la législation de la Fédération de Russie.",
+      "paragraph2Header": "4.2. Les personnes concernées sont tenues de :",
+      "paragraph2Item1": "&mdash; fournir à l'Opérateur des informations fiables sur vous-même ;",
+      "paragraph2Item2": "&mdash; informer l'Opérateur de la clarification (mise à jour, modification) de vos données personnelles.",
+      "paragraph3Header": "4.3. Les personnes qui ont fourni à l'Opérateur de fausses informations les concernant ou des informations sur un autre sujet de données personnelles sans le consentement de ce dernier, sont responsables conformément à la législation de la Fédération de Russie."
+    },
+    "section5": {
+      "header": "5. Principes de traitement des données personnelles",
+      "paragraph1": "5.1. Le traitement des données personnelles est effectué sur une base légale et équitable.",
+      "paragraph2": "5.2. Le traitement des données personnelles est limité à la réalisation de finalités spécifiques, prédéterminées et légitimes. Le traitement des données personnelles incompatible avec les finalités de collecte de données personnelles n'est pas autorisé.",
+      "paragraph3": "5.3. Il n'est pas permis de combiner des bases de données contenant des données personnelles dont le traitement est effectué à des fins incompatibles entre elles.",
+      "paragraph4": "5.4. Seules les données personnelles répondant aux finalités de leur traitement font l'objet d'un traitement.",
+      "paragraph5": "5.5. Le contenu et le volume des données personnelles traitées correspondent aux finalités déclarées du traitement. La redondance des données personnelles traitées par rapport aux finalités déclarées de leur traitement n'est pas autorisée.",
+      "paragraph6": "5.6. Lors du traitement des données personnelles, l'exactitude des données personnelles, leur suffisance et, le cas échéant, leur pertinence par rapport aux finalités du traitement des données personnelles sont garanties. L'opérateur prend les mesures nécessaires et/ou assure leur adoption de supprimer ou de clarifier des données incomplètes ou inexactes.",
+      "paragraph7": "5.7. Les données personnelles sont stockées sous une forme permettant d'identifier le sujet des données personnelles, pas plus longtemps que ne l'exigent les finalités du traitement des données personnelles, à moins que la durée de conservation des données personnelles ne soit fixée par la loi fédérale , un accord auquel est partie, bénéficiaire ou garant auquel appartient le sujet des données personnelles. Les données personnelles traitées sont détruites ou anonymisées lors de la réalisation des finalités du traitement ou en cas de perte de la nécessité d'atteindre ces finalités, à moins que autrement prévu par la loi fédérale."
+    },
+    "section6": {
+      "header": "6. Finalités du traitement des données personnelles",
+      "row1Name": "Finalité du traitement",
+      "row1Value": "permettre à l'Utilisateur d'accéder aux services, informations et/ou éléments contenus sur le site Web",
+      "row2Name": "Données personnelles",
+      "row2Value1": "nom, prénom, patronyme",
+      "row2Value2": "adresse e-mail",
+      "row2Value3": "images téléchargées par l'utilisateur",
+      "row3Name": "Base juridique",
+      "row3Value": "Loi fédérale « sur l'information, les technologies de l'information et la protection de l'information » du 27 juillet 2006 N 149-FZ",
+      "row4Name": "Types de traitements de données personnelles",
+      "row4Value1": "Collecte, enregistrement, systématisation, accumulation, stockage, destruction et dépersonnalisation des données personnelles",
+      "row4Value2": "Envoyer les newsletters à l'adresse e-mail"
+    },
+    "section7": {
+      "header": "7. Conditions de traitement des données personnelles",
+      "paragraph1": "7.1. Le traitement des données personnelles est effectué avec le consentement de la personne concernée au traitement de ses données personnelles.",
+      "paragraph2": "7.2. Le traitement des données personnelles est nécessaire pour atteindre les objectifs prévus par un traité international de la Fédération de Russie ou par la loi, pour mettre en œuvre les fonctions, pouvoirs et responsabilités attribués à l'opérateur par la législation de la Fédération de Russie. ",
+      "paragraph3": "7.3. Le traitement des données personnelles est nécessaire à l'administration de la justice, à l'exécution d'un acte judiciaire, d'un acte d'un autre organe ou fonctionnaire soumis à exécution conformément à la législation de la Fédération de Russie sur les procédures d'exécution.",
+      "paragraph4": "7.4. Le traitement des données personnelles est nécessaire à l'exécution d'un accord auquel la personne concernée est partie ou bénéficiaire ou garant, ainsi que pour conclure un accord à l'initiative de la personne concernée. ou un accord en vertu duquel la personne concernée sera bénéficiaire ou garante.",
+      "paragraph5": "7.5. Le traitement des données personnelles est nécessaire pour exercer les droits et intérêts légitimes de l'opérateur ou de tiers ou pour atteindre des objectifs socialement importants, à condition que les droits et libertés de la personne concernée ne soient pas violés." ,
+      "paragraph6": "7.6. Le traitement des données personnelles est effectué, l'accès à un nombre illimité de personnes est fourni par le sujet des données personnelles ou à sa demande (ci-après - données personnelles accessibles au public).",
+      "paragraph7": "7.7. Nous traitons les données personnelles soumises à la publication ou à la divulgation obligatoire conformément à la loi fédérale."
+    },
+    "section8": {
+      "header": "8. Procédure de collecte, de stockage, de transfert et d'autres types de traitement des données personnelles",
+      "text": "La sécurité des données personnelles traitées par l'Opérateur est assurée par la mise en œuvre des mesures juridiques, organisationnelles et techniques nécessaires pour se conformer pleinement aux exigences de la législation en vigueur dans le domaine de la protection des données personnelles.",
+      "paragraph1": "8.1. L'opérateur assure la sécurité des données personnelles et prend toutes les mesures possibles pour empêcher l'accès aux données personnelles par des personnes non autorisées.",
+      "paragraph2": "8.2. Les données personnelles de l'Utilisateur ne seront en aucun cas cédées à des tiers, sauf dans les cas liés à la mise en œuvre de la législation en vigueur ou dans le cas où la personne concernée a donné son consentement à l'Opérateur transférer des données à un tiers pour remplir des obligations en vertu d'un contrat de droit civil.",
+      "paragraph3": "8.3. Si des inexactitudes dans les données personnelles sont identifiées, l'Utilisateur peut les mettre à jour de manière indépendante en envoyant à l'Opérateur une notification à l'adresse e-mail de l'Opérateur {contactEmail} marquée &laquo;Mise à jour des données personnelles&raquo;.",
+      "paragraph4": "8.4. La durée du traitement des données personnelles est déterminée par la réalisation des finalités pour lesquelles les données personnelles ont été collectées, sauf si une durée différente est prévue par le contrat ou la législation en vigueur. <br> L'utilisateur peut à tout moment retirer son consentement au traitement des données personnelles en envoyant à l'Opérateur une notification par courrier électronique à l'adresse e-mail de l'Opérateur {contactEmail} marquée &laquo;Retrait du consentement au traitement des données personnelles&raquo;.",
+      "paragraph5": "8.5. Toutes les informations collectées par des services tiers, y compris les systèmes de paiement, les communications et autres fournisseurs de services, sont stockées et traitées par ces personnes (opérateurs) conformément à leur accord d'utilisation et à leur politique de confidentialité. Le sujet des données personnelles et/ou avec les documents spécifiés. L'opérateur n'est pas responsable des actions de tiers, y compris les prestataires de services spécifiés dans ce paragraphe.",
+      "paragraph6": "8.6. Les interdictions établies par le sujet des données personnelles sur le transfert (sauf pour fournir l'accès), ainsi que sur le traitement ou les conditions de traitement (sauf pour obtenir l'accès) des données personnelles autorisées à la distribution, ne s'appliquent pas en cas de traitement de données personnelles dans l'intérêt de l'État, du public et d'autres intérêts publics déterminés par la législation de la Fédération de Russie.",
+      "paragraph7": "8.7. Lors du traitement des données personnelles, l'opérateur assure la confidentialité des données personnelles.",
+      "paragraph8": "8.8. L'opérateur stocke les données personnelles sous une forme permettant d'identifier le sujet des données personnelles, pas plus longtemps que ne l'exigent les finalités du traitement des données personnelles, à moins que la durée de conservation des données personnelles ne soit fixée par la loi fédérale, un convention à laquelle le bénéficiaire ou le garant est partie et qui fait l'objet de données à caractère personnel.",
+      "paragraph9": "8.9. La condition pour mettre fin au traitement des données personnelles peut être la réalisation des finalités du traitement des données personnelles, l'expiration du consentement du sujet des données personnelles, le retrait du consentement par le sujet des données personnelles ou une obligation de cesser le traitement des données personnelles, ainsi que l'identification d'un traitement illégal de données personnelles."
+    },
+    "section9": {
+      "header": "9. Liste des actions effectuées par l'Opérateur avec les données personnelles reçues",
+      "paragraph1": "9.1. L'opérateur collecte, enregistre, systématise, accumule, stocke, affine (mises à jour, modifications), extrait, utilise, transfère (distribution, mise à disposition, accès), dépersonnalise, bloque, supprime et détruit les données personnelles." ,
+      "paragraph2": "9.2. L'opérateur effectue un traitement automatisé de données personnelles avec ou sans réception et/ou transmission des informations reçues via les réseaux d'information et de télécommunication."
+    },
+    "section10": {
+      "header": "10. Transfert transfrontalier de données personnelles",
+      "paragraph1": "10.1. Avant de commencer les activités de transfert transfrontalier de données personnelles, l'opérateur est tenu d'informer l'organisme autorisé pour la protection des droits des personnes concernées de données personnelles de son intention d'effectuer un transfert transfrontalier de données personnelles. données personnelles (cette notification est envoyée séparément de la notification de l'intention de traiter les données personnelles). ",
+      "paragraph2": "10.2. Avant de soumettre la notification ci-dessus, l'opérateur est tenu d'obtenir les informations pertinentes auprès des autorités d'un État étranger, des personnes physiques étrangères, des personnes morales étrangères vers lesquelles le transfert transfrontalier de données personnelles est prévu."
+    },
+    "section11": {
+      "header": "11. Confidentialité des données personnelles",
+      "text": "L'opérateur et les autres personnes ayant accès aux données personnelles sont tenus de ne pas divulguer à des tiers ou de ne pas diffuser de données personnelles sans le consentement de la personne concernée, sauf disposition contraire de la loi fédérale."
+    },
+    "section12": {
+      "header": "12. Dispositions finales",
+      "paragraph1": "12.1. L'Utilisateur peut recevoir toute clarification sur les questions d'intérêt concernant le traitement de ses données personnelles en contactant l'Opérateur par e-mail {contactEmail}",
+      "paragraph2": "12.2. Ce document reflétera toute modification apportée à la politique de traitement des données personnelles de l'Opérateur. La politique est valable indéfiniment jusqu'à ce qu'elle soit remplacée par une nouvelle version.",
+      "paragraph3": "12.3. La version actuelle de la Politique est disponible gratuitement sur Internet à l'adresse {privacyUrl}"
+    }
+  },
+  "cookieBanner": {
+    "title": "Utiliser des cookies",
+    "text": "Ce site Web ou ses outils tiers utilisent des cookies afin que nous puissions afficher correctement ce site Web. En fermant cette bannière, en faisant défiler cette page, en cliquant sur un lien ou en poursuivant votre navigation, vous nous autorisez à utiliser des cookies et acceptez également {privacyLink}",
+    "btnAccept": "D'accord"
+  },
+  "searchPageImageAlt": "image principale de la page",
+  "close": "fermer",
+  "calendarImgAlt": "icône du calendrier"
+}

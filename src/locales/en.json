@@ -1,0 +1,519 @@
+{
+  "appErrors": {
+    "unknown": "An unexpected error occurred",
+    "sessionInitFailed": "Error creating a new session",
+    "badRequest": "Invalid request",
+    "objectNotFound": "Object not found",
+    "helm": "Error",
+    "pageNotFound": "This is not the page you're looking for",
+    "unauthorized": "Login is required to proceed",
+    "captchaError": "Access verification error. Check your network connectivity, then reload page and try again",
+    "emailingDisabled": "Operation cannot be performed as it requires Emailing feature enabled on the website",
+    "forbidden": "Access is forbidden"
+  },
+  "httpCodes": {
+    "401": "Unauthorized",
+    "404": "Not Found",
+    "500": "Unexpected error"
+  },
+  "errorBox": {
+    "homeLink": "Go back home"
+  },
+  "notAvailableInDemo": "Not available in demo",
+  "nav": {
+    "findFlights": "Find Flights",
+    "findStays": "Find Stays",
+    "login": "Login",
+    "signUp": "Sign up",
+    "navToggler": "navigation links toggler",
+    "userBox": {
+      "navAvatarAlt": "user avatar",
+      "favourites": "Favourites",
+      "myAccount": "My account",
+      "payments": "Payments",
+      "settings": "Settings",
+      "support": "Support",
+      "logout": "Logout"
+    }
+  },
+  "subscribeBox": {
+    "title": "Subscribe Newsletter",
+    "heading": "The Travel",
+    "text": "Get inspired! Receive travel discounts, tips and behind the scenes stories.",
+    "emailPlaceholder": "Your email address",
+    "subscribeBtn": "Subscribe",
+    "subscribeNotification": "You've subscribed"
+  },
+  "editableImage": {
+    "btnUpload": "Upload",
+    "btnCancel": "Cancel",
+    "editImgAlt": "edit image before upload",
+    "croppingBoxTitle": "Select area",
+    "uploading": "Uploading...",
+    "issues": {
+      "noFilesSelected": "File was not selected",
+      "fileSizeExceeded": "File is too large. It's size cannot exceed {maxSizeMb} megabytes",
+      "fileIsNotAnImage": "Selected file is not an image",
+      "imageLoadFailed": "Image load failed",
+      "imageLoadAborted": "Image load cancelled",
+      "imageProcessingFailed": "Failed to process image",
+      "unsupported": "Unsupported browser"
+    }
+  },
+  "propertyGrid": {
+    "controlButtons": {
+      "change": "Change",
+      "apply": "Apply",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "add": "Add"
+    },
+    "deleteConfirmMsg": "Are you sure want to delete {itemText} ?"
+  },
+  "confirmBox": {
+    "btnYes": "Yes",
+    "btnNo": "No",
+    "btnCancel": "Cancel"
+  },
+  "searchOffers": {
+    "addPromoCode": "Add Promo Code",
+    "showFlights": "Show Flights",
+    "showStays": "Show Places",
+    "flightsTab": "Flights",
+    "staysTab": "Stays",
+    "whereToFly": "Where are you flying?"
+  },
+  "searchFlights": {
+    "destinationCaption": "From - To",
+    "fromPlaceholder": "Departure city",
+    "toPlaceholder": "Arrival city",
+    "tripCaption": "Trip",
+    "tripOneway": "One-way",
+    "tripReturn": "Return",
+    "dateSingle": "Date",
+    "dateRange": "Depart - Return",
+    "flightParamsCaption": "Passenger - Class",
+    "passenger": "passenger | passengers",
+    "class": {
+      "economy": "Economy",
+      "comfort": "Comfort",
+      "business": "Business"
+    },
+    "fieldPassengers": "Passengers",
+    "fieldClass": "Flight Class",
+    "ariaLabelFrom": "departure city",
+    "ariaLabelTo": "arrival city",
+    "ariaLabelSwap": "swap arrival & departure city"
+  },
+  "searchStays": {
+    "destinationCaption": "Enter Destination",
+    "destinationPlaceholder": "Destination city",
+    "checkInCaption": "Check In",
+    "checkOutCaption": "Check Out",
+    "roomsGuestsCaption": "Rooms & Guests",
+    "numberOfRooms": "Rooms",
+    "numberOfGuests": "Guests",
+    "numRooms": "room | rooms",
+    "numGuests": "guest | guests",
+    "ariaLabelDestination": "destination city"
+  },
+  "ariaLabels": {
+    "btnThemeSwitcher": "theme switcher",
+    "imgLinkMainPage": "main page image link",
+    "footerSocialLinkTwitter": "Twitter image link",
+    "footerSocialLinkYoutube": "YouTube image link",
+    "btnGithubLogin": "login via GitHub",
+    "btnGoogleLogin": "login via Google",
+    "btnTestLocalLogin": "login via Test Local provider"
+  },
+  "footer": {
+    "destinations": {
+      "title": "Our Destinations",
+      "canada": "Canada",
+      "alaska": "Alaska",
+      "france": "France",
+      "iceland": "Iceland"
+    },
+    "activities": {
+      "title": "Our Activities",
+      "northernLights": "Northern Lights",
+      "cruisingSailing": "Cruising & Sailing",
+      "multiactivities": "Multi-activities",
+      "kayaking": "Kayaking"
+    },
+    "travelBlogs": {
+      "title": "Travel Blogs",
+      "bali": "Bali Travel Guide",
+      "sriLanka": "Sri Lanka Travel Guide",
+      "peru": "Peru Travel Guide"
+    },
+    "aboutUs": {
+      "title": "About Us",
+      "ourStory": "Our Story",
+      "workWithUs": "Work with us"
+    },
+    "contactUs": {
+      "title": "Contact Us",
+      "email": "Email"
+    }
+  },
+  "site": {
+    "name": "Test website (dev)",
+    "description": "Test (dev)"
+  },
+  "indexPage": {
+    "title": "Home",
+    "heading": {
+      "pre": "Helping Others",
+      "main": "LIVE & TRAVEL",
+      "sub": "Special offers to suit your plan"
+    },
+    "perfectTripSection": {
+      "title": "Plan your perfect trip",
+      "subtext": "Search Flights & Places Hire to our most popular destinations",
+      "btn": "See more places"
+    },
+    "popularCity": {
+      "imgAlt": "city image",
+      "flights": "Flights",
+      "stays": "Hotels"
+    },
+    "imgLinkAlt": "page link image",
+    "flightsImgLink": {
+      "title": "Flights",
+      "sub": "Search Flights & Places Hire to our most popular destinations",
+      "btn": "Show Flights"
+    },
+    "staysImgLink": {
+      "title": "Hotels",
+      "sub": "Search hotels & Places Hire to our most popular destinations",
+      "btn": "Show Hotels"
+    },
+    "companyReviewSection": {
+      "title": "Reviews",
+      "subtext": "What people says about Golobe facilities",
+      "btn": "See All",
+      "expandBtn": "View more",
+      "collapseBtn": "View less",
+      "imgAlt": "review image",
+      "userCompany": "Weave Studios"
+    }
+  },
+  "flightsPage": {
+    "title": "Flights",
+    "heading": {
+      "main": "Make your travel whishlist, we’ll do the rest",
+      "sub": "Special offers to suit your plan"
+    },
+    "letsGoPlacesSection": {
+      "title": "Let's go places together",
+      "subtext": "Discover the latest offers and news and start planning your next trip with us.",
+      "btn": "See All"
+    },
+    "worldMap": {
+      "cityImgAlt": "city image",
+      "cityTravelInfoAria": "navigate to city's travel info"
+    }
+  },
+  "findFlightsPage": {
+    "title": "Find Flights"
+  },
+  "staysPage": {
+    "title": "Hotels"
+  },
+  "findStaysPage": {
+    "title": "Find Stays"
+  },
+  "travelCities": {
+    "title": "Fall into travel",
+    "subtext": "Going somewhere to celebrate this season? Whether you’re going home or somewhere to roam, we’ve got the travel tools to get you to your destination.",
+    "btn": "See all",
+    "card": {
+      "btnBook": "Book Flight"
+    }
+  },
+  "travelDetails": {
+    "title": "Fall into travel",
+    "subtext": "Going somewhere to celebrate this season? Whether you’re going home or somewhere to roam, we’ve got the travel tools to get you to your destination.",
+    "btn": "See all",
+    "travelImgAlt": "one of city photos",
+    "bookBtn": "Book Flight",
+    "priceFrom": "From"
+  },
+  "accountPageCommon": {
+    "emailLabel": "Email",
+    "emailPlaceholder": "Enter your email here",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter your password here",
+    "confirmPasswordLabel": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm entered password",
+    "login": "Login",
+    "loginWith": "Or login with",
+    "toHome": "To home",
+    "toLogin": "To login",
+    "backToHome": "Back to home",
+    "backToLogin": "Back to login",
+    "toAccount": "To account page",
+    "signUp": "Sign up"
+  },
+  "loginPage": {
+    "title": "Login",
+    "subTitle": "Login to access your Golobe account",
+    "forms": {
+      "forgotPassword": "Forgot Password"
+    },
+    "havingAccount": "Dont have account?",
+    "invalidCredentials": "Login with provided email and password has failed"
+  },
+  "signUpPage": {
+    "title": "Sign Up",
+    "subTitle": "Let’s get you all set up so you can access your personal account.",
+    "forms": {
+      "firstNameLabel": "First Name",
+      "firstNamePlaceholder": "Enter your first name here",
+      "lastNameLabel": "Last Name",
+      "lastNamePlaceholder": "Enter your last name here",
+      "createAccount": "Create account"
+    },
+    "agreeWithPolicy": "I agree to all the {privacyLink}",
+    "privacyLinkText": "Privacy Policies",
+    "alreadyHaveAccount": "Already have an account?",
+    "signUpWith": "Or Sign up with",
+    "emailWasAutoverified": "DEVELOPMENT ONLY: Provided email has been autoverified by the system and now you can login using your credentials. You could also enable emailing in server config to use actual emails for verification in signup flow"
+  },
+  "signUpVerifyPage": {
+    "title": "Complete Your Sign Up",
+    "text": "An email has been sent to you. Please, check your inbox and follow confirmation link in the email to complete your registration process. The link will be valid for { tokenExpirationHours } hours"
+  },
+  "signUpCompletePage": {
+    "title": "Completing account registration",
+    "text": {
+      "success": "Congratulations! Sign up process has been successfully completed and now you can login with provided credentials.",
+      "alreadyConsumed": "The link has already been used for email confirmation. You should be able to login using the email.",
+      "linkInvalid": "The link is invalid or broken. Please, check it for correctness. You may also try to register again using different email or contact support to assist you on the problem.",
+      "linkExpired": "The link has expired. Please, start sign up process again to obtain a new one."
+    }
+  },
+  "emailVerifyCompletePage": {
+    "title": "Completing email verification",
+    "text": {
+      "success": "Congratulations! Your email has been successfully verified and now you can login using the email.",
+      "alreadyConsumed": "The link has already been used for email confirmation. You should be able to login using the email.",
+      "linkInvalid": "The link is invalid or broken. Please, check it for correctness. You may also again try to update email information on user's account page to obtain a new link.",
+      "linkExpired": "The link has expired. Please, update email information on user's account page again to obtain a new link."
+    }
+  },
+  "forgotPasswordPage": {
+    "title": "Forgot your password?",
+    "subTitle": "Don’t worry, happens to all of us. Enter your email below to recover your password",
+    "forms": {
+      "submit": "Submit"
+    },
+    "loginWith": "Or login with",
+    "userNotFound": "User with specified email is not registered in system",
+    "emailNotVerified": "User email has not been verified. Please, check your inbox for confirmation link"
+  },
+  "forgotPasswordVerifyPage": {
+    "title": "Password reset confirmation",
+    "text": "An email has been sent to you. Please, check your inbox and follow password recovery link in the email. The link will be valid for { tokenExpirationHours } hours"
+  },
+  "forgotPasswordSetPage": {
+    "title": "Set a password",
+    "subTitle": "Your previous password has been reseted. Please set a new password for your account.",
+    "setPassword": "Set password"
+  },
+  "forgotPasswordCompletePage": {
+    "title": "Completing password reset",
+    "text": {
+      "success": "Password has been changed successfully and now you can login using it.",
+      "alreadyConsumed": "The link has already been used for password reset. You should be able to login using your new password or reset it again to obtain another recovery link",
+      "linkInvalid": "The link is invalid or broken. Please, check it for correctness. You may also try to reset password again.",
+      "linkExpired": "The link has expired. Please, start password recovery process again to obtain a new one."
+    },
+    "resetPassword": "Reset password"
+  },
+  "accountPage": {
+    "title": "Account",
+    "uploadCover": "Upload new cover",
+    "coverAlt": "user's cover",
+    "btnAddEmail": "Add another email",
+    "tabAccount": {
+      "title": "Account",
+      "firstNameCaption": "First name",
+      "firstNamePlaceholder": "Enter first name",
+      "lastNameCaption": "Last name",
+      "lastNamePlaceholder": "Enter last name",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter password",
+      "emailPlaceholder": "Enter email",
+      "emailVerifyNotification": "A confirmation link has been sent to {email}. Please, check your inbox and follow the link to verify added email.",
+      "emailWasAutoverified": "DEVELOPMENT ONLY: Provided email has been autoverified by the system and now you can login using it. You could also enable emailing in server config to use actual emails for verification"
+    },
+    "tabHistory": {
+      "title": "History"
+    },
+    "tabPayments": {
+      "title": "Payments"
+    },
+    "avatarAlt": "user's avatar"
+  },
+  "authFormsPhotoAlt": "page photo",
+  "validations": {
+    "required": "The field is required",
+    "email": "Value is not a valid email address",
+    "minLength": "The field value must have a min length of {min}",
+    "password": "Password must have at least 8 characters, must contain uppercase and lowercase letters, at least one number and one special character",
+    "sameAsPassword": "Passwords must match",
+    "emailAlreadyRegistered": "User with specified email has already registered",
+    "emailIsUsed": "Email address is already in use",
+    "deletingLastEmail": "The only email cannot be deleted, you won't be able to login!",
+    "mustAgreeToPolicies": "You must agree to Privacy Policies",
+    "maximumNumberOfRecordsReached": "Maximum allowed number of records reached"
+  },
+  "emails": {
+    "registerAccount": {
+      "subject": "Complete your account registration",
+      "title": "Confirm your email address"
+    },
+    "emailVerify": {
+      "subject": "Confirm your email address",
+      "title": "Confirm your email address"
+    },
+    "passwordRecovery": {
+      "subject": "Password reset request",
+      "title": "Password reset"
+    }
+  },
+  "privacyPage": {
+    "title": "Privacy policy",
+    "documentHeader": "Policy regarding the processing of personal data",
+    "section1": {
+      "header": "1. General Provisions",
+      "text": "This personal data processing policy has been drawn up in accordance with the requirements of the Federal Law of July 27, 2006. &#8470; 152-FZ &laquo;On personal data&raquo; (hereinafter referred to as the Personal Data Law) and determines the procedure for processing personal data and measures to ensure the security of personal data by the website information system (hereinafter referred to as the Operator).",
+      "paragraph1": "1.1. The operator sets as its most important goal and condition for carrying out its activities the observance of the rights and freedoms of man and citizen when processing his personal data, including the protection of the rights to privacy, personal and family secrets.",
+      "paragraph2": "1.2. This Operator's policy regarding the processing of personal data (hereinafter referred to as the Policy) applies to all information that the Operator may receive about visitors to the website {siteUrl}"
+    },
+    "section2": {
+      "header": "2. Basic concepts used in the Policy",
+      "paragraph1": "2.1. Automated processing of personal data &mdash; processing of personal data using computer technology.",
+      "paragraph2": "2.2. Blocking personal data &mdash; temporary cessation of processing of personal data (except for cases where processing is necessary to clarify personal data).",
+      "paragraph3": "2.3. Website &mdash; a set of graphic and information materials, as well as computer programs and databases that ensure their availability on the Internet at the network address {siteUrl}",
+      "paragraph4": "2.4. Personal data information system &mdash; the totality of personal data contained in databases and the information technologies and technical means that ensure their processing.",
+      "paragraph5": "2.5. Depersonalization of personal data &mdash; actions as a result of which it is impossible to determine without the use of additional information the ownership of personal data to a specific User or other subject of personal data.",
+      "paragraph6": "2.6. Processing of personal data &mdash; any action (operation) or set of actions (operations) performed using automation tools or without the use of such means with personal data, including collection, recording, systematization, accumulation, storage, clarification (updating, changing), extraction, use, transfer ( distribution, provision, access), depersonalization, blocking, deletion, destruction of personal data.",
+      "paragraph7": "2.7. Operator &mdash; state body, municipal body, legal entity or individual, independently or jointly with other persons organizing and/or carrying out the processing of personal data, as well as determining the purposes of processing personal data, the composition of personal data to be processed, actions (operations) performed with personal data .",
+      "paragraph8": "2.8. Personal data &mdash; any information relating directly or indirectly to a specific or identifiable User of the website {siteUrl}",
+      "paragraph9": "2.9. Personal data authorized by the subject of personal data for distribution, &mdash; personal data, access to an unlimited number of persons is provided by the subject of personal data by giving consent to the processing of personal data authorized by the subject of personal data for distribution in the manner prescribed by the Law on Personal Data (hereinafter referred to as personal data permitted for distribution).",
+      "paragraph10": "2.10. User &mdash; any visitor to the website {siteUrl}",
+      "paragraph11": "2.11. Providing personal data &mdash; actions aimed at disclosing personal data to a certain person or a certain circle of persons.",
+      "paragraph12": "2.12. Distribution of personal data &mdash; any actions aimed at disclosing personal data to an indefinite number of persons (transfer of personal data) or to familiarize with personal data of an unlimited number of persons, including the publication of personal data in the media, posting in information and telecommunication networks or providing access to personal data to any -or in another way.",
+      "paragraph13": "2.13. Cross-border transfer of personal data &mdash; transfer of personal data to the territory of a foreign state to an authority of a foreign state, a foreign individual or a foreign legal entity.",
+      "paragraph14": "2.14. Destruction of personal data &mdash; any actions as a result of which personal data is irretrievably destroyed with the impossibility of further restoration of the content of personal data in the personal data information system and/or the physical media of personal data are destroyed."
+    },
+    "section3": {
+      "header": "3. Basic rights and obligations of the Operator",
+      "paragraph1Header": "3.1. The operator has the right:",
+      "paragraph1Item1": "&mdash; receive from the subject of personal data reliable information and/or documents containing personal data;",
+      "paragraph1Item2": "&mdash; in the event that the subject of personal data withdraws consent to the processing of personal data, as well as sends an application to stop processing personal data, the Operator has the right to continue processing personal data without the consent of the subject of personal data if there are grounds specified in the Law on Personal Data;",
+      "paragraph1Item3": "&mdash; independently determine the composition and list of measures necessary and sufficient to ensure the fulfillment of the obligations provided for by the Law on Personal Data and regulations adopted in accordance with it, unless otherwise provided by the Law on Personal Data or other federal laws.",
+      "paragraph2Header": "3.2. The operator is obliged:",
+      "paragraph2Item1": "&mdash; provide the subject of personal data, at his request, with information regarding the processing of his personal data;",
+      "paragraph2Item2": "&mdash; organize the processing of personal data in the manner established by the current legislation of the Russian Federation;",
+      "paragraph2Item3": "&mdash; respond to requests and inquiries from personal data subjects and their legal representatives in accordance with the requirements of the Personal Data Law;",
+      "paragraph2Item4": "&mdash; report to the authorized body for the protection of the rights of personal data subjects, at the request of this body, the necessary information within 10 days from the date of receipt of such a request;",
+      "paragraph2Item5": "&mdash; publish or otherwise provide unrestricted access to this Policy regarding the processing of personal data;",
+      "paragraph2Item6": "&mdash; take legal, organizational and technical measures to protect personal data from unauthorized or accidental access, destruction, modification, blocking, copying, provision, distribution of personal data, as well as from other unlawful actions in relation to personal data;",
+      "paragraph2Item7": "&mdash; stop transfer (distribution, provision, access) of personal data, stop processing and destroy personal data in the manner and cases provided for by the Law on Personal Data;",
+      "paragraph2Item8": "&mdash; perform other duties provided for by the Personal Data Law."
+    },
+    "section4": {
+      "header": "4. Basic rights and obligations of personal data subjects",
+      "paragraph1Header": "4.1. Subjects of personal data have the right:",
+      "paragraph1Item1": "&mdash; receive information regarding the processing of his personal data, except for cases provided for by federal laws. The information is provided to the subject of personal data by the Operator in an accessible form, and it should not contain personal data relating to other subjects of personal data, except in cases where there are legal grounds for the disclosure of such personal data. The list of information and the procedure for obtaining it is established by the Law on Personal Data;",
+      "paragraph1Item2": "&mdash; require the operator to clarify his personal data, block it or destroy it if the personal data is incomplete, outdated, inaccurate, illegally obtained or not necessary for the stated purpose of processing, as well as take measures provided by law to protect their rights;",
+      "paragraph1Item3": "&mdash; put forward a condition of prior consent when processing personal data in order to promote goods, works and services on the market;",
+      "paragraph1Item4": "&mdash; to withdraw consent to the processing of personal data, as well as to send a request to stop processing personal data;",
+      "paragraph1Item5": "&mdash; appeal to the authorized body for the protection of the rights of personal data subjects or in court against unlawful actions or inaction of the Operator when processing his personal data;",
+      "paragraph1Item6": "&mdash; to exercise other rights provided for by the legislation of the Russian Federation.",
+      "paragraph2Header": "4.2. Personal data subjects are obliged to:",
+      "paragraph2Item1": "&mdash; provide the Operator with reliable information about yourself;",
+      "paragraph2Item2": "&mdash; inform the Operator about clarifying (updating, changing) your personal data.",
+      "paragraph3Header": "4.3. Persons who provided the Operator with false information about themselves, or information about another subject of personal data without the latter's consent, are liable in accordance with the legislation of the Russian Federation."
+    },
+    "section5": {
+      "header": "5. Principles for processing personal data",
+      "paragraph1": "5.1. Processing of personal data is carried out on a legal and fair basis.",
+      "paragraph2": "5.2. The processing of personal data is limited to the achievement of specific, predetermined and legitimate purposes. Processing of personal data that is incompatible with the purposes of collecting personal data is not permitted.",
+      "paragraph3": "5.3. It is not allowed to combine databases containing personal data, the processing of which is carried out for purposes incompatible with each other.",
+      "paragraph4": "5.4. Only personal data that meets the purposes of their processing are subject to processing.",
+      "paragraph5": "5.5. The content and volume of the processed personal data correspond to the stated purposes of processing. Redundancy of the processed personal data in relation to the stated purposes of their processing is not allowed.",
+      "paragraph6": "5.6. When processing personal data, the accuracy of personal data, their sufficiency, and, where necessary, relevance in relation to the purposes of processing personal data is ensured. The operator takes the necessary measures and/or ensures their adoption to delete or clarify incomplete or inaccurate data.",
+      "paragraph7": "5.7. Personal data is stored in a form that makes it possible to identify the subject of personal data, no longer than required by the purposes of processing personal data, unless the storage period for personal data is established by federal law, an agreement to which the party, beneficiary or guarantor to which the subject of personal data is. The processed personal data is destroyed or anonymized upon achievement of the processing goals or in the event of the loss of the need to achieve these goals, unless otherwise provided by federal law."
+    },
+    "section6": {
+      "header": "6. Purposes of processing personal data",
+      "row1Name": "Purpose of processing",
+      "row1Value": "providing the User with access to services, information and/or materials contained on the website",
+      "row2Name": "Personal Data",
+      "row2Value1": "last name, first name, patronymic",
+      "row2Value2": "email address",
+      "row2Value3": "images uploaded by the User",
+      "row3Name": "Legal Basis",
+      "row3Value": "Federal Law “On Information, Information Technologies and Information Protection” dated July 27, 2006 N 149-FZ",
+      "row4Name": "Types of personal data processing",
+      "row4Value1": "Collection, recording, systematization, accumulation, storage, destruction and depersonalization of personal data",
+      "row4Value2": "Send newsletters to email address"
+    },
+    "section7": {
+      "header": "7. Conditions for processing personal data",
+      "paragraph1": "7.1. Processing of personal data is carried out with the consent of the subject of personal data to the processing of his personal data.",
+      "paragraph2": "7.2. Processing of personal data is necessary to achieve the goals provided for by an international treaty of the Russian Federation or law, to implement the functions, powers and responsibilities assigned by the legislation of the Russian Federation to the operator.",
+      "paragraph3": "7.3. Processing of personal data is necessary for the administration of justice, execution of a judicial act, act of another body or official subject to execution in accordance with the legislation of the Russian Federation on enforcement proceedings.",
+      "paragraph4": "7.4. Processing of personal data is necessary for the execution of an agreement to which the subject of personal data is a party or beneficiary or guarantor, as well as for concluding an agreement at the initiative of the subject of personal data or an agreement under which the subject of personal data will be a beneficiary or guarantor.",
+      "paragraph5": "7.5. Processing of personal data is necessary to exercise the rights and legitimate interests of the operator or third parties or to achieve socially significant goals, provided that the rights and freedoms of the subject of personal data are not violated.",
+      "paragraph6": "7.6. Processing of personal data is carried out, access to an unlimited number of persons is provided by the subject of personal data or at his request (hereinafter - publicly available personal data).",
+      "paragraph7": "7.7. We process personal data that is subject to publication or mandatory disclosure in accordance with federal law."
+    },
+    "section8": {
+      "header": "8. Procedure for collection, storage, transfer and other types of processing of personal data",
+      "text": "The security of personal data processed by the Operator is ensured by implementing legal, organizational and technical measures necessary to fully comply with the requirements of current legislation in the field of personal data protection.",
+      "paragraph1": "8.1. The operator ensures the safety of personal data and takes all possible measures to prevent access to personal data by unauthorized persons.",
+      "paragraph2": "8.2. The User's personal data will never, under any circumstances, be transferred to third parties, except in cases related to the implementation of current legislation or in the event that the subject of personal data has given consent to the Operator to transfer data to a third party to fulfill obligations under a civil law contract.",
+      "paragraph3": "8.3. If inaccuracies in personal data are identified, the User can update them independently by sending the Operator a notification to the Operator's email address {contactEmail} marked &laquo;Updating personal data&raquo;.",
+      "paragraph4": "8.4. The period for processing personal data is determined by the achievement of the purposes for which personal data was collected, unless a different period is provided for by the contract or current legislation. <br> The user can at any time withdraw his consent to the processing of personal data by sending to the Operator notification via email to the Operator's email address {contactEmail} marked &laquo;Withdrawal of consent to the processing of personal data&raquo;.",
+      "paragraph5": "8.5. All information that is collected by third-party services, including payment systems, communications and other service providers, is stored and processed by these persons (Operators) in accordance with their User Agreement and Privacy Policy. The subject of personal data and /or with the specified documents. The operator is not responsible for the actions of third parties, including the service providers specified in this paragraph.",
+      "paragraph6": "8.6. Prohibitions established by the subject of personal data on the transfer (except for providing access), as well as on processing or conditions for processing (except for gaining access) of personal data permitted for distribution, do not apply in cases of processing personal data in state, public and other public interests determined by the legislation of the Russian Federation.",
+      "paragraph7": "8.7. When processing personal data, the operator ensures the confidentiality of personal data.",
+      "paragraph8": "8.8. The operator stores personal data in a form that allows identifying the subject of personal data, no longer than required by the purposes of processing personal data, unless the storage period for personal data is established by federal law, an agreement to which the beneficiary or guarantor is a party which is the subject of personal data.",
+      "paragraph9": "8.9. The condition for terminating the processing of personal data may be the achievement of the purposes of processing personal data, the expiration of the consent of the subject of personal data, withdrawal of consent by the subject of personal data or a requirement to cease processing of personal data, as well as identification of unlawful processing of personal data."
+    },
+    "section9": {
+      "header": "9. List of actions performed by the Operator with the received personal data",
+      "paragraph1": "9.1. The operator collects, records, systematizes, accumulates, stores, refines (updates, changes), extracts, uses, transfers (distribution, provision, access), depersonalizes, blocks, deletes and destroys personal data." ,
+      "paragraph2": "9.2. The operator carries out automated processing of personal data with or without receiving and/or transmitting the received information via information and telecommunication networks."
+    },
+    "section10": {
+      "header": "10. Cross-border transfer of personal data",
+      "paragraph1": "10.1. Before commencing activities for the cross-border transfer of personal data, the operator is obliged to notify the authorized body for the protection of the rights of personal data subjects of its intention to carry out cross-border transfer of personal data (such notification is sent separately from the notification of the intention to process personal data). ",
+      "paragraph2": "10.2. Before submitting the above notification, the operator is obliged to obtain relevant information from the authorities of a foreign state, foreign individuals, foreign legal entities to whom the cross-border transfer of personal data is planned."
+    },
+    "section11": {
+      "header": "11. Confidentiality of personal data",
+      "text": "The operator and other persons who have access to personal data are obliged not to disclose to third parties or distribute personal data without the consent of the subject of personal data, unless otherwise provided by federal law."
+    },
+    "section12": {
+      "header": "12. Final provisions",
+      "paragraph1": "12.1. The User can receive any clarification on issues of interest regarding the processing of his personal data by contacting the Operator via email {contactEmail}",
+      "paragraph2": "12.2. This document will reflect any changes to the Operator's personal data processing policy. The policy is valid indefinitely until replaced by a new version.",
+      "paragraph3": "12.3. The current version of the Policy is freely available on the Internet at {privacyUrl}"
+    }
+  },
+  "cookieBanner": {
+    "title": "Using cookies",
+    "text": "This website or its third-party tools use cookies so that we can display this website correctly. By closing this banner, scrolling this page, clicking a link or continuing to browse you allow us to use cookies and also agree to {privacyLink}",
+    "btnAccept": "Agree"
+  },
+  "searchPageImageAlt": "page's main image",
+  "close": "Close",
+  "calendarImgAlt": "calendar icon"
+}

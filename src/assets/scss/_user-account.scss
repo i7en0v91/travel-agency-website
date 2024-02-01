@@ -1,0 +1,365 @@
+@use "sass:map";
+@use 'system' as *;
+@use 'themes' as *;
+@use 'utils' as *;
+@use 'svg';
+
+$user-cover-border-radius: 12px;
+$user-avatar-xsmall-size: 100px;
+$user-avatar-small-size: 120px;
+$user-avatar-normal-size: 160px;
+$user-avatar-btn-size: 44px;
+$user-avatar-box-xsmargin-top: 40px;
+$user-avatar-box-margin-top: 60px;
+
+.user-account-page {
+  padding-left: var(--#{$prefix}-page-padding-x);
+  padding-right: var(--#{$prefix}-page-padding-x);
+  padding-top: var(--#{$prefix}-page-padding-y);
+  padding-bottom: var(--#{$prefix}-page-padding-y);
+
+  width: 100%;
+
+  .profile-images {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .user-account-contacts {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+
+    margin-top: $user-avatar-box-xsmargin-top;
+    @include for-small-and-above() {
+      margin-top: $user-avatar-box-margin-top;
+    }
+
+    .user-name {
+      flex: 1 1 auto;
+      width: 100%;
+
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+
+      @include with-theme-color('input-ctrl-primary') using ($css-var) {
+        color: var(#{$css-var});
+      }
+      
+      .first-name, .last-name {
+        flex: 0 1 auto;
+
+        text-align: center;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+
+        @include with-body-font('category-caption');
+        font-size: 24px;
+      }
+    }
+
+    .user-email {
+      flex: 1 1 auto;
+      width: 100%;
+
+      text-align: center;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+
+      @include with-theme-color('primary') using ($css-var) {
+        color: var($css-var);
+      }
+      @include with-body-font('body-primary');
+    }
+  }
+
+  .user-account-page-tabs-control {
+    width: 100%;
+  }
+
+  .option-button-div {
+    justify-content: center;
+  }
+  .option-button-text {
+    display: none!important;
+  }
+  @include for-small-and-above() {
+    .option-button-icon {
+      display: none!important;
+    }
+    .option-button-text {
+      display: block!important;
+    }
+  }
+}
+
+.user-cover {
+  grid-row-start: 1;
+  grid-row-end: 2;
+  grid-column-start: 1;
+  grid-column-end: 2;
+
+  width: 100%;
+  z-index: 1;
+
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto;
+
+  min-height: 300px;
+
+  .user-cover-upload-btn {
+    margin-bottom: map.get($spacings, '2');
+    margin-right: map.get($spacings, '2');
+    @include for-small-and-above() {
+      margin-bottom: map.get($spacings, '4');
+      margin-right: map.get($spacings, '4');
+    }
+
+    &::-webkit-file-upload-button {
+      display: none;
+    }
+  }
+
+  .user-cover-image-container {
+    grid-row-start: 1;
+    grid-row-end: 2;
+    grid-column-start: 1;
+    grid-column-end: 2;
+
+    width: 100%;
+
+    border-radius: $user-cover-border-radius;
+    .user-cover-image-el {
+      border-radius: $user-cover-border-radius;
+    }
+    .static-image-stub {
+      border-radius: $user-cover-border-radius;
+    }
+  }
+
+  .user-cover-upload-btn {
+    grid-row-start: 1;
+    grid-row-end: 2;
+    grid-column-start: 1;
+    grid-column-end: 2;
+
+    align-self: flex-end;
+    justify-self: flex-end;
+    z-index: 2;
+  }
+}
+
+.avatar-box {
+  grid-row-start: 1;
+  grid-row-end: 2;
+  grid-column-start: 1;
+  grid-column-end: 2;
+  
+  z-index: 2;
+
+  align-self: flex-end;
+  justify-self: flex-start;  
+
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto;
+
+  transform: translateY($user-avatar-box-xsmargin-top);
+  @include for-small-and-above() {
+    transform: translateY($user-avatar-box-margin-top);
+  }
+  
+
+  width: $user-avatar-xsmall-size;
+  height: $user-avatar-xsmall-size;
+  @include for-small-and-above() {
+    width: $user-avatar-small-size;
+    height: $user-avatar-small-size;  
+  }
+  @include for-medium-and-large() {
+    width: $user-avatar-normal-size;
+    height: $user-avatar-normal-size;  
+    justify-self: center;
+  }
+
+  @include with-theme-color('account-avatar-frame') using($css-var) {
+    border: 4px solid var($css-var);
+    background-color: var($css-var);
+  }    
+
+  border-radius: calc($user-avatar-small-size / 2);
+  @include for-small-and-above() {
+    border-radius: calc($user-avatar-normal-size / 2);
+  }
+
+  .user-avatar-image-container {
+    width: 100%;
+    height: 100%;
+
+    grid-row-start: 1;
+    grid-row-end: 2;
+    grid-column-start: 1;
+    grid-column-end: 2;
+
+    @include with-theme-color('body-bg') using($css-var) {
+      background-color: var($css-var);
+    } 
+
+    border-radius: calc($user-avatar-small-size / 2);
+    @include for-small-and-above() {
+      border-radius: calc($user-avatar-normal-size / 2);
+    }
+    .user-avatar-image-el {
+      border-radius: calc($user-avatar-small-size / 2);
+      @include for-small-and-above() {
+        border-radius: calc($user-avatar-normal-size / 2);
+      }
+    }
+    .static-image-stub {
+      border-radius: calc($user-avatar-small-size / 2);
+      @include for-small-and-above() {
+        border-radius: calc($user-avatar-normal-size / 2);
+      }
+    }
+  }  
+
+  .user-avatar-upload-btn {
+    width: calc($user-avatar-btn-size * $user-avatar-small-size / $user-avatar-normal-size);
+    height: calc($user-avatar-btn-size * $user-avatar-small-size / $user-avatar-normal-size);
+    max-width: calc($user-avatar-btn-size * $user-avatar-small-size / $user-avatar-normal-size);
+    max-height: calc($user-avatar-btn-size * $user-avatar-small-size / $user-avatar-normal-size);
+
+    grid-row-start: 1;
+    grid-row-end: 2;
+    grid-column-start: 1;
+    grid-column-end: 2;
+
+    align-self: flex-end;
+    justify-self: flex-end;
+    
+    z-index: 3;
+
+    margin: 0;
+
+    @include with-theme-color('account-avatar-frame') using($css-var) {
+      background-color: var($css-var);
+    }
+
+    border-radius: calc($user-avatar-small-size / 2);
+    @include for-small-and-above() {
+      width: $user-avatar-btn-size;
+      height: $user-avatar-btn-size;
+      max-width: $user-avatar-btn-size;
+      max-height: $user-avatar-btn-size;
+      border-radius: calc($user-avatar-normal-size / 2);
+    }
+    
+    &::before {
+      background-color: black;
+      padding: 0;
+      margin: 0;
+      transform: translate(-48%, -65%);
+      @include for-small-and-above() {
+        width: 24px;
+        height: 24px;
+        transform: translate(-15%, -20%);
+      }
+    }
+  }
+}
+
+.account-page-waiting-indicator {
+  height: 100px;
+}
+
+.account-page-content {
+  margin-top: 40px;
+}
+
+.account-page-tab-div {
+  width: 100%;
+  height: 100%;
+
+  .account-page-tab {
+    width: 100%;
+    height: 100%;
+
+    .account-page-tab-name {
+      @include with-theme-color('input-ctrl-primary') using ($css-var) {
+        color: var(#{$css-var});
+      }
+    }
+
+    .error-helm-stub {
+      min-height: 200px;
+    }
+  }
+}
+
+.account-tab-account {
+  display: block;
+  width: 100%;
+  height: auto;
+
+  @include with-theme-color('shadow') using($css-var) {
+    box-shadow: 0px 4px 16px var($css-var);
+  }
+}
+
+.account-tab-history {
+  @include with-theme-color('input-ctrl-primary') using ($css-var) {
+    color: var(#{$css-var});
+  }
+}
+
+.account-tab-payments {
+  @include with-theme-color('input-ctrl-primary') using ($css-var) {
+    color: var(#{$css-var});
+  }
+}
+
+.icon-upload::before {
+  -webkit-mask-image: url('/img/icon-upload.svg');
+  mask-image: url('/img/icon-upload.svg');
+}
+
+.icon-pen::before {
+  -webkit-mask-image: url('/img/icon-pen.svg');
+  mask-image: url('/img/icon-pen.svg');
+}
+
+.icon-check::before {
+  -webkit-mask-image: escape-svg(svg.$icon-check);
+  mask-image: escape-svg(svg.$icon-check);
+}
+
+.icon-cross::before {
+  -webkit-mask-image: escape-svg(svg.$icon-cross);
+  mask-image: escape-svg(svg.$icon-cross);
+}
+
+.option-button-icon-user {
+  -webkit-mask-image: escape-svg(svg.$icon-user);
+  mask-image: escape-svg(svg.$icon-user);
+}
+
+.option-button-icon-history {
+  -webkit-mask-image: url('/img/icon-history.svg');
+  mask-image: url('/img/icon-history.svg');
+}
+
+.option-button-icon-payments {
+  -webkit-mask-image: url('/img/icon-credit-card.svg');
+  mask-image: url('/img/icon-credit-card.svg');
+}

@@ -1,0 +1,12 @@
+@use 'sass:map';
+@use 'system' as *;
+@use 'buttons' as *;
+@use 'themes' as *;
+@use 'utils' as *;
+@use 'svg';
+
+.stays-page {
+  @include with-theme-color('primary') using($css-var) {
+    color: var($css-var);
+  }
+}

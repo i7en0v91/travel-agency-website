@@ -1,0 +1,143 @@
+<script setup lang="ts">
+
+import type { WatchStopHandle } from 'vue';
+import TravelDetailsTextingFrame from './travel-details-texting-frame.vue';
+import { useTravelDetailsStore } from './../../stores/travel-details-store';
+import { type ITravelDetailsData, type ITravelDetailsTextingData } from './../../shared/interfaces';
+
+interface IProps {
+  ctrlKey: string
+};
+const props = defineProps<IProps>();
+
+const logger = CommonServicesLocator.getLogger();
+const activeFrame = ref<'initial' | 'A' | 'B'>('initial');
+const elFrameA = ref<InstanceType<typeof TravelDetailsTextingFrame>>();
+const elFrameB = ref<InstanceType<typeof TravelDetailsTextingFrame>>();
+const isError = ref(false);
+const initialFrameHidden = ref(false);
+const clientFramesActivated = ref(false);
+
+const dataBufInitial = ref<ITravelDetailsTextingData | undefined>();
+const dataBuf1 = ref<ITravelDetailsTextingData | undefined>();
+const dataBuf2 = ref<ITravelDetailsTextingData | undefined>();
+
+const watches: WatchStopHandle[] = [];
+
+function swapFrames () {
+  logger.debug(`(TravelDetailsTexting) swapping frames: ctrlKey=${props.ctrlKey}, activeFrame=${activeFrame.value}`);
+  switch (activeFrame.value) {
+    case 'initial':
+      elFrameA.value!.setFrame(true);
+      activeFrame.value = 'A';
+      nextTick(() => { clientFramesActivated.value = true; });
+      break;
+    case 'A':
+      elFrameA.value!.setFrame(false);
+      elFrameB.value!.setFrame(true);
+      activeFrame.value = 'B';
+      initialFrameHidden.value = true;
+      break;
+    case 'B':
+      elFrameA.value!.setFrame(true);
+      elFrameB.value!.setFrame(false);
+      activeFrame.value = 'A';
+      break;
+  }
+}
+
+function isInitialFrame () : boolean {
+  return activeFrame.value === 'initial';
+}
+
+defineExpose({
+  swapFrames,
+  isInitialFrame
+});
+
+const travelDetailsStore = useTravelDetailsStore();
+
+if (process.client) {
+  await startWatchingForDataChanges();
+}
+
+const storeInstance = await (travelDetailsStore.getInstance());
+if (storeInstance.current?.texting) {
+  onInitialDataReady(storeInstance.current);
+} else if (process.server) {
+  isError.value = true;
+}
+
+function onUpcomingDataChanged (data?: ITravelDetailsData | undefined) {
+  logger.verbose(`(TravelDetailsTexting) upcoming data changed: ctrlKey=${props.ctrlKey}, activeFrame=${activeFrame.value}`);
+  if (data?.texting) {
+    (activeFrame.value !== 'A' ? dataBuf2 : dataBuf1).value = data.texting;
+  }
+}
+
+function onInitialDataReady (data: ITravelDetailsData) {
+  logger.verbose(`(TravelDetailsTexting) initial data ready: ctrlKey=${props.ctrlKey}, activeFrame=${activeFrame.value}`);
+  if (activeFrame.value !== 'initial' || dataBufInitial.value) {
+    logger.verbose(`(TravelDetailsTexting) initial data has been already processed: ctrlKey=${props.ctrlKey}, activeFrame=${activeFrame.value}`);
+    return;
+  }
+
+  if (data.texting) {
+    dataBufInitial.value = data.texting;
+  }
+}
+
+async function startWatchingForDataChanges () : Promise<void> {
+  logger.verbose(`(TravelDetailsTexting) starting to watch for data changes: ctrlKey=${props.ctrlKey}`);
+
+  const storeInstance = await (travelDetailsStore.getInstance());
+  watches.push(watch([() => storeInstance.upcoming?.cityId, () => storeInstance.upcoming?.texting], () => {
+    onUpcomingDataChanged(storeInstance.upcoming);
+  }));
+
+  if (!storeInstance.current?.cityId) {
+    watches.push(watch([() => storeInstance.current?.cityId], () => {
+      onInitialDataReady(storeInstance.current!);
+    }));
+  }
+}
+
+function stopWatchingForDataChanges () {
+  logger.verbose(`(TravelDetailsTexting) stopping to watch for data changes: ctrlKey=${props.ctrlKey}`);
+  watches.forEach(sw => sw());
+}
+
+onBeforeUnmount(() => {
+  stopWatchingForDataChanges();
+});
+
+</script>
+
+<template>
+  <div class="travel-details-texting brdr-3" role="article">
+    <ErrorHelm :is-error="isError">
+      <div class="travel-details-frame-container">
+        <TravelDetailsTextingFrame
+          v-if="!initialFrameHidden"
+          :ctrl-key="`${ctrlKey}-TravelDetailsTexting-Initial`"
+          :class="(activeFrame === 'initial' && !initialFrameHidden) ? 'fadein' : ''"
+          :texting="dataBufInitial"
+          :is-initial="activeFrame === 'initial'"
+          :style="{ display: 'flex' }"
+        />
+        <TravelDetailsTextingFrame
+          ref="elFrameA"
+          :ctrl-key="`${ctrlKey}-TravelDetailsTexting-FrameA`"
+          :texting="dataBuf2"
+          :style="{ visibility: clientFramesActivated ? 'visible' : 'hidden' }"
+        />
+        <TravelDetailsTextingFrame
+          ref="elFrameB"
+          :ctrl-key="`${ctrlKey}-TravelDetailsTexting-FrameB`"
+          :texting="dataBuf1"
+          :style="{ visibility: (clientFramesActivated && initialFrameHidden) ? 'visible' : 'hidden' }"
+        />
+      </div>
+    </ErrorHelm>
+  </div>
+</template>

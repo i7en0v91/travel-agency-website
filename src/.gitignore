@@ -1,0 +1,32 @@
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
+.cache
+.unlighthouse
+.tmp
+dist
+
+# Node dependencies
+node_modules
+
+# Logs
+logs
+*.log
+
+# Cache
+.img.cache
+
+# Misc
+.DS_Store
+.fleet
+.idea
+
+# env files
+.env
+.env.**.local
+!.env.example
+
+# Tests output
+tests/screenshots

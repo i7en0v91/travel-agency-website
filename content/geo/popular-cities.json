@@ -1,0 +1,187 @@
+[{
+	"name": "Paris",
+	"rating": 1,
+	"promoLine": {
+		"en": "Eiffel Tower",
+		"fr": "tour Eiffel",
+		"ru": "Эйфелева башня"
+	},
+	"visibleOnWorldMap": true
+},
+{
+	"name": "Bangkok",
+	"rating": 2,
+	"promoLine": {
+		"en": "Grand Palace",
+		"fr": "grand Palace",
+		"ru": "Большой дворец"
+	},
+	"visibleOnWorldMap": true
+}, 
+{
+	"name": "London",
+	"rating": 3,
+	"promoLine": {
+		"en": "Tower of London",
+		"fr": "Tour de Londres",
+		"ru": "Башня Лондона"
+	}
+},
+{
+	"name": "Dubai",
+	"rating": 4,
+	"promoLine": {
+		"en": "Burj Khalifa",
+		"fr": "Burj Khalifa",
+		"ru": "Бурдж-Халифа"
+	}
+},
+{
+	"name": "Singapore",
+	"rating": 5,
+	"promoLine": {
+		"en": "Marina Bay Sands",
+		"fr": "Sables de Marina Bay",
+		"ru": "Марина Бэй Сэндс"
+	}
+},
+{
+	"name": "New York City",
+	"rating": 6,
+	"promoLine": {
+		"en": "Times Square",
+		"fr": "Times Square",
+		"ru": "Таймс Сквер"
+	}
+},
+{
+	"name": "Tokyo",
+	"rating": 7,
+	"promoLine": {
+		"en": "Shibuya Crossing",
+		"fr": "Traversée de Shibuya",
+		"ru": "Пересечение Сибуя"
+	}
+},
+{
+	"name": "Istanbul",
+	"rating": 8,
+	"promoLine": {
+		"en": "Hagia Sophia",
+		"fr": "Sainte-Sophie",
+		"ru": "Собор Святой Софии"
+	}
+},
+{
+	"name": "Rome",
+	"rating": 9,
+	"promoLine": {
+		"en": "Colosseum",
+		"fr": "Colisée",
+		"ru": "Колизей"
+	}
+},
+{
+	"name": "Barcelona",
+	"rating": 10,
+	"promoLine": {
+		"en": "Sagrada Família",
+		"fr": "Sagrada Familia",
+		"ru": "Саграда Фамилия"
+	}
+},
+{
+	"name": "Hong Kong",
+	"rating": 11,
+	"promoLine": {
+		"en": "Victoria Harbour",
+		"fr": "Port Victoria",
+		"ru": "Виктория Харбор"
+	}
+},
+{
+	"name": "Amsterdam",
+	"rating": 12,
+	"promoLine": {
+		"en": "Dam Square",
+		"fr": "Place du Dam",
+		"ru": "Площадь Дам"
+	}
+},
+{
+	"name": "Seoul",
+	"rating": 13,
+	"promoLine": {
+		"en": "Gyeongbokgung Palace",
+		"fr": "Palais Gyeongbokgung",
+		"ru": "Дворец Кёнбоккун"
+	},
+	"visibleOnWorldMap": true
+},
+{
+	"name": "Milan",
+	"rating": 14,
+	"promoLine": {
+		"en": "Duomo di Milano",
+		"fr": "Duomo de Milan",
+		"ru": "Дуомо ди Милано"
+	}
+},
+{
+	"name": "Kuala Lumpur",
+	"rating": 15,
+	"promoLine": {
+		"en": "Petronas Twin Towers",
+		"fr": "les tours jumelles Petronas",
+		"ru": "Башни-близнецы Петронас"
+	}
+},
+{
+	"name": "Vienna",
+	"rating": 16,
+	"promoLine": {
+		"en": "Schönbrunn Palace",
+		"fr": "Château de Schönbrunn",
+		"ru": "Дворец Шенбрунн"
+	}
+},
+{
+	"name": "Sydney",
+	"rating": 17,
+	"promoLine": {
+		"en": "Sydney Opera House",
+		"fr": "Opéra de Sydney",
+		"ru": "Сиднейский оперный театр"
+	},
+	"visibleOnWorldMap": true
+},
+{
+	"name": "Prague",
+	"rating": 18,
+	"promoLine": {
+		"en": "Prague Castle",
+		"fr": "Château de Prague",
+		"ru": "Пражский Град"
+	}
+},
+{
+	"name": "Los Angeles",
+	"rating": 19,
+	"promoLine": {
+		"en": "Hollywood",
+		"fr": "Hollywood",
+		"ru": "Голливуд"
+	},
+	"visibleOnWorldMap": true
+},
+{
+	"name": "Cairo",
+	"rating": 20,
+	"promoLine": {
+		"en": "Giza Pyramid Complex",
+		"fr": "Complexe pyramidal de Gizeh",
+		"ru": "Комплекс пирамид в Гизе"
+	},
+	"visibleOnWorldMap": true
+}]
+

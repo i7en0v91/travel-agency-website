@@ -1,0 +1,822 @@
+@use "sass:map";
+@use 'utils' as *; 
+@use 'themes' as *;
+@use 'system' as *;
+@use 'svg';
+
+$landing-color: white;
+
+$theme-switcher-button-size: 16px;
+$theme-switcher-aspect-ratio: 2;
+$theme-switcher-button-pad: 2px;
+$theme-switcher-animation-interval: 0.2s;
+
+$search-page-link-menu-animation-interval: 0.6s;
+$navlink-text-decoration-thickness: 1.5px;
+$navbar-outline-offset: $default-outline-offset + 1px;
+
+.nav-bar {
+  width: 100%;
+  &:not(.nav-bar-landing) {
+    min-width: map.get($breakpoints, 'xs');
+  }
+
+  &.nav-bar-landing {
+    * {
+      outline-color: $landing-color!important;
+    }
+  }
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+
+  align-items: center;
+  @include for-large-and-extra-large() {
+    align-items: baseline;
+  }
+  
+
+  &.nav-bar-inapp {
+    @include with-theme-color('body-bg') using ($css-var) {
+      background-color: var($css-var);
+    }
+    padding: 16px calc(var(--#{$prefix}-page-padding-x) - $navbar-outline-offset) 16px calc(var(--#{$prefix}-page-padding-x) - $navbar-outline-offset);
+  
+    @include with-theme-color('shadow') using($css-var) {
+      box-shadow: 0px 4px 16px var($css-var);
+    }
+
+    .nav-item {
+      @include with-theme-color('input-ctrl-primary') using ($css-var) {
+        color: var($css-var);
+      }
+    }
+
+    .nav-link-icon::before {
+      @include with-theme-color('input-ctrl-primary') using ($css-var) {
+        background-color: var($css-var);
+      }
+    }
+  }
+
+  &.nav-bar-landing {
+    padding: 6px 10px 6px 10px;
+    @include for-small-and-above() {
+      padding: 16px 24px 16px 24px;
+    }
+    @include for-large-and-extra-large() {
+      padding: 24px 32px 24px 32px;
+    }
+
+    .nav-item {
+      color: $landing-color;
+    }
+    .nav-link-icon::before {
+      background-color: $landing-color;
+    }
+  }
+
+  .nav-link-icon::before {
+    width: 24px;
+    height: 24px;
+  
+    display: inline-block;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center center;
+    mask-position: center center;
+    vertical-align: middle;
+
+    margin-right: map.get($spacings, '1');
+
+    content: '';
+  }
+
+  .nav-search-page-links {
+    order: 5;
+    @include for-large-and-extra-large() {
+      order: 1
+    }
+    z-index: 2;
+
+    $toggle-max-height: 15em;
+
+    width: 100%;
+    flex: 0 1 auto;
+
+    gap: map.get($spacings, '2');
+
+    overflow-y: clip;
+    max-height: $toggle-max-height;
+
+    max-height: 0px;
+    visibility: hidden;
+    padding-left: $navbar-outline-offset;
+
+    &.toggling {
+      animation: frames-collapse $search-page-link-menu-animation-interval ease-out;
+    }
+
+    &.expanded {
+      max-height: $toggle-max-height;
+      visibility: visible;
+
+      &.toggling {
+        animation: frames-expand $search-page-link-menu-animation-interval ease-out;  
+      }
+    }
+
+    @include for-large-and-extra-large() {
+      flex: 1 1 auto;
+
+      overflow-y: auto;
+      width: auto;
+      &, &.expanded {
+        max-height: $toggle-max-height;
+        visibility: visible;
+      }
+
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: map.get($spacings, '3');
+    }
+
+    @keyframes frames-collapse {
+      0% { 
+        visibility: visible;
+        max-height: $toggle-max-height;
+      }
+
+      99% {
+        visibility: visible;
+        max-height: 0px;
+      }
+
+      100% {
+        visibility: hidden;
+        max-height: 0px;
+      }
+    }
+
+    @keyframes frames-expand {
+      0% { 
+        visibility: hidden;
+        max-height: 0px;
+      }
+
+      1% {
+        visibility: visible;
+      }
+
+      100% {
+        visibility: visible;
+        max-height: $toggle-max-height;
+      }
+    }
+  }
+
+  .nav-logo-list-item {
+    order: 2;
+    padding-left: $navbar-outline-offset;
+    @include for-large-and-extra-large() {
+      order: 1;
+      padding-left: 0;
+    }
+    flex: 0 1 auto;
+    
+  }
+
+  .nav-toggler-div {
+    order: 2;
+    flex: 1 1 auto;
+    @include for-large-and-extra-large() {
+      display: none;
+      flex: 0 1 0;
+      order: 3;
+    }
+
+    .nav-toggler {
+      width: 26px;
+      height: 26px;
+      margin-bottom: 6px;
+
+      display: block;
+
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center center;
+
+      &:focus-visible {
+        @include with-outline();
+      }
+
+      &:hover {
+        @include with-theme-color('select-ctrl-highlight-bg') using ($css-var) {
+          background-color: var($css-var);
+        }
+      }
+    }
+  }
+
+  .nav-controlbox {
+    order: 3;
+    flex: 0 1 auto;
+    justify-content: flex-start;
+    @include for-large-and-extra-large() {
+      flex: 1 1 auto;
+      order: 4;
+      justify-content: flex-end;
+    }
+    
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    gap: map.get($spacings, '2');
+    @include for-large-and-extra-large() {
+      gap: map.get($spacings, '3');
+    }
+
+    padding-right: $navbar-outline-offset;
+
+    .nav-login {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+
+      margin-bottom: 4px;
+      gap: map.get($spacings, '3');
+      @include for-large-and-extra-large() {
+        margin-bottom: unset;
+        gap: map.get($spacings, '5');
+      }
+
+      .nav-signup-btn {
+        border-radius: map.get($borders-radius, '2');
+        @include with-theme-color('nav-signup-bg') using($css-var) {
+          background-color: var($css-var);
+        }
+        @include with-theme-color('nav-signup') using($css-var) {
+          color: var($css-var);
+        }
+
+        padding: map.get($spacings, '2');
+        @include for-small-and-above() {
+          padding: map.get($spacings, '3');
+        }
+      }
+    }
+
+    .nav-user {
+      .nav-user-avatar {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
+
+        display: inline-block;
+        border-radius: 22px;
+        overflow: hidden;
+
+        .nav-user-avatar-img {
+          border-radius: 22px;
+        }
+
+        &.nav-user-avatar-default {
+          mask-image: escape-svg(svg.$icon-user);
+          -webkit-mask-image: escape-svg(svg.$icon-user);
+          -webkit-mask-size: contain;
+          mask-size: contain;
+          -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+          -webkit-mask-position: center center;
+          mask-position: center center;
+          vertical-align: middle;
+
+          border-radius: 22px;
+          background-color: white;
+          
+          @at-root {
+            .nav-bar.nav-bar-inapp .nav-user .nav-user-avatar.nav-user-avatar-default {
+              @include with-theme-color('input-ctrl-primary') using ($css-var) {
+                background-color: var($css-var);
+              }
+            }
+          }
+        }
+      }
+  
+      .btn-user-name {
+        white-space: nowrap;
+        align-self: center;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        max-width: map.get($breakpoints, 'xs') - 110px;
+        transform: translateY(-16px);
+
+        @include with-body-font('nav-link');
+        &:focus-visible {
+          @include with-outline();
+        }
+
+        &:hover {
+          text-decoration: underline;
+          text-decoration-thickness: $navlink-text-decoration-thickness;
+          cursor: pointer;
+        }
+
+        @at-root {
+          .btn-user-name {
+            @include with-theme-color('input-ctrl-primary') using ($css-var) {
+              color: var(#{$css-var});
+            }
+          }
+
+          .nav-bar-landing .nav-user .btn-user-name {
+            color: $landing-color;
+          }
+        }
+      }
+
+      .nav-user-avatar-default + .btn-user-name {
+        transform: translateY(0px);
+      }
+    }
+  }    
+
+  &.nav-bar-landing { 
+    .locale-switcher-btn {
+      color: $landing-color;
+    }
+
+    .theme-switcher {
+      button {
+        border: 2px $landing-color solid;
+        &::after {
+          background: $landing-color;
+        }
+
+        @at-root :root[data-theme="light"] &::after {
+          background: $landing-color;
+        }        
+      }
+    }
+
+    .nav-login {
+      .nav-signup-btn {
+        background-color: $landing-color;
+        color: black;
+      } 
+    }
+  }
+
+  @include with-dark-theme() {
+    .nav-toggler {
+      background-image: escape-svg(svg.$icon-navbar-toggler-dark);
+    }
+  }
+  
+  @include with-light-theme() {
+    .nav-toggler {
+      background-image: escape-svg(svg.$icon-navbar-toggler-light);
+    }
+    &.nav-bar-landing {
+      .nav-toggler {
+        background-image: escape-svg(svg.$icon-navbar-toggler-dark);
+      }
+    }
+  }
+}
+
+.nav-link {
+  white-space: nowrap;
+  @include with-body-font('nav-link');
+  &:focus-visible {
+    @include with-outline();
+  }
+
+  &:hover {
+    text-decoration: underline;
+    text-decoration-thickness: $navlink-text-decoration-thickness;
+  }
+}
+
+.nav-controlbox {
+  .nav-page-settings {
+    display: none;
+    @include for-large-and-extra-large() {
+      display: flex;
+    }
+  }  
+}
+
+.nav-search-page-links {
+  .nav-page-settings {
+    display: flex;
+    @include for-large-and-extra-large() {
+      display: none;
+    }
+  }  
+}
+
+.nav-page-settings {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: map.get($spacings, '2');
+}
+
+.theme-switcher {
+  text-align: right;
+  margin-bottom: auto;
+  margin-top: auto;
+  padding-bottom: 3px;
+
+  button {
+    display: inline-block;
+    position: relative;
+    
+    width: $theme-switcher-aspect-ratio * $theme-switcher-button-size;
+    height: $theme-switcher-button-size + 2 * $theme-switcher-button-pad + 2;
+
+    cursor: pointer;
+    z-index: 0;
+    margin: 0;
+    padding: 0;
+
+    @include with-theme-color('input-ctrl-primary') using($css-var) {
+      border: 2px var($css-var) solid;
+      &::after {
+        background: var($css-var);
+      }
+
+      @at-root :root[data-theme="light"] &::after {
+        background: var($css-var);
+      }
+    }
+
+    &:focus-visible {
+      @include with-outline(2px);
+    }
+    border-radius: $theme-switcher-button-size * 0.5;
+    &:focus-visible {
+      border-radius: $theme-switcher-button-size * 0.5;
+    }
+
+    &::after {
+      position: absolute;
+      content: "";
+
+      -webkit-mask-image: escape-svg(svg.$icon-moon);
+      mask-image: escape-svg(svg.$icon-moon);
+      -webkit-mask-size: contain;
+      mask-size: contain;
+
+      top: 50%;
+      bottom: 50%;
+      margin-top: auto;
+      margin-bottom: auto;
+      left: $theme-switcher-button-pad;
+      height: $theme-switcher-button-size;
+      width: $theme-switcher-button-size;
+      
+      z-index: 1;
+      border-radius: $theme-switcher-button-size * 0.5;
+    }
+  
+    .locale-switcher-nav-item {
+      align-self: center;
+    }
+  
+    @at-root :root[data-theme="light"] &::after {
+      left: ($theme-switcher-aspect-ratio - 1) * $theme-switcher-button-size - $theme-switcher-button-pad - 2;
+      
+      -webkit-mask-image: escape-svg(svg.$icon-sun);
+      mask-image: escape-svg(svg.$icon-sun);
+      -webkit-mask-size: contain;
+      mask-size: contain;
+    }
+  }
+}
+
+.theme-switcher {
+  &.interacted {
+    button {
+      &::after {
+        animation: theme-switcher-off $theme-switcher-animation-interval ease-out;
+      }
+
+      @at-root :root[data-theme="light"] &::after {
+        animation: theme-switcher-on $theme-switcher-animation-interval ease-out;
+      }
+    }
+  }
+
+  @keyframes theme-switcher-on {
+    0% {
+      -webkit-mask-image: escape-svg(svg.$icon-moon);
+      mask-image: escape-svg(svg.$icon-moon);
+      -webkit-mask-size: contain;
+      mask-size: contain;
+
+      left: $theme-switcher-button-pad;
+    }
+
+    100% {
+      -webkit-mask-image: escape-svg(svg.$icon-sun);
+      mask-image: escape-svg(svg.$icon-sun);
+      -webkit-mask-size: contain;
+      mask-size: contain;
+
+      left: ($theme-switcher-aspect-ratio - 1) * $theme-switcher-button-size - $theme-switcher-button-pad - 2;
+    }
+  }
+
+  @keyframes theme-switcher-off {
+    0% {
+      -webkit-mask-image: escape-svg(svg.$icon-sun);
+      mask-image: escape-svg(svg.$icon-sun);
+      -webkit-mask-size: contain;
+      mask-size: contain;
+
+      left: ($theme-switcher-aspect-ratio - 1) * $theme-switcher-button-size - $theme-switcher-button-pad - 2;
+    }
+
+    100% {
+      -webkit-mask-image: escape-svg(svg.$icon-moon);
+      mask-image: escape-svg(svg.$icon-moon);
+      -webkit-mask-size: contain;
+      mask-size: contain;
+
+      left: $theme-switcher-button-pad;
+    }
+  }
+}
+
+.locale-switcher-nav-item {
+  align-self: center;
+}
+
+.nav-icon-common {
+  display: inline-block;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center center;
+  mask-position: center center;
+  vertical-align: middle;
+}
+
+.nav-user-dropdown {
+  width: min-content;
+  height: auto;
+  margin: 4px;
+
+  width: 240px;
+  @include for-large-and-extra-large() {
+    width: 320px;
+  }
+
+  .nav-user-menu-header {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: map.get($spacings, '3');
+
+    .nav-user-menu-avatar {
+      width: 64px;
+      height: 64px;
+      min-width: 64px;
+      min-height: 64px;  
+      border-radius: 32px;
+  
+      .nav-user-menu-avatar-img {
+        border-radius: 32px;
+      }
+
+      &.nav-user-menu-avatar-default {
+        mask-image: escape-svg(svg.$icon-user);
+        -webkit-mask-image: escape-svg(svg.$icon-user);
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center center;
+        mask-position: center center;
+        vertical-align: middle;
+
+        border-radius: 32px;
+        @include with-theme-color('input-ctrl-primary') using ($css-var) {
+          background-color: var($css-var);
+        }
+      }
+    }
+
+    .nav-user-menu-name {
+      max-width: map.get($breakpoints, 'xs') - 160px;
+      overflow-wrap: break-word;
+      @include with-body-font('nav-link');
+      font-size: var(--#{$prefix}-font-body-primary-sz);
+      margin-top: auto;
+      margin-bottom: auto;
+    }
+  }
+
+  .nav-user-menu-divisor {
+    width: 100%;
+    background: none;
+    @include with-theme-color('control-frame') using ($css-var) {
+      border-top: 1px dashed var($css-var);
+    }
+  }
+
+  .nav-user-menu-list {
+    .nav-user-menu-item {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
+      margin-top: map.get($spacings, '3');
+
+      .nav-user-menu-icon {
+        width: 16px;
+        height: 16px;
+        flex: 0 0 auto;
+      
+        @include with-theme-color('input-ctrl-primary') using ($css-var) {
+          background-color: var($css-var);
+        }
+      }
+
+      .nav-link {
+        flex: 1 1 auto;
+      }
+
+      .nav-user-menu-chevron {
+        flex: 0 0 auto;
+
+        @include with-theme-color('input-ctrl-primary') using ($css-var) {
+          color: var(#{$css-var});
+        }
+
+        &::after {
+          width: 5px;
+          height: 9px;
+          margin-top: 3px;
+          margin-right: 5px;
+          position: absolute;
+          right: 0;
+          display: inline-block;
+          padding: map.get($spacings, '1');
+          content: '';
+
+          -webkit-mask-image: escape-svg(svg.$icon-right-chevron);
+          mask-image: escape-svg(svg.$icon-right-chevron);
+          
+          -webkit-mask-size: contain;
+          mask-size: contain;
+          -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+          -webkit-mask-position: center center;
+          mask-position: center center;
+          vertical-align: middle;
+
+          @include with-theme-color('input-ctrl-primary') using ($css-var) {
+            background-color: var($css-var);
+          }
+        }
+      }
+    }
+  }
+}
+
+.nav-logo {
+  display: block;
+  width: 110px;
+  height: 36px;
+  z-index: 2;
+
+  @include for-large-and-extra-large() {
+    position: absolute;
+    left: 50%;
+    right: 50%;
+    top: 24px;
+  }
+
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: contain;
+
+  &:focus-visible {
+    @include with-outline();
+  }
+
+  @at-root {
+    body {
+      .nav-bar.nav-bar-landing .nav-logo {
+        @include for-large-and-extra-large() {
+          top: 60px;
+        }
+      }
+
+      .nav-bar.nav-bar-inapp .nav-logo {
+        @include for-large-and-extra-large() {
+          top: unset;
+          transform: translateY(-20px);
+        }  
+      }
+
+      @include with-light-theme() {
+        .nav-logo {
+          background-image: url('/img/logo-dark.svg');
+        }
+        .nav-bar-landing {
+          .nav-logo {
+            background-image: url('/img/logo-light.svg');
+          }
+        }
+      }
+    
+      @include with-dark-theme() {
+        .nav-logo {
+          background-image: url('/img/logo-light.svg');
+        }
+      }
+    }
+  }
+}
+
+.nav-link-icon-airplane::before {
+  -webkit-mask-image: escape-svg(svg.$icon-airplane);
+  mask-image: escape-svg(svg.$icon-airplane);
+}
+
+.nav-link-icon-bed::before {
+  -webkit-mask-image: escape-svg(svg.$icon-bed);
+  mask-image: escape-svg(svg.$icon-bed);
+}
+
+.nav-link-icon-heart {
+  -webkit-mask-image: url('/img/icon-heart.svg');
+  mask-image: url('/img/icon-heart.svg');
+}
+
+.nav-link-icon-user {
+  -webkit-mask-image: escape-svg(svg.$icon-user);
+  mask-image: escape-svg(svg.$icon-user);
+}
+
+.nav-link-icon-credit-card {
+  -webkit-mask-image: url('/img/icon-credit-card.svg');
+  mask-image: url('/img/icon-credit-card.svg');
+}
+
+.nav-link-icon-gear {
+  -webkit-mask-image: url('/img/icon-gear.svg');
+  mask-image: url('/img/icon-gear.svg');
+}
+
+.nav-link-icon-support {
+  -webkit-mask-image: url('/img/icon-support.svg');
+  mask-image: url('/img/icon-support.svg');
+}
+
+.nav-link-icon-user {
+  -webkit-mask-image: escape-svg(svg.$icon-user);
+  mask-image: escape-svg(svg.$icon-user);
+}
+
+.nav-link-icon-logout {
+  -webkit-mask-image: url('/img/icon-logout.svg');
+  mask-image: url('/img/icon-logout.svg');
+}
+
+
+.locale-switcher-btn {
+  width: 28px;
+  height: 28px;
+
+  @include with-theme-color('input-ctrl-primary') using ($css-var) {
+    color: var(#{$css-var});
+  }
+
+  &:focus-visible {
+    @include with-outline(1px);
+  }
+  &:hover {
+    @include with-theme-color('select-ctrl-highlight-bg') using ($css-var) {
+      background-color: var($css-var);
+    }
+  }
+}
+
+.locale-switcher-link.nav-link {
+  text-decoration: none;
+}

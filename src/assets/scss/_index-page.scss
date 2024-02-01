@@ -1,0 +1,456 @@
+@use 'sass:map';
+@use 'system' as *;
+@use 'buttons' as *;
+@use 'themes' as *;
+@use 'utils' as *;
+@use 'svg';
+
+$main-title-image-xs-height: 501px;
+$main-title-image-m-height: 581px;
+
+$popular-city-card-width: 350px;
+$popular-city-card-xs-width: 340px;
+$search-page-image-link-border-radius: 20px;
+
+$review-card-swiper-xs-height: 506px;
+$review-card-swiper-s-height: 586px;
+
+$review-card-sz-xs-width: 325px;
+$review-card-sz-s-width: 425px;
+$review-card-sz-backface-xs-gap: 16px;
+$review-card-sz-backface-s-gap: 26px;
+$review-card-sz-xs-header-height: 60px;
+$review-card-sz-s-header-height: 80px;
+$review-card-sz-img-height: 200px;
+$review-card-sz-xs-height: 376px;
+$review-card-sz-s-height: 408px;
+
+.search-page-head-landing {
+  border-radius: $search-page-control-radius;
+  background-image: linear-gradient(0deg, transparent 0%, transparent 40%, #000000aa 100%);
+
+  margin: 14px 14px 0px 14px;
+  @include for-large-and-extra-large() {
+    margin: 30px 30px 0px 30px;
+  }
+
+  .search-page-head-image {
+    height: $main-title-image-xs-height;
+    max-height: $main-title-image-xs-height;
+    @include for-medium-and-large() {
+      height: $main-title-image-m-height;
+      max-height: $main-title-image-m-height;
+    }
+
+    border-radius: $search-page-control-radius;
+    img {
+      height: $main-title-image-xs-height;
+      max-height: $main-title-image-xs-height;
+      @include for-medium-and-large() {
+        height: $main-title-image-m-height;
+        max-height: $main-title-image-m-height;
+      }
+
+      border-radius: $search-page-control-radius;
+    }
+    .static-image-stub {
+      border-radius: $search-page-control-radius;
+    }
+  }
+
+  .search-page-head-content {
+    grid-row-start: 1;
+    grid-row-end: 2;
+    grid-column-start: 1;
+    grid-column-end: 2;
+  }
+
+  .heading-text {
+    color: white;
+    text-align: center;
+    margin-top: 20px;
+
+    @include for-small-and-above() {
+      margin-top: 0px;
+      position: absolute;
+      top: 180px;
+      left: 0;
+      right: 0;
+      width: 100%;
+    }
+
+    h2, h1 {
+      font-weight: bold;
+    }
+
+    p {
+      font-weight: map.get($weights-map, 'semi-bold');
+      font-size: 20px;
+    }
+  }
+}
+
+.popular-city-grid {
+  display: grid;
+  grid-auto-flow: row;
+  grid-template-columns: repeat(auto-fill, minmax($popular-city-card-xs-width, 1fr));
+  grid-template-rows: auto auto auto auto auto;
+  grid-auto-rows: 0px;
+  overflow: hidden;
+  justify-content: center;
+  @include for-medium-and-large() {
+    grid-template-rows: auto auto auto;
+    grid-template-columns: repeat(auto-fill, minmax($popular-city-card-width, 1fr));
+  }
+
+  .popular-city-grid-item {
+    width: 100%;
+  }
+
+  .popular-city-card {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 16px;
+
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    max-width: $popular-city-card-xs-width - 32px;
+    @include for-medium-and-large() {
+      max-width: $popular-city-card-width - 32px;
+    }
+
+    @include with-theme-color('shadow') using($css-var) {
+      box-shadow: 0px 4px 16px var($css-var);
+    }
+  
+    .popular-city-card-img {
+      width: 90px;
+      height: 90px;
+      min-width: 90px;
+      min-height: 90px;
+
+      .static-image-stub {
+        border-radius: map.get($borders-radius, '3');
+      }
+
+      img {
+        background-size: cover;
+        border-radius: map.get($borders-radius, '3');
+      }
+    }
+  
+    .popular-city-info {
+      width: 100%;
+      height: 100%;
+  
+      .popular-city-name {
+        @include with-theme-color('secondary') using ($css-var) {
+          color: var(#{$css-var});
+        }
+        @include with-body-font('category-caption');
+      }
+
+      .popular-city-links {
+        display: flex;
+        flex-wrap: nowrap;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+
+        @include with-theme-color('input-ctrl-primary') using ($css-var) {
+          color: var(#{$css-var});
+        }
+
+        a:focus-visible {
+          @include with-outline();
+        }
+
+        a:hover {
+          text-decoration: underline;
+          text-decoration-thickness: 1.5px;
+        }
+      }
+    }
+  }
+}
+
+.search-page-image-links {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 24px;
+  align-items: center;
+  justify-content: center;
+
+  @include for-large-and-extra-large() {
+    flex-direction: row;
+  }
+
+  .search-page-image-link {
+    width: 100%;
+    max-width: 450px;
+
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+
+    @include for-small-and-above() {
+      max-width: 650px;
+    }
+
+    .image-link-img {
+      grid-column-start: 1;
+      grid-column-end: 2;
+      grid-row-start: 1;
+      grid-row-end: 2;
+
+      aspect-ratio: 1 / 1;
+  
+      border-radius: $search-page-control-radius;
+      img {
+        border-radius: $search-page-control-radius;
+        aspect-ratio: 1 / 1;
+      }
+      .static-image-stub {
+        border-radius: $search-page-control-radius;
+      }
+    }
+  
+    .image-link-texting {
+      z-index: 2;
+      color: white;
+
+      grid-column-start: 1;
+      grid-column-end: 2;
+      grid-row-start: 1;
+      grid-row-end: 2;
+  
+      align-self: flex-end;
+      justify-self: center;
+  
+      display: flex;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      align-items: center;
+
+      * {
+        max-width: 60%;
+      }
+
+      p, h2 {
+        text-align: center;
+      }
+
+      a {
+        align-self: center;
+        outline-color: white;
+      }
+    }
+  }
+}
+
+.company-reviews-swiper {
+  min-height: $review-card-swiper-xs-height;
+  @include for-small-and-above() {
+    min-height: $review-card-swiper-s-height;
+  }
+}
+
+.company-review-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+
+  width: $review-card-sz-xs-width;
+  border-radius: 20px;
+
+  @include for-small-and-above() {
+    width: $review-card-sz-s-width;
+  }
+
+  .company-review-card-backface {
+    grid-column-start: 1;
+    grid-column-end: 2;
+    grid-row-start: 1;
+    grid-row-end: 2;
+    z-index: 1;
+    
+    border-radius: 20px;
+
+    width: 100%;
+    height: 100%;
+
+    margin-left: $review-card-sz-backface-xs-gap;
+    margin-top: $review-card-sz-backface-xs-gap;
+    @include for-small-and-above() {
+      margin-left: $review-card-sz-backface-s-gap;
+      margin-top: $review-card-sz-backface-s-gap;
+    }
+
+    @include with-theme-color('review-card-backface-bg') using($css-var) {
+      background-color: var($css-var);
+    }
+  }
+
+  .company-review-card-frontface {
+    grid-column-start: 1;
+    grid-column-end: 2;
+    grid-row-start: 1;
+    grid-row-end: 2;
+    z-index: 2;
+
+    border-radius: 20px;
+
+    width: 100%;
+    height: 100%;
+    //margin-bottom: $review-card-sz-backface-xs-gap;
+    margin-right: $review-card-sz-backface-xs-gap;
+    @include for-small-and-above() {
+      //margin-bottom: $review-card-sz-backface-s-gap;
+      margin-right: $review-card-sz-backface-s-gap;
+    }    
+
+    @include with-theme-color('shadow') using($css-var) {
+      box-shadow: 0px 4px 16px var($css-var);
+    }
+
+    @include with-theme-color('body-bg') using($css-var) {
+      background-color: var($css-var);
+    }
+
+    .review-card-header {
+      font-weight: map.get($weights-map, 'bold');
+      min-height: $review-card-sz-xs-header-height;
+
+      @include with-theme-color('input-ctrl-primary') using ($css-var) {
+        color: var(#{$css-var});
+      }
+      
+      @include for-small-and-above() {
+        min-height: $review-card-sz-s-header-height;
+      }
+    }
+  
+    .review-card-scroll-container {
+      position: relative;
+      margin: auto;
+      overflow: hidden;
+      
+      height: $review-card-sz-xs-height;
+      max-height: $review-card-sz-xs-height;
+      @include for-small-and-above() {
+        height: $review-card-sz-s-height;
+        max-height: $review-card-sz-s-height;
+      }
+  
+      .review-card-content {
+        width: 100%;
+    
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        justify-items: stretch;
+    
+        .review-card-body {
+          overflow: hidden;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+          white-space: pre-wrap;
+      
+          @include with-body-font('secondary');
+          @include with-theme-color('secondary') using ($css-var) {
+            color: var(#{$css-var});
+          }
+    
+          &.expanded {
+            -webkit-line-clamp: unset;
+            -webkit-line-clamp: unset;
+            overflow: unset;
+          }
+        }
+    
+        .review-expand-btn {
+          align-self: flex-end;
+    
+          white-space: nowrap;
+          font-family: $font-header;
+          font-weight: map.get($weights-map, 'bold');
+          @include with-theme-color('input-ctrl-primary') using ($css-var) {
+            color: var(#{$css-var});
+          }
+    
+          &:focus-visible {
+            @include with-outline();
+          }
+        }
+  
+        .review-card-stars {
+          display: flex;
+          flex-direction: row;
+          flex-wrap: nowrap;
+          gap: 12px;
+      
+          .review-card-star {
+            width: 22px;
+            height: 22px;
+      
+            background-image: url('/img/star.svg');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center center;
+          }
+        }
+      
+        .review-card-userinfo {
+          .review-card-user-name {
+            font-family: $font-header;
+            font-weight: map.get($weights-map, 'bold');
+            @include with-theme-color('input-ctrl-primary') using ($css-var) {
+              color: var(#{$css-var});
+            } 
+          }
+      
+          .review-card-user-company {
+            @include with-body-font('entity-card-primary');
+            @include with-theme-color('secondary') using ($css-var) {
+              color: var(#{$css-var});
+            } 
+          }
+        }
+      
+        .review-card-img {
+          width: 100%;
+          height: $review-card-sz-img-height;
+          max-height: $review-card-sz-img-height;
+      
+          border-radius: map.get($borders-radius, '3');
+      
+          margin-top: 24px;
+          @include for-small-and-above() {
+            margin-top: 40px;
+          }
+      
+          .static-image-stub {
+            border-radius: map.get($borders-radius, '3');
+            height: $review-card-sz-img-height;
+          }
+          img {
+            border-radius: map.get($borders-radius, '3');
+            height: $review-card-sz-img-height;
+          }
+        }
+      }
+    }
+  }
+}
+
+.company-reviews-section {
+  .company-reviews-swiper {
+    width: 100%;
+    height: auto;
+  }
+}

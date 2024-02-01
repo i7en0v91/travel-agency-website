@@ -1,0 +1,64 @@
+@use "sass:map";
+@use 'utils' as *; 
+@use 'themes' as *;
+@use 'system' as *;
+@use 'svg';
+
+.checkbox {
+  $checkbox-size: 16px;
+  $checkbox-checkmark-size: $checkbox-size - 5px;
+
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  gap: 4px;
+
+  align-items: center;
+
+  &:focus-visible {
+    @include with-outline();
+  }
+
+  .checkbox-checkmark {
+    width: $checkbox-size;
+    height: $checkbox-size;
+    min-width: $checkbox-size;
+    min-height: $checkbox-size;
+
+    @include with-theme-color('input-ctrl-primary-bg') using($css-var) {
+      background-color: var($css-var);
+    }
+    @include with-theme-color('control-frame') using($css-var) {
+      border: 2px solid var($css-var);
+    }
+
+    span {
+      visibility: hidden;
+      
+      &.checkmark-checked {
+        width: $checkbox-checkmark-size;
+        height: $checkbox-checkmark-size;
+        visibility: visible;
+        position: absolute;
+        -webkit-mask-size: $checkbox-checkmark-size $checkbox-checkmark-size;
+        mask-size: $checkbox-checkmark-size $checkbox-checkmark-size;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center center;
+        mask-position: center center;
+        vertical-align: middle;
+        -webkit-mask-image: escape-svg(svg.$icon-check);
+        mask-image: escape-svg(svg.$icon-check);
+        @include with-theme-color('input-ctrl-primary') using($css-var) {
+          background-color: var($css-var);
+        }
+  
+        content: '';
+      }
+    }
+  }
+
+  .checkbox-input-val {
+    display: none;
+  }
+}

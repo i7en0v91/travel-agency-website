@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html data-theme="<%= theme %>">
+<head>
+
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title><%= title %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <style type="text/css">
+  /**
+   * Avoid browser level font resizing.
+   * 1. Windows Mobile
+   * 2. iOS / OSX
+   */
+  body,
+  table,
+  td,
+  a {
+    -ms-text-size-adjust: 100%; /* 1 */
+    -webkit-text-size-adjust: 100%; /* 2 */
+  }
+  /**
+   * Remove extra space added to tables and cells in Outlook.
+   */
+  table,
+  td {
+    mso-table-rspace: 0pt;
+    mso-table-lspace: 0pt;
+  }
+
+  /**
+   * Better fluid images in Internet Explorer.
+   */
+  img {
+    -ms-interpolation-mode: bicubic;
+  }
+  /**
+   * Remove blue links for iOS devices.
+   */
+  a[x-apple-data-detectors] {
+    font-family: inherit !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    line-height: inherit !important;
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+  /**
+   * Fix centering issues in Android 4.4.
+   */
+  div[style*="margin: 16px 0;"] {
+    margin: 0 !important;
+  }
+  body {
+    width: 100% !important;
+    height: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  /**
+   * Collapse table borders to avoid space between cells.
+   */
+  table {
+    border-collapse: collapse !important;
+  }
+  a {
+    color: #1a82e2;
+  }
+  img {
+    height: auto;
+    line-height: 100%;
+    text-decoration: none;
+    border: 0;
+    outline: none;
+  }
+
+  /**
+  * Theming
+  */
+  :root[data-theme="light"] body, :root[data-theme="light"] .body-bg {
+    background-color: #e9ecef;
+  }
+
+  :root[data-theme="light"] .content-bg {
+    background-color: #ffffff;
+  }
+
+  :root[data-theme="light"] .logo {
+    background: url('data:image/svg+xml;base64, PHN2ZyB3aWR0aD0iMTExIiBoZWlnaHQ9IjM2IiB2aWV3Qm94PSIwIDAgMTExIDM2IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMF82MDNfMzY4MCkiPjxwYXRoIGQ9Ik0xNC43MjgyIDUuNTc2NjlMMTcuOTQ2NiA4LjAwODEzTDE1Ljk4MDUgMTAuNTA5N0MxNy4zMzc5IDEyLjA0NTcgMTcuODM4MiAxMy43OTgzIDE3LjgzODIgMTUuNzI5NUMxNy44MzgyIDE3LjkwOTIgMTcuMDE2MSAyMC45ODQzIDE0LjExOTUgMjIuMzA2OEMxNy4wNTEyIDIzLjc3MjcgMTcuNzY0OSAyNS44ODIzIDE3Ljc2NDkgMjguMTM1MkMxNy43NjQ5IDMyLjk5ODEgMTQuMDQ2MyAzNiA4LjkzNTA1IDM2QzMuODIzODQgMzYgMCAzMi44ODk4IDAgMjguMTM1Mkg0LjMyNDEzQzQuMzI0MTMgMzAuNDIzMyA2LjQzMzYyIDMxLjkyNDIgOC45MzUwNSAzMS45MjQyQzExLjQzNjUgMzEuOTI0MiAxMy40MDI2IDMwLjU2NjcgMTMuNDAyNiAyOC4xMzUyQzEzLjQwMjYgMjUuNzAzOCAxMS4xMTQ2IDI0LjU5NDggOC45MzUwNSAyNC41OTQ4QzMuNDMxOSAyNC41OTQ4IDAgMjEuMjM2MSAwIDE1LjcyOTVDMCAxMC4yMjI5IDQuMDAyMjkgNi43OTA4MiA4LjkzODIzIDYuNzkwODJDMTAuMzMzOSA2Ljc5MDgyIDExLjc2MTUgNi45NjkyNyAxMi45Nzg4IDcuNzkxNDRMMTQuNzI4MiA1LjU3NjY5Wk00LjMyNDEzIDE1LjcyOTVDNC4zMjQxMyAxOC44MDQ2IDYuMzk4NTcgMjAuNjI3NCA4LjkzNTA1IDIwLjYyNzRDMTEuNDM2NSAyMC42Mjc0IDEzLjUxMDkgMTguNzY5NiAxMy41MTA5IDE1LjcyOTVDMTMuNTEwOSAxMi42ODk0IDExLjQzOTcgMTAuNzYxNCA4LjkzODIzIDEwLjc2MTRDNi4zOTg1NiAxMC43NjE0IDQuMzI0MTMgMTIuNjU0MyA0LjMyNDEzIDE1LjcyOTVaIiBmaWxsPSIjMTEyMjExIi8+PHBhdGggZD0iTTUwLjU2NzMgMFYyNC45OUg0Ni4yNDMyVjBINTAuNTY3M1oiIGZpbGw9IiMxMTIyMTEiLz48cGF0aCBkPSJNNjkuOTk4NyAxNi4xOTQ4QzY5Ljk5ODcgMjEuMjcxMSA2Ni41MzE3IDI1LjM4MiA2MC44MTE5IDI1LjM4MkM1NS4wOTIxIDI1LjM4MiA1MS42NjAyIDIxLjI3MTEgNTEuNjYwMiAxNi4xOTQ4QzUxLjY2MDIgMTEuMTUzNCA1NS4xNjIyIDcuMDA3NTQgNjAuNzc2OCA3LjAwNzU0QzY2LjM5MTUgNy4wMDc1NCA2OS45OTg3IDExLjE1MzQgNjkuOTk4NyAxNi4xOTQ4Wk01Ni4wMTkzIDE2LjE5NDhDNTYuMDE5MyAxOC44NzQ4IDU3LjYyODUgMjEuMzc5NSA2MC44MDg3IDIxLjM3OTVDNjMuOTg4OSAyMS4zNzk1IDY1LjU5ODEgMTguODc3OSA2NS41OTgxIDE2LjE5NDhDNjUuNTk4MSAxMy41NDk4IDYzLjc0MDMgMTAuOTc1IDYwLjgwODcgMTAuOTc1QzU3LjY2MzYgMTAuOTc1IDU2LjAxOTMgMTMuNTQ5OCA1Ni4wMTkzIDE2LjE5NDhaIiBmaWxsPSIjMTEyMjExIi8+PHBhdGggZD0iTTc1LjQ1MDcgMFY5Ljc2MDgyQzc2LjQ4NjQgNy45MzgwNCA3OS4zODI5IDYuOTM3NDIgODEuMjQwNyA2LjkzNzQyQzg2LjM4NjkgNi45Mzc0MiA5MC4yMTQgMTAuMDgyNyA5MC4yMTQgMTYuMTU5N0M5MC4yMTQgMjEuOTQ5OSA4Ni4zMTY4IDI1LjM4MiA4MS4xMzU1IDI1LjM4MkM3OC45OTEgMjUuMzgyIDc2LjgxMTQgMjQuNjY4MSA3NS40NTA3IDIyLjU1ODZMNzUuMTY0IDI0Ljk5SDcxLjA4ODRWMEg3NS40NTA3Wk03NS43MzQzIDE2LjE1OTdDNzUuNzM0MyAxOS4zNCA3OC4wOTI0IDIxLjM0NDQgODAuODQ1NiAyMS4zNDQ0QzgzLjYzMzggMjEuMzQ0NCA4NS44NTE2IDE5LjIzNDggODUuODUxNiAxNi4xNTk3Qzg1Ljg1MTYgMTIuOTc5NCA4My42MzM4IDExLjAxMzIgODAuODQ1NiAxMS4wMTMyQzc4LjA5NTYgMTEuMDEgNzUuNzM0MyAxMy4wODQ1IDc1LjczNDMgMTYuMTU5N1oiIGZpbGw9IiMxMTIyMTEiLz48cGF0aCBkPSJNOTYuNjk4NyAxOS4yMzE3Qzk3LjcxMiAyMS4xODE5IDEwMC4wMzIgMjIuMDEzNiAxMDIuOTIyIDIwLjk2MkMxMDQuNDMyIDIwLjQxMDcgMTA2LjIwNyAxOS4xMjAxIDEwNi43OTQgMTcuODA0TDExMC4zNTYgMTkuNDM1NkMxMDkuMjcgMjEuODg2MiAxMDYuNzMzIDIzLjc5ODIgMTA0LjIxMyAyNC43MTU5Qzk4LjUwMjMgMjYuNzkzNyA5My44MjQ0IDI0LjUwMjQgOTEuODkzNCAxOS4xOTM0QzkwLjA1OCAxNC4xNTUzIDkyLjE2NDMgOS4yNzk2MyA5Ny41Mzk5IDcuMzIzMDFDMTAzLjA4MSA1LjMwNTg0IDEwNy43OTEgNy40NzI3OCAxMDkuNjMzIDE0LjUyNDlMOTYuNjk4NyAxOS4yMzE3Wk0xMDQuNDY3IDEyLjU2MTlDMTAzLjQxNiAxMC41MDk3IDEwMS4zNDUgMTAuMDQ3NiA5OC45OTMgMTAuOTAxN0M5Ni43NzUyIDExLjcwNzkgOTUuMzU0IDEzLjQ0NDYgOTUuNTMyNCAxNS44MTIzTDEwNC40NjcgMTIuNTYxOVoiIGZpbGw9IiMxMTIyMTEiLz48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTM5Ljc2MjYgMTEuOTg5OEMzOC4zNDg5IDkuMDQwMjYgMzUuNDAxNyA3LjAwNzU0IDMxLjQ3MDIgNy4wMDc1NEMyNS44NTU1IDcuMDA3NTQgMjIuMzUzNSAxMS4xNTM0IDIyLjM1MzUgMTYuMTk0OEMyMi4zNTM1IDE5LjQxMzIgMjMuNzMzIDIyLjI0MzYgMjYuMjAwNiAyMy44ODQzQzI2LjM0MTIgMjMuNzc5MSAyNi40MjU4IDIzLjcxMDggMjYuNDI1OCAyMy43MTA4QzI3LjY1NjYgMjIuOTA3NyAyOC44NTczIDIyLjA2MjQgMzAuMDI1OCAyMS4xNzY1QzI3LjgyNDQgMjAuNTI4NyAyNi43MTI3IDE4LjQyMjMgMjYuNzEyNyAxNi4xOTQ4QzI2LjcxMjcgMTMuNTQ5OCAyOC4zNjAxIDEwLjk3NSAzMS41MDIxIDEwLjk3NUMzNC4yNjkgMTAuOTc1IDM2LjA3OTMgMTMuMjY4NiAzNi4yNzQgMTUuNzUwMUMzNy40ODY4IDE0LjU0NjQgMzguNjUwNyAxMy4yOTIgMzkuNzYyNiAxMS45ODk4Wk0zMS4wNjAxIDI1LjM3MzZDMzQuNTQxOCAyMi45MDU3IDM3Ljc2MTEgMjAuMDg2NiA0MC42NjUyIDE2Ljk2M0M0MC4zMzI4IDIxLjY3OTUgMzYuOTMzNSAyNS4zODIgMzEuNTA1MiAyNS4zODJDMzEuMzU1MyAyNS4zODIgMzEuMjA2OSAyNS4zNzkxIDMxLjA2MDEgMjUuMzczNloiIGZpbGw9IiM4REQzQkIiLz48cGF0aCBkPSJNNDMuMzE3OSA0LjUzNzg1QzM4Ljg2MzEgMi44OTk4OSAzNS42NjA3IDYuNDI0MzcgMzUuNjYwNyA2LjQyNDM3TDM4LjY5NzQgOC4xODk3OUMzOS44MzUgNy41MzY1MiA0MC4zNDE3IDguMTcwNjcgNDAuNDcyMyA4LjUxODAyQzQwLjU2NDggOC43NjMzOSA0MC40NDA1IDkuMDMxMDggNDAuMzQxNyA5LjE3NzY2TDM5LjYwMjQgMTAuMTExNEMzNS42MTI5IDE0LjkyMzMgMzAuOTIyMyAxOS4xMDQyIDI1LjY4NjggMjIuNTIwM0MyNS42ODY4IDIyLjUyMDMgMjQuMTA2MyAyMy43OTUgMjMuMjY1IDIzLjgxNDFDMjIuNTU3NiAyMy44MzAxIDIyLjI0MjIgMjMuMjM0MSAyMi44MzggMjIuMzgwMUwyMS4zNzIyIDE5LjA3MjNDMjEuMzcyMiAxOS4wNzIzIDE3LjU1OCAyMS41NzA3IDE4LjI5NzIgMjUuOTYxOUMxOC42MDk1IDI3LjgxNjYgMjAuMzUyNSAyOS4xMzU5IDIyLjIwMzkgMjguODAxM0MyMy4xNTAzIDI4LjYzMjQgMjQuMzE5OCAyOC4xNzAzIDI1Ljc1MDUgMjcuMjIzOUwyOC4zODI2IDI1LjUwMzFDMzMuNjE4MSAyMi4wODA2IDM4LjMxMTkgMTcuODg2OSA0Mi4yOTgyIDEzLjA2ODZMNDMuMjAzMiAxMS45NzU2QzQ0LjU2NyAxMC40MjM3IDQ1LjE3ODkgOS4xNDU4IDQ1LjM4NiA4LjEzNTYyQzQ1LjcwNDYgNi41OTAwNyA0NC43OTAxIDUuMDc5NTkgNDMuMzE3OSA0LjUzNzg1WiIgZmlsbD0iIzhERDNCQiIvPjwvZz48ZGVmcz48Y2xpcFBhdGggaWQ9ImNsaXAwXzYwM18zNjgwIj48cmVjdCB3aWR0aD0iMTEwLjM1MyIgaGVpZ2h0PSIzNiIgZmlsbD0id2hpdGUiLz48L2NsaXBQYXRoPjwvZGVmcz48L3N2Zz4=');
+    background-size: contain;
+  }
+
+  :root[data-theme="light"] .mail-text {
+    color: #112211C0;
+  }
+  :root[data-theme="light"] .footer-text {
+    color: #11221180;
+  }
+  :root[data-theme="light"] h1, :root[data-theme="light"] h2, :root[data-theme="light"] h3, :root[data-theme="light"] h4, :root[data-theme="light"] h5 {
+    color: #112211;
+  }
+
+  :root[data-theme="light"] .mail-btn {
+    color: #112211;
+  }
+  :root[data-theme="light"] .mail-btn-bg {
+    background-color: #8DD3BB;
+  }
+
+  :root[data-theme="dark"] body, :root[data-theme="dark"] .body-bg {
+    background-color: #2B2B2B;
+  }
+
+  :root[data-theme="dark"] .content-bg {
+    background-color: #3B3B3B;
+  }
+
+  :root[data-theme="dark"] .logo {
+    background: url('data:image/svg+xml;base64, PHN2ZyB3aWR0aD0iMTExIiBoZWlnaHQ9IjM2IiB2aWV3Qm94PSIwIDAgMTExIDM2IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMF8xMDhfMjEwMjkpIj48cGF0aCBkPSJNMTQuNzI4MiA1LjU3NjY5TDE3Ljk0NjYgOC4wMDgxM0wxNS45ODA1IDEwLjUwOTdDMTcuMzM3OSAxMi4wNDU3IDE3LjgzODIgMTMuNzk4MyAxNy44MzgyIDE1LjcyOTVDMTcuODM4MiAxNy45MDkyIDE3LjAxNjEgMjAuOTg0MyAxNC4xMTk1IDIyLjMwNjhDMTcuMDUxMiAyMy43NzI3IDE3Ljc2NDkgMjUuODgyMyAxNy43NjQ5IDI4LjEzNTJDMTcuNzY0OSAzMi45OTgxIDE0LjA0NjMgMzYgOC45MzUwNSAzNkMzLjgyMzg0IDM2IDAgMzIuODg5OCAwIDI4LjEzNTJINC4zMjQxM0M0LjMyNDEzIDMwLjQyMzMgNi40MzM2MiAzMS45MjQyIDguOTM1MDUgMzEuOTI0MkMxMS40MzY1IDMxLjkyNDIgMTMuNDAyNiAzMC41NjY3IDEzLjQwMjYgMjguMTM1MkMxMy40MDI2IDI1LjcwMzggMTEuMTE0NiAyNC41OTQ4IDguOTM1MDUgMjQuNTk0OEMzLjQzMTkgMjQuNTk0OCAwIDIxLjIzNjEgMCAxNS43Mjk1QzAgMTAuMjIyOSA0LjAwMjI5IDYuNzkwODIgOC45MzgyMyA2Ljc5MDgyQzEwLjMzMzkgNi43OTA4MiAxMS43NjE1IDYuOTY5MjcgMTIuOTc4OCA3Ljc5MTQ0TDE0LjcyODIgNS41NzY2OVpNNC4zMjQxMyAxNS43Mjk1QzQuMzI0MTMgMTguODA0NiA2LjM5ODU3IDIwLjYyNzQgOC45MzUwNSAyMC42Mjc0QzExLjQzNjUgMjAuNjI3NCAxMy41MTA5IDE4Ljc2OTYgMTMuNTEwOSAxNS43Mjk1QzEzLjUxMDkgMTIuNjg5NCAxMS40Mzk3IDEwLjc2MTQgOC45MzgyMyAxMC43NjE0QzYuMzk4NTYgMTAuNzYxNCA0LjMyNDEzIDEyLjY1NDMgNC4zMjQxMyAxNS43Mjk1WiIgZmlsbD0id2hpdGUiLz48cGF0aCBkPSJNNTAuNTY3MyAwVjI0Ljk5SDQ2LjI0MzJWMEg1MC41NjczWiIgZmlsbD0id2hpdGUiLz48cGF0aCBkPSJNNjkuOTk4NyAxNi4xOTQ4QzY5Ljk5ODcgMjEuMjcxMSA2Ni41MzE3IDI1LjM4MiA2MC44MTE5IDI1LjM4MkM1NS4wOTIxIDI1LjM4MiA1MS42NjAyIDIxLjI3MTEgNTEuNjYwMiAxNi4xOTQ4QzUxLjY2MDIgMTEuMTUzNCA1NS4xNjIyIDcuMDA3NTQgNjAuNzc2OCA3LjAwNzU0QzY2LjM5MTUgNy4wMDc1NCA2OS45OTg3IDExLjE1MzQgNjkuOTk4NyAxNi4xOTQ4Wk01Ni4wMTkzIDE2LjE5NDhDNTYuMDE5MyAxOC44NzQ4IDU3LjYyODUgMjEuMzc5NSA2MC44MDg3IDIxLjM3OTVDNjMuOTg4OSAyMS4zNzk1IDY1LjU5ODEgMTguODc3OSA2NS41OTgxIDE2LjE5NDhDNjUuNTk4MSAxMy41NDk4IDYzLjc0MDMgMTAuOTc1IDYwLjgwODcgMTAuOTc1QzU3LjY2MzYgMTAuOTc1IDU2LjAxOTMgMTMuNTQ5OCA1Ni4wMTkzIDE2LjE5NDhaIiBmaWxsPSJ3aGl0ZSIvPjxwYXRoIGQ9Ik03NS40NTA3IDBWOS43NjA4MkM3Ni40ODY0IDcuOTM4MDQgNzkuMzgyOSA2LjkzNzQyIDgxLjI0MDcgNi45Mzc0MkM4Ni4zODY5IDYuOTM3NDIgOTAuMjE0IDEwLjA4MjcgOTAuMjE0IDE2LjE1OTdDOTAuMjE0IDIxLjk0OTkgODYuMzE2OCAyNS4zODIgODEuMTM1NSAyNS4zODJDNzguOTkxIDI1LjM4MiA3Ni44MTE0IDI0LjY2ODEgNzUuNDUwNyAyMi41NTg2TDc1LjE2NCAyNC45OUg3MS4wODg0VjBINzUuNDUwN1pNNzUuNzM0MyAxNi4xNTk3Qzc1LjczNDMgMTkuMzQgNzguMDkyNCAyMS4zNDQ0IDgwLjg0NTYgMjEuMzQ0NEM4My42MzM4IDIxLjM0NDQgODUuODUxNiAxOS4yMzQ4IDg1Ljg1MTYgMTYuMTU5N0M4NS44NTE2IDEyLjk3OTQgODMuNjMzOCAxMS4wMTMyIDgwLjg0NTYgMTEuMDEzMkM3OC4wOTU2IDExLjAxIDc1LjczNDMgMTMuMDg0NSA3NS43MzQzIDE2LjE1OTdaIiBmaWxsPSJ3aGl0ZSIvPjxwYXRoIGQ9Ik05Ni42OTg3IDE5LjIzMTdDOTcuNzEyIDIxLjE4MTkgMTAwLjAzMiAyMi4wMTM2IDEwMi45MjIgMjAuOTYyQzEwNC40MzIgMjAuNDEwNyAxMDYuMjA3IDE5LjEyMDEgMTA2Ljc5NCAxNy44MDRMMTEwLjM1NiAxOS40MzU2QzEwOS4yNyAyMS44ODYyIDEwNi43MzMgMjMuNzk4MiAxMDQuMjEzIDI0LjcxNTlDOTguNTAyMyAyNi43OTM3IDkzLjgyNDQgMjQuNTAyNCA5MS44OTM0IDE5LjE5MzRDOTAuMDU4IDE0LjE1NTMgOTIuMTY0MyA5LjI3OTYzIDk3LjUzOTkgNy4zMjMwMUMxMDMuMDgxIDUuMzA1ODQgMTA3Ljc5MSA3LjQ3Mjc4IDEwOS42MzMgMTQuNTI0OUw5Ni42OTg3IDE5LjIzMTdaTTEwNC40NjcgMTIuNTYxOUMxMDMuNDE2IDEwLjUwOTcgMTAxLjM0NSAxMC4wNDc2IDk4Ljk5MyAxMC45MDE3Qzk2Ljc3NTIgMTEuNzA3OSA5NS4zNTQgMTMuNDQ0NiA5NS41MzI0IDE1LjgxMjNMMTA0LjQ2NyAxMi41NjE5WiIgZmlsbD0id2hpdGUiLz48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTM5Ljc2MjYgMTEuOTg5OEMzOC4zNDg5IDkuMDQwMjYgMzUuNDAxNyA3LjAwNzU0IDMxLjQ3MDIgNy4wMDc1NEMyNS44NTU1IDcuMDA3NTQgMjIuMzUzNSAxMS4xNTM0IDIyLjM1MzUgMTYuMTk0OEMyMi4zNTM1IDE5LjQxMzIgMjMuNzMzIDIyLjI0MzYgMjYuMjAwNiAyMy44ODQzQzI2LjM0MTIgMjMuNzc5IDI2LjQyNTggMjMuNzEwOCAyNi40MjU4IDIzLjcxMDhDMjcuNjU2NiAyMi45MDc3IDI4Ljg1NzMgMjIuMDYyNCAzMC4wMjU4IDIxLjE3NjVDMjcuODI0NCAyMC41Mjg3IDI2LjcxMjcgMTguNDIyMyAyNi43MTI3IDE2LjE5NDhDMjYuNzEyNyAxMy41NDk4IDI4LjM2MDEgMTAuOTc1IDMxLjUwMjEgMTAuOTc1QzM0LjI2OSAxMC45NzUgMzYuMDc5MyAxMy4yNjg2IDM2LjI3NCAxNS43NTAxQzM3LjQ4NjggMTQuNTQ2NCAzOC42NTA4IDEzLjI5MiAzOS43NjI2IDExLjk4OThaTTMxLjA2MDEgMjUuMzczNkMzNC41NDE4IDIyLjkwNTcgMzcuNzYxMSAyMC4wODY2IDQwLjY2NTIgMTYuOTYzMUM0MC4zMzI4IDIxLjY3OTUgMzYuOTMzNSAyNS4zODIgMzEuNTA1MiAyNS4zODJDMzEuMzU1MyAyNS4zODIgMzEuMjA2OSAyNS4zNzkxIDMxLjA2MDEgMjUuMzczNloiIGZpbGw9IiM4REQzQkIiLz48cGF0aCBkPSJNNDMuMzE3OSA0LjUzNzg1QzM4Ljg2MzEgMi44OTk4OSAzNS42NjA3IDYuNDI0MzcgMzUuNjYwNyA2LjQyNDM3TDM4LjY5NzQgOC4xODk3OUMzOS44MzUgNy41MzY1MiA0MC4zNDE3IDguMTcwNjcgNDAuNDcyMyA4LjUxODAyQzQwLjU2NDggOC43NjMzOSA0MC40NDA1IDkuMDMxMDggNDAuMzQxNyA5LjE3NzY2TDM5LjYwMjQgMTAuMTExNEMzNS42MTI5IDE0LjkyMzMgMzAuOTIyMyAxOS4xMDQyIDI1LjY4NjggMjIuNTIwM0MyNS42ODY4IDIyLjUyMDMgMjQuMTA2MyAyMy43OTUgMjMuMjY1IDIzLjgxNDFDMjIuNTU3NiAyMy44MzAxIDIyLjI0MjIgMjMuMjM0MSAyMi44MzggMjIuMzgwMUwyMS4zNzIyIDE5LjA3MjNDMjEuMzcyMiAxOS4wNzIzIDE3LjU1OCAyMS41NzA3IDE4LjI5NzIgMjUuOTYxOUMxOC42MDk1IDI3LjgxNjYgMjAuMzUyNSAyOS4xMzU5IDIyLjIwMzkgMjguODAxM0MyMy4xNTAzIDI4LjYzMjQgMjQuMzE5OCAyOC4xNzAzIDI1Ljc1MDUgMjcuMjIzOUwyOC4zODI2IDI1LjUwMzFDMzMuNjE4MSAyMi4wODA2IDM4LjMxMTkgMTcuODg2OSA0Mi4yOTgyIDEzLjA2ODZMNDMuMjAzMiAxMS45NzU2QzQ0LjU2NyAxMC40MjM3IDQ1LjE3ODkgOS4xNDU4IDQ1LjM4NiA4LjEzNTYyQzQ1LjcwNDYgNi41OTAwNyA0NC43OTAxIDUuMDc5NTkgNDMuMzE3OSA0LjUzNzg1WiIgZmlsbD0iIzhERDNCQiIvPjwvZz48ZGVmcz48Y2xpcFBhdGggaWQ9ImNsaXAwXzEwOF8yMTAyOSI+PHJlY3Qgd2lkdGg9IjExMC4zNTMiIGhlaWdodD0iMzYiIGZpbGw9IndoaXRlIi8+PC9jbGlwUGF0aD48L2RlZnM+PC9zdmc+');
+    background-size: contain;
+  }
+
+  :root[data-theme="dark"] .mail-text {
+    color: #ffffffC0;
+  }
+  :root[data-theme="dark"] .footer-text {
+    color: #ffffff80;
+  }
+  :root[data-theme="dark"] h1, :root[data-theme="dark"] h2, :root[data-theme="dark"] h3, :root[data-theme="dark"] h4, :root[data-theme="dark"] h5 {
+    color: #ffffffD8;
+  }
+
+  :root[data-theme="dark"] .mail-btn {
+    color: #ffffff;
+  }
+  :root[data-theme="dark"] .mail-btn-bg {
+    background-color: #A259FF;
+  }
+  </style>
+
+</head>
+<body>
+
+  <!-- start preheader -->
+  <div class="<% if(preheader) { %> preheader <% } else { %>  <% } %>" style="display: none; max-width: 0; max-height: 0; overflow: hidden; font-size: 1px; line-height: 1px; color: #fff; opacity: 0;">
+    <%= preheader %>
+  </div>
+  <!-- end preheader -->
+
+  <!-- start body -->
+  <table border="0" cellpadding="0" cellspacing="0" width="100%">
+
+    <!-- start logo -->
+    <tr>
+      <td class="body-bg" align="center">
+        <!--[if (gte mso 9)|(IE)]>
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="600">
+        <tr>
+        <td align="center" valign="top" width="600">
+        <![endif]-->
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
+          <tr>
+            <td align="center" valign="top" style="padding: 36px 24px;">
+              <a href="<%= siteUrl %>" target="_blank" style="display: inline-block;">
+                <div class="logo" alt="Logo" border="0" width="111" style="display: block; width: 111px; max-width: 111px; min-width: 111px; height: 36px; min-height: 36px;">
+              </a>
+            </td>
+          </tr>
+        </table>
+        <!--[if (gte mso 9)|(IE)]>
+        </td>
+        </tr>
+        </table>
+        <![endif]-->
+      </td>
+    </tr>
+    <!-- end logo -->
+
+    <!-- start hero -->
+    <tr>
+      <td class="body-bg" align="center">
+        <!--[if (gte mso 9)|(IE)]>
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="600">
+        <tr>
+        <td align="center" valign="top" width="600">
+        <![endif]-->
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
+          <tr>
+            <td class="mail-text content-bg" align="left" style="padding: 36px 24px 0; font-family: 'Montserrat', sans-serif; border-top: 3px solid #d4dadf;">
+              <h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -1px; line-height: 48px;">Добро пожаловать, <%= userName %>,</h1>
+            </td>
+          </tr>
+        </table>
+        <!--[if (gte mso 9)|(IE)]>
+        </td>
+        </tr>
+        </table>
+        <![endif]-->
+      </td>
+    </tr>
+    <!-- end hero -->
+
+    <!-- start copy block -->
+    <tr>
+      <td class="body-bg" align="center">
+        <!--[if (gte mso 9)|(IE)]>
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="600">
+        <tr>
+        <td align="center" valign="top" width="600">
+        <![endif]-->
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
+
+          <!-- start copy -->
+          <tr>
+            <td class="content-bg" align="left" style="padding: 24px; font-family: 'Montserrat', sans-serif; font-size: 16px; line-height: 24px;">
+              <p class="mail-text" style="margin: 0;">Благодарим за регистрацию аккаунта. Пожалуйста, нажмите на кнопку ниже чтобы подтвердить Ваш адрес электронной почты и завершить процесс регистрации. Если Вы не делали запросов на регистрацию аккаунта <a href="<%= siteUrl %>"><%= appName %></a>, можете удалить данное письмо.</p>
+            </td>
+          </tr>
+          <!-- end copy -->
+
+          <!-- start button -->
+          <tr>
+            <td class="content-bg" align="left">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td class="content-bg" align="center" style="padding: 12px;">
+                    <table border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td class="mail-btn-bg" align="center" style="border-radius: 6px;">
+                          <a class="mail-btn" href="<%= siteUrl %>/<%= pageLinkQuery %>" target="_blank" style="display: inline-block; padding: 16px 36px; font-family: 'Montserrat', sans-serif; font-size: 16px; text-decoration: none; border-radius: 6px;">Подтвердить</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- end button -->
+
+          <!-- start copy -->
+          <tr>
+            <td class="content-bg" align="left" style="padding: 24px; font-family: 'Montserrat', sans-sserif; font-size: 16px; line-height: 24px;">
+              <p class="mail-text" style="margin: 0;">Если кнопка не работает, скопируйте и вставьте указанную ниже ссылку в адресную строку Вашего браузера:</p>
+              <p class="mail-text" style="margin: 0;"><a href="<%= siteUrl %>/<%= pageLinkQuery %>" target="_blank"><%= siteUrl %>/<%= pageLinkQuery %></a></p>
+            </td>
+          </tr>
+          <!-- end copy -->
+
+          <!-- start copy -->
+          <tr>
+            <td class="content-bg" align="left" style="padding: 24px; font-family: 'Montserrat', sans-serif; font-size: 16px; line-height: 24px; border-bottom: 3px solid #d4dadf">
+              <p class="mail-text" style="margin: 0;">Всего наилучшего,<br> <%= appName %></p>
+            </td>
+          </tr>
+          <!-- end copy -->
+
+        </table>
+        <!--[if (gte mso 9)|(IE)]>
+        </td>
+        </tr>
+        </table>
+        <![endif]-->
+      </td>
+    </tr>
+    <!-- end copy block -->
+
+    <!-- start footer -->
+    <tr>
+      <td class="body-bg" align="center" style="padding: 24px;">
+        <!--[if (gte mso 9)|(IE)]>
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="600">
+        <tr>
+        <td align="center" valign="top" width="600">
+        <![endif]-->
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
+
+          <!-- start permission -->
+          <tr>
+            <td class="body-bg" align="center" style="padding: 12px 24px; font-family: 'Montserrat', sans-serif; font-size: 14px; line-height: 20px;">
+              <p class="footer-text" style="margin: 0;">Вам пришло данное письмо поскольку мы получили от Вас запрос на регистрацию аккаунта. Если Вы не делали запросов на регистрацию аккаунта, можете удалить данное письмо.</p>
+            </td>
+          </tr>
+          <!-- end permission -->
+
+          <!-- start unsubscribe -->
+          <tr>
+            <td class="body-bg" align="center" style="padding: 12px 24px; font-family: 'Montserrat', sans-serif; font-size: 14px; line-height: 20px;">
+              <p class="footer-text" style="margin: 0;">Вы можете <a href="<%= siteUrl %>" target="_blank">отписаться</a> от рассылки в любое время.</p>
+              <p class="footer-text" style="margin: 0;"><%= appName %></p>
+            </td>
+          </tr>
+          <!-- end unsubscribe -->
+
+        </table>
+        <!--[if (gte mso 9)|(IE)]>
+        </td>
+        </tr>
+        </table>
+        <![endif]-->
+      </td>
+    </tr>
+    <!-- end footer -->
+
+  </table>
+  <!-- end body -->
+
+</body>
+</html>

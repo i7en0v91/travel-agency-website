@@ -1,0 +1,756 @@
+@use "sass:map";
+@use 'system' as *;
+@use 'themes' as *;
+@use 'utils' as *;
+@use 'svg';
+
+$account-page-default-font-size: 14px;
+
+@mixin oauth-btn-image-icon($url) {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-image: url($url);
+}
+
+@mixin oauth-btn-mask-icon($url) {
+  -webkit-mask-image: url($url);
+  mask-image: url($url);
+  
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center center;
+  mask-position: center center;
+  vertical-align: middle;
+
+  @include with-theme-color('input-ctrl-primary') using ($css-var) {
+    background-color: var($css-var);
+  }
+}
+
+.account-forms-photos {   
+  --swiper-pagination-bullet-size: 10px;
+  --swiper-pagination-bullet-inactive-opacity: 1;
+  --swiper-pagination-bullet-inactive-color: white;
+  --swiper-pagination-bottom: 24px;
+  @include with-theme-color('control-bg') using ($css-var) {
+    --swiper-pagination-color: var(#{$css-var});
+  }
+
+  flex: 0 1 auto;
+  width: 100%;
+
+  display: none;
+  width: 386px;
+  @include for-medium-and-large() {
+    display: block;
+  }
+  @include for-large-and-extra-large() {
+    width: 486px;
+  }
+
+  .account-forms-photos-swiper {
+    height: 100%;
+    width: 386px;
+    @include for-large-and-extra-large() {
+      width: 486px;  
+    }
+  }
+
+  .account-forms-photo {
+    width: 100%;
+    height: 100%;
+  }
+
+  .swiper-pagination-bullet-active {
+    width: 32px;
+    border-radius: map.get($borders-radius, '1');
+  }
+}
+
+.btn-oauth {
+  height: auto;
+
+  width: 100px;
+  @include for-small-and-above() {
+    width: 120px;
+  }
+  @include for-medium-and-large() {
+    width: 160px;
+  }
+
+  @include with-theme-color('body-bg') using($css-var) {
+    background-color: var($css-var);
+  }
+  @include with-theme-color('control-bg') using($css-var) {
+    border: 1px solid var($css-var);
+  }
+
+  &:hover {
+    @include with-theme-color('select-ctrl-highlight-bg') using($css-var) {
+      background-color: var($css-var);
+    }
+  }
+
+  &:focus-visible {
+    @include with-outline();
+  }
+
+  &::after {
+    width: 24px;
+    height: 24px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto; 
+    content: '';
+  }
+
+  &.icon-login-github::after {
+    @include oauth-btn-mask-icon('/img/icon-login-github.svg');
+  }
+
+  &.icon-login-google::after {
+    @include oauth-btn-image-icon('/img/icon-login-google.svg');
+  }
+
+  &.icon-login-testlocal::after {
+    @include oauth-btn-mask-icon('/img/icon-gear.svg');
+  }
+
+  &:active {
+    filter: brightness($active-highlight-percent);
+  }
+
+  &.disabled {
+    filter: grayscale(1) brightness(0.9);
+    pointer-events: none;
+  }
+}
+
+.oauth-providers-list-div {
+
+  margin-top: 28px;
+  @include for-medium-and-large() {
+    margin-top: 40px;
+  }
+
+  .providers-list-divisor {
+    width: 100%;
+    text-align: center;
+    @include with-theme-color('control-frame') using ($css-var) {
+      border-bottom: 1px solid var($css-var);
+    }
+
+    .providers-list-divisor-label {
+      @include with-body-font('body-secondary');
+      font-size: $account-page-default-font-size;  
+      transform: translateY(50%);
+      white-space: nowrap;
+      margin-left: auto;
+      margin-right: auto;
+      width: min-content;
+      
+      @include with-theme-color('control-frame') using($css-var) {
+        color: var($css-var);
+      }
+      @include with-theme-color('body-bg') using($css-var) {
+        background-color: var($css-var);
+      }
+    }
+  }
+
+  .oauth-providers-list {
+    margin-top: 28px;
+    @include for-medium-and-large() {
+      margin-top: 40px;
+    }
+    
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: map.get($spacings, '3');
+    justify-content: center;
+  }
+}
+
+.account-page {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+
+  gap: 60px; 
+
+  padding-left: var(--#{$prefix}-page-padding-x);
+  padding-right: var(--#{$prefix}-page-padding-x);
+  padding-top: var(--#{$prefix}-page-padding-y);
+  padding-bottom: var(--#{$prefix}-page-padding-y);
+  @include for-medium-and-large() {
+    padding-top: 104px;
+    padding-bottom: 104px;
+  }
+
+  @include for-extra-large-only() {
+    gap: 104px;
+  }
+
+  @include with-theme-color('primary') using($css-var) {
+    color: var($css-var);
+  }
+}
+
+.login-page {
+
+  .login-account-forms-photos {
+    height: 812px;
+  }
+
+  .login-page-content {
+    flex: 1 1 auto;
+
+    @include for-medium-and-large() {
+      margin-bottom: 123px;
+    }
+
+    .login-title {
+      margin-top: 36px;
+      @include for-medium-and-large() {
+        margin-top: 64px;
+      }
+      @include with-theme-color('input-ctrl-primary') using ($css-var) {
+        color: var(#{$css-var});
+      }
+    }
+  
+    .login-form-field {
+      width: 100%;
+    }
+  
+    .login-subtitle {
+      @include with-theme-color('primary') using($css-var) {
+        color: var($css-var);
+      }
+    }
+  
+    .login-email-field {
+      margin-top: 48px;
+    }
+  
+    .forgot-password-link {
+      display: block;
+      width: min-content;
+      white-space: nowrap;
+      font-size: $account-page-default-font-size;  
+      font-family: $font-default;
+      @include with-theme-color('account-form-link') using ($css-var) {
+        color: var($css-var);
+      }
+      &:focus-visible {
+        @include with-outline();
+      }
+    }
+  
+    .login-btn {
+      width: 100%;
+      font-size: $account-page-default-font-size;
+      margin-top: 28px;  
+      @include for-medium-and-large() {
+        margin-top: 40px;  
+      }
+    }
+  
+    .having-account {
+      text-align: center;
+      font-size: $account-page-default-font-size;
+
+      @include with-theme-color('input-ctrl-primary') using ($css-var) {
+        color: var(#{$css-var});
+      }
+
+      .login-signup {
+        @include with-theme-color('account-form-link') using ($css-var) {
+          color: var($css-var);
+        }
+        a {
+          &:focus-visible {
+            @include with-outline();
+          }
+        }
+      }
+    }     
+  }
+}
+
+.signup-page {
+  
+  .signup-account-forms-photos {
+    height: 1054px;
+  }
+
+  .signup-page-content {
+    flex: 1 1 auto;
+
+    @include for-medium-and-large() {
+      margin-bottom: 123px;
+    }
+
+    .signup-title {
+      margin-top: 36px;
+      @include for-medium-and-large() {
+        margin-top: 64px;
+      }
+    }
+  
+    .signup-subtitle {
+      @include with-theme-color('primary') using($css-var) {
+        color: var($css-var);
+      }
+    }
+
+    form {
+      margin-top: 48px;
+
+      display: grid;
+      grid-template-rows: repeat(5, auto);
+      grid-template-columns: 1fr;
+      gap: map.get($spacings, '4');
+
+      @include for-medium-and-large() {
+        grid-template-rows: repeat(4, auto);
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .signup-form-field {
+        width: 100%;
+      }
+
+      .signup-firstname-field {
+        grid-row-start: 1;
+        grid-row-end: 2;
+        grid-column-start: 1;
+        grid-column-end: 2;
+      }
+
+      .signup-lastname-field {
+        grid-row-start: 2;
+        grid-row-end: 3;
+        grid-column-start: 1;
+        grid-column-end: 2;
+
+        @include for-medium-and-large() {
+          grid-row-start: 1;
+          grid-row-end: 2;
+          grid-column-start: 2;
+          grid-column-end: 3;
+        }
+      }
+
+      .signup-email-field {
+        grid-row-start: 3;
+        grid-row-end: 4;
+        grid-column-start: 1;
+        grid-column-end: 2;
+
+        @include for-medium-and-large() {
+          grid-row-start: 2;
+          grid-row-end: 3;
+          grid-column-start: 1;
+          grid-column-end: 3;
+        }
+      }
+
+      .signup-password-field {
+        grid-row-start: 4;
+        grid-row-end: 5;
+        grid-column-start: 1;
+        grid-column-end: 2;
+
+        @include for-medium-and-large() {
+          grid-row-start: 3;
+          grid-row-end: 4;
+          grid-column-start: 1;
+          grid-column-end: 3;
+        }
+      }
+
+      .signup-confirm-password-field {
+        grid-row-start: 5;
+        grid-row-end: 6;
+        grid-column-start: 1;
+        grid-column-end: 2;
+
+        @include for-medium-and-large() {
+          grid-row-start: 4;
+          grid-row-end: 5;
+          grid-column-start: 1;
+          grid-column-end: 3;
+        }
+      }
+    }
+    
+    .privacy-checkbox {
+      font-size: $account-page-default-font-size;
+
+      .privacy-link {
+        display: inline-block;
+        width: min-content;
+        white-space: nowrap;
+        font-size: $account-page-default-font-size;  
+        font-family: $font-default;
+        @include with-theme-color('account-form-link') using ($css-var) {
+          color: var($css-var);
+        }
+        &:focus-visible {
+          @include with-outline();
+        }
+      }
+    }
+  
+    .signup-btn {
+      width: 100%;
+      margin-top: 28px;  
+      font-size: $account-page-default-font-size;
+      @include for-medium-and-large() {
+        margin-top: 40px;  
+      }
+    }
+  
+    .already-have-account {
+      text-align: center;
+      font-size: $account-page-default-font-size;
+
+      .signup-login-link {
+        @include with-theme-color('account-form-link') using ($css-var) {
+          color: var($css-var);
+        }
+        a {
+          &:focus-visible {
+            @include with-outline();
+          }
+        }
+      }
+    }
+  }
+}
+
+.signup-verify-page {
+
+  .signup-verify-account-forms-photos {
+    height: 1054px;
+  }
+    
+  .signup-verify-page-div {
+    flex: 1 1 auto;
+
+    @include for-medium-and-large() {
+      margin-bottom: 123px;
+    }
+
+    .signup-verify-page-content {
+      margin-top: 36px;
+      @include for-medium-and-large() {
+        margin-top: 64px;
+      }
+    }
+
+    .signup-verify-page-logo {
+      height: auto;
+    }
+
+    .btn-signup-verify-home {
+      display: block;
+      width: fit-content;
+    }
+  }
+}
+
+.signup-complete-page {
+
+  .signup-complete-account-forms-photos {
+    height: 812px;
+  }
+    
+  .signup-complete-page-div {
+    flex: 1 1 auto;
+
+    @include for-medium-and-large() {
+      margin-bottom: 123px;
+    }
+
+    .signup-complete-page-content {
+      margin-top: 36px;
+      @include for-medium-and-large() {
+        margin-top: 64px;
+      }
+    }
+
+    .signup-complete-page-logo {
+      height: auto;
+    }
+
+    .btn-signup-complete {
+      display: block;
+      width: fit-content;
+    }
+  }
+}
+
+.signup-page, .signup-verify-page, .signup-complete-page {
+  .account-forms-photos {
+    width: 386px; 
+    .account-forms-photos-swiper {
+      width: 386px;
+    }
+  }
+}
+
+.signup-page {
+  .account-forms-photos {
+    height: 1054px;
+
+    display: none;
+    @include for-extra-large-only() {
+      display: block;
+    }
+  
+    .account-forms-photos-swiper {
+      @include for-extra-large-only() {
+        display: block;
+      }
+    }
+  }
+}
+
+.forgot-password-page {
+
+  .forgot-password-account-forms-photos {
+    height: 812px;
+  }
+
+  .forgot-password-page-content {
+    flex: 1 1 auto;
+
+    @include for-medium-and-large() {
+      margin-bottom: 123px;
+    }
+
+    .back-to-login-link {
+      margin-top: 36px;
+      @include for-medium-and-large() {
+        margin-top: 64px;
+      }
+    }
+  
+    .forgot-password-form-field {
+      width: 100%;
+    }
+
+    .forgot-password-title {
+      @include with-theme-color('primary') using ($css-var) {
+        color: var($css-var);
+      }
+    }
+  
+    .forgot-password-subtitle {
+      @include with-theme-color('primary') using($css-var) {
+        color: var($css-var);
+      }
+    }
+  
+    .forgot-password-email-field {
+      margin-top: 48px;
+    }
+  
+    .back-to-login-link {
+      display: block;
+      width: min-content;
+      white-space: nowrap;
+      font-size: $account-page-default-font-size;  
+      font-family: $font-default;
+
+      @include with-theme-color('primary') using ($css-var) {
+        color: var($css-var);
+      }
+
+      &:focus-visible {
+        @include with-outline();
+      }
+
+      &::before {
+        width: 10px;
+        height: 20px;
+        margin-bottom: 2px;
+        margin-right: 10px;
+        display: inline-block;
+        content: '';
+        transform: scale(-1, 1);
+
+        -webkit-mask-image: escape-svg(svg.$icon-right-chevron);
+        mask-image: escape-svg(svg.$icon-right-chevron);
+        
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center center;
+        mask-position: center center;
+        vertical-align: middle;
+
+        @include with-theme-color('input-ctrl-primary') using ($css-var) {
+          background-color: var($css-var);
+        }
+      }
+    }
+  
+    .forgot-password-submit-btn {
+      width: 100%;
+      font-size: $account-page-default-font-size;
+      margin-top: 28px;  
+      @include for-medium-and-large() {
+        margin-top: 40px;  
+      }
+    }
+  }
+}
+
+.forgot-password-verify-page {
+
+  .forgot-password-verify-account-forms-photos {
+    height: 812px;
+  }
+    
+  .forgot-password-verify-page-div {
+    flex: 1 1 auto;
+
+    @include for-medium-and-large() {
+      margin-bottom: 123px;
+    }
+
+    .forgot-password-verify-page-content {
+      margin-top: 36px;
+      @include for-medium-and-large() {
+        margin-top: 64px;
+      }
+    }
+
+    .forgot-password-verify-page-logo {
+      height: auto;
+    }
+
+    .btn-forgot-password-verify-home {
+      display: block;
+      width: fit-content;
+    }
+  }
+}
+
+.set-password-page {
+
+  .set-password-account-forms-photos {
+    height: 812px;
+  }
+
+  .set-password-page-content {
+    flex: 1 1 auto;
+
+    @include for-medium-and-large() {
+      margin-bottom: 123px;
+    }
+
+    .set-password-title {
+      margin-top: 36px;
+      @include for-medium-and-large() {
+        margin-top: 64px;
+      }
+      @include with-theme-color('input-ctrl-primary') using ($css-var) {
+        color: var(#{$css-var});
+      }
+    }
+  
+    .set-password-form-field {
+      width: 100%;
+    }
+  
+    .set-password-subtitle {
+      @include with-theme-color('primary') using($css-var) {
+        color: var($css-var);
+      }
+    }
+  
+    .set-password-password-field {
+      margin-top: 48px;
+    }
+  
+    .set-password-btn {
+      width: 100%;
+      font-size: $account-page-default-font-size;
+      margin-top: 28px;  
+      @include for-medium-and-large() {
+        margin-top: 40px;  
+      }
+    }
+  }
+}
+
+.complete-password-page {
+
+  .complete-password-account-forms-photos {
+    height: 812px;
+  }
+    
+  .complete-password-page-div {
+    flex: 1 1 auto;
+
+    @include for-medium-and-large() {
+      margin-bottom: 123px;
+    }
+
+    .complete-password-page-content {
+      margin-top: 36px;
+      @include for-medium-and-large() {
+        margin-top: 64px;
+      }
+    }
+
+    .complete-password-page-logo {
+      height: auto;
+    }
+
+    .btn-complete-password {
+      display: block;
+      width: fit-content;
+    }
+  }
+}
+
+.email-verify-complete-page {
+
+  .email-verify-complete-forms-photos {
+    height: 812px;
+  }
+    
+  .email-verify-complete-page-div {
+    flex: 1 1 auto;
+
+    @include for-medium-and-large() {
+      margin-bottom: 123px;
+    }
+
+    .email-verify-complete-page-content {
+      margin-top: 36px;
+      @include for-medium-and-large() {
+        margin-top: 64px;
+      }
+    }
+
+    .email-verify-complete-page-logo {
+      height: auto;
+    }
+
+    .btn-email-verify-complete {
+      display: block;
+      width: fit-content;
+    }
+  }
+}

@@ -1,0 +1,138 @@
+<script setup lang="ts">
+
+import shuffle from 'lodash/shuffle';
+import { Navigation, Autoplay, Mousewheel } from 'swiper/modules';
+import range from 'lodash/range';
+import PageSection from './../components/common-page-components/page-section.vue';
+import SearchPageImageLink from './../components/index/search-page-image-link.vue';
+import PopularCityCard from './../components/index/popular-city-card.vue';
+import { type IPopularCityDto, type ICompanyReviewDto } from './../server/dto';
+import { getI18nResName3, getI18nResName2 } from './../shared/i18n';
+import { WebApiRoutes, TabIndicesUpdateDefaultTimeout } from './../shared/constants';
+import { useFetchEx } from './../shared/fetch-ex';
+import CompanyReviewCard from './../components/index/company-review-card.vue';
+import { updateTabIndices } from './../shared/dom';
+import AppConfig from './../appconfig';
+import { mapLocalizeableValues } from './../shared/common';
+
+definePageMeta({
+  title: getI18nResName2('indexPage', 'title')
+});
+
+const logger = CommonServicesLocator.getLogger();
+
+const citiesListFetch = await useFetchEx<IPopularCityDto[], IPopularCityDto[], null[]>(WebApiRoutes.PopularCitiesList, 'error-page',
+  {
+    server: true,
+    lazy: true,
+    cache: 'default',
+    default: () => { return range(0, 20, 1).map(_ => null); },
+    transform: (response: IPopularCityDto[]) => {
+      logger.verbose(`(indexPage) received popular cities list response: ${JSON.stringify(response)}`);
+      if (!response) {
+        logger.warn('(indexPage) popular cities list response is empty');
+        return []; // error should be logged by fetchEx
+      }
+      return shuffle(response);
+    }
+  });
+
+const reviewsListFetch = await useFetchEx(WebApiRoutes.CompanyReviewsList, 'error-page',
+  {
+    server: true,
+    lazy: true,
+    cache: 'default',
+    default: () => { return range(0, 10, 1).map(_ => null); },
+    transform: (response: ICompanyReviewDto[]) => {
+      logger.verbose(`(indexPage) received company reviews list response: ${JSON.stringify(response)}`);
+      if (!response) {
+        logger.warn('(indexPage) company review list response is empty');
+        return []; // error should be logged by fetchEx
+      }
+      return shuffle(response);
+    }
+  });
+
+function onActiveSlideChanged () {
+  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
+}
+
+</script>
+
+<template>
+  <div class="index-page-content no-hidden-parent-tabulation-check">
+    <PageSection
+      ctrl-key="PerfectTripSection"
+      :header-res-name="getI18nResName3('indexPage', 'perfectTripSection', 'title')"
+      :subtext-res-name="getI18nResName3('indexPage', 'perfectTripSection', 'subtext')"
+      :btn-text-res-name="getI18nResName3('indexPage', 'perfectTripSection', 'btn')"
+      :content-padded="true"
+      :is-error="citiesListFetch.error.value !== undefined"
+    >
+      <ul class="popular-city-grid p-xs-2 p-s-3  hidden-overflow-nontabbable">
+        <PopularCityCard
+          v-for="(city, idx) in citiesListFetch.data.value"
+          :key="`popular-city-${idx}`"
+          :ctrl-key="`PopularCityCard-${idx}`"
+          :text="city ? mapLocalizeableValues((city: string, country: string) => `${city}, ${country}`, city.cityDisplayName, city.countryDisplayName) : undefined"
+          :img-src="city ? { slug: city.slug, timestamp: city.timestamp } : undefined"
+          class="popular-city-grid-item"
+        />
+      </ul>
+    </PageSection>
+    <section class="page-section">
+      <div class="page-section-content content-padded search-image-links-section-content">
+        <div class="search-page-image-links">
+          <SearchPageImageLink ctrl-key="SearchFlightsImageLink" page="flights" />
+          <SearchPageImageLink ctrl-key="SearchHotelsImageLink" page="stays" />
+        </div>
+      </div>
+    </section>
+    <PageSection
+      ctrl-key="CompanyReviewSection"
+      class="company-reviews-section"
+      :header-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'title')"
+      :subtext-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'subtext')"
+      :btn-text-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'btn')"
+      :content-padded="true"
+      :is-error="reviewsListFetch.error.value !== undefined"
+    >
+      <Swiper
+        class="company-reviews-swiper pb-xs-4"
+        :modules="[Navigation, Mousewheel, Autoplay]"
+        slides-per-view="auto"
+        :navigation="{
+          enabled: true,
+          nextEl: null,
+          prevEl: null
+        }"
+        :loop="true"
+        :allow-touch-move="true"
+        :simulate-touch="true"
+        :autoplay="{
+          delay: AppConfig.sliderAutoplayPeriodMs
+        }"
+        :touch-start-prevent-default="false"
+        :mousewheel="{
+          forceToAxis: true
+        }"
+        @slide-change="onActiveSlideChanged"
+      >
+        <SwiperSlide
+          v-for="(review, index) in reviewsListFetch.data.value"
+          :key="`CompanyReview-${index}`"
+          :style="{width: 'auto'}"
+        >
+          <CompanyReviewCard
+            :ctrl-key="`CompanyReviewCard-${index}`"
+            class="ml-xs-1 mr-xs-2 mr-s-4"
+            :header="review?.header ?? undefined"
+            :body="review?.body ?? undefined"
+            :user-name="review?.userName ?? undefined"
+            :img-src="review?.img?.slug ? { slug: review.img.slug, timestamp: review.img.timestamp } : undefined"
+          />
+        </SwiperSlide>
+      </Swiper>
+    </PageSection>
+  </div>
+</template>

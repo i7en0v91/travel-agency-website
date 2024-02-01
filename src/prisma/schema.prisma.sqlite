@@ -1,0 +1,548 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./../.tmp/golobe-demo.db"
+}
+
+model User {
+  id                  Int                   @id @default(autoincrement())
+  firstName           String?               
+  lastName            String?               
+  passwordSalt        String?               
+  passwordHash        String?               
+  authProvider        String
+  providerIdentity    String                
+  avatarId            Int?                  @unique
+  coverId             Int?                  @unique
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  emails              UserEmail[]           @relation(name: "UserOnEmail")
+  files               File[]                @relation(name: "UserOnFile")
+  avatar              Image?                @relation(name: "AvatarOnUser", fields: [avatarId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  cover               Image?                @relation(name: "CoverOnUser", fields: [coverId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  sessions            UserSession[]         @relation(name: "UserOnBrowserSession")     
+
+  flightOffers        FlightOffer[]         @relation(name: "UserOnFlightOffer")
+  stayOffers          StayOffer[]           @relation(name: "UserOnStayOffer")
+  hotelReviews        HotelReview[]         @relation(name: "UserOnHotelReview")
+  bookings            Booking[]             @relation(name: "UserOnBooking")
+  verificationTokens  VerificationToken[]   @relation(name: "UserOnVerificationToken")
+
+  @@unique([authProvider, providerIdentity])
+}
+
+model UserEmail {
+  id                  Int                   @id @default(autoincrement())
+  email               String                
+  isVerified          Boolean               @default(false)
+  verificationTokenId Int?                  @unique
+  changedEmailId      Int?
+
+  order               Int             
+  userId              Int             
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  user                User                  @relation(name: "UserOnEmail", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  verificationToken   VerificationToken?    @relation(name: "VerificationTokenOnEmail", fields: [verificationTokenId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  changedEmail        UserEmail?            @relation(name: "ChangedEmailOnEmail", fields: [changedEmailId], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  newEmails           UserEmail[]           @relation(name: "ChangedEmailOnEmail")
+
+  @@index(fields: [email])
+  @@index(fields: [userId])
+  @@index(fields: [verificationTokenId])
+}
+
+model Image {
+  id                  Int                   @id @default(autoincrement())
+  slug                String                @unique
+  categoryId          Int    
+  fileId              Int                   @unique
+  stubCssStyle        String?
+
+  category            ImageCategory         @relation(name: "CategoryOnImage", fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)     
+  file                File                  @relation(name: "FileOnImage", fields: [fileId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userOfAvatar        User?                 @relation(name: "AvatarOnUser")
+  userOfCover         User?                 @relation(name: "CoverOnUser")
+  popularCity         PopularCityImage?     @relation(name: "ImageOnPopularCity")
+  hotel               HotelImage?           @relation(name: "ImageOnHotel")
+  companyReview       CompanyReview?        @relation(name: "ImageOnCompanyReview")
+  airlineCompany      AirlineCompany?       @relation(name: "ImageOnAirlineCompany")
+  airplaneImage       AirplaneImage?        @relation(name: "ImageOnAirplaneImage")
+
+  @@index(fields: [slug])
+  @@index(fields: [categoryId])
+}
+
+model ImageCategory {
+  id                  Int                   @id @default(autoincrement())
+  kind                String                @unique
+  width               Int
+  height              Int
+
+  images              Image[]               @relation(name: "CategoryOnImage")     
+
+  @@index(fields: [kind])
+}
+
+model File {
+  id                  Int                   @id @default(autoincrement()) 
+  mime                String?               
+  originalName        String?               
+  ownerId             Int?               
+  bytes               Bytes
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  image               Image?                @relation(name: "FileOnImage")
+  owner               User?                 @relation(name: "UserOnFile", fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model UserSession {
+  id                  String                @id
+  userId              Int?
+  data                String
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  user                User?                 @relation(name: "UserOnBrowserSession", fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+}
+
+model Flight {
+  id                  Int                   @id @default(autoincrement()) 
+  airlineCompanyId    Int
+  airplaneId          Int
+  departmentAirportId Int
+  arrivalAirportId    Int
+  departmentUtc       DateTime              
+  arrivalUtc          DateTime              
+
+  createdUtc          DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  airlineCompany      AirlineCompany        @relation(name: "AirlineCompanyOnFlight", fields: [airlineCompanyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  airplane            Airplane              @relation(name: "AirplaneOnFlight", fields: [airplaneId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  departmentAirport   Airport               @relation(name: "DepartmentAirportOnFlight", fields: [departmentAirportId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  arrivalAirport      Airport               @relation(name: "ArrivalAirportOnFlight", fields: [arrivalAirportId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  departOffers        FlightOffer[]         @relation(name: "DepartFlightOnOffer")
+  returnOffers        FlightOffer[]         @relation(name: "ReturnFlightOnOffer")
+
+  @@index([departmentAirportId, departmentUtc])
+  @@index([departmentUtc])
+}
+
+model FlightOffer {
+  id                  Int                   @id @default(autoincrement()) 
+  departFlightId      Int    
+  returnFlightId      Int?    
+  numPassengers       Int
+  totalPrice          Int
+  class               String
+  userId              Int?
+  isFavourite         Boolean               @default(false)
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  user                User?                 @relation(name: "UserOnFlightOffer", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  booking             Booking?              @relation(name: "FlightOfferOnBooking")
+  departFlight        Flight                @relation(name: "DepartFlightOnOffer", fields: [departFlightId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  returnFlight        Flight?               @relation(name: "ReturnFlightOnOffer", fields: [returnFlightId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([userId])
+  @@index([departFlightId])
+  @@index([returnFlightId])
+}
+
+
+model StayOffer {
+  id                  Int                   @id @default(autoincrement()) 
+  hotelId             Int                   @unique
+  checkIn             DateTime              
+  checkOut            DateTime              
+  numRooms            Int
+  numGuests           Int
+  userId              Int?
+  isFavourite         Boolean               @default(false)
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  hotel               Hotel                 @relation(name: "HotelOnOffer", fields: [hotelId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  user                User?                 @relation(name: "UserOnStayOffer", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  booking             Booking?              @relation(name: "StayOfferOnBooking")
+
+  @@index([userId])
+}
+
+model Hotel {
+  id                  Int                   @id @default(autoincrement()) 
+  cityId              Int                     
+  nameStrId           Int                   @unique
+  lon                 Decimal               
+  lat                 Decimal               
+  rating              Int
+  numReviews          Int
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  city                PopularCity           @relation(name: "CityOnHotel", fields: [cityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  nameStr             LocalizeableValue     @relation(name: "NameOnHotel", fields: [nameStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  offer               StayOffer?            @relation(name: "HotelOnOffer")
+
+  description         HotelDescription[]    @relation(name: "HotelOnHotelDescription")
+  reviews             HotelReview[]         @relation(name: "HotelOnHotelReview")
+  images              HotelImage[]          @relation(name: "HotelOnHotelImage")
+
+  @@index([cityId])
+}
+
+model HotelDescription {
+  id                  Int                   @id @default(autoincrement()) 
+  hotelId             Int       
+  textStrId           Int                   @unique
+  paragraphKind       String                
+  order               Int
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  hotel               Hotel                 @relation(name: "HotelOnHotelDescription", fields: [hotelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  textStr             LocalizeableValue     @relation(name: "TextOnHotelHotelDescription", fields: [textStrId], references: [id], onDelete: Cascade, onUpdate: Cascade)            
+
+  @@unique([hotelId, order])
+}
+
+model HotelReview {
+  id                  Int                   @id @default(autoincrement()) 
+  hotelId             Int                   
+  userId              Int                   
+  textStrId           Int                   @unique
+  score               Int
+  
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  hotel               Hotel                 @relation(name: "HotelOnHotelReview", fields: [hotelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  textStr             LocalizeableValue     @relation(name: "TextOnHotelReview", fields: [textStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)            
+  user                User                  @relation(name: "UserOnHotelReview", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)            
+
+  @@unique([hotelId, userId])
+}
+
+model HotelImage {
+  id                  Int                   @id @default(autoincrement()) 
+  hotelId             Int                   
+  imageId             Int                   @unique
+  serviceLevel        String?
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  image               Image                 @relation(name: "ImageOnHotel", fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  hotel               Hotel                 @relation(name: "HotelOnHotelImage", fields: [hotelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([hotelId, serviceLevel])
+}
+
+model Booking {
+  id                  Int                   @id @default(autoincrement())
+  flightOfferId       Int?                  @unique
+  stayOfferId         Int?                  @unique
+  serviceLevel        String?
+  userId              Int
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  user                User                  @relation(name: "UserOnBooking", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  flightOffer         FlightOffer?          @relation(name: "FlightOfferOnBooking", fields: [flightOfferId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  stayOffer           StayOffer?            @relation(name: "StayOfferOnBooking", fields: [stayOfferId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([userId])
+}
+
+model PopularCity {
+  id                  Int                   @id @default(autoincrement()) 
+  cityId              Int                   @unique
+  promoLineStrId      Int                   @unique
+  travelHeaderStrId   Int                   @unique
+  travelTextStrId     Int                   @unique
+  rating              Int
+  visibleOnWorldMap   Boolean               @default(false)
+
+  promoLineStr        LocalizeableValue     @relation(name: "PromoLineOnPopularCity", fields: [promoLineStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  travelHeaderStr     LocalizeableValue     @relation(name: "TravelHeaderOnPopularCity", fields: [travelHeaderStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  travelTextStr       LocalizeableValue     @relation(name: "TravelTextOnPopularCity", fields: [travelTextStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  city                City                  @relation(name: "CityOnPopularCity", fields: [cityId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  airlineCompany      AirlineCompany?       @relation(name: "CityOnAirlineCompany")
+
+  hotels              Hotel[]               @relation(name: "CityOnHotel")
+  images              PopularCityImage[]    @relation(name: "CityOnCityImage")
+
+  @@index([cityId])
+}
+
+model PopularCityImage {
+  id                  Int                   @id @default(autoincrement()) 
+  popularCityId       Int    
+  imageId             Int                   @unique
+  order               Int
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  image               Image                 @relation(name: "ImageOnPopularCity", fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  popularCity         PopularCity           @relation(name: "CityOnCityImage", fields: [popularCityId], references: [id])
+
+  @@index([popularCityId])
+}
+
+model Country {
+  id                  Int                   @id @default(autoincrement()) 
+  nameStrId           Int                   @unique
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  nameStr             LocalizeableValue     @relation(name: "NameOnCountry", fields: [nameStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  cities              City[]                @relation(name: "CountryOnCity")     
+}
+
+model City {
+  id                  Int                   @id @default(autoincrement()) 
+  slug                String                @unique
+  nameStrId           Int                   @unique
+  textForSearch       String
+  lon                 Decimal               
+  lat                 Decimal               
+  countryId           Int
+  population          Int
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  nameStr             LocalizeableValue     @relation(name: "NameOnCity", fields: [nameStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  country             Country               @relation(name: "CountryOnCity", fields: [countryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  popularCity         PopularCity?          @relation(name: "CityOnPopularCity")
+  airports            Airport[]             @relation(name: "CityOnAirport")
+
+  @@index([countryId])
+  @@index([slug])
+}
+
+model Airport {
+  id                  Int                   @id @default(autoincrement()) 
+  lon                 Decimal               
+  lat                 Decimal               
+  cityId              Int    
+  nameStrId           Int                   @unique               
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  city                City                  @relation(name: "CityOnAirport", fields: [cityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  departmentFlights   Flight[]              @relation(name: "DepartmentAirportOnFlight")
+  arrivalFlights      Flight[]              @relation(name: "ArrivalAirportOnFlight")
+  nameStr             LocalizeableValue     @relation(name: "NameOnAirport", fields: [nameStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([cityId])
+}
+
+model CompanyReview {
+  id                  Int                   @id @default(autoincrement()) 
+
+  headerStrId         Int                   @unique
+  bodyStrId           Int                   @unique
+  personNameStrId     Int                   @unique
+  imageId             Int                   @unique
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  headerStr           LocalizeableValue     @relation(name: "HeaderOnCompanyReview", fields: [headerStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  bodyStr             LocalizeableValue     @relation(name: "BodyOnCompanyReview", fields: [bodyStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  personNameStr       LocalizeableValue     @relation(name: "PersonNameOnCompanyReview", fields: [personNameStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  image               Image                 @relation(name: "ImageOnCompanyReview", fields: [imageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+model FooterSection {
+  id                  Int                   @id @default(autoincrement()) 
+  nameStrId           Int                   @unique
+  order               Int                   @unique
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  nameStr             LocalizeableValue     @relation(name: "NameOnFooterSection", fields: [nameStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+model FooterSectionLink {
+  id                  Int                   @id @default(autoincrement()) 
+  footerSectionId     Int
+  nameStrId           Int                   @unique
+  order               Int
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  nameStr             LocalizeableValue     @relation(name: "NameOnFooterSectionLink", fields: [nameStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([footerSectionId, order])
+}
+
+model AirlineCompany {
+  id                  Int                   @id @default(autoincrement())
+  nameStrId           Int                   @unique
+  cityId              Int                   @unique
+  imageId             Int                   @unique
+  numReviews          Int
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  nameStr             LocalizeableValue     @relation(name: "NameOnAirlineCompany", fields: [nameStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  city                PopularCity           @relation(name: "CityOnAirlineCompany", fields: [cityId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  image               Image                 @relation(name: "ImageOnAirlineCompany", fields: [imageId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  flights             Flight[]              @relation(name: "AirlineCompanyOnFlight")
+
+  @@index([cityId])
+}
+
+model Airplane {
+  id                  Int                   @id @default(autoincrement())
+  nameStrId           Int                   @unique
+  
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  nameStr             LocalizeableValue     @relation(name: "NameOnAirplane", fields: [nameStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  images              AirplaneImage[]       @relation(name: "ImageOnAirplane")
+  flights             Flight[]              @relation(name: "AirplaneOnFlight")
+}
+
+model AirplaneImage {
+  id                  Int                   @id @default(autoincrement()) 
+  airplaneId          Int    
+  imageId             Int                   @unique
+  kind                String
+  order               Int
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  airplane            Airplane              @relation(name: "ImageOnAirplane", fields: [airplaneId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  image               Image                 @relation(name: "ImageOnAirplaneImage", fields: [imageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  
+  @@unique([airplaneId, order])
+}
+
+model MailTemplate {
+  id                  Int                   @id @default(autoincrement()) 
+  kind                String
+  templateStrId       Int                   @unique
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  templateStr         LocalizeableValue     @relation(name: "TemplateOnMail", fields: [templateStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+}
+
+model VerificationToken {
+  id                  Int                   @id @default(autoincrement()) 
+  userId              Int?
+  hash                String                
+  attemptsMade        Int                   @default(0)
+  kind                String
+
+  createdUtc          DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  user                User?                 @relation(name: "UserOnVerificationToken", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  email               UserEmail?            @relation(name: "VerificationTokenOnEmail")
+  @@index([userId, createdUtc])
+}
+
+model LocalizeableValue {
+  id                      Int                   @id @default(autoincrement()) 
+  en                      String                
+  ru                      String                
+  fr                      String                
+  createdUtc              DateTime              @default(now())
+  modifiedUtc             DateTime              @default(now())
+  isDeleted               Boolean               @default(false)
+
+  city                    City?                 @relation(name: "NameOnCity")
+  country                 Country?              @relation(name: "NameOnCountry")
+  hotel                   Hotel?                @relation(name: "NameOnHotel")
+  cityOfPromoLine         PopularCity?          @relation(name: "PromoLineOnPopularCity")
+  cityOfTravelHeader      PopularCity?          @relation(name: "TravelHeaderOnPopularCity")
+  cityOfTravelText        PopularCity?          @relation(name: "TravelTextOnPopularCity")
+  hotelOfDescription      HotelDescription?     @relation(name: "TextOnHotelHotelDescription")
+  hotelReview             HotelReview?          @relation(name: "TextOnHotelReview")
+  headerOfCompanyReview   CompanyReview?        @relation(name: "HeaderOnCompanyReview")
+  bodyOfCompanyReview     CompanyReview?        @relation(name: "BodyOnCompanyReview")
+  personOfCompanyReview   CompanyReview?        @relation(name: "PersonNameOnCompanyReview")
+  nameOfFooterSection     FooterSection?        @relation(name: "NameOnFooterSection")
+  nameOfFooterSectionLink FooterSectionLink?    @relation(name: "NameOnFooterSectionLink")
+  airlineCompany          AirlineCompany?       @relation(name: "NameOnAirlineCompany")
+  airplane                Airplane?             @relation(name: "NameOnAirplane")
+  mailTemplate            MailTemplate?         @relation(name: "TemplateOnMail")
+  airport                 Airport?              @relation(name: "NameOnAirport")
+}

@@ -1,0 +1,188 @@
+@use "sass:map";
+@use 'system' as *;
+@use 'themes' as *;
+@use 'utils' as *;
+@use 'svg';
+
+$property-grid-row-height: 48px;
+$property-grid-value-font-size-normal: 20px;
+$property-grid-value-font-size-small: 16px;
+
+.property-grid {
+  width: 100%;
+  height: auto;
+
+  .property-grid-row {
+    &:not(:first-child) {
+      .property-grid-cell {
+        padding-top: map.get($spacings, '4');
+        @include for-small-and-above() {
+          padding-top: map.get($spacings, '5');
+        }
+      }
+    }
+
+    .property-grid-main-cell {
+      width: 100%;
+      
+      .property-grid-value-slot {
+        min-height: $property-grid-row-height;
+        display: flex;
+        flex-wrap: nowrap;
+        flex-direction: column;
+        justify-content: center;
+      }
+    }
+
+    .property-grid-cell {
+      vertical-align: top;
+    }
+  }
+
+  &.list-property-edit {
+    .property-grid-row {
+      &:not(:first-child) {
+        .property-grid-cell {
+          padding-top: 0;
+        }
+        .property-view-caption {
+          display: none;
+        }
+
+        &.list-property-edit-add {
+          .property-view-value {
+            visibility: hidden;
+          }
+        }      
+      }
+    } 
+  }
+
+  .property-grid-control-section {
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+
+    .property-grid-control-button {
+      height: $property-grid-row-height;
+
+      font-size: 0;
+      width: 48px;
+      &::before {
+        margin-right: 0;
+      }
+      @include for-small-and-above() {
+        font-size: inherit;
+        width: 100%;
+        &::before {
+          margin-right: 4px;
+        }
+      }
+    }
+  }
+
+  .property-grid-first-section {
+    .property-grid-control-section:last-child {
+      margin-right: map.get($spacings, '2');
+    }
+  }
+
+  .simple-property-edit {
+    .field-frame {
+      padding: 8px 12px 8px 12px;
+      height: 100%;
+      min-height: $property-grid-row-height;
+
+      display: flex;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      justify-content: center;
+
+      @include with-theme-color('property-grid-edit-highlight') using ($css-var) {
+        border: 3px solid var($css-var);
+      }
+
+      .input-field {
+        @include with-body-font('body-primary');
+        
+        font-weight: map.get($weights-map, 'semi-bold');
+        white-space: nowrap;
+        font-size: $property-grid-value-font-size-small;
+        @include for-small-and-above() {
+          font-size: $property-grid-value-font-size-normal;
+        }
+      }
+    }
+
+    .simple-property-view { 
+      display: inline-grid; // for long text ellipsis truncation 
+      @include with-body-font('body-primary');
+  
+      .property-view-caption {  
+        @include with-theme-color('primary') using($css-var) {
+          color: var($css-var);
+        }
+      }
+  
+      .property-view-value {
+        text-overflow: ellipsis;
+        overflow: hidden;
+
+        font-weight: map.get($weights-map, 'semi-bold');
+        white-space: nowrap;
+        font-size: $property-grid-value-font-size-small;
+        @include with-theme-color('input-ctrl-primary') using ($css-var) {
+          color: var(#{$css-var});
+        }
+
+        @include for-small-and-above() {
+          font-size: $property-grid-value-font-size-normal;
+        }
+      }
+    }
+
+    .simple-property-input {
+      * {
+        background-color: inherit;
+        @include with-theme-color('input-ctrl-primary') using ($css-var) {
+          color: var(#{$css-var});
+        }
+      }
+      
+    }
+  }
+}
+
+.icon-propCtrl-apply::before {
+  -webkit-mask-image: url('/img/icon-check.svg');
+  mask-image: url('/img/icon-check.svg');
+  margin-bottom: 2px;
+}
+
+.icon-propCtrl-cancel::before {
+  -webkit-mask-image: url('/img/icon-cross.svg');
+  mask-image: url('/img/icon-cross.svg');
+  width: 12px;
+  height: 12px;
+  margin-bottom: 2px;
+}
+
+.icon-propCtrl-delete::before {
+  -webkit-mask-image: url('/img/icon-bin.svg');
+  mask-image: url('/img/icon-bin.svg');
+  margin-bottom: 3px;
+}
+
+.icon-propCtrl-change::before {
+  -webkit-mask-image: url('/img/icon-pen.svg');
+  mask-image: url('/img/icon-pen.svg');
+  margin-bottom: 2px;
+}
+
+.icon-propCtrl-add::before {
+  -webkit-mask-image: url('/img/icon-add.svg');
+  mask-image: url('/img/icon-add.svg');
+  margin-bottom: 3px;
+}

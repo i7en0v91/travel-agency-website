@@ -1,0 +1,59 @@
+@use 'utils' as *; 
+@use 'themes' as *;
+@use 'system' as *;
+
+$vue-toastification-prefix: 'Vue-Toastification';
+
+.#{$vue-toastification-prefix}__container.user-notification-container {
+  max-width: $max-page-width;
+  top: 0;
+}
+
+.#{$vue-toastification-prefix}__toast.user-notification-toast {
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+
+  @include with-body-font('input-ctrl-primary');
+
+  @include with-theme-color('control-bg') using($css-var) {
+    background-color: var($css-var);
+  }
+  @include with-theme-color('primary') using($css-var) {
+    color: var($css-var);
+  }
+
+  .#{$vue-toastification-prefix}__close-button.user-notification-button {
+    opacity: 1;
+    @include with-theme-color('primary') using($css-var) {
+      color: var($css-var);
+    }
+  }
+
+  &.#{$vue-toastification-prefix}__toast--warning {
+    @include with-theme-color('notification-warning') using($css-var) {
+      background-color: var($css-var);
+    } 
+    @include with-theme-color('notification-warning-text') using($css-var) {
+      color: var($css-var);
+      .#{$vue-toastification-prefix}__close-button.user-notification-button {
+        color: var($css-var);
+      }
+    } 
+  }
+  &.#{$vue-toastification-prefix}__toast--error {
+    @include with-theme-color('notification-error') using($css-var) {
+      background-color: var($css-var);
+    }
+    @include with-theme-color('notification-error-text') using($css-var) {
+      color: var($css-var);
+      .#{$vue-toastification-prefix}__close-button.user-notification-button {
+        color: var($css-var);
+      }
+    }  
+  }
+
+  .#{$vue-toastification-prefix}__toast-body {
+    cursor: default;
+  }
+}

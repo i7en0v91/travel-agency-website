@@ -1,0 +1,241 @@
+@use 'sass:map';
+@use 'sass:math';
+@use 'system' as *;
+@use 'buttons' as *;
+@use 'themes' as *;
+@use 'utils' as *;
+@use 'svg';
+
+$flights-title-image-xs-height: 457px;
+$flights-title-image-m-height: 537px;
+
+$world-map-width: 1230;
+$world-map-height: 505;
+$world-map-canvas-min-width: 916px;
+
+$world-city-img-xs-size: 40px;
+$world-city-img-size: 50px;
+$world-city-font-xs-size: 12px;
+$world-city-font-s-size: 14px;
+$world-city-font-size: 16px;
+
+
+.flights-page-head {
+  .heading-text {
+    color: white;
+
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 80px;
+    max-width: 340px;
+    @include for-medium-and-large() {
+      max-width: 440px;
+      margin: 80px 0px 0px 126px;
+    }
+
+    h2 {
+      font-weight: bold;
+    }
+
+    p {
+      font-weight: map.get($weights-map, 'meidum');
+      font-size: 20px;
+    }
+  }
+
+  .search-page-head-image {
+    height: $flights-title-image-xs-height;
+    max-height: $flights-title-image-xs-height;
+    @include for-medium-and-large() {
+      height: $flights-title-image-m-height;
+      max-height: $flights-title-image-m-height;
+    }
+
+    img {
+      object-position: top;
+
+      height: $flights-title-image-xs-height;
+      max-height: $flights-title-image-xs-height;
+      @include for-medium-and-large() {
+        height: $flights-title-image-m-height;
+        max-height: $flights-title-image-m-height;
+      }
+    }
+  }
+
+  .search-page-head-content {
+    background-image: linear-gradient(-90deg, transparent 0%, transparent 20%, #00234DAA 100%);
+    height: $flights-title-image-xs-height;
+    max-height: $flights-title-image-xs-height;
+    @include for-medium-and-large() {
+      height: $flights-title-image-m-height;
+      max-height: $flights-title-image-m-height;
+    }
+
+    grid-row-start: 1;
+    grid-row-end: 2;
+    grid-column-start: 1;
+    grid-column-end: 2;
+  }
+}
+
+.world-map {
+  width: 100%;
+
+  max-height: 75vw;
+  min-height: $world-map-canvas-min-width * math.div($world-map-height, $world-map-width) + 5px;
+  @include for-small-and-above() {
+    aspect-ratio: #{$world-map-width '/' $world-map-height};
+  }
+
+  @include with-theme-color('world-map-bg') using ($css-var) {
+    background-color: var(#{$css-var});
+  }
+
+  .world-map-container {
+    width: 100%;
+    height: 100%; 
+    overflow: auto;
+
+    .world-map-content {
+      width: $world-map-canvas-min-width;
+      max-width: $world-map-canvas-min-width;
+      @include for-medium-and-large() {
+        width: 100%;
+        max-width: unset;
+      }
+      aspect-ratio: #{$world-map-width '/' $world-map-height};
+
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr;
+
+      #worldMapCanvas {
+        width: 100%;
+        height: 100%;
+
+        grid-row-start: 1;
+        grid-row-end: 2;
+        grid-column-start: 1;
+        grid-column-end: 2;
+
+        z-index: 1;
+      }
+
+      .world-map-city-label {
+        grid-row-start: 1;
+        grid-row-end: 2;
+        grid-column-start: 1;
+        grid-column-end: 2;
+    
+        z-index: 2;
+    
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 8px;
+    
+        width: fit-content;
+        max-width: 190px;
+
+        font-size: $world-city-font-xs-size;
+        @include for-small-and-above() {
+          font-size: $world-city-font-s-size;
+        }
+        @include for-medium-and-large() {
+          font-size: $world-city-font-size;
+          max-width: 240px;
+        }
+    
+        height: min-content;
+        @include with-theme-color('shadow') using($css-var) {
+          box-shadow: 0px 4px 16px var($css-var);
+        }
+
+        @include with-theme-color('body-bg') using($css-var) {
+          background-color: var($css-var);
+        }
+      
+        .world-map-city-label-img {
+          width: $world-city-img-xs-size;
+          height: $world-city-img-xs-size;
+          min-width: $world-city-img-xs-size;
+          min-height: $world-city-img-xs-size;
+          @include for-large-and-extra-large() {
+            width: $world-city-img-size;
+            height: $world-city-img-size;
+            min-width: $world-city-img-size;
+            min-height: $world-city-img-size;
+          }
+    
+          .static-image-stub {
+            border-radius: map.get($borders-radius, '2');
+          }
+    
+          img {
+            background-size: cover;
+            border-radius: map.get($borders-radius, '2');
+          }
+        }
+      
+        .world-map-city-info {
+          width: 100%;
+          height: 100%;
+      
+          .world-map-city-name {
+            @include with-theme-color('secondary') using ($css-var) {
+              color: var(#{$css-var});
+            }
+            @include with-body-font('category-caption');
+
+            font-size: $world-city-font-xs-size;
+            @include for-small-and-above() {
+              font-size: $world-city-font-s-size;
+            }
+            @include for-medium-and-large() {
+              font-size: $world-city-font-size;
+            }
+
+            &:focus-visible {
+              @include with-outline();
+            }
+
+            &:hover {
+              text-decoration: underline;
+              text-decoration-thickness: 1.5px;
+            }
+          }
+
+          .world-map-city-country {
+            @include with-theme-color('input-ctrl-primary') using ($css-var) {
+              color: var(#{$css-var});
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .error-helm {
+    .error-helm-stub {
+      border-radius: 0px;
+    }
+  }
+  
+
+  /* custom scrollbar theme */
+  .ps {
+    .ps__rail-y, .ps__rail-x {     
+      .ps__thumb-y, .ps__thumb-x {
+        background-color: rgba(255, 255, 255, 0.5); 
+      }
+      
+      &:hover, &.ps--clicking {
+        .ps__thumb-y, .ps__thumb-x {
+          background-color: rgba(255, 255, 255, 0.5);
+        }
+      }
+    }  
+  }
+};
