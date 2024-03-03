@@ -125,7 +125,7 @@ export default defineNuxtConfig({
       }
     },
     build: {
-      transpile: ['vue-toastification']
+      transpile: ['lodash', 'vue-toastification']
     },
     auth: {
       baseURL: `http://127.0.0.1:${TEST_SERVER_PORT}/api/auth`
