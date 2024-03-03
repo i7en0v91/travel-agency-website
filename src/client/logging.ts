@@ -1,10 +1,11 @@
-import deepmerge from 'lodash/merge';
+import deepmerge from 'lodash-es/merge';
 
 import AppConfig from '../appconfig';
 import { type IAppLogger, wrapLogDataArg, getErrorCustomLogLevel } from '../shared/applogger';
 
 import { LogLevelEnum, type LogLevel } from '../shared/constants';
 import { flattenError, wrapExceptionIfNeeded } from '../shared/exceptions';
+import { isDevOrTestEnv } from '~/shared/common';
 
 export class ClientLogger implements IAppLogger {
   logLevel = LogLevelEnum.warn;
@@ -69,6 +70,7 @@ export class ClientLogger implements IAppLogger {
       const errPoco = err ? flattenError(wrapExceptionIfNeeded(err)) : {};
       logData = deepmerge(wrapLogDataArg(data), logData, errPoco);
     }
+    this.logProblemsToConsoleIfNeeded(logData, err);
 
     this.sendLogData(logData);
   }
@@ -88,8 +90,21 @@ export class ClientLogger implements IAppLogger {
       const errPoco = err ? flattenError(wrapExceptionIfNeeded(err)) : {};
       logData = deepmerge(wrapLogDataArg(data), logData, errPoco);
     }
+    this.logProblemsToConsoleIfNeeded(logData, err);
 
     this.sendLogData(logData);
+  }
+
+  logProblemsToConsoleIfNeeded (logData: { level: LogLevel, msg: string }, err: any) {
+    if (isDevOrTestEnv()) {
+      if (logData.level === 'warn') {
+        console.warn(logData.msg, err);
+      } else if (logData.level === 'error') {
+        console.error(logData.msg, err);
+      } else {
+        console.info(logData.msg, err);
+      }
+    }
   }
 
   level2str (level: LogLevel) : string {

@@ -99,11 +99,11 @@ const localePath = useLocalePath();
         <table class="privacy-purpose-table">
           <tbody>
             <tr>
-              <th>{{ $t(getI18nResName3('privacyPage', 'section6', 'row1Name')) }}</th>
+              <td>{{ $t(getI18nResName3('privacyPage', 'section6', 'row1Name')) }}</td>
               <td>{{ $t(getI18nResName3('privacyPage', 'section6', 'row1Value')) }}</td>
             </tr>
             <tr>
-              <th>{{ $t(getI18nResName3('privacyPage', 'section6', 'row2Name')) }}</th>
+              <td>{{ $t(getI18nResName3('privacyPage', 'section6', 'row2Name')) }}</td>
               <td>
                 <ul class="privacy-purpose-table-listvalues">
                   <li>{{ $t(getI18nResName3('privacyPage', 'section6', 'row2Value1')) }}</li>
@@ -113,11 +113,11 @@ const localePath = useLocalePath();
               </td>
             </tr>
             <tr>
-              <th>{{ $t(getI18nResName3('privacyPage', 'section6', 'row3Name')) }}</th>
+              <td>{{ $t(getI18nResName3('privacyPage', 'section6', 'row3Name')) }}</td>
               <td>{{ $t(getI18nResName3('privacyPage', 'section6', 'row3Value')) }}</td>
             </tr>
             <tr>
-              <th>{{ $t(getI18nResName3('privacyPage', 'section6', 'row4Name')) }}</th>
+              <td>{{ $t(getI18nResName3('privacyPage', 'section6', 'row4Name')) }}</td>
               <td>
                 <ul class="privacy-purpose-table-listvalues">
                   <li>{{ $t(getI18nResName3('privacyPage', 'section6', 'row4Value1')) }}</li>

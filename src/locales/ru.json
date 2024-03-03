@@ -21,8 +21,8 @@
   },
   "notAvailableInDemo": "Недоступно в демо-версии",
   "nav": {
-    "findFlights": "Поиск авиабилетов",
-    "findStays": "Поиск отелей",
+    "findFlights": "Авиабилеты",
+    "findStays": "Отели",
     "login": "Вход",
     "signUp": "Регистрация",
     "navToggler": "переключатель доступности панели ссылок",
@@ -81,7 +81,35 @@
     "showStays": "Показать отели",
     "flightsTab": "Авиабилеты",
     "staysTab": "Отели",
-    "whereToFly": "Куда летим?"
+    "whereToFly": "Куда летим?",
+    "filters": {
+      "panelHeader": "Фильтры",
+      "price": "Цена",
+      "rating": "Рейтинг",
+      "noResultsStub": "Отсутствуют результаты поиска",
+      "checklistMoreItems": "+{count} ещё",
+      "checklistCollapseItems": "свернуть",
+      "ariaLabelRangeHandler": "кнопка задания порогового значения диапазона"
+    },
+    "displayOptions": {
+      "cheapest": "Цена",
+      "best": "Лучшие",
+      "rating": "Рейтинг",
+      "otherSelected": "Ещё: {variantLabel}",
+      "showingTotal": "Показано {count} из {total}",
+      "sortBy": "Упорядочить по {factor}"
+    },
+    "scoreClass": {
+      "veryGood": "Отлично",
+      "good": "Хорошо",
+      "medium": "Средний",
+      "low": "Низий",
+      "veryLow": "Очень низкий"
+    },
+    "reviewsCount": "отзывов | отзыв | отзыва | отзывов",
+    "startingPrice": "цена от",
+    "pagingBtn": "Показать больше вариантов",
+    "ariaLabelSearch": "начать поиск"
   },
   "searchFlights": {
     "destinationCaption": "Откуда - Куда",
@@ -103,7 +131,26 @@
     "fieldClass": "Класс",
     "ariaLabelFrom": "город отправления",
     "ariaLabelTo": "город прибытия",
-    "ariaLabelSwap": "поменять местами города прибытия и отправления"
+    "ariaLabelSwap": "поменять местами города прибытия и отправления",
+    "filters": {
+      "departureTime": "Время вылета",
+      "airlines": "Авиакомпании",
+      "trips": "Поездка",
+      "tripsDatesFlexible": "Гибкие даты",
+      "applyBtn": "Применить фильтры",
+      "resetBtn": "Сбросить"
+    },
+    "displayOptions": {
+      "timeToDeparture": "Ближайшие",
+      "quickest": "Время в пути",
+      "shortSummary": "${price} . {hours}ч {minutes}м",
+      "flights": "авиабилетов | авиабилета | авиабилетов | авиабилетов",
+      "other": "Ещё"
+    },
+    "airlineCompanyLogoAlt": "логотип авиакомпании",
+    "nonStop": "прямой рейс",
+    "flightDuration": "{hours}ч {minutes}м",
+    "viewDetails": "Подробнее"
   },
   "searchStays": {
     "destinationCaption": "Город",
@@ -115,7 +162,43 @@
     "numberOfGuests": "Гости",
     "numRooms": "комнат | комната | комнаты | комнат",
     "numGuests": "человек | человек | человека | человек",
-    "ariaLabelDestination": "город"
+    "ariaLabelDestination": "город",
+    "filters": {
+      "freebies": "Бесплатные услуги",
+      "amenities": "Инфраструктура"
+    },
+    "freebies": {
+      "breakfast": "Бесплатный завтрак",
+      "parking": "Бесплатная парковка",
+      "internet": "Бесплатный интернет",
+      "shuttle": "Бесплатный трансфер из аэропорта",
+      "cancellation": "Бесплатная отмена"
+    },
+    "amenities": {
+      "frontDesk": "24/7 стойка регистрации",
+      "airConditioner": "Кондиционер",
+      "fitness": "Фитнесс центр",
+      "indoorPool": "Крытый бассейн",
+      "outdoorPool": "Открытый бассейн",
+      "spa": "Spa и оздоровительный центр",
+      "restaraunt": "Ресторан",
+      "roomService": "Обслуживание номеров",
+      "bar": "Бар/гостиная",
+      "wifi": "Бесплатный Wi-Fi",
+      "teaCoffee": "Кофе-машина"
+    },
+    "displayOptions": {
+      "hotels": "Отели",
+      "motels": "Мотели",
+      "resorts": "Гостиницы",
+      "places": "мест | места | мест | мест",
+      "btnSubtext": "{n} мест | {n} место | {n} места | {n} мест",
+      "other": "Ещё"
+    },
+    "viewPlace": "Подробнее",
+    "hotelPhotoAlt": "главное фото отеля",
+    "stayRatingCaption": "Отель 5 звёзд",
+    "excludingTax": "б/у налогов"
   },
   "ariaLabels": {
     "btnThemeSwitcher": "переключатель цветовой схемы",
@@ -237,7 +320,10 @@
     "subtext": "Собираетесь куда-нибудь отпраздновать это время года? Планируете ли Вы домой или же посмотреть мир и узнать что-то новое, у нас есть все необходимое, чтобы доставить Вас к месту назначения.",
     "btn": "Просмотреть все",
     "travelImgAlt": "одна из фотографий города",
-    "bookBtn": "Забронировать рейс",
+    "bookBtn": {
+      "flight": "Забронировать рейс",
+      "stay": "Забронировать отель"
+    },
     "priceFrom": "От"
   },
   "accountPageCommon": {
@@ -515,5 +601,6 @@
   },
   "searchPageImageAlt": "фоновое изображение основной страницы",
   "close": "Закрыть",
-  "calendarImgAlt": "значок календаря"
+  "calendarImgAlt": "значок календаря",
+  "ariaLabelToggleSection": "свернуть/развернуть секцию"
 }

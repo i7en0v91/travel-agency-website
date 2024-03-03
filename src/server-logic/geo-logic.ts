@@ -1,16 +1,61 @@
+import { type Storage, type StorageValue } from 'unstorage';
 import { PrismaClient } from '@prisma/client';
-import { type ICityShort, type ICityData, type ICountry, type ICountryData, type IGeoLogic, type EntityId } from '../shared/interfaces';
+import { type ICityShort, type ICityData, type ICountry, type ICountryData, type IGeoLogic, type EntityId, type GeoPoint, type DistanceUnitKm } from '../shared/interfaces';
 import { type IAppLogger } from '../shared/applogger';
-import { DbConcurrencyVersions } from '../shared/constants';
+import { DbConcurrencyVersions, CurrentUserGeoLocation } from '../shared/constants';
+import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
+import { calculateDistanceKm } from './../shared/common';
 
 export class GeoLogic implements IGeoLogic {
   private logger: IAppLogger;
   private dbRepository: PrismaClient;
+  private cache: Storage<StorageValue>;
 
-  public static inject = ['logger', 'dbRepository'] as const;
-  constructor (logger: IAppLogger, dbRepository: PrismaClient) {
+  public static inject = ['cache', 'dbRepository', 'logger'] as const;
+  constructor (cache: Storage<StorageValue>, dbRepository: PrismaClient, logger: IAppLogger) {
     this.logger = logger;
     this.dbRepository = dbRepository;
+    this.cache = cache;
+  }
+
+  getAverageDistanceCacheKey = (cityId: EntityId): string => {
+    return `AvgCityDistance-${cityId}`;
+  };
+
+  async getAverageDistance (cityId: EntityId): Promise<DistanceUnitKm> {
+    this.logger.debug(`(GeoLogic) get average distance, cityId=${cityId}`);
+
+    const cacheKey = this.getAverageDistanceCacheKey(cityId);
+    let result: number | null = (await this.cache.getItem(cacheKey));
+    if (result === null) {
+      this.logger.verbose(`(GeoLogic) average distance, cache miss, cityId=${cityId}`);
+      const entity = await this.dbRepository.city.findFirst({
+        where: {
+          id: cityId,
+          isDeleted: false
+        },
+        select: {
+          id: true,
+          lon: true,
+          lat: true
+        }
+      });
+      if (!entity) {
+        this.logger.warn(`(GeoLogic) cannot calculate average distance, city not found, cityId=${cityId}`);
+        throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'city not found', 'error-stub');
+      }
+
+      const cityLocation: GeoPoint = {
+        lon: entity.lon.toNumber(),
+        lat: entity.lat.toNumber()
+      };
+      result = calculateDistanceKm(CurrentUserGeoLocation, cityLocation);
+      await this.cache.setItem(cacheKey, result);
+      this.logger.verbose(`(GeoLogic) average distance calculated, cityId=${cityId}, distance=${result.toFixed(3)}`);
+    }
+
+    this.logger.debug(`(GeoLogic) average distance, cityId=${cityId}, distance=${result.toFixed(3)}`);
+    return result;
   }
 
   async createCountry (data: ICountryData): Promise<EntityId> {
@@ -44,6 +89,7 @@ export class GeoLogic implements IGeoLogic {
         isDeleted: false,
         lat: data.geo.lat!,
         lon: data.geo.lon!,
+        utcOffsetMin: data.utcOffsetMin,
         population: data.population,
         nameStr: {
           create: data.name

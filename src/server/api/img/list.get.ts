@@ -1,7 +1,7 @@
 import { H3Event } from 'h3';
-import toPairs from 'lodash/toPairs';
+import toPairs from 'lodash-es/toPairs';
 import dayjs from 'dayjs';
-import max from 'lodash/max';
+import max from 'lodash-es/max';
 import onHeaders from 'on-headers';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import { WebApiRoutes } from '../../../shared/constants';
@@ -49,8 +49,9 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   const result: IImageDetailsDto[] = imageInfos.map((imageInfo) => {
     return {
       slug: imageInfo.slug,
-      stubCssStyle: toPairs(imageInfo.stubCssStyle).map(p => [p[0], p[1].toString()])
+      stubCssStyle: toPairs(imageInfo.stubCssStyle).map(p => [p[0], p[1].toString()]),
+      invertForDarkTheme: imageInfo.invertForDarkTheme
     };
   });
   return result;
-}, { logResponseBody: true, authorizedOnly: false });
+}, { logResponseBody: false, authorizedOnly: false });

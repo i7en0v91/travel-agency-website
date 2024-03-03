@@ -1,10 +1,11 @@
 import { type CSSProperties } from 'vue';
-import type { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from 'decimal.js';
 import { type ICitiesSearchQuery } from '../server/dto';
 import { type Locale, DefaultUserCoverSlug, DefaultUserAvatarSlug, type Theme } from './constants';
 import { type I18nResName } from './i18n';
 
 export type Price = Decimal;
+export type DistanceUnitKm = number;
 
 export type EntityId = number;
 export interface IEntity {
@@ -29,20 +30,33 @@ export interface ILocalizableValue {
   ru: string
 }
 
-// Demo-specific optimization concept, designed to reduce number of records in DB.
-// Flights/stays are generated on-the-fly in memory on request and do not exists in DB until user has performed some actions, e.g. opened details or booked.
-// When this happens, in-memory flights/stays are materialized into DB records and become specific only to particular user which performed the operation.
-// This is for simplicity of domain's logic DB representation and is not critical for demonstration purposes
-export type PrivacyScope = 'visible-to-all' | 'session-user-only';
-
 export interface IPagination {
   skip: number,
   take: number
 }
 
 export interface ISorting<TFactor> {
-  direction?: 'asc' | 'desc' | null,
+  direction: 'asc' | 'desc',
   factor?: TFactor
+}
+
+export type SearchOfferKind = 'flights' | 'stays';
+export type FlightClass = 'economy' | 'business' | 'comfort';
+export type TripType = 'oneway' | 'return';
+export interface IOffer extends IEditableEntity, ISoftDeleteEntity {
+  kind: SearchOfferKind,
+  totalPrice: Price,
+  dataHash: string,
+  isFavourite: boolean
+}
+export type MakeSearchResultEntity<TEntity extends IEditableEntity & ISoftDeleteEntity> = Omit<TEntity, keyof IEditableEntity | keyof ISoftDeleteEntity | 'dataHash'> & { id: EntityId };
+
+/**
+ * Assets provider
+ */
+export type AssetType = 'geo';
+export interface IAssetsProvider {
+  getAsset(assetType: AssetType, filename: string): Promise<Object | undefined>;
 }
 
 /**
@@ -117,12 +131,15 @@ export type CacheEntityType = keyof typeof CacheEntityTypeEnum;
 
 export interface IEntityCacheItem {
   id: EntityId,
-  slug: string,
   type: CacheEntityType,
   expireAt?: Date
 }
 
-export interface IEntityCacheCityItem extends IEntityCacheItem {
+export interface IEntityCacheSlugItem extends IEntityCacheItem {
+  slug: string,
+}
+
+export interface IEntityCacheCityItem extends IEntityCacheSlugItem {
   type: CacheEntityType,
   displayName: ILocalizableValue
 }
@@ -178,7 +195,8 @@ export interface IImageInfo extends IEntity {
   slug: string,
   category: ImageCategory,
   file: IFileInfo,
-  stubCssStyle: CSSProperties | undefined
+  stubCssStyle: CSSProperties | undefined,
+  invertForDarkTheme: boolean
 }
 
 export interface IImageCategoryInfo {
@@ -198,6 +216,7 @@ export interface IImageBytes {
 export type IImageData = IFileData & {
   slug: string,
   category: ImageCategory,
+  invertForDarkTheme: boolean | undefined,
   stubCssStyle: CSSProperties | undefined
 };
 
@@ -252,6 +271,7 @@ export interface IUserLogic {
 /**
  * Geo logic
  */
+export type GeoPoint = { lon: number, lat: number };
 export interface ICountry extends IEditableEntity, ISoftDeleteEntity {
   name: ILocalizableValue
 }
@@ -259,13 +279,11 @@ export interface ICountry extends IEditableEntity, ISoftDeleteEntity {
 export interface ICity extends IEditableEntity, ISoftDeleteEntity {
   name: ILocalizableValue,
   slug: string,
-  geo: {
-    lon: number,
-    lat: number
-  },
-  country: ICountry
+  geo: GeoPoint,
+  utcOffsetMin: number,
+  country: Pick<ICountry, 'id' | 'name'>
 }
-export type ICityShort = Omit<ICity, 'country'>;
+export type ICityShort = Omit<ICity, 'country' | 'utcOffsetMin'>;
 export type ICityData = Omit<ICity, 'country' | keyof (IEditableEntity & ISoftDeleteEntity)> & { countryId: EntityId, population: number };
 export type ICountryData = Omit<ICountry, keyof (IEditableEntity & ISoftDeleteEntity)>;
 
@@ -274,6 +292,7 @@ export interface IGeoLogic {
   getAllCities(): Promise<ICityShort[]>;
   createCountry(data: ICountryData): Promise<EntityId>;
   createCity(data: ICityData): Promise<EntityId>;
+  getAverageDistance(cityId: EntityId): Promise<DistanceUnitKm>;
 };
 
 /**
@@ -287,14 +306,12 @@ export interface ICitySearchItem {
 export interface IPopularCityItem {
   id: EntityId,
   slug: string,
+  imgSlug: string,
   visibleOnWorldMap: boolean,
   cityDisplayName: ILocalizableValue,
   countryDisplayName: ILocalizableValue,
   promoLine: ILocalizableValue,
-  geo: {
-    lon: number,
-    lat: number
-  },
+  geo: GeoPoint,
   timestamp: number
 }
 
@@ -306,7 +323,7 @@ export interface ITravelDetails {
     slug: string,
     timestamp: Timestamp
   }[],
-  modifiedUtc: Date
+  city: ICityShort
 }
 
 export interface IPopularCityData {
@@ -322,94 +339,259 @@ export interface ICitiesLogic {
   search(query: ICitiesSearchQuery): Promise<ICitySearchItem[]>;
   getPopularCities(): Promise<IPopularCityItem[]>;
   setPopularCityImages(cityId: EntityId, images: { id: EntityId, order: number }[]): Promise<void>;
-  getCity(slug: string): Promise<ICityShort>;
+  getCity(slug: string): Promise<ICity>;
   makeCityPopular(data: IPopularCityData): Promise<void>;
-  getTravelDetails(cityId: EntityId): Promise<ITravelDetails>;
+  getTravelDetails(cityId: EntityId): Promise<Omit<ITravelDetails, 'price'>>;
 };
 
-/** Airport logic */
-export type FlightClass = 'economy' | 'business' | 'comfort';
-export type TripType = 'oneway' | 'return';
-
+/** Airline company logic */
 export interface IAirlineCompany extends IEditableEntity, ISoftDeleteEntity {
   name: ILocalizableValue,
   logoImage: {
     slug: string,
     timestamp?: Timestamp
   },
+  city: Pick<ICity, 'geo'>,
   numReviews: number,
   reviewScore: number
 }
 
-export interface IAirplane extends IEditableEntity, ISoftDeleteEntity {
-  name: ILocalizableValue
+export type IAirlineCompanyData = Omit<IAirlineCompany, 'logoImage' | keyof (IEditableEntity & ISoftDeleteEntity)> & { cityId: EntityId, logoImageId: EntityId };
+export interface IAirlineCompanyLogic {
+  getNearestCompany() : Promise<IAirlineCompany>;
+  createAirlineCompany(data: IAirlineCompanyData): Promise<EntityId>;
+  getAllAirlineCompanies() : Promise<IAirlineCompany[]>;
 }
 
+/** Airplane logic */
+export type AirplaneImageKind = 'main' | 'window' | 'cabin' | 'common' | FlightClass;
+
+export interface IAirplaneImage extends IEditableEntity, ISoftDeleteEntity {
+  kind: AirplaneImageKind,
+  order: number,
+  image: {
+    slug: string,
+    timestamp: Timestamp
+  }
+};
+
+export interface IAirplane extends IEditableEntity, ISoftDeleteEntity {
+  name: ILocalizableValue,
+  images: MakeSearchResultEntity<IAirplaneImage>[]
+}
+
+export interface IAirplaneData {
+  name: ILocalizableValue,
+  images: {
+    imageId: EntityId,
+    kind: AirplaneImageKind,
+    order: number
+  }[]
+};
+export interface IAirplaneLogic {
+  getAllAirplanes(): Promise<IAirplane[]>;
+  createAirplane(data: IAirplaneData): Promise<EntityId>;
+};
+
+/** Airport logic */
 export interface IAirport extends IEditableEntity, ISoftDeleteEntity {
   name: ILocalizableValue,
-  city: ICity,
-  geo: {
-    lon: number,
-    lat: number
-  }
+  city: MakeSearchResultEntity<ICity>
+  geo: GeoPoint
 }
 
 export type IAirportShort = Omit<IAirport, 'city' | 'geo' | Exclude<keyof (IEditableEntity & ISoftDeleteEntity), 'id'>>;
 export type IAirportData = Omit<IAirport, 'city' | keyof (IEditableEntity & ISoftDeleteEntity)> & { cityId: EntityId };
 export interface IAirportLogic {
-  getAllAirports(): Promise<IAirportShort[]>;
+  getAirport(id: EntityId): Promise<IAirport>;
+  getAllAirportsShort(): Promise<IAirportShort[]>;
   createAirport(data: IAirportData): Promise<EntityId>;
+  getAirportsForSearch(citySlugs: string[], addPopular: boolean): Promise<MakeSearchResultEntity<IAirport>[]>;
 };
 
 /** Flights logic */
 export interface IFlight extends IEditableEntity, ISoftDeleteEntity {
-  airlineCompany: IAirlineCompany,
-  airplane: IAirplane,
-  departAirport: IAirport,
-  arriveAirport: IAirport,
+  airlineCompany: MakeSearchResultEntity<IAirlineCompany>,
+  airplane: MakeSearchResultEntity<IAirplane>,
+  departAirport: MakeSearchResultEntity<IAirport>,
+  arriveAirport: MakeSearchResultEntity<IAirport>,
   departTimeUtc: Date,
-  arriveTimeUtc: Date
+  arriveTimeUtc: Date,
+  dataHash: string
 }
 
-export interface IFlightOffer extends IEditableEntity, ISoftDeleteEntity {
-  departFlight: IFlight,
-  arriveFlight?: IFlight,
+export interface IFlightOffer extends IOffer {
+  departFlight: MakeSearchResultEntity<IFlight>,
+  arriveFlight?: MakeSearchResultEntity<IFlight>,
   numPassengers: number,
-  totalPrice: Price,
-  class: FlightClass,
-  privacyScope: PrivacyScope,
-  isFavourite: boolean
+  class: FlightClass
 }
 
 export interface IFlightOffersFilterParams {
-  fromCityId: EntityId,
-  toCityId: EntityId,
-  tripType: TripType,
-  numPassengers: number,
-  class: FlightClass,
-  departDate: Date,
-  returnDate?: Date,
-  departureTimeOfDay?: number, // in minutes, i.e. from 0 to 1439
+  fromCitySlug?: string,
+  toCitySlug?: string,
+  tripType?: TripType,
+  numPassengers?: number,
+  class?: FlightClass,
+  dateFrom?: Date,
+  dateTo?: Date
+  price?: {
+    from?: Price,
+    to?: Price
+  },
+  departureTimeOfDay?: { // in minutes, i.e. from 0 to 1439
+    from?: number,
+    to?: number
+  },
   airlineCompanyIds?: EntityId[],
+  ratings?: number[],
   flexibleDates?: boolean
 }
 
-export type FlightOffersSortFactor = 'Price' | 'Score' | 'Duration' | 'TimeToDeparture' | 'Rating';
+export enum FlightOffersSortFactorEnum {
+  Price,
+  Score,
+  Duration,
+  TimeToDeparture,
+  Rating
+};
+export const AvailableFlightOffersSortFactor = Object.keys(FlightOffersSortFactorEnum).map(x => x.toLowerCase());
+export type FlightOffersSortFactor = Lowercase<keyof typeof FlightOffersSortFactorEnum>;
+
+export interface ITopFlightOfferInfo {
+  factor: FlightOffersSortFactor,
+  price: Price,
+  duration: number // flight duration in minutes
+}
+
+export interface ISearchFlightOffersResultFilterParams {
+  priceRange?: {
+    from: number,
+    to: number
+  },
+  airlineCompanies?: {
+    id: EntityId,
+    name: ILocalizableValue
+  }[],
+}
 
 export interface ISearchFlightOffersResult {
-  pagedItems: IFlightOffer[],
-  totalItemsCount: number,
-  paramsNarrowing?: {
-    priceRange?: {
-      from: number,
-      to: number
-    },
-    airlineCompanyIds?: EntityId[],
-  }
+  pagedItems: MakeSearchResultEntity<IFlightOffer>[],
+  totalCount: number,
+  paramsNarrowing?: ISearchFlightOffersResultFilterParams,
+  topOffers?: ITopFlightOfferInfo[]
 }
 
 export interface IFlightsLogic {
-  searchOffers(filter: IFlightOffersFilterParams, userId: EntityId | 'guest', sorting: ISorting<FlightOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean): Promise<ISearchFlightOffersResult>;
+  getFlightPromoPrice(cityId: EntityId): Promise<Price>;
+  searchOffers(filter: IFlightOffersFilterParams, userId: EntityId | 'guest', primarySorting: ISorting<FlightOffersSortFactor>, secondarySorting: ISorting<FlightOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean, topOffersStats: boolean): Promise<ISearchFlightOffersResult>;
+  toggleFavourite(offerId: EntityId, userId: EntityId): Promise<boolean>;
+};
+
+/** Stays logic */
+export enum StayOffersSortFactorEnum {
+  Price = 'price',
+  Score = 'score',
+  Rating = 'rating'
+};
+
+export type StayServiceLevel = 'base' | 'cityView-1' | 'cityView-2' | 'cityView-3';
+export type StayDescriptionParagraphType = 'title' | 'main' | 'footer' | 'feature-caption' | 'feature-text';
+
+export const AvailableStayOffersSortFactor = Object.keys(StayOffersSortFactorEnum).map(x => x.toLowerCase());
+export type StayOffersSortFactor = Lowercase<keyof typeof StayOffersSortFactorEnum>;
+
+export interface IStayDescription extends IEditableEntity, ISoftDeleteEntity {
+  textStr: ILocalizableValue,
+  paragraphKind: StayDescriptionParagraphType,
+  order: number
+}
+export type IStayDescriptionData = Omit<IStayDescription, keyof (IEditableEntity & ISoftDeleteEntity)>;
+
+export interface IStayReview extends IEditableEntity, ISoftDeleteEntity {
+  user: {
+    id: EntityId,
+    avatar?: IImageInfo,
+    firstName?: string,
+    lastName?: string
+  },
+  text: ILocalizableValue,
+  score: number
+}
+export type IStayReviewData = Omit<IStayReview, keyof (IEditableEntity & ISoftDeleteEntity) | 'user'> & { userId: EntityId };
+
+export interface IStayImage extends IEditableEntity, ISoftDeleteEntity {
+  image: IImageInfo,
+  serviceLevel?: StayServiceLevel,
+  order: number
+}
+export type IStayImageData = Omit<IStayImage, keyof (IEditableEntity & ISoftDeleteEntity) | 'image'> & { imageId: EntityId };
+
+export interface IStay extends IEditableEntity, ISoftDeleteEntity {
+  city: MakeSearchResultEntity<ICity>,
+  slug: string,
+  geo: GeoPoint,
+  name: ILocalizableValue,
+  rating: number,
+  description: IStayDescription[],
+  reviews: IStayReview[],
+  images: IStayImage[]
+}
+export type IStayData = Omit<IStay, keyof (IEditableEntity & ISoftDeleteEntity) | 'description' | 'reviews' | 'images' | 'city'> & {
+  cityId: EntityId,
+  descriptionData: IStayDescriptionData[],
+  reviewsData: IStayReviewData[],
+  imagesData: IStayImageData[]
+};
+
+export type IStayShort = Omit<IStay, 'description' | 'reviews' | 'images'> & {
+  numReviews: number,
+  reviewScore: number,
+  photo: {
+    slug: string,
+    timestamp: Timestamp
+  }
+};
+
+export interface IStayOffer extends IOffer {
+  stay: MakeSearchResultEntity<IStayShort>,
+  checkIn: Date,
+  checkOut: Date,
+  numGuests: number,
+  numRooms: number
+}
+
+export interface IStayOffersFilterParams {
+  citySlug?: string,
+  checkIn?: Date,
+  checkOut?: Date,
+  price?: {
+    from?: Price,
+    to?: Price
+  },
+  ratings?: number[],
+  numGuests?: number,
+  numRooms?: number
+}
+
+export interface ISearchStayOffersResultFilterParams {
+  priceRange?: {
+    from: number,
+    to: number
+  }
+}
+
+export interface ISearchStayOffersResult {
+  pagedItems: MakeSearchResultEntity<IStayOffer>[],
+  totalCount: number,
+  paramsNarrowing?: ISearchStayOffersResultFilterParams
+}
+
+export interface IStaysLogic {
+  createStay(data: IStayData): Promise<EntityId>;
+  findStay(idOrSlug: EntityId | string): Promise<IStay | undefined>;
+  searchOffers(filter: IStayOffersFilterParams, userId: EntityId | 'guest', sorting: ISorting<StayOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean): Promise<ISearchStayOffersResult>;
+  toggleFavourite(offerId: EntityId, userId: EntityId): Promise<boolean>;
 };
 
 /**
@@ -503,6 +685,8 @@ export interface IEntityCache {
 }
 
 /** Components - option buttons */
+export type IOptionButtonRole = { role: 'radio'} | { role: 'tab', tabPanelId: string };
+
 export interface IOptionButtonProps {
   ctrlKey: string,
   enabled: boolean,
@@ -510,20 +694,25 @@ export interface IOptionButtonProps {
   labelResName: I18nResName,
   subtextResName?: I18nResName,
   subtextResArgs?: any,
-  shortIcon: string
+  shortIcon?: string,
+  role: IOptionButtonRole
 }
+
+export type OtherOptionButtonVariant = Omit<IOptionButtonProps, 'subtextResName' | 'subtextResArgs' | 'shortIcon'>;
 
 export interface IOtherOptionsButtonGroupProps extends Omit<IOptionButtonProps, 'isActive' | 'shortIcon' | 'labelResName'> {
   defaultResName: I18nResName,
   selectedResName: I18nResName,
-  variants: Omit<IOptionButtonProps, 'subtextResName' | 'subtextResArgs' | 'shortIcon'>[]
+  variants: OtherOptionButtonVariant[]
 }
 
 export interface IOptionButtonGroupProps {
   ctrlKey: string,
   options: IOptionButtonProps[],
   otherOptions?: IOtherOptionsButtonGroupProps,
-  activeOptionCtrl?: string
+  activeOptionCtrl?: string,
+  useAdaptiveButtonWidth?: boolean,
+  role: 'radiogroup' | 'tablist'
 }
 
 /** Components - dropdown lists */
@@ -534,14 +723,15 @@ export interface IDropdownListItemProps {
 }
 export interface IDropdownListProps {
   ctrlKey: string,
-  captionResName: I18nResName,
+  captionResName?: I18nResName,
   persistent: boolean,
   selectedValue?: DropdownListValue | undefined,
   defaultValue?: DropdownListValue | undefined,
   initiallySelectedValue?: DropdownListValue | null | undefined,
   placeholderResName?: I18nResName,
   listContainerClass?: string,
-  items: IDropdownListItemProps[]
+  items: IDropdownListItemProps[],
+  kind?: 'primary' | 'secondary'
 };
 
 /** Components - travel details */
@@ -549,7 +739,8 @@ export type TravelDetailsImageStatus = 'loading' | 'ready' | 'error';
 export interface ITravelDetailsTextingData {
   header: ILocalizableValue,
   text: ILocalizableValue,
-  price: number
+  price: number,
+  slug: string
 };
 export interface ITravelDetailsData {
   cityId: EntityId,
@@ -566,39 +757,38 @@ export interface ISearchListItem {
 };
 
 /** Components - search offers */
-export type SearchOfferKind = 'flights' | 'stays';
 
-export type FilterType = 'range' | 'choice' | 'checklist';
+// Filters
+export type FilterType = 'range' | 'checklist';
 export interface ISearchOffersFilterProps<TValue> {
   filterId: string,
   captionResName: I18nResName,
   type: FilterType,
-  currentValue?: TValue
+  currentValue?: TValue,
+  displayOrder: number
 }
 
-export interface ISearchOffersRangeFilterProps extends ISearchOffersFilterProps<number> {
+export interface ISearchOffersRangeFilterProps extends ISearchOffersFilterProps<{ min: number, max: number }> {
   type: 'range',
   valueRange: {
     min: number,
     max: number
   },
-  limitLabelFormatter: (value: number) => string
+  limitLabelFormatter: 'price' | 'daytime',
+  applyNarrowing: (min: number, max: number) => void
 }
 
 export type SearchOffersFilterVariantId = string;
 export interface ISearchOffersFilterVariant {
   id: SearchOffersFilterVariantId,
-  labelResName: I18nResName
-}
-
-export interface ISearchOffersChoiceFilterProps extends ISearchOffersFilterProps<SearchOffersFilterVariantId> {
-  type: 'choice',
-  variants: ISearchOffersFilterVariant[]
+  displayText?: I18nResName | ILocalizableValue
 }
 
 export interface ISearchOffersChecklistFilterProps extends ISearchOffersFilterProps<SearchOffersFilterVariantId[]> {
   type: 'checklist',
-  variants: ISearchOffersFilterVariant[]
+  display: 'list' | 'flow',
+  variants: ISearchOffersFilterVariant[],
+  applyNarrowing: (variants: ISearchOffersFilterVariant[]) => void
 }
 
 export interface ISearchOffersCommonParams {
@@ -606,9 +796,10 @@ export interface ISearchOffersCommonParams {
 }
 
 export interface ISearchOffersFilterParams {
-  filters: (ISearchOffersRangeFilterProps | ISearchOffersChoiceFilterProps | ISearchOffersChecklistFilterProps)[]
+  filters: (ISearchOffersRangeFilterProps | ISearchOffersChecklistFilterProps)[]
 }
 
+// Search parameters
 export interface ISearchFlightOffersMainParams {
   fromCity: ISearchListItem,
   toCity: ISearchListItem,
@@ -629,3 +820,24 @@ export interface ISearchStayOffersMainParams {
 
 export type ISearchFlightOffersParams = ISearchFlightOffersMainParams & ISearchOffersFilterParams & ISearchOffersCommonParams & { kind: 'flights' };
 export type ISearchStayOffersParams = ISearchStayOffersMainParams & ISearchOffersFilterParams & ISearchOffersCommonParams & { kind: 'stays' };
+
+// Display options
+export type FlightOffersDisplayOptionType = FlightOffersSortFactor;
+
+export interface ISearchOffersCommonDisplayOptions {
+  totalCount: number
+}
+
+export interface ISearchFlightOffersDisplayOption {
+  type: FlightOffersDisplayOptionType,
+  price?: Price,
+  duration?: number, // flights duration in minutes
+  isActive: boolean
+}
+export interface ISearchFlightOffersDisplayOptions extends ISearchOffersCommonDisplayOptions {
+  primaryOptions: ISearchFlightOffersDisplayOption[],
+  additionalSorting: FlightOffersDisplayOptionType
+}
+export interface ISearchStayOffersDisplayOptions extends ISearchOffersCommonDisplayOptions {
+  sorting: StayOffersSortFactor
+}

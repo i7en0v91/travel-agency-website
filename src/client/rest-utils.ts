@@ -1,4 +1,4 @@
-import isString from 'lodash/isString';
+import isString from 'lodash-es/isString';
 import { type HTTPMethod } from 'h3';
 import { FetchError } from 'ofetch';
 import { destr } from 'destr';

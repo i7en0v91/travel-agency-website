@@ -6,7 +6,7 @@ interface IProps {
   ctrlKey: string,
   page: 'flights' | 'stays'
 }
-defineProps<IProps>();
+const props = defineProps<IProps>();
 
 const localePath = useLocalePath();
 
@@ -17,8 +17,9 @@ const localePath = useLocalePath();
     <StaticImage
       :ctrl-key="ctrlKey"
       :asset-src="{ filename: `image-link-${$props.page}.webp`, width: 590, height: 550 }"
-      sizes="sm:40vw md:40vw lg:40vw xl:40vw xxl:40vw"
+      sizes="xs:40vw sm:40vw md:40vw lg:40vw xl:40vw"
       class="image-link-img"
+      :overlay-class="`search-${props.page}-page-link-overlay`"
       :alt-res-name="getI18nResName2('indexPage', 'imgLinkAlt')"
     />
     <div class="image-link-texting mb-xs-4">

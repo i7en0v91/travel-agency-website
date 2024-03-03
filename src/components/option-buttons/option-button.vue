@@ -11,14 +11,28 @@ function onActivate () {
   $emit('click', props.ctrlKey);
 }
 
+const htmlLabelId = useId();
+const htmlId = useId();
+
 </script>
 
 <template>
-  <li :class="`option-button tabbable ${isActive ? 'active' : ''} ${enabled ? 'enabled' : 'disabled'}`" @click="onActivate" @keyup.enter="onActivate">
-    <div class="option-button-div px-xs-2">
-      <div :class="`option-button-icon mr-xs-2 option-button-icon-${props.shortIcon}`" />
+  <div
+    :id="htmlId"
+    :class="`option-button tabbable ${isActive ? 'active' : ''} ${enabled ? 'enabled' : 'disabled'}`"
+    :role="role.role"
+    :aria-checked="role.role === 'radio' ? isActive : undefined"
+    :aria-labelledby="htmlLabelId"
+    :aria-controls="role.role === 'tab' ? (role as any).tabPanelId : undefined"
+    :aria-selected="role.role === 'tab' ? isActive : undefined"
+    @click="onActivate"
+    @keyup.enter="onActivate"
+  >
+    <div class="option-button-separator" role="separator" />
+    <div class="option-button-div px-xs-2 py-xs-2 py-s-3">
+      <div v-if="props.shortIcon" :class="`option-button-icon mr-xs-2 option-button-icon-${props.shortIcon}`" />
       <div class="option-button-text">
-        <div class="option-button-label">
+        <div :id="htmlLabelId" class="option-button-label">
           {{ $t(labelResName) }}
         </div>
         <div v-if="subtextResName" class="option-button-subtext mt-xs-2">
@@ -26,5 +40,5 @@ function onActivate () {
         </div>
       </div>
     </div>
-  </li>
+  </div>
 </template>

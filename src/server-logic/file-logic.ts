@@ -98,7 +98,7 @@ export class FileLogic implements IFileLogic {
   };
 
   updateFile = async (id: EntityId, data: Partial<IFileData>, recoverDeleted?: boolean | undefined): Promise<{ timestamp: Timestamp }> => {
-    this.logger.verbose(`(FileLogic) updaing file, id=${id}, ownerId=${data.ownerId}, fileName=${data.originalName}, mime=${data.mimeType}, length=${data.bytes?.length?.toString() ?? '[empty]'}, recover=${recoverDeleted ?? false}`);
+    this.logger.verbose(`(FileLogic) updating file, id=${id}, ownerId=${data.ownerId}, fileName=${data.originalName}, mime=${data.mimeType}, length=${data.bytes?.length?.toString() ?? '[empty]'}, recover=${recoverDeleted ?? false}`);
     recoverDeleted ??= false;
 
     const modifiedUtc = dayjs().utc().toDate();

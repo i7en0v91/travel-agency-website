@@ -1,5 +1,5 @@
 import { type ImageModifiers, type ImageCTX } from '@nuxt/image';
-import clamp from 'lodash/clamp';
+import clamp from 'lodash-es/clamp';
 import AppConfig from '../appconfig';
 import { type IAppLogger } from './applogger';
 

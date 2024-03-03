@@ -44,6 +44,8 @@ function onSubscribeClick () {
   }
 }
 
+const emailId = useId();
+
 </script>
 
 <template>
@@ -55,11 +57,12 @@ function onSubscribeClick () {
       <p class="subscribe-box-caption mt-xs-4">
         {{ t(getI18nResName2('subscribeBox', 'heading')) }}
       </p>
-      <div class="subscribe-box-text mt-xs-2">
+      <label class="subscribe-box-text mt-xs-2" :for="emailId">
         {{ t(getI18nResName2('subscribeBox', 'text')) }}
-      </div>
+      </label>
       <div class="subscribe-box-input mt-xs-3">
         <input
+          :id="emailId"
           ref="elInput"
           v-model="useremail"
           type="email"

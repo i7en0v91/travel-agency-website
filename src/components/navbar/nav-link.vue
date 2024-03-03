@@ -25,7 +25,7 @@ function getClass (): string {
 </script>
 
 <template>
-  <div class="nav-item nav-page-link mt-xs-2 mb-xs-2">
+  <div class="nav-item nav-page-link my-xs-2 py-l-2 my-l-0">
     <NuxtLink :class="getClass()" :to="localePath(to)">
       {{ $t(textResName) }}
     </NuxtLink>

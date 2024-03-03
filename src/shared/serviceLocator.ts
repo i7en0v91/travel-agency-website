@@ -1,6 +1,6 @@
 import { type IServerI18n } from '../server-logic/helpers/i18n';
 import { type IAppLogger } from './applogger';
-import { type IAirportLogic, type IMailTemplateLogic, type ISessionLogic, type IUserSession, type IUserSessionClient, type IUserSessionServer, type IUserLogic, type IImageBytesProvider, type IImageLogic, type IImageCategoryLogic, type IEmailSender, type ITokenLogic, type ICitiesLogic, type ICompanyReviewsLogic, type IEntityCache, type IEntityCacheLogic, type IGeoLogic } from './interfaces';
+import { type IAirplaneLogic, type IAirportLogic, type IStaysLogic, type IFlightsLogic, type IAirlineCompanyLogic, type IMailTemplateLogic, type ISessionLogic, type IUserSession, type IUserSessionClient, type IUserSessionServer, type IUserLogic, type IImageBytesProvider, type IImageLogic, type IImageCategoryLogic, type IEmailSender, type ITokenLogic, type ICitiesLogic, type ICompanyReviewsLogic, type IEntityCache, type IEntityCacheLogic, type IGeoLogic, type IAssetsProvider } from './interfaces';
 
 export interface ICommonServicesLocator {
   getLogger() : IAppLogger,
@@ -11,6 +11,7 @@ export interface ICommonServicesLocator {
 }
 
 export interface IServerServicesLocator extends ICommonServicesLocator {
+  getAssetsProvider(): IAssetsProvider,
   getSessionLogic(): ISessionLogic,
   getUserLogic(): IUserLogic,
   getImageBytesProvider(): IImageBytesProvider,
@@ -26,7 +27,11 @@ export interface IServerServicesLocator extends ICommonServicesLocator {
   getServerI18n(): IServerI18n,
   getEntityCacheLogic(): IEntityCacheLogic,
   getGeoLogic(): IGeoLogic,
+  getAirplaneLogic(): IAirplaneLogic,
   getAirportLogic(): IAirportLogic,
+  getFlightsLogic(): IFlightsLogic,
+  getStaysLogic(): IStaysLogic,
+  getAirlineCompanyLogic(): IAirlineCompanyLogic,
   getCitiesLogic(): ICitiesLogic,
   getCompanyReviewsLogic(): ICompanyReviewsLogic
 }

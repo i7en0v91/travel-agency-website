@@ -10,12 +10,14 @@ interface IProps {
   value: string | boolean,
   modelValue: any,
   trueValue?: any,
-  falseValue?: any
+  falseValue?: any,
+  tabbableGroupId?: string
 }
 const props = withDefaults(defineProps<IProps>(), {
   trueValue: true,
   falseValue: false,
-  labelResName: undefined
+  labelResName: undefined,
+  tabbableGroupId: undefined
 });
 
 const isChecked = computed(() => {
@@ -47,14 +49,17 @@ function onKeypress () {
   updateInput();
 }
 
+const htmlId = useId();
+
 </script>
 
 <template>
-  <div class="checkbox brdr-1" role="checkbox" @keyup.space="onKeypress" @keyup.enter="onKeypress">
+  <div :class="`checkbox brdr-1 ${tabbableGroupId ? `tabbable-group-${tabbableGroupId}` : ''}`" role="checkbox" :aria-checked="isChecked" @keyup.space="onKeypress" @keyup.enter="onKeypress">
     <div :class="`checkbox-checkmark brdr-1`" @click="onKeypress">
       <span :class="isChecked ? 'checkmark-checked' : 'checkmark-unchecked'" />
     </div>
     <input
+      :id="htmlId"
       ref="elInput"
       class="checkbox-input-val"
       type="checkbox"
@@ -62,7 +67,7 @@ function onKeypress () {
       :value="isChecked ? value : ''"
       @change="updateInput"
     >
-    <div v-if="labelResName">
+    <div v-if="labelResName" :for="htmlId">
       {{ $t(labelResName) }}
     </div>
     <div v-else>

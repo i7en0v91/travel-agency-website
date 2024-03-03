@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { Dropdown } from 'floating-vue';
-import isArray from 'lodash/isArray';
-import isString from 'lodash/isString';
-import isObject from 'lodash/isObject';
+import isArray from 'lodash-es/isArray';
+import isString from 'lodash-es/isString';
+import isObject from 'lodash-es/isObject';
 import { type I18nResName, getI18nResName2 } from './../../shared/i18n';
-import { useControlSettingsStore } from './../../stores/control-settings-store';
 import { type EntityId, type CacheEntityType, type SearchListItemType, type ISearchListItem, type ILocalizableValue, type IEntityCacheItem, type IEntityCacheCityItem } from './../../shared/interfaces';
 import { updateTabIndices } from './../../shared/dom';
 import { getLocalizeableValue } from './../../shared/common';
@@ -53,10 +52,18 @@ const logger = CommonServicesLocator.getLogger();
 const controlSettingsStore = useControlSettingsStore();
 const userNotificationStore = useUserNotificationStore();
 
+defineExpose({
+  setExclusionIds,
+  setValue,
+  getValue,
+  setInputFocus
+});
+
 const getControlValueSetting = () => controlSettingsStore.getControlValueSetting<[number, string] | undefined>(props.ctrlKey, undefined, props.persistent);
-if (props.initiallySelectedValue) {
+if (props.initiallySelectedValue && props.initiallySelectedValue.displayName) {
   const controlValueSetting = getControlValueSetting();
-  controlValueSetting.value = [props.initiallySelectedValue.id, getItemDisplayText(props.initiallySelectedValue.displayName)!];
+  const displayName = (process.client ? (await tryLookupLocalizeableDisplayNameOnClient(props.initiallySelectedValue.id)) : undefined) ?? getItemDisplayText(props.initiallySelectedValue.displayName)!;
+  controlValueSetting.value = [props.initiallySelectedValue.id, isString(displayName) ? displayName : getLocalizeableValue(displayName, locale.value as Locale)];
   selectedItemName = searchTerm.value = controlValueSetting.value![1] as string;
 } else if (props.initiallySelectedValue === null) {
   const controlValueSetting = getControlValueSetting();
@@ -127,7 +134,12 @@ function scheduleSuggestionPopup () {
 function cancelSuggestionPopup () {
   logger.debug(`(SearchListInput) hiding scheduled popup requests: ctrlKey=${props.ctrlKey}`);
   scheduledPopupShows = [];
-  dropdown.value?.hide();
+  try {
+    dropdown.value?.hide();
+  } catch (err: any) { // KB: sometimes throws error on webkit
+    const userAgent = (window?.navigator as any)?.userAgent;
+    logger.warn(`(SearchListInput) exception on hiding dropdown: ctrlKey=${props.ctrlKey}`, err, { userAgent });
+  }
   setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 }
 
@@ -193,13 +205,24 @@ async function updateClientEntityCacheIfNeeded (items: ISearchListItem[]): Promi
       item = {
         type: 'City',
         id: dto.id,
-        slug: dto.slug!
-      };
+        slug: dto.slug
+      } as IEntityCacheCityItem;
       await entityCache.set(item, AppConfig.clientCache.expirationsSeconds.default);
     } else if (import.meta.env.MODE === 'development') {
       logger.warn(`(SearchListInput) unexpected item type: ctrlKey=${props.ctrlKey}, type=${props.type}`);
     }
   }
+}
+
+async function tryLookupLocalizeableDisplayNameOnClient (id: EntityId): Promise<ILocalizableValue | undefined> {
+  if (!process.client) {
+    return undefined;
+  }
+
+  const entityCache = ClientServicesLocator.getEntityCache();
+  const entityCacheType = getCacheEntityType();
+  const cached = await entityCache.get<'City', IEntityCacheCityItem>([id], entityCacheType, false);
+  return cached ? (cached[0].displayName) : undefined;
 }
 
 async function ensureDisplayedItemCached (): Promise<void> {
@@ -227,13 +250,6 @@ async function ensureDisplayedItemCached (): Promise<void> {
     logger.warn(`(SearchListInput) exception when ensuring displayed item is cached: ctrlKey=${props.ctrlKey}, id=[${selectedItemId}]`, err);
   }
 }
-
-defineExpose({
-  setExclusionIds,
-  setValue,
-  getValue,
-  setInputFocus
-});
 
 const searchTermQueryParam = ref<string | undefined>();
 const { data, error, status, refresh } = await useFetch(props.itemSearchUrl,
@@ -408,7 +424,7 @@ onMounted(() => {
     @keyup.escape="onEscape"
   >
     <input
-      :id="`${ctrlKey}-search-list-input-anchor`"
+      :id="ctrlKey"
       ref="inputEl"
       type="text"
       class="search-list-input-el"
@@ -432,7 +448,7 @@ onMounted(() => {
       @apply-hide="onMenuHide"
     >
       <template #popper>
-        <div :class="`search-list-input-select-div ${listContainerClass}`" :data-popper-anchor="`${ctrlKey}-search-list-input-anchor`">
+        <div :class="`search-list-input-select-div ${listContainerClass}`" :data-popper-anchor="ctrlKey">
           <ClientOnly>
             <ol v-if="(data?.filter(d => !exclusionIds.includes(d.id) /*&& d.id !== selectedId*/).length ?? 0) > 0" role="select">
               <li

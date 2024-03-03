@@ -5,11 +5,13 @@
 @use 'utils' as *;
 @use 'svg';
 
-$search-flights-geo-swapbtn-size: 24px;
-$search-offers-controls-height: 57px;
-$search-offers-controls-icon-size: 21px;
-
+$search-offers-input-controls-size: 24px;
 $calendar-icon-size: 24px;
+
+$main-title-image-xs-height: 701px;
+$main-title-image-m-height: 581px;
+$flights-title-image-xs-height: 657px;
+$flights-title-image-m-height: 737px;
 
 $travel-cities-swiper-xs-height: 420px;
 $travel-cities-swiper-s-height: 420px;
@@ -26,46 +28,114 @@ $travel-details-scrollbar-highlight-percent: 110%;
   }
 }
 
+@mixin with-city-card-width() {
+  min-width: $travel-city-card-xs-width;
+  @include for-small-and-above() {
+    min-width: $travel-city-card-s-width;
+  }
+  width: min-content;
+}
+
 .search-page-head {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto;
-
-  .search-page-head-image {
-    grid-row-start: 1;
-    grid-row-end: 2;
-    grid-column-start: 1;
-    grid-column-end: 2;
-    align-self: flex-start;
-
+  .search-page-head-media {
     width: 100%;
+    height: 100%;
 
-    height: 499px;
-    margin-bottom: 453px;
-    @include for-small-and-above() {
-      margin-bottom: 423px;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  
+    .search-page-head-image {
+      grid-row-start: 1;
+      grid-row-end: 2;
+      grid-column-start: 1;
+      grid-column-end: 2;
+      align-self: flex-start;
+  
+      width: 100%;
+      
+      z-index: -1;
     }
-    @include for-extra-large-only() {
-      height: 599px;
-      margin-bottom: 233px;
+
+    @at-root {
+      .search-page-head-landing {
+        .search-page-head-image {
+          height: $main-title-image-xs-height;
+          max-height: $main-title-image-xs-height;
+          @include for-medium-and-large() {
+            height: $main-title-image-m-height;
+            max-height: $main-title-image-m-height;
+          }
+      
+          border-radius: $search-page-control-radius;
+          img {
+            height: $main-title-image-xs-height;
+            max-height: $main-title-image-xs-height;
+            @include for-medium-and-large() {
+              height: $main-title-image-m-height;
+              max-height: $main-title-image-m-height;
+            }
+      
+            border-radius: $search-page-control-radius;
+          }
+          .static-image-stub {
+            border-radius: $search-page-control-radius;
+          }
+        }
+      }
+
+      .flights-page-head {
+        
+        .search-page-head-content {
+          height: $flights-title-image-xs-height;
+          max-height: $flights-title-image-xs-height;
+          @include for-medium-and-large() {
+            height: $flights-title-image-m-height;
+            max-height: $flights-title-image-m-height;
+          }
+
+          overflow: hidden;
+      
+          grid-row-start: 1;
+          grid-row-end: 2;
+          grid-column-start: 1;
+          grid-column-end: 2;
+        }
+
+        .search-page-head-image {
+          height: $flights-title-image-xs-height;
+          max-height: $flights-title-image-xs-height;
+          @include for-medium-and-large() {
+            height: $flights-title-image-m-height;
+            max-height: $flights-title-image-m-height;
+          }
+      
+          img {
+            object-position: top;
+      
+            height: $flights-title-image-xs-height;
+            max-height: $flights-title-image-xs-height;
+            @include for-medium-and-large() {
+              height: $flights-title-image-m-height;
+              max-height: $flights-title-image-m-height;
+            }
+          }
+        }
+      }
     }
-    
-    z-index: -1;
   }
 }
 
 .search-offers {
   display: block;
-  width: 90%;
-  max-width: 1230px;
-  //height: 280px;
+  width: 95%;
+  max-width: 1700px;
+  margin-left: auto;
+  margin-right: auto;
 
-  grid-row-start: 1;
-  grid-row-end: 2;
-  grid-column-start: 1;
-  grid-column-end: 2;
-  align-self: flex-end;
-  justify-self: center;
+  transform: translateY(-10%);
+
+  z-index: 2;
 
   border-radius: $search-page-control-radius;
   @include with-theme-color('shadow') using($css-var) {
@@ -117,12 +187,10 @@ $travel-details-scrollbar-highlight-percent: 110%;
   }
 
   .search-offers-controls {
-    //width: inherit;
-
     display: flex;
     flex-wrap: nowrap;
     flex-direction: column;
-    font-size: 14px;
+    font-size: markup-to-rem(14px);
 
     gap: 16px;
     @include for-small-and-above() {
@@ -131,13 +199,6 @@ $travel-details-scrollbar-highlight-percent: 110%;
 
     @include for-extra-large-only() {
       flex-direction: row;
-    }
-  }
-
-  .field-frame  {
-    padding: 0px 10px 12px 10px;
-    @include for-small-and-above() {
-      padding: 0px 16px 14px 16px;
     }
   }
 
@@ -153,10 +214,9 @@ $travel-details-scrollbar-highlight-percent: 110%;
 
   .search-flights-params {
     .dropdown-list-field-frame {
-      height: $search-offers-controls-height;
       button {
         width: 100%;
-        margin-top: 5px;
+        height: markup-to-rem($search-offers-input-controls-size);
         text-align: left;
 
         &:focus-visible {
@@ -187,7 +247,7 @@ $travel-details-scrollbar-highlight-percent: 110%;
 
   @at-root {
     .search-offers-dropdown-list-container {
-      font-size: 14px;
+      font-size: markup-to-rem(14px);
     }
 
     .icon-increment::before {
@@ -208,11 +268,12 @@ $travel-details-scrollbar-highlight-percent: 110%;
   .search-flights-geo {
     flex: 1 6 auto;
     width: 100%;
-    height: $search-offers-controls-height;
-    //min-width: 264px;
 
     .search-flights-geo-content {
       width: 100%;
+      height: 100%;
+      vertical-align: middle;
+      align-items: center;
       display: flex;
       flex-direction: row;
       flex-wrap: nowrap;
@@ -225,7 +286,6 @@ $travel-details-scrollbar-highlight-percent: 110%;
         flex-direction: row;
         flex-wrap: nowrap;
         align-items: center;
-
         justify-content: center;
   
         gap: 6px;
@@ -250,10 +310,10 @@ $travel-details-scrollbar-highlight-percent: 110%;
         .search-flights-geo-swap {
           flex: 0 0 auto;
     
-          width: $search-flights-geo-swapbtn-size;
-          height: $search-flights-geo-swapbtn-size;
-          -webkit-mask-size: $search-flights-geo-swapbtn-size;
-          mask-size: $search-flights-geo-swapbtn-size;
+          width: markup-to-rem($search-offers-input-controls-size);
+          height: markup-to-rem($search-offers-input-controls-size);
+          -webkit-mask-size: markup-to-rem($search-offers-input-controls-size);
+          mask-size: markup-to-rem($search-offers-input-controls-size);
           -webkit-mask-repeat: no-repeat;
           mask-repeat: no-repeat;
           -webkit-mask-position: center center;
@@ -287,30 +347,29 @@ $travel-details-scrollbar-highlight-percent: 110%;
     .search-flights-trip-type {
       flex: 1 3 auto;
       width: 100%;
-      height: $search-offers-controls-height;
+
+      button {
+        height: markup-to-rem($search-offers-input-controls-size);
+      }
     }
 
     .search-flights-date-picker {
       flex: 2 2 auto;
       width: 100%;
+      button {
+        height: markup-to-rem($search-offers-input-controls-size);
+      }
     }
   }
 
   .search-flights-flightparams {
     flex: 1 7 auto;
     width: 100%;
-    height: $search-offers-controls-height;
   }
   
-  /* align input's vertically */
-  .search-flights-geo .search-flights-geo-content  {
-    margin-top: -2px;
-  }
   .search-flights-flightparams button {
-    margin-top: 3px;
-  }
-  .search-flights-date-picker .date-picker-field-btn, .search-flights-triparams .dropdown-list-btn {
-    margin-top: 4px;
+    height: markup-to-rem($search-offers-input-controls-size);
+    align-self: center;
   }
 }
 
@@ -318,8 +377,7 @@ $travel-details-scrollbar-highlight-percent: 110%;
   width: 100%;
 
   .search-stays-destination-frame {
-    height: $search-offers-controls-height;
-    flex: 2 1 auto;
+    flex: 4 4 auto;
     width: 100%;
 
     .search-stays-destination-div {
@@ -328,7 +386,6 @@ $travel-details-scrollbar-highlight-percent: 110%;
       flex-wrap: nowrap;
       align-items: center;
 
-      margin-top: 2px;
   
       .search-stays-destination {
         width: 100%;
@@ -340,12 +397,12 @@ $travel-details-scrollbar-highlight-percent: 110%;
       }
   
       .search-stays-destination-icon {
-        width: $search-offers-controls-icon-size;
-        height: $search-offers-controls-icon-size;
-        min-width: $search-offers-controls-icon-size;
-        min-height: $search-offers-controls-icon-size;
-        -webkit-mask-size: $search-offers-controls-icon-size;
-        mask-size: $search-offers-controls-icon-size;
+        width: markup-to-rem($search-offers-input-controls-size);
+        height: markup-to-rem($search-offers-input-controls-size);
+        min-width: markup-to-rem($search-offers-input-controls-size);
+        min-height: markup-to-rem($search-offers-input-controls-size);
+        -webkit-mask-size: markup-to-rem($search-offers-input-controls-size);
+        mask-size: markup-to-rem($search-offers-input-controls-size);
         -webkit-mask-repeat: no-repeat;
         mask-repeat: no-repeat;
         -webkit-mask-position: center center;
@@ -363,7 +420,7 @@ $travel-details-scrollbar-highlight-percent: 110%;
   }
 
   .search-stays-dates {
-    flex: 2 1 auto;
+    flex: 5 3 auto;
     width: 100%;
     display: flex;
     flex-wrap: nowrap;
@@ -380,26 +437,23 @@ $travel-details-scrollbar-highlight-percent: 110%;
 
     .search-stays-checkin {
       width: 100%;
-      height: $search-offers-controls-height;
     }
 
     .search-stays-checkout {
       width: 100%;
-      height: $search-offers-controls-height;
     }
   }
 
   .search-stays-bookparams {
     width: 100%;
-    flex: 1 1 auto;
+    flex: 2 4 auto;
 
     .search-stays-bookparams-frame {
-      height: $search-offers-controls-height;
-  
+ 
       .search-stays-bookparams-btn {
         width: 100%;
         text-align: left;
-        margin-top: 5px;
+        height: markup-to-rem($search-offers-input-controls-size);
     
         @include with-theme-color('input-ctrl-primary') using($css-var) {
           color: var($css-var);
@@ -416,7 +470,7 @@ $travel-details-scrollbar-highlight-percent: 110%;
     .search-stays-bookparams-content {
       width: 100%;
       height: auto;
-      font-size: 14px;
+      font-size: markup-to-rem(14px);
 
       .search-offers-counter {
         width: 100%;
@@ -428,12 +482,6 @@ $travel-details-scrollbar-highlight-percent: 110%;
       }
     }
   }
-
-  /* align input's vertically */
-  .search-stays-checkout .date-picker-field-frame .date-picker-field-div .date-picker-field-btn, 
-  .search-stays-checkin .date-picker-field-frame .date-picker-field-div .date-picker-field-btn {
-    margin-top: 2px;
-  }
 }
 
 .search-offers-buttons {
@@ -444,7 +492,7 @@ $travel-details-scrollbar-highlight-percent: 110%;
   justify-content: right;
   align-items: center;
 
-  font-size: 14px;
+  font-size: markup-to-rem(14px);
 
   @include for-small-and-above() {
     flex-direction: row;
@@ -474,8 +522,6 @@ $travel-details-scrollbar-highlight-percent: 110%;
 }
 
 .date-picker-field-frame {
-  height: $search-offers-controls-height;
-
   .date-picker-field-div {
     width: 100%;
     height: 100%;
@@ -483,16 +529,15 @@ $travel-details-scrollbar-highlight-percent: 110%;
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: center;
-    margin-top: -6px;
   }
 
   .date-picker-field-icon {
-    width: $calendar-icon-size;
-    height: $calendar-icon-size;
-    min-width: $calendar-icon-size;
-    min-height: $calendar-icon-size;
-    -webkit-mask-size: $calendar-icon-size;
-    mask-size: $calendar-icon-size;
+    width: markup-to-rem($calendar-icon-size);
+    height: markup-to-rem($calendar-icon-size);
+    min-width: markup-to-rem($calendar-icon-size);
+    min-height: markup-to-rem($calendar-icon-size);
+    -webkit-mask-size: markup-to-rem($calendar-icon-size);
+    mask-size: markup-to-rem($calendar-icon-size);
     -webkit-mask-repeat: no-repeat;
     mask-repeat: no-repeat;
     -webkit-mask-position: center center;
@@ -507,8 +552,9 @@ $travel-details-scrollbar-highlight-percent: 110%;
 
   .date-picker-field-btn {
     width: 100%;
+    height: auto;
+    align-self: center;
     text-align: left;
-    margin-top: 5px;
 
     @include with-theme-color('input-ctrl-primary') using ($css-var) {
       color: var(#{$css-var});
@@ -516,17 +562,6 @@ $travel-details-scrollbar-highlight-percent: 110%;
 
     &:focus-visible {
       @include with-outline();
-    }
-  }
-
-  .date-picker-field-div {
-    .date-picker-field-btn {
-      margin-top: 0px;
-      margin-bottom: 5px;
-    }
-
-    .date-picker-field-icon {
-      margin-bottom: 5px;
     }
   }
   
@@ -552,8 +587,8 @@ $travel-details-scrollbar-highlight-percent: 110%;
     align-items: center;
 
     .search-offers-counter-btn {
-      width: $search-offers-controls-icon-size + 2;
-      height: $search-offers-controls-icon-size + 2;
+      width: calc(markup-to-rem($search-offers-input-controls-size) + 2px);
+      height: calc(markup-to-rem($search-offers-input-controls-size) + 2px);
     }
     
     .search-offers-counter-value {
@@ -630,34 +665,17 @@ $travel-details-scrollbar-highlight-percent: 110%;
   height: 100px;
 }
 
-.travel-cities-swiper {
-  width: 100%;
-  height: auto;
-
-  min-height: $travel-cities-swiper-xs-height;
-  @include for-small-and-above() {
-    min-height: $travel-cities-swiper-s-height;
-  }
-}
-
 .travel-city-card {
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: 1fr;
 
-  width: $travel-city-card-xs-width;
-  max-width: $travel-city-card-xs-width;
+  @include with-city-card-width();
   min-height: $travel-cities-swiper-xs-height;
   @include for-small-and-above() {
-    width: $travel-city-card-s-width;
-    max-width: $travel-city-card-xs-width;
     min-height: $travel-cities-swiper-s-height;
   }
   border-radius: 20px;
-
-  @include for-small-and-above() {
-    width: $travel-city-card-s-width;
-  }
 
   .travel-city-card-dim {
     grid-column-start: 1;
@@ -665,7 +683,8 @@ $travel-details-scrollbar-highlight-percent: 110%;
     grid-row-start: 1;
     grid-row-end: 2;
     background-image: linear-gradient(0deg, #000000AA 0%, #000000AA 20%, #00000055 25%, transparent 65%, transparent 100%);
-    width: 100%;
+
+    width: auto;
     height: 100%;
     z-index: 2;
   }
@@ -676,7 +695,7 @@ $travel-details-scrollbar-highlight-percent: 110%;
     grid-row-start: 1;
     grid-row-end: 2;
 
-    width: 100%;
+    @include with-city-card-width();
     height: auto;
 
     z-index: 3;
@@ -688,13 +707,13 @@ $travel-details-scrollbar-highlight-percent: 110%;
 
       display: flex;
       flex-direction: row;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
       align-items: flex-end;
       gap: 8px;
       
       .travel-city-card-place-info {
         flex: 1 1 auto;
-        width: 100%;
+        width: min-content;
         height: auto;
         
         h4 {
@@ -715,7 +734,7 @@ $travel-details-scrollbar-highlight-percent: 110%;
     }
 
     a.btn {
-      width: 100%;
+      width: auto;
       display: block;
       text-align: center;
 
@@ -734,7 +753,8 @@ $travel-details-scrollbar-highlight-percent: 110%;
 
     z-index: 1;
 
-    width: 100%;
+    @include with-city-card-width();
+    width: auto;
     height: 100%;
     .static-image-stub {
       border-radius: map.get($borders-radius, '3');
@@ -742,6 +762,16 @@ $travel-details-scrollbar-highlight-percent: 110%;
     img {
       border-radius: map.get($borders-radius, '3');
     }
+  }
+}
+
+.travel-cities-swiper {
+  width: 100%;
+  height: auto;
+
+  min-height: $travel-cities-swiper-xs-height;
+  @include for-small-and-above() {
+    min-height: $travel-cities-swiper-s-height;
   }
 }
 
@@ -763,7 +793,7 @@ $travel-details-scrollbar-highlight-percent: 110%;
   }
   @include for-extra-large-only() {
     grid-template-columns: 8fr 7fr 7fr;
-    grid-template-rows: auto auto;
+    grid-template-rows: repeat(2, auto);
   }
 
   .travel-details-frame-container {
@@ -785,22 +815,13 @@ $travel-details-scrollbar-highlight-percent: 110%;
       
       &.initialized {
         z-index: 2;
-        opacity: 0;
   
         &.loaded:not(.fadein) {
           z-index: 3;
-          opacity: 1;
-
-          &.travel-details-texting-frame {
-            opacity: 0;
-            animation: travel-details-texting-frame-fadeout $transition-default-interval linear;
-          }
         }
   
         &.fadein {
           z-index: 4;
-          opacity: 1;
-          animation: travel-details-frame-fadein $transition-default-interval linear;
         }
       }
   
@@ -848,24 +869,20 @@ $travel-details-scrollbar-highlight-percent: 110%;
     }
 
     /* custom scrollbar theme */
-    .ps {
-      .ps__rail-y, .ps__rail-x {     
-        .ps__thumb-y, .ps__thumb-x {
-          filter: brightness($travel-details-scrollbar-highlight-percent);
-          @include with-theme-color('control-bg') using ($css-var) {
-            background-color: var($css-var);
-          }
-        }
-        
-        &:hover, &.ps--clicking {
+    @include with-theme-color('control-bg-scrollbar') using ($css-var) { 
+      .ps {
+        .ps__rail-y, .ps__rail-x {     
           .ps__thumb-y, .ps__thumb-x {
-            filter: brightness($travel-details-scrollbar-highlight-percent);
-            @include with-theme-color('control-bg') using ($css-var) {
-              background-color: var($css-var);
+            background-color: var(#{$css-var}); 
+          }
+          
+          &:hover, &.ps--clicking {
+            .ps__thumb-y, .ps__thumb-x {
+              background-color: var(#{$css-var});
             }
           }
-        }
-      }  
+        }  
+      }
     }
     
     .text-data-loading {
@@ -878,15 +895,15 @@ $travel-details-scrollbar-highlight-percent: 110%;
       gap: 12px;
 
       width: 100%;
-      height: 506px;
+      height: markup-to-rem(506px);
       @include for-small-and-above() {
-        height: 386px;
+        height: markup-to-rem(506px);
       }
       @include for-travel-details-medium() {
         height: 100%;
       }
       @include for-medium-and-large() {
-        height: 326px;
+        height: markup-to-rem(326px);
       }
       @include for-extra-large-only() {
         height: 100%;
@@ -897,7 +914,8 @@ $travel-details-scrollbar-highlight-percent: 110%;
       }
 
       .travel-details-texting-header {
-        flex: 0 1 auto;
+        flex: 1 0 auto;
+        height: min-content;
         
         .travel-details-texting-title {
           width: 100%;
@@ -911,8 +929,9 @@ $travel-details-scrollbar-highlight-percent: 110%;
   
         .travel-details-texting-price {
           // fixed size for smooth fading
-          width: 76px;
-          height: 68px;
+          min-width: 90px;
+          height: 3rem;
+          box-sizing: content-box;
   
           display: inline;
           float: right;
@@ -941,7 +960,7 @@ $travel-details-scrollbar-highlight-percent: 110%;
           .travel-details-price-value {
             display: block;
             font-weight: map.get($weights-map, 'semi-bold');
-            font-size: 20px;
+            font-size: markup-to-rem(20px);
           }
         }
 
@@ -950,10 +969,10 @@ $travel-details-scrollbar-highlight-percent: 110%;
 
       .travel-details-texting-paragraph {
         width: 100%;
-        height: 100%;
+        display: block;
+        height: min-content;
 
-        flex: 1 1 auto;
-        overflow: auto;
+        flex: 1000 1 10px;
 
         grid-row-start: 2;
         grid-row-end: 3;
@@ -975,8 +994,8 @@ $travel-details-scrollbar-highlight-percent: 110%;
         @include with-body-font('body-secondary');
 
         p {
+          display: block;
           width: 100%;
-          height: 100%;
         }
       }
 
@@ -986,6 +1005,8 @@ $travel-details-scrollbar-highlight-percent: 110%;
         display: block;
         text-align: center;
         margin-top: auto;
+
+        flex: 1 0 auto;
 
         grid-row-start: 3;
         grid-row-end: 4;
@@ -1110,25 +1131,5 @@ $travel-details-scrollbar-highlight-percent: 110%;
         border-radius: $travel-details-image-border-radius;
       }
     }
-  }
-}
-
-@keyframes travel-details-frame-fadein {
-  0% { 
-    opacity: 0;
-  }
-
-  100% { 
-    opacity: 1;
-  }
-}
-
-@keyframes travel-details-texting-frame-fadeout {
-  0% { 
-    opacity: 1;
-  }
-
-  100% { 
-    opacity: 0;
   }
 }

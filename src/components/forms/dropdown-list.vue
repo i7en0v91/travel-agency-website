@@ -11,7 +11,8 @@ const props = withDefaults(defineProps<IDropdownListProps>(), {
   defaultValue: undefined,
   placeholderResName: undefined,
   initiallySelectedValue: undefined,
-  listContainerClass: ''
+  listContainerClass: '',
+  kind: 'primary'
 });
 
 const elBtn = ref<HTMLElement>();
@@ -80,6 +81,9 @@ onMounted(() => {
   if (controlValueSetting.value || (props.initiallySelectedValue !== undefined)) {
     $emit('update:selectedValue', controlValueSetting.value);
   }
+  watch(() => props.selectedValue, () => {
+    updateSelectedValue(props.selectedValue);
+  });
 });
 
 </script>
@@ -91,10 +95,11 @@ onMounted(() => {
       ref="dropdown"
       :distance="-6"
       :hide-triggers="(triggers: any) => [...triggers, 'click']"
-      placement="bottom"
+      placement="bottom-end"
+      :prevent-overflow="kind === 'primary' ? true : false"
       :flip="false"
       :boundary="elBtn"
-      theme="control-dropdown"
+      :theme="kind === 'primary' ? 'control-dropdown' : 'secondary-dropdown'"
       no-auto-focus
       @apply-show="onMenuShown"
       @apply-hide="onMenuHide"
@@ -107,7 +112,7 @@ onMounted(() => {
           type="button"
           @keyup.escape="hideDropdown"
         >
-          {{ hasMounted ? (selectedItemResName ? $t(selectedItemResName) : (placeholderResName ? $t(placeholderResName) : '')) : '' }}
+          {{ (hasMounted || !persistent) ? (selectedItemResName ? $t(selectedItemResName) : (placeholderResName ? $t(placeholderResName) : '')) : '' }}
         </button>
       </FieldFrame>
       <template #popper>

@@ -1,6 +1,6 @@
 import { Readable } from 'stream';
 import { H3Event } from 'h3';
-import isString from 'lodash/isString';
+import isString from 'lodash-es/isString';
 import onHeaders from 'on-headers';
 import { defineWebApiEventHandler } from '../utils/webapi-event-handler';
 import { WebApiRoutes } from '../../shared/constants';

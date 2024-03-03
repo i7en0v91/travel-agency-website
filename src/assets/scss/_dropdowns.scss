@@ -84,3 +84,27 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
     }
   }
 }
+
+.v-popper.v-popper--theme-secondary-dropdown {
+  width: 100%;
+  height: 100%;
+
+  .dropdown-list-field-frame {
+    border: none;
+    padding-left: map.get($map: $spacings, $key: '2');
+
+    .dropdown-list-btn {
+      width: max-content;
+      font-weight: map.get($weights-map, 'semi-bold');
+      line-height: normal;
+      display: inline;
+
+      &::after {
+        display: inline-block;
+        margin-left: markup-to-rem(4px);
+        vertical-align: middle;
+        float: none;
+      }
+    }
+  }
+}

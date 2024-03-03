@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { updateTabIndices } from './../../shared/dom';
+import { updateTabIndices, isPrefersReducedMotionEnabled } from './../../shared/dom';
 import { type NavBarMode } from './../../shared/interfaces';
 import { getI18nResName2 } from './../../shared/i18n';
 import NavLink from './nav-link.vue';
@@ -22,10 +22,14 @@ const props = defineProps<IProps>();
 const collapsed = ref(true);
 const toggling = ref(false);
 
+function isAnimated (): boolean {
+  return !isPrefersReducedMotionEnabled();
+}
+
 function togglePageLinksMenu () {
   if (!toggling.value) {
     collapsed.value = !collapsed.value;
-    toggling.value = true;
+    toggling.value = isAnimated() && true;
   }
 }
 
@@ -36,7 +40,7 @@ function onPageLinksToggled () {
 
 function onLocaleChanged () {
   if (!toggling.value && !collapsed.value) {
-    toggling.value = true;
+    toggling.value = isAnimated() && true;
     setTimeout(() => {
       collapsed.value = true;
     }, 0);

@@ -1,8 +1,9 @@
 import { PrismaClient } from '@prisma/client';
-import isString from 'lodash/isString';
+import isString from 'lodash-es/isString';
 import { type IEntityCacheItem, type IEntityCacheLogic, type CacheEntityType, type IEntityCacheCityItem, type EntityId } from '../shared/interfaces';
 import { type IAppLogger } from '../shared/applogger';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
+import { mapLocalizeableValues } from '~/shared/common';
 
 export class EntityCacheLogic implements IEntityCacheLogic {
   private logger: IAppLogger;
@@ -31,6 +32,11 @@ export class EntityCacheLogic implements IEntityCacheLogic {
         },
         select: {
           nameStr: true,
+          country: {
+            select: {
+              nameStr: true
+            }
+          },
           id: true,
           slug: true
         }
@@ -45,7 +51,7 @@ export class EntityCacheLogic implements IEntityCacheLogic {
           type,
           id: entity.id,
           slug: entity.slug,
-          displayName: entity.nameStr
+          displayName: mapLocalizeableValues((cityName: string, countryName: string) => { return `${cityName}, ${countryName}`; }, entity.nameStr, entity.country.nameStr)
         };
       });
     } else {

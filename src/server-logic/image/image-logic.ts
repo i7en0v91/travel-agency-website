@@ -1,5 +1,5 @@
 import { Prisma, PrismaClient } from '@prisma/client';
-import isString from 'lodash/isString';
+import isString from 'lodash-es/isString';
 import Mime from 'mime';
 import { type IAppLogger } from '../../shared/applogger';
 import { type IImageBytes, type EntityId, ImageCategory, type IImageInfo, type IImageLogic, type ImageCheckAccessResult, ImageAuthRequiredCategories, ImagePublicSlugs, type IImageData, type IFileLogic, type Timestamp, type IImageCategoryLogic } from '../../shared/interfaces';
@@ -43,6 +43,7 @@ export class ImageLogic implements IImageLogic {
           slug: data.slug,
           categoryId,
           stubCssStyle: data.stubCssStyle ? JSON.stringify(data.stubCssStyle) : undefined,
+          invertForDarkTheme: data.invertForDarkTheme ?? false,
           fileId: fileCreationResult.id
         },
         select: {
@@ -63,7 +64,7 @@ export class ImageLogic implements IImageLogic {
    * @param imageFileId Optional, if provided, used for optimization to skip additional DB request for obtaining image file ID
    */
   async updateImage (imageId: EntityId, data: Partial<IImageData>, imageFileId?: EntityId): Promise<{ timestamp: Timestamp }> {
-    this.logger.verbose(`(ImageLogic) updaing image, imageId=${imageId}, slug=${data.slug}, category=${data.category}, ownerId=${data.ownerId}, imageFileId=${imageFileId}, fileName=${data.originalName}, length=${data.bytes?.length?.toString() ?? '[empty]'}`);
+    this.logger.verbose(`(ImageLogic) updating image, imageId=${imageId}, slug=${data.slug}, category=${data.category}, ownerId=${data.ownerId}, imageFileId=${imageFileId}, fileName=${data.originalName}, length=${data.bytes?.length?.toString() ?? '[empty]'}`);
 
     if (!imageFileId) {
       const fileInfo = await this.dbRepository.image.findFirst({
@@ -102,7 +103,8 @@ export class ImageLogic implements IImageLogic {
         data: {
           slug: data.slug,
           categoryId,
-          stubCssStyle: undefined
+          stubCssStyle: undefined,
+          ...(data.invertForDarkTheme !== undefined ? { invertForDarkTheme: data.invertForDarkTheme } : {})
         }
       });
     });

@@ -1,5 +1,5 @@
-import assign from 'lodash/assign';
-import keys from 'lodash/keys';
+import assign from 'lodash-es/assign';
+import keys from 'lodash-es/keys';
 import { WebApiRoutes } from '../shared/constants';
 import { useFetchEx } from '../shared/fetch-ex';
 import { type IImageEntitySrc, type EntityId } from '../shared/interfaces';

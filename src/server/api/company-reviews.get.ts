@@ -35,4 +35,4 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     };
     return mapped;
   });
-}, { logResponseBody: true, authorizedOnly: false });
+}, { logResponseBody: false, authorizedOnly: false });

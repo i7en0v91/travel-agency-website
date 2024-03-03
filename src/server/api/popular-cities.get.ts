@@ -6,6 +6,7 @@ import { type IPopularCityDto } from './../dto';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const citiesLogic = ServerServicesLocator.getCitiesLogic();
+  const flightsLogic = ServerServicesLocator.getFlightsLogic();
 
   if (process.env.NODE_ENV !== 'development') {
     handleCacheHeaders(event, {
@@ -18,11 +19,15 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   });
 
   const popularCityItems = await citiesLogic.getPopularCities();
-  return popularCityItems.map((item) => {
-    const mapped: IPopularCityDto = {
-      promoPrice: 350, // TODO: implement some pricing logic
+  const result: IPopularCityDto[] = [];
+  for (let i = 0; i < popularCityItems.length; i++) {
+    const item = popularCityItems[i];
+    const promoPrice = await flightsLogic.getFlightPromoPrice(item.id);
+    result.push({
+      promoPrice: promoPrice.toNumber(),
       ...item
-    };
-    return mapped;
-  });
+    });
+  }
+
+  return result;
 }, { logResponseBody: false, authorizedOnly: false });

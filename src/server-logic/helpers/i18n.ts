@@ -1,11 +1,11 @@
 import { readFileSync } from 'fs';
-import get from 'lodash/get';
+import get from 'lodash-es/get';
 import { join, resolve } from 'pathe';
-import flatten from 'lodash/flatten';
-import toPairs from 'lodash/toPairs';
-import isObject from 'lodash/isObject';
-import difference from 'lodash/difference';
-import uniq from 'lodash/uniq';
+import flatten from 'lodash-es/flatten';
+import toPairs from 'lodash-es/toPairs';
+import isObject from 'lodash-es/isObject';
+import difference from 'lodash-es/difference';
+import uniq from 'lodash-es/uniq';
 import { destr } from 'destr';
 import { AvailableLocaleCodes, type Locale } from '../../shared/constants';
 import { type I18nResName } from '../../shared/i18n';

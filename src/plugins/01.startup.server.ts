@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync } from 'fs';
 import { access } from 'fs/promises';
 import { Scope, createInjector } from 'typed-inject';
-import once from 'lodash/once';
+import once from 'lodash-es/once';
 import { createStorage, type Storage, type StorageValue } from 'unstorage';
 import { resolve, join } from 'pathe';
 import { SessionLogic } from '../server-logic/session/session-logic';
@@ -19,12 +19,17 @@ import { EmailSender } from '../server-logic/email-sender';
 import { TokenLogic } from '../server-logic/token-logic';
 import { ServerI18n } from '../server-logic/helpers/i18n';
 import { CitiesLogic } from '../server-logic/cities-logic';
+import { FlightsLogic } from '../server-logic/flights-logic';
+import { StaysLogic } from '../server-logic/stays-logic';
 import { CompanyReviewLogic } from '../server-logic/company-review-logic';
 import { EntityCacheLogic } from '../server-logic/entity-cache-logic';
 import { ImageCategoryLogic } from '../server-logic/image/image-category-logic';
 import { MailTemplateLogic } from '../server-logic/mail-template-logic';
 import { GeoLogic } from '../server-logic/geo-logic';
 import { AirportLogic } from '../server-logic/airport-logic';
+import { AssetsProvider } from '../server-logic/assets-provider';
+import { AirlineCompanyLogic } from './../server-logic/airline-company-logic';
+import { AirplaneLogic } from './../server-logic/airplane-logic';
 import { createPrismaClient } from './../prisma/client';
 import installLoggingHooks from './common/errors-hooks';
 import { isQuickStartEnv } from './../shared/common';
@@ -43,6 +48,21 @@ function ensureImageCacheDir (logger: IAppLogger): string {
   }
   logger.verbose('image cache directory ensured');
   return cacheDir;
+}
+
+async function getPublicAssetsStorage (logger: IAppLogger): Promise<Storage<StorageValue>> {
+  const result = (globalThis as any).$publicAssetsStorage as Storage<StorageValue>;
+  if (!result) {
+    logger.error('public assets storage is not available');
+    throw new Error('public assets storage is not available');
+  }
+
+  if (!(await result.getItem('geo/world-map.json'))) {
+    logger.error('public assets storage is miconfigured');
+    throw new Error('public assets storage is miconfigured');
+  }
+
+  return result;
 }
 
 async function buildServiceLocator (logger: IAppLogger) : Promise<IServerServicesLocator> {
@@ -71,12 +91,16 @@ async function buildServiceLocator (logger: IAppLogger) : Promise<IServerService
     dbUrlOverwrite = `file:${dbUrlOverwrite}`;
   }
 
+  const publicAssetsStorage = await getPublicAssetsStorage(logger);
+
   const injector = createInjector();
   const provider = injector
     .provideClass('logger', ServerLogger, Scope.Singleton)
     .provideValue('dbRepository', createPrismaClient(logger, dbUrlOverwrite))
     .provideValue('cache', createCache())
+    .provideValue('publicAssetsStorage', publicAssetsStorage)
     .provideValue('imageCacheDir', ensureImageCacheDir(logger))
+    .provideClass('assetsProvider', AssetsProvider, Scope.Singleton)
     .provideClass('sessionLogic', SessionLogic, Scope.Singleton)
     .provideClass('userSession', UserSessionOnServer, Scope.Singleton)
     .provideClass('fileLogic', FileLogic, Scope.Singleton)
@@ -89,13 +113,18 @@ async function buildServiceLocator (logger: IAppLogger) : Promise<IServerService
     .provideClass('serverI18n', ServerI18n, Scope.Singleton)
     .provideClass('userLogic', UserLogic, Scope.Singleton)
     .provideClass('geoLogic', GeoLogic, Scope.Singleton)
-    .provideClass('airportLogic', AirportLogic, Scope.Singleton)
+    .provideClass('airlineCompanyLogic', AirlineCompanyLogic, Scope.Singleton)
+    .provideClass('airplaneLogic', AirplaneLogic, Scope.Singleton)
     .provideClass('citiesLogic', CitiesLogic, Scope.Singleton)
+    .provideClass('airportLogic', AirportLogic, Scope.Singleton)
+    .provideClass('flightsLogic', FlightsLogic, Scope.Singleton)
+    .provideClass('staysLogic', StaysLogic, Scope.Singleton)
     .provideClass('companyReviewsLogic', CompanyReviewLogic, Scope.Singleton)
     .provideClass('entityCacheLogic', EntityCacheLogic, Scope.Singleton);
 
   return {
     getLogger: () => provider.resolve('logger'),
+    getAssetsProvider: () => provider.resolve('assetsProvider'),
     getSessionLogic: () => provider.resolve('sessionLogic'),
     getUserSession: () => provider.resolve('userSession'),
     getUserLogic: () => provider.resolve('userLogic'),
@@ -107,7 +136,11 @@ async function buildServiceLocator (logger: IAppLogger) : Promise<IServerService
     getTokenLogic: () => provider.resolve('tokenLogic'),
     getServerI18n: () => provider.resolve('serverI18n'),
     getGeoLogic: () => provider.resolve('geoLogic'),
+    getAirplaneLogic: () => provider.resolve('airplaneLogic'),
     getAirportLogic: () => provider.resolve('airportLogic'),
+    getFlightsLogic: () => provider.resolve('flightsLogic'),
+    getStaysLogic: () => provider.resolve('staysLogic'),
+    getAirlineCompanyLogic: () => provider.resolve('airlineCompanyLogic'),
     getCitiesLogic: () => provider.resolve('citiesLogic'),
     getEntityCacheLogic: () => provider.resolve('entityCacheLogic'),
     getCompanyReviewsLogic: () => provider.resolve('companyReviewsLogic')
@@ -136,7 +169,7 @@ const initApp = once(async () => {
 export default defineNuxtPlugin({
   async setup (/* nuxtApp */) {
     await initApp();
-    await initializeSession(useRequestEvent());
+    await initializeSession(useRequestEvent()!);
   },
   hooks: {
     'app:created' () {

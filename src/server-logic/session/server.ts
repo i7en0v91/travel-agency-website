@@ -1,8 +1,8 @@
 import { getCookie, setCookie, H3Event } from 'h3';
 import { type CookieSerializeOptions } from 'cookie-es';
 import dayjs from 'dayjs';
-import remove from 'lodash/remove';
-import keys from 'lodash/keys';
+import remove from 'lodash-es/remove';
+import keys from 'lodash-es/keys';
 import { CookieNames, type Locale, DbConcurrencyVersions, NuxtDataKeys, WebApiRoutes } from '../../shared/constants';
 import { getNewSessionValues } from '../../shared/session';
 import { executeWithConcurrentUpdateRetries } from '../helpers/db';

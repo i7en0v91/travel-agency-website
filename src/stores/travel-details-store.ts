@@ -1,12 +1,14 @@
-import shuffle from 'lodash/shuffle';
-import once from 'lodash/once';
-import type { AsyncDataRequestStatus } from 'nuxt/dist/app/composables/asyncData';
+import shuffle from 'lodash-es/shuffle';
+import once from 'lodash-es/once';
+import { withQuery, encodeHash, stringifyParsedURL, type ParsedURL } from 'ufo';
+import type { AsyncDataRequestStatus } from '#app/composables/asyncData';
 import { type IPopularCityDto, type ITravelDetailsDto } from '../server/dto';
-import { WebApiRoutes } from '../shared/constants';
-import { type EntityId, type ITravelDetailsData } from '../shared/interfaces';
+import { TravelDetailsHtmlAnchor, WebApiRoutes, UserNotificationLevel } from '../shared/constants';
+import { type EntityId, type IEntityCacheCityItem, type ITravelDetailsData } from '../shared/interfaces';
 import { useFetchEx, type SSRAwareFetchResult } from '../shared/fetch-ex';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
 import AppConfig from './../appconfig';
+import { getI18nResName2 } from './../shared/i18n';
 
 interface ITravelDetailsStoreState {
   current?: ITravelDetailsData | undefined,
@@ -41,6 +43,53 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
   const logger = CommonServicesLocator.getLogger();
   logger.info('(travel-details-store) start store construction');
   const nuxtApp = useNuxtApp();
+
+  const userNotificationStore = useUserNotificationStore();
+  const localePath = useLocalePath();
+  const router = useRouter();
+
+  async function getCityFromUrl (): Promise<IEntityCacheCityItem | undefined> {
+    const route = router.currentRoute.value;
+    logger.debug(`(world-map-store) parsing city from url, query=${JSON.stringify(route.query)}`);
+
+    const citySlug = route.query?.city?.toString();
+    if (!citySlug) {
+      logger.debug('(world-map-store) city slug parameter was not specified');
+      return undefined;
+    }
+
+    let cacheResult: IEntityCacheCityItem[] | undefined;
+    if (process.client) {
+      cacheResult = await ClientServicesLocator.getEntityCache().get<'City', IEntityCacheCityItem>([citySlug], 'City', { expireInSeconds: AppConfig.clientCache.expirationsSeconds.default });
+    } else {
+      cacheResult = await ServerServicesLocator.getEntityCacheLogic().get<'City', IEntityCacheCityItem>([citySlug], 'City');
+    }
+    if (!cacheResult || cacheResult.length === 0) {
+      logger.warn(`(world-map-store) failed to lookup city by slug, slug=${citySlug}`);
+      userNotificationStore.show({
+        level: UserNotificationLevel.WARN,
+        resName: getI18nResName2('appErrors', 'objectNotFound')
+      });
+      return undefined;
+    }
+    const result = cacheResult[0];
+
+    logger.debug(`(world-map-store) city from url parsed, query=${route.query}, id=${result.id}`);
+    return result;
+  }
+
+  function buildTravelCityUrl (citySlug: string): string {
+    logger.debug(`(world-map-store) build city url, slug=${citySlug}`);
+
+    const url: Partial<ParsedURL> = {
+      pathname: localePath('/flights'),
+      hash: encodeHash(`#${TravelDetailsHtmlAnchor}`)
+    };
+    const result = withQuery(stringifyParsedURL(url), { city: citySlug });
+
+    logger.debug(`(world-map-store) city url, slug=${citySlug}, url=${result}`);
+    return result;
+  }
 
   const fetchCityId = ref<EntityId>();
   const popularCitiesFetchRequest = useFetchEx<IPopularCityDto[] | null[], IPopularCityDto[] | null[], null[]>(WebApiRoutes.PopularCitiesList, 'error-page',
@@ -199,7 +248,11 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
       }
 
       instance.idPlaylist = popularCities.map(c => (c as IPopularCityDto).id);
-      if (instance.manuallySetCityId) {
+      const cityFromUrl = await getCityFromUrl();
+      if (cityFromUrl) {
+        logger.verbose(`(travel-details-store) initializing first travel details popular city from url, url cityId=${cityFromUrl.id}`);
+        fetchCityId.value = cityFromUrl.id;
+      } else if (instance.manuallySetCityId) {
         logger.verbose(`(travel-details-store) initializing first travel details popular city from manually set city, manual cityId=${fetchCityId.value}`);
         fetchCityId.value = instance.manuallySetCityId!;
       } else {
@@ -269,7 +322,15 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'popular cities load failed', 'error-stub');
     }
     instance.idPlaylist = popularCities.map(c => (c as IPopularCityDto).id);
-    fetchCityId.value = instance.idPlaylist[0];
+
+    const cityFromUrl = await getCityFromUrl();
+    if (cityFromUrl) {
+      logger.verbose(`(travel-details-store) initializing first travel details popular city from url, url cityId=${cityFromUrl.id}`);
+      fetchCityId.value = cityFromUrl.id;
+    } else {
+      fetchCityId.value = instance.idPlaylist[0];
+      logger.verbose(`(travel-details-store) initializing first travel details popular city, cityId=${fetchCityId.value}`);
+    }
 
     travelDetailsFetchRequest = nuxtApp.runWithContext(async () => {
       return await useFetchEx<ITravelDetailsDto | null, ITravelDetailsDto | null>(WebApiRoutes.PopularCityTravelDetails, 'error-stub',
@@ -298,7 +359,8 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
       texting: {
         header: travelDetails.header,
         text: travelDetails.text,
-        price: travelDetails.price
+        price: travelDetails.price,
+        slug: travelDetails.city.slug
       },
       images: travelDetails.images
     };
@@ -368,9 +430,6 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
     }
 
     if (!travelDetailsFetch) { // if travelDetailsFetch is null, then client state is still initializing and will trigger another load upon completing initialization
-      /* setTimeou(() => {
-        startLoadingNextUpcoming(instance.current!.cityId, true);
-      }, AppConfig.fallIntoTravel.retryTimeoutMs); */
       timePlayer!.setMainLineTask(() => {
         startLoadingNextUpcoming(instance.current!.cityId, true);
       }, AppConfig.fallIntoTravel.retryTimeoutMs);
@@ -432,7 +491,7 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
       timePlayer!.setMainLineTask(() => {
         startLoadingNextUpcoming(cityId);
       }, AppConfig.fallIntoTravel.retryTimeoutMs);
-    } else if (travelDetailsFetch!.status.value === 'success' && fetchCityId.value! === travelDetailsFetch!.data?.value?.cityId) {
+    } else if (travelDetailsFetch!.status.value === 'success' && fetchCityId.value! === travelDetailsFetch!.data?.value?.city.id) {
       const travelDetailsData : ITravelDetailsData = {
         cityId: fetchCityId.value!,
         images: travelDetailsFetch!.data?.value?.images ?? [],
@@ -440,7 +499,8 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
           ? {
               header: travelDetailsFetch!.data?.value!.header,
               text: travelDetailsFetch!.data?.value!.text,
-              price: travelDetailsFetch!.data?.value!.price
+              price: travelDetailsFetch!.data?.value!.price,
+              slug: travelDetailsFetch!.data?.value!.city.slug
             }
           : undefined
       };
@@ -487,6 +547,8 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
   logger.info('(travel-details-store) store constructed');
   return {
     getInstance,
-    setDisplayingCity
+    setDisplayingCity,
+    getCityFromUrl,
+    buildTravelCityUrl
   };
 });

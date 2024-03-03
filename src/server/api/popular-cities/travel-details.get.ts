@@ -27,11 +27,13 @@ function readCityIdParameter (event : H3Event): EntityId {
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const cityId = readCityIdParameter(event);
   const citiesLogic = ServerServicesLocator.getCitiesLogic();
+  const flightsLogic = ServerServicesLocator.getFlightsLogic();
 
   const travelDetails = await citiesLogic.getTravelDetails(cityId);
+  const price = (await flightsLogic.getFlightPromoPrice(cityId)).toNumber();
   handleCacheHeaders(event, {
     maxAge: WebApiRoutes.OneHourCacheLatency,
-    modifiedTime: new Date(travelDetails.modifiedUtc.setMilliseconds(0)),
+    modifiedTime: new Date(travelDetails.city.modifiedUtc.setMilliseconds(0)),
     cacheControls: ['must-revalidate']
   });
   onHeaders(event.node.res, () => {
@@ -39,8 +41,14 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   });
 
   const result: ITravelDetailsDto = {
-    ...travelDetails,
-    cityId
+    header: travelDetails.header,
+    images: travelDetails.images,
+    text: travelDetails.text,
+    price,
+    city: {
+      id: travelDetails.city.id,
+      slug: travelDetails.city.slug
+    }
   };
   return result;
-}, { logResponseBody: true, authorizedOnly: false });
+}, { logResponseBody: false, authorizedOnly: false });

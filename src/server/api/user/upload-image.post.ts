@@ -1,7 +1,7 @@
 import { H3Event } from 'h3';
-import isString from 'lodash/isString';
+import isString from 'lodash-es/isString';
 import onHeaders from 'on-headers';
-import isBuffer from 'lodash/isBuffer';
+import isBuffer from 'lodash-es/isBuffer';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import { type EntityId, ImageCategory } from '../../../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';

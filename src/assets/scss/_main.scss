@@ -8,6 +8,12 @@
 @use 'utils' as *;
 @use 'svg';
 
+$field-frame-y-padding: markup-to-rem(14px);
+
+:root {
+  font-size: 16px;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -18,7 +24,7 @@ body {
     background-color: var($css-var);
   }
 
-  @for $i from 1 through 6 {
+  @for $i from 1 through 5 {
     h#{$i} {
       @include with-header-font(#{$i});
     }
@@ -169,15 +175,21 @@ a {
 }  
 
 .field-frame {
+  display: flex;
+  flex-direction: row;
+
   @include with-theme-color('control-frame') using($css-var) {
     border: 1px solid var($css-var);
   }
 
-  padding: 0px 16px 14px 16px;
+  padding: $field-frame-y-padding 16px $field-frame-y-padding 16px;
 
   .field-frame-label {
-    transform:  translateX(-4px) translateY(-8px);
+    display: block;
+    position: absolute;
+    transform:  translateX(-4px) translateY(calc(-50% - $field-frame-y-padding));
     white-space: nowrap;
+    
 
     @include with-body-font('body-secondary');
     @include with-theme-color('primary') using($css-var) {
@@ -219,6 +231,9 @@ a {
 }
 
 .search-list-input {
+  /*align vertically for search offers*/
+  margin-bottom: 1px;
+
   .search-list-input-el {
     width: 100%;
     border: none;  
@@ -259,10 +274,12 @@ a {
   }
 
   .dropdown-list-btn {
-    margin-top: 5px;
     width: 100%;
+    height: 100%;
+    display: block;
+    align-self: center;
     text-align: left;
-
+    
     @include with-theme-color('input-ctrl-primary') using ($css-var) {
       color: var(#{$css-var});
     }
@@ -272,13 +289,13 @@ a {
     }
 
     &::after {
-      width: 13px;
-      height: 7px;
-      margin-bottom: 2px;
-      margin-top: 3px;
-      display: block;
+      width: markup-to-rem(13px);
+      height: markup-to-rem(13px);
+      
       content: '';
       float: right;
+      vertical-align: inherit;
+      
 
       -webkit-mask-image: escape-svg(svg.$icon-dropdown-toggler);
       mask-image: escape-svg(svg.$icon-dropdown-toggler);
@@ -315,6 +332,14 @@ a {
     @include with-theme-color('body-bg') using ($css-var) {
       background-color: var(#{$css-var});
     }
+
+    --vc-text-2xs: markup-to-rem(10px);
+    --vc-text-xs: markup-to-rem(12px);
+    --vc-text-sm: markup-to-rem(14px);
+    --vc-text-base: markup-to-rem(16px);
+    --vc-text-lg: markup-to-rem(18px);
+    --vc-text-xl: markup-to-rem(20px);
+    --vc-text-2xl: markup-to-rem(24px);
   }
 
   @include with-dark-theme() {
@@ -398,7 +423,7 @@ a {
   .vfm__content {
     border-radius: map.get($borders-radius, '2');
     @include for-small-and-above() {
-      border-radius: map.get($borders-radius, '4');  
+      border-radius: map.get($borders-radius, '4'); 
     }
 
     @include with-theme-color('body-bg')  using ($css-var) {
@@ -486,6 +511,7 @@ a {
 
 .cookie-banner {
   width: 100%;
+  max-width: 100vw;
   height: auto;
   position: fixed;
   bottom: 0;
@@ -496,13 +522,13 @@ a {
   align-items: center;
   gap: map.get($spacings, '3');
 
-  font-size: 0.8em;
+  font-size: 0.8rem;
   @include for-small-and-above() {
     flex-direction: row;
     gap: map.get($spacings, '4');
     align-items: flex-end;
 
-    font-size: 1em;
+    font-size: 1rem;
   }
 
   @include with-theme-color('subscribe-box-bg') using($css-var) {
@@ -510,6 +536,8 @@ a {
   }
 
   .cookie-banner-text {
+    flex: 4 1  auto;
+    width: 100%;
     text-align: center;
     @include for-small-and-above() {
       text-align: left;
@@ -520,14 +548,13 @@ a {
     }
 
     .cookie-banner-title {
-      white-space: nowrap;
-      font-size: 2.0em;
+      word-break: break-all;
+      font-size: 2.0rem;
     }
 
     .cookie-banner-privacy-link {
       font-weight: bold;
       text-decoration: underline;
-      white-space: nowrap;
 
       &:focus-visible {
         @include with-outline();
@@ -536,6 +563,8 @@ a {
   }
 
   .cookie-banner-accept-btn {
+    flex: 1 4 auto;
+    width: 100%;
     min-width: 130px;
   }
 }
@@ -559,4 +588,66 @@ a {
       }
     }
   }  
+}
+
+.collapsable-section {
+  display: contents;
+  width: 100%;
+  float: right;
+
+  .collapsable-section-head {
+    display: inline-block;
+    width: fit-content;
+  }
+
+  .collapsable-section-content {
+    display: block;
+    width: 100%;
+
+    overflow-y: clip;
+  }
+
+  .collapsable-section-btn {
+    width: min-content;
+    white-space: nowrap;
+    float: right;
+
+    &:focus-visible {
+      @include with-outline();
+    }
+
+    &:not(.disabled):hover {
+      filter: brightness($active-highlight-percent);
+      @include with-theme-color('select-ctrl-highlight-bg') using ($css-var) {
+        background-color: var($css-var);
+      }
+    }
+
+    &::before {
+      width: markup-to-rem(20px);
+      height: markup-to-rem(10px);
+      display: inline-block;
+      content: '';
+      transform: rotate(-90deg) /*translateX(-1px)*/;
+
+      -webkit-mask-image: escape-svg(svg.$icon-right-chevron);
+      mask-image: escape-svg(svg.$icon-right-chevron);
+      
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center center;
+      mask-position: center center;
+      vertical-align: middle;
+
+      @include with-theme-color('input-ctrl-primary') using ($css-var) {
+        background-color: var($css-var);
+      }
+    }
+
+    &.collapsed::before {
+      transform: rotate(90deg) translateX(1px);
+    }
+  }
 }

@@ -10,6 +10,7 @@
     display: grid;
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
+    border-radius: inherit;
 
     .static-image-stub {
       grid-row-start: 1;
@@ -53,6 +54,25 @@
       object-fit: cover;
       font-size: 0;
       background-color: transparent;
+
+      &.dark-theme-invert {
+        @include with-dark-theme() {
+          filter: #{'invert()'};
+        }
+      }
+    }
+
+    .static-image-overlay {
+      grid-row-start: 1;
+      grid-row-end: 2;
+      grid-column-start: 1;
+      grid-column-end: 2;
+
+      display: block;
+      width: inherit;
+      height: inherit;
+      z-index: 2;
+      border-radius: inherit;
     }
   }
 }
@@ -105,7 +125,7 @@
   .cropping-box-buttons {
     display: flex;
     flex-direction: row;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: map.get($spacings, '3');
 
     justify-content: space-between;
@@ -113,14 +133,12 @@
       justify-content: flex-end;
     }
 
-    .icon-cross::before {
-      width: 12px;
-      height: 12px;
-      margin-bottom: 2px;
-    }
+    &::before {
+      width: 1rem;
+      height: 1rem;
+      vertical-align: middle;
+    };
 
-    .icon-check::before {
-      margin-bottom: 3px;
-    }
+    
   }
 }

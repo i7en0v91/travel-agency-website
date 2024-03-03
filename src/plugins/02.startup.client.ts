@@ -1,12 +1,15 @@
 import { Scope, createInjector } from 'typed-inject';
-import once from 'lodash/once';
+import once from 'lodash-es/once';
+import { createStorage, type Storage, type StorageValue } from 'unstorage';
 import { updateTabIndices } from '../shared/dom';
 import { ClientLogger } from '../client/logging';
 import { EntityCache } from '../client/entity-cache';
 import type { IClientServicesLocator } from '../shared/serviceLocator';
 import { UserSessionOnClient } from '../client/user-session';
-import { TabIndicesUpdateDefaultTimeout } from '../shared/constants';
+import { TabIndicesUpdateDefaultTimeout, UIControlKeys } from '../shared/constants';
+import { getLastSelectedOptionStorageKey } from './../shared/common';
 import installLoggingHooks from './common/errors-hooks';
+import type { IAppLogger } from './../shared/applogger';
 
 function installGlobalExceptionHandler () {
   const logger = CommonServicesLocator.getLogger();
@@ -33,11 +36,16 @@ function initializeBrowserPage () {
   }
 }
 
+function createCache (): Storage<StorageValue> {
+  return createStorage();
+}
+
 function buildServiceLocator () : IClientServicesLocator {
   const injector = createInjector();
   const provider = injector
     .provideClass('logger', ClientLogger, Scope.Singleton)
     .provideClass('userSession', UserSessionOnClient, Scope.Singleton)
+    .provideValue('cache', createCache())
     .provideClass('entityCache', EntityCache, Scope.Singleton);
 
   return {
@@ -48,6 +56,12 @@ function buildServiceLocator () : IClientServicesLocator {
   };
 }
 
+function resetSearchOffersFilterSettings (logger: IAppLogger) {
+  logger.verbose('resetting user filter settings');
+  localStorage.removeItem(getLastSelectedOptionStorageKey(UIControlKeys.SearchFlightOffersDisplayOptions));
+  localStorage.removeItem(getLastSelectedOptionStorageKey(UIControlKeys.SearchStayOffersDisplayOptions));
+}
+
 const initApp = once(() => {
   const logger = new ClientLogger(); // container has not built yet
   try {
@@ -55,6 +69,8 @@ const initApp = once(() => {
     (globalThis as any).CommonServicesLocator = (globalThis as any).ClientServicesLocator = buildServiceLocator();
     const clientServicesLocator = <IClientServicesLocator>(globalThis as any).ClientServicesLocator;
     initializeBrowserPage();
+
+    resetSearchOffersFilterSettings(logger);
 
     const nuxtApp = useNuxtApp();
     nuxtApp.hook('app:mounted', () => {
@@ -74,10 +90,12 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   nuxtApp.hook('app:created', () => {
     installLoggingHooks(nuxtApp);
-    updateTabIndices();
   });
 
   nuxtApp.hook('page:loading:end', () => {
-    setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
+    const clientServicesLocator = <IClientServicesLocator>(globalThis as any).ClientServicesLocator;
+    if (clientServicesLocator.appMounted) {
+      setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
+    }
   });
 });

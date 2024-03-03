@@ -21,7 +21,7 @@ async function toggleTheme () {
 </script>
 
 <template>
-  <div :class="`nav-item theme-switcher ${wasInteracted ? 'interacted' : ''}`">
+  <div :class="`nav-item theme-switcher pb-xs-1 ${wasInteracted ? 'interacted' : ''}`">
     <button
       type="button"
       role="switch"

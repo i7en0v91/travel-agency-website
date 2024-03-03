@@ -1,14 +1,12 @@
 <script setup lang="ts">
 
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
-import throttle from 'lodash/throttle';
-import clamp from 'lodash/clamp';
-import { type IWorldMap, useWorldMapStore } from './../../stores/world-map-store';
+import throttle from 'lodash-es/throttle';
+import clamp from 'lodash-es/clamp';
 import { AppException, AppExceptionCodeEnum } from './../../shared/exceptions';
 import WorldMapCityLabel from './world-map-city-label.vue';
 import { WorldMapCityLabelFlipX, TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
 import { updateTabIndices } from './../../shared/dom';
-import { type EntityId } from './../../shared/interfaces';
 
 const MapPointColor = { r: 255, g: 255, b: 255 };
 const MapPointAlphaRange = { from: 0.3, to: 0.6 };
@@ -27,7 +25,7 @@ const canvasEl = ref<HTMLCanvasElement>();
 const logger = CommonServicesLocator.getLogger();
 
 const worldMapStore = useWorldMapStore();
-const worldMap = shallowRef<IWorldMap>();
+const worldMap = await worldMapStore.getWorldMap();
 const worldMapRenderError = ref(false);
 
 function getPointFillStyle (intensity: number | 'cityLabel'): string {
@@ -69,7 +67,7 @@ function renderMapFrameSafe () {
 
 function doRenderMapFrame () {
   logger.debug('(WorldMap) redering new frame');
-  if (!worldMap.value?.displayedObjects) {
+  if (worldMap.displayedObjects.points.length === 0 || !worldMap.viewport) {
     logger.debug('(WorldMap) nothing to render, world map was not initialized');
     return;
   }
@@ -86,15 +84,18 @@ function doRenderMapFrame () {
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'cannot acquire 2D context', 'error-stub');
   }
 
-  const animationCmd = worldMap.value.onPrepareNewFrame();
+  const animationCmd = worldMap.onPrepareNewFrame();
 
-  const canvasSize = worldMap.value.viewport;
+  const canvasSize = worldMap.viewport;
   ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
-  ctx.reset();
+  // KB: reset must be present, but may be not and it is a bug (e.g. reproduced on GNOME web 45.2)
+  if (ctx.reset) {
+    ctx.reset();
+  }
 
-  const pointRadius = worldMap.value.cellRelativeSize * canvasSize.width / 2;
-  for (let i = 0; i < worldMap.value.displayedObjects.points.length; i++) {
-    const point = worldMap.value.displayedObjects.points[i];
+  const pointRadius = worldMap.cellRelativeSize! * canvasSize.width / 2;
+  for (let i = 0; i < worldMap.displayedObjects.points.length; i++) {
+    const point = worldMap.displayedObjects.points[i];
     if (!point.visible) {
       continue;
     }
@@ -104,17 +105,19 @@ function doRenderMapFrame () {
     ctx.fill();
   }
 
-  for (let i = 0; i < worldMap.value.displayedObjects.cities.length; i++) {
-    const city = worldMap.value.displayedObjects.cities[i];
-    const point = city.nearestPoint;
+  if (worldMap.displayedObjects.citiesVisible) {
+    for (let i = 0; i < worldMap.displayedObjects.cities.length; i++) {
+      const city = worldMap.displayedObjects.cities[i];
+      const point = city.nearestPoint;
 
-    const cityPointAbs = { x: canvasSize.width * point.coord.x, y: canvasSize.height * point.coord.y };
-    renderCityLabelPointer(ctx, cityPointAbs, { x: cityPointAbs.x + (point.coord.x > WorldMapCityLabelFlipX ? -MapCityPointerLength : MapCityPointerLength), y: cityPointAbs.y + 3 });
+      const cityPointAbs = { x: canvasSize.width * point.coord.x, y: canvasSize.height * point.coord.y };
+      renderCityLabelPointer(ctx, cityPointAbs, { x: cityPointAbs.x + (point.coord.x > WorldMapCityLabelFlipX ? -MapCityPointerLength : MapCityPointerLength), y: cityPointAbs.y + 3 });
 
-    ctx.beginPath();
-    ctx.fillStyle = getPointFillStyle('cityLabel');
-    ctx.arc(cityPointAbs.x, cityPointAbs.y, pointRadius, 0, 3 * Math.PI);
-    ctx.fill();
+      ctx.beginPath();
+      ctx.fillStyle = getPointFillStyle('cityLabel');
+      ctx.arc(cityPointAbs.x, cityPointAbs.y, pointRadius, 0, 3 * Math.PI);
+      ctx.fill();
+    }
   }
 
   if (animationCmd === 'continue-animation') {
@@ -126,22 +129,12 @@ function renderMapFrame () {
   window.requestAnimationFrame(renderMapFrameSafe);
 }
 
-async function initializeWorldMap (): Promise<void> {
-  logger.verbose('(WorldMap) initializing world map');
-  worldMap.value = await worldMapStore.getWorldMap();
-  setTimeout(() => {
-    worldMap.value!.onPageOpen();
-    raiseWorldMapInViewportIfNeeded();
-    renderMapFrame();
-  }, 0);
-}
-
 const onWindowResize = () => setTimeout(throttle(function () {
   renderMapFrame();
 }), 100);
 
 function testCanvasIsInViewport () : boolean {
-  if (!canvasEl.value || !worldMap.value) {
+  if (!canvasEl.value || !worldMap) {
     return false;
   }
 
@@ -153,12 +146,12 @@ function testCanvasIsInViewport () : boolean {
 }
 
 function raiseWorldMapInViewportIfNeeded () {
-  if (!canvasEl.value || !worldMap.value) {
+  if (!canvasEl.value || !worldMap) {
     return;
   }
 
   if (!worldMapInViewportEventRaised && testCanvasIsInViewport()) {
-    worldMap.value!.onMapInViewport();
+    worldMap.onMapInViewport();
     logger.verbose('(WorldMap) world map entered the viewport');
     worldMapInViewportEventRaised = true;
     window.removeEventListener('scroll', onWindowScroll);
@@ -166,17 +159,31 @@ function raiseWorldMapInViewportIfNeeded () {
   }
 }
 
-watch(() => worldMap.value?.displayedObjects.cities, () => {
-  if ((worldMap.value?.displayedObjects.cities?.length ?? 0) > 0) {
+watch(() => worldMap.displayedObjects.cities, () => {
+  if ((worldMap.displayedObjects.cities?.length ?? 0) > 0 && worldMap.displayedObjects.citiesVisible) {
     setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
   }
 });
 
 function onScroll () {
-  if ((worldMap.value?.displayedObjects.cities?.length ?? 0) > 0) {
+  if (((worldMap.displayedObjects.cities?.length ?? 0) > 0) && worldMap.displayedObjects.citiesVisible) {
     setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
   }
 }
+
+const isServer = process.server ?? false;
+const isMounted = ref(false);
+const cityLabelsVisibilityClass = computed(() => {
+  if (isServer) {
+    return '';
+  }
+
+  if (!isMounted.value) {
+    return '';
+  }
+
+  return (worldMap?.displayedObjects.citiesVisible ?? false) ? 'visible' : '';
+});
 
 let worldMapInViewportEventRaised = false;
 const onWindowScroll = () => setTimeout(throttle(function () {
@@ -184,7 +191,12 @@ const onWindowScroll = () => setTimeout(throttle(function () {
 }), 100);
 
 onMounted(() => {
-  initializeWorldMap();
+  setTimeout(() => {
+    worldMap.onPageOpen();
+    raiseWorldMapInViewportIfNeeded();
+    renderMapFrame();
+    isMounted.value = true;
+  }, 0);
   window.addEventListener('resize', onWindowResize);
   window.addEventListener('scroll', onWindowScroll);
   raiseWorldMapInViewportIfNeeded();
@@ -195,50 +207,42 @@ onUnmounted(() => {
   if (!worldMapInViewportEventRaised) {
     window.removeEventListener('scroll', onWindowScroll);
   }
-  if (worldMap.value) {
-    worldMap.value.onPageLeave();
+  if (worldMap) {
+    worldMap.onPageLeave();
   }
 });
-
-const $emit = defineEmits<{(event: 'cityFocused', cityId: EntityId): void}>();
-
-function onCityClick (cityId: EntityId) {
-  logger.verbose(`(WorldMap) city focused, cityId=${cityId}`);
-  $emit('cityFocused', cityId);
-}
 
 </script>
 
 <template>
   <div class="world-map">
-    <ClientOnly>
-      <ErrorHelm :is-error="(worldMap ? (worldMap.status.value === 'error') : false) || worldMapRenderError">
-        <PerfectScrollbar
-          class="world-map-container"
-          :options="{
-            suppressScrollY: true,
-            swipeEasing: true,
-            wheelPropagation: true
-          }"
-          :watch-options="false"
-          tag="div"
-          @ps-scroll-x="onScroll"
-        >
-          <div class="world-map-content">
-            <canvas v-if="worldMap?.status.value === 'ready'" id="worldMapCanvas" ref="canvasEl" :width="worldMap?.viewport.width" :height="worldMap?.viewport.height" />
-            <WorldMapCityLabel
-              v-for="(city, idx) in (worldMap?.status.value === 'ready' ? worldMap.displayedObjects.cities : [])"
-              :key="`world-map-city-${idx}`"
-              :ctrl-key="`WorldMapCityLabel-${idx}`"
-              :city-name="city.cityDisplayName"
-              :country-name="city.countryDisplayName"
-              :img-src="{ slug: city.slug, timestamp: city.timestamp }"
-              :relative-coord="city.nearestPoint.coord"
-              @click="() => onCityClick(city.id)"
-            />
-          </div>
-        </PerfectScrollbar>
-      </ErrorHelm>
-    </ClientOnly>
+    <ErrorHelm :is-error="(worldMap ? (worldMap.status.value === 'error') : false) || worldMapRenderError">
+      <PerfectScrollbar
+        class="world-map-container"
+        :options="{
+          suppressScrollY: true,
+          swipeEasing: true,
+          wheelPropagation: true
+        }"
+        :watch-options="false"
+        tag="div"
+        @ps-scroll-x="onScroll"
+      >
+        <div class="world-map-content">
+          <canvas v-if="worldMap?.status.value === 'ready' && worldMap?.viewport" id="worldMapCanvas" ref="canvasEl" :width="worldMap.viewport.width" :height="worldMap.viewport.height" />
+          <WorldMapCityLabel
+            v-for="(city) in (worldMap?.displayedObjects.cities ?? [])"
+            :key="`world-map-city-${city.slug}`"
+            :class="cityLabelsVisibilityClass"
+            :slug="city.slug"
+            :ctrl-key="`WorldMapCityLabel-${city.slug}`"
+            :city-name="city.cityDisplayName"
+            :country-name="city.countryDisplayName"
+            :img-src="{ slug: city.imgSlug, timestamp: city.timestamp }"
+            :relative-coord="city.nearestPoint.coord"
+          />
+        </div>
+      </PerfectScrollbar>
+    </ErrorHelm>
   </div>
 </template>

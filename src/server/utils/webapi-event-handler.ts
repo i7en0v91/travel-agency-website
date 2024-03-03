@@ -2,7 +2,7 @@ import { type EventHandler, type EventHandlerRequest, type EventHandlerResponse,
 import axios from 'axios';
 import { withQuery } from 'ufo';
 import { type ObjectSchema } from 'yup';
-import keys from 'lodash/keys';
+import keys from 'lodash-es/keys';
 import { isQuickStartEnv, testHeaderValue } from '../../shared/common';
 import { validateObject } from '../../shared/validation';
 import { AppException, AppExceptionCodeEnum } from '../../shared/exceptions';

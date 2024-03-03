@@ -4,24 +4,62 @@ import PageSection from './../components/common-page-components/page-section.vue
 import HeadingText from './../components/flights/flights-heading-text.vue';
 import { getI18nResName1, getI18nResName2, getI18nResName3 } from './../shared/i18n';
 import { ImageCategory, type EntityId } from './../shared/interfaces';
-import { FlightsTitleSlug } from './../shared/constants';
+import { FlightsTitleSlug, TravelDetailsHtmlAnchor } from './../shared/constants';
 import WorldMap from './../components/flights/world-map.vue';
-import TravelCities from './../components/common-page-components/travel-cities.vue';
-import TravelDetails from './../components/common-page-components/travel-details.vue';
-import { useTravelDetailsStore } from './../stores/travel-details-store';
+import TravelCities from './../components/common-page-components/travel-details/travel-cities.vue';
+import TravelDetails from './../components/common-page-components/travel-details/travel-details.vue';
 
 definePageMeta({
   title: getI18nResName2('flightsPage', 'title')
 });
 
-const TravelDetailsAnchor = 'flightsTravelDetails';
+const logger = CommonServicesLocator.getLogger();
 
 const travelDetailsStore = useTravelDetailsStore();
-function onCityFocused (cityId: EntityId) {
-  travelDetailsStore.setDisplayingCity(cityId);
-  const sectionElement = document.getElementById(TravelDetailsAnchor)!.offsetTop;
-  window.scrollTo({ top: sectionElement, behavior: 'smooth' });
+function scrollToTravelDetailsSection () {
+  const sectionElement = document.getElementById(TravelDetailsHtmlAnchor)!;
+  sectionElement.scrollIntoView({
+    block: 'center',
+    behavior: 'smooth'
+  });
 }
+
+function displayCity (cityId: EntityId) {
+  logger.verbose(`(Flights) setting displayed city, id=${cityId}`);
+  travelDetailsStore.setDisplayingCity(cityId);
+  scrollToTravelDetailsSection();
+  logger.verbose(`(Flights) setting displayed city, id=${cityId}, exit`);
+}
+
+async function displayCityFromUrl (): Promise<void> {
+  const route = useRoute();
+  logger.verbose(`(Flights) updating displayed city from url, url=${route.fullPath}, query=${JSON.stringify(route.query)}`);
+  const cityFromUrl = await travelDetailsStore.getCityFromUrl();
+  if (!cityFromUrl) {
+    logger.debug('(Flights) no city from url retrieved');
+    return;
+  }
+
+  const currentlyDisplayedCity = (await travelDetailsStore.getInstance()).current;
+  if (currentlyDisplayedCity?.cityId === cityFromUrl.id) {
+    logger.verbose(`(Flights) city from url equals to currently displayed, id=${cityFromUrl.id}`);
+    return;
+  }
+
+  logger.verbose(`(Flights) setting city to display from url, id=${cityFromUrl.id}`);
+  await displayCity(cityFromUrl.id);
+}
+
+const router = useRouter();
+onMounted(() => {
+  displayCityFromUrl();
+  if (router.currentRoute.value.hash?.includes(TravelDetailsHtmlAnchor)) {
+    scrollToTravelDetailsSection();
+  }
+  watch(router.currentRoute, () => {
+    displayCityFromUrl();
+  });
+});
 
 </script>
 
@@ -33,6 +71,7 @@ function onCityFocused (cityId: EntityId) {
       :image-entity-src="{ slug: FlightsTitleSlug }"
       :category="ImageCategory.PageTitle"
       :image-alt-res-name="getI18nResName1('searchPageImageAlt')"
+      overlay-class="search-flights-page-head-overlay"
       single-tab="flights"
     >
       <HeadingText ctrl-key="FlightsPageHeading" />
@@ -44,9 +83,9 @@ function onCityFocused (cityId: EntityId) {
       :btn-text-res-name="getI18nResName3('flightsPage', 'letsGoPlacesSection', 'btn')"
       :content-padded="false"
     >
-      <WorldMap ctrl-key="WorldMap" @city-focused="onCityFocused" />
+      <WorldMap ctrl-key="WorldMap" />
     </PageSection>
     <TravelCities ctrl-key="FlightsTravelCitiesSection" />
-    <TravelDetails :id="TravelDetailsAnchor" ctrl-key="FlightsTravelDetailsSection" />
+    <TravelDetails :id="TravelDetailsHtmlAnchor" ctrl-key="FlightsTravelDetailsSection" book-kind="flight" />
   </div>
 </template>

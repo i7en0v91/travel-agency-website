@@ -1,4 +1,4 @@
-import isString from 'lodash/isString';
+import isString from 'lodash-es/isString';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import { type IUpdateAccountDto, UpdateAccountDtoSchema, type IUpdateAccountResultDto, UpdateAccountResultCode } from '../../dto';
 import { type Locale, type Theme } from '../../../shared/constants';
@@ -40,4 +40,4 @@ export default defineWebApiEventHandler(async (event) => {
       break;
   }
   return responseDto;
-}, { logResponseBody: true, authorizedOnly: true, validationSchema: UpdateAccountDtoSchema, captchaProtected: true });
+}, { logResponseBody: false, authorizedOnly: true, validationSchema: UpdateAccountDtoSchema, captchaProtected: true });

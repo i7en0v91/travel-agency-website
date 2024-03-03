@@ -70,7 +70,6 @@ export function useConfirmBox (): {
       return new Promise((resolve) => {
         completeCallback = resolve;
         open();
-        setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
       });
     }
   };

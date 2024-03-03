@@ -1,4 +1,4 @@
-import remove from 'lodash/remove';
+import remove from 'lodash-es/remove';
 import { type IAppLogger } from '../shared/applogger';
 import { getNewSessionValues, buildSessionDto, parseSessionDto } from '../shared/session';
 import { type SessionValues, type SessionValue, type IUserSessionClient, type UserSession } from '../shared/interfaces';

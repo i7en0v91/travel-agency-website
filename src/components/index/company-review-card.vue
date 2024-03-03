@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import range from 'lodash/range';
+import range from 'lodash-es/range';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { type ILocalizableValue, ImageCategory, type IImageEntitySrc } from './../../shared/interfaces';
 import { getI18nResName3 } from './../../shared/i18n';
@@ -40,8 +40,8 @@ function toggleReviewText () {
         :watch-options="true"
         tag="div"
       >
-        <div class="review-card-content px-xs-3 px-s-4">
-          <p :class="props.body ? `review-card-body ${expanded ? 'expanded' : ''}` : 'data-loading-stub text-data-loading mt-xs-3'">
+        <div :class="`review-card-content px-xs-3 px-s-4 ${expanded ? 'expanded' : ''}`">
+          <p :class="props.body ? 'review-card-body' : 'data-loading-stub text-data-loading mt-xs-3'">
             {{ props.body ? (props.body as any)[locale] : '&nbsp;' }}
           </p>
           <button class="review-expand-btn mt-xs-3 mr-xs-1 brdr-1 no-hidden-parent-tabulation-check" type="button" @click="toggleReviewText">
@@ -62,7 +62,7 @@ function toggleReviewText () {
             :ctrl-key="ctrlKey"
             :entity-src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
             :category="ImageCategory.CompanyReview"
-            sizes="sm:80vw md:50vw lg:50vw xl:50vw xxl:40vw"
+            sizes="xs:80vw sm:50vw md:50vw lg:50vw xl:40vw"
             class="review-card-img brdr-3"
             :alt-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'imgAlt')"
             :show-stub="true"

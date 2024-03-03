@@ -13,8 +13,6 @@ export default defineNuxtConfig({
   sitemap: {
     autoLastmod: false,
     exclude: [
-      ...listLocalizedPaths('/find-flights'),
-      ...listLocalizedPaths('/find-stays'),
       ...listLocalizedPaths('/account')
     ]
   },
@@ -23,12 +21,6 @@ export default defineNuxtConfig({
   },
   experimental: {
     renderJsonPayloads: false
-  },
-  // Nuxt 3.8.2 fix - added option to fix undefined property access (options.compatibility <<< .prerender) in NuxtOgImage module
-  ogImage: {
-    compatibility: {
-      prerender: undefined
-    }
   },
   components: [
     {
@@ -95,6 +87,11 @@ export default defineNuxtConfig({
       }
     }
   },
+  router: {
+    options: {
+      scrollBehaviorType: 'smooth'
+    }
+  },
   modules: [
     ['@nuxtjs/google-fonts', {}],
     ['@nuxtjs/i18n', {}],
@@ -114,9 +111,21 @@ export default defineNuxtConfig({
   build: {
     transpile: ['jsonwebtoken']
   },
+  $development: {
+    vite: {
+      optimizeDeps: {
+        exclude: ['server-logic']
+      }
+    }
+  },
   $test: {
+    vite: {
+      optimizeDeps: {
+        exclude: ['server-logic']
+      }
+    },
     build: {
-      transpile: ['lodash', 'vue-toastification']
+      transpile: ['vue-toastification']
     },
     auth: {
       baseURL: `http://127.0.0.1:${TEST_SERVER_PORT}/api/auth`

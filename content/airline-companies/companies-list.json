@@ -1,0 +1,222 @@
+[
+  {
+    "citySlug": "amsterdam",
+    "name": {
+      "en": "Demo Airline Company #1",
+      "fr": "Compagnie aérienne de démo #1",
+      "ru": "Авиакомпания (демо) №1"
+    },
+    "invertLogoForDarkTheme": false,
+    "numReviews": 38,
+    "reviewScore": 4.6
+  },
+  {
+    "citySlug": "bangkok",
+    "name": {
+      "en": "Demo Airline Company #2",
+      "fr": "Compagnie aérienne de démo #2",
+      "ru": "Авиакомпания (демо) №2"
+    },
+    "invertLogoForDarkTheme": false,
+    "numReviews": 37,
+    "reviewScore": 4.1
+  },
+  {
+    "citySlug": "barcelona",
+    "name": {
+      "en": "Demo Airline Company #3",
+      "fr": "Compagnie aérienne de démo #3",
+      "ru": "Авиакомпания (демо) №3"
+    },
+    "invertLogoForDarkTheme": true,
+    "numReviews": 42,
+    "reviewScore": 4.8
+  },
+  {
+    "citySlug": "cairo",
+    "name": {
+      "en": "Demo Airline Company #4",
+      "fr": "Compagnie aérienne de démo #4",
+      "ru": "Авиакомпания (демо) №4"
+    },
+    "invertLogoForDarkTheme": false,
+    "numReviews": 23,
+    "reviewScore": 4.3
+  },
+  {
+    "citySlug": "dubai",
+    "name": {
+      "en": "Demo Airline Company #5",
+      "fr": "Compagnie aérienne de démo #5",
+      "ru": "Авиакомпания (демо) №5"
+    },
+    "invertLogoForDarkTheme": false,
+    "numReviews": 64,
+    "reviewScore": 4.9
+  },
+  {
+    "citySlug": "hong-kong",
+    "name": {
+      "en": "Demo Airline Company #6",
+      "fr": "Compagnie aérienne de démo #6",
+      "ru": "Авиакомпания (демо) №6"
+    },
+    "invertLogoForDarkTheme": false,
+    "numReviews": 55,
+    "reviewScore": 4.6
+  },
+  {
+    "citySlug": "istanbul",
+    "name": {
+      "en": "Demo Airline Company #7",
+      "fr": "Compagnie aérienne de démo #7",
+      "ru": "Авиакомпания (демо) №7"
+    },
+    "invertLogoForDarkTheme": true,
+    "numReviews": 39,
+    "reviewScore": 4.4
+  },
+  {
+    "citySlug": "kuala-lumpur",
+    "name": {
+      "en": "Demo Airline Company #8",
+      "fr": "Compagnie aérienne de démo #8",
+      "ru": "Авиакомпания (демо) №8"
+    },
+    "invertLogoForDarkTheme": false,
+    "numReviews": 71,
+    "reviewScore": 4.7
+  },
+  {
+    "citySlug": "london",
+    "name": {
+      "en": "Demo Airline Company #9",
+      "fr": "Compagnie aérienne de démo #9",
+      "ru": "Авиакомпания (демо) №9"
+    },
+    "invertLogoForDarkTheme": true,
+    "numReviews": 63,
+    "reviewScore": 4.6
+  },
+  {
+    "citySlug": "los-angeles",
+    "name": {
+      "en": "Demo Airline Company #10",
+      "fr": "Compagnie aérienne de démo #10",
+      "ru": "Авиакомпания (демо) №10"
+    },
+    "invertLogoForDarkTheme": false,
+    "numReviews": 43,
+    "reviewScore": 4.8
+  },
+  {
+    "citySlug": "milan",
+    "name": {
+      "en": "Demo Airline Company #11",
+      "fr": "Compagnie aérienne de démo #11",
+      "ru": "Авиакомпания (демо) №11"
+    },
+    "invertLogoForDarkTheme": false,
+    "numReviews": 83,
+    "reviewScore": 4.6
+  },
+  {
+    "citySlug": "new-york-city",
+    "name": {
+      "en": "Demo Airline Company #12",
+      "fr": "Compagnie aérienne de démo #12",
+      "ru": "Авиакомпания (демо) №12"
+    },
+    "invertLogoForDarkTheme": false,
+    "numReviews": 70,
+    "reviewScore": 4.7
+  },
+  {
+    "citySlug": "paris",
+    "name": {
+      "en": "Demo Airline Company #13",
+      "fr": "Compagnie aérienne de démo #13",
+      "ru": "Авиакомпания (демо) №13"
+    },
+    "invertLogoForDarkTheme": false,
+    "numReviews": 51,
+    "reviewScore": 4.7
+  },
+  {
+    "citySlug": "prague",
+    "name": {
+      "en": "Demo Airline Company #14",
+      "fr": "Compagnie aérienne de démo #14",
+      "ru": "Авиакомпания (демо) №14"
+    },
+    "invertLogoForDarkTheme": true,
+    "numReviews": 65,
+    "reviewScore": 5.0
+  },
+  {
+    "citySlug": "rome",
+    "name": {
+      "en": "Demo Airline Company #15",
+      "fr": "Compagnie aérienne de démo #15",
+      "ru": "Авиакомпания (демо) №15"
+    },
+    "invertLogoForDarkTheme": false,
+    "numReviews": 49,
+    "reviewScore": 4.3
+  },
+  {
+    "citySlug": "seoul",
+    "name": {
+      "en": "Demo Airline Company #16",
+      "fr": "Compagnie aérienne de démo #16",
+      "ru": "Авиакомпания (демо) №16"
+    },
+    "invertLogoForDarkTheme": true,
+    "numReviews": 84,
+    "reviewScore": 4.6
+  },
+  {
+    "citySlug": "singapore",
+    "name": {
+      "en": "Demo Airline Company #17",
+      "fr": "Compagnie aérienne de démo #17",
+      "ru": "Авиакомпания (демо) №17"
+    },
+    "invertLogoForDarkTheme": false,
+    "numReviews": 59,
+    "reviewScore": 4.5
+  },
+  {
+    "citySlug": "sydney",
+    "name": {
+      "en": "Demo Airline Company #18",
+      "fr": "Compagnie aérienne de démo #18",
+      "ru": "Авиакомпания (демо) №18"
+    },
+    "invertLogoForDarkTheme": false,
+    "numReviews": 71,
+    "reviewScore": 4.9
+  },
+  {
+    "citySlug": "tokyo",
+    "name": {
+      "en": "Demo Airline Company #19",
+      "fr": "Compagnie aérienne de démo #19",
+      "ru": "Авиакомпания (демо) №19"
+    },
+    "invertLogoForDarkTheme": true,
+    "numReviews": 53,
+    "reviewScore": 4.7
+  },
+  {
+    "citySlug": "vienna",
+    "name": {
+      "en": "Demo Airline Company #20",
+      "fr": "Compagnie aérienne de démo #20",
+      "ru": "Авиакомпания (демо) №20"
+    },
+    "invertLogoForDarkTheme": true,
+    "numReviews": 36,
+    "reviewScore": 4.8
+  }
+]

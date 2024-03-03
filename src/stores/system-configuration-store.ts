@@ -5,11 +5,13 @@ import { NuxtDataKeys } from '../shared/constants';
 type CategoryInfoPayload = [string, IImageCategoryInfo];
 
 export interface ISystemConfigurationStore {
+  initialize(): Promise<void>;
   getImageSrcSize(category: ImageCategory): Promise<IImageCategoryInfo>;
 }
 
 export const useSystemConfigurationStore = defineStore('systemConfigurationStore', () => {
   const logger = CommonServicesLocator.getLogger();
+  let initialized = false;
   let imageCategoryInfosMap: ReadonlyMap<ImageCategory, IImageCategoryInfo> | undefined;
   let imageCategoryInfosPayload: CategoryInfoPayload[] | undefined;
 
@@ -32,7 +34,7 @@ export const useSystemConfigurationStore = defineStore('systemConfigurationStore
     }
   }
 
-  function buildImageCategoryInfosMap (payload: CategoryInfoPayload[]) : ReadonlyMap<ImageCategory, IImageCategoryInfo> {
+  function createImageCategoryInfosMap (payload: CategoryInfoPayload[]) : ReadonlyMap<ImageCategory, IImageCategoryInfo> {
     try {
       logger.verbose('(systemConfigurationStore) building image category infos map');
       const result = new Map<ImageCategory, IImageCategoryInfo>([]);// = new Map<ImageCategory, IImageCategoryInfo>(payload);
@@ -49,23 +51,35 @@ export const useSystemConfigurationStore = defineStore('systemConfigurationStore
     }
   }
 
+  async function initialize (): Promise<void> {
+    if (!initialized) {
+      logger.verbose('(systemConfigurationStore) initializing');
+
+      if (!imageCategoryInfosPayload) {
+        const nuxtApp = useNuxtApp();
+        if (process.client) {
+          imageCategoryInfosPayload = destr<CategoryInfoPayload[]>(nuxtApp.payload[NuxtDataKeys.ImageSrcSizes]);
+        } else {
+          imageCategoryInfosPayload = await buildImageCategoryInfoPayload();
+          nuxtApp.payload[NuxtDataKeys.ImageSrcSizes] = imageCategoryInfosPayload;
+        }
+      }
+
+      if (!imageCategoryInfosMap) {
+        imageCategoryInfosMap = createImageCategoryInfosMap(imageCategoryInfosPayload);
+      }
+
+      initialized = true;
+      logger.verbose('(systemConfigurationStore) initialization completed');
+    }
+  }
+
   async function getImageSrcSize (category: ImageCategory): Promise<IImageCategoryInfo> {
     logger.verbose(`(systemConfigurationStore) accessing image source size, category=${category}`);
 
-    if (!imageCategoryInfosPayload) {
-      const nuxtApp = useNuxtApp();
-      if (process.client) {
-        imageCategoryInfosPayload = destr<CategoryInfoPayload[]>(nuxtApp.payload[NuxtDataKeys.ImageSrcSizes]);
-      } else {
-        imageCategoryInfosPayload = await buildImageCategoryInfoPayload();
-        nuxtApp.payload[NuxtDataKeys.ImageSrcSizes] = imageCategoryInfosPayload;
-      }
-    }
+    await initialize();
 
-    if (!imageCategoryInfosMap) {
-      imageCategoryInfosMap = buildImageCategoryInfosMap(imageCategoryInfosPayload);
-    }
-    let info = imageCategoryInfosMap.get(category);
+    let info = imageCategoryInfosMap!.get(category);
     if (!info) {
       logger.warn(`(systemConfigurationStore) unexpected category: ${category}, fallback size will be used`);
       info = { width: 1, height: 1, id: 0 };
@@ -76,7 +90,8 @@ export const useSystemConfigurationStore = defineStore('systemConfigurationStore
   };
 
   const istore: ISystemConfigurationStore = {
-    getImageSrcSize
+    getImageSrcSize,
+    initialize
   };
   return istore;
 });

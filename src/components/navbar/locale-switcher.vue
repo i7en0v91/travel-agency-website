@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { type LocaleObject } from 'vue-i18n-routing';
-import isString from 'lodash/isString';
+import isString from 'lodash-es/isString';
 import { Dropdown } from 'floating-vue';
 import { SessionConstants, TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
 import { type IUserSessionClient } from './../../shared/interfaces';
 import { updateTabIndices } from './../../shared/dom';
+
+type LocaleObject = {
+  code: string,
+  name: string
+};
 
 const switchLocalePath = useSwitchLocalePath();
 const { locale, locales } = useI18n();
@@ -63,14 +67,14 @@ const $emit = defineEmits(['changed']);
       @apply-show="onMenuShown"
       @apply-hide="onMenuHide"
     >
-      <button :id="`nav-locale-switcher-${ctrlKey}`" ref="elBtn" class="locale-switcher-btn brdr-1 mt-xs-1" type="button" @keyup.escape="hideDropdown">
+      <button :id="`nav-locale-switcher-${ctrlKey}`" ref="elBtn" class="locale-switcher-btn brdr-1 px-xs-1" type="button" @keyup.escape="hideDropdown">
         {{ locale.toUpperCase() }}
       </button>
 
       <template #popper>
         <ul class="dropdown-list locale-switcher-list" :data-popper-anchor="`nav-locale-switcher-${ctrlKey}`">
           <li v-for="l in availableLocales" :key="l.code" class="dropdown-list-item pl-xs-2 pr-xs-3">
-            <NuxtLink :id="`locale-switch-link-${l.code.toLowerCase()}`" :to="switchLocalePath(l.code)" class="nav-link locale-switcher-link brdr-1" @click="switchClicked">
+            <NuxtLink :id="`locale-switch-link-${l.code!.toLowerCase()}`" :to="switchLocalePath(l.code)" class="nav-link locale-switcher-link brdr-1" @click="switchClicked">
               {{ l.name }}
             </NuxtLink>
           </li>

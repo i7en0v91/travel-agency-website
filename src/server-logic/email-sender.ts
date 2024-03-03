@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { createTransport } from 'nodemailer';
 import { type Logger as MailLogger } from 'nodemailer/lib/shared';
-import template from 'lodash/template';
+import template from 'lodash-es/template';
 import { withQuery, joinURL } from 'ufo';
 import juice from 'juice';
 import { type IAppLogger } from '../shared/applogger';

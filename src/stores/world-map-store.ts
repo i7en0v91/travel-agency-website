@@ -1,10 +1,13 @@
-import range from 'lodash/range';
-import clamp from 'lodash/clamp';
+import range from 'lodash-es/range';
+import clamp from 'lodash-es/clamp';
 import { type IWorldMapDataDto, type IPopularCityDto } from '../server/dto';
-import { WebApiRoutes } from '../shared/constants';
-import { type ILocalizableValue, type EntityId } from '../shared/interfaces';
+import { NuxtDataKeys, WebApiRoutes } from '../shared/constants';
+import { type ILocalizableValue, type EntityId, type GeoPoint } from '../shared/interfaces';
 import type { IAppLogger } from '../shared/applogger';
 import AppConfig from './../appconfig';
+import { isPrefersReducedMotionEnabled } from './../shared/dom';
+import { useFetchEx } from './../shared/fetch-ex';
+import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
 
 export interface IWorldMapPoint {
   coord: {
@@ -20,6 +23,7 @@ export interface IWorldMapCity {
   cityDisplayName: ILocalizableValue,
   countryDisplayName: ILocalizableValue,
   slug: string,
+  imgSlug: string,
   timestamp: number,
   nearestPoint: IWorldMapPoint
 };
@@ -27,15 +31,16 @@ export interface IWorldMapCity {
 export type WorldMapStatus = 'loading' | 'ready' | 'error';
 
 export interface IWorldMap {
-  viewport: {
+  viewport?: {
     width: number,
     height: number,
   },
   displayedObjects: {
     points: IWorldMapPoint[],
-    cities: IWorldMapCity[]
+    cities: IWorldMapCity[],
+    citiesVisible: boolean
   },
-  cellRelativeSize: number,
+  cellRelativeSize?: number,
   status: Ref<WorldMapStatus>,
   onPageOpen: () => void,
   onMapInViewport: () => void,
@@ -49,23 +54,27 @@ export interface IWorldMap {
 const PrimeIteratorBase = 4483;
 
 interface IWorldMapInternal extends IWorldMap {
-  sourceData: {
+  sourceData?: {
     cities: IPopularCityDto[]
     map: IWorldMapDataDto
   },
-  extremLonRelativeX: number,
+  extremLonRelativeX?: number,
   animationStartTimeMs?: number | undefined
 }
 
 interface IWorldMapPointInternal extends IWorldMapPoint {
   animationTimelinePosition: number,
-  geo: {
-    lon: number,
-    lat: number
-  }
+  geo: GeoPoint
 }
 
-function getNearestMapPoint (worldMap: IWorldMapInternal, p: { lon: number, lat: number }) : IWorldMapPointInternal {
+function isAnimationNeeded () : boolean {
+  if (process.server ?? false) {
+    return false;
+  }
+  return !isPrefersReducedMotionEnabled();
+}
+
+function getNearestMapPoint (worldMap: IWorldMapInternal, p: GeoPoint) : IWorldMapPointInternal {
   let minDistance = 100.0;
   let result : IWorldMapPointInternal = worldMap.displayedObjects.points[0] as IWorldMapPointInternal;
   for (let i = 0; i < worldMap.displayedObjects.points.length; i++) {
@@ -79,17 +88,17 @@ function getNearestMapPoint (worldMap: IWorldMapInternal, p: { lon: number, lat:
   return result;
 }
 
-function calcPointGeoCoords (worldMap: IWorldMapInternal, relativeCoord: { x: number, y: number }, logger: IAppLogger): {lon: number, lat: number} {
-  const lat = worldMap.sourceData.map.origin.geo.lat - (relativeCoord.y - worldMap.sourceData.map.origin.relative.y) / worldMap.sourceData.map.step.relative.y * worldMap.sourceData.map.step.geo.lat;
-  let result: {lon: number, lat: number};
-  if (relativeCoord.x > worldMap.extremLonRelativeX) {
+function calcPointGeoCoords (worldMap: IWorldMapInternal, relativeCoord: { x: number, y: number }, logger: IAppLogger): GeoPoint {
+  const lat = worldMap.sourceData!.map.origin.geo.lat - (relativeCoord.y - worldMap.sourceData!.map.origin.relative.y) / worldMap.sourceData!.map.step.relative.y * worldMap.sourceData!.map.step.geo.lat;
+  let result: GeoPoint;
+  if (relativeCoord.x > worldMap.extremLonRelativeX!) {
     result = {
-      lon: -180 + (relativeCoord.x - worldMap.extremLonRelativeX) / worldMap.sourceData.map.step.relative.x * worldMap.sourceData.map.step.geo.lon,
+      lon: -180 + (relativeCoord.x - worldMap.extremLonRelativeX!) / worldMap.sourceData!.map.step.relative.x * worldMap.sourceData!.map.step.geo.lon,
       lat
     };
   } else {
     result = {
-      lon: 180 - (worldMap.extremLonRelativeX - relativeCoord.x) / worldMap.sourceData.map.step.relative.x * worldMap.sourceData.map.step.geo.lon,
+      lon: 180 - (worldMap.extremLonRelativeX! - relativeCoord.x) / worldMap.sourceData!.map.step.relative.x * worldMap.sourceData!.map.step.geo.lon,
       lat
     };
   }
@@ -98,31 +107,36 @@ function calcPointGeoCoords (worldMap: IWorldMapInternal, relativeCoord: { x: nu
 }
 
 function initializeRuntimeValues (worldMap: IWorldMapInternal, logger: IAppLogger) {
-  logger.info('(world-map-store) initializing world map runtime values');
+  const withAnimation = isAnimationNeeded();
+  logger.verbose(`(world-map-store) initializing world map runtime values, animation=${withAnimation}`);
 
   try {
-    worldMap.displayedObjects.points = worldMap.sourceData.map.points.map((p, idx) => {
+    worldMap.displayedObjects.points = worldMap.sourceData!.map.points.map((p, idx) => {
       return <IWorldMapPointInternal>{
         coord: {
           x: p.x,
           y: p.y
         },
         visible: true,
-        colorIntensity: 0.0,
-        animationTimelinePosition: (idx * PrimeIteratorBase) % worldMap.sourceData.map.points.length,
+        colorIntensity: withAnimation ? 0.0 : 1.0,
+        animationTimelinePosition: withAnimation ? (idx * PrimeIteratorBase) % worldMap.sourceData!.map.points.length : 0,
         geo: calcPointGeoCoords(worldMap, p, logger)
       };
     });
 
-    const allTimelinePositions = worldMap.displayedObjects.points.map(x => (<IWorldMapPointInternal>x).animationTimelinePosition);
-    const timelinePositionLimits = { min: Math.min(...allTimelinePositions), max: Math.max(...allTimelinePositions) };
-    const timelinePositionRange = timelinePositionLimits.max - timelinePositionLimits.min;
-    for (let i = 0; i < worldMap.displayedObjects.points.length; i++) {
-      const point = <IWorldMapPointInternal>worldMap.displayedObjects.points[i];
-      point.animationTimelinePosition = (point.animationTimelinePosition - timelinePositionLimits.min) / timelinePositionRange;
+    if (withAnimation) {
+      const allTimelinePositions = worldMap.displayedObjects.points.map(x => (<IWorldMapPointInternal>x).animationTimelinePosition);
+      const timelinePositionLimits = { min: Math.min(...allTimelinePositions), max: Math.max(...allTimelinePositions) };
+      const timelinePositionRange = timelinePositionLimits.max - timelinePositionLimits.min;
+      for (let i = 0; i < worldMap.displayedObjects.points.length; i++) {
+        const point = <IWorldMapPointInternal>worldMap.displayedObjects.points[i];
+        point.animationTimelinePosition = (point.animationTimelinePosition - timelinePositionLimits.min) / timelinePositionRange;
+      }
     }
+    worldMap.displayedObjects.cities = filterDisplayedCities(worldMap, logger);
+    worldMap.displayedObjects.citiesVisible = !withAnimation;
 
-    logger.info('(world-map-store) world map runtime values initialized');
+    logger.verbose('(world-map-store) world map runtime values initialized');
   } catch (err: any) {
     logger.warn('(world-map-store) failed to initialize world map runtime values', err);
     worldMap.status.value = 'error';
@@ -131,7 +145,12 @@ function initializeRuntimeValues (worldMap: IWorldMapInternal, logger: IAppLogge
 
 function reset (map: IWorldMapInternal, logger: IAppLogger) {
   logger.verbose('(world-map-store) resetting map');
-  map.displayedObjects.cities = [];
+  if (!isAnimationNeeded()) {
+    logger.verbose('(world-map-store) animation is not needed - reset ignored');
+    return;
+  }
+
+  map.displayedObjects.citiesVisible = false;
   const points = map.displayedObjects.points;
   for (let i = 0; i < points.length; i++) {
     const point = points[i] as IWorldMapPointInternal;
@@ -155,7 +174,33 @@ function onPageLeave (map: IWorldMapInternal, logger: IAppLogger) {
   reset(map, logger);
 }
 
+function filterDisplayedCities (map: IWorldMapInternal, logger: IAppLogger): IWorldMapCity[] {
+  logger.verbose('(world-map-store) building list of displayed cities');
+
+  const displayedCities = map.sourceData!.cities
+    .filter(c => c.visibleOnWorldMap)
+    .map((c) => {
+      return {
+        id: c.id,
+        cityDisplayName: c.cityDisplayName,
+        countryDisplayName: c.countryDisplayName,
+        nearestPoint: getNearestMapPoint(map, c.geo),
+        slug: c.slug,
+        imgSlug: c.imgSlug,
+        timestamp: c.timestamp
+      };
+    });
+
+  logger.verbose(`(world-map-store) list of displayed cities: ${displayedCities.map(x => x.cityDisplayName.en).join(', ')}`);
+  return displayedCities;
+}
+
 function onPrepareNewFrame (map: IWorldMapInternal): 'continue-animation' | 'stop-animation' {
+  const withAnimation = isAnimationNeeded();
+  if (!withAnimation) {
+    return 'stop-animation';
+  }
+
   if (!map.animationStartTimeMs) {
     return 'stop-animation';
   }
@@ -190,33 +235,21 @@ function onPrepareNewFrame (map: IWorldMapInternal): 'continue-animation' | 'sto
     }
   }
 
-  // update visible cities
+  // update cities visibility
   if (animationPosition > (1.0 + pointHighlightRatio)) {
-    map.displayedObjects.cities = map.sourceData.cities
-      .filter(c => c.visibleOnWorldMap)
-      .map((c) => {
-        return {
-          id: c.id,
-          cityDisplayName: c.cityDisplayName,
-          countryDisplayName: c.countryDisplayName,
-          nearestPoint: getNearestMapPoint(map, c.geo),
-          slug: c.slug,
-          timestamp: c.timestamp
-        };
-      });
+    map.displayedObjects.citiesVisible = true;
     return 'stop-animation';
   } else {
-    map.displayedObjects.cities = [];
+    map.displayedObjects.citiesVisible = false;
     return 'continue-animation';
   }
 }
 
 export const useWorldMapStore = defineStore('world-map-store', () => {
   const logger = CommonServicesLocator.getLogger();
-
-  const citiesListFetch = useFetch<IPopularCityDto[] | null[]>(WebApiRoutes.PopularCitiesList,
+  const citiesListFetchRequest = useFetchEx<IPopularCityDto[] | null[], IPopularCityDto[], null[]>(WebApiRoutes.PopularCitiesList, 'error-stub',
     {
-      server: false,
+      server: true,
       lazy: true,
       immediate: true,
       cache: 'default',
@@ -226,98 +259,130 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
       onRequestError: (ctx) => { logger.warn('(world-map-store) got popular cities request exception', ctx.error); }
     });
 
-  const worldMapDataFetch = useFetch<IWorldMapDataDto>('/geo/world-map.json',
-    {
-      server: false,
-      lazy: true,
-      immediate: true,
-      cache: 'default',
-      onResponse: () => { logger.verbose('(world-map-store) received world map data response'); },
-      onResponseError: (ctx) => { logger.warn('(world-map-store) got world map data response exception', ctx.error); },
-      onRequestError: (ctx) => { logger.warn('(world-map-store) got world map data request exception', ctx.error); }
-    });
+  const getWorldMapDataOnServer = async (): Promise<IWorldMapDataDto> => {
+    logger.verbose('(world-map-store) loading world map data from assets');
+    try {
+      const worldMapDto = await ServerServicesLocator.getAssetsProvider().getAsset('geo', 'world-map.json') as IWorldMapDataDto;
+      if (!worldMapDto) {
+        throw new Error('failed to load world map data from assets');
+      }
+      logger.verbose(`(world-map-store) world map data loaded from assets, num points=${worldMapDto?.points?.length}`);
+      return worldMapDto;
+    } catch (err: any) {
+      logger.warn('(world-map-store) failed to load world map data from assets', err);
+      throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'internal server error', 'error-stub');
+    }
+  };
+
+  const worldMapDataFetch = process.server
+    ? useAsyncData(NuxtDataKeys.WorldMapData, getWorldMapDataOnServer, {
+      server: true,
+      lazy: false,
+      immediate: true
+    })
+    : useFetch<IWorldMapDataDto>('/geo/world-map.json',
+      {
+        server: true,
+        lazy: true,
+        immediate: true,
+        cache: 'default',
+        key: NuxtDataKeys.WorldMapData,
+        onResponse: () => { logger.verbose('(world-map-store) received world map data response'); },
+        onResponseError: (ctx) => { logger.warn('(world-map-store) got world map data response exception', ctx.error); },
+        onRequestError: (ctx) => { logger.warn('(world-map-store) got world map data request exception', ctx.error); }
+      });
 
   const worldMapStatus = ref<WorldMapStatus>('loading');
-  watch([citiesListFetch.status, worldMapDataFetch.status], () => {
-    if (citiesListFetch.status.value === 'error' || worldMapDataFetch.status.value === 'error') {
-      worldMapStatus.value = 'error';
-    } else if (citiesListFetch.status.value === 'success' && worldMapDataFetch.status.value === 'success') {
-      worldMapStatus.value = 'ready';
-    } else {
-      worldMapStatus.value = 'loading';
-    }
-  });
-
   let worldMapValue: IWorldMapInternal | undefined;
 
   const calculateExtremLonRelativeX = (dto: IWorldMapDataDto) : number => {
     return dto.origin.relative.x - (180.0 + dto.origin.geo.lon) / dto.step.geo.lon * dto.step.relative.x;
   };
 
-  const buildWorldMap = (isError: boolean) : IWorldMapInternal => {
-    const result : IWorldMapInternal = {
-      status: worldMapStatus,
-      viewport: !isError ? worldMapDataFetch.data.value!.viewport : { width: 1230, height: 505 },
-      cellRelativeSize: !isError ? worldMapDataFetch.data.value!.cellRelativeSize : 0.0,
-      extremLonRelativeX: calculateExtremLonRelativeX(worldMapDataFetch.data.value!),
-      displayedObjects: reactive({
-        cities: [],
-        points: []
-      }),
-      sourceData: {
-        cities: !isError ? citiesListFetch.data.value! as IPopularCityDto[] : [],
-        map: !isError ? worldMapDataFetch.data.value! : {} as any
-      },
-      onPageOpen: () => onPageOpen(worldMapValue!, logger),
-      onPageLeave: () => onPageLeave(worldMapValue!, logger),
-      onMapInViewport: () => onMapInViewport(worldMapValue!, logger),
-      onPrepareNewFrame: () => { return onPrepareNewFrame(worldMapValue!); }
+  const updateWorldMapOnFetchFinished = (isError: boolean, popularCities: IPopularCityDto[] | undefined) => {
+    if (!worldMapValue) {
+      logger.warn('(world-map-store) world map fetch failed, won\'t update');
+      return;
+    }
+    logger.debug('(world-map-store) world map fetch finished, updating');
+
+    worldMapValue.viewport = !isError ? worldMapDataFetch.data.value!.viewport : { width: 1230, height: 505 };
+    worldMapValue.cellRelativeSize = !isError ? worldMapDataFetch.data.value!.cellRelativeSize : 0.0;
+    worldMapValue.extremLonRelativeX = calculateExtremLonRelativeX(worldMapDataFetch.data.value!);
+    worldMapValue.sourceData = {
+      cities: !isError ? (popularCities as IPopularCityDto[]) : [],
+      map: !isError ? worldMapDataFetch.data.value! : {} as any
     };
     if (!isError) {
-      initializeRuntimeValues(result, logger);
+      initializeRuntimeValues(worldMapValue!, logger);
     }
-    return result;
+    logger.info('(world-map-store) world map data updated');
   };
 
-  const getWorldMapWhenFetchFinishes = () : Promise<IWorldMapInternal> => {
-    // eslint-disable-next-line promise/param-names
-    return new Promise<IWorldMapInternal>((resolve, _) => {
-      if (worldMapStatus.value === 'loading') {
-        watch([worldMapDataFetch.status, citiesListFetch.status], () => {
-          if (!worldMapValue && ['success', 'error'].includes(worldMapDataFetch.status.value) && ['success', 'error'].includes(citiesListFetch.status.value)) {
-            const isError = citiesListFetch.status.value === 'error' || worldMapDataFetch.status.value === 'error';
-            if (isError) {
-              const msg = `(world-map-store) world map data load failed, num points=${worldMapDataFetch.data.value?.points.length ?? 0}`;
-              logger.warn(msg);
-              resolve(buildWorldMap(true));
-            } else if (worldMapDataFetch.data.value && citiesListFetch.data.value && citiesListFetch.data.value[0]) {
-              const msg = `(world-map-store) world map data load finished, num points=${worldMapDataFetch.data.value?.points.length ?? 0}`;
-              logger.info(msg);
-              resolve(buildWorldMap(false));
-            }
-          }
-        });
-      } else if (!worldMapValue) {
-        const isError = citiesListFetch.status.value === 'error' || worldMapDataFetch.status.value === 'error';
-        if (isError) {
-          const msg = `(world-map-store) world map data failed, num points=${worldMapDataFetch.data.value?.points.length ?? 0}`;
-          logger.warn(msg);
-          resolve(buildWorldMap(true));
-        } else if (worldMapDataFetch.data.value && citiesListFetch.data.value && citiesListFetch.data.value[0]) {
-          const msg = `(world-map-store) world map data load finished, num points=${worldMapDataFetch.data.value?.points.length ?? 0}`;
-          logger.info(msg);
-          resolve(buildWorldMap(false));
-        }
+  const updateWorldMapWhenFetchFinishes = async () : Promise<void> => {
+    logger.debug('(world-map-store) starting to watch world map data fetch status');
+
+    const updateWorldMapFetchStatus = () => {
+      if (citiesListFetch.status.value === 'error' || worldMapDataFetch.status.value === 'error') {
+        worldMapStatus.value = 'error';
+      } else if (citiesListFetch.status.value === 'success' && worldMapDataFetch.status.value === 'success') {
+        worldMapStatus.value = 'ready';
+      } else {
+        worldMapStatus.value = 'loading';
       }
+    };
+
+    const updateWorldMap = () => {
+      const isError = citiesListFetch.status.value === 'error' || worldMapDataFetch.status.value === 'error';
+      if (isError) {
+        const msg = `(world-map-store) world map data load failed, num points=${worldMapDataFetch.data.value?.points.length ?? 0}`;
+        logger.warn(msg);
+        updateWorldMapOnFetchFinished(true, undefined);
+      } else if (worldMapDataFetch.data.value && citiesListFetch.data.value && citiesListFetch.data.value[0]) {
+        const msg = `(world-map-store) world map data load finished, num points=${worldMapDataFetch.data.value?.points.length ?? 0}`;
+        logger.info(msg);
+        updateWorldMapOnFetchFinished(false, citiesListFetch.data.value as IPopularCityDto[]);
+      }
+    };
+
+    const citiesListFetch = await citiesListFetchRequest;
+    watch([citiesListFetch.status, worldMapDataFetch.status], () => {
+      updateWorldMapFetchStatus();
     });
+    updateWorldMapFetchStatus();
+
+    if (worldMapStatus.value === 'loading') {
+      watch([worldMapDataFetch.status, citiesListFetch.status], () => {
+        if (['success', 'error'].includes(worldMapDataFetch.status.value) && ['success', 'error'].includes(citiesListFetch.status.value)) {
+          updateWorldMap();
+        }
+      });
+    } else {
+      updateWorldMap();
+    }
   };
 
   const getWorldMap = async () : Promise<IWorldMap> => {
     if (!worldMapValue) {
-      logger.info('(world-map-store) starting to load world map data');
+      logger.verbose('(world-map-store) creating new world map');
+      worldMapValue = {
+        status: worldMapStatus,
+        displayedObjects: reactive({
+          cities: [],
+          citiesVisible: false,
+          points: []
+        }),
+        onPageOpen: () => onPageOpen(worldMapValue!, logger),
+        onPageLeave: () => onPageLeave(worldMapValue!, logger),
+        onMapInViewport: () => onMapInViewport(worldMapValue!, logger),
+        onPrepareNewFrame: () => { return onPrepareNewFrame(worldMapValue!); }
+      };
+
+      logger.verbose('(world-map-store) starting to load world map data');
+      const citiesListFetch = await citiesListFetchRequest;
       await citiesListFetch;
       await worldMapDataFetch;
-      worldMapValue = await getWorldMapWhenFetchFinishes();
+      await updateWorldMapWhenFetchFinishes();
     }
 
     return worldMapValue;

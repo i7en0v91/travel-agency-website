@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { dirname } from 'pathe';
 import traverse from 'traverse';
-import deepmerge from 'lodash/merge';
+import deepmerge from 'lodash-es/merge';
 
 import { createLogger as createWinstonLogger, format as WinstonFormat, Logger as WinstonLogger } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';

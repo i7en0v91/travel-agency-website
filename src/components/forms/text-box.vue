@@ -22,12 +22,14 @@ withDefaults(defineProps<IProps>(), {
 });
 
 const $emit = defineEmits(['update:modelValue']);
+const htmlId = useId();
 
 </script>
 
 <template>
-  <FieldFrame :text-res-name="captionResName">
+  <FieldFrame :text-res-name="captionResName" :input-html-id="htmlId">
     <input
+      :id="htmlId"
       :type="type"
       class="input-field p-xs-1 brdr-1"
       :placeholder="placeholderResName ? t(placeholderResName) : ''"

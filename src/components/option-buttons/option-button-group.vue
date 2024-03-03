@@ -4,7 +4,9 @@ import { getLastSelectedOptionStorageKey } from './../../shared/common';
 import OptionButton from './option-button.vue';
 import OtherOptionsButton from './other-options-button.vue';
 
-const props = defineProps<IOptionButtonGroupProps>();
+const props = withDefaults(defineProps<IOptionButtonGroupProps>(), {
+  useAdaptiveButtonWidth: false
+});
 
 const $emit = defineEmits<{(event: 'update:activeOptionCtrl', newActiveOptionCtrlKey: string, prevActiveOptionCtrlKey?: string): void}>();
 
@@ -80,7 +82,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <ol class="option-button-group">
+  <div
+    :class="`option-button-group ${useAdaptiveButtonWidth ? 'adaptive-buttons-width' : ''}`"
+    :style="useAdaptiveButtonWidth ? {
+      '--glb-option-button-group-size': ((otherOptions?.variants.length ?? 0) > 0 ? (options.length + 1) : options.length)
+    } : undefined"
+    :role="role"
+  >
     <OptionButton
       v-for="o in props.options"
       :key="o.ctrlKey"
@@ -91,6 +99,7 @@ onMounted(() => {
       :subtext-res-name="o.subtextResName"
       :subtext-res-args="o.subtextResArgs"
       :enabled="o.enabled"
+      :role="role === 'radiogroup' ? { role: 'radio' } : { role: 'tab', tabPanelId: (o.role as any).tabPanelId }"
       @click="onOptionButtonClick"
     />
     <OtherOptionsButton
@@ -106,8 +115,9 @@ onMounted(() => {
           isActive: props.activeOptionCtrl === v.ctrlKey
         };
       })"
+      :role="{ role: 'radio' }"
       :enabled="props.otherOptions!.enabled"
       @item-click="onOptionButtonClick"
     />
-  </ol>
+  </div>
 </template>

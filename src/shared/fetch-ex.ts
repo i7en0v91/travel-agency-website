@@ -1,8 +1,8 @@
 import { FetchError, type FetchResponse } from 'ofetch';
 import type { NitroFetchRequest, AvailableRouterMethod as _AvailableRouterMethod } from 'nitropack';
 import { destr } from 'destr';
-import isString from 'lodash/isString';
-import isNumber from 'lodash/isNumber';
+import isString from 'lodash-es/isString';
+import isNumber from 'lodash-es/isNumber';
 import type { KeysOf, PickFrom, AsyncDataExecuteOptions } from '#app/composables/asyncData.js';
 import type { UseFetchOptions } from '#app/composables';
 import { type IApiErrorDto } from '../server/dto';
@@ -16,6 +16,8 @@ type _FetchResultOpProps = Pick<_FetchResultT, 'pending' | 'status' | 'refresh'>
 export type SSRAwareFetchResult<TFetchResult> = {
   data: Ref<TFetchResult>,
   error: Ref<AppException | undefined>,
+  query: Ref<any>,
+  body: Ref<any>,
   execute: (opts?: AsyncDataExecuteOptions) => Promise<TFetchResult>,
 } & _FetchResultOpProps & {
   throwIfErrorOnSSR(): void
@@ -81,7 +83,11 @@ async function useFetchExInner<TDto, DataT, DefaultT = null, Method extends Avai
 
   const headers = useRequestHeaders(['cookie']) as HeadersInit;
   const caughtAppException = ref<AppException | undefined>();
+  const innerFetchQuery = ref<any>(undefined);
+  const innerFetchBody = ref<any>(undefined);
   const innerFetch = await useFetch<TDto, FetchError, NitroFetchRequest, Method, TDto, DataT, PickKeys, DefaultT>(request, {
+    query: innerFetchQuery,
+    body: innerFetchBody,
     ...opts,
     ...(process.server
       ? {
@@ -89,6 +95,7 @@ async function useFetchExInner<TDto, DataT, DefaultT = null, Method extends Avai
         }
       : {}),
     onRequestError (ctx) {
+      console.error(ctx.error);
       const isRequestAborted = ctx.error?.name === 'AbortError';
       if (isRequestAborted && ignoreAbortedRequestErrors) {
         logger.info(`(fetch-ex) abort request exception occured, configured behavior is to ignore it, url=${request.toString()}`);
@@ -106,6 +113,7 @@ async function useFetchExInner<TDto, DataT, DefaultT = null, Method extends Avai
       }
     },
     async onResponseError (ctx) {
+      console.error(ctx.error);
       const errorInfo = await extractErrorInfoFromResponse(ctx.response);
       if (!errorInfo) {
         logger.warn(`(fetch-ex) fetch exception occured in fetch response, url=${request.toString()}, status=${ctx.response.status}, text=${ctx.response.statusText}`);
@@ -135,6 +143,8 @@ async function useFetchExInner<TDto, DataT, DefaultT = null, Method extends Avai
     refresh: innerFetch.refresh,
     execute: innerFetch.execute,
     status: innerFetch.status,
+    query: innerFetchQuery,
+    body: innerFetchBody,
     throwIfErrorOnSSR: () => {
       if (process.server && caughtAppException.value) {
         defaultErrorHandler(caughtAppException.value);

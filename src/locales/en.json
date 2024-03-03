@@ -81,7 +81,35 @@
     "showStays": "Show Places",
     "flightsTab": "Flights",
     "staysTab": "Stays",
-    "whereToFly": "Where are you flying?"
+    "whereToFly": "Where are you flying?",
+    "filters": {
+      "panelHeader": "Filters",
+      "price": "Price",
+      "rating": "Rating",
+      "noResultsStub": "No results to filter",
+      "checklistMoreItems": "+{count} more",
+      "checklistCollapseItems": "collapse",
+      "ariaLabelRangeHandler": "range slider handler"
+    },
+    "displayOptions": {
+      "cheapest": "Cheapest",
+      "best": "Best",
+      "rating": "Rating",
+      "otherSelected": "Other: {variantLabel}",
+      "showingTotal": "Showing {count} of {total}",
+      "sortBy": "Sort by {factor}"
+    },
+    "scoreClass": {
+      "veryGood": "Very Good",
+      "good": "Good",
+      "medium": "Medium",
+      "low": "Low",
+      "veryLow": "Very Low"
+    },
+    "reviewsCount": "review | reviews",
+    "startingPrice": "starting from",
+    "pagingBtn": "Show more results",
+    "ariaLabelSearch": "start offers search"
   },
   "searchFlights": {
     "destinationCaption": "From - To",
@@ -103,7 +131,26 @@
     "fieldClass": "Flight Class",
     "ariaLabelFrom": "departure city",
     "ariaLabelTo": "arrival city",
-    "ariaLabelSwap": "swap arrival & departure city"
+    "ariaLabelSwap": "swap arrival & departure city",
+    "filters": {
+      "departureTime": "Departure Time",
+      "airlines": "Airlines",
+      "trips": "Trips",
+      "tripsDatesFlexible": "My Dates Are Flexible",
+      "applyBtn": "Apply Filters",
+      "resetBtn": "Reset"
+    },
+    "displayOptions": {
+      "timeToDeparture": "Time to departure",
+      "quickest": "Quickest",
+      "shortSummary": "${price} . {hours}h {minutes}m",
+      "flights": "flight | flights",
+      "other": "Other sort"
+    },
+    "airlineCompanyLogoAlt": "airline company logo",
+    "nonStop": "non stop",
+    "flightDuration": "{hours}h {minutes}m",
+    "viewDetails": "View Details"
   },
   "searchStays": {
     "destinationCaption": "Enter Destination",
@@ -115,7 +162,43 @@
     "numberOfGuests": "Guests",
     "numRooms": "room | rooms",
     "numGuests": "guest | guests",
-    "ariaLabelDestination": "destination city"
+    "ariaLabelDestination": "destination city",
+    "filters": {
+      "freebies": "Freebies",
+      "amenities": "Amenities"
+    },
+    "freebies": {
+      "breakfast": "Free breakfast",
+      "parking": "Free parking",
+      "internet": "Free internet",
+      "shuttle": "Free airport shuttle",
+      "cancellation": "Free cancellation"
+    },
+    "amenities": {
+      "frontDesk": "24hr front desk",
+      "airConditioner": "Air-conditioned",
+      "fitness": "Fitness Center",
+      "indoorPool": "Indoor Pool",
+      "outdoorPool": "Outdoor Pool",
+      "spa": "Spa and wellness center",
+      "restaraunt": "Restaurant",
+      "roomService": "Room service",
+      "bar": "Bar/Lounge",
+      "wifi": "Free Wi-Fi",
+      "teaCoffee": "Tea/coffee machine"
+    },
+    "displayOptions": {
+      "hotels": "Hotels",
+      "motels": "Motels",
+      "resorts": "Resorts",
+      "places": "place | places",
+      "btnSubtext": "{n} place | {n} places",
+      "other": "Other"
+    },
+    "viewPlace": "View Place",
+    "hotelPhotoAlt": "stay main photo",
+    "stayRatingCaption": "5 Star Hotel",
+    "excludingTax": "excl. tax"
   },
   "ariaLabels": {
     "btnThemeSwitcher": "theme switcher",
@@ -237,7 +320,10 @@
     "subtext": "Going somewhere to celebrate this season? Whether you’re going home or somewhere to roam, we’ve got the travel tools to get you to your destination.",
     "btn": "See all",
     "travelImgAlt": "one of city photos",
-    "bookBtn": "Book Flight",
+    "bookBtn": {
+      "flight": "Book Flight",
+      "stay": "Book Stay"
+    },
     "priceFrom": "From"
   },
   "accountPageCommon": {
@@ -515,5 +601,6 @@
   },
   "searchPageImageAlt": "page's main image",
   "close": "Close",
-  "calendarImgAlt": "calendar icon"
+  "calendarImgAlt": "calendar icon",
+  "ariaLabelToggleSection": "expand/collapse section"
 }

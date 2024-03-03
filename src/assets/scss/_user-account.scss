@@ -119,11 +119,24 @@ $user-avatar-box-margin-top: 60px;
   min-height: 300px;
 
   .user-cover-upload-btn {
+    grid-row-start: 1;
+    grid-row-end: 2;
+    grid-column-start: 1;
+    grid-column-end: 2;
+
+    align-self: flex-end;
+    justify-self: flex-end;
+    z-index: 2;
+
     margin-bottom: map.get($spacings, '2');
     margin-right: map.get($spacings, '2');
     @include for-small-and-above() {
       margin-bottom: map.get($spacings, '4');
       margin-right: map.get($spacings, '4');
+    }
+
+    &:hover {
+      cursor: pointer;
     }
 
     &::-webkit-file-upload-button {
@@ -146,17 +159,6 @@ $user-avatar-box-margin-top: 60px;
     .static-image-stub {
       border-radius: $user-cover-border-radius;
     }
-  }
-
-  .user-cover-upload-btn {
-    grid-row-start: 1;
-    grid-row-end: 2;
-    grid-column-start: 1;
-    grid-column-end: 2;
-
-    align-self: flex-end;
-    justify-self: flex-end;
-    z-index: 2;
   }
 }
 
@@ -240,6 +242,12 @@ $user-avatar-box-margin-top: 60px;
     max-width: calc($user-avatar-btn-size * $user-avatar-small-size / $user-avatar-normal-size);
     max-height: calc($user-avatar-btn-size * $user-avatar-small-size / $user-avatar-normal-size);
 
+    background-image: url('/img/icon-pen.svg');
+    background-size: 50% 50%;
+    background-repeat: no-repeat;
+    background-position: center center;
+    vertical-align: bottom;
+
     grid-row-start: 1;
     grid-row-end: 2;
     grid-column-start: 1;
@@ -252,6 +260,10 @@ $user-avatar-box-margin-top: 60px;
 
     margin: 0;
 
+    &:hover {
+      cursor: pointer;
+    }
+
     @include with-theme-color('account-avatar-frame') using($css-var) {
       background-color: var($css-var);
     }
@@ -263,18 +275,6 @@ $user-avatar-box-margin-top: 60px;
       max-width: $user-avatar-btn-size;
       max-height: $user-avatar-btn-size;
       border-radius: calc($user-avatar-normal-size / 2);
-    }
-    
-    &::before {
-      background-color: black;
-      padding: 0;
-      margin: 0;
-      transform: translate(-48%, -65%);
-      @include for-small-and-above() {
-        width: 24px;
-        height: 24px;
-        transform: translate(-15%, -20%);
-      }
     }
   }
 }
@@ -347,6 +347,17 @@ $user-avatar-box-margin-top: 60px;
 .icon-cross::before {
   -webkit-mask-image: escape-svg(svg.$icon-cross);
   mask-image: escape-svg(svg.$icon-cross);
+  margin-bottom: 0.05rem;
+}
+
+.icon-like::before {
+  -webkit-mask-image: url('/img/icon-like.svg');
+  mask-image: url('/img/icon-like.svg');
+}
+
+.icon-heart::before {
+  -webkit-mask-image: url('/img/icon-heart.svg');
+  mask-image: url('/img/icon-heart.svg');
 }
 
 .option-button-icon-user {

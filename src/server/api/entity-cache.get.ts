@@ -1,12 +1,12 @@
 import { H3Event } from 'h3';
 import onHeaders from 'on-headers';
-import orderBy from 'lodash/orderBy';
-import startCase from 'lodash/startCase';
-import isString from 'lodash/isString';
-import castArray from 'lodash/castArray';
+import orderBy from 'lodash-es/orderBy';
+import startCase from 'lodash-es/startCase';
+import isString from 'lodash-es/isString';
+import castArray from 'lodash-es/castArray';
 import { defineWebApiEventHandler } from '../utils/webapi-event-handler';
 import { AppException, AppExceptionCodeEnum } from '../../shared/exceptions';
-import { type CacheEntityType, type EntityId, type IEntityCacheItem } from '../../shared/interfaces';
+import { type CacheEntityType, type EntityId, type IEntityCacheItem, type IEntityCacheSlugItem } from '../../shared/interfaces';
 import { validateObject } from '../../shared/validation';
 import { EntityCacheQuerySchema } from './../dto';
 import AppConfig from './../../appconfig';
@@ -15,7 +15,7 @@ function sortResultByRequestOrder (items: IEntityCacheItem[], requestParamsOrder
   if (!items.length) {
     return items;
   }
-  const getItemIndex = (item: IEntityCacheItem) => (isString(requestParamsOrder[0]) ? (<string[]>requestParamsOrder).indexOf(item.slug) : (<EntityId[]>requestParamsOrder).indexOf(item.id));
+  const getItemIndex = (item: IEntityCacheItem) => (isString(requestParamsOrder[0]) ? (<string[]>requestParamsOrder).indexOf(((item as any) as IEntityCacheSlugItem).slug) : (<EntityId[]>requestParamsOrder).indexOf(item.id));
   return orderBy(items.map((i) => { return { item: i, idx: getItemIndex(i) }; }), ['idx'], ['asc']).map(i => i.item);
 }
 

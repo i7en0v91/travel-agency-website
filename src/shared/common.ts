@@ -1,10 +1,10 @@
-import toLower from 'lodash/toLower';
-import replace from 'lodash/replace';
+import toLower from 'lodash-es/toLower';
+import replace from 'lodash-es/replace';
 import { normalizeURL, parseURL } from 'ufo';
-import fromPairs from 'lodash/fromPairs';
+import fromPairs from 'lodash-es/fromPairs';
 import AppConfig from '../appconfig';
-import { type Locale, AvailableLocaleCodes, DEV_ENV_MODE } from './constants';
-import type { ILocalizableValue } from './interfaces';
+import { type Locale, AvailableLocaleCodes, DEV_ENV_MODE, SearchOffersListConstants } from './constants';
+import type { ILocalizableValue, GeoPoint, DistanceUnitKm } from './interfaces';
 import { LocaleEnum } from './constants';
 
 export function isLandingPageUrl (url: string): boolean {
@@ -80,6 +80,20 @@ export function eraseTimeOfDay (dateTime: Date): Date {
   return new Date(totalMs - totalMs % (1000 * 60 * 60 * 24));
 }
 
+export function convertTimeOfDay (timeOfDayMinutes: number): { hour24: number, minutes: number } {
+  timeOfDayMinutes = timeOfDayMinutes % SearchOffersListConstants.NumMinutesInDay;
+  const h = Math.max(0, Math.floor(timeOfDayMinutes / 60));
+  const m = Math.max(0, Math.floor(timeOfDayMinutes - 60 * h)) % 60;
+  return {
+    hour24: h,
+    minutes: m
+  };
+}
+
+export function getTimeOfDay (dateTimeUtc: Date, utcOffsetMinutes: number): number {
+  return (dateTimeUtc.getHours() * 60 + dateTimeUtc.getMinutes() + utcOffsetMinutes) % SearchOffersListConstants.NumMinutesInDay;
+}
+
 export function isDevOrTestEnv (): boolean {
   return import.meta.env.MODE === DEV_ENV_MODE || import.meta.env.VITE_VITEST || process.env?.VITEST || process.env?.NODE_ENV === DEV_ENV_MODE;
 }
@@ -114,4 +128,19 @@ export function mapLocalizeableValues (f: (...lv: string[]) => string, ...locali
     Object.keys(LocaleEnum).map(x => x.toLowerCase())
       .map(l => [l, f(...localizeableValues.map(v => (v as any)[l] as string))])
   ) as any;
+}
+
+export function calculateDistanceKm (from: GeoPoint, to: GeoPoint): DistanceUnitKm {
+  const EarthRadius: DistanceUnitKm = 6371;
+
+  const deg2rad = (deg: number) => deg * (Math.PI / 180);
+
+  const dLat = deg2rad(to.lat - from.lat);
+  const dLon = deg2rad(to.lon - from.lon);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(from.lat)) * Math.cos(deg2rad(to.lat)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return EarthRadius * c;
 }

@@ -1,19 +1,19 @@
-import orderBy from 'lodash/orderBy';
-import zip from 'lodash/zip';
-import range from 'lodash/range';
-import throttle from 'lodash/throttle';
-import groupBy from 'lodash/groupBy';
-import keys from 'lodash/keys';
-import flatten from 'lodash/flatten';
-import { type Theme } from './constants';
+import orderBy from 'lodash-es/orderBy';
+import zip from 'lodash-es/zip';
+import range from 'lodash-es/range';
+import throttle from 'lodash-es/throttle';
+import groupBy from 'lodash-es/groupBy';
+import keys from 'lodash-es/keys';
+import flatten from 'lodash-es/flatten';
+import { type Theme, WindowBreakpoints, DeviceSizeEnum } from './constants';
+import AppConfig from './../appconfig';
 
 export function isInViewport (element: HTMLElement, includeVeticallyScrollableTo = false) {
   const rect = element.getBoundingClientRect();
   const html = document.documentElement;
-  const res = (rect.top >= 0 || includeVeticallyScrollableTo) &&
-    rect.left >= 0 &&
-    (rect.bottom <= (window.innerHeight || html.clientHeight) || includeVeticallyScrollableTo) &&
-    rect.right <= (window.innerWidth || html.clientWidth);
+  const separatedByXaxis = rect.bottom < 0 || rect.top > (window.innerHeight || html.clientHeight);
+  const separatedByYaxis = rect.right < 0 || rect.left > (window.innerWidth || html.clientWidth);
+  const res = (!separatedByXaxis || includeVeticallyScrollableTo) && !separatedByYaxis;
   return res;
 }
 
@@ -22,11 +22,11 @@ function testRectIntersection (rect1: DOMRect, rect2: DOMRect): boolean {
 }
 
 function isElementItselfVisible (element: HTMLElement) {
-  const isTransparent = element.style.opacity && element.style.opacity.split('.').every(p => parseInt(p) === 0);
-  return !(element.style.display === 'none' ||
-          window.getComputedStyle(element).visibility === 'hidden' ||
-          !isInViewport(element, true) ||
-          isTransparent);
+  const isTransparent = ((element.style.opacity?.length ?? 0) > 0) && element.style.opacity.split('.').every((p) => { return parseInt(p) === 0; });
+  const isNotDisplayed = element.style.display === 'none';
+  const isInvisible = window.getComputedStyle(element).visibility === 'hidden';
+  const isOutOfViewport = !isInViewport(element, true);
+  return !(isNotDisplayed || isInvisible || isOutOfViewport || isTransparent);
 }
 
 function isElementHiddenOverflowVisible (testElement: HTMLElement, parentElement?: HTMLElement | null) : boolean {
@@ -65,11 +65,33 @@ function hasHiddenParent (element: HTMLElement) : boolean {
   return hasHiddenParent(element.parentElement);
 }
 
+function hasParentWithClassName (element: HTMLElement, classNameLowerCase: string): boolean {
+  if (element.className.includes('app-track') || element.tagName.toLowerCase() === 'body') {
+    return false;
+  }
+  if (element.className.toLowerCase().includes(classNameLowerCase)) {
+    return true;
+  }
+  if (!element.parentElement) {
+    return false;
+  }
+  return hasParentWithClassName(element.parentElement, classNameLowerCase);
+}
+
+function hasModalParent (element: HTMLElement) : boolean {
+  return hasParentWithClassName(element, 'modal-window');
+}
+
+function isReCAPTCHAElement (element: HTMLElement) : boolean {
+  return hasParentWithClassName(element, 'grecaptcha');
+}
+
 export function isElementVisible (element: HTMLElement) {
-  const isTransparent = element.style.opacity && element.style.opacity.split('.').every(p => parseInt(p) === 0);
+  const isTransparent = ((element.style.opacity?.length ?? 0) > 0) && element.style.opacity.split('.').every((p) => { return parseInt(p) === 0; });
   const hiddenOverflowVisibilityCheck = !element.className.includes('hidden-overflow-nontabbable') || isElementHiddenOverflowVisible(element);
   const hasHiddenParentCheck = element.className.includes('no-hidden-parent-tabulation-check') || !hasHiddenParent(element);
-  return isInViewport(element, true) && hasHiddenParentCheck && !isTransparent && hiddenOverflowVisibilityCheck;
+  const viewportCheck = isInViewport(element, true);
+  return viewportCheck && hasHiddenParentCheck && !isTransparent && hiddenOverflowVisibilityCheck;
 }
 
 export function calculateTabIndicies (rects: {x: number, y: number, width: number, height: number}[], snapSize = 1): number[] {
@@ -123,7 +145,13 @@ function getPopperId (elem: HTMLElement): string | undefined {
   return getPopperId(parentElem);
 }
 
-function doUpdateTabIndices () {
+/**
+ * Processes focusable HTML elements on page and fills tabIndex property in order - first from left to right then top to bottom.
+ * Handles dropdown menus, hidden parents e.t.c
+ * @param excludeModalWindowElements Workaround to make modal window controls ( e.g. @see useConfirmBox ) tabbale when on webkit engine.
+ * If true - autodetects modal container and excludes all inner controls from indexation
+ */
+function doUpdateTabIndices (excludeModalWindowElements: boolean = true) {
   const logger = CommonServicesLocator.getLogger();
   if (!document) {
     logger.verbose('tab indices - nothing to update');
@@ -143,12 +171,27 @@ function doUpdateTabIndices () {
 
   const disabledTabbableElements = allPotentiallyTabbableElems.filter(e => e.classList.contains('nontabbable') || e.classList.contains('disabled'));
   allPotentiallyTabbableElems.forEach((e) => {
+    if ((excludeModalWindowElements && hasModalParent(e)) || isReCAPTCHAElement(e)) {
+      return;
+    }
+
     if (isElementVisible(e) && !disabledTabbableElements.includes(e)) {
       tabbableElements.push(e);
     } else {
       unreachableElements.push(e);
     }
   });
+
+  if (!AppConfig.enableHtmlTabIndex) {
+    allPotentiallyTabbableElems.forEach((e) => {
+      if (e.attributes.getNamedItem('tabIndex')) {
+        e.attributes.removeNamedItem('tabIndex');
+      }
+    });
+    unreachableElements.forEach((e) => { e.tabIndex = -1; });
+    logger.verbose(`tab indices - turned off in config, total elements = ${allPotentiallyTabbableElems.length}`);
+    return;
+  }
 
   /** Popper groupings - dropdowns & menus */
   const popperGroupings = groupBy(tabbableElements
@@ -270,3 +313,20 @@ export function getPreferredTheme (): Theme | undefined {
   }
   return undefined;
 };
+
+export function isPrefersReducedMotionEnabled (): boolean {
+  const mediaQueryResult = window.matchMedia ? window.matchMedia('(prefers-reduced-motion)') : undefined;
+  return mediaQueryResult !== undefined && (mediaQueryResult.media === 'reduce' || (mediaQueryResult.matches && mediaQueryResult.media === '(prefers-reduced-motion)'));
+}
+
+export async function callForCurrentDeviceSize<TResult> (fn: (currentSize: DeviceSizeEnum, breakpoint: number) => Promise<TResult>): Promise<TResult> {
+  const allDeviceSizes = orderBy(Object.values(DeviceSizeEnum).map((x) => { return { value: x, width: WindowBreakpoints.getBreakpointForDevice(DeviceSizeEnum[x] as DeviceSizeEnum) }; }), ['width'], ['desc']);
+  for (let i = 0; i < allDeviceSizes.length; i++) {
+    const deviceSize = allDeviceSizes[i];
+    const mediaQuery = window.matchMedia(`only screen and (min-width: ${deviceSize.width}px)`);
+    if (mediaQuery.matches) {
+      return await fn(deviceSize.value, deviceSize.width);
+    }
+  }
+  return await fn(DeviceSizeEnum.S, WindowBreakpoints.S);
+}

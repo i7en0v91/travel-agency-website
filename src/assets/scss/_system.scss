@@ -1,4 +1,5 @@
 @use "sass:map";
+@use "sass:math";
 @use 'utils' as *; 
 @use 'themes' as *;
 
@@ -8,6 +9,8 @@
 
 $font-default: 'Montserrat', sans-serif;
 $font-header: 'Raleway', sans-serif;
+$font-size-base-px: 16px; // used for REM computation with respect to markup design values: 16px
+$font-size-base: math.div($font-size-base-px, 1px); 
 $transition-default-interval: 1.4s;
 $default-outline-offset: 4px; 
 $search-page-control-radius: 24px;
@@ -52,10 +55,18 @@ body {
   }
 }
 
+@function markup-to-rem($markup-size) {
+  @return math.div($markup-size, $font-size-base-px) * 1rem;
+}
+
+@mixin with-body-font-size($name) {
+  font-size: calc(var(--#{$prefix}-font-#{$name}-sz) / #{$font-size-base} * 1rem);
+}
+
 @mixin with-body-font($name) {
   font-family: $font-default;
   font-weight: map.get($weights-map, map.get($font-weights, $name));
-  font-size: var(--#{$prefix}-font-#{$name}-sz);
+  @include with-body-font-size($name);
 }
 
 @mixin with-header-font($level) {
@@ -63,15 +74,15 @@ body {
   @if $level == '1' or $level == '2' {
     font-weight: map.get($weights-map, map.get($weights-map, 'bold'));
     @if $level == '1' {
-      font-size: 42px; // to fit heading on landing page for XS devices
+      font-size: markup-to-rem(42px); // to fit heading on landing page for XS devices
     } @else {
-      font-size: calc(var(--#{$prefix}-font-h#{$level}-sz) * 2 / 3);
+      font-size: calc(math.div(map.get($font-size-l, h#{$level}) * 2, 3 * $font-size-base-px) * 1rem);
     }
     @include for-large-and-extra-large() {
-      font-size: var(--#{$prefix}-font-h#{$level}-sz);
+      font-size: calc(math.div(map.get($font-size-l, h#{$level}), $font-size-base-px) * 1rem);
     }
   } @else {
-    font-size: var(--#{$prefix}-font-h#{$level}-sz);
+    font-size: calc(math.div(map.get($font-size-l, h#{$level}), $font-size-base-px) * 1rem);
     font-weight: map.get($weights-map, 'semi-bold');
   } 
 }

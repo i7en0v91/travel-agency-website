@@ -7,7 +7,6 @@ import { getI18nResName3 } from './../../shared/i18n';
 import { clampTextLine } from './../../shared/common';
 import { updateTabIndices } from './../../shared/dom';
 import NavUserMenuItem from './nav-user-menu-item.vue';
-import { useUserAccountStore } from './../../stores/user-account-store';
 import { TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
 
 interface IProps {
@@ -38,7 +37,7 @@ function hideDropdown () {
 </script>
 
 <template>
-  <div v-if="status === 'authenticated'" class="nav-item nav-user mt-m-1" @keyup.escape="hideDropdown">
+  <div v-if="status === 'authenticated'" class="nav-item nav-user" @keyup.escape="hideDropdown">
     <VDropdown
       ref="dropdown"
       :distance="6"
@@ -55,10 +54,10 @@ function hideDropdown () {
         ctrl-key="navUserAvatar"
         :show-stub="false"
         class="nav-user-avatar"
-        img-class="nav-user-avatar-img"
+        img-class="nav-user-avatar-img mb-xs-1"
         :entity-src="{ slug: userAccount.avatar.slug, timestamp: userAccount.avatar.timestamp }"
         :category="ImageCategory.UserAvatar"
-        sizes="sm:30vw md:20vw lg:20vw xl:10vw xxl:10vw"
+        sizes="xs:30vw sm:20vw md:20vw lg:10vw xl:10vw"
         :alt-res-name="getI18nResName3('nav', 'userBox', 'navAvatarAlt')"
       />
       <div v-else class="nav-user-avatar nav-user-avatar-default" />
@@ -76,7 +75,7 @@ function hideDropdown () {
               img-class="nav-user-menu-avatar-img"
               :entity-src="{ slug: userAccount.avatar.slug, timestamp: userAccount.avatar.timestamp }"
               :category="ImageCategory.UserAvatar"
-              sizes="sm:30vw md:20vw lg:20vw xl:10vw xxl:10vw"
+              sizes="xs:30vw sm:20vw md:20vw lg:10vw xl:10vw"
               :alt-res-name="getI18nResName3('nav', 'userBox', 'navAvatarAlt')"
             />
             <div v-else class="nav-user-menu-avatar nav-user-menu-avatar-default" />

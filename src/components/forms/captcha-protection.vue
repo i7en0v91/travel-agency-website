@@ -3,7 +3,6 @@
 import VueRecaptcha from 'vue3-recaptcha2';
 import AppConfig from './../../appconfig';
 import { useThemeSettings } from './../../composables/theme-settings';
-import { useUserNotificationStore } from './../../stores/user-notification-store';
 import { UserNotificationLevel } from './../../shared/constants';
 import { getI18nResName2 } from './../../shared/i18n';
 import { maskLog, buildParamsLogData } from './../../shared/applogger';

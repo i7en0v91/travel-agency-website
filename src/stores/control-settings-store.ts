@@ -1,5 +1,5 @@
-import isArray from 'lodash/isArray';
-import isString from 'lodash/isString';
+import isArray from 'lodash-es/isArray';
+import isString from 'lodash-es/isString';
 import { type EntityId } from '../shared/interfaces';
 
 export type ControlValueSettingType = EntityId | string;

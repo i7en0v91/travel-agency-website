@@ -16,6 +16,10 @@ definePageMeta({
 const userAccountStore = useUserAccountStore();
 const userAccount = await userAccountStore.getUserAccount();
 
+const accountTabHtmlId = useId();
+const historyTabHtmlId = useId();
+const paymentTabHtmlId = useId();
+
 const primaryEmail = computed(() => {
   return ((userAccount.emails?.length ?? 0) > 0 && (userAccount.emails![0]?.length ?? 0) > 0)
     ? userAccount.emails![0]
@@ -48,12 +52,13 @@ const activeOptionCtrl = ref<string | undefined>();
       v-model:active-option-ctrl="activeOptionCtrl"
       class="user-account-page-tabs-control mt-xs-5"
       ctrl-key="accountOptionButtonsGroup"
+      role="tablist"
       :options="[
-        { ctrlKey: UIControlKeys.UserAccountOptionButtonAccount, labelResName: getI18nResName3('accountPage', 'tabAccount', 'title'), subtextResName: getI18nResName3('accountPage', 'tabAccount', 'title'), shortIcon: 'user', enabled: true },
-        { ctrlKey: UIControlKeys.UserAccountOptionButtonHistory, labelResName: getI18nResName3('accountPage', 'tabHistory', 'title'), subtextResName: getI18nResName3('accountPage', 'tabHistory', 'title'), shortIcon: 'history', enabled: true },
-        { ctrlKey: UIControlKeys.UserAccountOptionButtonPayments, labelResName: getI18nResName3('accountPage', 'tabPayments', 'title'), subtextResName: getI18nResName3('accountPage', 'tabPayments', 'title'), shortIcon: 'payments', enabled: true }
+        { ctrlKey: UIControlKeys.UserAccountOptionButtonAccount, labelResName: getI18nResName3('accountPage', 'tabAccount', 'title'), shortIcon: 'user', enabled: true, role: { role: 'tab', tabPanelId: accountTabHtmlId } },
+        { ctrlKey: UIControlKeys.UserAccountOptionButtonHistory, labelResName: getI18nResName3('accountPage', 'tabHistory', 'title'), shortIcon: 'history', enabled: true, role: { role: 'tab', tabPanelId: historyTabHtmlId } },
+        { ctrlKey: UIControlKeys.UserAccountOptionButtonPayments, labelResName: getI18nResName3('accountPage', 'tabPayments', 'title'), shortIcon: 'payments', enabled: true, role: { role: 'tab', tabPanelId: paymentTabHtmlId } }
       ]"
     />
-    <PageContent ctrl-key="accountPageContent" :active-option="activeOptionCtrl" />
+    <PageContent ctrl-key="accountPageContent" :active-option="activeOptionCtrl" :tab-panel-ids="{ payments: paymentTabHtmlId, account: accountTabHtmlId, history: historyTabHtmlId }" />
   </div>
 </template>

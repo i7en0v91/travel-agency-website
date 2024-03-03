@@ -39,13 +39,17 @@ $theme-light: (
   'subscribe-box-bg': #CDEAE1,
   'review-card-backface-bg': #CDEAE1,
   'shadow': color.adjust(rgba($ambient-base-light, 1.0), $alpha: -0.85),
-  'option-button-group-divisor': #D7E2EE,
+  'control-group-divisor': #D7E2EE,
   'property-grid-edit-highlight': #CDEAE1,
   'world-map-bg': #8DD3BB,
   'travel-details-ctrl-bg': white,
   'travel-details-ctrl': $ambient-base-light,
   'footer-bg': #8DD3BB,
-  'travel-details-texting': $ambient-base-light
+  'travel-details-texting': $ambient-base-light,
+  'badge': #8DD3BB,
+  'control-bg-scrollbar': rgba(255, 255, 255, 0.5),
+  'filter-panel-ctrl-btn': #FF8682,
+  'highlighted-info': #FF8682
 );
 
 $ambient-base-dark: #FFFFFF;
@@ -81,13 +85,17 @@ $theme-dark: (
   'subscribe-box-bg': #3B3B3B,
   'review-card-backface-bg': #3B3B3B,
   'shadow': color.adjust(rgba($ambient-base-dark, 1.0), $alpha: -0.85),
-  'option-button-group-divisor': #D7E2EE,
+  'control-group-divisor': #D7E2EE,
   'property-grid-edit-highlight': #3B3B3B,
   'world-map-bg': #A259FF,
   'travel-details-ctrl-bg': white,
   'travel-details-ctrl': black,
   'footer-bg': #676767,
-  'travel-details-texting': #112211
+  'travel-details-texting': #112211,
+  'badge': #676767,
+  'control-bg-scrollbar': rgba(255, 255, 255, 0.5),
+  'filter-panel-ctrl-btn': #FF8682,
+  'highlighted-info': #FF8682
 );
 
 @mixin compile-theme($theme-name, $colormap) {

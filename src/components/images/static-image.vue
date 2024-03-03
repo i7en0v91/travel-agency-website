@@ -1,14 +1,13 @@
 <script setup lang="ts">
 
 import { type CSSProperties } from 'vue';
-import fromPairs from 'lodash/fromPairs';
-import isString from 'lodash/isString';
+import fromPairs from 'lodash-es/fromPairs';
+import isString from 'lodash-es/isString';
 import { type ImageCategory, ImageAuthRequiredCategories, type IImageEntitySrc } from './../../shared/interfaces';
 import { type I18nResName } from './../../shared/i18n';
 import { type IAppLogger } from './../../shared/applogger';
 import { WebApiRoutes } from './../../shared/constants';
 import { type IImageDetailsDto } from './../../server/dto';
-import { useSystemConfigurationStore } from './../../stores/system-configuration-store';
 import ErrorHelm from './../error-helm.vue';
 
 interface IPublicAssetSrc {
@@ -25,12 +24,19 @@ interface IProps {
   sizes: string, // e.g. sm:100vw md:100vw lg:80vw xl:60vw xxl:40vw
   imgClass?: string | undefined,
   stubStyle?: CSSProperties | 'default' | 'custom-if-configured', // false - do not show custom stub (use default)
+  requestExtraDisplayOptions?: boolean,
+  overlayClass?: string,
   altResName?: I18nResName | undefined,
   altResParams?: any | undefined,
   showStub?: boolean,
   imgIsClientOnly?: boolean,
   isHighPriority?: boolean
 }
+
+declare interface IFetchedImageDetails {
+  stubCssStyle: CSSProperties | undefined,
+  invertForDarkTheme: boolean
+};
 
 const props = withDefaults(defineProps<IProps>(), {
   assetSrc: undefined,
@@ -39,7 +45,9 @@ const props = withDefaults(defineProps<IProps>(), {
   imgClass: undefined,
   altResName: undefined,
   altResParams: undefined,
+  requestExtraDisplayOptions: false,
   stubStyle: 'default',
+  overlayClass: undefined,
   showStub: true,
   imgIsClientOnly: false,
   isHighPriority: false
@@ -65,44 +73,47 @@ const imgUrl = computed(() => {
 
 // custom stub css styling
 const logger = CommonServicesLocator.getLogger();
-let finalStubData: Ref<CSSProperties | null | undefined>;
+let fetchedImageDetails: Ref<IFetchedImageDetails | undefined | null>;
+const invertForDarkTheme = ref<boolean>(false);
 const finalStubStyle = ref<CSSProperties | undefined>(!isString(props.stubStyle) ? (props.stubStyle as CSSProperties) : undefined);
-if (props.entitySrc && props.stubStyle === 'custom-if-configured') {
-  const stylingUrl = `${WebApiRoutes.ImageDetails}?slug=${props.entitySrc!.slug}&category=${props.category}`;
-  const { data, error } = await useFetch(stylingUrl,
+if (props.entitySrc && (props.stubStyle === 'custom-if-configured' || props.requestExtraDisplayOptions)) {
+  const detailsUrl = `${WebApiRoutes.ImageDetails}?slug=${props.entitySrc!.slug}&category=${props.category}`;
+  const { data, error } = await useFetch<IFetchedImageDetails>(detailsUrl,
     {
       server: true,
       lazy: true,
-      transform: (response: any) => {
-        logger.verbose(`(StaticImage) received image details, ctrlKey=${props.ctrlKey}, url=${stylingUrl}]`);
+      transform: (response: any): IFetchedImageDetails => {
+        logger.verbose(`(StaticImage) received image details, ctrlKey=${props.ctrlKey}, url=${detailsUrl}]`);
         const dto = response as IImageDetailsDto;
         if (!dto) {
-          logger.warn(`(StaticImage) fetch request for image details returned empty data, ctrlKey=${props.ctrlKey}, url=${stylingUrl}`);
-          return;
+          logger.warn(`(StaticImage) fetch request for image details returned empty data, ctrlKey=${props.ctrlKey}, url=${detailsUrl}`);
+          return { stubCssStyle: undefined, invertForDarkTheme: false };
         }
-        if (!dto.stubCssStyle) {
-          logger.info(`(StaticImage) image details does not contain custom css styling, ctrlKey=${props.ctrlKey}, url=${stylingUrl}`);
-          return;
+
+        let resultCssStyle: CSSProperties | undefined;
+        if (dto.stubCssStyle) {
+          resultCssStyle = fromPairs(dto.stubCssStyle) as CSSProperties;
+          logger.verbose(`(StaticImage) stub custom css style fetched, style=[${JSON.stringify(resultCssStyle)}] ctrlKey=${props.ctrlKey}, url=${detailsUrl}`);
         }
-        const result = fromPairs(dto.stubCssStyle) as CSSProperties;
-        logger.verbose(`(StaticImage) stub custom css style fetched, style=[${JSON.stringify(result)}] ctrlKey=${props.ctrlKey}, url=${stylingUrl}`);
-        return result;
+
+        return { stubCssStyle: resultCssStyle, invertForDarkTheme: dto.invertForDarkTheme } as IFetchedImageDetails;
       }
     });
-  finalStubData = data;
+  fetchedImageDetails = data;
   watch(error, () => {
     if (error.value) {
-      logger.warn(`(StaticImage) fetch request for image details failed, ctrlKey=${props.ctrlKey}, url=${stylingUrl}`, error.value);
+      logger.warn(`(StaticImage) fetch request for image details failed, ctrlKey=${props.ctrlKey}, url=${detailsUrl}`, error.value);
     }
   });
 
-  function updateFinalStubStyle () {
-    finalStubStyle.value = (!isString(props.stubStyle) ? (props.stubStyle as CSSProperties) : undefined) ?? finalStubData.value ?? undefined;
-    logger.verbose(`(StaticImage) applying stub custom css style, ctrlKey=${props.ctrlKey}, url=${stylingUrl}, style=[${finalStubStyle.value ? JSON.stringify(finalStubStyle.value) : 'empty'}]`);
+  function updateImageStylingDetails () {
+    finalStubStyle.value = (!isString(props.stubStyle) ? (props.stubStyle as CSSProperties) : undefined) ?? fetchedImageDetails.value?.stubCssStyle ?? undefined;
+    invertForDarkTheme.value = (props.requestExtraDisplayOptions ? (fetchedImageDetails.value?.invertForDarkTheme) : undefined) ?? false;
+    logger.verbose(`(StaticImage) applying stub custom css style, ctrlKey=${props.ctrlKey}, url=${detailsUrl}, style=[${finalStubStyle.value ? JSON.stringify(finalStubStyle.value) : 'empty'}], invertForDarkTheme=${invertForDarkTheme.value}`);
   }
-  watch(finalStubData, updateFinalStubStyle);
-  if (finalStubData.value) {
-    updateFinalStubStyle();
+  watch(fetchedImageDetails, updateImageStylingDetails);
+  if (fetchedImageDetails.value) {
+    updateImageStylingDetails();
   }
 }
 
@@ -113,7 +124,7 @@ const stubCssClass = computed(() => {
 });
 
 const imgCssClass = computed(() => {
-  return `static-image-img ${props.imgClass} ${loaded ? 'img-loaded' : ''}`;
+  return `static-image-img ${props.imgClass} ${loaded ? 'img-loaded' : ''} ${invertForDarkTheme.value ? 'dark-theme-invert' : ''}`;
 });
 
 function onLoad () {
@@ -184,6 +195,7 @@ function getLogger () : IAppLogger {
           @load="onLoad"
           @error="onError"
         />
+        <div v-if="loaded && overlayClass" :class="`static-image-overlay ${props.overlayClass}`" />
       </div>
     </ErrorHelm>
   </div>

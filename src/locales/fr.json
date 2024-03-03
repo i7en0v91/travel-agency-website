@@ -21,8 +21,8 @@
   },
   "notAvailableInDemo": "Non disponible en démo",
   "nav": {
-    "findFlights": "Trouver des vols",
-    "findStays": "Trouver des séjours",
+    "findFlights": "Vols",
+    "findStays": "Séjours",
     "login": "Connecter",
     "signUp": "S'inscrire",
     "navToggler": "basculeur de liens de navigation",
@@ -76,12 +76,40 @@
     "btnCancel": "Annuler"
   },
   "searchOffers": {
-    "addPromoCode": "Ajouter un code promotionnel",
+    "addPromoCode": "Code promo",
     "showFlights": "Afficher les vols",
     "showStays": "Afficher les lieux",
     "flightsTab": "Vols",
     "staysTab": "Séjours",
-    "whereToFly": "Où volez-vous ?"
+    "whereToFly": "Où volez-vous ?",
+    "filters": {
+      "panelHeader": "Filtres",
+      "price": "Prix",
+      "rating": "Notation",
+      "noResultsStub": "Aucun résultat à filtrer",
+      "checklistMoreItems": "+{count} plus",
+      "checklistCollapseItems": "effondrement",
+      "ariaLabelRangeHandler": "gestionnaire de curseur de plage"
+    },
+    "displayOptions": {
+      "cheapest": "Le moins cher",
+      "best": "Meilleur",
+      "rating": "Note",
+      "otherSelected": "Autre: {variantLabel}",
+      "showingTotal": "Affichage de {count} sur {total}",
+      "sortBy": "Trier par {factor}"
+    },
+    "scoreClass": {
+      "veryGood": "Très bien",
+      "good": "Bien",
+      "medium": "Moyen",
+      "low": "Faible",
+      "veryLow": "Très lent"
+    },
+    "reviewsCount": "revoir | commentairess",
+    "startingPrice": "a partir de",
+    "pagingBtn": "Afficher plus de résultats",
+    "ariaLabelSearch": "lancer la recherche d'offres"
   },
   "searchFlights": {
     "destinationCaption": "De - À",
@@ -103,7 +131,26 @@
     "fieldClass": "Classe de vol",
     "ariaLabelFrom": "ville de départ",
     "ariaLabelTo": "ville d'arrivée",
-    "ariaLabelSwap": "échanger la ville d'arrivée et de départ"
+    "ariaLabelSwap": "échanger la ville d'arrivée et de départ",
+    "filters": {
+      "departureTime": "Heure de départ",
+      "airlines": "Compagnies aériennes",
+      "trips": "Voyages",
+      "tripsDatesFlexible": "Mes dates sont flexibles",
+      "applyBtn": "Appliquer des filtres",
+      "resetBtn": "Réinitialiser"
+    },
+    "displayOptions": {
+      "timeToDeparture": "Heure du départ",
+      "quickest": "Le plus rapide",
+      "shortSummary": "${price} . {hours}h {minutes}m",
+      "flights": "vol | vols",
+      "other": "Autre sorte"
+    },
+    "airlineCompanyLogoAlt": "logo de la compagnie aérienne",
+    "nonStop": "sans arrêt",
+    "flightDuration": "{hours}h {minutes}m",
+    "viewDetails": "Voir les détails"
   },
   "searchStays": {
     "destinationCaption": "Entrez la destination",
@@ -115,7 +162,43 @@
     "numberOfGuests": "Invités",
     "numRooms": "chambre | chambres",
     "numGuests": "invité | invités",
-    "ariaLabelDestination": "ville de destination"
+    "ariaLabelDestination": "ville de destination",
+    "filters": {
+      "freebies": "Cadeaux",
+      "amenities": "Agréments"
+    },
+    "freebies": {
+      "breakfast": "Petit déjeuner gratuit",
+      "parking": "Parking gratuit",
+      "internet": "Internet gratuit",
+      "shuttle": "Navette aéroport gratuite",
+      "cancellation": "Annulation gratuite"
+    },
+    "amenities": {
+      "frontDesk": "Réception 24h",
+      "airConditioner": "Climatisée",
+      "fitness": "Centre Fitness",
+      "indoorPool": "Piscine intérieure",
+      "outdoorPool": "Piscine extérieure",
+      "spa": "Centre de spa et de bien-être",
+      "restaraunt": "Restaurant",
+      "roomService": "Service de chambre",
+      "bar": "Bar lounge",
+      "wifi": "Wifi gratuit",
+      "teaCoffee": "Machine à thé/café"
+    },
+    "displayOptions": {
+      "hotels": "Maison",
+      "motels": "Motels",
+      "resorts": "Hôtels",
+      "places": "lieu | lieux",
+      "btnSubtext": "{n} lieu | {n} lieux",
+      "other": "Autre"
+    },
+    "viewPlace": "Voir le lieu",
+    "hotelPhotoAlt": "rester photo principale",
+    "stayRatingCaption": "Hôtel 5 étoiles",
+    "excludingTax": "excl. impôt"
   },
   "ariaLabels": {
     "btnThemeSwitcher": "changeur de thème",
@@ -237,7 +320,10 @@
     "subtext": "Vous allez quelque part pour célébrer cette saison ? Que vous rentriez chez vous ou quelque part en itinérance, nous avons les outils de voyage pour vous amener à votre destination.",
     "btn": "Voir tout",
     "travelImgAlt": "une des photos de la ville",
-    "bookBtn": "Réserver un vol",
+    "bookBtn": {
+      "flight": "Réserver un vol",
+      "stay": "Réserver un séjour"
+    },
     "priceFrom": "De"
   },
   "loginPage": {
@@ -515,5 +601,6 @@
   },
   "searchPageImageAlt": "image principale de la page",
   "close": "fermer",
-  "calendarImgAlt": "icône du calendrier"
+  "calendarImgAlt": "icône du calendrier",
+  "ariaLabelToggleSection": "développer/réduire la section"
 }

@@ -44,8 +44,8 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
 
     .footer-app-logo {
       display: block;
-      width: 120px;
-      height: 40px;
+      width: markup-to-rem(120px);
+      height: markup-to-rem(40px);
 
       margin-left: auto;
       margin-right: auto;
@@ -88,8 +88,8 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
         }
 
         &::after {
-          width: 20px;
-          height: 20px;
+          width: markup-to-rem(20px);
+          height: markup-to-rem(20px);
           content: '';
           display: block;
           
@@ -128,7 +128,7 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
     grid-template-columns: 1fr;
     place-content: center;
     @media only screen and (min-width: $app-footer-centering-breakpoint) {
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
       place-content: unset;
       order: 2;
     }
@@ -150,7 +150,7 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
         .footer-section-header {
           white-space: nowrap;
           @include with-body-font('5');
-          font-size: 16px;
+          font-size: markup-to-rem(16px);
           font-weight: bold;
 
           @include with-theme-color('input-ctrl-primary') using ($css-var) {
@@ -161,7 +161,10 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
     
       .footer-item {
         width: 100%;
-        max-width: 210px;
+        max-width: 290px;
+        @include for-small-and-above() {
+          max-width: 270px;  
+        }
         margin-left: auto;
         margin-right: auto; 
         text-align: center;
@@ -179,6 +182,10 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
           width: min-content;
           white-space: nowrap;
           cursor: pointer;
+
+          text-overflow: ellipsis;
+          max-width: 100%;
+          overflow: hidden;
 
           margin-left: auto;
           margin-right: auto;
@@ -246,6 +253,7 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
     }
 
     .subscribe-box-text {
+      display: block;
       @include with-theme-color('secondary') using ($css-var) {
         color: var(#{$css-var});
       }

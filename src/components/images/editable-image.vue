@@ -1,12 +1,11 @@
 <script setup lang="ts">
 
-import isString from 'lodash/isString';
+import isString from 'lodash-es/isString';
 import { useModal } from 'vue-final-modal';
 import { toUint8Array } from 'js-base64';
 import { basename, extname } from 'pathe';
 import { type ImageCategory, type IImageEntitySrc } from './../../shared/interfaces';
 import { type I18nResName, getI18nResName2, getI18nResName3 } from './../../shared/i18n';
-import { useUserNotificationStore } from './../../stores/user-notification-store';
 import StaticImage from './static-image.vue';
 import { UserNotificationLevel, CroppingImageDataKey, WebApiRoutes } from './../../shared/constants';
 import AppConfig from './../../appconfig';
@@ -225,6 +224,8 @@ function openFileDialog () {
   fileInputEl.value?.click();
 }
 
+const fileInputHtmlId = useId();
+
 </script>
 
 <template>
@@ -241,9 +242,9 @@ function openFileDialog () {
       :is-high-priority="isHighPriority"
       :alt-res-name="altResName"
     />
-    <label :for="`${ctrlKey}-input-btn`" :class="`tabbable btn ${styling?.btnClass} py-xs-3 px-xs-2 ${styling?.btnIcon ? `btn-icon icon-${styling?.btnIcon}` : ''}`" @keyup.enter="openFileDialog" @keyup.space="openFileDialog">{{ btnResName ? $t(btnResName) : '&nbsp;' }}</label>
+    <label :for="fileInputHtmlId" :class="`tabbable btn ${styling?.btnClass} py-xs-3 px-xs-2 ${styling?.btnIcon ? `btn-icon icon-${styling?.btnIcon}` : ''}`" @keyup.enter="openFileDialog" @keyup.space="openFileDialog">{{ btnResName ? $t(btnResName) : '&nbsp;' }}</label>
     <input
-      :id="`${ctrlKey}-input-btn`"
+      :id="fileInputHtmlId"
       ref="fileInputEl"
       :style=" { display: 'none' } "
       type="file"

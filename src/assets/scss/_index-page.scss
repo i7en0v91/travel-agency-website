@@ -5,11 +5,11 @@
 @use 'utils' as *;
 @use 'svg';
 
-$main-title-image-xs-height: 501px;
-$main-title-image-m-height: 581px;
-
-$popular-city-card-width: 350px;
-$popular-city-card-xs-width: 340px;
+$popular-city-card-width: markup-to-rem(370px);
+$popular-city-card-xs-width: markup-to-rem(340px);
+$popular-city-card-img-size: 90px;
+$popular-city-card-height: 120px;
+$popular-city-card-width-limit: 70vw;
 $search-page-image-link-border-radius: 20px;
 
 $review-card-swiper-xs-height: 506px;
@@ -19,37 +19,27 @@ $review-card-sz-xs-width: 325px;
 $review-card-sz-s-width: 425px;
 $review-card-sz-backface-xs-gap: 16px;
 $review-card-sz-backface-s-gap: 26px;
-$review-card-sz-xs-header-height: 60px;
-$review-card-sz-s-header-height: 80px;
-$review-card-sz-img-height: 200px;
-$review-card-sz-xs-height: 376px;
-$review-card-sz-s-height: 408px;
+$review-card-sz-header-height: 4rem;
+$review-card-sz-body-height: 60px;
+$review-card-sz-xs-height: calc(306px + $review-card-sz-header-height);
+$review-card-sz-s-height: calc(378px + $review-card-sz-header-height);
 
 .search-page-head-landing {
   border-radius: $search-page-control-radius;
-  background-image: linear-gradient(0deg, transparent 0%, transparent 40%, #000000aa 100%);
 
   margin: 14px 14px 0px 14px;
   @include for-large-and-extra-large() {
     margin: 30px 30px 0px 30px;
   }
 
+  .search-page-head-landing-overlay {
+    background-image: linear-gradient(0deg, transparent 0%, #000000aa 100%);
+  }
+
   .search-page-head-image {
-    height: $main-title-image-xs-height;
-    max-height: $main-title-image-xs-height;
-    @include for-medium-and-large() {
-      height: $main-title-image-m-height;
-      max-height: $main-title-image-m-height;
-    }
 
     border-radius: $search-page-control-radius;
     img {
-      height: $main-title-image-xs-height;
-      max-height: $main-title-image-xs-height;
-      @include for-medium-and-large() {
-        height: $main-title-image-m-height;
-        max-height: $main-title-image-m-height;
-      }
 
       border-radius: $search-page-control-radius;
     }
@@ -68,15 +58,22 @@ $review-card-sz-s-height: 408px;
   .heading-text {
     color: white;
     text-align: center;
-    margin-top: 20px;
+    height: 100%;
 
+
+    margin-top: 80px;
     @include for-small-and-above() {
-      margin-top: 0px;
       position: absolute;
+      height: unset;
+      max-height: unset;
+      padding-bottom: unset;
       top: 180px;
       left: 0;
       right: 0;
       width: 100%;
+    }
+    @include for-medium-and-large() {
+      top: 80px;
     }
 
     h2, h1 {
@@ -85,7 +82,14 @@ $review-card-sz-s-height: 408px;
 
     p {
       font-weight: map.get($weights-map, 'semi-bold');
-      font-size: 20px;
+      font-size: markup-to-rem(20px);
+    }
+
+    h2, h1, p {
+      word-break: break-all;
+      @include for-small-and-above() {
+        word-break: normal;
+      }
     }
   }
 }
@@ -108,69 +112,97 @@ $review-card-sz-s-height: 408px;
   }
 
   .popular-city-card {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 16px;
+    display: block;
+    width: auto;
+    height: $popular-city-card-height;
+    max-height: $popular-city-card-height;
+    max-width: 100%;
 
     margin-left: auto;
     margin-right: auto;
-    width: 100%;
-    max-width: $popular-city-card-xs-width - 32px;
-    @include for-medium-and-large() {
-      max-width: $popular-city-card-width - 32px;
+
+    @include for-small-and-above() {
+      min-width: $popular-city-card-xs-width;
     }
 
-    @include with-theme-color('shadow') using($css-var) {
-      box-shadow: 0px 4px 16px var($css-var);
-    }
-  
-    .popular-city-card-img {
-      width: 90px;
-      height: 90px;
-      min-width: 90px;
-      min-height: 90px;
+    .popular-city-card-container {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 16px;
 
-      .static-image-stub {
-        border-radius: map.get($borders-radius, '3');
-      }
-
-      img {
-        background-size: cover;
-        border-radius: map.get($borders-radius, '3');
-      }
-    }
-  
-    .popular-city-info {
-      width: 100%;
+      width: auto;
       height: 100%;
+      overflow: hidden;
   
-      .popular-city-name {
-        @include with-theme-color('secondary') using ($css-var) {
-          color: var(#{$css-var});
-        }
-        @include with-body-font('category-caption');
+      @include with-theme-color('shadow') using($css-var) {
+        box-shadow: 0px 4px 16px var($css-var);
       }
+    
+      .popular-city-card-img {
+        width: $popular-city-card-img-size;
+        height: $popular-city-card-img-size;
+        max-width: $popular-city-card-img-size;
+        max-height: $popular-city-card-img-size;
 
-      .popular-city-links {
-        display: flex;
-        flex-wrap: nowrap;
-        flex-direction: row;
-        align-items: center;
-        gap: 8px;
-
-        @include with-theme-color('input-ctrl-primary') using ($css-var) {
-          color: var(#{$css-var});
+        flex: 1 0 auto;
+  
+        .static-image-stub {
+          border-radius: map.get($borders-radius, '3');
         }
-
-        a:focus-visible {
-          @include with-outline();
+  
+        img {
+          background-size: cover;
+          border-radius: map.get($borders-radius, '3');
         }
+      }
+    
+      .popular-city-info {
+        width: fit-content;
+        height: max-content;
 
-        a:hover {
-          text-decoration: underline;
-          text-decoration-thickness: 1.5px;
+        flex: 0 1 auto;
+    
+        .popular-city-name {
+          width: fit-content;
+          height: auto;
+
+          overflow: hidden;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+          white-space: pre-wrap;
+  
+          @include with-theme-color('secondary') using ($css-var) {
+            color: var(#{$css-var});
+          }
+          @include with-body-font('category-caption');
+        }
+  
+        .popular-city-links {
+          width: fit-content;
+          height: auto;
+          overflow: hidden;
+
+          display: flex;
+          flex-wrap: wrap;
+          flex-direction: row;
+          align-items: center;
+          gap: 8px;
+  
+          @include with-theme-color('input-ctrl-primary') using ($css-var) {
+            color: var(#{$css-var});
+          }
+  
+          a:focus-visible {
+            @include with-outline();
+          }
+  
+          a:hover {
+            text-decoration: underline;
+            text-decoration-thickness: markup-to-rem(1.5px);
+          }
         }
       }
     }
@@ -237,7 +269,7 @@ $review-card-sz-s-height: 408px;
       align-items: center;
 
       * {
-        max-width: 60%;
+        max-width: 80%;
       }
 
       p, h2 {
@@ -247,8 +279,17 @@ $review-card-sz-s-height: 408px;
       a {
         align-self: center;
         outline-color: white;
+
+        &::before {
+          transform: translateY(2px);
+          vertical-align: baseline;
+        }
       }
     }
+  }
+
+  .search-stays-page-link-overlay {
+    background-image: linear-gradient(0deg, transparent 0%, #00000088 100%);
   }
 }
 
@@ -306,10 +347,8 @@ $review-card-sz-s-height: 408px;
 
     width: 100%;
     height: 100%;
-    //margin-bottom: $review-card-sz-backface-xs-gap;
     margin-right: $review-card-sz-backface-xs-gap;
     @include for-small-and-above() {
-      //margin-bottom: $review-card-sz-backface-s-gap;
       margin-right: $review-card-sz-backface-s-gap;
     }    
 
@@ -323,14 +362,14 @@ $review-card-sz-s-height: 408px;
 
     .review-card-header {
       font-weight: map.get($weights-map, 'bold');
-      min-height: $review-card-sz-xs-header-height;
+      height: $review-card-sz-header-height;
+      max-height: $review-card-sz-header-height;
 
+      width: fit-content;
+    
+      overflow: hidden;
       @include with-theme-color('input-ctrl-primary') using ($css-var) {
         color: var(#{$css-var});
-      }
-      
-      @include for-small-and-above() {
-        min-height: $review-card-sz-s-header-height;
       }
     }
   
@@ -348,6 +387,7 @@ $review-card-sz-s-height: 408px;
   
       .review-card-content {
         width: 100%;
+        height: 100%;
     
         display: flex;
         flex-direction: column;
@@ -356,20 +396,22 @@ $review-card-sz-s-height: 408px;
     
         .review-card-body {
           overflow: hidden;
-          display: -webkit-box;
-          -webkit-box-orient: vertical;
-          -webkit-line-clamp: 2;
-          white-space: pre-wrap;
+          height: $review-card-sz-body-height;
+          min-height: $review-card-sz-body-height;
       
           @include with-body-font('secondary');
           @include with-theme-color('secondary') using ($css-var) {
             color: var(#{$css-var});
           }
-    
-          &.expanded {
-            -webkit-line-clamp: unset;
+        }
+
+        &.expanded {
+          .review-card-body {
             -webkit-line-clamp: unset;
             overflow: unset;
+            height: 100%;
+            display: contents;
+            max-height: unset;
           }
         }
     
@@ -424,23 +466,25 @@ $review-card-sz-s-height: 408px;
       
         .review-card-img {
           width: 100%;
-          height: $review-card-sz-img-height;
-          max-height: $review-card-sz-img-height;
+          height: auto;
+          justify-self: flex-end;
+          margin-top: auto;
       
           border-radius: map.get($borders-radius, '3');
       
-          margin-top: 24px;
-          @include for-small-and-above() {
-            margin-top: 40px;
-          }
-      
           .static-image-stub {
             border-radius: map.get($borders-radius, '3');
-            height: $review-card-sz-img-height;
+            height: 100%;
           }
           img {
             border-radius: map.get($borders-radius, '3');
-            height: $review-card-sz-img-height;
+            height: 100%;
+          }
+        }
+
+        &.expanded {
+          .review-card-img {
+            margin-top: 40px;
           }
         }
       }

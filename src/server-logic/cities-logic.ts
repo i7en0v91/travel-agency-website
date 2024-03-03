@@ -1,22 +1,28 @@
 import { PrismaClient } from '@prisma/client';
-import { type EntityId, type ICitiesLogic, type ICitySearchItem, type ICityShort, type IPopularCityData, type IPopularCityItem, type ITravelDetails } from '../shared/interfaces';
+import { type Storage, type StorageValue } from 'unstorage';
+import { type EntityId, type ICitiesLogic, type ICitySearchItem, type ICity, type IPopularCityData, type IPopularCityItem, type ITravelDetails } from '../shared/interfaces';
 import { type IAppLogger } from '../shared/applogger';
 import { DbConcurrencyVersions } from '../shared/constants';
 import type { ICitiesSearchQuery } from '../server/dto';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
 import { mapLocalizeableValues } from '../shared/common';
+import { Mappers, Queries } from './queries';
 
 export class CitiesLogic implements ICitiesLogic {
+  private readonly AllPopularCitiesCacheKey = 'AllPopularCities';
+
   private logger: IAppLogger;
   private dbRepository: PrismaClient;
+  private cache: Storage<StorageValue>;
 
-  public static inject = ['logger', 'dbRepository'] as const;
-  constructor (logger: IAppLogger, dbRepository: PrismaClient) {
+  public static inject = ['cache', 'dbRepository', 'logger'] as const;
+  constructor (cache: Storage<StorageValue>, dbRepository: PrismaClient, logger: IAppLogger) {
     this.logger = logger;
     this.dbRepository = dbRepository;
+    this.cache = cache;
   }
 
-  async getCity (slug: string): Promise<ICityShort> {
+  async getCity (slug: string): Promise<ICity> {
     this.logger.verbose(`(CitiesLogic) loading city, slug=${slug}`);
 
     const cityEntity = await this.dbRepository.city.findFirst({
@@ -24,14 +30,7 @@ export class CitiesLogic implements ICitiesLogic {
         isDeleted: false,
         slug
       },
-      select: {
-        id: true,
-        modifiedUtc: true,
-        createdUtc: true,
-        lon: true,
-        lat: true,
-        nameStr: true
-      }
+      select: Queries.CityInfoQuery.select
     });
     if (!cityEntity) {
       this.logger.warn(`(CitiesLogic) city not found: slug=${slug}`);
@@ -41,18 +40,7 @@ export class CitiesLogic implements ICitiesLogic {
         'error-stub');
     }
 
-    const result: ICityShort = {
-      id: cityEntity.id,
-      slug,
-      createdUtc: cityEntity.createdUtc,
-      modifiedUtc: cityEntity.modifiedUtc,
-      isDeleted: false,
-      name: cityEntity.nameStr,
-      geo: {
-        lat: cityEntity.lat.toNumber(),
-        lon: cityEntity.lon.toNumber()
-      }
-    };
+    const result: ICity = Mappers.MapCity(cityEntity);
 
     this.logger.verbose(`(CitiesLogic) city loaded, slug=${slug}, id=${result.id}`);
     return result;
@@ -84,11 +72,13 @@ export class CitiesLogic implements ICitiesLogic {
         id: true
       }
     });
+    this.logger.debug('(CitiesLogic) adding popular city, resetting cache');
+    await this.cache.removeItem(this.AllPopularCitiesCacheKey);
 
     this.logger.verbose(`(CitiesLogic) popular city data added, cityId=${data.cityId}`);
   }
 
-  async getTravelDetails (cityId: number): Promise<ITravelDetails> {
+  async getTravelDetails (cityId: number): Promise<Omit<ITravelDetails, 'price'>> {
     this.logger.verbose(`(CitiesLogic) city travel details requested, cityId=${cityId}`);
 
     const popularCityEntity = await this.dbRepository.popularCity.findFirst({
@@ -99,12 +89,7 @@ export class CitiesLogic implements ICitiesLogic {
         }
       },
       select: {
-        city: {
-          select: {
-            id: true,
-            modifiedUtc: true
-          }
-        },
+        city: Queries.CityInfoQuery,
         travelHeaderStr: true,
         travelTextStr: true,
         images: {
@@ -138,15 +123,14 @@ export class CitiesLogic implements ICitiesLogic {
         'error-stub');
     }
 
-    const result: ITravelDetails = {
-      price: 350, // TODO: implement some pricing logic
+    const result: Omit<ITravelDetails, 'price'> = {
       header: popularCityEntity.travelHeaderStr,
       text: popularCityEntity.travelTextStr,
       images: popularCityEntity.images.map((i) => { return { slug: i.image.slug, timestamp: i.image.file.modifiedUtc.getTime() }; }),
-      modifiedUtc: popularCityEntity.city.modifiedUtc
+      city: Mappers.MapCity(popularCityEntity.city)
     };
 
-    this.logger.verbose(`(CitiesLogic) city travel details loaded, cityId=${cityId}, numImages=${result.images.length}, result=${result.modifiedUtc}`);
+    this.logger.verbose(`(CitiesLogic) city travel details loaded, cityId=${cityId}, numImages=${result.images.length}, lastModified=${result.city.modifiedUtc}`);
     return result;
   }
 
@@ -201,85 +185,86 @@ export class CitiesLogic implements ICitiesLogic {
         }
       });
     });
+    this.logger.debug('(CitiesLogic) setting popular city images, resetting cache');
+    await this.cache.removeItem(this.AllPopularCitiesCacheKey);
 
     this.logger.verbose(`(CitiesLogic) popular city images have been set, id=${id}, images=${JSON.stringify(images)}`);
   }
 
   async getPopularCities (): Promise<IPopularCityItem[]> {
-    this.logger.verbose('(CitiesLogic) obtaining list of popular cities');
+    this.logger.debug('(CitiesLogic) obtaining list of popular cities');
 
-    const cityEntities = await this.dbRepository.popularCity.findMany({
-      where: {
-        city: {
-          isDeleted: false
-        }
-      },
-      select: {
-        // id: true,
-        visibleOnWorldMap: true,
-        promoLineStr: true,
-        city: {
-          select: {
-            id: true,
-            nameStr: true,
-            country: {
-              include: {
-                nameStr: true
-              }
-            },
-            lon: true,
-            lat: true
+    let result = await this.cache.getItem(this.AllPopularCitiesCacheKey) as IPopularCityItem[];
+    if (!result) {
+      this.logger.verbose('(CitiesLogic) obtaining list of popular cities, cache miss');
+      const cityEntities = await this.dbRepository.popularCity.findMany({
+        where: {
+          city: {
+            isDeleted: false
           }
         },
-        images: {
-          select: {
-            image: {
-              select: {
-                slug: true,
-                file: {
-                  select: {
-                    modifiedUtc: true
+        select: {
+          // id: true,
+          visibleOnWorldMap: true,
+          promoLineStr: true,
+          city: {
+            select: {
+              id: true,
+              slug: true,
+              nameStr: true,
+              country: {
+                include: {
+                  nameStr: true
+                }
+              },
+              lon: true,
+              lat: true
+            }
+          },
+          images: {
+            select: {
+              image: {
+                select: {
+                  slug: true,
+                  file: {
+                    select: {
+                      modifiedUtc: true
+                    }
                   }
                 }
-              }
-            },
-            order: true
+              },
+              order: true
+            }
+          }
+        },
+        orderBy: {
+          city: {
+            population: 'desc'
           }
         }
-      },
-      orderBy: {
-        city: {
-          population: 'desc'
-        }
-      }
-    });
+      });
 
-    const result: IPopularCityItem[] = cityEntities.map((e) => {
-      const cardImage = e.images.find(i => i.order === 1);
-      /* if (!cardImage) {
-        this.logger.warn(`(CitiesLogic) cannot find city main card image: cityId=${e.city.id}`);
-        throw new AppException(
-          AppExceptionCodeEnum.UNKNOWN,
-          'Cannot find city main card image',
-          'error-stub');
-      } */
+      result = cityEntities.map((e) => {
+        const cardImage = e.images.find(i => i.order === 1);
+        return <IPopularCityItem>{
+          id: e.city.id,
+          cityDisplayName: e.city.nameStr,
+          countryDisplayName: e.city.country.nameStr,
+          promoLine: e.promoLineStr,
+          imgSlug: cardImage?.image.slug ?? '', // cardImage may be undefined only if DB has not been initially seeded
+          slug: e.city.slug,
+          geo: {
+            lon: e.city.lon.toNumber(),
+            lat: e.city.lat.toNumber()
+          },
+          visibleOnWorldMap: e.visibleOnWorldMap,
+          timestamp: cardImage?.image.file.modifiedUtc.getTime() ?? 0
+        };
+      });
+      await this.cache.setItem(this.AllPopularCitiesCacheKey, result);
+    }
 
-      return <IPopularCityItem>{
-        id: e.city.id,
-        cityDisplayName: e.city.nameStr,
-        countryDisplayName: e.city.country.nameStr,
-        promoLine: e.promoLineStr,
-        slug: cardImage?.image.slug ?? '', // cardImage may be undefined only if DB has not been initially seeded
-        geo: {
-          lon: e.city.lon.toNumber(),
-          lat: e.city.lat.toNumber()
-        },
-        visibleOnWorldMap: e.visibleOnWorldMap,
-        timestamp: cardImage?.image.file.modifiedUtc.getTime() ?? 0
-      };
-    });
-    this.logger.verbose(`(CitiesLogic) list of popular cities obtained, count=${result.length}`);
-
+    this.logger.debug(`(CitiesLogic) list of popular cities obtained, count=${result.length}`);
     return result;
   }
 

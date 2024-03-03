@@ -5,8 +5,6 @@ import { VueFinalModal } from 'vue-final-modal';
 import { fromUint8Array } from 'js-base64';
 import { type ImageCategory } from './../../shared/interfaces';
 import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
-import { useUserNotificationStore } from './../../stores/user-notification-store';
-import { useSystemConfigurationStore } from './../../stores/system-configuration-store';
 import { UserNotificationLevel, CroppingImageDataKey, CroppingImageFormat } from './../../shared/constants';
 import { useThemeSettings } from './../../composables/theme-settings';
 import SimpleButton from './../forms/simple-button.vue';

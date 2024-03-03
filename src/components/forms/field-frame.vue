@@ -5,17 +5,22 @@ import { type I18nResName } from './../../shared/i18n';
 const { t } = useI18n();
 
 interface IProps {
-  textResName?: I18nResName
+  textResName?: I18nResName,
+  inputHtmlId?: string
 }
-defineProps<IProps>();
+
+withDefaults(defineProps<IProps>(), {
+  textResName: undefined,
+  inputHtmlId: undefined
+});
 
 </script>
 
 <template>
   <div class="field-frame brdr-1">
-    <div v-if="textResName" class="field-frame-label px-xs-1">
+    <label v-if="textResName" :for="inputHtmlId" class="field-frame-label px-xs-1">
       {{ t(textResName) }}
-    </div>
+    </label>
     <slot />
   </div>
 </template>

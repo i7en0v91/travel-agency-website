@@ -20,6 +20,10 @@
     }
   }
 
+  tr td {
+    display: table-cell;
+  }
+
   .privacy-section {
     margin-top: map.get($spacings, '4');
     @include for-medium-and-large() {
@@ -53,7 +57,15 @@
     }
 
     .privacy-purpose-table-listvalues {
+      display: inline-grid;
       list-style: inside;
+
+      li {
+        margin-top:  map.get($spacings, '1');
+        &:last-child {
+          margin-bottom: map.get($spacings, '1');
+        }
+      }
     }
   }
 }

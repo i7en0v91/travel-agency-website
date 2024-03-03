@@ -6,6 +6,7 @@ import { WorldMapCityLabelFlipX } from './../../shared/constants';
 
 interface IProps {
   ctrlKey: string,
+  slug: string,
   cityName: ILocalizableValue,
   countryName: ILocalizableValue,
   imgSrc: IImageEntitySrc,
@@ -14,11 +15,17 @@ interface IProps {
 const props = defineProps<IProps>();
 
 const { locale } = useI18n();
+const travelDetailsStore = useTravelDetailsStore();
 
-const $emit = defineEmits(['click']);
-function onClick () {
-  $emit('click');
+const cityUrl = ref<string>(travelDetailsStore.buildTravelCityUrl(props.slug));
+function updateCityUrl () {
+  cityUrl.value = travelDetailsStore.buildTravelCityUrl(props.slug);
 }
+
+onMounted(() => {
+  updateCityUrl();
+  watch(locale, updateCityUrl);
+});
 
 </script>
 
@@ -36,15 +43,15 @@ function onClick () {
       :ctrl-key="ctrlKey"
       :entity-src="{ slug: imgSrc.slug, timestamp: imgSrc.timestamp }"
       :category="ImageCategory.CityCard"
-      sizes="sm:30vw md:20vw lg:10vw xl:10vw xxl:10vw"
+      sizes="xs:30vw sm:20vw md:10vw lg:10vw xl:10vw"
       class="world-map-city-label-img brdr-2"
       :alt-res-name="getI18nResName3('flightsPage', 'worldMap', 'cityImgAlt')"
       :show-stub="true"
     />
     <div class="world-map-city-info">
-      <button class="world-map-city-name brdr-1 no-hidden-parent-tabulation-check" type="button" :aria-label="$t(getI18nResName3('flightsPage', 'worldMap', 'cityTravelInfoAria'))" @click="onClick">
+      <NuxtLink :external="false" :replace="true" :href="cityUrl" class="world-map-city-name brdr-1 no-hidden-parent-tabulation-check" :aria-label="$t(getI18nResName3('flightsPage', 'worldMap', 'cityTravelInfoAria'))">
         {{ (props.cityName as any)[locale] }}
-      </button>
+      </NuxtLink>
       <div class="world-map-city-country">
         {{ (props.countryName as any)[locale] }}
       </div>

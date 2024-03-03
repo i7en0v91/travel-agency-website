@@ -51,10 +51,12 @@ function onDropdownHide () {
 
 const $emit = defineEmits<{(event: 'itemClick', ctrlKey: string): void}>();
 
+const htmlId = useId();
+
 </script>
 
 <template>
-  <li
+  <div
     :id="`other-options-menu-anchor-${props.ctrlKey}`"
     :class="`option-button tabbable ${hasActiveItem ? 'active' : ''} ${enabled ? 'enabled' : 'disabled'}`"
     @click="onClick"
@@ -62,6 +64,7 @@ const $emit = defineEmits<{(event: 'itemClick', ctrlKey: string): void}>();
     @keyup.enter="onClick"
     @keyup.escape="onEscape"
   >
+    <div class="option-button-separator" role="separator" />
     <VDropdown
       ref="dropdown"
       :distance="6"
@@ -96,7 +99,11 @@ const $emit = defineEmits<{(event: 'itemClick', ctrlKey: string): void}>();
           >
             <span class="options-button-dropdown-active-icon mr-xs-1" />
             <span
+              :id="htmlId"
               :class="`options-button-dropdown-text brdr-1 tabbable ${v.isActive ? 'active' : ''} ${v.enabled ? 'enabled' : 'disabled'}`"
+              role="radio"
+              :aria-checked="v.enabled"
+              :aria-labelledby="htmlId"
               @click="() => { if(v.enabled) { onActivate(v.ctrlKey); } }"
               @keyup.space="() => { if(v.enabled) { onActivate(v.ctrlKey); } }"
               @keyup.enter="() => { if(v.enabled) { onActivate(v.ctrlKey); } }"
@@ -105,5 +112,5 @@ const $emit = defineEmits<{(event: 'itemClick', ctrlKey: string): void}>();
         </ol>
       </template>
     </VDropdown>
-  </li>
+  </div>
 </template>

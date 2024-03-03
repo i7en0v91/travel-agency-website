@@ -1,8 +1,8 @@
-import { createStorage } from 'unstorage';
+import { type Storage, type StorageValue } from 'unstorage';
 import dayjs from 'dayjs';
-import isString from 'lodash/isString';
+import isString from 'lodash-es/isString';
 import { type IAppLogger } from '../shared/applogger';
-import { type IEntityCache, type IEntityCacheItem, type CacheEntityType, type EntityId } from '../shared/interfaces';
+import { type IEntityCache, type IEntityCacheItem, type IEntityCacheSlugItem, type CacheEntityType, type EntityId } from '../shared/interfaces';
 import { WebApiRoutes } from '../shared/constants';
 import { get } from './rest-utils';
 
@@ -12,13 +12,13 @@ declare interface IEntityCacheItemEntry<TCacheItem extends { type: CacheEntityTy
 }
 
 export class EntityCache implements IEntityCache {
-  inMemoryStorage: ReturnType<typeof createStorage> | undefined; // server-side session (stored in DB)
+  cache: Storage<StorageValue>;
   logger: IAppLogger;
 
-  public static inject = ['logger'] as const;
-  constructor (logger: IAppLogger) {
+  public static inject = ['logger', 'cache'] as const;
+  constructor (logger: IAppLogger, cache: Storage<StorageValue>) {
     this.logger = logger;
-    this.inMemoryStorage = createStorage();
+    this.cache = cache;
   }
 
   getItemKey = (idOrSlug: EntityId | string, type: CacheEntityType): string => {
@@ -33,27 +33,28 @@ export class EntityCache implements IEntityCache {
   };
 
   set = async <TEntityType extends CacheEntityType, TCacheItem extends { type: TEntityType; } & IEntityCacheItem>(item: TCacheItem, expireInSeconds: number | undefined): Promise<void> => {
-    this.logger.debug(`(entity-cache) set: id=${item.id}, slug=${item.slug}, item=${JSON.stringify(item)}, expireInSeconds=${expireInSeconds ?? '[none]'}`);
-    const keys = [item.slug ? this.getItemKey(item.slug, item.type) : undefined, item.id ? this.getItemKey(item.id, item.type) : undefined].filter(k => k);
+    const slug = ((item as any) as IEntityCacheSlugItem)?.slug;
+    this.logger.debug(`(entity-cache) set: id=${item.id}, slug=${slug}, item=${JSON.stringify(item)}, expireInSeconds=${expireInSeconds ?? '[none]'}`);
+    const keys = [slug ? this.getItemKey(slug, item.type) : undefined, item.id ? this.getItemKey(item.id, item.type) : undefined].filter(k => k);
     const cacheEntry : IEntityCacheItemEntry<TCacheItem> = {
       item,
       expireAt: expireInSeconds ? dayjs(new Date()).add(expireInSeconds!, 'second').toDate() : undefined
     };
     for (let i = 0; i < keys.length; i++) {
-      await this.inMemoryStorage!.setItem(keys[i]!, cacheEntry);
+      await this.cache!.setItem(keys[i]!, cacheEntry);
     }
   };
 
   remove = async <TEntityType extends CacheEntityType>(idOrSlug: EntityId | string, type: TEntityType): Promise<void> => {
     this.logger.debug(`(entity-cache) remove: idOrSlug=${idOrSlug}, type=${type}`);
     const key = this.getItemKey(idOrSlug, type);
-    await this.inMemoryStorage?.removeItem(key);
+    await this.cache?.removeItem(key);
   };
 
   getSingle = async <TEntityType extends CacheEntityType, TCacheItem extends { type: TEntityType; } & IEntityCacheItem>(idOrSlug: EntityId | string, type: TEntityType): Promise<TCacheItem | undefined> => {
     this.logger.debug(`(entity-cache) getSingle: idOrSlug=${idOrSlug}, type=${type}`);
     const key = this.getItemKey(idOrSlug, type);
-    const cacheEntry = await this.inMemoryStorage?.getItem<IEntityCacheItemEntry<TCacheItem>>(key);
+    const cacheEntry = await this.cache?.getItem<IEntityCacheItemEntry<TCacheItem>>(key);
     if (cacheEntry) {
       if (cacheEntry.expireAt) {
         if (dayjs(new Date()).isBefore(cacheEntry.expireAt)) {

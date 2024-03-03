@@ -6,13 +6,16 @@
 
 $landing-color: white;
 
-$theme-switcher-button-size: 16px;
+$theme-switcher-button-size: 1rem;
 $theme-switcher-aspect-ratio: 2;
 $theme-switcher-button-pad: 2px;
+$theme-switcher-stopper-adj: 6px;
 $theme-switcher-animation-interval: 0.2s;
 
 $search-page-link-menu-animation-interval: 0.6s;
 $navlink-text-decoration-thickness: 1.5px;
+$navlink-menu-chevron-width: 0.33rem;
+$navlink-menu-chevron-height: 0.6rem;
 $navbar-outline-offset: $default-outline-offset + 1px;
 
 .nav-bar {
@@ -33,7 +36,7 @@ $navbar-outline-offset: $default-outline-offset + 1px;
 
   align-items: center;
   @include for-large-and-extra-large() {
-    align-items: baseline;
+    align-items: center;
   }
   
 
@@ -41,7 +44,7 @@ $navbar-outline-offset: $default-outline-offset + 1px;
     @include with-theme-color('body-bg') using ($css-var) {
       background-color: var($css-var);
     }
-    padding: 16px calc(var(--#{$prefix}-page-padding-x) - $navbar-outline-offset) 16px calc(var(--#{$prefix}-page-padding-x) - $navbar-outline-offset);
+    padding: markup-to-rem(16px) calc(var(--#{$prefix}-page-padding-x) - $navbar-outline-offset) markup-to-rem(16px) calc(var(--#{$prefix}-page-padding-x) - $navbar-outline-offset);
   
     @include with-theme-color('shadow') using($css-var) {
       box-shadow: 0px 4px 16px var($css-var);
@@ -78,8 +81,8 @@ $navbar-outline-offset: $default-outline-offset + 1px;
   }
 
   .nav-link-icon::before {
-    width: 24px;
-    height: 24px;
+    width: markup-to-rem(24px);
+    height: markup-to-rem(24px);
   
     display: inline-block;
     -webkit-mask-size: contain;
@@ -201,8 +204,8 @@ $navbar-outline-offset: $default-outline-offset + 1px;
     }
 
     .nav-toggler {
-      width: 26px;
-      height: 26px;
+      width: markup-to-rem(26px);
+      height: markup-to-rem(26px);
       margin-bottom: 6px;
 
       display: block;
@@ -274,79 +277,96 @@ $navbar-outline-offset: $default-outline-offset + 1px;
     }
 
     .nav-user {
-      .nav-user-avatar {
-        width: 44px;
-        height: 44px;
-        min-width: 44px;
-        min-height: 44px;
+      & > div {
 
-        display: inline-block;
-        border-radius: 22px;
-        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
 
-        .nav-user-avatar-img {
+        .nav-user-avatar {
+          width: 44px;
+          height: 44px;
+          min-width: 44px;
+          min-height: 44px;
+  
+          display: inline-block;
           border-radius: 22px;
-        }
+          overflow: hidden;
+  
+          .nav-user-avatar-img {
+            border-radius: 22px;
+          }
+  
+          &.nav-user-avatar-default {
+            mask-image: escape-svg(svg.$icon-user);
+            -webkit-mask-image: escape-svg(svg.$icon-user);
+            -webkit-mask-size: contain;
+            mask-size: contain;
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+            -webkit-mask-position: center center;
+            mask-position: center center;
+            vertical-align: middle;
+  
+            border-radius: 22px;
+            
+            @at-root {
+              .nav-user-avatar-default {
+                background-color: white;
+              }
 
-        &.nav-user-avatar-default {
-          mask-image: escape-svg(svg.$icon-user);
-          -webkit-mask-image: escape-svg(svg.$icon-user);
-          -webkit-mask-size: contain;
-          mask-size: contain;
-          -webkit-mask-repeat: no-repeat;
-          mask-repeat: no-repeat;
-          -webkit-mask-position: center center;
-          mask-position: center center;
-          vertical-align: middle;
-
-          border-radius: 22px;
-          background-color: white;
-          
-          @at-root {
-            .nav-bar.nav-bar-inapp .nav-user .nav-user-avatar.nav-user-avatar-default {
-              @include with-theme-color('input-ctrl-primary') using ($css-var) {
-                background-color: var($css-var);
+              .nav-bar.nav-bar-inapp .nav-user .nav-user-avatar.nav-user-avatar-default {
+                @include with-theme-color('input-ctrl-primary') using ($css-var) {
+                  background-color: var($css-var);
+                }
               }
             }
           }
         }
-      }
+    
+        .btn-user-name {
+          white-space: nowrap;
+          align-self: center;
+          vertical-align: middle;
+          text-overflow: ellipsis;
+          overflow: hidden;
+          max-width: map.get($breakpoints, 'xs') - 110px;
   
-      .btn-user-name {
-        white-space: nowrap;
-        align-self: center;
-        text-overflow: ellipsis;
-        overflow: hidden;
-        max-width: map.get($breakpoints, 'xs') - 110px;
-        transform: translateY(-16px);
-
-        @include with-body-font('nav-link');
-        &:focus-visible {
-          @include with-outline();
-        }
-
-        &:hover {
-          text-decoration: underline;
-          text-decoration-thickness: $navlink-text-decoration-thickness;
-          cursor: pointer;
-        }
-
-        @at-root {
-          .btn-user-name {
-            @include with-theme-color('input-ctrl-primary') using ($css-var) {
-              color: var(#{$css-var});
+          @include with-body-font('nav-link');
+          &:focus-visible {
+            @include with-outline();
+          }
+  
+          &:hover {
+            text-decoration: underline;
+            text-decoration-thickness: $navlink-text-decoration-thickness;
+            cursor: pointer;
+          }
+  
+          @at-root {
+            .btn-user-name {
+              @include with-theme-color('input-ctrl-primary') using ($css-var) {
+                color: var(#{$css-var});
+              }
+            }
+  
+            .nav-bar-landing .nav-user .btn-user-name {
+              color: $landing-color;
             }
           }
-
-          .nav-bar-landing .nav-user .btn-user-name {
-            color: $landing-color;
+        }
+  
+        .nav-user-avatar-default + .btn-user-name {
+          margin-bottom: 0.2rem;
+          @include for-large-and-extra-large() {
+            margin-bottom: unset;
           }
         }
-      }
 
-      .nav-user-avatar-default + .btn-user-name {
-        transform: translateY(0px);
       }
+      
     }
   }    
 
@@ -434,16 +454,20 @@ $navbar-outline-offset: $default-outline-offset + 1px;
 
 .theme-switcher {
   text-align: right;
-  margin-bottom: auto;
-  margin-top: auto;
-  padding-bottom: 3px;
+  height: fit-content;
+  vertical-align: middle;
+  align-self: center;
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  align-items: center;
 
   button {
     display: inline-block;
     position: relative;
     
-    width: $theme-switcher-aspect-ratio * $theme-switcher-button-size;
-    height: $theme-switcher-button-size + 2 * $theme-switcher-button-pad + 2;
+    width: calc($theme-switcher-aspect-ratio * $theme-switcher-button-size);
+    height: calc($theme-switcher-button-size + 2 * $theme-switcher-button-pad + 2px);
 
     cursor: pointer;
     z-index: 0;
@@ -464,9 +488,9 @@ $navbar-outline-offset: $default-outline-offset + 1px;
     &:focus-visible {
       @include with-outline(2px);
     }
-    border-radius: $theme-switcher-button-size * 0.5;
+    border-radius: calc($theme-switcher-button-size * 0.5);
     &:focus-visible {
-      border-radius: $theme-switcher-button-size * 0.5;
+      border-radius: calc($theme-switcher-button-size * 0.5);
     }
 
     &::after {
@@ -487,7 +511,7 @@ $navbar-outline-offset: $default-outline-offset + 1px;
       width: $theme-switcher-button-size;
       
       z-index: 1;
-      border-radius: $theme-switcher-button-size * 0.5;
+      border-radius: calc($theme-switcher-button-size * 0.5);
     }
   
     .locale-switcher-nav-item {
@@ -495,7 +519,8 @@ $navbar-outline-offset: $default-outline-offset + 1px;
     }
   
     @at-root :root[data-theme="light"] &::after {
-      left: ($theme-switcher-aspect-ratio - 1) * $theme-switcher-button-size - $theme-switcher-button-pad - 2;
+      left: calc(($theme-switcher-aspect-ratio - 1) * $theme-switcher-button-size);
+      margin-left: calc($theme-switcher-button-pad - $theme-switcher-stopper-adj);
       
       -webkit-mask-image: escape-svg(svg.$icon-sun);
       mask-image: escape-svg(svg.$icon-sun);
@@ -526,6 +551,7 @@ $navbar-outline-offset: $default-outline-offset + 1px;
       mask-size: contain;
 
       left: $theme-switcher-button-pad;
+      margin-left: 0;
     }
 
     100% {
@@ -534,7 +560,8 @@ $navbar-outline-offset: $default-outline-offset + 1px;
       -webkit-mask-size: contain;
       mask-size: contain;
 
-      left: ($theme-switcher-aspect-ratio - 1) * $theme-switcher-button-size - $theme-switcher-button-pad - 2;
+      left: calc(($theme-switcher-aspect-ratio - 1) * $theme-switcher-button-size);
+      margin-left: calc($theme-switcher-button-pad - $theme-switcher-stopper-adj);
     }
   }
 
@@ -545,7 +572,8 @@ $navbar-outline-offset: $default-outline-offset + 1px;
       -webkit-mask-size: contain;
       mask-size: contain;
 
-      left: ($theme-switcher-aspect-ratio - 1) * $theme-switcher-button-size - $theme-switcher-button-pad - 2;
+      left: calc(($theme-switcher-aspect-ratio - 1) * $theme-switcher-button-size);
+      margin-left: calc($theme-switcher-button-pad - $theme-switcher-stopper-adj);
     }
 
     100% {
@@ -555,6 +583,7 @@ $navbar-outline-offset: $default-outline-offset + 1px;
       mask-size: contain;
 
       left: $theme-switcher-button-pad;
+      margin-left: 0;
     }
   }
 }
@@ -579,9 +608,8 @@ $navbar-outline-offset: $default-outline-offset + 1px;
   height: auto;
   margin: 4px;
 
-  width: 240px;
   @include for-large-and-extra-large() {
-    width: 320px;
+    min-width: 320px;
   }
 
   .nav-user-menu-header {
@@ -623,7 +651,7 @@ $navbar-outline-offset: $default-outline-offset + 1px;
       max-width: map.get($breakpoints, 'xs') - 160px;
       overflow-wrap: break-word;
       @include with-body-font('nav-link');
-      font-size: var(--#{$prefix}-font-body-primary-sz);
+      @include with-body-font-size('body-primary');
       margin-top: auto;
       margin-bottom: auto;
     }
@@ -646,8 +674,8 @@ $navbar-outline-offset: $default-outline-offset + 1px;
       margin-top: map.get($spacings, '3');
 
       .nav-user-menu-icon {
-        width: 16px;
-        height: 16px;
+        width: 1rem;
+        height: 1rem;
         flex: 0 0 auto;
       
         @include with-theme-color('input-ctrl-primary') using ($css-var) {
@@ -657,24 +685,26 @@ $navbar-outline-offset: $default-outline-offset + 1px;
 
       .nav-link {
         flex: 1 1 auto;
+        line-height: normal;
       }
 
       .nav-user-menu-chevron {
         flex: 0 0 auto;
+        margin-right: 3 * $navlink-menu-chevron-width;
 
         @include with-theme-color('input-ctrl-primary') using ($css-var) {
           color: var(#{$css-var});
         }
 
         &::after {
-          width: 5px;
-          height: 9px;
-          margin-top: 3px;
-          margin-right: 5px;
+          width: $navlink-menu-chevron-width;
+          height: $navlink-menu-chevron-height;
+          margin-top: 0.33rem;
+          margin-right: 8px;
           position: absolute;
           right: 0;
           display: inline-block;
-          padding: map.get($spacings, '1');
+          padding-right: markup-to-rem(map.get($spacings, '1'));
           content: '';
 
           -webkit-mask-image: escape-svg(svg.$icon-right-chevron);
@@ -699,14 +729,15 @@ $navbar-outline-offset: $default-outline-offset + 1px;
 
 .nav-logo {
   display: block;
-  width: 110px;
-  height: 36px;
+  width: markup-to-rem(110px);
+  height: markup-to-rem(36px);
   z-index: 2;
 
   @include for-large-and-extra-large() {
     position: absolute;
     left: 50%;
     right: 50%;
+    transform: translateX(-50%);
     top: 24px;
   }
 
@@ -722,14 +753,14 @@ $navbar-outline-offset: $default-outline-offset + 1px;
     body {
       .nav-bar.nav-bar-landing .nav-logo {
         @include for-large-and-extra-large() {
-          top: 60px;
+          top: calc(70px - 0.7rem);
         }
       }
 
       .nav-bar.nav-bar-inapp .nav-logo {
         @include for-large-and-extra-large() {
           top: unset;
-          transform: translateY(-20px);
+          transform: translateY(-1rem);
         }  
       }
 
@@ -800,8 +831,10 @@ $navbar-outline-offset: $default-outline-offset + 1px;
 
 
 .locale-switcher-btn {
-  width: 28px;
-  height: 28px;
+  width: markup-to-rem(28px);
+  height: markup-to-rem(28px);
+  white-space: nowrap;
+  width: 100%;
 
   @include with-theme-color('input-ctrl-primary') using ($css-var) {
     color: var(#{$css-var});

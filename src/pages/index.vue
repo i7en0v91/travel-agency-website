@@ -1,8 +1,8 @@
 <script setup lang="ts">
 
-import shuffle from 'lodash/shuffle';
+import shuffle from 'lodash-es/shuffle';
 import { Navigation, Autoplay, Mousewheel } from 'swiper/modules';
-import range from 'lodash/range';
+import range from 'lodash-es/range';
 import PageSection from './../components/common-page-components/page-section.vue';
 import SearchPageImageLink from './../components/index/search-page-image-link.vue';
 import PopularCityCard from './../components/index/popular-city-card.vue';
@@ -67,6 +67,7 @@ function onActiveSlideChanged () {
       :subtext-res-name="getI18nResName3('indexPage', 'perfectTripSection', 'subtext')"
       :btn-text-res-name="getI18nResName3('indexPage', 'perfectTripSection', 'btn')"
       :content-padded="true"
+      link-url="flights"
       :is-error="citiesListFetch.error.value !== undefined"
     >
       <ul class="popular-city-grid p-xs-2 p-s-3  hidden-overflow-nontabbable">
@@ -75,7 +76,8 @@ function onActiveSlideChanged () {
           :key="`popular-city-${idx}`"
           :ctrl-key="`PopularCityCard-${idx}`"
           :text="city ? mapLocalizeableValues((city: string, country: string) => `${city}, ${country}`, city.cityDisplayName, city.countryDisplayName) : undefined"
-          :img-src="city ? { slug: city.slug, timestamp: city.timestamp } : undefined"
+          :img-src="city ? { slug: city.imgSlug, timestamp: city.timestamp } : undefined"
+          :city-slug="city ? city.slug : undefined"
           class="popular-city-grid-item"
         />
       </ul>

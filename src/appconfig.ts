@@ -1,4 +1,4 @@
-import { type LogLevel, type Locale } from './shared/constants';
+import { type LogLevel, type Locale, SearchOffersListConstants } from './shared/constants';
 import { type ILogSuppressionRule } from './shared/applogger';
 import { isDevOrTestEnv, isQuickStartEnv } from './shared/common';
 import { type AppExceptionCode } from './shared/exceptions';
@@ -84,7 +84,12 @@ export interface IAppConfig {
     expirationsSeconds: {
       default: number
     }
-  }
+  },
+  searchOffers: {
+    listPageSize: number,
+    flexibleDatesRangeDays: number
+  },
+  enableHtmlTabIndex: boolean
 }
 
 const Config : IAppConfig = {
@@ -132,7 +137,9 @@ const Config : IAppConfig = {
         /** suppressing VPopper hydration mistmatches - non critical, everything works */
         { messageFitler: /.*[h|H]ydration.*/g, componentNameFilter: /.*[p|P]opper.*/g },
         /** suppressing NuxtImg hydration mistmatches - non critical, everything works */
-        { messageFitler: /.*[h|H]ydration.*/g, componentNameFilter: /.*NuxtImg.*/g }
+        { messageFitler: /.*[h|H]ydration.*/g, componentNameFilter: /.*NuxtImg.*/g },
+        /** suppressing strange travel details visibility style hydration mistmatches - non critical, everything works */
+        { messageFitler: /.*[h|H]ydration.*/g, componentNameFilter: /.*(TravelDetailsImage|TravelDetailsTexting).*/g }
       ]
     }
   },
@@ -210,7 +217,12 @@ const Config : IAppConfig = {
     expirationsSeconds: { // cache item expiration in seconds, must not exceed "maxage" cache HTTP-header across involved entity types
       default: 1800 // default expiration for any entity type
     }
-  }
+  },
+  searchOffers: { // settings related to flight & stay offers search pages with filter & pagination
+    listPageSize: 20, // pagination - number of offer items fetched from server in one request
+    flexibleDatesRangeDays: SearchOffersListConstants.FlexibleDatesRangeDays // allowed depart/return date adjustment in days for searched offers when "My Dates Are Flexible" flag is set
+  },
+  enableHtmlTabIndex: true // if enabled, system will automatically compute and fill tabIndex property for all interactive html elements (including dropdowns, menus e.t.c). If disabled, tabIndex="-1" will be used
 };
 
 export default Config;

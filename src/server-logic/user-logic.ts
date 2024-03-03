@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import dayjs from 'dayjs';
-import groupBy from 'lodash/groupBy';
-import values from 'lodash/values';
+import groupBy from 'lodash-es/groupBy';
+import values from 'lodash-es/values';
 import { type IUserProfileInfo, type UserResponseDataSet, type RegisterVerificationFlow, type RegisterUserByEmailResponse, type IUserLogic, AuthProvider, type IUserMinimalInfo, type IImageLogic, type ITokenLogic, type IEmailSender, TokenKind, type IEmailParams, EmailTemplate, type PasswordRecoveryResult, type EntityId, ImageCategory, type IImageBytesProvider, type Timestamp, type UpdateUserAccountResult } from '../shared/interfaces';
 import { type IAppLogger } from '../shared/applogger';
 import { isPasswordSecure } from '../shared/common';
@@ -328,7 +328,8 @@ export class UserLogic implements IUserLogic {
           category,
           ownerId: userId,
           mimeType,
-          stubCssStyle: undefined
+          stubCssStyle: undefined,
+          invertForDarkTheme: false
         });
         timestamp = queryResult.timestamp;
         imageId = queryResult.id;
@@ -712,7 +713,8 @@ export class UserLogic implements IUserLogic {
         },
         select: {
           email: true,
-          verificationToken: true
+          verificationToken: true,
+          isVerified: true
         }
       });
       if (userEmails.length === 0) {
@@ -720,7 +722,7 @@ export class UserLogic implements IUserLogic {
         return 'user-not-found';
       }
       const verificationToken = userEmails[0].verificationToken;
-      if (!verificationToken || this.tokenLogic.isTokenActive(verificationToken.isDeleted, verificationToken.attemptsMade, verificationToken.createdUtc) === 'active') {
+      if (!userEmails[0].isVerified && (!verificationToken || this.tokenLogic.isTokenActive(verificationToken.isDeleted, verificationToken.attemptsMade, verificationToken.createdUtc) === 'active')) {
         this.logger.info(`(UserLogic) user email verification pending, no need to recover password, email=${maskLog(email)}`);
         return 'email-not-verified';
       }

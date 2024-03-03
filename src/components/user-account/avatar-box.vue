@@ -39,10 +39,10 @@ watch(imageSrc, () => {
     :category="ImageCategory.UserAvatar"
     ctrl-key="userAvatar"
     class="avatar-box"
-    sizes="sm:50vw md:30vw lg:20vw xl:10vw xxl:10vw"
+    sizes="xs:50vw sm:30vw md:20vw lg:10vw xl:10vw"
     :fill-alpha="false"
     :show-stub="false"
     :alt-res-name="getI18nResName2('accountPage', 'avatarAlt')"
-    :styling="{ containerClass: 'user-avatar-image-container', htmlImgClass: 'user-avatar-image-el', btnClass: 'user-avatar-upload-btn', btnIcon: 'pen' }"
+    :styling="{ containerClass: 'user-avatar-image-container', htmlImgClass: 'user-avatar-image-el', btnClass: 'user-avatar-upload-btn' }"
   />
 </template>

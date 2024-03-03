@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import range from 'lodash/range';
+import range from 'lodash-es/range';
 import SimplePropertyEdit from './../../forms/property-grid/simple-property-edit.vue';
 import PropertyGrid from './../../forms/property-grid/property-grid.vue';
 import { updateTabIndices } from './../../../shared/dom';

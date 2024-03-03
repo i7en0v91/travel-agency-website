@@ -1,17 +1,21 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { readdir } from 'fs/promises';
+import { readdir, access } from 'fs/promises';
 import slugify from 'slugify';
 import { join, resolve, basename } from 'pathe';
 import Mime from 'mime';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Decimal } from 'decimal.js';
 import { destr } from 'destr';
 import sharp from 'sharp';
-import mean from 'lodash/mean';
+import mean from 'lodash-es/mean';
 import type { CSSProperties } from 'vue';
-import fromPairs from 'lodash/fromPairs';
+import fromPairs from 'lodash-es/fromPairs';
+import orderBy from 'lodash-es/orderBy';
+import set from 'lodash-es/set';
+import template from 'lodash-es/template';
+import { murmurHash } from 'ohash';
 import { type IAppLogger } from '../shared/applogger';
-import { DefaultUserAvatarSlug, DefaultUserCoverSlug, MainTitleSlug, FlightsTitleSlug, DefaultLocale, DEV_ENV_MODE } from '../shared/constants';
-import { type EntityId, type ILocalizableValue, AuthProvider, ImageCategory, type IImageData, EmailTemplate } from '../shared/interfaces';
+import { DefaultUserAvatarSlug, DefaultUserCoverSlug, MainTitleSlug, FlightsTitleSlug, AvailableLocaleCodes, DefaultLocale, DEV_ENV_MODE, type Theme } from '../shared/constants';
+import { type FlightClass, type AirplaneImageKind, type EntityId, type IStayImageData, type IStayData, type IStayDescriptionData, type IStayReviewData, type ILocalizableValue, AuthProvider, ImageCategory, type IImageData, EmailTemplate, type IAirplaneData } from '../shared/interfaces';
 import { CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD } from '../shared/testing/common';
 import type { IWorldMapDataDto } from './../server/dto';
 import { isQuickStartEnv } from './../shared/common';
@@ -30,6 +34,8 @@ interface ContextParams {
 const ContentDirName = 'content';
 const PublicResDirName = 'public';
 const AdminUserEmail = 'admin@demo.golobe';
+
+const StayNameTemplateParam = 'hotelName';
 
 const WorldMapDimDefs = {
   source: {
@@ -86,21 +92,67 @@ interface ICityInfo {
   airports: IAirportInfo[],
   lon?: Decimal,
   lat?: Decimal,
+  utcOffsetMin: number,
   countryInfo: ICountryInfo
 }
 
-async function ensureUser (ctx: ContextParams, password: string, email: string, firstName: string, lastName: string, authProvider: AuthProvider, providerIdentity: string): Promise<void> {
-  ctx.logger.info(`>>> ensuring user, providerIdentity=${providerIdentity}, providerType=${authProvider}, email=${email}`);
+type HotelIdentityJson = {
+  slug: string,
+  citySlug: string,
+  name: ILocalizableValue
+};
+
+type DescriptionFeatureJson = {
+  caption: ILocalizableValue,
+  text: ILocalizableValue
+};
+
+type DescriptionTemplatesJson = {
+  title: ILocalizableValue,
+  main: ILocalizableValue,
+  footer: ILocalizableValue,
+  features: DescriptionFeatureJson[]
+};
+
+type HotelsJson = {
+  identities: HotelIdentityJson[],
+  descriptionTemplates: DescriptionTemplatesJson,
+  reviews: ILocalizableValue[],
+  userNames: string[]
+};
+
+const hashString = (value: string) => murmurHash(Buffer.from(value).toString('base64'));
+
+async function checkFileExists (filePath: string): Promise<boolean> {
+  try {
+    await access(filePath);
+    return true;
+  } catch (err: any) {
+    return false;
+  }
+};
+
+async function ensureUser (ctx: ContextParams, password: string, email: string, firstName: string, lastName: string, authProvider: AuthProvider, providerIdentity: string, avatarFileName?: string): Promise<EntityId> {
+  ctx.logger.info(`>>> ensuring user, providerIdentity=${providerIdentity}, providerType=${authProvider}, email=${email}, avatarFile=${avatarFileName}`);
 
   const userLogic = ServerServicesLocator.getUserLogic();
   const user = await userLogic.findUser(authProvider, providerIdentity, 'minimal');
   if (user) {
-    ctx.logger.info(`ensuring user - completed - already exists, providerIdentity=${providerIdentity}, providerType=${authProvider}, email=${email}`);
-    return;
+    ctx.logger.info(`ensuring user - completed - already exists, providerIdentity=${providerIdentity}, providerType=${authProvider}, email=${email}, id=${user.id}`);
+    return user.id;
   }
-  await userLogic.registerUserByEmail(email, password, 'verified', firstName, lastName, 'light', 'en');
+  const userId = (await userLogic.registerUserByEmail(email, password, 'verified', firstName, lastName, 'light', 'en')) as EntityId;
 
-  ctx.logger.info(`>>> user created, providerIdentity=${providerIdentity}, providerType=${authProvider}, email=${email}`);
+  if (avatarFileName) {
+    await ensureImageCategory(ctx, ImageCategory.UserAvatar, 512, 512);
+    const filePath = join(ctx.contentDir, avatarFileName);
+    const mime = Mime.getType(avatarFileName) ?? 'image/webp';
+    const bytes = readFileSync(filePath);
+    await userLogic.uploadUserImage(userId, ImageCategory.UserAvatar, bytes, mime, avatarFileName);
+  }
+
+  ctx.logger.info(`>>> user created, providerIdentity=${providerIdentity}, providerType=${authProvider}, email=${email}, id=${userId}`);
+  return userId;
 }
 
 async function ensureAppAdminUser (ctx: ContextParams) : Promise<void> {
@@ -160,10 +212,10 @@ async function extractImageRegion (ctx: ContextParams, bytes: Buffer, width: num
   }
 }
 
-async function ensureImage (ctx: ContextParams, contentFile: string, imageData: Partial<IImageData> & Pick<IImageData, 'slug' | 'category'>, regionOfImage?: { width: number, height: number }): Promise<EntityId> {
+async function ensureImage (ctx: ContextParams, contentFile: string, imageData: Partial<IImageData> & Pick<IImageData, 'slug' | 'category'>, regionOfImage?: { width: number, height: number }, invertForDarkTheme?: boolean): Promise<EntityId> {
   ctx.logger.info(`>>> ensuring image, fileName=${contentFile}, slug=${imageData.slug}`);
   imageData.originalName ??= basename(contentFile);
-  // eslint-disable-next-line import/namespace
+
   imageData.mimeType ??= Mime.getType(imageData.originalName) ?? undefined;
   if (!imageData.mimeType) {
     ctx.logger.error(`failed to determine image mime type: file=${contentFile}`);
@@ -186,6 +238,7 @@ async function ensureImage (ctx: ContextParams, contentFile: string, imageData: 
   }
 
   imageData.bytes = bytes;
+  imageData.invertForDarkTheme = invertForDarkTheme;
   const imageId = (await imageLogic.createImage(imageData as IImageData)).id;
 
   ctx.logger.info(`>>> ensuring image, contentFile=${contentFile} - completed - created new, id=${imageId}`);
@@ -396,6 +449,7 @@ async function ensureCity (ctx: ContextParams, cityInfo: ICityInfo, countryId: E
       lat: cityInfo.lat!.toNumber(),
       lon: cityInfo.lon!.toNumber()
     },
+    utcOffsetMin: cityInfo.utcOffsetMin,
     population: cityInfo.population,
     name: cityInfo.name as ILocalizableValue,
     countryId
@@ -412,7 +466,7 @@ async function ensureAirport (ctx: ContextParams, airportInfo: IAirportInfo, cit
   const airportLogic = ServerServicesLocator.getAirportLogic();
   if (!ctx.dbAirportMap) {
     ctx.logger.info('>>> initializing airport data context');
-    const airports = await airportLogic.getAllAirports();
+    const airports = await airportLogic.getAllAirportsShort();
     ctx.dbAirportMap = new Map<string, EntityId>();
     for (let i = 0; i < airports.length; i++) {
       const airport = airports[i];
@@ -442,6 +496,11 @@ async function ensureAirport (ctx: ContextParams, airportInfo: IAirportInfo, cit
 
 async function addGeoData (ctx: ContextParams) : Promise<void> {
   ctx.logger.info('>>> adding geo data');
+
+  type CityUtcOffsetJsonRaw = {
+    city: string,
+    offset: number
+  };
 
   type AirportJsonRaw = {
     airport: string,
@@ -522,6 +581,13 @@ async function addGeoData (ctx: ContextParams) : Promise<void> {
   const enFilePath = join(ctx.contentDir, 'geo', 'city-airports-en.json');
   const enFileContent = readFileSync(enFilePath, { encoding: 'utf-8' });
   const enJson = (destr<AirportJsonRaw[]>(enFileContent)).map(src => mapAirportJson(src));
+
+  const cityUtcOffsetsFilePath = join(ctx.contentDir, 'geo', 'city-utc-offsets.json');
+  const cityUtcOffsetsFileContent = readFileSync(cityUtcOffsetsFilePath, { encoding: 'utf-8' });
+  const cityUtcOffsetsJson = (destr<CityUtcOffsetJsonRaw[]>(cityUtcOffsetsFileContent));
+  const cityUtcOffsetsMap = new Map<string, number>(cityUtcOffsetsJson.map(x => [x.city.split('/').pop()!, x.offset]));
+
+  const missedUtcOffsetCitiesMap = new Map<string, ICityInfo>();
   for (let i = 0; i < enJson.length; i++) {
     const airportJson = enJson[i];
     let country = countryMap.get(airportJson.countryCode);
@@ -535,6 +601,13 @@ async function addGeoData (ctx: ContextParams) : Promise<void> {
 
     let city = cityMap.get(airportJson.cityCode);
     if (!city) {
+      const cityUtcOffset = cityUtcOffsetsMap.get(airportJson.cityCode);
+      if (!cityUtcOffset) {
+        // ctx.logger.debug(`adding geo data - cannot find utc offset for city: code=${airportJson.cityCode}, name=${airportJson.cityName}`);
+        // throw new Error('cannot find utc offset for city');
+        // missedUtcOffsetsCount++;
+      }
+
       city = {
         code: airportJson.cityCode,
         countryCode: airportJson.countryCode,
@@ -543,9 +616,13 @@ async function addGeoData (ctx: ContextParams) : Promise<void> {
         },
         population: airportJson.cityPopulation,
         airports: [],
-        countryInfo: country
+        countryInfo: country,
+        utcOffsetMin: Math.round((cityUtcOffset ?? 0) * 60)
       };
       cityMap.set(airportJson.cityCode, city);
+      if (cityUtcOffset === undefined) {
+        missedUtcOffsetCitiesMap.set(city.code, city);
+      }
     }
 
     let airport = airportMap.get(airportJson.code);
@@ -571,6 +648,29 @@ async function addGeoData (ctx: ContextParams) : Promise<void> {
     const city = allCities[i];
     city.lat = city.airports.reduce((sum: Decimal, airport: IAirportInfo) => { return sum.add(airport.lat); }, new Decimal(0)).div(city.airports.length);
     city.lon = city.airports.reduce((sum: Decimal, airport: IAirportInfo) => { return sum.add(airport.lon); }, new Decimal(0)).div(city.airports.length);
+  }
+
+  const missedUtcOffsetCityCodes = [...missedUtcOffsetCitiesMap.keys()];
+  ctx.logger.info(`adding geo data - filling UTC offset for cities where it is missed, count=${missedUtcOffsetCityCodes.length}`);
+  const citiesWithUtcOffsets = allCities.filter(c => !missedUtcOffsetCitiesMap.has(c.code));
+
+  for (let i = 0; i < missedUtcOffsetCityCodes.length; i++) {
+    const cityCode = missedUtcOffsetCityCodes[i];
+    const city = missedUtcOffsetCitiesMap.get(cityCode)!;
+
+    let nearestCity = citiesWithUtcOffsets[0];
+    let nearestDist = Math.sqrt((city.lat!.toNumber() - nearestCity.lat!.toNumber()) + (city.lon!.toNumber() - nearestCity.lon!.toNumber()));
+    for (let j = 0; j < citiesWithUtcOffsets.length; j++) {
+      const testCity = citiesWithUtcOffsets[j];
+      const dist = Math.sqrt((city.lat!.toNumber() - testCity.lat!.toNumber()) + (city.lon!.toNumber() - testCity.lon!.toNumber()));
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearestCity = testCity;
+      }
+    }
+
+    ctx.logger.verbose(`adding geo data - updating city UTC offset, code=${city.code}, name=${city.name}, nearestCity=${nearestCity.name}, utcOffset=${nearestCity.utcOffsetMin}`);
+    city.utcOffsetMin = nearestCity.utcOffsetMin;
   }
 
   ctx.logger.info('adding geo data - RU localization');
@@ -765,12 +865,6 @@ async function addCityImages (ctx: ContextParams) : Promise<void> {
     const popularCityInfo = popularCityInfos[i];
     ctx.logger.verbose(`processing popular city images - cityId=${popularCityInfo.id}`);
 
-    const travelDetails = await citiesLogic.getTravelDetails(popularCityInfo.id);
-    if (travelDetails.images.length > 0) {
-      ctx.logger.info(`adding city images - images have been already added: city=${popularCityInfo.cityDisplayName.en}`);
-      continue;
-    }
-
     const citySlugBase = popularCityInfo.cityDisplayName.en.replace(/\s/g, '').toLowerCase();
     const testPath = join(ctx.contentDir, `cities/${citySlugBase}.webp`);
     if (!existsSync(testPath)) {
@@ -837,7 +931,7 @@ async function addCompanyReviews (ctx: ContextParams) : Promise<void> {
     const imageId = await ensureImage(ctx, `company-reviews/${imageFileBaseName}`, {
       category: ImageCategory.CompanyReview,
       slug: imageSlug
-    });
+    }, reviewImageCategorySize);
     const reviewId = await companyReviewsLogic.createReview({
       body: review.body,
       header: review.header,
@@ -956,6 +1050,416 @@ function compileWorldMapData (ctx: ContextParams) {
   ctx.logger.info(`>>> compiling world map data - completed: count=${mapPoints.length}, left=${Math.min(...mapPoints.map(p => p.x))}, right=${Math.max(...mapPoints.map(p => p.x))}, top=${Math.min(...mapPoints.map(p => p.y))}, bottom=${Math.max(...mapPoints.map(p => p.y))}, d=${mean(mapPoints.map(p => p.d))}`);
 }
 
+async function addAirlineCompanies (ctx: ContextParams) {
+  ctx.logger.info('>>> adding airline companies');
+
+  type AirlineCompanyJsonRaw = {
+    citySlug: string,
+    name: {
+      en: string,
+      fr: string,
+      ru: string
+    },
+    invertLogoForDarkTheme: boolean,
+    numReviews: number,
+    reviewScore: number
+  };
+
+  const getLogoFileName = (citySlug: string, theme: Theme | undefined) => `${citySlug}${theme !== undefined ? `-${theme}` : ''}.webp`;
+  const getLogoFilePath = (citySlug: string, theme: Theme | undefined) => join(ctx.contentDir, 'airline-companies', getLogoFileName(citySlug, theme));
+
+  const airlineCompanyLogic = ServerServicesLocator.getAirlineCompanyLogic();
+  const citiesLogic = ServerServicesLocator.getCitiesLogic();
+
+  await ensureImageCategory(ctx, ImageCategory.AirlineLogo, 512, 512);
+
+  const filePath = join(ctx.contentDir, 'airline-companies', 'companies-list.json');
+  const fileContent = readFileSync(filePath, { encoding: 'utf-8' });
+  const json = (destr<AirlineCompanyJsonRaw[]>(fileContent));
+  for (let i = 0; i < json.length; i++) {
+    const companyJson = json[i];
+    ctx.logger.verbose(`adding airline companies - city=${companyJson.citySlug}`);
+    const logoImageSlug = `airline-company-logo-${i}`;
+
+    const cityInfo = (await citiesLogic.getCity(companyJson.citySlug));
+
+    let logoImageId: EntityId;
+    const citySlug = companyJson.citySlug;
+    if (await checkFileExists(getLogoFilePath(citySlug, undefined))) {
+      const fileName = join('airline-companies', getLogoFileName(citySlug, undefined));
+      logoImageId = await ensureImage(ctx, fileName, {
+        category: ImageCategory.AirlineLogo,
+        slug: logoImageSlug
+      }, undefined, companyJson.invertLogoForDarkTheme);
+    } else {
+      ctx.logger.error(`Airline company logo image does not exists: ${getLogoFilePath(citySlug, undefined)}`);
+      throw new Error('Airline company logo image does not exists');
+    }
+
+    const companyId = await airlineCompanyLogic.createAirlineCompany({
+      cityId: cityInfo.id,
+      logoImageId,
+      city: {
+        geo: cityInfo.geo
+      },
+      name: companyJson.name,
+      numReviews: companyJson.numReviews,
+      reviewScore: companyJson.reviewScore
+    });
+    ctx.logger.verbose(`adding airline companies - added for city=${companyJson.citySlug}, id=${companyId}`);
+  }
+
+  ctx.logger.info(`>>> adding airline companies - completed: count=${json.length}`);
+}
+
+async function createAirplaneImageData (ctx: ContextParams, airplaneIndex: number, featureCategorySize: { width: number, height: number }): Promise<{ imageId: EntityId, kind: AirplaneImageKind, order: number }[]> {
+  const getAirplaneFeatureImageFilePath = (kind: AirplaneImageKind, idx: number) => join('airplanes', `${kind}-0${idx}.webp`);
+
+  const imageData: {
+    imageId: EntityId,
+    kind: AirplaneImageKind,
+    order: number
+  }[] = [];
+
+  let imageId = await ensureImage(ctx, join('airplanes', `airplane-0${airplaneIndex + 1}.webp`), {
+    category: ImageCategory.Airplane,
+    slug: `airplane${airplaneIndex}`
+  });
+  imageData.push({
+    imageId,
+    kind: 'main',
+    order: 0
+  });
+
+  imageId = await ensureImage(ctx, getAirplaneFeatureImageFilePath('window', 1), {
+    category: ImageCategory.AirplaneFeature,
+    slug: `airplane${airplaneIndex}-${<AirplaneImageKind>'window'}1`
+  }, featureCategorySize);
+  imageData.push({
+    imageId,
+    kind: 'window',
+    order: 1
+  });
+
+  imageId = await ensureImage(ctx, getAirplaneFeatureImageFilePath('cabin', 1), {
+    category: ImageCategory.AirplaneFeature,
+    slug: `airplane${airplaneIndex}-${<AirplaneImageKind>'cabin'}1`
+  }, featureCategorySize);
+  imageData.push({
+    imageId,
+    kind: 'cabin',
+    order: 2
+  });
+
+  imageId = await ensureImage(ctx, getAirplaneFeatureImageFilePath('window', 2), {
+    category: ImageCategory.AirplaneFeature,
+    slug: `airplane${airplaneIndex}-${<AirplaneImageKind>'window'}2`
+  }, featureCategorySize);
+  imageData.push({
+    imageId,
+    kind: 'window',
+    order: 3
+  });
+
+  for (let i = 0; i < 4; i++) {
+    imageId = await ensureImage(ctx, getAirplaneFeatureImageFilePath('common', 1 + i), {
+      category: ImageCategory.AirplaneFeature,
+      slug: `airplane${airplaneIndex}-${<AirplaneImageKind>'common'}${i + 1}`
+    }, featureCategorySize);
+    imageData.push({
+      imageId,
+      kind: 'common',
+      order: i + 4
+    });
+  }
+
+  const addFlightClassImages = async (flightClass: FlightClass, startIdx: number) : Promise<void> => {
+    for (let i = 0; i < 2; i++) {
+      imageId = await ensureImage(ctx, getAirplaneFeatureImageFilePath(flightClass, i + 1), {
+        category: ImageCategory.AirplaneFeature,
+        slug: `airplane${airplaneIndex}-${flightClass}${i}`
+      }, featureCategorySize);
+      imageData.push({
+        imageId,
+        kind: flightClass,
+        order: startIdx + i
+      });
+    }
+  };
+  await addFlightClassImages('economy', 8);
+  await addFlightClassImages('comfort', 10);
+  await addFlightClassImages('business', 12);
+
+  return imageData;
+}
+
+async function addAirplanes (ctx: ContextParams) {
+  ctx.logger.info('>>> adding airplanes');
+
+  const isFeatureFileName = (fileName: string): boolean => {
+    return fileName.includes(<AirplaneImageKind>'business') ||
+          fileName.includes(<AirplaneImageKind>'comfort') ||
+          fileName.includes(<AirplaneImageKind>'economy') ||
+          fileName.includes(<AirplaneImageKind>'cabin') ||
+          fileName.includes(<AirplaneImageKind>'window') ||
+          fileName.includes(<AirplaneImageKind>'common');
+  };
+
+  await ensureImageCategory(ctx, ImageCategory.Airplane, 1805, 578);
+
+  const imageFiles = await readdir(join(ctx.contentDir, 'airplanes'));
+  const featureImageFiles = imageFiles.filter(isFeatureFileName).map(f => join(ctx.contentDir, 'airplanes', f));
+  const featureCategorySize = await computeImageCategorySize(featureImageFiles);
+  await ensureImageCategory(ctx, ImageCategory.AirplaneFeature, featureCategorySize.width, featureCategorySize.height);
+  ctx.logger.info(`>>> airplane feature image category size: width=${featureCategorySize.width}, height=${featureCategorySize.height}`);
+
+  let i = 0;
+  const getAirplaneImageFilePath = (index: number) => join(ctx.contentDir, 'airplanes', `airplane-0${index + 1}.webp`);
+
+  const airplaneLogic = ServerServicesLocator.getAirplaneLogic();
+  let addMore = await checkFileExists(getAirplaneImageFilePath(i));
+  while (addMore) {
+    ctx.logger.debug(`>>> adding airplane #${i} images`);
+
+    const imageData = await createAirplaneImageData(ctx, i, featureCategorySize);
+    const airplaneData: IAirplaneData = {
+      name: {
+        en: `Demo Airplane #${i}`,
+        fr: `Avion de démonstration #${i}`,
+        ru: `Самолёт (демо) #${i}`
+      },
+      images: imageData
+    };
+    await airplaneLogic.createAirplane(airplaneData);
+
+    addMore = await checkFileExists(getAirplaneImageFilePath(++i));
+  }
+
+  ctx.logger.info(`>>> adding airplanes - compelted: count=${i}`);
+}
+
+function buildStayDescription (templates: DescriptionTemplatesJson, hotelName: ILocalizableValue): IStayDescriptionData[] {
+  const result: IStayDescriptionData[] = [];
+
+  const substituteTemplateParameters = (templatedValue: ILocalizableValue): ILocalizableValue => {
+    const result = {};
+    for (let i = 0; i < AvailableLocaleCodes.length; i++) {
+      const locale = AvailableLocaleCodes[i].toLowerCase();
+
+      const templateParams = {};
+      set(templateParams, StayNameTemplateParam, (hotelName as any)[locale]);
+
+      const templateStr = (templatedValue as any)[locale];
+      const compiled = template(templateStr);
+      set(result, locale, compiled(templateParams));
+    }
+    return result as ILocalizableValue;
+  };
+
+  result.push({
+    order: 0,
+    paragraphKind: 'title',
+    textStr: substituteTemplateParameters(templates.title)
+  });
+
+  result.push({
+    order: 1,
+    paragraphKind: 'main',
+    textStr: substituteTemplateParameters(templates.main)
+  });
+
+  for (let i = 0; i < templates.features.length; i++) {
+    const feature = templates.features[i];
+    result.push({
+      order: 2 + 2 * i,
+      paragraphKind: 'feature-caption',
+      textStr: substituteTemplateParameters(feature.caption)
+    });
+    result.push({
+      order: 2 + 2 * i + 1,
+      paragraphKind: 'feature-text',
+      textStr: substituteTemplateParameters(feature.caption)
+    });
+  }
+
+  return result;
+}
+
+async function ensureReviewUsers (ctx: ContextParams, userNames: string[]): Promise<EntityId[]> {
+  ctx.logger.info('>>> adding hotels - ensuring review users');
+
+  ctx.logger.debug('>>> adding hotels - locating review user avatar files');
+  const avatarFiles = (await readdir(join(ctx.contentDir, 'hotels'))).filter(f => f.includes('avatar')).map(f => join('hotels', f));
+
+  const userLogic = ServerServicesLocator.getUserLogic();
+  const result: EntityId[] = [];
+
+  const names = [...userNames].sort((a, b) => a.localeCompare(b));
+  for (let i = 0; i < names.length; i++) {
+    const userName = names[i];
+    const email = `${slugify(userName)}@demo.golobe`;
+    const userInfo = await userLogic.findUserByEmail(email, false, 'minimal');
+    if (userInfo) {
+      result.push(userInfo.id);
+      continue;
+    }
+
+    const password = process.env.APP_TESTUSER_PWD!;
+    if (!password || password.length === 0) {
+      ctx.logger.error('Review user password must be passed in APP_TESTUSER_PWD env variable');
+      throw new Error('Review user passwordmust be passed in APP_TESTUSER_PWD env variable');
+    }
+    const firstName = userName.split(' ')[0];
+    const lastName = userName.split(' ')[1];
+    const avatarFileName = (i % (avatarFiles.length + 1)) === 0 ? undefined : avatarFiles[(i % (avatarFiles.length + 1)) - 1];
+    const userId = await ensureUser(ctx, password, email, firstName, lastName, AuthProvider.Email, email, avatarFileName);
+    result.push(userId);
+  }
+
+  ctx.logger.info(`>>> adding hotels - review users ensured, count=${result.length}`);
+  return result;
+}
+
+function buildStayReviews (nameEn: string, userIds: EntityId[], reviews: ILocalizableValue[]): IStayReviewData[] {
+  const primeModule = 9721;
+  const randomizer = hashString(nameEn);
+
+  const numReviews = Math.min(10 + randomizer % 10, userIds.length, reviews.length);
+
+  const result: IStayReviewData[] = [];
+  for (let i = 0; i < numReviews; i++) {
+    const text = reviews[((i + randomizer) * primeModule) % reviews.length];
+    const userId = userIds[((i + randomizer) * primeModule) % userIds.length];
+    const score = ((i * randomizer * primeModule) % 3) === 2 ? 4 : 5;
+    result.push({
+      userId,
+      text,
+      score
+    });
+  }
+
+  return result;
+}
+
+async function buildStayImages (ctx: ContextParams, staySlug: string, hotelRoomCategorySize: { width: number, height: number }): Promise<IStayImageData[]> {
+  ctx.logger.debug(`adding hotels - building stay images, slug=${staySlug}`);
+  const randomizer = hashString(staySlug) % 16;
+
+  const result: IStayImageData[] = [];
+
+  const mainImgFile = join('hotels', `${staySlug.replace('stay-', '')}.webp`);
+  const mainImgId = await ensureImage(ctx, mainImgFile, {
+    category: ImageCategory.Hotel,
+    slug: `${staySlug}-photo`
+  });
+  result.push({
+    imageId: mainImgId,
+    order: 0,
+    serviceLevel: undefined
+  });
+
+  const baseImgFile = join('hotels', `room-base-${randomizer & 0x01 ? '01' : '02'}.webp`);
+  const baseImgId = await ensureImage(ctx, baseImgFile, {
+    category: ImageCategory.HotelRoom,
+    slug: `${staySlug}-base`
+  }, hotelRoomCategorySize);
+  result.push({
+    imageId: baseImgId,
+    order: 1,
+    serviceLevel: 'base'
+  });
+
+  const cityView1ImgFile = join('hotels', `room-city1-${randomizer & 0x02 ? '01' : '02'}.webp`);
+  const cityView1ImgId = await ensureImage(ctx, cityView1ImgFile, {
+    category: ImageCategory.HotelRoom,
+    slug: `${staySlug}-city1`
+  }, hotelRoomCategorySize);
+  result.push({
+    imageId: cityView1ImgId,
+    order: 2,
+    serviceLevel: 'cityView-1'
+  });
+
+  const cityView2ImgFile = join('hotels', `room-city2-${randomizer & 0x04 ? '01' : '02'}.webp`);
+  const cityView2ImgId = await ensureImage(ctx, cityView2ImgFile, {
+    category: ImageCategory.HotelRoom,
+    slug: `${staySlug}-city2`
+  }, hotelRoomCategorySize);
+  result.push({
+    imageId: cityView2ImgId,
+    order: 3,
+    serviceLevel: 'cityView-2'
+  });
+
+  const cityView3ImgFile = join('hotels', `room-city3-${randomizer & 0x08 ? '01' : '02'}.webp`);
+  const cityView3ImgId = await ensureImage(ctx, cityView3ImgFile, {
+    category: ImageCategory.HotelRoom,
+    slug: `${staySlug}-city3`
+  }, hotelRoomCategorySize);
+  result.push({
+    imageId: cityView3ImgId,
+    order: 4,
+    serviceLevel: 'cityView-3'
+  });
+
+  ctx.logger.debug(`adding hotels - building stay images completed, slug=${staySlug}`);
+  return result;
+}
+
+async function addHotels (ctx: ContextParams) {
+  ctx.logger.info('>>> adding hotels');
+
+  const citiesLogic = ServerServicesLocator.getCitiesLogic();
+  const stayLogic = ServerServicesLocator.getStaysLogic();
+
+  ctx.logger.debug('adding hotels - loading hotels list');
+  const hotelsFilePath = join(ctx.contentDir, 'hotels', 'hotels.json');
+  const hotelsFileContent = readFileSync(hotelsFilePath, { encoding: 'utf-8' });
+  const hotelsJson = (destr<HotelsJson>(hotelsFileContent));
+
+  ctx.logger.debug('adding hotels - calculating hotel room category size');
+  const imageFiles = await readdir(join(ctx.contentDir, 'hotels'));
+  const roomImageFiles = imageFiles.filter(f => f.includes('room-')).map(f => join(ctx.contentDir, 'hotels', f));
+  const hotelRoomCategorySize = await computeImageCategorySize(roomImageFiles);
+  ctx.logger.debug(`adding hotels - hotel room image category sizes: w=${hotelRoomCategorySize.width}, h=${hotelRoomCategorySize.height}`);
+
+  await ensureImageCategory(ctx, ImageCategory.Hotel, 1024, 1024);
+  await ensureImageCategory(ctx, ImageCategory.HotelRoom, hotelRoomCategorySize.width, hotelRoomCategorySize.height);
+
+  const reviewUserIds = await ensureReviewUsers(ctx, hotelsJson.userNames);
+  if (reviewUserIds.length === 0) {
+    ctx.logger.error('Review users list is empty');
+    throw new Error('Review users list is empty');
+  }
+
+  const hotelIdentities = orderBy(hotelsJson.identities, ['slug'], ['asc']);
+  for (let i = 0; i < hotelIdentities.length; i++) {
+    const identityJson = hotelIdentities[i];
+    const stayEntity = await stayLogic.findStay(identityJson.slug);
+    if (stayEntity) {
+      ctx.logger.debug(`adding hotels - already exists: slug=${stayEntity.slug}`);
+      continue;
+    }
+
+    ctx.logger.debug(`adding hotels - creating new: slug=${identityJson.slug}`);
+    const cityInfo = await citiesLogic.getCity(identityJson.citySlug);
+
+    const stayData: IStayData = {
+      cityId: cityInfo.id,
+      slug: identityJson.slug,
+      geo: cityInfo.geo,
+      name: identityJson.name,
+      rating: (i % 2) ? 5 : 4,
+      descriptionData: buildStayDescription(hotelsJson.descriptionTemplates, identityJson.name),
+      reviewsData: buildStayReviews(identityJson.name.en, reviewUserIds, hotelsJson.reviews),
+      imagesData: await buildStayImages(ctx, identityJson.slug, hotelRoomCategorySize)
+    };
+    await stayLogic.createStay(stayData);
+  }
+
+  ctx.logger.info(`adding hotels - completed, count=${hotelIdentities.length}`);
+}
+
 async function seedDb () : Promise<void> {
   const logger: IAppLogger = CommonServicesLocator.getLogger();
   logger.info('(data-seed) starting data seeding');
@@ -1000,6 +1504,9 @@ async function seedDb () : Promise<void> {
     await addCompanyReviews(ctx);
     await addFlightsPageTitleImages(ctx);
     compileWorldMapData(ctx);
+    await addAirlineCompanies(ctx);
+    await addAirplanes(ctx);
+    await addHotels(ctx);
 
     if (process.env.NODE_ENV === DEV_ENV_MODE) {
       await ensureCredentialsTestUser(ctx);

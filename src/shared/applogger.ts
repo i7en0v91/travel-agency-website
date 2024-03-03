@@ -1,10 +1,10 @@
-import repeat from 'lodash/repeat';
-import zip from 'lodash/zip';
-import range from 'lodash/range';
-import fromPairs from 'lodash/fromPairs';
-import isString from 'lodash/isString';
-import isNumber from 'lodash/isNumber';
-import cloneDeep from 'lodash/cloneDeep';
+import repeat from 'lodash-es/repeat';
+import zip from 'lodash-es/zip';
+import range from 'lodash-es/range';
+import fromPairs from 'lodash-es/fromPairs';
+import isString from 'lodash-es/isString';
+import isNumber from 'lodash-es/isNumber';
+import cloneDeep from 'lodash-es/cloneDeep';
 import AppConfig from '../appconfig';
 import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
 import type { LogLevel } from './../shared/constants';

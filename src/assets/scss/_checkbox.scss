@@ -5,8 +5,8 @@
 @use 'svg';
 
 .checkbox {
-  $checkbox-size: 16px;
-  $checkbox-checkmark-size: $checkbox-size - 5px;
+  $checkbox-size: markup-to-rem(16px);
+  $checkbox-checkmark-size: calc($checkbox-size - 5px);
 
   display: flex;
   flex-wrap: nowrap;

@@ -4,7 +4,7 @@
 @use 'utils' as *;
 @use 'svg';
 
-$account-page-default-font-size: 14px;
+$account-page-default-font-size: markup-to-rem(14px);
 
 @mixin oauth-btn-image-icon($url) {
   background-size: contain;
@@ -99,8 +99,8 @@ $account-page-default-font-size: 14px;
   }
 
   &::after {
-    width: 24px;
-    height: 24px;
+    width: markup-to-rem(24px);
+    height: markup-to-rem(24px);
     display: block;
     margin-left: auto;
     margin-right: auto; 

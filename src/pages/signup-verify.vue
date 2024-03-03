@@ -24,7 +24,7 @@ const localePath = useLocalePath();
       <NavLogo ctrl-key="signupVerifyPageAppLogo" class="signup-verify-page-logo" mode="inApp" />
       <div class="signup-verify-page-content">
         {{ $t(getI18nResName2('signUpVerifyPage', 'text'), { tokenExpirationHours: AppConfig.verificationTokenExpirationHours }) }}
-        <NuxtLink class="btn btn-signup-verify-home btn-mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath('/')">
+        <NuxtLink class="btn btn-signup-verify-home mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath('/')">
           {{ $t(getI18nResName2('accountPageCommon', 'backToHome')) }}
         </NuxtLink>
       </div>

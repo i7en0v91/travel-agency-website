@@ -21,7 +21,7 @@ defineProps<IProps>();
     img-class="account-forms-photo-img"
     :entity-src="{ slug: imgSlug }"
     :category="ImageCategory.AuthFormsImage"
-    sizes="sm:0vw md:50vw lg:50vw xl:40vw xxl:30vw"
+    sizes="xs:0vw sm:50vw md:50vw lg:40vw xl:30vw"
     :alt-res-name="altResName"
   />
 </template>

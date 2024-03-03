@@ -4,7 +4,7 @@ import type { IClientServicesLocator } from '../shared/serviceLocator';
 export default <RouterConfig> {
   scrollBehavior: (to, from, savedPosition) => {
     // also handles case of initial '/' navigation scroll jumping
-    const isNavSamePage = from.fullPath === to.fullPath;
+    const isNavSamePage = from.path === to.path;
 
     // after app is initialized (not when moving to new page) it will try to update scroll position according to it's rules
     // for this one-time case in the beginning we need to force scroll position to where use has scrolled

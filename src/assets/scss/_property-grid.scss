@@ -4,7 +4,6 @@
 @use 'utils' as *;
 @use 'svg';
 
-$property-grid-row-height: 48px;
 $property-grid-value-font-size-normal: 20px;
 $property-grid-value-font-size-small: 16px;
 
@@ -13,6 +12,11 @@ $property-grid-value-font-size-small: 16px;
   height: auto;
 
   .property-grid-row {
+    .property-grid-row-td, .property-grid-row-container, .property-grid-row-input-ctrs {
+      width: 100%;
+      height: 100%;
+    }
+
     &:not(:first-child) {
       .property-grid-cell {
         padding-top: map.get($spacings, '4');
@@ -26,7 +30,6 @@ $property-grid-value-font-size-small: 16px;
       width: 100%;
       
       .property-grid-value-slot {
-        min-height: $property-grid-row-height;
         display: flex;
         flex-wrap: nowrap;
         flex-direction: column;
@@ -35,7 +38,7 @@ $property-grid-value-font-size-small: 16px;
     }
 
     .property-grid-cell {
-      vertical-align: top;
+      vertical-align: middle;
     }
   }
 
@@ -66,10 +69,11 @@ $property-grid-value-font-size-small: 16px;
     gap: 8px;
 
     .property-grid-control-button {
-      height: $property-grid-row-height;
+      box-sizing: content-box;
+      height: 1.2rem;
 
       font-size: 0;
-      width: 48px;
+      width: auto;
       &::before {
         margin-right: 0;
       }
@@ -78,6 +82,7 @@ $property-grid-value-font-size-small: 16px;
         width: 100%;
         &::before {
           margin-right: 4px;
+          vertical-align: middle;
         }
       }
     }
@@ -93,7 +98,6 @@ $property-grid-value-font-size-small: 16px;
     .field-frame {
       padding: 8px 12px 8px 12px;
       height: 100%;
-      min-height: $property-grid-row-height;
 
       display: flex;
       flex-direction: column;
@@ -109,9 +113,9 @@ $property-grid-value-font-size-small: 16px;
         
         font-weight: map.get($weights-map, 'semi-bold');
         white-space: nowrap;
-        font-size: $property-grid-value-font-size-small;
+        font-size: markup-to-rem($property-grid-value-font-size-small);
         @include for-small-and-above() {
-          font-size: $property-grid-value-font-size-normal;
+          font-size: markup-to-rem($property-grid-value-font-size-normal);
         }
       }
     }
@@ -132,13 +136,13 @@ $property-grid-value-font-size-small: 16px;
 
         font-weight: map.get($weights-map, 'semi-bold');
         white-space: nowrap;
-        font-size: $property-grid-value-font-size-small;
+        font-size: markup-to-rem($property-grid-value-font-size-small);
         @include with-theme-color('input-ctrl-primary') using ($css-var) {
           color: var(#{$css-var});
         }
 
         @include for-small-and-above() {
-          font-size: $property-grid-value-font-size-normal;
+          font-size: markup-to-rem($property-grid-value-font-size-normal);
         }
       }
     }
@@ -156,16 +160,16 @@ $property-grid-value-font-size-small: 16px;
 }
 
 .icon-propCtrl-apply::before {
-  -webkit-mask-image: url('/img/icon-check.svg');
-  mask-image: url('/img/icon-check.svg');
+  -webkit-mask-image: escape-svg(svg.$icon-check);
+  mask-image: escape-svg(svg.$icon-check);
   margin-bottom: 2px;
 }
 
 .icon-propCtrl-cancel::before {
-  -webkit-mask-image: url('/img/icon-cross.svg');
-  mask-image: url('/img/icon-cross.svg');
-  width: 12px;
-  height: 12px;
+  -webkit-mask-image: escape-svg(svg.$icon-cross);
+  mask-image: escape-svg(svg.$icon-cross);
+  width: 1rem;
+  height: 1rem;
   margin-bottom: 2px;
 }
 

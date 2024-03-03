@@ -14,7 +14,6 @@ export default defineConfig({
     useSystem: false
   },
   scanner: {
-    // run lighthouse for each URL 3 times
     samples: 1,
     // use desktop to scan
     device: 'desktop',
@@ -40,7 +39,7 @@ export default defineConfig({
             '/account'
           ]
           */
-          include: ['/flights'] // scan only one index page
+          include: ['/find-stays'] // scan only one page
         })
   },
   cookies: process.env.UNLIGHTHOUSE_MODE === 'authenticated'

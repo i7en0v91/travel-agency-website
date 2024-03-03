@@ -1,6 +1,6 @@
 import { H3Event } from 'h3';
-import toPairs from 'lodash/toPairs';
-import isString from 'lodash/isString';
+import toPairs from 'lodash-es/toPairs';
+import isString from 'lodash-es/isString';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import { WebApiRoutes } from '../../../shared/constants';
 import { type EntityId, ImageCategory } from '../../../shared/interfaces';
@@ -73,7 +73,8 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
 
   const result: IImageDetailsDto = {
     slug: imageInfo.slug,
-    stubCssStyle: imageInfo.stubCssStyle ? toPairs(imageInfo.stubCssStyle).map(p => [p[0], p[1].toString()]) : []
+    stubCssStyle: imageInfo.stubCssStyle ? toPairs(imageInfo.stubCssStyle).map(p => [p[0], p[1].toString()]) : [],
+    invertForDarkTheme: imageInfo.invertForDarkTheme
   };
   return result;
 }, { logResponseBody: true, authorizedOnly: false });

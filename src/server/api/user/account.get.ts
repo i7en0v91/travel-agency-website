@@ -1,5 +1,5 @@
 import { H3Event } from 'h3';
-import isString from 'lodash/isString';
+import isString from 'lodash-es/isString';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import { type EntityId } from '../../../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';
@@ -49,4 +49,4 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     emails: user.emails?.map(x => x.email) ?? []
   };
   return result;
-}, { logResponseBody: true, authorizedOnly: true });
+}, { logResponseBody: false, authorizedOnly: true });

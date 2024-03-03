@@ -14,8 +14,6 @@ $vue-toastification-prefix: 'Vue-Toastification';
   margin-left: auto;
   margin-right: auto;
 
-  @include with-body-font('input-ctrl-primary');
-
   @include with-theme-color('control-bg') using($css-var) {
     background-color: var($css-var);
   }
@@ -23,11 +21,30 @@ $vue-toastification-prefix: 'Vue-Toastification';
     color: var($css-var);
   }
 
+  @include with-body-font('input-ctrl-primary');
+  .#{$vue-toastification-prefix}__toast-body {
+    @include with-body-font('input-ctrl-primary');
+  }
+
+  .#{$vue-toastification-prefix}__close-button {
+    font-size: markup-to-rem(24px);
+    line-height: 1;
+  }
+
+  .#{$vue-toastification-prefix}__icon {
+    width: markup-to-rem(20px);
+  }
+
   .#{$vue-toastification-prefix}__close-button.user-notification-button {
     opacity: 1;
     @include with-theme-color('primary') using($css-var) {
       color: var($css-var);
     }
+  }
+
+  .#{$vue-toastification-prefix}__toast-body {
+    cursor: default;
+    line-height: normal;
   }
 
   &.#{$vue-toastification-prefix}__toast--warning {
@@ -51,9 +68,5 @@ $vue-toastification-prefix: 'Vue-Toastification';
         color: var($css-var);
       }
     }  
-  }
-
-  .#{$vue-toastification-prefix}__toast-body {
-    cursor: default;
   }
 }

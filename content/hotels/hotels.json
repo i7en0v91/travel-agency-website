@@ -1,0 +1,547 @@
+{
+  "identities": [{
+    "slug": "stay-amsterdam-01",
+    "citySlug": "amsterdam",
+    "name": {
+      "en": "Amstel Serenity Hotel Amsterdam",
+      "fr": "Hôtel Amstel Serenity à Amsterdam",
+      "ru": "Отель Amstel Serenity Амстердам"
+    }
+  },
+  {
+    "slug": "stay-amsterdam-02",
+    "citySlug": "amsterdam",
+    "name": {
+      "en": "Amsterdam Skyline Vista Hotel",
+      "fr": "Hôtel Skyline Vista à Amsterdam",
+      "ru": "Отель Skyline Vista Амстердам"
+    }
+  },
+  {
+    "slug": "stay-bangkok-01",
+    "citySlug": "bangkok",
+    "name": {
+      "en": "Thailand Oasis Grand Hotel",
+      "fr": "Thaïlande Oasis Grand Hôtel",
+      "ru": "Таиланд Оазис Гранд Отель"
+    }
+  },
+  {
+    "slug": "stay-bangkok-02",
+    "citySlug": "bangkok",
+    "name": {
+      "en": "Golden Siam Haven Hotel",
+      "fr": "Hôtel Golden Siam Haven",
+      "ru": "Голден Сиам Хэвен Отель"
+    }
+  },
+  {
+    "slug": "stay-barcelona-01",
+    "citySlug": "barcelona",
+    "name": {
+      "en": "Catalunya Vista Hotel Barcelona",
+      "fr": "Hôtel Catalunya Vista Barcelone",
+      "ru": "Отель Catalunya Vista Барселона"
+    }
+  },
+  {
+    "slug": "stay-barcelona-02",
+    "citySlug": "barcelona",
+    "name": {
+      "en": "Barcelona Del Mar Hotel",
+      "fr": "Hôtel Barcelone Del Mar",
+      "ru": "Отель Барселона Дель Мар"
+    }
+  },
+  {
+    "slug": "stay-cairo-01",
+    "citySlug": "cairo",
+    "name": {
+      "en": "Nile Horizon Oasis Hotel",
+      "fr": "Hôtel Nile Horizon Oasis",
+      "ru": "Отель Nile Horizon Оазис"
+    }
+  },
+  {
+    "slug": "stay-cairo-02",
+    "citySlug": "cairo",
+    "name": {
+      "en": "Eternal Nile Haven Hotel",
+      "fr": "Hôtel Eternal Nile Haven",
+      "ru": "Отель Eternal Nile Haven"
+    }
+  },
+  {
+    "slug": "stay-dubai-01",
+    "citySlug": "dubai",
+    "name": {
+      "en": "Golden Sands Oasis Hotel Dubai",
+      "fr": "Hôtel Golden Sands Oasis à Dubaï",
+      "ru": "Отель Golden Sands Oasis Дубай"
+    }
+  },
+  {
+    "slug": "stay-dubai-02",
+    "citySlug": "dubai",
+    "name": {
+      "en": "Diamond Mirage Hotel Dubai",
+      "fr": "Hôtel Diamond Mirage à Dubaï",
+      "ru": "Отель Diamond Mirage Дубай"
+    }
+  },
+  {
+    "slug": "stay-hong-kong-01",
+    "citySlug": "hong-kong",
+    "name": {
+      "en": "Pearl Harbor View Hotel Hong Kong",
+      "fr": "Hôtel Pearl Harbor View à Hong Kong",
+      "ru": "Отель Pearl Harbour View Гонконг"
+    }
+  },
+  {
+    "slug": "stay-hong-kong-02",
+    "citySlug": "hong-kong",
+    "name": {
+      "en": "Harbor Haven Hotel Hong Kong",
+      "fr": "Hôtel Harbour Haven à Hong Kong",
+      "ru": "Отель Harbour Haven Гонконг"
+    }
+  },
+  {
+    "slug": "stay-istanbul-01",
+    "citySlug": "istanbul",
+    "name": {
+      "en": "Bosphorus View Oasis Hotel Istanbul",
+      "fr": "Hôtel Bosphorus View Oasis à Istanbul",
+      "ru": "Отель Bosphorus View Oasis Стамбул"
+    }
+  },
+  {
+    "slug": "stay-istanbul-02",
+    "citySlug": "istanbul",
+    "name": {
+      "en": "Sultana Serenity Hotel Istanbul",
+      "fr": "Hôtel Sultana Serenity à Istanbul",
+      "ru": "Отель Sultana Serenity Стамбул"
+    }
+  },
+  {
+    "slug": "stay-kuala-lumpur-01",
+    "citySlug": "kuala-lumpur",
+    "name": {
+      "en": "Kuala Lumpur Skyview Oasis Hotel",
+      "fr": "Hôtel Skyview Oasis à Kuala Lumpur",
+      "ru": "Отель Skyview Oasis Куала-Лумпур"
+    }
+  },
+  {
+    "slug": "stay-kuala-lumpur-02",
+    "citySlug": "kuala-lumpur",
+    "name": {
+      "en": "KL Luxe Vista Hotel",
+      "fr": "Hôtel KL Luxe Vista",
+      "ru": "КЛ Люкс Виста Отель"
+    }
+  },
+  {
+    "slug": "stay-london-01",
+    "citySlug": "london",
+    "name": {
+      "en": "Royal Thames Manor Hotel",
+      "fr": "Hôtel Royal Thames",
+      "ru": "Роял Темз Манор Отель"
+    }
+  },
+  {
+    "slug": "stay-london-02",
+    "citySlug": "london",
+    "name": {
+      "en": "Graceful Regent London Hotel",
+      "fr": "Hôtel Graceful Regent à Londres",
+      "ru": "Отель Graceful Regent Лондон"
+    }
+  },
+  {
+    "slug": "stay-los-angeles-01",
+    "citySlug": "los-angeles",
+    "name": {
+      "en": "Los Angeles Luminous Heights Hotel",
+      "fr": "Hôtel Bright Heights à Los Angeles",
+      "ru": "Отель Luminous Heights Лос-Анджелес"
+    }
+  },
+  {
+    "slug": "stay-los-angeles-02",
+    "citySlug": "los-angeles",
+    "name": {
+      "en": "Los Angeles Radiance Retreat Hotel",
+      "fr": "Hôtel Radiance Retreat à Los Angeles",
+      "ru": "Лос-Анджелес Radiance Retreat Hotel"
+    }
+  },
+  {
+    "slug": "stay-milan-01",
+    "citySlug": "milan",
+    "name": {
+      "en": "Milan Eleganza Grande Hotel",
+      "fr": "Hôtel Eleganza Grande à Milan",
+      "ru": "Отель Eleganza Grande Милан"
+    }
+  },
+  {
+    "slug": "stay-milan-02",
+    "citySlug": "milan",
+    "name": {
+      "en": "Milan Majestic Heights Hotel",
+      "fr": "Hôtel Majestic Heights à Milan",
+      "ru": "Отель Majestic Heights Милан"
+    }
+  },
+  {
+    "slug": "stay-new-york-city-01",
+    "citySlug": "new-york-city",
+    "name": {
+      "en": "Metropolitan Skyline Suites New York",
+      "fr": "Metropolitan Skyline Suites New York",
+      "ru": "Метрополитен Скайлайн Сьютс Нью-Йорк"
+    }
+  },
+  {
+    "slug": "stay-new-york-city-02",
+    "citySlug": "new-york-city",
+    "name": {
+      "en": "Empire Horizon Hotel New York",
+      "fr": "Hôtel Empire Horizon à New York",
+      "ru": "Отель Empire Horizon Нью-Йорк"
+    }
+  },
+  {
+    "slug": "stay-paris-01",
+    "citySlug": "paris",
+    "name": {
+      "en": "Étoile Charme Paris Hotel",
+      "fr": "Hôtel Étoile Charme Paris",
+      "ru": "Отель Этуаль Шарм Париж"
+    }
+  },
+  {
+    "slug": "stay-paris-02",
+    "citySlug": "paris",
+    "name": {
+      "en": "Lumière Étoile Parisian Hotel",
+      "fr": "Hôtel Parisien Lumière Étoile",
+      "ru": "Люмьер Этуаль Парижский Отель"
+    }
+  },
+  {
+    "slug": "stay-prague-01",
+    "citySlug": "prague",
+    "name": {
+      "en": "Prague Enchanted Haven Hotel",
+      "fr": "Hôtel Prague Enchanted Haven",
+      "ru": "Отель Enchanted Haven Прага"
+    }
+  },
+  {
+    "slug": "stay-prague-02",
+    "citySlug": "prague",
+    "name": {
+      "en": "Prague Royal Legacy Hotel",
+      "fr": "Hôtel Royal Legacy à Prague",
+      "ru": "Отель Royal Legacy Прага"
+    }
+  },
+  {
+    "slug": "stay-rome-01",
+    "citySlug": "rome",
+    "name": {
+      "en": "Roma Eterna Grand Hotel",
+      "fr": "Hôtel Roma Eterna Grand",
+      "ru": "Рома Этерна Гран Отель"
+    }
+  },
+  {
+    "slug": "stay-rome-02",
+    "citySlug": "rome",
+    "name": {
+      "en": "RomeLux Oasis Hotel",
+      "fr": "Hôtel RomeLux Oasis",
+      "ru": "РимLux Oasis Hotel"
+    }
+  },
+  {
+    "slug": "stay-seoul-01",
+    "citySlug": "seoul",
+    "name": {
+      "en": "Seoul Heights Hotel",
+      "fr": "Hôtel Séoul Heights",
+      "ru": "Отель Seoul Heightsы"
+    }
+  },
+  {
+    "slug": "stay-seoul-02",
+    "citySlug": "seoul",
+    "name": {
+      "en": "Seoul Harmony Haven Hotel",
+      "fr": "Hôtel Harmony Haven à Séoul",
+      "ru": "Отель Harmony Haven Сеул"
+    }
+  },
+  {
+    "slug": "stay-singapore-01",
+    "citySlug": "singapore",
+    "name": {
+      "en": "Serene Harbor View Hotel Singapore",
+      "fr": "Hôtel Serene Harbour View à Singapour",
+      "ru": "Отель Serene Harbour View Сингапур"
+    }
+  },
+  {
+    "slug": "stay-singapore-02",
+    "citySlug": "singapore",
+    "name": {
+      "en": "Zenith Oasis Residences Singapore",
+      "fr": "Zenith Oasis Résidences Singapour",
+      "ru": "Zenith Oasis Residences Сингапур"
+    }
+  },
+  {
+    "slug": "stay-sydney-01",
+    "citySlug": "sydney",
+    "name": {
+      "en": "Sydney Harbour Haven Hotel",
+      "fr": "Hôtel Harbour View à Sydney",
+      "ru": "Отель Сидней Харбор Хэвен"
+    }
+  },
+  {
+    "slug": "stay-sydney-02",
+    "citySlug": "sydney",
+    "name": {
+      "en": "Sydney Skyline Vista Hotel",
+      "fr": "Hôtel Skyline Vista à Sydney",
+      "ru": "Отель Skyline Vista Сидней"
+    }
+  },
+  {
+    "slug": "stay-tokyo-01",
+    "citySlug": "tokyo",
+    "name": {
+      "en": "Sakura Skyline Hotel Tokyo",
+      "fr": "Hôtel Sakura Skyline à Tokyo",
+      "ru": "Отель Sakura Skyline Токио"
+    }
+  },
+  {
+    "slug": "stay-tokyo-02",
+    "citySlug": "tokyo",
+    "name": {
+      "en": "Harmony Haven Hotel Tokyo",
+      "fr": "Hôtel Harmony Haven à Tokyo",
+      "ru": "Отель Harmony Haven Токио"
+    }
+  },
+  {
+    "slug": "stay-vienna-01",
+    "citySlug": "vienna",
+    "name": {
+      "en": "Vienna Royal Residences Hotel",
+      "fr": "Hôtel Royal Residences à Vienne",
+      "ru": "Отель Royal Residences Вена"
+    }
+  },
+  {
+    "slug": "stay-vienna-02",
+    "citySlug": "vienna",
+    "name": {
+      "en": "Vienna Grandeur Palace Hotel",
+      "fr": "Hôtel Grandeur Palace à Vienne",
+      "ru": "Отель Grandeur Palace Вена"
+    }
+  }],
+  "descriptionTemplates": {
+    "title": {
+      "en": "Introducing <%= hotelName %> - Where Tradition Meets Modernity in Perfect Harmony",
+      "fr": "Présentation de <%= hotelName %> – Là où la tradition rencontre la modernité en parfaite harmonie",
+      "ru": "Представляем отель <%= hotelName %> – место, где традиции встречаются с современностью в идеальной гармонии"
+    },
+    "main": {
+      "en": "We are delighted to unveil a haven of timeless charm and contemporary luxury – the <%= hotelName %>. Nestled in the heart of dynamic city, our hotel invites you to experience a haven that seamlessly blends modern luxury with traditional warmth, promising an unforgettable journey",
+      "fr": "Nous sommes ravis de dévoiler un havre de charme intemporel et de luxe contemporain : le <%= hotelName %>. Niché au cœur d'une ville dynamique, notre hôtel vous invite à découvrir un havre de paix qui allie harmonieusement luxe moderne et chaleur traditionnelle, promettant un voyage inoubliable.",
+      "ru": "Мы рады представить вам оазис вневременного очарования и современной роскоши – <%= hotelName %>. Наш отель, расположенный в самом сердце динамичного города, приглашает вас окунуться в рай, в котором органично сочетаются современная роскошь и традиционное тепло, обещая незабываемое путешествие."
+    },
+    "footer": {
+      "en": "Welcome to a realm of harmony and elegance. Welcome to <%= hotelName %>. Reserve your extraordinary experience today and immerse yourself in cultural tapestry and luxury like never before.",
+      "fr": "Bienvenue dans un royaume d'harmonie et d'élégance. Bienvenue à <%= hotelName %>. Réservez votre expérience extraordinaire dès aujourd'hui et plongez-vous dans la tapisserie culturelle et le luxe comme jamais auparavant.",
+      "ru": "Добро пожаловать в царство гармонии и элегантности. Добро пожаловать в <%= hotelName %>. Забронируйте свой необыкновенный опыт сегодня и погрузитесь в культурное наследие и роскошь, как никогда раньше."
+    },
+    "features": [
+      {
+        "caption": {
+          "en": "A Majestic Welcome",
+          "fr": "Un accueil majestueux",
+          "ru": "Величественный прием"
+        },
+        "text": {
+          "en": "Be among the first to discover the seamless blend of luxury at <%= hotelName %>. Witness the majesty from the comfort of your elegant oasis",
+          "fr": "Soyez parmi les premiers à découvrir le mélange harmonieux de luxe chez <%= hotelName %>. Soyez témoin de la majesté dans le confort de votre élégante oasis",
+          "ru": "Будьте одним из первых, кто откроет для себя безупречное сочетание роскоши в отеле <%= hotelName %>. Станьте свидетелем величия, не выходя из своего элегантного оазиса."
+        }
+      },
+      {
+        "caption": {
+          "en": "Breathtaking Views",
+          "fr": "Vues à couper le souffle",
+          "ru": "Захватывающие виды"
+        },
+        "text": {
+          "en": "Elevate your experience to our rooftop oasis, offering panoramic views of iconic skyline. Witness the city's energy from a serene vantage point",
+          "fr": "Élevez votre expérience dans notre oasis sur le toit, offrant une vue panoramique sur l'horizon emblématique. Observez l'énergie de la ville d'un point de vue serein",
+          "ru": "Повысьте уровень своих впечатлений в нашем оазисе на крыше, откуда открывается панорамный вид на знаменитый горизонт. Станьте свидетелем энергии города с безмятежной точки зрения"
+        }
+      },
+      {
+        "caption": {
+          "en": "Moments to Cherish",
+          "fr": "Des moments à chérir",
+          "ru": "Моменты, которые стоит ценить"
+        },
+        "text": {
+          "en": "From intimate gatherings to grand celebrations, our event spaces are thoughtfully designed to host your cherished moments. Allow us to craft unforgettable memories",
+          "fr": "Des rassemblements intimes aux grandes célébrations, nos espaces événementiels sont soigneusement conçus pour accueillir vos moments précieux. Permettez-nous de créer des souvenirs inoubliables",
+          "ru": "От камерных встреч до грандиозных торжеств — наши помещения для мероприятий тщательно спроектированы, чтобы провести ваши самые заветные моменты. Позвольте нам создать незабываемые воспоминания"
+        }
+      },
+      {
+        "caption": {
+          "en": "Culinary Odyssey",
+          "fr": "Odyssée culinaire",
+          "ru": "Кулинарная Одиссея"
+        },
+        "text": {
+          "en": "Embark on a culinary adventure led by our master chefs who artfully blend international flavors with authentic gastronomic prowess. Every dish is a testament to the city's rich culinary heritage.",
+          "fr": "Embarquez pour une aventure culinaire dirigée par nos maîtres chefs qui mélangent astucieusement les saveurs internationales avec des prouesses gastronomiques authentiques. Chaque plat témoigne du riche patrimoine culinaire de la ville.",
+          "ru": "Отправьтесь в кулинарное приключение под руководством наших шеф-поваров, которые искусно сочетают вкусы интернациональной кухни с подлинным гастрономическим мастерством. Каждое блюдо является свидетельством богатого кулинарного наследия города."
+        }
+      },
+      {
+        "caption": {
+          "en": "Retailer's Paradise",
+          "fr": "Le paradis des détaillants",
+          "ru": "Рай для шоппинга"
+        },
+        "text": {
+          "en": "Immerse yourself in a shopping adventure with exclusive access to city's vibrant bazaars and markets. Discover treasures that echo rich cultural heritage",
+          "fr": "Plongez dans une aventure shopping avec un accès exclusif aux bazars et marchés animés de la ville. Découvrez des trésors qui font écho au riche patrimoine culturel",
+          "ru": "Погрузитесь в шопинг-приключение, получив эксклюзивный доступ к оживленным базарам и рынкам города. Откройте для себя сокровища, отражающие богатое культурное наследие"
+        }
+      }
+    ]
+  },
+  "reviews": [{
+    "en": "Fantastic stay! The staff was so attentive and the rooms were luxurious.",
+    "fr": "Séjour fantastique ! Le personnel était très attentionné et les chambres étaient luxueuses.",
+    "ru": "Фантастический отдых! Персонал был очень внимательным, а номера были роскошными."
+  },
+  {
+    "en": "An oasis of comfort and relaxation. Loved every moment of my stay.",
+    "fr": "Une oasis de confort et de détente. J'ai adoré chaque instant de mon séjour.",
+    "ru": "Оазис комфорта и отдыха. Мне понравился каждый момент моего пребывания."
+  },
+  {
+    "en": "Exceptional service and breathtaking views. A true gem.",
+    "fr": "Service exceptionnel et vues à couper le souffle. Un véritable joyau.",
+    "ru": "Исключительный сервис и захватывающие виды. Настоящая жемчужина."
+  },
+  {
+    "en": "Top-notch amenities and friendly staff. Can't wait to come back!",
+    "fr": "Prestations haut de gamme et personnel sympathique. J'ai hâte de revenir ",
+    "ru": "Первоклассные удобства и дружелюбный персонал. Не могу дождаться, чтобы вернуться!"
+  },
+  {
+    "en": "A perfect blend of modern elegance and historic charm.",
+    "fr": "Un mélange parfait d'élégance moderne et de charme historique.",
+    "ru": "Идеальное сочетание современной элегантности и исторического очарования."
+  },
+  {
+    "en": "Unforgettable experience! The attention to detail was impressive.",
+    "fr": "Expérience inoubliable! L'attention portée aux détails était impressionnante.",
+    "ru": "Незабываемый опыт! Внимание к деталям было впечатляющим."
+  },
+  {
+    "en": "Every corner exudes sophistication and comfort. Loved my stay here.",
+    "fr": "Chaque coin respire la sophistication et le confort. J'ai adoré mon séjour ici.",
+    "ru": "Каждый уголок излучает изысканность и комфорт. Мне понравилось мое пребывание здесь."
+  },
+  {
+    "en": "Pampered from check-in to check-out. Will definitely return.",
+    "fr": "Choyé de l'enregistrement au départ. J'y retournerai certainement.",
+    "ru": "Побалуйте себя от заезда до отъезда. Обязательно вернусь."
+  },
+  {
+    "en": "A retreat that exceeds expectations. Highly recommend to all.",
+    "fr": "Une retraite qui dépasse les attentes. Je le recommande vivement à tous.",
+    "ru": "Отступление, которое превосходит ожидания. Очень рекомендую всем."
+  },
+  {
+    "en": "Attention to guest comfort is evident in every aspect of this hotel.",
+    "fr": "L'attention portée au confort des clients est évidente dans tous les aspects de cet hôtel.",
+    "ru": "Внимание к комфорту гостей проявляется во всех аспектах этого отеля."
+  },
+  {
+    "en": "A stay to remember! The staff's warmth made all the difference.",
+    "fr": "Un séjour inoubliable ! La chaleur du personnel a fait toute la différence.",
+    "ru": "Незабываемый отдых! Теплота персонала имела решающее значение."
+  },
+  {
+    "en": "Everything about this hotel is first-class. Can't wait to return.",
+    "fr": "Tout dans cet hôtel est de première classe. J'ai hâte d'y retourner.",
+    "ru": "Все в этом отеле первоклассное. Не могу дождаться, чтобы вернуться."
+  },
+  {
+    "en": "From the decor to the cuisine, every detail was perfection.",
+    "fr": "De la décoration à la cuisine, chaque détail était parfait.",
+    "ru": "От декора до кухни каждая деталь была совершенна."
+  },
+  {
+    "en": "Impressed by the world-class service and exquisite design.",
+    "fr": "Impressionné par le service de classe mondiale et le design exquis.",
+    "ru": "Впечатлен сервисом мирового уровня и изысканным дизайном."
+  },
+  {
+    "en": "Loved the personalized approach that made our stay truly special.",
+    "fr": "J'ai adoré l'approche personnalisée qui a rendu notre séjour vraiment spécial.",
+    "ru": "Понравился индивидуальный подход, который сделал наше пребывание по-настоящему особенным."
+  },
+  {
+    "en": "A haven of comfort and style. Would recommend without hesitation.",
+    "fr": "Un havre de confort et de style. Je le recommande sans hésitation.",
+    "ru": "Райский уголок комфорта и стиля. Рекомендую без колебаний."
+  },
+  {
+    "en": "Exceeded all expectations. A true 5-star experience.",
+    "fr": "A dépassé toutes les attentes. Une véritable expérience 5 étoiles.",
+    "ru": "Превзошел все ожидания!"
+  },
+  {
+    "en": "An urban retreat that captures the essence of luxury.",
+    "fr": "Une retraite urbaine qui capture l'essence du luxe.",
+    "ru": "Городской отдых, отражающий суть роскоши."
+  },
+  {
+    "en": "The staff's attentiveness made us feel like royalty. Wonderful!",
+    "fr": "L'attention du personnel nous a fait sentir comme des rois. Merveilleux!",
+    "ru": "Внимательность персонала позволила нам почувствовать себя членами королевской семьи. Замечательный!"
+  },
+  {
+    "en": "A hotel that sets the standard for excellence. Truly outstanding.",
+    "fr": "Un hôtel qui établit la norme d’excellence. Vraiment exceptionnel.",
+    "ru": "Отель, который устанавливает стандарты качества. Действительно выдающийся."
+  },
+  {
+    "en": "Cherished every moment at this elegant and inviting hotel.",
+    "fr": "Chérifié chaque instant dans cet hôtel élégant et accueillant.",
+    "ru": "Цените каждую минуту, проведенную в этом элегантном и уютном отеле."
+  }],
+  "userNames": ["Sophia Anderson", "Jackson Clark","Emma Martinez","Liam Walker","Olivia Collins","Noah Rodriguez","Ava Lewis","Ethan Carter","Mia Wright","Aiden Johnson","Isabella Hall","Lucas Scott","Sophia Adams","Oliver Turner","Amelia Green","Elijah Hughes","Harper White","Benjamin Martinez","Ava Davis","William Carter","Charlotte Jackson","James Johnson","Amelia Martin","Logan Thompson","Mia Martinez"]
+}

@@ -11,6 +11,11 @@ import { updateTabIndices } from './../../shared/dom';
 interface IProps {
   ctrlKey: string,
   activeOption?: string,
+  tabPanelIds: {
+    account: string,
+    history: string,
+    payments: string
+  }
 }
 const props = withDefaults(defineProps<IProps>(), {
   activeOption: undefined
@@ -65,9 +70,9 @@ onMounted(() => {
           <h3 class="account-page-tab-name mb-xs-2 mb-s-3">
             {{ tabName }}
           </h3>
-          <TabPayments v-if="props.activeOption === UIControlKeys.UserAccountOptionButtonPayments" v-model:ready="paymentsTabReady" ctrl-key="userAccountTabPayments" />
-          <TabHistory v-else-if="props.activeOption === UIControlKeys.UserAccountOptionButtonHistory" v-model:ready="historyTabReady" ctrl-key="userAccountTabHistory" />
-          <TabAccount v-else v-model:ready="accountTabReady" ctrl-key="userAccountTabAccount" />
+          <TabPayments v-if="props.activeOption === UIControlKeys.UserAccountOptionButtonPayments" :id="tabPanelIds.payments" v-model:ready="paymentsTabReady" ctrl-key="userAccountTabPayments" />
+          <TabHistory v-else-if="props.activeOption === UIControlKeys.UserAccountOptionButtonHistory" :id="tabPanelIds.history" v-model:ready="historyTabReady" ctrl-key="userAccountTabHistory" />
+          <TabAccount v-else :id="tabPanelIds.account" v-model:ready="accountTabReady" ctrl-key="userAccountTabAccount" />
         </div>
       </ClientOnly>
     </div>

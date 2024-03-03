@@ -3,6 +3,7 @@
 import 'vue-toastification/dist/index.css';
 import 'cropperjs/dist/cropper.css';
 import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
+import '@vueform/slider/themes/default.css';
 
 import Toast, { type PluginOptions, POSITION as ToastPosition } from 'vue-toastification';
 import { ModalsContainer } from 'vue-final-modal';
@@ -11,7 +12,6 @@ import AppContainer from './../components/app-container.vue';
 import NavBar from './../components/navbar/nav-bar.vue';
 import HeadingText from './../components/index/main-heading-text.vue';
 import AppConfig from './../appconfig';
-import { useUserNotificationStore } from './../stores/user-notification-store';
 import { type NavBarMode, ImageCategory } from './../shared/interfaces';
 import { isLandingPageUrl } from './../shared/common';
 import { MainTitleSlug } from './../shared/constants';
@@ -23,7 +23,6 @@ const route = useRoute();
 const { t, locale } = useI18n();
 useLocaleHead({
   addDirAttribute: true,
-  // identifierAttribute: 'id',
   addSeoAttributes: true
 });
 
@@ -71,6 +70,9 @@ const toastOptions : PluginOptions = {
 };
 nuxtApp.vueApp.use(Toast, toastOptions);
 
+const systemConfigurationStore = useSystemConfigurationStore();
+await systemConfigurationStore.initialize();
+
 const userNotificationStore = useUserNotificationStore();
 onMounted(() => {
   userNotificationStore.handleAppMount();
@@ -107,6 +109,7 @@ const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.val
         :image-entity-src="{ slug: MainTitleSlug }"
         :category="ImageCategory.MainTitle"
         :image-alt-res-name="getI18nResName1('searchPageImageAlt')"
+        overlay-class="search-page-head-landing-overlay"
       >
         <NavBar ctrl-key="NavBar" :mode="navBarMode" />
         <HeadingText ctrl-key="IndexPageMainHeading" />
@@ -126,6 +129,7 @@ const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.val
     @use "~/assets/scss/svg";
     @use "~/assets/scss/main";
     @use "~/assets/scss/system";
+    @use "~/assets/scss/transitions";
     @use "~/assets/scss/user-notification";
     @use "~/assets/scss/buttons";
     @use "~/assets/scss/option-buttons";
@@ -139,6 +143,7 @@ const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.val
     @use "~/assets/scss/property-grid";
     @use "~/assets/scss/privacy";
     @use "~/assets/scss/common-page-components";
+    @use "~/assets/scss/offers-list-view";
     @use "~/assets/scss/index-page";
     @use "~/assets/scss/flights-page";
     @use "~/assets/scss/stays-page";

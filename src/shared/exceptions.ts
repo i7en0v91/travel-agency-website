@@ -1,5 +1,4 @@
 import { type NuxtError } from 'nuxt/app';
-import { useUserNotificationStore, type IUserNotificationParams } from '../stores/user-notification-store';
 import { type I18nResName, getI18nResName2 } from './i18n';
 import { UserNotificationLevel } from './constants';
 

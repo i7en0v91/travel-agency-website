@@ -2,7 +2,6 @@
 
 import { DefaultUserCoverSlug } from './../../shared/constants';
 import { ImageCategory } from './../../shared/interfaces';
-import { useUserAccountStore } from './../../stores/user-account-store';
 import { getI18nResName2 } from './../../shared/i18n';
 import EditableImage from './../images/editable-image.vue';
 
@@ -38,7 +37,7 @@ watch(imageSrc, () => {
     :category="ImageCategory.UserCover"
     ctrl-key="userCover"
     class="user-cover"
-    sizes="sm:100vw md:100vw lg:100vw xl:100vw xxl:100vw"
+    sizes="xs:100vw sm:100vw md:100vw lg:100vw xl:100vw"
     :is-high-priority="true"
     :alt-res-name="getI18nResName2('accountPage', 'coverAlt')"
     :btn-res-name="getI18nResName2('accountPage', 'uploadCover')"

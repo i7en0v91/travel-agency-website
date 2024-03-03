@@ -34,4 +34,4 @@ export default defineWebApiEventHandler((event: H3Event): Promise<string | JwtPa
   const user = ensureAuth(event);
   logger.verbose('(oauth-stub:user) exit');
   return Promise.resolve(user);
-}, { logResponseBody: true, authorizedOnly: false, allowedEnvironments: ['test', 'development', 'quickstart'] });
+}, { logResponseBody: false, authorizedOnly: false, allowedEnvironments: ['test', 'development', 'quickstart'] });

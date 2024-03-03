@@ -53,8 +53,8 @@ $btn-icon-size: 16px;
 .btn-icon {
   &::before {
     display: inline-block;
-    width: $btn-icon-size;
-    height: $btn-icon-size;
+    width: markup-to-rem($btn-icon-size);
+    height: markup-to-rem($btn-icon-size);
     margin-right: 4px;
     -webkit-mask-size: contain;
     mask-size: contain;
@@ -62,19 +62,27 @@ $btn-icon-size: 16px;
     mask-repeat: no-repeat;
     -webkit-mask-position: center center;
     mask-position: center center;
-    vertical-align: middle;
+    vertical-align: bottom;
     
     @include with-theme-color('input-ctrl-primary') using($css-var) {
       background-color: var($css-var);
     }
   
     content: '';
+
+    @at-root {
+      .btn-icon.btn-accent::before {
+        @include with-theme-color('accent') using($css-var) {
+          background-color: var($css-var);
+        } 
+      }
+    }
   }
 
   &.disabled {
     pointer-events: none;
     &::before {
-      @include with-theme-color('option-button-group-divisor') using ($css-var) {
+      @include with-theme-color('control-group-divisor') using ($css-var) {
         background-color: var($css-var);
       }
     }
@@ -84,3 +92,4 @@ $btn-icon-size: 16px;
     margin-right: 0;
   }
 }
+

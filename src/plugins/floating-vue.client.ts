@@ -16,6 +16,9 @@ export default defineNuxtPlugin(() => {
   FloatingVue.options.themes['options-button-dropdown'] = {
     $extend: 'control-dropdown'
   };
+  FloatingVue.options.themes['secondary-dropdown'] = {
+    $extend: 'control-dropdown'
+  };
   FloatingVue.options.themes['default-tooltip'] = {
     $extend: 'tooltip'
   };
