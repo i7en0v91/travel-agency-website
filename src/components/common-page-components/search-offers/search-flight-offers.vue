@@ -158,7 +158,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchFlightOffers
             type="destination"
             list-container-class="search-offers-dropdown-list-container"
             :placeholder-res-name="getI18nResName2('searchFlights', 'fromPlaceholder')"
-            :aria-label-res-name="getI18nResName2('searchFlights', 'ariaLabelFrom')"
+            :aria-label-res-name="getI18nResName2('ariaLabels', 'ariaLabelFrom')"
             @update:selected-value="(value?: ISearchListItem | undefined) => { onDestinationChanged(true, value); }"
           />
           <span class="flights-geo-searchlists-sep">-</span>
@@ -172,12 +172,12 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchFlightOffers
             type="destination"
             list-container-class="search-offers-dropdown-list-container"
             :placeholder-res-name="getI18nResName2('searchFlights', 'toPlaceholder')"
-            :aria-label-res-name="getI18nResName2('searchFlights', 'ariaLabelTo')"
+            :aria-label-res-name="getI18nResName2('ariaLabels', 'ariaLabelTo')"
             @update:selected-value="(value?: ISearchListItem | undefined) => { onDestinationChanged(false, value); }"
           />
         </div>
         <div class="search-flights-geo-swap-div brdr-1">
-          <button class="search-flights-geo-swap" type="button" :aria-label="$t(getI18nResName2('searchFlights', 'ariaLabelSwap'))" @click="onSwapButtonClick">
+          <button class="search-flights-geo-swap" type="button" :aria-label="$t(getI18nResName2('ariaLabels', 'ariaLabelSwap'))" @click="onSwapButtonClick">
 &nbsp;
           </button>
         </div>

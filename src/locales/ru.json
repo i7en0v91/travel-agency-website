@@ -1,7 +1,6 @@
 {
   "appErrors": {
     "unknown": "Произошла непредвиденная ошибка",
-    "sessionInitFailed": "Ошибка создания новой сессии",
     "badRequest": "Некорректный запрос",
     "objectNotFound": "Объект не найден",
     "helm": "Ошибка",
@@ -75,6 +74,9 @@
     "btnNo": "Нет",
     "btnCancel": "Отмена"
   },
+  "maps": {
+    "disabled": "Интерактивная карта отключена в конфигурации веб-сайта"
+  },
   "searchOffers": {
     "addPromoCode": "Добавить промокод",
     "showFlights": "Показать рейсы",
@@ -88,8 +90,7 @@
       "rating": "Рейтинг",
       "noResultsStub": "Отсутствуют результаты поиска",
       "checklistMoreItems": "+{count} ещё",
-      "checklistCollapseItems": "свернуть",
-      "ariaLabelRangeHandler": "кнопка задания порогового значения диапазона"
+      "checklistCollapseItems": "свернуть"
     },
     "displayOptions": {
       "cheapest": "Цена",
@@ -108,8 +109,7 @@
     },
     "reviewsCount": "отзывов | отзыв | отзыва | отзывов",
     "startingPrice": "цена от",
-    "pagingBtn": "Показать больше вариантов",
-    "ariaLabelSearch": "начать поиск"
+    "pagingBtn": "Показать больше вариантов"
   },
   "searchFlights": {
     "destinationCaption": "Откуда - Куда",
@@ -129,9 +129,6 @@
     },
     "fieldPassengers": "Кол-во пассажиров",
     "fieldClass": "Класс",
-    "ariaLabelFrom": "город отправления",
-    "ariaLabelTo": "город прибытия",
-    "ariaLabelSwap": "поменять местами города прибытия и отправления",
     "filters": {
       "departureTime": "Время вылета",
       "airlines": "Авиакомпании",
@@ -162,7 +159,6 @@
     "numberOfGuests": "Гости",
     "numRooms": "комнат | комната | комнаты | комнат",
     "numGuests": "человек | человек | человека | человек",
-    "ariaLabelDestination": "город",
     "filters": {
       "freebies": "Бесплатные услуги",
       "amenities": "Инфраструктура"
@@ -198,16 +194,30 @@
     "viewPlace": "Подробнее",
     "hotelPhotoAlt": "главное фото отеля",
     "stayRatingCaption": "Отель 5 звёзд",
-    "excludingTax": "б/у налогов"
+    "excludingTax": "б/у налогов",
+    "night": "ночь"
   },
   "ariaLabels": {
+    "ariaLabelToggleSection": "свернуть/развернуть секцию",
+    "ariaLabelDestination": "город",
+    "ariaLabelFrom": "город отправления",
+    "ariaLabelTo": "город прибытия",
+    "ariaLabelSwap": "поменять местами города прибытия и отправления",
+    "ariaLabelSearch": "начать поиск",
+    "ariaLabelRangeHandler": "кнопка задания порогового значения диапазона",
     "btnThemeSwitcher": "переключатель цветовой схемы",
     "imgLinkMainPage": "изображение-ссылка на главную страницу",
     "footerSocialLinkTwitter": "изображение-ссылка на Twitter",
     "footerSocialLinkYoutube": "изображение-ссылка на YouTube",
     "btnGithubLogin": "вход через GitHub",
     "btnGoogleLogin": "вход через Google",
-    "btnTestLocalLogin": "вход через локальный тестовый провайдер"
+    "btnTestLocalLogin": "вход через локальный тестовый провайдер",
+    "btnShareSocial": "поделиться в социальных сетях",
+    "btnGiveReview": "добавить отзыв",
+    "btnReviewEditorSend": "отправить текст отзыва на серве",
+    "btnReviewEditorCancel": "закрыть редактор текста отзыва",
+    "btnDeleteUserReview": "Удалить",
+    "btnEditUserReview": "Редактировать"
   },
   "footer": {
     "destinations": {
@@ -283,11 +293,7 @@
     }
   },
   "flightsPage": {
-    "title": "Авиабилеты",
-    "heading": {
-      "main": "Составьте список желаний для путешествия, мы сделаем все остальное",
-      "sub": "Специальные предложения в соответствии с Вашим планом"
-    },
+    "title": "Поиск авиабилетов",
     "letsGoPlacesSection": {
       "title": "Пойдем куда-нибудь вместе",
       "subtext": "Узнайте о последних предложениях и новостях и начните планировать свою следующую поездку вместе с нами.",
@@ -298,21 +304,104 @@
       "cityTravelInfoAria": "перейти к туристической информации по городу"
     }
   },
-  "findFlightsPage": {
-    "title": "Поиск авиабилетов"
+  "searchPageCommon": {
+    "heading": {
+      "main": "Составьте список желаний для путешествия, мы сделаем все остальное",
+      "sub": "Специальные предложения в соответствии с Вашим планом"
+    },
+    "mainImageAlt": "основное изображение страницы"
   },
   "staysPage": {
-    "title": "Отели"
+    "title": "Поиск отелей",
+    "recentSearchesTitle": "Вы недавно искали",
+    "cityPlacesCount": "{n} мест | {n} место | {n} места | {n} мест",
+    "searchHistoryEmpty": "Нет данных. Укажите название какого-нибудь известного города, например {cityLink}"
   },
-  "findStaysPage": {
-    "title": "Поиск отелей"
+  "offerDetailsPage": {
+    "bookBtn": "Забронировать"
+  },
+  "flightDetailsPage": {
+    "title": "Детали рейса",
+    "titleExt": "Рейс {from} - {to}",
+    "airplaneMainImageAlt": "изображение самолёта",
+    "airplaneFeatureImageAlt": "фото самолета",
+    "flightClassFeaturesTitle": "Услуги {class} класса",
+    "companyPolicies": {
+      "caption": "{company} - условия",
+      "cleaning": "Предполетная уборка, установка HEPA-фильтров салона.",
+      "screening": "Скрининг перед полетом."
+    }
+  },
+  "flightDetailsCard": {
+    "direction": {
+      "depart": "Отправление {date}",
+      "arrive": "Возвращение {date}"
+    }
+  },
+  "stayDetailsPage": {
+    "title": "Подробная информация Отеля",
+    "titleExt": "Подробная информация {stay} {from} - {to}",
+    "stayMainImageAlt": "фото отеля",
+    "stayServiceImageAlt": "фото номера",
+    "overviewHightlights": {
+      "newPark": "Новый парк",
+      "nightlife": "Рядом ночная жизнь",
+      "theater": "Недалеко от театра",
+      "clean": "Чистый Отель"
+    },
+    "availableRooms": {
+      "title": "Свободные номера",
+      "base": "Улучшенный номер – 1 двуспальная кровать или 2 односпальные кровати",
+      "city": "Улучшенный номер - Вид на город - 1 двуспальная кровать или 2 односпальные кровати"
+    },
+    "location": {
+      "title": "Местоположение на карте",
+      "viewOnWebsite": "На {webLink}"
+    },
+    "amenities": {
+      "title": "Инфраструктура",
+      "moreItems": "+{count} ещё",
+      "collapseItems": "свернуть"
+    },
+    "reviews": {
+      "title": "Отзывы",
+      "giveReviewBtn": "Добавить отзыв",
+      "count": "проверенных отзывов | проверенный отзыв | проверенных отзыва | проверенных отзывов",
+      "avatarImgAlt": "аватар автора отзыва",
+      "scorePickerTitle": "Пожалуйста, поставьте оценку от 1 до 5",
+      "confirmDelete": "Подтвердить операцию удаления?",
+      "validationErrEmptyReview": "Отзыв не может быть пустым",
+      "validationErrTooLongReview": "Текст отзыва слишком длинный",
+      "paging": "{of} из {total}",
+      "noReviews": "Нет отзывов",
+      "mustBeLoggedInToReview": "Для добавления отзывов необходимо войти в систему"
+    }
+  },
+  "reviewEditor": {
+    "buttons": {
+      "bold": "Жирный",
+      "italic": "Курсив",
+      "strikethrough": "Зачеркивание",
+      "underline": "Подчеркивание", 
+      "bulletList": "Маркированный список",
+      "orderedList": "Пронумерованный список",
+      "blockquote": "Цитата",
+      "undo": "Отменить",
+      "redo": "Восстановить"
+    },
+    "controlButtons": {
+      "send": "Отправить",
+      "cancel": "Отмена"
+    },
+    "placeholder": "Напишите текст отзыва здесь..."
   },
   "travelCities": {
     "title": "Отправиться в путешествие",
     "subtext": "Собираетесь куда-нибудь отпраздновать это время года? Планируете ли Вы домой или же посмотреть мир и узнать что-то новое, у нас есть все необходимое, чтобы доставить Вас к месту назначения.",
     "btn": "Просмотреть все",
-    "card": {
-      "btnBook": "Забронировать рейс"
+    "bookBtn": {
+      "flight": "Забронировать рейс",
+      "stay": "Забронировать отель"
     }
   },
   "travelDetails": {
@@ -320,10 +409,6 @@
     "subtext": "Собираетесь куда-нибудь отпраздновать это время года? Планируете ли Вы домой или же посмотреть мир и узнать что-то новое, у нас есть все необходимое, чтобы доставить Вас к месту назначения.",
     "btn": "Просмотреть все",
     "travelImgAlt": "одна из фотографий города",
-    "bookBtn": {
-      "flight": "Забронировать рейс",
-      "stay": "Забронировать отель"
-    },
     "priceFrom": "От"
   },
   "accountPageCommon": {
@@ -599,8 +684,6 @@
     "text": "Этот веб-сайт или его сторонние компоненты используют файлы cookie, чтобы мы могли правильно веб-сайт отображать. Закрывая этот баннер, прокручивая эту страницу, нажимая ссылку или продолжая просматривать, Вы разрешаете нам использовать cookie, а также соглашаетесь с {privacyLink}",
     "btnAccept": "Согласен"
   },
-  "searchPageImageAlt": "фоновое изображение основной страницы",
   "close": "Закрыть",
-  "calendarImgAlt": "значок календаря",
-  "ariaLabelToggleSection": "свернуть/развернуть секцию"
+  "calendarImgAlt": "значок календаря"
 }

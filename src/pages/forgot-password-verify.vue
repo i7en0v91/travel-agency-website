@@ -10,8 +10,9 @@ definePageMeta({
     unauthenticatedOnly: true,
     navigateAuthenticatedTo: '/'
   },
-  title: getI18nResName2('forgotPasswordVerifyPage', 'title')
+  title: { resName: getI18nResName2('forgotPasswordVerifyPage', 'title'), resArgs: undefined }
 });
+useOgImage();
 
 const localePath = useLocalePath();
 

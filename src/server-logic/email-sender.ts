@@ -8,7 +8,7 @@ import { type IAppLogger } from '../shared/applogger';
 import { type IEmailParams, EmailTemplate, type IEmailSender, type IMailTemplateLogic } from '../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
 import AppConfig from '../appconfig';
-import { DefaultLocale, SecretValueMask } from '../shared/constants';
+import { DefaultLocale, SecretValueMask, PagePath } from '../shared/constants';
 import { maskLog, buildParamsLogData } from '../shared/applogger';
 
 interface IMailSettings {
@@ -123,13 +123,13 @@ export class EmailSender implements IEmailSender {
       let pageUrlSegment = '';
       switch (kind) {
         case EmailTemplate.EmailVerify:
-          pageUrlSegment = 'email-verify-complete';
+          pageUrlSegment = PagePath.EmailVerifyComplete;
           break;
         case EmailTemplate.PasswordRecovery:
-          pageUrlSegment = 'forgot-password-set';
+          pageUrlSegment = PagePath.ForgotPasswordSet;
           break;
         case EmailTemplate.RegisterAccount:
-          pageUrlSegment = 'signup-complete';
+          pageUrlSegment = PagePath.SignupComplete;
           break;
       }
 

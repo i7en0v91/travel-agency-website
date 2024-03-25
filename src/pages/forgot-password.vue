@@ -7,13 +7,13 @@ import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
 import { AuthProvider } from './../shared/interfaces';
 import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
-import { WebApiRoutes } from './../shared/constants';
+import { PagePath, WebApiRoutes } from './../shared/constants';
 import SimpleButton from './../components/forms/simple-button.vue';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
 import CaptchaProtection from './../components/forms/captcha-protection.vue';
 import { type IRecoverPasswordDto, type IRecoverPasswordResultDto, RecoverPasswordResultCode } from './../server/dto';
-import { post } from './../client/rest-utils';
+import { post } from './../shared/rest-utils';
 
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
@@ -25,8 +25,9 @@ definePageMeta({
     unauthenticatedOnly: true,
     navigateAuthenticatedTo: '/'
   },
-  title: getI18nResName2('forgotPasswordPage', 'title')
+  title: { resName: getI18nResName2('forgotPasswordPage', 'title'), resArgs: undefined }
 });
+useOgImage();
 
 const { signIn } = useAuth();
 const themeSettings = useThemeSettings();
@@ -57,7 +58,7 @@ async function callServerPasswordRecovery (email: string, captchaToken?: string)
   if (resultDto) {
     switch (resultDto.code) {
       case RecoverPasswordResultCode.SUCCESS:
-        await navigateTo(localePath('forgot-password-verify'));
+        await navigateTo(localePath(`${PagePath.ForgotPasswordVerify}`));
         break;
       case RecoverPasswordResultCode.USER_NOT_FOUND:
         useremailServerError.value = getI18nResName2('forgotPasswordPage', 'userNotFound');
@@ -105,7 +106,7 @@ function onOAuthProviderClick (provider: AuthProvider) {
   <div class="forgot-password-page account-page no-hidden-parent-tabulation-check">
     <div class="forgot-password-page-content">
       <NavLogo ctrl-key="forgotPasswordPageAppLogo" mode="inApp" />
-      <NuxtLink class="back-to-login-link brdr-1" :to="localePath('/login')">
+      <NuxtLink class="back-to-login-link brdr-1" :to="localePath(`/${PagePath.Login}`)">
         {{ t(getI18nResName2('accountPageCommon', 'backToLogin')) }}
       </NuxtLink>
       <h2 class="forgot-password-title mt-xs-3">

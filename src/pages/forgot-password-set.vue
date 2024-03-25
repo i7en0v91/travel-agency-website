@@ -7,9 +7,9 @@ import { getI18nResName2 } from './../shared/i18n';
 import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
 import SimpleButton from './../components/forms/simple-button.vue';
-import { WebApiRoutes, SecretValueMask } from './../shared/constants';
+import { WebApiRoutes, SecretValueMask, PagePath } from './../shared/constants';
 import { type IRecoverPasswordCompleteDto, type IRecoverPasswordCompleteResultDto, RecoverPasswordCompleteResultCode } from './../server/dto';
-import { post } from './../client/rest-utils';
+import { post } from './../shared/rest-utils';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import { isPasswordSecure } from './../shared/common';
 
@@ -22,8 +22,9 @@ definePageMeta({
     unauthenticatedOnly: true,
     navigateAuthenticatedTo: '/'
   },
-  title: getI18nResName2('forgotPasswordSetPage', 'title')
+  title: { resName: getI18nResName2('forgotPasswordSetPage', 'title'), resArgs: undefined }
 });
+useOgImage();
 
 const password = ref('');
 const confirmPassword = ref('');
@@ -65,10 +66,10 @@ const callServerPasswordSet = async (password: string) => {
     const resultDto = await post(WebApiRoutes.PasswordRecoveryComplete, undefined, postBody) as IRecoverPasswordCompleteResultDto;
     if (resultDto) {
       const resultCode = resultDto.code;
-      navigateTo(localePath(`/forgot-password-complete?result=${resultCode}`));
+      navigateTo(localePath(`/${PagePath.ForgotPasswordComplete}?result=${resultCode}`));
     }
   } else {
-    navigateTo(localePath(`/forgot-password-complete?result=${RecoverPasswordCompleteResultCode.LINK_INVALID}`));
+    navigateTo(localePath(`/${PagePath.ForgotPasswordComplete}?result=${RecoverPasswordCompleteResultCode.LINK_INVALID}`));
   }
 };
 

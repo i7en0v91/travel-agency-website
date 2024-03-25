@@ -1,3 +1,5 @@
+import type { EntityId } from './interfaces';
+
 export enum LogLevelEnum {
   'debug' = 10,
   'verbose' = 20,
@@ -31,24 +33,31 @@ export type Locale = Lowercase<keyof typeof LocaleEnum>;
 
 export class NuxtDataKeys {
   public static readonly UserNotifications = 'UserNotifications';
-  public static readonly BrowserSession = 'BrowserSession';
   public static readonly ImageSrcSizes = 'ImageSrcSizes';
   public static readonly EntityCacheItems = 'EntityCacheItems';
   public static readonly WorldMapData = 'WorldMapData';
   public static readonly SearchFlightOffers = 'SearchFlightOffers';
   public static readonly SearchStayOffers = 'SearchStayOffers';
+  public static readonly StayDetailsReviews = 'StayDetailsReviews';
 }
 
 export class SessionConstants {
   public static readonly ThemeKey = 'theme';
   public static readonly LocaleKey = 'locale';
+  public static readonly StaySearchHistory = 'stay-search-history';
+}
+
+export class HeaderNames {
+  public static readonly SetCookie = 'set-cookie';
+  public static readonly Cookies = 'cookie';
+  public static readonly UserAgent = 'User-Agent';
 }
 
 export class CookieNames {
   public static readonly AuthSessionToken = 'next-auth.session-token';
   public static readonly AuthCallbackUrl = 'next-auth.callback-url';
   public static readonly AuthCsrfToken = 'next-auth.csrf-token';
-  public static readonly SessionId = 'golobe-sessionId';
+  public static readonly Session = 'golobe-session';
   public static readonly I18nLocale = 'i18n_redirected';
   public static readonly CookieAndPolicyConsent = 'cookie_and_privacy_policies';
 }
@@ -58,7 +67,6 @@ export class WebApiRoutes {
 
   public static readonly Logging = `${this.Prefix}/log`;
   public static readonly Authentication = `${this.Prefix}/auth`;
-  public static readonly SessionManagement = `${this.Prefix}/session`;
   public static readonly Image = `${this.Prefix}/img`;
   public static readonly ImageDetails = `${this.Prefix}/img/details`;
   public static readonly ImageList = `${this.Prefix}/img/list`;
@@ -75,15 +83,47 @@ export class WebApiRoutes {
   public static readonly PopularCityTravelDetails = `${this.Prefix}/popular-cities/travel-details`;
   public static readonly CompanyReviewsList = `${this.Prefix}/company-reviews`;
   public static readonly EntityCache = `${this.Prefix}/entity-cache`;
-  public static readonly FlightsSearch = `${this.Prefix}/flights/search`;
-  public static readonly FlightsFavourite = `${this.Prefix}/flights/favourite`;
-  public static readonly StaysSearch = `${this.Prefix}/stays/search`;
-  public static readonly StaysFavourite = `${this.Prefix}/stays/favourite`;
+  public static readonly FlightOffersSearch = `${this.Prefix}/flight-offers/search`;
+  public static readonly FlightOfferDetails = (id: EntityId) => `${this.Prefix}/flight-offers/${id}/details`;
+  public static readonly FlightOfferFavourite = (id: EntityId) => `${this.Prefix}/flight-offers/${id}/favourite`;
+  public static readonly StayOffersSearch = `${this.Prefix}/stay-offers/search`;
+  public static readonly StayOfferDetails = (id: EntityId) => `${this.Prefix}/stay-offers/${id}/details`;
+  public static readonly StayOfferFavourite = (id: EntityId) => `${this.Prefix}/stay-offers/${id}/favourite`;
+  public static readonly StayOffersSearchHistory = `${this.Prefix}/stay-offers/search-history`;
+
+  public static readonly StayReviews = (id: EntityId) => `${this.Prefix}/stays/${id}/reviews`;
 
   public static readonly ImageCacheLatency = 5 * 60; // maxAge HTTP caching option
   public static readonly OneDayCacheLatency = 24 * 60 * 60; // maxAge HTTP caching option
   public static readonly OneHourCacheLatency = 60 * 60; // maxAge HTTP caching option
 }
+
+export const MaxStayReviewLength = 8000;
+
+export enum PagePath {
+  Account = 'account',
+  EmailVerifyComplete = 'email-verify-complete',
+  FindFlights = 'find-flights',
+  FindStays = 'find-stays',
+  FlightDetails = 'flight-details',
+  Flights = 'flights',
+  ForgotPasswordComplete = 'forgot-password-complete',
+  ForgotPasswordSet = 'forgot-password-set',
+  ForgotPasswordVerify = 'forgot-password-verify',
+  ForgotPassword = 'forgot-password',
+  Index = '',
+  Login = 'login',
+  Privacy = 'privacy',
+  SignupComplete = 'signup-complete',
+  SignupVerify = 'signup-verify',
+  Signup = 'signup',
+  Stays = 'stays',
+  StayDetails = 'stay-details'
+}
+export const AllPagePaths = Object.values(PagePath);
+
+export const OgImageDynamicPages: PagePath[] = [PagePath.FlightDetails, PagePath.StayDetails];
+export const OgImageExt = 'png';
 
 export class DbConcurrencyVersions {
   public static readonly DraftVersion = -1;
@@ -129,7 +169,7 @@ export const TravelDetailsHtmlAnchor = 'travelDetails';
 
 export const CurrentUserGeoLocation = { lon: 0.0, lat: 0.0 };
 
-export const DefaultStayReviewScore = 4;
+export const DefaultStayReviewScore = 5;
 
 export class SearchOffersListConstants {
   public static readonly Price = { min: 0, max: 25000 };
@@ -165,6 +205,7 @@ export class SearchOffersListConstants {
   public static readonly FlightTimeOfDayIntervalMinutes = 15;
 
   public static readonly NumMinutesInDay = 1440;
+  public static readonly MaxSearchHistorySize = 8;
 
   public static readonly DefaultFlightOffersSorting = 'score';
   public static readonly FlightsAirlineCompanyFilterId = 'FlightOffersAirlineCompanyFilterId';
@@ -219,3 +260,11 @@ export class WindowBreakpoints {
 
 // Id value for objects which have been not saved to DB
 export const TemporaryEntityId = -1;
+
+export function isDevOrTestEnv (): boolean {
+  return import.meta.env.MODE === DEV_ENV_MODE || import.meta.env.VITE_VITEST || process.env?.VITEST || process.env?.NODE_ENV === DEV_ENV_MODE;
+}
+
+export function isQuickStartEnv (): boolean {
+  return import.meta.env.VITE_QUICKSTART;
+}

@@ -17,6 +17,7 @@ $btn-icon-size: 16px;
   border-radius: map.get($borders-radius, '1');
   
   white-space: nowrap;
+  line-height: normal;
 
   &:focus-visible {
     @include with-outline();
@@ -82,7 +83,7 @@ $btn-icon-size: 16px;
   &.disabled {
     pointer-events: none;
     &::before {
-      @include with-theme-color('control-group-divisor') using ($css-var) {
+      @include with-theme-color('ctrl-disabled') using ($css-var) {
         background-color: var($css-var);
       }
     }

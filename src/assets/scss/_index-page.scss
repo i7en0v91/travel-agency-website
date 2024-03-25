@@ -5,11 +5,6 @@
 @use 'utils' as *;
 @use 'svg';
 
-$popular-city-card-width: markup-to-rem(370px);
-$popular-city-card-xs-width: markup-to-rem(340px);
-$popular-city-card-img-size: 90px;
-$popular-city-card-height: 120px;
-$popular-city-card-width-limit: 70vw;
 $search-page-image-link-border-radius: 20px;
 
 $review-card-swiper-xs-height: 506px;
@@ -94,118 +89,10 @@ $review-card-sz-s-height: calc(378px + $review-card-sz-header-height);
   }
 }
 
-.popular-city-grid {
-  display: grid;
-  grid-auto-flow: row;
-  grid-template-columns: repeat(auto-fill, minmax($popular-city-card-xs-width, 1fr));
-  grid-template-rows: auto auto auto auto auto;
-  grid-auto-rows: 0px;
-  overflow: hidden;
-  justify-content: center;
-  @include for-medium-and-large() {
-    grid-template-rows: auto auto auto;
-    grid-template-columns: repeat(auto-fill, minmax($popular-city-card-width, 1fr));
-  }
-
-  .popular-city-grid-item {
-    width: 100%;
-  }
-
-  .popular-city-card {
-    display: block;
-    width: auto;
-    height: $popular-city-card-height;
-    max-height: $popular-city-card-height;
-    max-width: 100%;
-
-    margin-left: auto;
-    margin-right: auto;
-
-    @include for-small-and-above() {
-      min-width: $popular-city-card-xs-width;
-    }
-
-    .popular-city-card-container {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: nowrap;
-      align-items: center;
-      gap: 16px;
-
-      width: auto;
-      height: 100%;
-      overflow: hidden;
-  
-      @include with-theme-color('shadow') using($css-var) {
-        box-shadow: 0px 4px 16px var($css-var);
-      }
-    
-      .popular-city-card-img {
-        width: $popular-city-card-img-size;
-        height: $popular-city-card-img-size;
-        max-width: $popular-city-card-img-size;
-        max-height: $popular-city-card-img-size;
-
-        flex: 1 0 auto;
-  
-        .static-image-stub {
-          border-radius: map.get($borders-radius, '3');
-        }
-  
-        img {
-          background-size: cover;
-          border-radius: map.get($borders-radius, '3');
-        }
-      }
-    
-      .popular-city-info {
-        width: fit-content;
-        height: max-content;
-
-        flex: 0 1 auto;
-    
-        .popular-city-name {
-          width: fit-content;
-          height: auto;
-
-          overflow: hidden;
-          display: -webkit-box;
-          -webkit-box-orient: vertical;
-          -webkit-line-clamp: 2;
-          white-space: pre-wrap;
-  
-          @include with-theme-color('secondary') using ($css-var) {
-            color: var(#{$css-var});
-          }
-          @include with-body-font('category-caption');
-        }
-  
-        .popular-city-links {
-          width: fit-content;
-          height: auto;
-          overflow: hidden;
-
-          display: flex;
-          flex-wrap: wrap;
-          flex-direction: row;
-          align-items: center;
-          gap: 8px;
-  
-          @include with-theme-color('input-ctrl-primary') using ($css-var) {
-            color: var(#{$css-var});
-          }
-  
-          a:focus-visible {
-            @include with-outline();
-          }
-  
-          a:hover {
-            text-decoration: underline;
-            text-decoration-thickness: markup-to-rem(1.5px);
-          }
-        }
-      }
-    }
+.search-page-image-link-section {
+  margin-top: 0px;
+  .search-image-links-section-content {
+    margin-top: 0px;
   }
 }
 
@@ -440,7 +327,7 @@ $review-card-sz-s-height: calc(378px + $review-card-sz-header-height);
             width: 22px;
             height: 22px;
       
-            background-image: url('/img/star.svg');
+            background-image: url('~/public/img/star.svg');
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center center;
@@ -472,6 +359,10 @@ $review-card-sz-s-height: calc(378px + $review-card-sz-header-height);
       
           border-radius: map.get($borders-radius, '3');
       
+          .error-helm {
+            min-height: 100px;
+          }
+
           .static-image-stub {
             border-radius: map.get($borders-radius, '3');
             height: 100%;

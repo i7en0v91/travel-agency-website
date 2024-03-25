@@ -7,7 +7,7 @@ import { getI18nResName3 } from './../../shared/i18n';
 import { clampTextLine } from './../../shared/common';
 import { updateTabIndices } from './../../shared/dom';
 import NavUserMenuItem from './nav-user-menu-item.vue';
-import { TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
+import { TabIndicesUpdateDefaultTimeout, PagePath } from './../../shared/constants';
 
 interface IProps {
   ctrlKey: string
@@ -18,7 +18,7 @@ const { status, signOut } = useAuth();
 const localePath = useLocalePath();
 
 const userAccountStore = useUserAccountStore();
-const userAccount = await userAccountStore.getUserAccount();
+const userAccount = await userAccountStore.initializeUserAccount();
 
 const dropdown = ref<InstanceType<typeof Dropdown>>();
 
@@ -85,7 +85,7 @@ function hideDropdown () {
           </div>
           <div class="nav-user-menu-list">
             <hr class="nav-user-menu-divisor mt-xs-1 mb-xs-1">
-            <NavUserMenuItem ctrl-key="navUserMenuMyAccount" :text-res-name="getI18nResName3('nav', 'userBox', 'myAccount')" :to="localePath('/account')" icon="user" @click="() => { navigateTo(localePath('/account')); hideDropdown(); }" />
+            <NavUserMenuItem ctrl-key="navUserMenuMyAccount" :text-res-name="getI18nResName3('nav', 'userBox', 'myAccount')" :to="localePath(`/${PagePath.Account}`)" icon="user" />
             <NavUserMenuItem ctrl-key="navUserMenuFavourites" :text-res-name="getI18nResName3('nav', 'userBox', 'favourites')" :to="localePath('/')" icon="heart" />
             <NavUserMenuItem ctrl-key="navUserMenuPayments" :text-res-name="getI18nResName3('nav', 'userBox', 'payments')" :to="localePath('/')" icon="credit-card" />
             <NavUserMenuItem ctrl-key="navUserMenuSettings" :text-res-name="getI18nResName3('nav', 'userBox', 'settings')" :to="localePath('/')" icon="gear" />

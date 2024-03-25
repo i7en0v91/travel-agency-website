@@ -3,7 +3,7 @@
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import orderBy from 'lodash-es/orderBy';
 import isEqual from 'lodash-es/isEqual';
-import { type ISearchOffersChecklistFilterProps, type ISearchOffersRangeFilterProps, type SearchOfferKind } from './../../../shared/interfaces';
+import { type ISearchOffersChecklistFilterProps, type ISearchOffersRangeFilterProps, type OfferKind } from './../../../shared/interfaces';
 import CollapsableSection from './../../collapsable-section.vue';
 import RangeFilter from './filters/range-filter.vue';
 import ChecklistFilter from './filters/checklist-filter.vue';
@@ -14,7 +14,7 @@ import { TabIndicesUpdateDefaultTimeout, SearchOffersFilterTabGroupId } from './
 
 interface IProps {
   ctrlKey: string,
-  offersKind: SearchOfferKind
+  offersKind: OfferKind
 }
 const props = withDefaults(defineProps<IProps>(), {
 });

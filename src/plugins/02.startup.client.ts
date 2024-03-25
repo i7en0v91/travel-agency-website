@@ -5,10 +5,9 @@ import { updateTabIndices } from '../shared/dom';
 import { ClientLogger } from '../client/logging';
 import { EntityCache } from '../client/entity-cache';
 import type { IClientServicesLocator } from '../shared/serviceLocator';
-import { UserSessionOnClient } from '../client/user-session';
 import { TabIndicesUpdateDefaultTimeout, UIControlKeys } from '../shared/constants';
 import { getLastSelectedOptionStorageKey } from './../shared/common';
-import installLoggingHooks from './common/errors-hooks';
+import installLoggingHooks from './common/logging-hooks';
 import type { IAppLogger } from './../shared/applogger';
 
 function installGlobalExceptionHandler () {
@@ -44,13 +43,11 @@ function buildServiceLocator () : IClientServicesLocator {
   const injector = createInjector();
   const provider = injector
     .provideClass('logger', ClientLogger, Scope.Singleton)
-    .provideClass('userSession', UserSessionOnClient, Scope.Singleton)
     .provideValue('cache', createCache())
     .provideClass('entityCache', EntityCache, Scope.Singleton);
 
   return {
     getLogger: () => provider.resolve('logger'),
-    getUserSession: () => provider.resolve('userSession'),
     getEntityCache: () => provider.resolve('entityCache'),
     appMounted: false
   };
@@ -67,7 +64,7 @@ const initApp = once(() => {
   try {
     logger.info(`PAGE INITIALIZING... (${import.meta.env.MODE})`);
     (globalThis as any).CommonServicesLocator = (globalThis as any).ClientServicesLocator = buildServiceLocator();
-    const clientServicesLocator = <IClientServicesLocator>(globalThis as any).ClientServicesLocator;
+    const clientServicesLocator = (globalThis as any).ClientServicesLocator as IClientServicesLocator;
     initializeBrowserPage();
 
     resetSearchOffersFilterSettings(logger);
@@ -85,17 +82,21 @@ const initApp = once(() => {
   }
 });
 
-export default defineNuxtPlugin((nuxtApp) => {
-  initApp();
+export default defineNuxtPlugin({
+  name: 'startup-client',
+  parallel: false,
+  setup (nuxtApp) {
+    initApp();
 
-  nuxtApp.hook('app:created', () => {
-    installLoggingHooks(nuxtApp);
-  });
+    nuxtApp.hook('app:created', () => {
+      installLoggingHooks(nuxtApp);
+    });
 
-  nuxtApp.hook('page:loading:end', () => {
-    const clientServicesLocator = <IClientServicesLocator>(globalThis as any).ClientServicesLocator;
-    if (clientServicesLocator.appMounted) {
-      setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-    }
-  });
+    nuxtApp.hook('page:loading:end', () => {
+      const clientServicesLocator = (globalThis as any).ClientServicesLocator as IClientServicesLocator;
+      if (clientServicesLocator.appMounted) {
+        setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
+      }
+    });
+  }
 });

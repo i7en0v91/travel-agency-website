@@ -3,21 +3,35 @@
 import { getI18nResName2 } from './../../shared/i18n';
 import { ImageCategory } from './../../shared/interfaces';
 import { DefaultUserAvatarSlug } from './../../shared/constants';
+import EditableImage from './../images/editable-image.vue';
 
 interface IProps {
   ctrlKey: string
 }
-defineProps<IProps>();
+const props = defineProps<IProps>();
+
+const userAvatarImage = ref<InstanceType<typeof EditableImage>>();
 
 const userAccountStore = useUserAccountStore();
-const userAccount = await userAccountStore.getUserAccount();
+const userAccount = await userAccountStore.initializeUserAccount();
+
+const logger = CommonServicesLocator.getLogger();
 
 const imageSrc = ref(userAccount.avatar
   ? { slug: userAccount.avatar!.slug, timestamp: userAccount.avatar!.timestamp }
   : { slug: DefaultUserAvatarSlug, timestamp: undefined }
 );
 
+watch(userAccount, () => {
+  logger.debug(`(UserAvatar) user account watch handler, ctrlKey=${props.ctrlKey}`);
+  if (userAccount.avatar && imageSrc.value?.slug !== userAccount.avatar?.slug) {
+    logger.verbose(`(UserAvatar) user image changed, ctrlKey=${props.ctrlKey}, editSlug=${imageSrc.value?.slug}, newSlug=${userAccount.avatar?.slug}`);
+    userAvatarImage.value?.setImage(userAccount.avatar!);
+  }
+});
+
 watch(imageSrc, () => {
+  logger.debug(`(UserAvatar) edit image watch handler, ctrlKey=${props.ctrlKey}, editSlug=${imageSrc.value?.slug}`);
   if (imageSrc.value) {
     userAccountStore.notifyUserAccountChanged({
       avatar: {
@@ -28,6 +42,13 @@ watch(imageSrc, () => {
   }
 });
 
+onMounted(() => {
+  if (userAccount.avatar && imageSrc.value?.slug !== userAccount.avatar?.slug) {
+    logger.verbose(`(UserAvatar) setting up initial image, ctrlKey=${props.ctrlKey}, editSlug=${imageSrc.value?.slug}, newSlug=${userAccount.avatar?.slug}`);
+    userAvatarImage.value!.setImage(userAccount.avatar!);
+  }
+});
+
 </script>
 
 <template>
@@ -35,6 +56,7 @@ watch(imageSrc, () => {
       Then, in case such avatar image is loaded before hydration (e.g. from browser cache)
       background stub animation behind actual avatar may be interpreted by user as an "artifact" -->
   <EditableImage
+    ref="userAvatarImage"
     v-model:entity-src="imageSrc"
     :category="ImageCategory.UserAvatar"
     ctrl-key="userAvatar"

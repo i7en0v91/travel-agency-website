@@ -2,6 +2,7 @@ import { TYPE, useToast } from 'vue-toastification';
 import { type I18nResName } from '../shared/i18n';
 import { UserNotificationLevel, NuxtDataKeys } from '../shared/constants';
 import AppConfig from './../appconfig';
+import { getPayload, addPayload } from './../shared/payload';
 
 export interface IUserNotificationParams {
   level: UserNotificationLevel;
@@ -41,7 +42,7 @@ export const useUserNotificationStore = defineStore('userNotificationStore', () 
     isMounted = true;
 
     const nuxtApp = useNuxtApp();
-    const notifications = nuxtApp.payload[NuxtDataKeys.UserNotifications] as IUserNotificationParams[];
+    const notifications = getPayload<IUserNotificationParams[]>(nuxtApp, NuxtDataKeys.UserNotifications);
     notifications?.forEach(n => doShowOnClient(n));
   };
 
@@ -56,7 +57,7 @@ export const useUserNotificationStore = defineStore('userNotificationStore', () 
         return;
       }
       notificationsToHydate.push(params);
-      nuxtApp.payload[NuxtDataKeys.UserNotifications] = notificationsToHydate;
+      addPayload(nuxtApp, NuxtDataKeys.UserNotifications, notificationsToHydate);
     }
   };
 

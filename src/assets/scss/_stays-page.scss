@@ -6,7 +6,73 @@
 @use 'svg';
 
 .stays-page {
-  @include with-theme-color('primary') using($css-var) {
-    color: var($css-var);
+  .popular-city-grid {
+    .text-data-loading {
+      height: 1em;
+      min-width: 80px;
+      width: 50%;
+      display: inline-block;
+      vertical-align: middle;
+    }
+  }
+
+  .stays-page-head {
+    .heading-text {
+      color: white;
+  
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 160px;
+      max-width: 80vw;
+      @include for-small-and-above() {
+        margin-top: 180px;
+        margin-left: 100px;
+        margin-right: unset;
+        max-width: 60vw;
+      }
+      @include for-medium-and-large() {
+        margin: 250px 0px 0px 126px;
+      }
+      @include for-large-and-extra-large() {
+        margin-top: 160px;
+        max-width: 50vw;
+      }
+  
+      h2 {
+        font-weight: bold;
+      }
+  
+      p {
+        font-weight: map.get($weights-map, 'medium');
+        font-size: markup-to-rem(20px);
+      }
+    }
+  
+    .search-stays-page-head-overlay {
+      background-image: linear-gradient(-90deg, transparent 0%, transparent 20%, #00234DAA 100%);
+    }
+  }
+  
+  .search-history-empty {
+    @include with-body-font('regular');
+    @include with-theme-color('primary') using($css-var) {
+      color: var($css-var);
+    }
+  
+    .search-history-city-link {
+      text-decoration: underline;
+      text-decoration-thickness: 1.5px;
+      &:hover {
+        text-decoration: none;
+      }
+    }
+  }
+  
+  .search-history-empty-div {
+    margin-bottom: 40px;
+  }
+  
+  .stays-page-travel-cities-section {
+    margin-top: 20px;
   }
 }

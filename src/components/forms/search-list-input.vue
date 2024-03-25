@@ -59,17 +59,21 @@ defineExpose({
   setInputFocus
 });
 
-const getControlValueSetting = () => controlSettingsStore.getControlValueSetting<[number, string] | undefined>(props.ctrlKey, undefined, props.persistent);
-if (props.initiallySelectedValue && props.initiallySelectedValue.displayName) {
-  const controlValueSetting = getControlValueSetting();
-  const displayName = (process.client ? (await tryLookupLocalizeableDisplayNameOnClient(props.initiallySelectedValue.id)) : undefined) ?? getItemDisplayText(props.initiallySelectedValue.displayName)!;
-  controlValueSetting.value = [props.initiallySelectedValue.id, isString(displayName) ? displayName : getLocalizeableValue(displayName, locale.value as Locale)];
-  selectedItemName = searchTerm.value = controlValueSetting.value![1] as string;
-} else if (props.initiallySelectedValue === null) {
-  const controlValueSetting = getControlValueSetting();
-  controlValueSetting.value = undefined;
-  selectedItemName = searchTerm.value = undefined;
+const getControlValueSetting = () => controlSettingsStore.getControlValueSetting<EntityId | undefined>(props.ctrlKey, undefined, props.persistent);
+
+async function setupInitialValue () {
+  if (props.initiallySelectedValue && props.initiallySelectedValue.displayName) {
+    const controlValueSetting = getControlValueSetting();
+    const displayName = (process.client ? (await tryLookupLocalizeableDisplayNameOnClient(props.initiallySelectedValue.id)) : undefined) ?? getItemDisplayText(props.initiallySelectedValue.displayName)!;
+    controlValueSetting.value = props.initiallySelectedValue.id;
+    selectedItemName = searchTerm.value = getItemDisplayText(displayName);
+  } else if (props.initiallySelectedValue === null) {
+    const controlValueSetting = getControlValueSetting();
+    controlValueSetting.value = undefined;
+    selectedItemName = searchTerm.value = undefined;
+  }
 }
+await setupInitialValue();
 
 let popupShowCounter = 0;
 let scheduledPopupShows: number[] = [];
@@ -205,7 +209,8 @@ async function updateClientEntityCacheIfNeeded (items: ISearchListItem[]): Promi
       item = {
         type: 'City',
         id: dto.id,
-        slug: dto.slug
+        slug: dto.slug,
+        displayName: dto.displayName
       } as IEntityCacheCityItem;
       await entityCache.set(item, AppConfig.clientCache.expirationsSeconds.default);
     } else if (import.meta.env.MODE === 'development') {
@@ -219,36 +224,14 @@ async function tryLookupLocalizeableDisplayNameOnClient (id: EntityId): Promise<
     return undefined;
   }
 
-  const entityCache = ClientServicesLocator.getEntityCache();
-  const entityCacheType = getCacheEntityType();
-  const cached = await entityCache.get<'City', IEntityCacheCityItem>([id], entityCacheType, false);
-  return cached ? (cached[0].displayName) : undefined;
+  return (await getCityFromCache(id, false))?.displayName;
 }
 
-async function ensureDisplayedItemCached (): Promise<void> {
-  if (!process.client) {
-    return;
-  }
-
-  let selectedItemId: EntityId | undefined;
-  try {
-    logger.debug(`(SearchListInput) ensuring displayed item is cached: ctrlKey=${props.ctrlKey}, id=[${props.selectedValue?.id}], slug=[${props.selectedValue?.slug}]`);
-    if (!props.selectedValue?.id) {
-      return;
-    }
-    if (props.selectedValue.slug && isObject(props.selectedValue.displayName)) {
-      logger.debug(`(SearchListInput) displayed item is cached: ctrlKey=${props.ctrlKey}, id=[${props.selectedValue?.id}]`);
-      return;
-    }
-
-    selectedItemId = props.selectedValue!.id;
-
-    const entityCache = ClientServicesLocator.getEntityCache();
-    const entityCacheType = getCacheEntityType();
-    await entityCache.get<'City', IEntityCacheCityItem>([selectedItemId], entityCacheType, { expireInSeconds: AppConfig.clientCache.expirationsSeconds.default });
-  } catch (err: any) {
-    logger.warn(`(SearchListInput) exception when ensuring displayed item is cached: ctrlKey=${props.ctrlKey}, id=[${selectedItemId}]`, err);
-  }
+async function getCityFromCache (cityId: EntityId, fetchFromServer: boolean): Promise<IEntityCacheCityItem | undefined> {
+  const entityCache = ClientServicesLocator.getEntityCache();
+  const entityCacheType = getCacheEntityType();
+  const lookupResult = await entityCache.get<'City', IEntityCacheCityItem>([cityId], entityCacheType, fetchFromServer ? { expireInSeconds: AppConfig.clientCache.expirationsSeconds.default } : false);
+  return (lookupResult?.length ?? 0) > 0 ? lookupResult![0] : undefined;
 }
 
 const searchTermQueryParam = ref<string | undefined>();
@@ -326,7 +309,7 @@ function updateSelectedValue (item?: ISearchListItem | undefined) {
   const itemDisplayText = getItemDisplayText(item?.displayName);
   logger.verbose(`(SearchListInput) updating selected item: ctrlKey=${props.ctrlKey}, id=${item?.id}, text=${itemDisplayText}, type=${props.type}`);
   const controlValueSetting = getControlValueSetting();
-  controlValueSetting.value = item ? [item.id, itemDisplayText!] : undefined;
+  controlValueSetting.value = item ? item.id : undefined;
   $emit('update:selectedValue', item);
   logger.verbose(`(SearchListInput) selected item updated: ctrlKey=${props.ctrlKey}, id=${item?.id}, text=${itemDisplayText}, type=${props.type}`);
 }
@@ -341,15 +324,13 @@ watch(locale, async () => {
   if (!isObject(item?.displayName)) {
     logger.debug(`(SearchListInput) checking cache for text localization: ctrlKey=${props.ctrlKey}, id=${item.id}`);
 
-    const entityCache = ClientServicesLocator.getEntityCache();
     const selectedItemId = props.selectedValue!.id;
-    const entityCacheType = getCacheEntityType();
-    const cacheItem = (await entityCache.get<'City', IEntityCacheCityItem>([selectedItemId], entityCacheType, false));
+    const cacheItem = await getCityFromCache(selectedItemId, false);
     if (!cacheItem) {
       logger.warn(`(SearchListInput) entity cache empty, cannot localize displayed text: ctrlKey=${props.ctrlKey}, id=${item.id}, type=${props.type}, locale=${locale.value}`);
       return;
     }
-    item = cacheItem[0];
+    item = cacheItem;
     setValue(item);
     logger.verbose(`(SearchListInput) displayed text updated: ctrlKey=${props.ctrlKey}, id=${item.id}, type=${props.type}, locale=${locale.value}`);
   } else if (item?.displayName) {
@@ -402,15 +383,27 @@ function onEscape () {
   cancelSuggestionPopup();
 }
 
-onMounted(() => {
+onMounted(async () => {
   hasMounted.value = true;
+
   const controlValueSetting = getControlValueSetting();
   if (controlValueSetting.value) {
-    selectedItemName = searchTerm.value = controlValueSetting.value![1] as string;
-    $emit('update:selectedValue', { id: controlValueSetting.value![0], displayName: controlValueSetting.value![1] });
-    nextTick(() => {
-      ensureDisplayedItemCached();
-    });
+    const entityId = controlValueSetting.value as EntityId;
+    logger.debug(`(SearchListInput) obtaining value display text: ctrlKey=${props.ctrlKey}, id=${entityId}, type=${props.type}`);
+    const displayName = await tryLookupLocalizeableDisplayNameOnClient(entityId);
+    if (displayName) {
+      selectedItemName = searchTerm.value = getItemDisplayText(displayName);
+      $emit('update:selectedValue', { id: entityId, displayName });
+    } else {
+      logger.debug(`(SearchListInput) obtaining value display text from cache: ctrlKey=${props.ctrlKey}, id=${entityId}, type=${props.type}`);
+      const cachedEntity = await getCityFromCache(entityId, true);
+      if (cachedEntity) {
+        selectedItemName = searchTerm.value = getItemDisplayText(cachedEntity.displayName);
+        updateSelectedValue(cachedEntity!);
+      } else {
+        logger.warn(`(SearchListInput) failed to obtain value display text: ctrlKey=${props.ctrlKey}, id=${entityId}, type=${props.type}`);
+      }
+    }
   }
 });
 

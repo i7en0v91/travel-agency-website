@@ -1,5 +1,4 @@
 import { H3Event } from 'h3';
-import onHeaders from 'on-headers';
 import { defineWebApiEventHandler } from '../utils/webapi-event-handler';
 import { WebApiRoutes } from '../../shared/constants';
 import { type ICompanyReviewDto } from '../dto';
@@ -15,10 +14,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     cacheControls: ['must-revalidate']
   });
 
-  onHeaders(event.node.res, () => {
-    const response = event.node.res;
-    response.setHeader('content-type', 'application/json');
-  });
+  setHeader(event, 'content-type', 'application/json');
 
   return companyReviews.map((item) => {
     const mapped: ICompanyReviewDto = {

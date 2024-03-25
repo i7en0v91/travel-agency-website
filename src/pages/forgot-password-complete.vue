@@ -3,6 +3,7 @@
 import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import { RecoverPasswordCompleteResultCode } from './../server/dto';
+import { PagePath } from './../shared/constants';
 
 definePageMeta({
   middleware: 'auth',
@@ -10,8 +11,9 @@ definePageMeta({
     unauthenticatedOnly: true,
     navigateAuthenticatedTo: '/'
   },
-  title: getI18nResName2('forgotPasswordCompletePage', 'title')
+  title: { resName: getI18nResName2('forgotPasswordCompletePage', 'title'), resArgs: undefined }
 });
+useOgImage();
 
 const localePath = useLocalePath();
 
@@ -40,19 +42,19 @@ if (resultParam) {
       <div class="complete-password-page-content">
         <div v-if="completionResult === RecoverPasswordCompleteResultCode.SUCCESS">
           {{ $t(getI18nResName3('forgotPasswordCompletePage', 'text', 'success')) }}
-          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath('/login')">
+          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${PagePath.Login}`)">
             {{ $t(getI18nResName2('accountPageCommon', 'login')) }}
           </NuxtLink>
         </div>
         <div v-else-if="completionResult === RecoverPasswordCompleteResultCode.ALREADY_CONSUMED">
           {{ $t(getI18nResName3('forgotPasswordCompletePage', 'text', 'alreadyConsumed')) }}
-          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath('/login')">
+          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${PagePath.Login}`)">
             {{ $t(getI18nResName2('accountPageCommon', 'login')) }}
           </NuxtLink>
         </div>
         <div v-else-if="completionResult === RecoverPasswordCompleteResultCode.LINK_EXPIRED">
           {{ $t(getI18nResName3('forgotPasswordCompletePage', 'text', 'linkExpired')) }}
-          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath('/forgot-password')">
+          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${PagePath.ForgotPassword}`)">
             {{ $t(getI18nResName2('forgotPasswordCompletePage', 'resetPassword')) }}
           </NuxtLink>
         </div>

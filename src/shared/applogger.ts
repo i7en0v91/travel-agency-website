@@ -5,6 +5,7 @@ import fromPairs from 'lodash-es/fromPairs';
 import isString from 'lodash-es/isString';
 import isNumber from 'lodash-es/isNumber';
 import cloneDeep from 'lodash-es/cloneDeep';
+import type { LogObject } from 'consola';
 import AppConfig from '../appconfig';
 import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
 import type { LogLevel } from './../shared/constants';
@@ -79,4 +80,46 @@ export function getErrorCustomLogLevel (err?: any): LogLevel | undefined {
   }
   const errCode = errEnumLookup[0].toUpperCase();
   return (AppConfig.logging.common.appExceptionLogLevels.find(r => r.appExceptionCode === errCode))?.logLevel;
+}
+
+export function parseLevelFromNuxtLog (logItem: LogObject): LogLevel {
+  switch (logItem.level) {
+    case 0:
+      return 'error';
+    case 1:
+      return 'warn';
+    case 2:
+    case 3:
+      return 'info';
+    case 4:
+      return 'verbose';
+    case 5:
+    case 999:
+      return 'debug';
+    case -999:
+      return 'debug';
+  }
+
+  switch (logItem.type) {
+    case 'trace':
+    case 'verbose':
+      return 'verbose';
+    case 'debug':
+      return 'debug';
+    case 'info':
+    case 'log':
+    case 'ready':
+    case 'start':
+    case 'success':
+    case 'box':
+      return 'info';
+    case 'warn':
+      return 'warn';
+    case 'error':
+    case 'fail':
+    case 'fatal':
+      return 'error';
+    default:
+      return 'verbose';
+  }
 }

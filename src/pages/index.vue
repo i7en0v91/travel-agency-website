@@ -16,8 +16,9 @@ import AppConfig from './../appconfig';
 import { mapLocalizeableValues } from './../shared/common';
 
 definePageMeta({
-  title: getI18nResName2('indexPage', 'title')
+  title: { resName: getI18nResName2('indexPage', 'title'), resArgs: undefined }
 });
+useOgImage();
 
 const logger = CommonServicesLocator.getLogger();
 
@@ -75,14 +76,16 @@ function onActiveSlideChanged () {
           v-for="(city, idx) in citiesListFetch.data.value"
           :key="`popular-city-${idx}`"
           :ctrl-key="`PopularCityCard-${idx}`"
+          search-kind="flight"
           :text="city ? mapLocalizeableValues((city: string, country: string) => `${city}, ${country}`, city.cityDisplayName, city.countryDisplayName) : undefined"
           :img-src="city ? { slug: city.imgSlug, timestamp: city.timestamp } : undefined"
           :city-slug="city ? city.slug : undefined"
+          :num-stays="city ? city.numStays : undefined"
           class="popular-city-grid-item"
         />
       </ul>
     </PageSection>
-    <section class="page-section">
+    <section class="page-section search-page-image-link-section">
       <div class="page-section-content content-padded search-image-links-section-content">
         <div class="search-page-image-links">
           <SearchPageImageLink ctrl-key="SearchFlightsImageLink" page="flights" />

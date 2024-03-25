@@ -298,7 +298,7 @@ $range-slider-tooltip-padding: 10%;
       justify-content: space-between;
       align-items: center;
 
-      @include with-body-font-size('body-secondary');
+      @include with-font-size('body-secondary');
 
       .display-options-summary {
         width: fit-content;
@@ -308,7 +308,7 @@ $range-slider-tooltip-padding: 10%;
         align-items: center;
 
         .display-options-total-count {
-          font-weight: map.get($font-weights, 'semi-bold');
+          font-weight: map.get($weights-map, 'semi-bold');
           @include with-theme-color('highlighted-info') using ($css-var) {
             color: var(#{$css-var});
           }
@@ -382,7 +382,7 @@ $range-slider-tooltip-padding: 10%;
   }
 
   .search-flights-result-card {
-    border-radius: 12px;
+    border-radius: map.get($borders-radius, '3');
     @include with-theme-color('shadow') using($css-var) {
       box-shadow: 0px 4px 16px var($css-var);
     }
@@ -548,7 +548,7 @@ $range-slider-tooltip-padding: 10%;
           width: auto;   
           
           display: grid;
-          grid-template-columns: auto auto 1fr auto;
+          grid-template-columns: repeat(4, max-content);
           grid-auto-flow: row;
           grid-auto-rows: auto;
 
@@ -647,6 +647,10 @@ $range-slider-tooltip-padding: 10%;
         .search-flights-card-btn-like {
           width: max-content;
           height: max-content;
+
+          &::before {
+            vertical-align: middle;
+          }
         }
 
         .search-flights-card-btn-details {
@@ -659,7 +663,7 @@ $range-slider-tooltip-padding: 10%;
   }
 
   .search-stays-result-card {
-    border-radius: 12px;
+    border-radius: map.get($borders-radius, '3');
     @include with-theme-color('shadow') using($css-var) {
       box-shadow: 0px 4px 16px var($css-var);
     }
@@ -815,6 +819,10 @@ $range-slider-tooltip-padding: 10%;
             color: var($css-var);
           }
           font-weight: map.get($weights-map, 'bold');
+
+          .stays-price-night {
+            font-size: markup-to-rem(16px);
+          }
         }
       }
 
@@ -853,8 +861,8 @@ $range-slider-tooltip-padding: 10%;
           .search-stays-card-info {
             .search-stays-card-location {
               .search-stays-location-icon {
-                -webkit-mask-image: url('/img/icon-location.svg');
-                mask-image: url('/img/icon-location.svg');
+                -webkit-mask-image: url('~/public/img/icon-location.svg');
+                mask-image: url('~/public/img/icon-location.svg');
               }
 
               .search-stays-card-location-text {
@@ -887,26 +895,6 @@ $range-slider-tooltip-padding: 10%;
                 flex-wrap: nowrap;
                 align-items: center;
                 gap: 2px;
-            
-                .stay-card-star {
-                  width: 0.9rem;
-                  height: 0.9rem;
-
-                  -webkit-mask-image: url('/img/star.svg');
-                  mask-image: url('/img/star.svg');
-                  
-                  -webkit-mask-size: contain;
-                  mask-size: contain;
-                  -webkit-mask-repeat: no-repeat;
-                  mask-repeat: no-repeat;
-                  -webkit-mask-position: center center;
-                  mask-position: center center;
-                  vertical-align: middle;
-      
-                  @include with-theme-color('highlighted-info') using ($css-var) {
-                    background-color: var($css-var);
-                  }
-                }
               }
 
               .search-stays-card-rating-caption {
@@ -927,8 +915,8 @@ $range-slider-tooltip-padding: 10%;
                 gap: 2px;
 
                 .search-stays-card-amenity-icon {
-                  -webkit-mask-image: url('/img/icon-cup.svg');
-                  mask-image: url('/img/icon-cup.svg');
+                  -webkit-mask-image: url('~/public/img/icon-cup.svg');
+                  mask-image: url('~/public/img/icon-cup.svg');
                 }
               }
             }
@@ -1012,6 +1000,10 @@ $range-slider-tooltip-padding: 10%;
           width: max-content;
           height: max-content;
           align-self: flex-end;
+
+          &::before {
+            vertical-align: middle;
+          }
         }
 
         .search-stays-card-btn-details {

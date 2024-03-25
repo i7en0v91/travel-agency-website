@@ -11,7 +11,7 @@ import { UserNotificationLevel, CroppingImageDataKey, WebApiRoutes } from './../
 import AppConfig from './../../appconfig';
 import CroppingBox from './cropping-box.vue';
 import ModalWaitingIndicator from './../modal-waiting-indicator.vue';
-import { post } from './../../client/rest-utils';
+import { post } from './../../shared/rest-utils';
 import { type IImageUploadResultDto } from './../../server/dto';
 
 interface IProps {
@@ -220,11 +220,19 @@ function onFileSelected (e: Event) {
   setImageForEdit(file);
 }
 
+function setImage (image: IImageEntitySrc) {
+  $emit('update:entitySrc', image);
+}
+
 function openFileDialog () {
   fileInputEl.value?.click();
 }
 
 const fileInputHtmlId = useId();
+
+defineExpose({
+  setImage
+});
 
 </script>
 

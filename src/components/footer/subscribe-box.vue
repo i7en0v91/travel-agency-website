@@ -3,7 +3,6 @@
 import { useVuelidate } from '@vuelidate/core';
 import * as validators from '@vuelidate/validators';
 import { email, required } from '@vuelidate/validators';
-import SimpleButton from './../components/forms/simple-button.vue';
 import { getI18nResName2 } from './../../shared/i18n';
 import { UserNotificationLevel } from './../../shared/constants';
 

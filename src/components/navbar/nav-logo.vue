@@ -18,7 +18,7 @@ const logoCssClass = computed(() => {
 </script>
 
 <template>
-  <div class="nav-item nav-logo-list-item mt-xs-2 mt-l-0">
+  <div class="nav-item nav-logo-list-item mt-xs-2">
     <NuxtLink :class="logoCssClass" :to="localePath('/')" :aria-label="$t(getI18nResName2('ariaLabels', 'imgLinkMainPage'))" />
   </div>
 </template>

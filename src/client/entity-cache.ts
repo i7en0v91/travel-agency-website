@@ -4,7 +4,7 @@ import isString from 'lodash-es/isString';
 import { type IAppLogger } from '../shared/applogger';
 import { type IEntityCache, type IEntityCacheItem, type IEntityCacheSlugItem, type CacheEntityType, type EntityId } from '../shared/interfaces';
 import { WebApiRoutes } from '../shared/constants';
-import { get } from './rest-utils';
+import { get } from '../shared/rest-utils';
 
 declare interface IEntityCacheItemEntry<TCacheItem extends { type: CacheEntityType; } & IEntityCacheItem> {
   item: TCacheItem,
@@ -27,7 +27,7 @@ export class EntityCache implements IEntityCache {
 
   fetchFromServer = async <TEntityType extends CacheEntityType, TCacheItem extends { type: TEntityType; } & IEntityCacheItem>(idsOrSlugs: EntityId[] | string[], type: TEntityType): Promise<TCacheItem[]> => {
     this.logger.verbose(`(entity-cache) fetching from server: idsOrSlugs=${JSON.stringify(idsOrSlugs)}, type=${type}`);
-    const dtos = await get<TCacheItem[]>(WebApiRoutes.EntityCache, isString(idsOrSlugs[0]) ? { slugs: idsOrSlugs, type: type.toLowerCase() } : { ids: idsOrSlugs, type: type.toLowerCase() }, 'default', 'throw');
+    const dtos = await get<TCacheItem[]>(WebApiRoutes.EntityCache, isString(idsOrSlugs[0]) ? { slugs: idsOrSlugs, type: type.toLowerCase() } : { ids: idsOrSlugs, type: type.toLowerCase() }, 'default', false, 'throw');
     this.logger.verbose(`(entity-cache) item fetched: idsOrSlugs=${JSON.stringify(idsOrSlugs)}, type=${type}, item=${JSON.stringify(dtos)}`);
     return dtos!;
   };

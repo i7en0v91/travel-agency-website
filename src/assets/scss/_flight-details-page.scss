@@ -1,0 +1,269 @@
+@use 'sass:map';
+@use 'sass:math';
+@use 'system' as *;
+@use 'buttons' as *;
+@use 'themes' as *;
+@use 'utils' as *;
+@use 'svg';
+
+.flight-details-page {
+  $flight-details-page-icon-size: 24px;
+
+  padding-left: var(--#{$prefix}-page-padding-x);
+  padding-right: var(--#{$prefix}-page-padding-x);
+  padding-top: var(--#{$prefix}-page-padding-y);
+  padding-bottom: var(--#{$prefix}-page-padding-y);
+
+  & > .flight-details-page-error-helm > .error-helm-stub {
+    min-height: 140px;
+    border-radius: map.get($borders-radius, '4');
+  }
+
+  .text-data-loading {
+    height: 1em;
+    min-width: 40px;
+    width: 50%;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .flight-details-airplane-image {
+    $airplane-image-border-radius: map.get($borders-radius, '3');
+
+    width: 100%;
+    height: 295px;
+    @include for-small-and-above() {
+      height: 395px;
+    }
+
+    @include with-theme-color('shadow') using($css-var) {
+      box-shadow: 0px 4px 4px var($css-var);
+    }
+
+    border-radius: $airplane-image-border-radius;
+    .static-image-stub {
+      border-radius: $airplane-image-border-radius;
+    }
+    img {
+      border-radius: $airplane-image-border-radius;
+    }
+  } 
+
+  .flight-details-class-features {
+    margin-top: 24px;
+    @include for-small-and-above() {
+      margin-top: 40px;
+    }
+
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+
+    .flight-details-class-features-caption {
+      display: block;
+      width: fit-content;
+      white-space: normal;
+
+      flex: 1 0 auto;
+
+      @include with-header-font('4');
+      @include with-theme-color('input-ctrl-primary') using ($css-var) {
+        color: var($css-var);
+      }
+    }
+
+    .flight-details-class-checkmarks {
+      flex: 0 1 auto;
+
+      $flight-class-checkmark-size: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      flex-direction: row;
+      align-items: center;
+      width: fit-content;
+      gap: 27px;
+
+      .flight-details-class-checkmark-item {
+        .flight-details-class-checkmark {
+          width: $flight-class-checkmark-size;
+          height: $flight-class-checkmark-size;
+
+          display: inline-block;
+          vertical-align: middle;
+  
+          background-color: transparent;
+          @include with-theme-color('control-frame') using($css-var) {
+            border: 2px solid var($css-var);
+          }
+  
+          &.checked {
+            @include with-theme-color('select-ctrl-highlight-bg') using($css-var) {
+              background-color: var($css-var);
+            }
+            border: none;
+  
+            &::before {
+              width: $flight-class-checkmark-size;
+              height: $flight-class-checkmark-size;
+              position: absolute;
+              -webkit-mask-size: $flight-class-checkmark-size $flight-class-checkmark-size;
+              mask-size: $flight-class-checkmark-size $flight-class-checkmark-size;
+              -webkit-mask-repeat: no-repeat;
+              mask-repeat: no-repeat;
+              -webkit-mask-position: center center;
+              mask-position: center center;
+              vertical-align: middle;
+              -webkit-mask-image: escape-svg(svg.$icon-check);
+              mask-image: escape-svg(svg.$icon-check);
+              content: '';
+              @include with-theme-color('choice-ctrl') using($css-var) {
+                background-color: var($css-var);
+              }
+            }
+          }
+        } 
+
+        .flight-details-class-name {
+          white-space: nowrap;
+          display: inline-block;
+          vertical-align: middle;
+
+          @include with-body-font('body-secondary');
+          @include with-theme-color('input-ctrl-primary') using ($css-var) {
+            color: var($css-var);
+          }
+        }
+      }
+    }
+  }
+
+  .flight-details-class-images {
+    $airplane-photo-xs-width: 90px;
+    $airplane-photo-s-width: 120px;
+    $airplane-photo-grid-gap: 19px;
+
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1200px;
+
+    display: grid;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fill, minmax($airplane-photo-xs-width, 1fr));
+    grid-template-rows: repeat(2, auto);
+    grid-auto-rows: 0px;
+    overflow: hidden;
+    justify-items: center;
+    gap: $airplane-photo-grid-gap;
+
+    @include for-small-and-above() {
+      grid-template-columns: repeat(auto-fill, minmax($airplane-photo-s-width, 1fr));
+    }
+    @include for-medium-and-large() {
+      grid-template-rows: auto;
+    }
+
+    .flight-details-class-image {
+      width: $airplane-photo-xs-width;
+      height: $airplane-photo-xs-width;
+      max-width: $airplane-photo-xs-width;
+      max-height: $airplane-photo-xs-width;
+
+      flex: 1 1 auto;
+
+      @include for-small-and-above() {
+        width: $airplane-photo-s-width;
+        height: $airplane-photo-s-width;
+        max-width: $airplane-photo-s-width;
+        max-height: $airplane-photo-s-width;
+      }
+      .static-image-stub {
+        border-radius: map.get($borders-radius, '3');
+      }
+
+      img {
+        background-size: cover;
+        border-radius: map.get($borders-radius, '3');
+      }
+    }
+  }
+
+  .flight-details-company-policies {
+    margin-top: 24px;
+    @include for-small-and-above() {
+      margin-top: 40px;
+    }
+
+    @include with-theme-color('input-ctrl-primary') using ($css-var) {
+      color: var($css-var);
+    }
+    @include with-theme-color('control-bg') using ($css-var) {
+      background-color: var($css-var);
+    }
+
+    .flight-details-policies-caption {
+      display: block;
+      width: fit-content;
+      white-space: normal;
+
+      @include with-header-font('4');
+    }
+
+    .flight-details-policies-details {
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+
+      @include with-body-font('primary');
+
+      .flight-details-policy-item {
+        flex: 1 1 auto;
+        width: max-content;
+
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 16px;
+
+        .flight-details-policy-item-icon {
+          flex: 0 0 auto;
+
+          width: $flight-details-page-icon-size;
+          height: $flight-details-page-icon-size;
+          
+          -webkit-mask-image: url('~/public/img/icon-stopwatch.svg');
+          mask-image: url('~/public/img/icon-stopwatch.svg');
+          
+          -webkit-mask-size: contain;
+          mask-size: contain;
+          -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+          -webkit-mask-position: center center;
+          mask-position: center center;
+          vertical-align: middle;
+
+          @include with-theme-color('input-ctrl-primary') using ($css-var) {
+            background-color: var($css-var);
+          }
+        }
+
+        .flight-details-policy-item-text {
+          flex: 1 1 auto;
+          display: block;
+          white-space: normal;
+          width: 100%;
+        }
+      }
+    }
+  }
+
+  .flight-details-flight-card {
+    display: block;
+    width: 100%;
+    margin-top: 40px;
+  }
+}

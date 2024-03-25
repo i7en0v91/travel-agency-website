@@ -8,11 +8,11 @@ interface IProps {
   labelResName?: I18nResName,
   ariaLabelResName?: I18nResName,
   labelResArgs?: any,
+  titleResName?: I18nResName,
   tabbableGroupId?: string,
   kind?: ButtonKind,
   icon?: string,
-  enabled?: boolean,
-  role?: string
+  enabled?: boolean
 }
 const props = withDefaults(defineProps<IProps>(), {
   kind: 'default',
@@ -20,8 +20,8 @@ const props = withDefaults(defineProps<IProps>(), {
   icon: undefined,
   labelResName: undefined,
   labelResArgs: undefined,
+  titleResName: undefined,
   ariaLabelResName: undefined,
-  role: undefined,
   tabbableGroupId: undefined
 });
 const $emit = defineEmits(['click']);
@@ -49,7 +49,7 @@ const cssClass = computed(() => {
 </script>
 
 <template>
-  <button :class="cssClass" type="button" :aria-label="ariaLabelResName ? $t(ariaLabelResName) : undefined" @click="onClick">
+  <button :class="cssClass" type="button" :aria-label="ariaLabelResName ? $t(ariaLabelResName) : undefined" :title="titleResName ? $t(titleResName) : undefined" @click="onClick">
     {{ labelResName ? (labelResArgs ? $t(labelResName, labelResArgs) : $t(labelResName)) : '' }}
   </button>
 </template>

@@ -4,7 +4,7 @@
 @use 'utils' as *;
 @use 'svg';
 
-$user-cover-border-radius: 12px;
+$user-cover-border-radius: map.get($borders-radius, '3');
 $user-avatar-xsmall-size: 100px;
 $user-avatar-small-size: 120px;
 $user-avatar-normal-size: 160px;
@@ -242,7 +242,7 @@ $user-avatar-box-margin-top: 60px;
     max-width: calc($user-avatar-btn-size * $user-avatar-small-size / $user-avatar-normal-size);
     max-height: calc($user-avatar-btn-size * $user-avatar-small-size / $user-avatar-normal-size);
 
-    background-image: url('/img/icon-pen.svg');
+    background-image: url('~/public/img/icon-pen.svg');
     background-size: 50% 50%;
     background-repeat: no-repeat;
     background-position: center center;
@@ -330,13 +330,13 @@ $user-avatar-box-margin-top: 60px;
 }
 
 .icon-upload::before {
-  -webkit-mask-image: url('/img/icon-upload.svg');
-  mask-image: url('/img/icon-upload.svg');
+  -webkit-mask-image: url('~/public/img/icon-upload.svg');
+  mask-image: url('~/public/img/icon-upload.svg');
 }
 
 .icon-pen::before {
-  -webkit-mask-image: url('/img/icon-pen.svg');
-  mask-image: url('/img/icon-pen.svg');
+  -webkit-mask-image: url('~/public/img/icon-pen.svg');
+  mask-image: url('~/public/img/icon-pen.svg');
 }
 
 .icon-check::before {
@@ -351,13 +351,13 @@ $user-avatar-box-margin-top: 60px;
 }
 
 .icon-like::before {
-  -webkit-mask-image: url('/img/icon-like.svg');
-  mask-image: url('/img/icon-like.svg');
+  -webkit-mask-image: url('~/public/img/icon-like.svg');
+  mask-image: url('~/public/img/icon-like.svg');
 }
 
 .icon-heart::before {
-  -webkit-mask-image: url('/img/icon-heart.svg');
-  mask-image: url('/img/icon-heart.svg');
+  -webkit-mask-image: url('~/public/img/icon-heart.svg');
+  mask-image: url('~/public/img/icon-heart.svg');
 }
 
 .option-button-icon-user {
@@ -366,11 +366,11 @@ $user-avatar-box-margin-top: 60px;
 }
 
 .option-button-icon-history {
-  -webkit-mask-image: url('/img/icon-history.svg');
-  mask-image: url('/img/icon-history.svg');
+  -webkit-mask-image: url('~/public/img/icon-history.svg');
+  mask-image: url('~/public/img/icon-history.svg');
 }
 
 .option-button-icon-payments {
-  -webkit-mask-image: url('/img/icon-credit-card.svg');
-  mask-image: url('/img/icon-credit-card.svg');
+  -webkit-mask-image: url('~/public/img/icon-credit-card.svg');
+  mask-image: url('~/public/img/icon-credit-card.svg');
 }

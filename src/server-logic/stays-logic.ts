@@ -5,7 +5,8 @@ import orderBy from 'lodash-es/orderBy';
 import isString from 'lodash-es/isString';
 import { type Storage, type StorageValue } from 'unstorage';
 import { murmurHash } from 'ohash';
-import { type StayServiceLevel, type ISearchStayOffersResultFilterParams, type ICity, type ISearchStayOffersResult, type StayOffersSortFactor, type IStayOffersFilterParams, type IStaysLogic, type IPagination, type ISorting, type Price, type EntityId, type IStayShort, type MakeSearchResultEntity, type IStayOffer, type IStay, type IStayData } from '../shared/interfaces';
+import sanitize from 'sanitize-html';
+import { type IStayOfferDetails, type IStayReview, type StayServiceLevel, type ISearchStayOffersResultFilterParams, type ICity, type ISearchStayOffersResult, type StayOffersSortFactor, type IStayOffersFilterParams, type IStaysLogic, type IPagination, type ISorting, type Price, type EntityId, type IStayShort, type MakeSearchResultEntity, type IStayOffer, type IStay, type IStayData } from '../shared/interfaces';
 import { type IAppLogger } from '../shared/applogger';
 import { DbConcurrencyVersions, SearchOffersListConstants, TemporaryEntityId, DefaultStayReviewScore } from '../shared/constants';
 import AppConfig from '../appconfig';
@@ -45,7 +46,6 @@ export class StaysLogic implements IStaysLogic {
           },
           lat: data.geo.lat,
           lon: data.geo.lon,
-          rating: data.rating,
           slug: data.slug,
           version: DbConcurrencyVersions.InitialVersion
         },
@@ -143,6 +143,34 @@ export class StaysLogic implements IStaysLogic {
     return Mappers.MapStay(entity);
   }
 
+  async getStayOffer (id: EntityId, userId: EntityId | 'guest'): Promise<IStayOfferDetails> {
+    this.logger.verbose(`(StaysLogic) get stay offer, id=${id}, userId=${userId}`);
+
+    const entity = await this.dbRepository.stayOffer.findFirst({
+      where: {
+        isDeleted: false,
+        id
+      },
+      select: Queries.StayOfferInfoQuery(userId).select
+    });
+    if (!entity) {
+      this.logger.warn(`(StaysLogic) stay offer was not found, id=${id}, userId=${userId}`);
+      throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'stay offer not found', 'error-page');
+    }
+
+    this.logger.verbose(`(StaysLogic) get stay offer - found, id=${id}, userId=${userId}, modifiedUtc=${entity.modifiedUtc}, price=${entity.totalPrice}`);
+    const offerDetails = Mappers.MapStayOfferDetails(entity);
+    return {
+      ...offerDetails,
+      prices: {
+        base: this.calculateStayPrice(offerDetails.stay.city, offerDetails.stay, 'base'),
+        'cityView-1': this.calculateStayPrice(offerDetails.stay.city, offerDetails.stay, 'cityView-1'),
+        'cityView-2': this.calculateStayPrice(offerDetails.stay.city, offerDetails.stay, 'cityView-2'),
+        'cityView-3': this.calculateStayPrice(offerDetails.stay.city, offerDetails.stay, 'cityView-3')
+      }
+    };
+  }
+
   async getAllStays (): Promise<IStayShort[]> {
     this.logger.debug('(StaysLogic) obtaining list of stays');
 
@@ -218,34 +246,39 @@ export class StaysLogic implements IStaysLogic {
   async searchOffers (filter: IStayOffersFilterParams, userId: EntityId | 'guest', sorting: ISorting<StayOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean): Promise<ISearchStayOffersResult> {
     this.logger.verbose(`(StaysLogic) search offers, filter=${JSON.stringify(filter)}, userId=${userId}, sorting=${JSON.stringify(sorting)}, pagination=${JSON.stringify(pagination)}, narrowFilterParams=${narrowFilterParams}`);
 
-    const sortFactor = sorting.factor ?? SearchOffersListConstants.DefaultStayOffersSorting;
-    let variants = await this.generateStayOffersFull(filter, userId, sortFactor);
-    this.logger.debug(`(StaysLogic) sorting flight offer variants, userId=${userId}`);
-    variants = orderBy(variants, ['sortFactor'], [sorting.direction]);
-    let filterParams : ISearchStayOffersResultFilterParams | undefined;
-    if (narrowFilterParams) {
-      filterParams = this.computeStayOffersFilterParams(variants, userId);
-    }
-    variants = this.filterStayOffers(variants, filter, userId);
-    const totalCount = variants.length;
+    try {
+      const sortFactor = sorting.factor ?? SearchOffersListConstants.DefaultStayOffersSorting;
+      let variants = await this.generateStayOffersFull(filter, userId, sortFactor);
+      this.logger.debug(`(StaysLogic) sorting stay offer variants, userId=${userId}`);
+      variants = orderBy(variants, ['sortFactor'], [sorting.direction]);
+      let filterParams : ISearchStayOffersResultFilterParams | undefined;
+      if (narrowFilterParams) {
+        filterParams = this.computeStayOffersFilterParams(variants, userId);
+      }
+      variants = this.filterStayOffers(variants, filter, userId);
+      const totalCount = variants.length;
 
-    const take = pagination.skip >= variants.length ? 0 : (Math.min(variants.length - pagination.skip, pagination.take));
-    const skip = pagination.skip;
-    this.logger.debug(`(StaysLogic) applying pagination to stay offers, userId=${userId}, skip=${skip}, take=${take}`);
-    if (pagination.skip >= variants.length) {
-      variants = [];
-    } else {
-      variants = variants.slice(skip, skip + take);
-    }
-    await this.ensureOffersInDatabase(variants, userId);
+      const take = pagination.skip >= variants.length ? 0 : (Math.min(variants.length - pagination.skip, pagination.take));
+      const skip = pagination.skip;
+      this.logger.debug(`(StaysLogic) applying pagination to stay offers, userId=${userId}, skip=${skip}, take=${take}`);
+      if (pagination.skip >= variants.length) {
+        variants = [];
+      } else {
+        variants = variants.slice(skip, skip + take);
+      }
+      await this.ensureOffersInDatabase(variants, userId);
 
-    const result: ISearchStayOffersResult = {
-      pagedItems: variants,
-      paramsNarrowing: filterParams,
-      totalCount
-    };
-    this.logger.verbose(`(StaysLogic) search offers - completed, filter=${JSON.stringify(filter)}, userId=${userId}, count=${variants.length}`);
-    return result;
+      const result: ISearchStayOffersResult = {
+        pagedItems: variants,
+        paramsNarrowing: filterParams,
+        totalCount
+      };
+      this.logger.verbose(`(StaysLogic) search offers - completed, filter=${JSON.stringify(filter)}, userId=${userId}, count=${variants.length}`);
+      return result;
+    } catch (err: any) {
+      this.logger.warn('(StaysLogic) error occured while searching offers', err, { filter, pagination, userId });
+      throw err;
+    }
   }
 
   async createOffersAndFillIds (offers: OfferWithSortFactor<IStayOffer>[]): Promise<void> {
@@ -322,7 +355,168 @@ export class StaysLogic implements IStaysLogic {
       await this.createOffersAndFillIds(offersToCreate);
     }
 
-    this.logger.debug(`(FlightsLogic) ensuring offers in DB - completed, userId=${userId}, count=${offers.length}, num identified=${identifiedCount}`);
+    this.logger.debug(`(StaysLogic) ensuring offers in DB - completed, userId=${userId}, count=${offers.length}, num identified=${identifiedCount}`);
+  }
+
+  async createOrUpdateReview (stayId: EntityId, textOrHtml: string, score: number, userId: EntityId): Promise<EntityId> {
+    this.logger.verbose(`(StaysLogic) create/update review, stayId=${stayId}, textOrHtml=${textOrHtml}, score=${score}, userId=${userId}`);
+
+    if ((textOrHtml ?? '').length === 0) {
+      this.logger.warn(`(StaysLogic) create/update review - cannot create review with empty text, stayId=${stayId}, textOrHtml=${textOrHtml}, userId=${userId}`);
+      throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'review text is empty', 'error-stub');
+    }
+
+    const stayExists = (await this.dbRepository.hotel.count({
+      where: {
+        isDeleted: false,
+        id: stayId
+      },
+      select: {
+        id: true
+      }
+    })).id > 0;
+    if (!stayExists) {
+      this.logger.warn(`(StaysLogic) create/update review - stay was not found, stayId=${stayId}, textOrHtml=${textOrHtml}, userId=${userId}`);
+      throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'stay not found', 'error-stub');
+    }
+
+    let textOrHtmlSanitized: string;
+    this.logger.debug(`(StaysLogic) create/update review - sanitizing input, stayId=${stayId}, userId=${userId}`);
+    try {
+      textOrHtmlSanitized = sanitize(textOrHtml);
+    } catch (err: any) {
+      this.logger.warn(`(StaysLogic) create/update review - failed to sanitize input, stayId=${stayId}, textOrHtml=${textOrHtml}, userId=${userId}`, err);
+      throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'text processing error', 'error-stub');
+    }
+    if (!textOrHtmlSanitized) {
+      this.logger.warn(`(StaysLogic) create/update review - resulted sanitize input empty, stayId=${stayId}, textOrHtml=${textOrHtml}, userId=${userId}`);
+      throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'text processing error', 'error-stub');
+    }
+    if (textOrHtmlSanitized.replace(/\s/g, '').replace(/\c/g, '') !== textOrHtml.replace(/\s/g, '').replace(/\c/g, '')) {
+      this.logger.warn(`(StaysLogic) create/update review - sanitization detected potential issues, stayId=${stayId}, userId=${userId}, textOrHtml=${textOrHtml}, sanitized=${textOrHtmlSanitized}`);
+    }
+
+    let reviewId = (await this.dbRepository.hotelReview.findFirst({
+      where: {
+        userId,
+        hotelId: stayId,
+        isDeleted: false
+      },
+      select: {
+        id: true
+      }
+    }))?.id;
+
+    let resOp: 'created' | 'updated';
+    if (reviewId) {
+      resOp = 'updated';
+      await this.dbRepository.hotelReview.update({
+        where: {
+          id: reviewId
+        },
+        data: {
+          score,
+          version: { increment: 1 },
+          textStr: {
+            create: {
+              en: textOrHtmlSanitized,
+              fr: textOrHtmlSanitized,
+              ru: textOrHtmlSanitized
+            }
+          }
+        } as any,
+        select: {
+          id: true
+        }
+      });
+    } else {
+      resOp = 'created';
+      reviewId = (await this.dbRepository.hotelReview.create({
+        data: {
+          score,
+          version: DbConcurrencyVersions.InitialVersion,
+          hotel: {
+            connect: {
+              id: stayId
+            }
+          },
+          user: {
+            connect: {
+              id: userId
+            }
+          },
+          textStr: {
+            create: {
+              en: textOrHtmlSanitized,
+              fr: textOrHtmlSanitized,
+              ru: textOrHtmlSanitized
+            }
+          }
+        } as any,
+        select: {
+          id: true
+        }
+      })).id;
+    }
+
+    this.logger.verbose(`(StaysLogic) create/update review, stayId=${stayId}, score=${score}, userId=${userId}, reviewId=${reviewId}, op=${resOp}`);
+    return reviewId;
+  }
+
+  async deleteReview (stayId: EntityId, userId: EntityId): Promise<EntityId | undefined> {
+    this.logger.verbose(`(StaysLogic) delete review, stayId=${stayId}, userId=${userId}`);
+
+    const reviewId = (await this.dbRepository.hotelReview.findFirst({
+      where: {
+        userId,
+        hotelId: stayId,
+        isDeleted: false
+      },
+      select: {
+        id: true
+      }
+    }))?.id;
+
+    if (reviewId) {
+      const deleted = (await this.dbRepository.hotelReview.update({
+        where: {
+          id: reviewId,
+          isDeleted: false
+        },
+        data: {
+          isDeleted: true,
+          version: { increment: 1 }
+        },
+        select: {
+          id: true
+        }
+      }))?.id;
+      if (deleted) {
+        this.logger.verbose(`(StaysLogic) delete review - done, stayId=${stayId}, userId=${userId}, reviewId=${reviewId}`);
+      } else {
+        this.logger.warn(`(StaysLogic) delete review - done, but seems like concurrent modification occured, stayId=${stayId}, userId=${userId}, reviewId=${reviewId}`);
+      }
+      return reviewId;
+    } else {
+      this.logger.debug(`(StaysLogic) delete review - already deleted, stayId=${stayId}, userId=${userId}`);
+      return undefined;
+    }
+  }
+
+  async getStayReviews (stayId: EntityId): Promise<MakeSearchResultEntity<IStayReview>[]> {
+    this.logger.verbose(`(StaysLogic) get reviews, stayId=${stayId}`);
+
+    const reviewEntities = await this.dbRepository.hotelReview.findMany({
+      where: {
+        isDeleted: false,
+        hotelId: stayId
+      },
+      include: Queries.StayReviewsQuery.include
+    });
+
+    const result: MakeSearchResultEntity<IStayReview>[] = reviewEntities.map(Mappers.MapStayReview);
+    this.logger.verbose(`(StaysLogic) get reviews - completed, stayId=${stayId}, count=${result.length}`);
+    return result;
   }
 
   filterStayOffers (offers: OfferWithSortFactor<IStayOffer>[], filter: IStayOffersFilterParams, userId: EntityId | 'guest'): OfferWithSortFactor<IStayOffer>[] {

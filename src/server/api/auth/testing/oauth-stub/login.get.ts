@@ -1,7 +1,6 @@
 /* eslint-disable camelcase */
 import { sign } from 'jsonwebtoken';
 import { H3Event } from 'h3';
-import onHeaders from 'on-headers';
 import { withQuery } from 'ufo';
 import { OAUTH_SECRET, OAUTH_TESTUSER_PROFILE as testUserProfile } from '../../../../../shared/testing/common';
 import { AuthProvider, type EntityId } from '../../../../../shared/interfaces';
@@ -72,11 +71,8 @@ export default defineWebApiEventHandler(async (event: H3Event): Promise<LoginRes
     user
   };
 
-  onHeaders(event.node.res, () => {
-    const response = event.node.res;
-    response.setHeader('location', buildRedirectUrl(event));
-  });
-  event.node.res.statusCode = 302;
+  setResponseStatus(event, 302);
+  setHeader(event, 'location', buildRedirectUrl(event));
 
   logger.info('(oauth-stub:login) exit');
   return {

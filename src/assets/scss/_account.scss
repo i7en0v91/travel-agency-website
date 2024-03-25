@@ -108,15 +108,15 @@ $account-page-default-font-size: markup-to-rem(14px);
   }
 
   &.icon-login-github::after {
-    @include oauth-btn-mask-icon('/img/icon-login-github.svg');
+    @include oauth-btn-mask-icon('~/public/img/icon-login-github.svg');
   }
 
   &.icon-login-google::after {
-    @include oauth-btn-image-icon('/img/icon-login-google.svg');
+    @include oauth-btn-image-icon('~/public/img/icon-login-google.svg');
   }
 
   &.icon-login-testlocal::after {
-    @include oauth-btn-mask-icon('/img/icon-gear.svg');
+    @include oauth-btn-mask-icon('~/public/img/icon-gear.svg');
   }
 
   &:active {

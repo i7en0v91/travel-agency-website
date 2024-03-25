@@ -1,8 +1,20 @@
 import { joinURL } from 'ufo';
-import { AvailableLocaleCodes } from './shared/constants';
+import { type RollupLog, type LogLevel, type LogOrStringHandler } from 'rollup';
+import { AvailableLocaleCodes, PagePath } from './shared/constants';
 import { TEST_SERVER_PORT } from './shared/testing/common';
+import AppConfig from './appconfig';
 
 const listLocalizedPaths = (enPath: string) => [enPath.startsWith('/') ? enPath : `/${enPath}`, ...AvailableLocaleCodes.filter(l => l !== 'en').map(l => joinURL(`/${l}`, `${enPath}`))];
+const rollupLogHandler = (
+  level: LogLevel,
+  log: RollupLog,
+  defaultHandler: LogOrStringHandler
+) => {
+  if (log.code === 'CIRCULAR_DEPENDENCY') {
+    return; // Ignore circular dependency warnings
+  }
+  defaultHandler(level, log);
+};
 
 export default defineNuxtConfig({
   devtools: { enabled: false },
@@ -13,11 +25,12 @@ export default defineNuxtConfig({
   sitemap: {
     autoLastmod: false,
     exclude: [
-      ...listLocalizedPaths('/account')
+      ...listLocalizedPaths(`/${PagePath.Account}`)
     ]
   },
   features: {
-    inlineStyles: false
+    inlineStyles: false,
+    devLogs: 'silent'
   },
   experimental: {
     renderJsonPayloads: false
@@ -63,22 +76,36 @@ export default defineNuxtConfig({
     identity: {
       type: 'Person'
     },
-    email: 'support@golobe.demo'
+    email: 'support@demo.golobe'
   },
   googleFonts: {
     download: true,
     base64: false,
     outputDir: '~/assets/fonts',
     stylePath: 'css/fonts.css',
-    subsets: ['Cyrillic', 'Latin'],
+    subsets: ['cyrillic', 'latin'],
     families: {
-      Montserrat: [400, 500, 600, 700],
-      Raleway: [400, 500, 600, 700]
+      Montserrat: [400, 500, 600, 700]
     }
   },
   dayjs: {
     plugins: ['relativeTime', 'utc', 'timezone', 'localizedFormat'],
     defaultLocale: 'en'
+  },
+  ogImage: {
+    defaults: {
+      width: AppConfig.ogImage.screenSize.width,
+      height: AppConfig.ogImage.screenSize.height,
+      cacheMaxAgeSeconds: 60 * 60 * 24
+    },
+    componentDirs: ['og-image', 'og-image-template'],
+    fonts: [
+      'Montserrat:500',
+      'Montserrat:700'
+    ]
+  },
+  tiptap: {
+    prefix: 'Tiptap'
   },
   image: {
     providers: {
@@ -92,24 +119,52 @@ export default defineNuxtConfig({
       scrollBehaviorType: 'smooth'
     }
   },
+  nitro: {
+    publicAssets: [
+      {
+        baseURL: '/appdata',
+        dir: './../assets/appdata',
+        maxAge: 60 * 60 * 24 * 7
+      }
+    ],
+    serverAssets: [{
+      baseName: 'appdata',
+      dir: './../assets/appdata'
+    }]
+  },
   modules: [
     ['@nuxtjs/google-fonts', {}],
     ['@nuxtjs/i18n', {}],
     ['@sidebase/nuxt-auth', {}],
     ['@nuxt/image', {}],
     ['dayjs-nuxt', {}],
-    ['@nuxtseo/module', {}],
+    ['@nuxtjs/seo', {}],
     ['nuxt-lazy-hydrate', {}],
     ['@pinia/nuxt', {}],
     ['floating-vue/nuxt', {}],
     ['nuxt-swiper', {}],
     ['@samk-dev/nuxt-vcalendar', {}],
-    ['@nuxt/test-utils/module', {}]
+    ['@nuxt/test-utils/module', {}],
+    ['nuxt-tiptap-editor', {}]
     // ['@unlighthouse/nuxt', {}] // triggering run via npm scripts, see package.json
   ],
   css: ['vue-final-modal/style.css'],
   build: {
     transpile: ['jsonwebtoken']
+  },
+  vite: {
+    $client: {
+      build: {
+        rollupOptions: {
+          output: !process.env.PUBLISH
+            ? {
+                chunkFileNames: '_nuxt/[name].[hash].js',
+                entryFileNames: '_nuxt/[name].[hash].js'
+              }
+            : undefined
+        }
+      }
+    }
   },
   $development: {
     vite: {
@@ -122,10 +177,15 @@ export default defineNuxtConfig({
     vite: {
       optimizeDeps: {
         exclude: ['server-logic']
+      },
+      build: {
+        rollupOptions: {
+          onLog: rollupLogHandler
+        }
       }
     },
     build: {
-      transpile: ['vue-toastification']
+      transpile: ['lodash', 'vue-toastification']
     },
     auth: {
       baseURL: `http://127.0.0.1:${TEST_SERVER_PORT}/api/auth`
@@ -138,7 +198,7 @@ export default defineNuxtConfig({
       identity: {
         type: 'Person'
       },
-      email: 'support@golobe.demo'
+      email: 'support@demo.golobe'
     },
     nitro: {
       rollupConfig: {
@@ -148,7 +208,8 @@ export default defineNuxtConfig({
               return 'sidebase-nuxt-auth';
             }
           }
-        }
+        },
+        onLog: rollupLogHandler
       }
     }
   },
@@ -168,14 +229,13 @@ export default defineNuxtConfig({
       identity: {
         type: 'Person'
       },
-      email: 'support@golobe.demo'
+      email: 'support@demo.golobe'
     },
     routeRules: {
       // at the moment - Nuxt 3.7.4 - this route rules works only for production mode; cannot get it work in dev
       '/img/**': { headers: { 'cache-control': `public,max-age=${24 * 60 * 60},s-maxage=${24 * 60 * 60}` } },
       '/_ipx/**': { headers: { 'cache-control': `public,max-age=${24 * 60 * 60},s-maxage=${24 * 60 * 60}` } },
-      '/js/**': { headers: { 'cache-control': `public,max-age=${24 * 60 * 60},s-maxage=${24 * 60 * 60}` } },
-      '/geo/**': { headers: { 'cache-control': `public,max-age=${24 * 60 * 60},s-maxage=${24 * 60 * 60}` } }
+      '/js/**': { headers: { 'cache-control': `public,max-age=${24 * 60 * 60},s-maxage=${24 * 60 * 60}` } }
     },
     nitro: {
       compressPublicAssets: {
@@ -188,7 +248,8 @@ export default defineNuxtConfig({
               return 'sidebase-nuxt-auth';
             }
           }
-        }
+        },
+        onLog: rollupLogHandler
       }
     },
     vite: {
@@ -199,7 +260,10 @@ export default defineNuxtConfig({
           }
         },
         minify: 'terser',
-        sourcemap: 'hidden'
+        sourcemap: 'hidden',
+        rollupOptions: {
+          onLog: rollupLogHandler
+        }
       }
     }
   }

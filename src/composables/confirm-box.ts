@@ -4,7 +4,7 @@ import { type ConfirmBoxButton } from '../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
 import { UserNotificationLevel, TabIndicesUpdateDefaultTimeout } from '../shared/constants';
 import { updateTabIndices } from '../shared/dom';
-import ConfirmBox from './../components/confirm-box.vue';
+import { ConfirmBox } from '#components';
 
 export function useConfirmBox (): {
   confirm: (ctrlKey: string, buttons: ConfirmBoxButton[], msgResName: I18nResName, msgResArgs?: any) => Promise<ConfirmBoxButton>

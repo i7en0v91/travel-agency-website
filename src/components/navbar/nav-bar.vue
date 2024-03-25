@@ -9,6 +9,7 @@ import NavLogo from './nav-logo.vue';
 import NavSearchPageLinks from './nav-search-page-links.vue';
 import LocaleSwitcher from './locale-switcher.vue';
 import ThemeSwitcher from './theme-switcher.vue';
+import { PagePath } from './../../shared/constants';
 
 const localePath = useLocalePath();
 const { status } = useAuth();
@@ -19,6 +20,8 @@ interface IProps {
 }
 const props = defineProps<IProps>();
 
+const logger = CommonServicesLocator.getLogger();
+
 const collapsed = ref(true);
 const toggling = ref(false);
 
@@ -28,18 +31,23 @@ function isAnimated (): boolean {
 
 function togglePageLinksMenu () {
   if (!toggling.value) {
+    logger.debug(`(NavBar) toggling navbar, new state collapsed=${!collapsed.value}`);
     collapsed.value = !collapsed.value;
     toggling.value = isAnimated() && true;
+  } else {
+    logger.verbose('(NavBar) wont toggle navbar, it is currently toggling');
   }
 }
 
 function onPageLinksToggled () {
+  logger.debug(`(NavBar) page links toggled, collapsed=${collapsed.value}`);
   toggling.value = false;
   updateTabIndices();
 }
 
-function onLocaleChanged () {
+function onLinkClicked () {
   if (!toggling.value && !collapsed.value) {
+    logger.verbose('(NavBar) locale changed, collapsing');
     toggling.value = isAnimated() && true;
     setTimeout(() => {
       collapsed.value = true;
@@ -60,7 +68,7 @@ const isErrorPage = useError().value;
       :collapsed="collapsed"
       :toggling="toggling"
       @toggled="onPageLinksToggled"
-      @locale-changed="onLocaleChanged"
+      @link-clicked="onLinkClicked"
     />
     <NavLogo ctrl-key="navLogo" :mode="mode" />
     <div class="nav-toggler-div mt-xs-2 mt-l-0">
@@ -75,8 +83,20 @@ const isErrorPage = useError().value;
       </div>
       <NavUser v-if="status==='authenticated'" ctrl-key="navUser" />
       <div v-else class="nav-login">
-        <NavLink :id="`${ctrlKey}-login-link`" ctrl-key="navLogin" :to="localePath('/login')" :text-res-name="getI18nResName2('nav', 'login')" :mode="mode" />
-        <NavLink link-class="btn nav-signup-btn" ctrl-key="navSignUp" :to="localePath('/signup')" :text-res-name="getI18nResName2('nav', 'signUp')" :mode="mode" />
+        <NavLink
+          :id="`${ctrlKey}-login-link`"
+          ctrl-key="navLogin"
+          :to="localePath(`/${PagePath.Login}`)"
+          :text-res-name="getI18nResName2('nav', 'login')"
+          :mode="mode"
+        />
+        <NavLink
+          link-class="btn nav-signup-btn"
+          ctrl-key="navSignUp"
+          :to="localePath(`/${PagePath.Signup}`)"
+          :text-res-name="getI18nResName2('nav', 'signUp')"
+          :mode="mode"
+        />
       </div>
     </div>
   </nav>

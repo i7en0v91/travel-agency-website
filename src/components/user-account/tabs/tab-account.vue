@@ -7,9 +7,9 @@ import { getI18nResName2, getI18nResName3, type I18nResName } from './../../../s
 import { updateTabIndices } from './../../../shared/dom';
 import AppConfig from './../../../appconfig';
 import { maskLog } from './../../../shared/applogger';
-import CaptchaProtection from './../components/forms/captcha-protection.vue';
+import CaptchaProtection from './../../../components/forms/captcha-protection.vue';
 import { useCaptchaToken } from './../../../composables/captcha-token';
-import { post } from './../../../client/rest-utils';
+import { post } from './../../../shared/rest-utils';
 import { TabIndicesUpdateDefaultTimeout, WebApiRoutes, UserNotificationLevel } from './../../../shared/constants';
 import { type IUpdateAccountDto, type IUpdateAccountResultDto, UpdateAccountResultCode } from './../../../server/dto';
 
@@ -28,7 +28,13 @@ enum PropertyCtrlKeys {
 
 const userNotificationStore = useUserNotificationStore();
 const userAccountStore = useUserAccountStore();
-const userAccount = await userAccountStore.getUserAccount();
+let userAccount: IUserAccount;
+if (process.server) {
+  userAccount = await userAccountStore.initializeUserAccount();
+} else {
+  userAccount = userAccountStore.userAccountValue;
+  userAccountStore.initializeUserAccount();
+}
 const themeSettings = useThemeSettings();
 
 const { locale } = useI18n();
@@ -42,7 +48,8 @@ const propLastName = ref<InstanceType<typeof SimplePropertyEdit>>();
 const propPassword = ref<InstanceType<typeof SimplePropertyEdit>>();
 const propEmails = ref<InstanceType<typeof ListPropertyEdit>>();
 
-const captchaToken = useCaptchaToken(captcha);
+const captchaToken = useCaptchaToken(captcha as any);
+let isCaptchaTokenRequestPending = false;
 
 const firstName = ref<string | undefined>(userAccount.firstName);
 const lastName = ref<string | undefined>(userAccount.lastName);
@@ -73,8 +80,18 @@ function onPropertyEnterEditMode (ctrlKey: string) {
   setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 }
 
-async function validateAndSaveChanges (dto: IUpdateAccountDto, emailForVerification?: string): Promise<I18nResName | 'success'> {
-  dto.captchaToken = await captchaToken.requestToken();
+async function validateAndSaveChanges (dto: IUpdateAccountDto, emailForVerification?: string): Promise<I18nResName | 'success' | 'cancel'> {
+  if (isCaptchaTokenRequestPending) {
+    logger.verbose(`(TabAccount) simple property change canceled - captcha request pending: ctrlKey=${props.ctrlKey}`);
+    return 'cancel';
+  }
+
+  try {
+    isCaptchaTokenRequestPending = true;
+    dto.captchaToken = await captchaToken.requestToken();
+  } finally {
+    isCaptchaTokenRequestPending = false;
+  }
 
   logger.info(`(TabAccount) sending user account update dto: userId=${userAccount.userId}`);
   const resultDto = await post(WebApiRoutes.UserAccount, undefined, dto) as IUpdateAccountResultDto;
@@ -111,7 +128,7 @@ async function validateAndSaveChanges (dto: IUpdateAccountDto, emailForVerificat
   }
 }
 
-async function validateAndSaveSimpleChanges (propCtrlKey: PropertyCtrlKeys, value?: string): Promise<I18nResName | 'success'> {
+async function validateAndSaveSimpleChanges (propCtrlKey: PropertyCtrlKeys, value?: string): Promise<I18nResName | 'success' | 'cancel'> {
   logger.verbose(`(TabAccount) validating and saving simple property change: ctrlKey=${props.ctrlKey}, propCtrlKey=${propCtrlKey}, value=${maskLog(value)}`);
   let updateDto: IUpdateAccountDto = {
     locale: locale.value,
@@ -131,7 +148,7 @@ async function validateAndSaveSimpleChanges (propCtrlKey: PropertyCtrlKeys, valu
   return await validateAndSaveChanges(updateDto);
 }
 
-async function validateAndSaveEmailChanges (newValues: (string | undefined)[], _currentValues: (string | undefined)[], op: 'add' | 'change' | 'delete', propIdx: number | 'add', newValue?: string) : Promise<I18nResName | 'success'> {
+async function validateAndSaveEmailChanges (newValues: (string | undefined)[], _currentValues: (string | undefined)[], op: 'add' | 'change' | 'delete', propIdx: number | 'add', newValue?: string) : Promise<I18nResName | 'success' | 'cancel'> {
   logger.verbose(`(TabAccount) validating and saving email changes: ctrlKey=${props.ctrlKey}, op=${op}, propIdx=${propIdx}, newValue=${maskLog(newValue)}`);
   const updateDto: IUpdateAccountDto = {
     locale: locale.value,

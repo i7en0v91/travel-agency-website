@@ -1,5 +1,7 @@
 import { joinURL, parseURL, stringifyParsedURL } from 'ufo';
 import en from '../locales/en.json';
+import { WebApiRoutes, type Locale } from './constants';
+import { type IAppLogger } from './../shared/applogger';
 
 export type I18nResName = string;
 export function getI18nResName1<P1 extends keyof NonNullable<typeof en>> (p1: P1): I18nResName {
@@ -41,6 +43,25 @@ export function patchUrlWithLocale (url: string, locale: string): string | undef
     urlObj.pathname = `/${locale}`;
   }
   return stringifyParsedURL(urlObj);
+}
+
+export function getLocaleFromUrl (url: string) : Locale | undefined {
+  const logger = (globalThis as any).CommonServicesLocator.getLogger() as IAppLogger;
+
+  logger?.debug(`(session:server) detecting locale from url: url=${url}`);
+  if (url.startsWith(`${WebApiRoutes.Logging}`) ||
+    url.startsWith(`${WebApiRoutes.Authentication}`)) {
+    return undefined;
+  }
+
+  let result: Locale = 'en';
+  if (url.startsWith(`/${<Locale>'ru'}`)) {
+    result = <Locale>'ru';
+  } else if (url.startsWith(`/${<Locale>'fr'}`)) {
+    result = <Locale>'fr';
+  }
+
+  return result;
 }
 
 export function RuPluralizationRule (choice: number, choicesLength: number, _: any): number {

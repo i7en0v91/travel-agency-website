@@ -40,6 +40,7 @@ $theme-light: (
   'review-card-backface-bg': #CDEAE1,
   'shadow': color.adjust(rgba($ambient-base-light, 1.0), $alpha: -0.85),
   'control-group-divisor': #D7E2EE,
+  'ctrl-disabled': #D7E2EE,
   'property-grid-edit-highlight': #CDEAE1,
   'world-map-bg': #8DD3BB,
   'travel-details-ctrl-bg': white,
@@ -49,7 +50,10 @@ $theme-light: (
   'badge': #8DD3BB,
   'control-bg-scrollbar': rgba(255, 255, 255, 0.5),
   'filter-panel-ctrl-btn': #FF8682,
-  'highlighted-info': #FF8682
+  'highlighted-info': #FF8682,
+  'choice-ctrl': white,
+  'review-editor-quotation-bg': #e1e1e1,
+  'review-editor-quotation': #2B2B2B
 );
 
 $ambient-base-dark: #FFFFFF;
@@ -86,6 +90,7 @@ $theme-dark: (
   'review-card-backface-bg': #3B3B3B,
   'shadow': color.adjust(rgba($ambient-base-dark, 1.0), $alpha: -0.85),
   'control-group-divisor': #D7E2EE,
+  'ctrl-disabled': #636363,
   'property-grid-edit-highlight': #3B3B3B,
   'world-map-bg': #A259FF,
   'travel-details-ctrl-bg': white,
@@ -95,7 +100,10 @@ $theme-dark: (
   'badge': #676767,
   'control-bg-scrollbar': rgba(255, 255, 255, 0.5),
   'filter-panel-ctrl-btn': #FF8682,
-  'highlighted-info': #FF8682
+  'highlighted-info': #FF8682,
+  'choice-ctrl': white,
+  'review-editor-quotation-bg': #BBBBBB,
+  'review-editor-quotation': #2B2B2B
 );
 
 @mixin compile-theme($theme-name, $colormap) {

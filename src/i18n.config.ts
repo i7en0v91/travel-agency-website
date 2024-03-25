@@ -33,6 +33,9 @@ export default defineI18nConfig(() => ({
       short: {
         year: 'numeric', month: 'short', day: 'numeric'
       },
+      day: {
+        month: 'short', day: 'numeric', weekday: 'short'
+      },
       daytime: {
         year: undefined, month: undefined, day: undefined, hour12: true, hour: '2-digit', minute: '2-digit'
       }
@@ -44,6 +47,9 @@ export default defineI18nConfig(() => ({
       short: {
         year: 'numeric', month: 'short', day: 'numeric'
       },
+      day: {
+        month: 'short', day: 'numeric', weekday: 'short'
+      },
       daytime: {
         year: undefined, month: undefined, day: undefined, hour12: true, hour: '2-digit', minute: '2-digit'
       }
@@ -54,6 +60,9 @@ export default defineI18nConfig(() => ({
       },
       short: {
         year: 'numeric', month: 'short', day: 'numeric'
+      },
+      day: {
+        month: 'short', day: 'numeric', weekday: 'short'
       },
       daytime: {
         year: undefined, month: undefined, day: undefined, hour12: true, hour: '2-digit', minute: '2-digit'

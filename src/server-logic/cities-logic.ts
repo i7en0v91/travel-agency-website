@@ -218,7 +218,16 @@ export class CitiesLogic implements ICitiesLogic {
                 }
               },
               lon: true,
-              lat: true
+              lat: true,
+              _count: {
+                select: {
+                  hotels: {
+                    where: {
+                      isDeleted: false
+                    }
+                  }
+                }
+              }
             }
           },
           images: {
@@ -258,6 +267,7 @@ export class CitiesLogic implements ICitiesLogic {
             lat: e.city.lat.toNumber()
           },
           visibleOnWorldMap: e.visibleOnWorldMap,
+          numStays: e.city._count.hotels,
           timestamp: cardImage?.image.file.modifiedUtc.getTime() ?? 0
         };
       });
@@ -274,6 +284,11 @@ export class CitiesLogic implements ICitiesLogic {
     const matchedEntities = await this.dbRepository.city.findMany({
       where: {
         isDeleted: false,
+        airports: {
+          some: {
+            isDeleted: false
+          }
+        },
         ...((query.searchTerm?.length ?? 0) > 0
           ? {
               textForSearch: {

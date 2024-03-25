@@ -34,6 +34,24 @@ export class FlightsLogic implements IFlightsLogic {
     this.airplaneLogic = airplaneLogic;
   }
 
+  async getFlightOffer (id: EntityId, userId: EntityId | 'guest'): Promise<IFlightOffer> {
+    this.logger.verbose(`(FlightsLogic) get flight offer, id=${id}, userId=${userId}`);
+    const entity = await this.dbRepository.flightOffer.findFirst({
+      where: {
+        isDeleted: false,
+        id
+      },
+      select: Queries.FlightOfferInfoQuery(userId).select
+    });
+    if (!entity) {
+      this.logger.warn(`(FlightsLogic) flight offer was not found, id=${id}, userId=${userId}`);
+      throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'flight offer not found', 'error-page');
+    }
+
+    this.logger.verbose(`(FlightsLogic) get flight offer - found, id=${id}, userId=${userId}, modifiedUtc=${entity.modifiedUtc}, price=${entity.totalPrice}`);
+    return Mappers.MapFlightOffer(entity);
+  }
+
   async toggleFavourite (offerId: EntityId, userId: EntityId): Promise<boolean> {
     this.logger.verbose(`(FlightsLogic) toggling favourite offer, id=${offerId}, userId=${userId}`);
 
@@ -136,40 +154,45 @@ export class FlightsLogic implements IFlightsLogic {
   async searchOffers (filter: IFlightOffersFilterParams, userId: EntityId | 'guest', primarySorting: ISorting<FlightOffersSortFactor>, secondarySorting: ISorting<FlightOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean, topOffersStats: boolean): Promise<ISearchFlightOffersResult> {
     this.logger.verbose(`(FlightsLogic) search offers, filter=${JSON.stringify(filter)}, userId=${userId}, primarySorting=${JSON.stringify(primarySorting)}, secondarySorting=${JSON.stringify(secondarySorting)}, pagination=${JSON.stringify(pagination)}, narrowFilterParams=${narrowFilterParams}, topOffersStats=${topOffersStats}`);
 
-    const primarySortFactor = primarySorting.factor ?? SearchOffersListConstants.DefaultFlightOffersSorting;
-    const secondarySortFactor = secondarySorting.factor ?? SearchOffersListConstants.DefaultFlightOffersSorting;
-    let variants = await this.generateFlightOffersFull(filter, userId, primarySortFactor, secondarySortFactor);
-    this.logger.debug(`(FlightsLogic) sorting flight offer variants, userId=${userId}`);
-    variants = orderBy(variants, ['primarySortFactor', 'secondarySortFactor'], [primarySorting.direction, secondarySorting.direction]);
-    let filterParams : ISearchFlightOffersResultFilterParams | undefined;
-    let topOffers: ITopFlightOfferInfo[] | undefined;
-    if (narrowFilterParams) {
-      filterParams = this.computeFlightOffersFilterParams(variants, userId);
-    }
-    variants = this.filterFlightOffers(variants, filter, userId);
-    const totalCount = variants.length;
-    if (topOffersStats) {
-      topOffers = this.computeTopFlightOffersInfo(variants, userId);
-    }
+    try {
+      const primarySortFactor = primarySorting.factor ?? SearchOffersListConstants.DefaultFlightOffersSorting;
+      const secondarySortFactor = secondarySorting.factor ?? SearchOffersListConstants.DefaultFlightOffersSorting;
+      let variants = await this.generateFlightOffersFull(filter, userId, primarySortFactor, secondarySortFactor);
+      this.logger.debug(`(FlightsLogic) sorting flight offer variants, userId=${userId}`);
+      variants = orderBy(variants, ['primarySortFactor', 'secondarySortFactor'], [primarySorting.direction, secondarySorting.direction]);
+      let filterParams : ISearchFlightOffersResultFilterParams | undefined;
+      let topOffers: ITopFlightOfferInfo[] | undefined;
+      if (narrowFilterParams) {
+        filterParams = this.computeFlightOffersFilterParams(variants, userId);
+      }
+      variants = this.filterFlightOffers(variants, filter, userId);
+      const totalCount = variants.length;
+      if (topOffersStats) {
+        topOffers = this.computeTopFlightOffersInfo(variants, userId);
+      }
 
-    const take = pagination.skip >= variants.length ? 0 : (Math.min(variants.length - pagination.skip, pagination.take));
-    const skip = pagination.skip;
-    this.logger.debug(`(FlightsLogic) applying pagination to flight offer, userId=${userId}, skip=${skip}, take=${take}`);
-    if (pagination.skip >= variants.length) {
-      variants = [];
-    } else {
-      variants = variants.slice(skip, skip + take);
-    }
-    await this.ensureOffersInDatabase(variants, userId);
+      const take = pagination.skip >= variants.length ? 0 : (Math.min(variants.length - pagination.skip, pagination.take));
+      const skip = pagination.skip;
+      this.logger.debug(`(FlightsLogic) applying pagination to flight offer, userId=${userId}, skip=${skip}, take=${take}`);
+      if (pagination.skip >= variants.length) {
+        variants = [];
+      } else {
+        variants = variants.slice(skip, skip + take);
+      }
+      await this.ensureOffersInDatabase(variants, userId);
 
-    const result: ISearchFlightOffersResult = {
-      pagedItems: variants,
-      paramsNarrowing: filterParams,
-      topOffers,
-      totalCount
-    };
-    this.logger.verbose(`(FlightsLogic) search offers - completed, filter=${JSON.stringify(filter)}, userId=${userId}, count=${variants.length}`);
-    return result;
+      const result: ISearchFlightOffersResult = {
+        pagedItems: variants,
+        paramsNarrowing: filterParams,
+        topOffers,
+        totalCount
+      };
+      this.logger.verbose(`(FlightsLogic) search offers - completed, filter=${JSON.stringify(filter)}, userId=${userId}, count=${variants.length}`);
+      return result;
+    } catch (err: any) {
+      this.logger.warn('(FlightsLogic) error occured while searching offers', err, { filter, pagination, userId });
+      throw err;
+    }
   }
 
   async createFlightsAndFillIds (flights: MakeSearchResultEntity<IFlight>[]): Promise<void> {

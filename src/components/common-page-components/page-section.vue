@@ -8,13 +8,14 @@ import SimpleButton from './../../components/forms/simple-button.vue';
 interface IProps {
   ctrlKey: string,
   headerResName: I18nResName,
-  subtextResName: I18nResName,
+  subtextResName?: I18nResName,
   linkUrl?: string,
   btnTextResName?: I18nResName,
   contentPadded?: boolean,
   isError?: boolean
 };
 const props = withDefaults(defineProps<IProps>(), {
+  subtextResName: undefined,
   btnTextResName: undefined,
   contentPadded: true,
   linkUrl: undefined,
@@ -38,7 +39,7 @@ function scheduleTooltipAutoHide () {
         <h3>
           {{ $t(headerResName) }}
         </h3>
-        <div class="page-section-subtext mt-xs-3" role="heading" aria-level="5">
+        <div v-if="subtextResName" class="page-section-subtext mt-xs-3" role="heading" aria-level="5">
           {{ $t(subtextResName) }}
         </div>
       </div>
@@ -46,7 +47,7 @@ function scheduleTooltipAutoHide () {
         {{ $t(btnTextResName) }}
       </NuxtLink>
       <VTooltip
-        v-else
+        v-else-if="btnTextResName"
         ref="tooltip"
         class="page-section-button-tooltip"
         :distance="6"

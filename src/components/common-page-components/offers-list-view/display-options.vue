@@ -6,11 +6,11 @@ import { getI18nResName3 } from './../../../shared/i18n';
 import { UIControlKeys, DeviceSizeEnum, SearchOffersListConstants } from './../../../shared/constants';
 import { callForCurrentDeviceSize } from './../../../shared/dom';
 import { convertTimeOfDay } from './../../../shared/common';
-import { StayOffersSortFactorEnum, type ISearchFlightOffersParams, type ISearchStayOffersParams, type ISearchStayOffersDisplayOptions, type IDropdownListItemProps, type StayOffersSortFactor, type FlightOffersSortFactor, type OtherOptionButtonVariant, type IOtherOptionsButtonGroupProps, type SearchOfferKind, type IOptionButtonProps, type ISearchFlightOffersDisplayOption, type ISearchFlightOffersDisplayOptions, type DropdownListValue } from './../../../shared/interfaces';
+import { StayOffersSortFactorEnum, type ISearchFlightOffersParams, type ISearchStayOffersParams, type ISearchStayOffersDisplayOptions, type IDropdownListItemProps, type StayOffersSortFactor, type FlightOffersSortFactor, type OtherOptionButtonVariant, type IOtherOptionsButtonGroupProps, type OfferKind, type IOptionButtonProps, type ISearchFlightOffersDisplayOption, type ISearchFlightOffersDisplayOptions, type DropdownListValue } from './../../../shared/interfaces';
 
 interface IProps {
   ctrlKey: string,
-  offersKind: SearchOfferKind
+  offersKind: OfferKind
 }
 const props = withDefaults(defineProps<IProps>(), {
 });

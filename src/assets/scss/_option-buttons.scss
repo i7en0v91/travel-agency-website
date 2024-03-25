@@ -14,7 +14,7 @@ $options-button-dropdown-icon-size: 20px;
 
   height: fit-content;
 
-  border-radius: 12px;
+  border-radius: map.get($borders-radius, '3');
   @include with-theme-color('shadow') using($css-var) {
     box-shadow: 0px 4px 16px var($css-var);
   }
@@ -161,13 +161,13 @@ $options-button-dropdown-icon-size: 20px;
       pointer-events: none;
 
       .option-button-label, .option-button-subtext {
-        @include with-theme-color('control-group-divisor') using ($css-var) {
+        @include with-theme-color('ctrl-disabled') using ($css-var) {
           color: var($css-var);
         }
       }
 
       .option-button-icon {
-        @include with-theme-color('control-group-divisor') using ($css-var) {
+        @include with-theme-color('ctrl-disabled') using ($css-var) {
           background-color: var($css-var);
         }
       }
@@ -230,7 +230,7 @@ $options-button-dropdown-icon-size: 20px;
     &.disabled {
       pointer-events: none;
 
-      @include with-theme-color('control-group-divisor') using ($css-var) {
+      @include with-theme-color('ctrl-disabled') using ($css-var) {
         color: var($css-var);
       }
 

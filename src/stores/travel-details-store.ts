@@ -3,10 +3,11 @@ import once from 'lodash-es/once';
 import { withQuery, encodeHash, stringifyParsedURL, type ParsedURL } from 'ufo';
 import type { AsyncDataRequestStatus } from '#app/composables/asyncData';
 import { type IPopularCityDto, type ITravelDetailsDto } from '../server/dto';
-import { TravelDetailsHtmlAnchor, WebApiRoutes, UserNotificationLevel } from '../shared/constants';
+import { TravelDetailsHtmlAnchor, WebApiRoutes, UserNotificationLevel, PagePath } from '../shared/constants';
 import { type EntityId, type IEntityCacheCityItem, type ITravelDetailsData } from '../shared/interfaces';
 import { useFetchEx, type SSRAwareFetchResult } from '../shared/fetch-ex';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
+import { get } from '../shared/rest-utils';
 import AppConfig from './../appconfig';
 import { getI18nResName2 } from './../shared/i18n';
 
@@ -26,7 +27,6 @@ export interface ITravelDetailsStoreMethods {
   onComponentDetached: () => void
 }
 
-const TravelDetailsFetchKey = 'TravelDetailsStore-TravelDetailsFetch';
 const TimerLoopIterationInterval = 1000;
 
 declare type ScheduledTask = {
@@ -42,7 +42,6 @@ interface ITimePlayer {
 export const useTravelDetailsStore = defineStore('travel-details-store', () => {
   const logger = CommonServicesLocator.getLogger();
   logger.info('(travel-details-store) start store construction');
-  const nuxtApp = useNuxtApp();
 
   const userNotificationStore = useUserNotificationStore();
   const localePath = useLocalePath();
@@ -82,7 +81,7 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
     logger.debug(`(world-map-store) build city url, slug=${citySlug}`);
 
     const url: Partial<ParsedURL> = {
-      pathname: localePath('/flights'),
+      pathname: localePath(`/${PagePath.Flights}`),
       hash: encodeHash(`#${TravelDetailsHtmlAnchor}`)
     };
     const result = withQuery(stringifyParsedURL(url), { city: citySlug });
@@ -120,8 +119,7 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
     manuallySetCityId: undefined
   });
 
-  let travelDetailsFetchRequest: SSRAwareFetchResult<ITravelDetailsDto | null> | Promise<SSRAwareFetchResult<ITravelDetailsDto | null>> | undefined;
-  let travelDetailsFetch: SSRAwareFetchResult<ITravelDetailsDto | null> | undefined;
+  const travelDetails = ref<{ data: ITravelDetailsDto | null, status: AsyncDataRequestStatus }>({ data: null, status: 'idle' });
   let timePlayer: ITimePlayer | undefined;
 
   const createTimePlayer = (): ITimePlayer => {
@@ -231,6 +229,32 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
     });
   };
 
+  const fetchTravelDetails = async (): Promise<void> => {
+    const cityId = fetchCityId.value;
+    logger.verbose(`(travel-details-store) fetch travel details, cityId=${cityId}`);
+
+    try {
+      travelDetails.value.status = 'pending';
+      const fetchResult = await get<ITravelDetailsDto>(WebApiRoutes.PopularCityTravelDetails, { cityId }, 'default', false, 'throw');
+      if (!fetchResult) {
+        logger.warn(`(travel-details-store) failed to fetch travel details, empty response, cityId=${cityId}`);
+        travelDetails.value.status = 'error';
+        return;
+      }
+
+      travelDetails.value = {
+        data: fetchResult,
+        status: 'success'
+      };
+    } catch (err: any) {
+      logger.warn(`(travel-details-store) failed to fetch travel details, cityId=${cityId}`, err);
+      travelDetails.value.status = 'error';
+      return;
+    }
+
+    logger.verbose(`(travel-details-store) fetch travel details completed, cityId=${cityId}`);
+  };
+
   const initializeStateOnClient = once(async (): Promise<void> => {
     logger.info('(travel-details-store) starting client state initialization');
     timePlayer = createTimePlayer();
@@ -260,31 +284,19 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
         logger.verbose(`(travel-details-store) initializing first travel details popular city, cityId=${fetchCityId.value}`);
       }
 
-      travelDetailsFetchRequest = nuxtApp.runWithContext(() => useFetchEx<ITravelDetailsDto | null, ITravelDetailsDto | null>(WebApiRoutes.PopularCityTravelDetails, 'error-stub',
-        {
-          server: true,
-          lazy: true,
-          immediate: true,
-          query: {
-            cityId: fetchCityId
-          },
-          key: TravelDetailsFetchKey
-        }, true));
+      await fetchTravelDetails();
 
-      travelDetailsFetch = (await travelDetailsFetchRequest)!;
-      await travelDetailsFetch;
-
-      if (travelDetailsFetch!.error?.value) {
+      if (travelDetails.value.status === 'error') {
         logger.warn('(travel-details-store) client state initialization failed - travel details load failed');
         instance.isError = true;
         return;
       }
 
-      watch(travelDetailsFetch!.status, () => {
-        logger.verbose(`(travel-details-store) travel details fetch status changed, current cityId=${fetchCityId.value}, status=${travelDetailsFetch!.status.value}`);
-        handleTravelDetailsStatusChange(travelDetailsFetch!.status.value);
+      watch(travelDetails, () => {
+        logger.verbose(`(travel-details-store) travel details fetch status changed, current cityId=${fetchCityId.value}, status=${travelDetails.value.status}`);
+        handleTravelDetailsStatusChange(travelDetails.value.status);
       });
-      handleTravelDetailsStatusChange(travelDetailsFetch!.status.value);
+      handleTravelDetailsStatusChange(travelDetails.value.status);
     };
 
     if (['pending', 'idle'].includes(popularCitiesFetch.status.value)) {
@@ -331,38 +343,25 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
       fetchCityId.value = instance.idPlaylist[0];
       logger.verbose(`(travel-details-store) initializing first travel details popular city, cityId=${fetchCityId.value}`);
     }
-
-    travelDetailsFetchRequest = nuxtApp.runWithContext(async () => {
-      return await useFetchEx<ITravelDetailsDto | null, ITravelDetailsDto | null>(WebApiRoutes.PopularCityTravelDetails, 'error-stub',
-        {
-          server: true,
-          lazy: false,
-          immediate: true,
-          query: {
-            cityId: fetchCityId.value
-          },
-          key: TravelDetailsFetchKey
-        }, true);
-    });
-
     logger.verbose(`(travel-details-store) setting on server new city travel details to load, cityId=${fetchCityId.value}`);
 
-    travelDetailsFetch = await travelDetailsFetchRequest;
-    const travelDetails = (await travelDetailsFetch).data.value;
-    if (!travelDetails) {
+    await fetchTravelDetails();
+
+    if (travelDetails.value.status === 'error') {
       logger.warn('(travel-details-store) server state initialization failed - travel details load failed');
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'travel details load failed', 'error-stub');
     }
 
+    const travelDetailsDto = travelDetails.value.data!;
     instance.current = {
       cityId: fetchCityId.value,
       texting: {
-        header: travelDetails.header,
-        text: travelDetails.text,
-        price: travelDetails.price,
-        slug: travelDetails.city.slug
+        header: travelDetailsDto.header,
+        text: travelDetailsDto.text,
+        price: travelDetailsDto.price,
+        slug: travelDetailsDto.city.slug
       },
-      images: travelDetails.images
+      images: travelDetailsDto.images
     };
     logger.info('(travel-details-store) server state initialization finished');
   });
@@ -392,7 +391,7 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
   };
 
   const startLoadingTravelDetails = (cityId: EntityId) => {
-    if (!travelDetailsFetch) {
+    if (travelDetails.value.status === 'pending') {
       logger.verbose(`(travel-details-store) skipping load travel details request, still in initialization state, new cityId=${cityId}, current cityId=${instance.current?.cityId}, upcoming cityId=${instance.upcoming?.cityId}`);
       return;
     }
@@ -408,8 +407,9 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
       images: undefined,
       texting: undefined
     };
-    fetchCityId.value = cityId; // will trigger re-fetch
-    handleTravelDetailsStatusChange(travelDetailsFetch.status.value);
+    fetchCityId.value = cityId;
+    fetchTravelDetails();
+    handleTravelDetailsStatusChange(travelDetails.value.status);
   };
 
   const onComponentAttachedInternal = () => {
@@ -424,15 +424,9 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
 
   const startLoadingNextUpcoming = (prevCityId: EntityId, rescheduledOnUncompletedInitiaization?: boolean) => {
     rescheduledOnUncompletedInitiaization ??= false;
-    if (rescheduledOnUncompletedInitiaization && travelDetailsFetch) {
-      // client completed initialization and has been scheduled another loading request
-      return;
-    }
 
-    if (!travelDetailsFetch) { // if travelDetailsFetch is null, then client state is still initializing and will trigger another load upon completing initialization
-      timePlayer!.setMainLineTask(() => {
-        startLoadingNextUpcoming(instance.current!.cityId, true);
-      }, AppConfig.fallIntoTravel.retryTimeoutMs);
+    if (rescheduledOnUncompletedInitiaization) {
+      // client completed initialization and has been scheduled another loading request
       return;
     }
 
@@ -449,17 +443,12 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
       return 'none';
     }
 
-    if (!travelDetailsFetch) {
-      logger.debug(`(travel-details-store), manually set city needs load, but client is still not fullly initialized, manually cityId=${instance.manuallySetCityId}`);
-      return 'none';
-    }
-
-    if (travelDetailsFetch.status.value === 'pending') {
+    if (travelDetails.value.status === 'pending') {
       logger.debug(`(travel-details-store), manually set city needs load, but currently another fetch is in progress, manually cityId=${instance.manuallySetCityId}`);
       return 'none';
     }
 
-    if (['pending', 'success'].includes(travelDetailsFetch.status.value) && fetchCityId.value === instance.manuallySetCityId) {
+    if (['pending', 'success'].includes(travelDetails.value.status) && fetchCityId.value === instance.manuallySetCityId) {
       // already loading
       return 'pending';
     }
@@ -485,32 +474,33 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
   };
 
   const handleTravelDetailsStatusChange = (status: AsyncDataRequestStatus) => {
-    logger.debug(`(travel-details-store) travel details status change handler, current cityId=${fetchCityId.value}, status=${travelDetailsFetch!.status.value}`);
+    logger.debug(`(travel-details-store) travel details status change handler, current cityId=${fetchCityId.value}, status=${status}`);
     if (status === 'error') {
       const cityId = fetchCityId.value!;
       timePlayer!.setMainLineTask(() => {
         startLoadingNextUpcoming(cityId);
       }, AppConfig.fallIntoTravel.retryTimeoutMs);
-    } else if (travelDetailsFetch!.status.value === 'success' && fetchCityId.value! === travelDetailsFetch!.data?.value?.city.id) {
+    } else if (travelDetails.value.status === 'success' && fetchCityId.value! === travelDetails.value?.data?.city.id) {
+      const travelDetailsDto = travelDetails.value?.data;
       const travelDetailsData : ITravelDetailsData = {
         cityId: fetchCityId.value!,
-        images: travelDetailsFetch!.data?.value?.images ?? [],
-        texting: travelDetailsFetch!.data?.value
+        images: travelDetailsDto?.images ?? [],
+        texting: travelDetailsDto
           ? {
-              header: travelDetailsFetch!.data?.value!.header,
-              text: travelDetailsFetch!.data?.value!.text,
-              price: travelDetailsFetch!.data?.value!.price,
-              slug: travelDetailsFetch!.data?.value!.city.slug
+              header: travelDetailsDto.header,
+              text: travelDetailsDto.text,
+              price: travelDetailsDto.price,
+              slug: travelDetailsDto.city.slug
             }
           : undefined
       };
-      logger.verbose(`(travel-details-store) upcoming data fetched, current cityId=${instance.current?.cityId}, upcoming cityId=${travelDetailsData.cityId}, status=${travelDetailsFetch!.status.value}`);
+      logger.verbose(`(travel-details-store) upcoming data fetched, current cityId=${instance.current?.cityId}, upcoming cityId=${travelDetailsData.cityId}, status=${travelDetails.value.status}`);
       if (instance.current) {
         if (travelDetailsData.cityId !== instance.current.cityId) {
           instance.upcoming = travelDetailsData;
         }
       } else {
-        logger.verbose(`(travel-details-store) using upcoming data as initial, status=${travelDetailsFetch!.status.value}`);
+        logger.verbose(`(travel-details-store) using upcoming data as initial, status=${travelDetails.value.status}`);
         instance.current = travelDetailsData;
       }
       checkManualCityLoadIfNeeded();

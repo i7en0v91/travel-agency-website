@@ -15,7 +15,7 @@ import { defaultErrorHandler } from './../../../shared/exceptions';
 
 interface IProps {
   ctrlKey: string,
-  validateAndSave: (value?: string) => Promise<I18nResName | 'success'>,
+  validateAndSave: (value?: string) => Promise<I18nResName | 'success' | 'cancel'>,
   captionResName?: I18nResName,
   type: SimplePropertyType,
   value?: string,
@@ -102,6 +102,10 @@ async function performValidateAndSave (value?: string) : Promise<boolean> {
       try {
         logger.verbose(`(SimplePropertyEdit) calling client save handler, ctrlKey=${props.ctrlKey}, value=${maskLogValue(value)}`);
         const validationResult = await props.validateAndSave(value);
+        if (validationResult === 'cancel') {
+          logger.verbose(`(SimplePropertyEdit) client save handler cancelled, ctrlKey=${props.ctrlKey}, value=${maskLogValue(value)}`);
+          return false;
+        }
         customValidationErrMsgResName.value = validationResult === 'success' ? undefined : validationResult;
         logger.verbose(`(SimplePropertyEdit) client save handler result, ctrlKey=${props.ctrlKey}, errMsgResName=${customValidationErrMsgResName.value}`);
       } catch (err: any) {

@@ -100,7 +100,7 @@ function toggleList () {
     </ol>
     <SimpleButton
       v-if="numMoreVariantsToDisplay"
-      class="list-checklist-toggler mb-xs-2 ml-xs-2"
+      class="list-checklist-toggler"
       :ctrl-key="`${props.ctrlKey}-ListToggler`"
       :label-res-name="listExpanded ? getI18nResName3('searchOffers', 'filters', 'checklistCollapseItems') : getI18nResName3('searchOffers', 'filters', 'checklistMoreItems')"
       :label-res-args="listExpanded ? undefined : numMoreVariantsToDisplay"

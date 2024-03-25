@@ -3,9 +3,10 @@ import replace from 'lodash-es/replace';
 import { normalizeURL, parseURL } from 'ufo';
 import fromPairs from 'lodash-es/fromPairs';
 import AppConfig from '../appconfig';
-import { type Locale, AvailableLocaleCodes, DEV_ENV_MODE, SearchOffersListConstants } from './constants';
+import { type Locale, AvailableLocaleCodes, SearchOffersListConstants, PagePath, OgImageExt } from './constants';
 import type { ILocalizableValue, GeoPoint, DistanceUnitKm } from './interfaces';
 import { LocaleEnum } from './constants';
+import { type I18nResName, getI18nResName3 } from './../shared/i18n';
 
 export function isLandingPageUrl (url: string): boolean {
   if (!url?.trim()) {
@@ -94,14 +95,6 @@ export function getTimeOfDay (dateTimeUtc: Date, utcOffsetMinutes: number): numb
   return (dateTimeUtc.getHours() * 60 + dateTimeUtc.getMinutes() + utcOffsetMinutes) % SearchOffersListConstants.NumMinutesInDay;
 }
 
-export function isDevOrTestEnv (): boolean {
-  return import.meta.env.MODE === DEV_ENV_MODE || import.meta.env.VITE_VITEST || process.env?.VITEST || process.env?.NODE_ENV === DEV_ENV_MODE;
-}
-
-export function isQuickStartEnv (): boolean {
-  return import.meta.env.VITE_QUICKSTART;
-}
-
 export function parseEnumOrThrow (enumType: any, value?: string | number): any {
   if (!value) {
     throw new Error('enum value empty');
@@ -143,4 +136,22 @@ export function calculateDistanceKm (from: GeoPoint, to: GeoPoint): DistanceUnit
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return EarthRadius * c;
+}
+
+export function getScoreClassResName (score: number): I18nResName {
+  if (score >= 4.0) {
+    return getI18nResName3('searchOffers', 'scoreClass', 'veryGood');
+  } else if (score >= 3.0) {
+    return getI18nResName3('searchOffers', 'scoreClass', 'good');
+  } else if (score >= 2.0) {
+    return getI18nResName3('searchOffers', 'scoreClass', 'medium');
+  } else if (score >= 1.0) {
+    return getI18nResName3('searchOffers', 'scoreClass', 'low');
+  } else {
+    return getI18nResName3('searchOffers', 'scoreClass', 'veryLow');
+  }
+}
+
+export function getOgImageFileName (page: PagePath, locale: Locale): string {
+  return `${page === PagePath.Index ? 'index' : page.valueOf()}_${locale.toLowerCase()}.${OgImageExt}`;
 }

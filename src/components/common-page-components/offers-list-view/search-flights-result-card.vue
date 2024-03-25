@@ -3,11 +3,11 @@
 import dayjs from 'dayjs';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { type MakeSearchResultEntity, type IFlight, type IFlightOffer, ImageCategory } from './../../../shared/interfaces';
-import { getI18nResName2, getI18nResName3, type I18nResName } from './../../../shared/i18n';
-import { getLocalizeableValue, convertTimeOfDay, getTimeOfDay } from './../../../shared/common';
-import { type Locale, WebApiRoutes } from './../../../shared/constants';
-import { post } from './../../../client/rest-utils';
-import type { IToggleFavouriteOfferDto, IToggleFavouriteOfferResultDto } from './../../../server/dto';
+import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
+import { getLocalizeableValue, convertTimeOfDay, getTimeOfDay, getScoreClassResName } from './../../../shared/common';
+import { type Locale, WebApiRoutes, PagePath } from './../../../shared/constants';
+import { post } from './../../../shared/rest-utils';
+import type { IToggleFavouriteOfferResultDto } from './../../../server/dto';
 
 interface IProps {
   ctrlKey: string,
@@ -23,20 +23,6 @@ const localePath = useLocalePath();
 const logger = CommonServicesLocator.getLogger();
 
 const isError = ref(false);
-
-function getScoreClassResName (score: number): I18nResName {
-  if (score >= 4.0) {
-    return getI18nResName3('searchOffers', 'scoreClass', 'veryGood');
-  } else if (score >= 3.0) {
-    return getI18nResName3('searchOffers', 'scoreClass', 'good');
-  } else if (score >= 2.0) {
-    return getI18nResName3('searchOffers', 'scoreClass', 'medium');
-  } else if (score >= 1.0) {
-    return getI18nResName3('searchOffers', 'scoreClass', 'low');
-  } else {
-    return getI18nResName3('searchOffers', 'scoreClass', 'veryLow');
-  }
-}
 
 const airlineCompany = props.offer.departFlight.airlineCompany;
 const airlineCompanyLogoTooltip = computed(() => getLocalizeableValue(airlineCompany.name, locale.value as Locale));
@@ -70,10 +56,7 @@ function extractAirportCode (displayName: string) {
 async function toggleFavourite (): Promise<void> {
   const offerId = props.offer.id;
   logger.verbose(`(SearchFlightsResultCard) toggling favourite, offerId=${offerId}, current=${isFavourite.value}`);
-  const dto: IToggleFavouriteOfferDto = {
-    offerId
-  };
-  const resultDto = await post(WebApiRoutes.FlightsFavourite, undefined, dto) as IToggleFavouriteOfferResultDto;
+  const resultDto = await post(WebApiRoutes.FlightOfferFavourite(offerId), undefined, undefined) as IToggleFavouriteOfferResultDto;
   if (resultDto) {
     logger.verbose(`(SearchFlightsResultCard) favourite toggled, offerId=${offerId}, result=${resultDto.isFavourite}`);
     isFavourite.value = resultDto.isFavourite;
@@ -176,7 +159,7 @@ function favouriteBtnClick () {
               kind="support"
               @click="favouriteBtnClick"
             />
-            <NuxtLink class="btn btn-primary brdr-1 search-flights-card-btn-details" :to="localePath('/find-flights')">
+            <NuxtLink class="btn btn-primary brdr-1 search-flights-card-btn-details" :to="localePath(`/${PagePath.FlightDetails}/${offer.id}`)">
               {{ $t(getI18nResName2('searchFlights', 'viewDetails')) }}
             </NuxtLink>
           </div>

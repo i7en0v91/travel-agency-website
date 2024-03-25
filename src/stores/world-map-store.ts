@@ -262,7 +262,7 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
   const getWorldMapDataOnServer = async (): Promise<IWorldMapDataDto> => {
     logger.verbose('(world-map-store) loading world map data from assets');
     try {
-      const worldMapDto = await ServerServicesLocator.getAssetsProvider().getAsset('geo', 'world-map.json') as IWorldMapDataDto;
+      const worldMapDto = await ServerServicesLocator.getAssetsProvider().getAsset('world-map.json') as IWorldMapDataDto;
       if (!worldMapDto) {
         throw new Error('failed to load world map data from assets');
       }
@@ -280,7 +280,7 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
       lazy: false,
       immediate: true
     })
-    : useFetch<IWorldMapDataDto>('/geo/world-map.json',
+    : useFetch<IWorldMapDataDto>('/appdata/world-map.json',
       {
         server: true,
         lazy: true,

@@ -13,7 +13,8 @@ import AppConfig from './../../../appconfig';
 import { updateTabIndices } from './../../../shared/dom';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: string,
+  bookKind: 'flight' | 'stay'
 };
 const props = defineProps<IProps>();
 
@@ -82,6 +83,7 @@ watch(popularCitiesListFetch.status, () => {
       >
         <TravelCityCard
           :ctrl-key="`${ctrlKey}-TravelCity-${index}`"
+          :book-kind="bookKind"
           :city-name="city?.cityDisplayName ?? undefined"
           :promo-line="city?.promoLine ?? undefined"
           :promo-price="city?.promoPrice ?? undefined"

@@ -2,13 +2,13 @@
 
 import ComponentWaiterIndicator from './../../component-waiting-indicator.vue';
 import { getI18nResName2 } from './../../../shared/i18n';
-import { type SearchOfferKind } from './../../../shared/interfaces';
+import { type OfferKind } from './../../../shared/interfaces';
 
 declare type ViewState = 'visible' | 'hidden' | 'waiting-stub';
 
 interface IProps {
   ctrlKey: string,
-  offersKind: SearchOfferKind
+  offersKind: OfferKind
 }
 const props = withDefaults(defineProps<IProps>(), {
 });

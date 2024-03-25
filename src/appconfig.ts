@@ -1,6 +1,5 @@
-import { type LogLevel, type Locale, SearchOffersListConstants } from './shared/constants';
+import { type LogLevel, type Locale, SearchOffersListConstants, isDevOrTestEnv, isQuickStartEnv } from './shared/constants';
 import { type ILogSuppressionRule } from './shared/applogger';
-import { isDevOrTestEnv, isQuickStartEnv } from './shared/common';
 import { type AppExceptionCode } from './shared/exceptions';
 
 // url used for showing users browser-navigateable links to the website
@@ -34,7 +33,9 @@ export interface IAppConfig {
     filterDuplicates: boolean
   },
   userSession: {
-    expirationDays: number
+    secure: boolean,
+    expirationDays: number,
+    encryptionKey: string
   },
   images: {
     sharpness: number,
@@ -89,7 +90,18 @@ export interface IAppConfig {
     listPageSize: number,
     flexibleDatesRangeDays: number
   },
-  enableHtmlTabIndex: boolean
+  enableHtmlTabIndex: boolean,
+  ogImage: {
+    enabled: boolean,
+    screenSize: {
+      width: number,
+      height: number
+    }
+  },
+  maps: {
+    providerDisplayName: {[L in Locale]: string},
+    mapControlComponentName: string
+  } | false
 }
 
 const Config : IAppConfig = {
@@ -133,13 +145,19 @@ const Config : IAppConfig = {
     suppress: {
       vue: [
         /** suppressing passing inherited properties values */
-        { messageFitler: /Extraneous non-props attributes .* were passed to component but could not be automatically inherited/g, componentNameFilter: /.*/ },
+        { messageFitler: /Extraneous non-props attributes .* were passed to component but could not be automatically inherited/gi, componentNameFilter: /.*/ },
         /** suppressing VPopper hydration mistmatches - non critical, everything works */
-        { messageFitler: /.*[h|H]ydration.*/g, componentNameFilter: /.*[p|P]opper.*/g },
+        { messageFitler: /.*hydration.*/gi, componentNameFilter: /.*[p|P]opper.*/gi },
         /** suppressing NuxtImg hydration mistmatches - non critical, everything works */
-        { messageFitler: /.*[h|H]ydration.*/g, componentNameFilter: /.*NuxtImg.*/g },
+        { messageFitler: /.*hydration.*/gi, componentNameFilter: /.*NuxtImg.*/gi },
         /** suppressing strange travel details visibility style hydration mistmatches - non critical, everything works */
-        { messageFitler: /.*[h|H]ydration.*/g, componentNameFilter: /.*(TravelDetailsImage|TravelDetailsTexting).*/g }
+        { messageFitler: /.*hydration.*/gi, componentNameFilter: /.*(TravelDetailsImage|TravelDetailsTexting).*/gi },
+        /** suppressing floating-vue^5.2.2 dispose exception (in webkit)
+         * ({"error":"[CLIENT LOG]","level":"error","message":"Reflect.get requires the first argument be an object","msg":"(nuxtApp.vueApp.config.exceptionHandler) beforeUnmount hook","name":"TypeError",
+         * "stack":"get@[native code]\nget@[native code]\nhide@http://localhost:3000/_nuxt/node_modules/.cache/vite/client/deps/floating-vue.js:1785:31
+         * \ndispose@http://localhost:3000/_nuxt/node_modules/.cache/vite/client/deps/floating-vue.js:1803:91\nbeforeUnmount@http://localhost:3000/_nuxt/node_modules/.cache/vite/client/deps/floating-vue.js:1773:17\ncallWithErrorHandling)
+         * */
+        { messageFitler: /.*beforeUnmount hook.*/gi, componentNameFilter: /.*floating-vue.*/gi }
       ]
     }
   },
@@ -149,7 +167,9 @@ const Config : IAppConfig = {
     filterDuplicates: true // don't show notification if there is already another notification with the same text displayed
   },
   userSession: {
-    expirationDays: 7 // expiration time for user session data
+    secure: !!process.env.PUBLISH, // set session cookie only when secure connection
+    expirationDays: 7, // expiration time for user session cookie
+    encryptionKey: process.env.H3_SESSION_ENCRYPTION_KEY! // key with which to encrypt session data
   },
   images: {
     /**
@@ -177,7 +197,7 @@ const Config : IAppConfig = {
         host: 'localhost', // SMTP server host
         port: 587, // SMTP server port
         secure: true, // require SSL connection with SMTP server
-        from: 'noreply@golobe.demo', // email address from which to send mails
+        from: 'noreply@demo.golobe', // email address from which to send mails
         appName: 'Golobe', // website app name to be used in email templates
         siteUrl: SiteUrl
       }
@@ -195,7 +215,7 @@ const Config : IAppConfig = {
   autoInputDatesRangeDays: 7, // amount of days between start and end date which system uses to automatically calculate and set value in date picker before any user interaction (e.g. check-in and check-out dates)
   etcDirName: 'etc', // name of directory with configuration, support files e.t.c
   siteUrl: SiteUrl,
-  contactEmail: 'support@golobe.demo', // contact email for website users
+  contactEmail: 'support@demo.golobe', // contact email for website users
   reCaptcha: {
     enabled: !isQuickStartEnv(),
     language: 'en', // default language
@@ -222,7 +242,24 @@ const Config : IAppConfig = {
     listPageSize: 20, // pagination - number of offer items fetched from server in one request
     flexibleDatesRangeDays: SearchOffersListConstants.FlexibleDatesRangeDays // allowed depart/return date adjustment in days for searched offers when "My Dates Are Flexible" flag is set
   },
-  enableHtmlTabIndex: true // if enabled, system will automatically compute and fill tabIndex property for all interactive html elements (including dropdowns, menus e.t.c). If disabled, tabIndex="-1" will be used
+  enableHtmlTabIndex: true, // if enabled, system will automatically compute and fill tabIndex property for all interactive html elements (including dropdowns, menus e.t.c). If disabled, tabIndex="-1" will be used
+  ogImage: {
+    enabled: !process.env.VITEST && !isQuickStartEnv(), // if enabled, system will add og:image metadata tag to pages and setup (pre-)rendering logic
+    screenSize: { // ogImage size (device width/height); 1200x630 is optimal image size for most social networks
+      width: 1200,
+      height: 630
+    }
+  },
+  maps: (!process.env.VITEST && !isQuickStartEnv())
+    ? {
+        providerDisplayName: { // name of map's service provider
+          en: 'Yandex.Maps',
+          fr: 'Yandex.Maps',
+          ru: 'Яндекс.Карты'
+        },
+        mapControlComponentName: 'YandexMaps' // name of Vue component used to display interactive map
+      }
+    : false
 };
 
 export default Config;

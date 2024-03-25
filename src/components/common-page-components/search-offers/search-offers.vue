@@ -4,12 +4,12 @@ import { Tooltip } from 'floating-vue';
 import dayjs from 'dayjs';
 import isEqual from 'lodash-es/isEqual';
 import pick from 'lodash-es/pick';
-import { TooltipHideTimeout } from './../../../shared/constants';
+import { TooltipHideTimeout, PagePath } from './../../../shared/constants';
 import OptionButtonGroup from './../components/option-buttons/option-button-group.vue';
 import { getI18nResName1, getI18nResName2 } from './../../../shared/i18n';
 import SearchFlightOffers from './search-flight-offers.vue';
 import SearchStayOffers from './search-stay-offers.vue';
-import { type ISearchStayOffersMainParams, type ISearchFlightOffersMainParams, type ISearchFlightOffersParams, type SearchOfferKind, type ISearchListItem, type IEntityCacheCityItem, type ISearchStayOffersParams } from './../../../shared/interfaces';
+import { type ISearchStayOffersMainParams, type ISearchFlightOffersMainParams, type ISearchFlightOffersParams, type OfferKind, type ISearchListItem, type IEntityCacheCityItem, type ISearchStayOffersParams } from './../../../shared/interfaces';
 import AppConfig from './../../../appconfig';
 import { type RouteLocationRaw } from '#vue-router';
 
@@ -27,14 +27,14 @@ const props = withDefaults(defineProps<IProps>(), {
 
 const SearchTabFlights = `${props.ctrlKey}-TabFlights`;
 const SearchTabStays = `${props.ctrlKey}-TabStays`;
-const DefaultSearchTab = SearchTabFlights;
+const DefaultSearchTab = props.singleTab === 'stays' ? SearchTabStays : SearchTabFlights;
 
 const searchOffersStoreAccessor = useSearchOffersStore();
 const clientEntityCache = process.client ? ClientServicesLocator.getEntityCache() : undefined;
 
 const controlSettingsStore = useControlSettingsStore();
 const activeSearchTab = controlSettingsStore.getControlValueSetting(`${props.ctrlKey}-TabControl`, DefaultSearchTab);
-if (props.minimumButtons && props.singleTab) {
+if (props.singleTab) {
   activeSearchTab.value = props.singleTab === 'flights' ? SearchTabFlights : SearchTabStays;
 }
 const tooltip = ref<InstanceType<typeof Tooltip>>();
@@ -107,14 +107,14 @@ async function resolveDestinationCitySlug (searchParams: Partial<ISearchStayOffe
 }
 
 async function validateAndGetRouteParams (): Promise<RouteLocationRaw | undefined> {
-  const searchKind: SearchOfferKind = activeSearchTab.value === SearchTabStays ? 'stays' : 'flights';
+  const searchKind: OfferKind = activeSearchTab.value === SearchTabStays ? 'stays' : 'flights';
   if (searchKind === 'flights') {
     const searchFlightStore = await searchOffersStoreAccessor.getInstance<ISearchFlightOffersParams>('flights', false, false);
     const userParams = searchFlightStore.viewState.currentSearchParams;
     const resolvedCitySlugs = await resolveFlightCitiesSlugs(userParams);
 
     return {
-      path: localePath('find-flights'),
+      path: localePath(PagePath.FindFlights),
       force: false,
       query: {
         class: userParams.class,
@@ -132,7 +132,7 @@ async function validateAndGetRouteParams (): Promise<RouteLocationRaw | undefine
     const resolvedCitySlug = await resolveDestinationCitySlug(userParams);
 
     return {
-      path: localePath('find-stays'),
+      path: localePath(`${PagePath.FindStays}`),
       force: false,
       query: {
         citySlug: resolvedCitySlug,
@@ -147,7 +147,7 @@ async function validateAndGetRouteParams (): Promise<RouteLocationRaw | undefine
 
 async function applyParamsAndFetchData (): Promise<void> {
   logger.verbose(`(SearchOffers) applying user params and fetching, ctrlKey=${props.ctrlKey}`);
-  const searchKind: SearchOfferKind = activeSearchTab.value === SearchTabStays ? 'stays' : 'flights';
+  const searchKind: OfferKind = activeSearchTab.value === SearchTabStays ? 'stays' : 'flights';
   const store = await searchOffersStoreAccessor.getInstance(searchKind, false, false);
   if (searchKind === 'flights') {
     const searchParams = searchFlights.value!.getSearchParamsFromInputControls();
@@ -165,7 +165,7 @@ async function applyParamsAndFetchData (): Promise<void> {
   if (searchRoute) {
     store.resetFetchState();
 
-    const isOnSearchPage = router.currentRoute.value.path.includes('find-flights') || router.currentRoute.value.path.includes('find-stays');
+    const isOnSearchPage = router.currentRoute.value.path.includes(PagePath.FindFlights) || router.currentRoute.value.path.includes(PagePath.FindStays);
     if (isOnSearchPage) {
       logger.info(`(SearchOffers) replacing search page query params, ctrlKey=${props.ctrlKey}`, searchRoute);
       router.replace(searchRoute);
@@ -184,7 +184,7 @@ async function onSearchBtnClick () : Promise<void> {
 }
 
 async function refetchIfNotLatestSearchParams (): Promise<void> {
-  const searchKind: SearchOfferKind = activeSearchTab.value === SearchTabStays ? 'stays' : 'flights';
+  const searchKind: OfferKind = activeSearchTab.value === SearchTabStays ? 'stays' : 'flights';
   logger.debug(`(SearchOffers) checking for refetch if not latest search params were used, ctrlKey=${props.ctrlKey}, type=${searchKind}`);
 
   let paramsAreActual = true;
@@ -269,7 +269,7 @@ const staysTabHtmlId = useId();
         v-if="minimumButtons"
         class="search-offers-btn-minimum-show"
         :ctrl-key="`${props.ctrlKey}-ShowMinimumBtn`"
-        :aria-label-res-name="getI18nResName2('searchOffers', 'ariaLabelSearch')"
+        :aria-label-res-name="getI18nResName2('ariaLabels', 'ariaLabelSearch')"
         icon="magnifier"
         kind="default"
         @click="onSearchBtnClick"
