@@ -2,9 +2,11 @@
 
 import { type ILocalizableValue, ImageCategory, type IImageEntitySrc } from './../../../shared/interfaces';
 import { getI18nResName3 } from './../../../shared/i18n';
+import { PagePath } from './../../../shared/constants';
 
 interface IProps {
   ctrlKey: string,
+  bookKind: 'flight' | 'stay',
   cityName?: ILocalizableValue,
   promoLine?: ILocalizableValue,
   promoPrice?: number,
@@ -35,8 +37,8 @@ const { locale } = useI18n();
           {{ props.promoPrice ? `$ ${props.promoPrice}` : '&nbsp;' }}
         </div>
       </div>
-      <NuxtLink class="btn btn-primary brdr-1 mt-xs-3 no-hidden-parent-tabulation-check" :to="citySlug ? localePath(`/find-flights?fromCitySlug=${citySlug}`) : localePath('/')">
-        {{ $t(getI18nResName3('travelCities', 'card', 'btnBook')) }}
+      <NuxtLink class="btn btn-primary brdr-1 mt-xs-3 no-hidden-parent-tabulation-check" :to="citySlug ? (bookKind === 'flight' ? localePath(`/${PagePath.FindFlights}?fromCitySlug=${citySlug}`) : localePath(`/${PagePath.FindStays}?citySlug=${citySlug}`)) : localePath('/')">
+        {{ $t(getI18nResName3('travelCities', 'bookBtn', bookKind)) }}
       </NuxtLink>
     </div>
     <StaticImage

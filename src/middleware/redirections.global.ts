@@ -1,6 +1,6 @@
 import { CookieNames, DefaultLocale } from '../shared/constants';
-import { getLocaleFromUrl } from '../server-logic/session/server';
-import { isLandingPageUrl } from '../shared/common';
+import { getLocaleFromUrl } from './../shared/i18n';
+import { isLandingPageUrl } from './../shared/common';
 
 export default defineNuxtRouteMiddleware((to, from) => {
   if (process.server) {

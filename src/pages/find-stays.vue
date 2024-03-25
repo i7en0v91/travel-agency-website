@@ -5,8 +5,9 @@ import SearchOffers from './../components/common-page-components/search-offers/s
 import OffersListView from './../components/common-page-components/offers-list-view/list-view.vue';
 
 definePageMeta({
-  title: getI18nResName2('findStaysPage', 'title')
+  title: { resName: getI18nResName2('staysPage', 'title'), resArgs: undefined }
 });
+useOgImage();
 
 if (process.client) {
   const searchOffersStoreAccessor = useSearchOffersStore();

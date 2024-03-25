@@ -3,9 +3,8 @@ import deepmerge from 'lodash-es/merge';
 import AppConfig from '../appconfig';
 import { type IAppLogger, wrapLogDataArg, getErrorCustomLogLevel } from '../shared/applogger';
 
-import { LogLevelEnum, type LogLevel } from '../shared/constants';
+import { LogLevelEnum, type LogLevel, isDevOrTestEnv } from '../shared/constants';
 import { flattenError, wrapExceptionIfNeeded } from '../shared/exceptions';
-import { isDevOrTestEnv } from '~/shared/common';
 
 export class ClientLogger implements IAppLogger {
   logLevel = LogLevelEnum.warn;

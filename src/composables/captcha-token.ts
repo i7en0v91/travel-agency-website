@@ -1,5 +1,5 @@
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
-import CaptchaProtection from './../components/forms/captcha-protection.vue';
+import type { CaptchaProtection } from '#build/components';
 
 export interface ICaptchaTokenComposable {
   requestToken: () => Promise<string>,

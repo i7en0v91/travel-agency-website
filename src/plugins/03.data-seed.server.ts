@@ -14,17 +14,18 @@ import set from 'lodash-es/set';
 import template from 'lodash-es/template';
 import { murmurHash } from 'ohash';
 import { type IAppLogger } from '../shared/applogger';
-import { DefaultUserAvatarSlug, DefaultUserCoverSlug, MainTitleSlug, FlightsTitleSlug, AvailableLocaleCodes, DefaultLocale, DEV_ENV_MODE, type Theme } from '../shared/constants';
+import { DefaultUserAvatarSlug, DefaultUserCoverSlug, MainTitleSlug, FlightsTitleSlug, StaysTitleSlug, AvailableLocaleCodes, DefaultLocale, DEV_ENV_MODE, type Theme } from '../shared/constants';
 import { type FlightClass, type AirplaneImageKind, type EntityId, type IStayImageData, type IStayData, type IStayDescriptionData, type IStayReviewData, type ILocalizableValue, AuthProvider, ImageCategory, type IImageData, EmailTemplate, type IAirplaneData } from '../shared/interfaces';
 import { CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD } from '../shared/testing/common';
 import type { IWorldMapDataDto } from './../server/dto';
-import { isQuickStartEnv } from './../shared/common';
+import { isQuickStartEnv } from './../shared/constants';
 import { resolveParentDirectory } from './../shared/fs';
 
 interface ContextParams {
   // dbRepository: PrismaClient,
   logger: IAppLogger,
   contentDir: string,
+  appDataDir: string,
   publicResDir: string,
   dbCountryMap?: Map<string, EntityId>,
   dbCityMap?: Map<string, EntityId>,
@@ -33,6 +34,7 @@ interface ContextParams {
 
 const ContentDirName = 'content';
 const PublicResDirName = 'public';
+const AppDataDirName = 'appdata';
 const AdminUserEmail = 'admin@demo.golobe';
 
 const StayNameTemplateParam = 'hotelName';
@@ -1044,7 +1046,7 @@ function compileWorldMapData (ctx: ContextParams) {
       relative: WorldMapDimDefs.step.relative
     }
   };
-  const outFile = join(ctx.publicResDir, 'geo', 'world-map.json');
+  const outFile = join(ctx.appDataDir, 'world-map.json');
   writeFileSync(outFile, JSON.stringify(resultJson), 'utf8');
 
   ctx.logger.info(`>>> compiling world map data - completed: count=${mapPoints.length}, left=${Math.min(...mapPoints.map(p => p.x))}, right=${Math.max(...mapPoints.map(p => p.x))}, top=${Math.min(...mapPoints.map(p => p.y))}, bottom=${Math.max(...mapPoints.map(p => p.y))}, d=${mean(mapPoints.map(p => p.d))}`);
@@ -1224,9 +1226,9 @@ async function addAirplanes (ctx: ContextParams) {
     const imageData = await createAirplaneImageData(ctx, i, featureCategorySize);
     const airplaneData: IAirplaneData = {
       name: {
-        en: `Demo Airplane #${i}`,
-        fr: `Avion de démonstration #${i}`,
-        ru: `Самолёт (демо) #${i}`
+        en: `Demo Airplane #${i + 1}`,
+        fr: `Avion de démonstration #${i + 1}`,
+        ru: `Самолёт (демо) #${i + 1}`
       },
       images: imageData
     };
@@ -1278,7 +1280,7 @@ function buildStayDescription (templates: DescriptionTemplatesJson, hotelName: I
     result.push({
       order: 2 + 2 * i + 1,
       paragraphKind: 'feature-text',
-      textStr: substituteTemplateParameters(feature.caption)
+      textStr: substituteTemplateParameters(feature.text)
     });
   }
 
@@ -1449,7 +1451,6 @@ async function addHotels (ctx: ContextParams) {
       slug: identityJson.slug,
       geo: cityInfo.geo,
       name: identityJson.name,
-      rating: (i % 2) ? 5 : 4,
       descriptionData: buildStayDescription(hotelsJson.descriptionTemplates, identityJson.name),
       reviewsData: buildStayReviews(identityJson.name.en, reviewUserIds, hotelsJson.reviews),
       imagesData: await buildStayImages(ctx, identityJson.slug, hotelRoomCategorySize)
@@ -1458,6 +1459,23 @@ async function addHotels (ctx: ContextParams) {
   }
 
   ctx.logger.info(`adding hotels - completed, count=${hotelIdentities.length}`);
+}
+
+async function addStaysPageTitleImages (ctx: ContextParams) : Promise<void> {
+  ctx.logger.info('>>> creating stays page title images');
+  await ensureImageCategory(ctx, ImageCategory.PageTitle, 1770, 1180);
+  const stubCssStyle = fromPairs([
+    ['backgroundImage', 'linear-gradient(75deg, hsla(197, 79%, 50%, 0.42) 7%, hsla(20, 100%, 37%, 0.68) 117%), linear-gradient(29deg, hsla(240, 100%, 93%, 0.57) -16%, hsla(36, 39%, 47%, 0.73) 153%), linear-gradient(0deg, hsla(63, 100%, 71%, 0.23) 21%, hsl(60, 100%, 70%) 57%, hsla(63, 100%, 84%, 0.67) 86%)'],
+    ['backgroundSize', '100% 100%, 100% 100%, 100% 100%'],
+    ['backgroundRepeat', 'no-repeat, no-repeat, no-repeat'],
+    ['backgroundPosition', '0% 0%, 0% 0%, 0% 0%']
+  ]) as CSSProperties;
+  await ensureImage(ctx, 'stays-title.webp', {
+    category: ImageCategory.PageTitle,
+    slug: StaysTitleSlug,
+    stubCssStyle
+  });
+  ctx.logger.info('>>> creating stays page title images - completed');
 }
 
 async function seedDb () : Promise<void> {
@@ -1484,10 +1502,22 @@ async function seedDb () : Promise<void> {
     publicResDir = resolve(publicResDir!);
     logger.info(`using public resources directory: ${publicResDir}`);
 
+    logger.info('locating appdata directory');
+    let appDataDir = resolve(join(publicResDir, '/../', 'assets', AppDataDirName));
+    if (!existsSync(appDataDir)) {
+      appDataDir = resolve(join(publicResDir, AppDataDirName));
+    }
+    if (!existsSync(appDataDir)) {
+      logger.warn('FAILED to locate app data directory');
+      return;
+    }
+    logger.info(`using app data directory: ${appDataDir}`);
+
     const ctx: ContextParams = {
       logger,
       contentDir: contentDir!,
-      publicResDir: publicResDir!
+      publicResDir: publicResDir!,
+      appDataDir
     };
 
     await ensureAppAdminUser(ctx);
@@ -1507,6 +1537,7 @@ async function seedDb () : Promise<void> {
     await addAirlineCompanies(ctx);
     await addAirplanes(ctx);
     await addHotels(ctx);
+    await addStaysPageTitleImages(ctx);
 
     if (process.env.NODE_ENV === DEV_ENV_MODE) {
       await ensureCredentialsTestUser(ctx);
@@ -1537,6 +1568,8 @@ async function checkNeedInitialSeeding () : Promise<boolean> {
 
 let seedMethodExecuted = false;
 export default defineNuxtPlugin({
+  name: 'data-seed',
+  parallel: false,
   async setup (/* nuxtApp */) {
     if (seedMethodExecuted) {
       return;

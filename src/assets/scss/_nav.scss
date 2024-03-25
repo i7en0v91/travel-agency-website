@@ -18,6 +18,8 @@ $navlink-menu-chevron-width: 0.33rem;
 $navlink-menu-chevron-height: 0.6rem;
 $navbar-outline-offset: $default-outline-offset + 1px;
 
+$nav-user-avatar-size: 44px;
+
 .nav-bar {
   width: 100%;
   &:not(.nav-bar-landing) {
@@ -286,17 +288,17 @@ $navbar-outline-offset: $default-outline-offset + 1px;
         align-items: center;
 
         .nav-user-avatar {
-          width: 44px;
-          height: 44px;
-          min-width: 44px;
-          min-height: 44px;
+          width: $nav-user-avatar-size;
+          height: $nav-user-avatar-size;
+          min-width: $nav-user-avatar-size;
+          min-height: $nav-user-avatar-size;
   
           display: inline-block;
-          border-radius: 22px;
+          border-radius: 0.5 * $nav-user-avatar-size;
           overflow: hidden;
   
           .nav-user-avatar-img {
-            border-radius: 22px;
+            border-radius: 0.5 * $nav-user-avatar-size;
           }
   
           &.nav-user-avatar-default {
@@ -310,7 +312,7 @@ $navbar-outline-offset: $default-outline-offset + 1px;
             mask-position: center center;
             vertical-align: middle;
   
-            border-radius: 22px;
+            border-radius: 0.5 * $nav-user-avatar-size;
             
             @at-root {
               .nav-user-avatar-default {
@@ -651,7 +653,7 @@ $navbar-outline-offset: $default-outline-offset + 1px;
       max-width: map.get($breakpoints, 'xs') - 160px;
       overflow-wrap: break-word;
       @include with-body-font('nav-link');
-      @include with-body-font-size('body-primary');
+      @include with-font-size('body-primary');
       margin-top: auto;
       margin-bottom: auto;
     }
@@ -737,7 +739,7 @@ $navbar-outline-offset: $default-outline-offset + 1px;
     position: absolute;
     left: 50%;
     right: 50%;
-    transform: translateX(-50%);
+    translate: -50%;
     top: 24px;
   }
 
@@ -760,24 +762,24 @@ $navbar-outline-offset: $default-outline-offset + 1px;
       .nav-bar.nav-bar-inapp .nav-logo {
         @include for-large-and-extra-large() {
           top: unset;
-          transform: translateY(-1rem);
+          transform: translateY(-1.2rem);
         }  
       }
 
       @include with-light-theme() {
         .nav-logo {
-          background-image: url('/img/logo-dark.svg');
+          background-image: url('~/public/img/logo-dark.svg');
         }
         .nav-bar-landing {
           .nav-logo {
-            background-image: url('/img/logo-light.svg');
+            background-image: url('~/public/img/logo-light.svg');
           }
         }
       }
     
       @include with-dark-theme() {
         .nav-logo {
-          background-image: url('/img/logo-light.svg');
+          background-image: url('~/public/img/logo-light.svg');
         }
       }
     }
@@ -795,8 +797,8 @@ $navbar-outline-offset: $default-outline-offset + 1px;
 }
 
 .nav-link-icon-heart {
-  -webkit-mask-image: url('/img/icon-heart.svg');
-  mask-image: url('/img/icon-heart.svg');
+  -webkit-mask-image: url('~/public/img/icon-heart.svg');
+  mask-image: url('~/public/img/icon-heart.svg');
 }
 
 .nav-link-icon-user {
@@ -805,18 +807,18 @@ $navbar-outline-offset: $default-outline-offset + 1px;
 }
 
 .nav-link-icon-credit-card {
-  -webkit-mask-image: url('/img/icon-credit-card.svg');
-  mask-image: url('/img/icon-credit-card.svg');
+  -webkit-mask-image: url('~/public/img/icon-credit-card.svg');
+  mask-image: url('~/public/img/icon-credit-card.svg');
 }
 
 .nav-link-icon-gear {
-  -webkit-mask-image: url('/img/icon-gear.svg');
-  mask-image: url('/img/icon-gear.svg');
+  -webkit-mask-image: url('~/public/img/icon-gear.svg');
+  mask-image: url('~/public/img/icon-gear.svg');
 }
 
 .nav-link-icon-support {
-  -webkit-mask-image: url('/img/icon-support.svg');
-  mask-image: url('/img/icon-support.svg');
+  -webkit-mask-image: url('~/public/img/icon-support.svg');
+  mask-image: url('~/public/img/icon-support.svg');
 }
 
 .nav-link-icon-user {
@@ -825,8 +827,8 @@ $navbar-outline-offset: $default-outline-offset + 1px;
 }
 
 .nav-link-icon-logout {
-  -webkit-mask-image: url('/img/icon-logout.svg');
-  mask-image: url('/img/icon-logout.svg');
+  -webkit-mask-image: url('~/public/img/icon-logout.svg');
+  mask-image: url('~/public/img/icon-logout.svg');
 }
 
 
@@ -835,6 +837,7 @@ $navbar-outline-offset: $default-outline-offset + 1px;
   height: markup-to-rem(28px);
   white-space: nowrap;
   width: 100%;
+  line-height: normal;
 
   @include with-theme-color('input-ctrl-primary') using ($css-var) {
     color: var(#{$css-var});

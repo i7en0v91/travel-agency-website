@@ -28,7 +28,6 @@ model User {
   files               File[]                @relation(name: "UserOnFile")
   avatar              Image?                @relation(name: "AvatarOnUser", fields: [avatarId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   cover               Image?                @relation(name: "CoverOnUser", fields: [coverId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  sessions            UserSession[]         @relation(name: "UserOnBrowserSession")     
 
   flightOffers        UserFlightOffer[]     @relation(name: "UserOnUserFlightOffer")
   stayOffers          UserStayOffer[]       @relation(name: "UserOnUserStayOffer")
@@ -110,19 +109,6 @@ model File {
 
   image               Image?                @relation(name: "FileOnImage")
   owner               User?                 @relation(name: "UserOnFile", fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-}
-
-model UserSession {
-  id                  String                @id
-  userId              Int?
-  data                String
-
-  createdUtc          DateTime              @default(now())
-  modifiedUtc         DateTime              @default(now())
-  isDeleted           Boolean               @default(false)
-  version             Int                   
-
-  user                User?                 @relation(name: "UserOnBrowserSession", fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 }
 
 model Flight {
@@ -240,7 +226,6 @@ model Hotel {
   nameStrId           Int                   @unique
   lon                 Decimal               
   lat                 Decimal               
-  rating              Int
 
   createdUtc          DateTime              @default(now())
   modifiedUtc         DateTime              @default(now())
@@ -291,8 +276,6 @@ model HotelReview {
   hotel               Hotel                 @relation(name: "HotelOnHotelReview", fields: [hotelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   textStr             LocalizeableValue     @relation(name: "TextOnHotelReview", fields: [textStrId], references: [id], onDelete: Restrict, onUpdate: Cascade)            
   user                User                  @relation(name: "UserOnHotelReview", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)            
-
-  @@unique([hotelId, userId])
 }
 
 model HotelImage {

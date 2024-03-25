@@ -5,8 +5,9 @@ import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
 import AppConfig from './../appconfig';
 
 definePageMeta({
-  title: getI18nResName2('privacyPage', 'title')
+  title: { resName: getI18nResName2('privacyPage', 'title'), resArgs: undefined }
 });
+useOgImage();
 
 const route = useRoute();
 const siteConfig = useSiteConfig();

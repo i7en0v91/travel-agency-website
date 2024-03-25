@@ -7,14 +7,14 @@ import '@vueform/slider/themes/default.css';
 
 import Toast, { type PluginOptions, POSITION as ToastPosition } from 'vue-toastification';
 import { ModalsContainer } from 'vue-final-modal';
-import { getI18nResName2, getI18nResName1 } from './../shared/i18n';
+import { getI18nResName2 } from './../shared/i18n';
 import AppContainer from './../components/app-container.vue';
 import NavBar from './../components/navbar/nav-bar.vue';
 import HeadingText from './../components/index/main-heading-text.vue';
 import AppConfig from './../appconfig';
 import { type NavBarMode, ImageCategory } from './../shared/interfaces';
 import { isLandingPageUrl } from './../shared/common';
-import { MainTitleSlug } from './../shared/constants';
+import { MainTitleSlug, PagePath } from './../shared/constants';
 import AppFooter from './../components/footer/app-footer.vue';
 import CookieBanner from './../components/cookie-banner.vue';
 import SearchPageHead from './../components/common-page-components/search-page-head.vue';
@@ -25,6 +25,8 @@ useLocaleHead({
   addDirAttribute: true,
   addSeoAttributes: true
 });
+
+const title = computed(() => (route.meta.title as any)?.resName ? t((route.meta.title as any).resName.toString(), (route.meta.title as any).resArgs) : '');
 
 useHead({
   htmlAttrs: {
@@ -39,12 +41,12 @@ useHead({
     { rel: 'icon', href: '/img/waiter.gif' }
   ],
   titleTemplate: computed(() => `%s %separator ${t(getI18nResName2('site', 'name'))}`),
-  title: computed(() => route.meta.title ? t(route.meta.title.toString()) : ''),
+  title,
   // at the moment nuxt seo module doesn't fully support i18n so define SEO attributes manually
   meta: [{
     property: 'og:site_name', content: t(getI18nResName2('site', 'name'))
   }, {
-    property: 'title', content: t(getI18nResName2('site', 'name'))
+    property: 'title', content: title
   }, {
     name: 'description', content: t(getI18nResName2('site', 'description'))
   }, {
@@ -94,7 +96,7 @@ const navBarMode : ComputedRef<NavBarMode> = computed(
   () => (isLandingPageUrl(route.path) && !error.value) ? 'landing' : 'inApp');
 
 const error = useError();
-const isAuthFormsPage = computed(() => route.path.includes('/login') || route.path.includes('/signup') || route.path.includes('/forgot-password') || route.path.includes('/email-verify'));
+const isAuthFormsPage = computed(() => route.path.includes(`/${PagePath.Login}`) || route.path.includes(`/${PagePath.Signup}`) || route.path.includes(`/${PagePath.ForgotPassword}`) || route.path.includes(`/${PagePath.EmailVerifyComplete}`));
 const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.value);
 
 </script>
@@ -108,7 +110,7 @@ const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.val
         class="search-page-head-landing"
         :image-entity-src="{ slug: MainTitleSlug }"
         :category="ImageCategory.MainTitle"
-        :image-alt-res-name="getI18nResName1('searchPageImageAlt')"
+        :image-alt-res-name="getI18nResName2('searchPageCommon', 'mainImageAlt')"
         overlay-class="search-page-head-landing-overlay"
       >
         <NavBar ctrl-key="NavBar" :mode="navBarMode" />
@@ -149,4 +151,6 @@ const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.val
     @use "~/assets/scss/stays-page";
     @use "~/assets/scss/search-flights-page";
     @use "~/assets/scss/search-stays-page";
+    @use "~/assets/scss/flight-details-page";
+    @use "~/assets/scss/stay-details-page";
 </style>

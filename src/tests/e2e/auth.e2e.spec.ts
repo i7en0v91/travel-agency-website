@@ -17,7 +17,9 @@ const TestTimeout = 120000;
 const PageNavigationDelayMs = 100; // delay in ms before proceeding test execution after navigation to new page was triggered (e.g. by clicking a link)
 const DefaultTestOptions: TestOptions = {
   timeout: TestTimeout,
-  retry: 0
+  retry: 0,
+  concurrent: false,
+  sequential: true
 };
 
 declare type PageActionType = 'authCookieRemoved' | 'i18nCookieRemoved' | 'localeChanged' | 'logout' | 'login';
@@ -621,7 +623,7 @@ class AuthTestCaseRunner {
   };
 }
 
-describe('User authentication', async () => {
+describe('e2e:auth User authentication', async () => {
   const logger = createLogger('(userauth)');
   logger.info('>>>>>>>>>>>>> NEW TEST RUN <<<<<<<<<<<<<<<<<<');
 
@@ -645,7 +647,7 @@ describe('User authentication', async () => {
   }
 
   const TestName1 = 'default locale, empty site data, credentials login (first-time site visit, basic case)';
-  test(TestName1, async () => {
+  test(TestName1, DefaultTestOptions, async () => {
     const testCase: IAuthTestCase = {
       testName: TestName1,
       authProvider: 'credentials',
@@ -668,10 +670,10 @@ describe('User authentication', async () => {
       }
     };
     await runAuthTest(testCase);
-  }, DefaultTestOptions);
+  });
 
   const TestName2 = 'default locale, empty site data, oauth login (first-time site visit, basic case)';
-  test(TestName2, async () => {
+  test(TestName2, DefaultTestOptions, async () => {
     const testCase: IAuthTestCase = {
       testName: TestName2,
       authProvider: 'oauth',
@@ -694,10 +696,10 @@ describe('User authentication', async () => {
       }
     };
     await runAuthTest(testCase);
-  }, DefaultTestOptions);
+  });
 
   const TestName3 = 'default locale changed on first-time visit, both auth providers';
-  test(TestName3, async () => {
+  test(TestName3, DefaultTestOptions, async () => {
     const getTestCase = (authProvider: AuthProviderType): IAuthTestCase => {
       return {
         testName: TestName3,
@@ -738,10 +740,10 @@ describe('User authentication', async () => {
     logger.info('testing with oauth provider');
     testCase = getTestCase('oauth');
     await runAuthTest(testCase, logger);
-  }, DefaultTestOptions);
+  });
 
   const TestName4 = 'default locale changed from non-index page (first-time visit), both auth providers';
-  test(TestName4, async () => {
+  test(TestName4, DefaultTestOptions, async () => {
     const getTestCase = (authProvider: AuthProviderType): IAuthTestCase => {
       return {
         testName: TestName4,
@@ -782,10 +784,10 @@ describe('User authentication', async () => {
     logger.info('testing with oauth provider');
     testCase = getTestCase('oauth');
     await runAuthTest(testCase, logger);
-  }, DefaultTestOptions);
+  });
 
   const TestName5 = 'preferred locale differs from default (first-time visit), both auth providers';
-  test(TestName5, async () => {
+  test(TestName5, DefaultTestOptions, async () => {
     const getTestCase = (authProvider: AuthProviderType): IAuthTestCase => {
       return {
         testName: TestName5,
@@ -822,10 +824,10 @@ describe('User authentication', async () => {
     logger.info('testing with oauth provider');
     testCase = getTestCase('oauth');
     await runAuthTest(testCase, logger);
-  }, DefaultTestOptions);
+  });
 
   const TestName6 = 'preferred locale changed to another non-default (first-time visit), both auth providers';
-  test(TestName6, async () => {
+  test(TestName6, DefaultTestOptions, async () => {
     const getTestCase = (authProvider: AuthProviderType): IAuthTestCase => {
       return {
         testName: TestName6,
@@ -863,10 +865,10 @@ describe('User authentication', async () => {
     logger.info('testing with oauth provider');
     testCase = getTestCase('oauth');
     await runAuthTest(testCase, logger);
-  }, DefaultTestOptions);
+  });
 
   const TestName7 = 'locale was changed on previous visit to another non-default, both auth providers';
-  test(TestName7, async () => {
+  test(TestName7, DefaultTestOptions, async () => {
     const getTestCase = (authProvider: AuthProviderType): IAuthTestCase => {
       return {
         testName: TestName7,
@@ -904,10 +906,10 @@ describe('User authentication', async () => {
     logger.info('testing with oauth provider');
     testCase = getTestCase('oauth');
     await runAuthTest(testCase, logger);
-  }, DefaultTestOptions);
+  });
 
   const TestName8 = 'locale was changed on previous visit to default, both auth providers';
-  test(TestName8, async () => {
+  test(TestName8, DefaultTestOptions, async () => {
     const getTestCase = (authProvider: AuthProviderType): IAuthTestCase => {
       return {
         testName: TestName8,
@@ -945,10 +947,10 @@ describe('User authentication', async () => {
     logger.info('testing with oauth provider');
     testCase = getTestCase('oauth');
     await runAuthTest(testCase, logger);
-  }, DefaultTestOptions);
+  });
 
   const TestName9 = 'logout on index page with default locale';
-  test(TestName9, async () => {
+  test(TestName9, DefaultTestOptions, async () => {
     const getTestCase = (authProvider: AuthProviderType): IAuthTestCase => {
       return {
         testName: TestName9,
@@ -982,10 +984,10 @@ describe('User authentication', async () => {
     logger.info('testing with oauth provider');
     testCase = getTestCase('oauth');
     await runAuthTest(testCase, logger);
-  }, DefaultTestOptions);
+  });
 
   const TestName10 = 'logout on non-index page with default locale';
-  test(TestName10, async () => {
+  test(TestName10, DefaultTestOptions, async () => {
     const getTestCase = (authProvider: AuthProviderType): IAuthTestCase => {
       return {
         testName: TestName10,
@@ -1023,10 +1025,10 @@ describe('User authentication', async () => {
     logger.info('testing with oauth provider');
     testCase = getTestCase('oauth');
     await runAuthTest(testCase, logger);
-  }, DefaultTestOptions);
+  });
 
   const TestName11 = 'logout on index page with locale switched to non-default';
-  test(TestName11, async () => {
+  test(TestName11, DefaultTestOptions, async () => {
     const getTestCase = (authProvider: AuthProviderType): IAuthTestCase => {
       return {
         testName: TestName11,
@@ -1064,10 +1066,10 @@ describe('User authentication', async () => {
     logger.info('testing with oauth provider');
     testCase = getTestCase('oauth');
     await runAuthTest(testCase, logger);
-  }, DefaultTestOptions);
+  });
 
   const TestName12 = 'logout on non-index page with locale switched to non-default';
-  test(TestName12, async () => {
+  test(TestName12, DefaultTestOptions, async () => {
     const getTestCase = (authProvider: AuthProviderType): IAuthTestCase => {
       return {
         testName: TestName12,
@@ -1109,10 +1111,10 @@ describe('User authentication', async () => {
     logger.info('testing with oauth provider');
     testCase = getTestCase('oauth');
     await runAuthTest(testCase, logger);
-  }, DefaultTestOptions);
+  });
 
   const TestName13 = 'logout on non-index page when preferred locale differs from default';
-  test(TestName13, async () => {
+  test(TestName13, DefaultTestOptions, async () => {
     const getTestCase = (authProvider: AuthProviderType): IAuthTestCase => {
       return {
         testName: TestName13,
@@ -1154,5 +1156,5 @@ describe('User authentication', async () => {
     logger.info('testing with oauth provider');
     testCase = getTestCase('oauth');
     await runAuthTest(testCase, logger);
-  }, DefaultTestOptions);
+  });
 });

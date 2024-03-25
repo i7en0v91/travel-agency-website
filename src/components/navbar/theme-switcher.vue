@@ -14,14 +14,14 @@ async function toggleTheme () {
   if (!process.client) {
     return;
   }
-  await themeSettings.toggleTheme();
+  themeSettings.toggleTheme();
   await nextTick(() => { wasInteracted.value = true; });
 }
 
 </script>
 
 <template>
-  <div :class="`nav-item theme-switcher pb-xs-1 ${wasInteracted ? 'interacted' : ''}`">
+  <div :class="`nav-item theme-switcher ${wasInteracted ? 'interacted' : ''}`">
     <button
       type="button"
       role="switch"

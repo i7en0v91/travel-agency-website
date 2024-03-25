@@ -2,7 +2,7 @@
 
 import { type I18nResName, getI18nResName2 } from './../../shared/i18n';
 import { AuthProvider } from './../../shared/interfaces';
-import { isDevOrTestEnv, isQuickStartEnv } from './../../shared/common';
+import { isDevOrTestEnv, isQuickStartEnv } from './../../shared/constants';
 import OAuthBtn from './oauth-btn.vue';
 
 interface IProps {

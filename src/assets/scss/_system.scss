@@ -8,7 +8,7 @@
 //
 
 $font-default: 'Montserrat', sans-serif;
-$font-header: 'Raleway', sans-serif;
+$font-header: 'Montserrat', sans-serif;
 $font-size-base-px: 16px; // used for REM computation with respect to markup design values: 16px
 $font-size-base: math.div($font-size-base-px, 1px); 
 $transition-default-interval: 1.4s;
@@ -59,14 +59,14 @@ body {
   @return math.div($markup-size, $font-size-base-px) * 1rem;
 }
 
-@mixin with-body-font-size($name) {
+@mixin with-font-size($name) {
   font-size: calc(var(--#{$prefix}-font-#{$name}-sz) / #{$font-size-base} * 1rem);
 }
 
 @mixin with-body-font($name) {
   font-family: $font-default;
   font-weight: map.get($weights-map, map.get($font-weights, $name));
-  @include with-body-font-size($name);
+  @include with-font-size($name);
 }
 
 @mixin with-header-font($level) {
@@ -170,7 +170,7 @@ $spacings: (
 $borders-radius: (
   '1': 4px,
   '2': 8px,
-  '3': 16px,
+  '3': 12px,
   '4': 20px,
   '5': 24px,
   '6': 30px

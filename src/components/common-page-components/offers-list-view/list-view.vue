@@ -4,12 +4,12 @@ import FilterPanel from './filter-panel.vue';
 import DisplayOptions from './display-options.vue';
 import ResultItemsList from './result-items-list.vue';
 import ListPaging from './list-paging.vue';
-import { type SearchOfferKind } from './../../../shared/interfaces';
+import { type OfferKind } from './../../../shared/interfaces';
 import ComponentWaiterIndicator from './../../component-waiting-indicator.vue';
 
 interface IProps {
   ctrlKey: string,
-  offersKind: SearchOfferKind
+  offersKind: OfferKind
 }
 const props = withDefaults(defineProps<IProps>(), {
 });

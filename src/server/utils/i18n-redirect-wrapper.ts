@@ -1,8 +1,7 @@
 import { type EventHandler, type EventHandlerRequest, type EventHandlerResponse, getCookie } from 'h3';
 import onHeaders from 'on-headers';
-import { patchUrlWithLocale } from '../../shared/i18n';
+import { patchUrlWithLocale, getLocaleFromUrl } from '../../shared/i18n';
 import { DefaultLocale, CookieNames, type Locale } from '../../shared/constants';
-import { getLocaleFromUrl } from '../../server-logic/session/server';
 
 export function wrapI18nRedirect<Request extends EventHandlerRequest = EventHandlerRequest, Response = EventHandlerResponse> (
   originalHandler: EventHandler<Request, Promise<Response>>, affectedUrls: RegExp[])

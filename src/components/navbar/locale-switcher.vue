@@ -2,7 +2,6 @@
 import isString from 'lodash-es/isString';
 import { Dropdown } from 'floating-vue';
 import { SessionConstants, TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
-import { type IUserSessionClient } from './../../shared/interfaces';
 import { updateTabIndices } from './../../shared/dom';
 
 type LocaleObject = {
@@ -19,12 +18,11 @@ interface IProps {
 defineProps<IProps>();
 
 if (process.client) {
-  const userSession = useUserSession() as IUserSessionClient;
-  watch(locale, async () => {
+  watch(locale, () => {
     const newLocale = locale.value;
-    const oldLocale = await userSession.getValue(SessionConstants.ThemeKey);
+    const oldLocale = localStorage.getItem(SessionConstants.ThemeKey) as string;
     if (oldLocale !== newLocale) {
-      await userSession.setValue(SessionConstants.LocaleKey, locale.value.toString(), false);
+      localStorage.setItem(SessionConstants.LocaleKey, locale.value.toString());
     }
   });
 }

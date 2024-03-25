@@ -162,7 +162,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
           :persistent="true"
           :placeholder-res-name="getI18nResName2('searchStays', 'destinationPlaceholder')"
           :min-suggestion-input-chars="2"
-          :aria-label-res-name="getI18nResName2('searchStays', 'ariaLabelDestination')"
+          :aria-label-res-name="getI18nResName2('ariaLabels', 'ariaLabelDestination')"
         />
       </div>
     </FieldFrame>

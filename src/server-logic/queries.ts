@@ -4,9 +4,9 @@ import { destr } from 'destr';
 import orderBy from 'lodash-es/orderBy';
 import omit from 'lodash-es/omit';
 import { Decimal } from 'decimal.js';
-import { type AirplaneImageKind, type IStayDescription, type IStay, type IStayOffer, type IFlightOffer, type IAirport, type IAirplane, type IUserMinimalInfo, type IUserProfileInfo, type IUserEmailInfo, type IImageInfo, type IFileInfo, AuthProvider, ImageCategory, type IAirlineCompany, type ICity, type IFlight, type FlightClass, type EntityId, type IStayShort, type IStayImage, type IStayReview } from '../shared/interfaces';
+import { type MakeSearchResultEntity, type IStayImageShort, type AirplaneImageKind, type IStayDescription, type IStay, type IStayOffer, type IFlightOffer, type IAirport, type IAirplane, type IUserMinimalInfo, type IUserProfileInfo, type IUserEmailInfo, type IImageInfo, type IFileInfo, AuthProvider, ImageCategory, type IAirlineCompany, type ICity, type IFlight, type FlightClass, type EntityId, type IStayShort, type IStayReview, type IStayOfferDetails, type StayServiceLevel, type StayDescriptionParagraphType } from '../shared/interfaces';
 import { parseEnumOrThrow } from './../shared/common';
-import { DefaultStayReviewScore } from '~/shared/constants';
+import { DefaultStayReviewScore } from './../shared/constants';
 
 export class Queries {
   public static readonly FileInfoQuery = {
@@ -180,6 +180,20 @@ export class Queries {
     }
   };
 
+  public static StayReviewsQuery = {
+    include: {
+      textStr: true,
+      user: {
+        select: {
+          id: true,
+          avatar: Queries.ImageInfoQuery,
+          firstName: true,
+          lastName: true
+        }
+      }
+    }
+  };
+
   public static StayInfoQuery = {
     select: {
       id: true,
@@ -190,26 +204,17 @@ export class Queries {
       lat: true,
       lon: true,
       nameStr: true,
-      rating: true,
       city: Queries.CityInfoQuery,
       reviews: {
-        include: {
-          textStr: true,
-          user: {
-            select: {
-              id: true,
-              avatar: Queries.ImageInfoQuery,
-              firstName: true,
-              lastName: true
-            }
-          }
-        },
+        include: Queries.StayReviewsQuery.include,
         where: {
           isDeleted: false
         }
       },
       images: {
-        include: {
+        select: {
+          serviceLevel: true,
+          order: true,
           image: Queries.ImageInfoQuery
         },
         where: {
@@ -301,6 +306,8 @@ const QFlightInfo = Prisma.validator<Prisma.FlightDefaultArgs>()(Queries.FlightI
 type TFlightInfo = Prisma.FlightGetPayload<typeof QFlightInfo>;
 const QFlightOfferInfo = Prisma.validator<Prisma.FlightOfferDefaultArgs>()(Queries.FlightOfferInfoQuery('guest'));
 type TFlightOfferInfo = Prisma.FlightOfferGetPayload<typeof QFlightOfferInfo>;
+const QStayReviewInfo = Prisma.validator<Prisma.HotelReviewDefaultArgs>()(Queries.StayReviewsQuery);
+type TStayReviewInfo = Prisma.HotelReviewGetPayload<typeof QStayReviewInfo>;
 const QStayInfo = Prisma.validator<Prisma.HotelDefaultArgs>()(Queries.StayInfoQuery);
 type TStayInfo = Prisma.HotelGetPayload<typeof QStayInfo>;
 const QStayOfferInfo = Prisma.validator<Prisma.StayOfferDefaultArgs>()(Queries.StayOfferInfoQuery('guest'));
@@ -338,8 +345,8 @@ export class Mappers {
       createdUtc: user.createdUtc,
       modifiedUtc: user.modifiedUtc,
       emails: orderBy(user.emails.map(Mappers.MapUserEmail), ['order'], ['asc']),
-      firstName: user.firstName ?? undefined,
-      lastName: user.lastName ?? undefined
+      firstName: user.firstName ?? '',
+      lastName: user.lastName ?? ''
     };
   };
 
@@ -512,11 +519,65 @@ export class Mappers {
       },
       numReviews: stay.reviews.length,
       reviewScore: stay.reviews.length > 0 ? stay.reviews.map(r => r.score).reduce((sum, v) => sum + v, 0) / stay.reviews.length : DefaultStayReviewScore,
-      rating: stay.rating,
       photo: {
         slug: photoImg.image.slug,
-        timestamp: photoImg.modifiedUtc.getTime()
+        timestamp: photoImg.image.file.modifiedUtc.getTime()
       }
+    };
+  };
+
+  static MapStayReview = function (review: TStayReviewInfo): MakeSearchResultEntity<IStayReview> {
+    return {
+      id: review.id,
+      score: review.score,
+      text: review.textStr,
+      user: {
+        id: review.user.id,
+        firstName: review.user.firstName ?? '',
+        lastName: review.user.lastName ?? '',
+        avatar: review.user.avatar
+          ? {
+              slug: review.user.avatar.slug,
+              timestamp: review.user.avatar.file.modifiedUtc.getTime()
+            }
+          : undefined
+      }
+    };
+  };
+
+  static MapStayDetails = function (stay: TStayInfo): IStay {
+    return {
+      id: stay.id,
+      slug: stay.slug,
+      createdUtc: stay.createdUtc,
+      modifiedUtc: stay.modifiedUtc,
+      isDeleted: stay.isDeleted,
+      city: Mappers.MapCity(stay.city),
+      name: stay.nameStr,
+      geo: {
+        lon: stay.lon.toNumber(),
+        lat: stay.lat.toNumber()
+      },
+      reviews: stay.reviews.map(Mappers.MapStayReview),
+      images: orderBy(stay.images, ['order'], ['asc']).map((i) => {
+        return <IStayImageShort>{
+          slug: i.image.slug,
+          timestamp: i.image.file.modifiedUtc.getTime(),
+          order: i.order,
+          serviceLevel: (i.serviceLevel as StayServiceLevel) ?? undefined
+        };
+      }),
+      description: orderBy(stay.description.map((d) => { return { ...d, ord: d.modifiedUtc.getTime() }; }), ['ord'], ['asc']).map((d, idx) => {
+        return {
+          id: d.id,
+          createdUtc: d.createdUtc,
+          modifiedUtc: d.modifiedUtc,
+          isDeleted: d.isDeleted,
+          order: idx,
+          paragraphKind: d.paragraphKind as StayDescriptionParagraphType,
+          textStr: d.textStr
+        };
+      })
     };
   };
 
@@ -532,11 +593,9 @@ export class Mappers {
         paragraphKind: d.paragraphKind,
         textStr: d.textStr
       }),
-      images: stay.images.map(i => <IStayImage>{
-        id: i.id,
-        createdUtc: i.createdUtc,
-        isDeleted: i.isDeleted,
-        modifiedUtc: i.modifiedUtc,
+      images: stay.images.map(i => <IStayImageShort>{
+        slug: i.image.slug,
+        timestamp: i.image.file.modifiedUtc.getTime(),
         order: i.order,
         serviceLevel: i.serviceLevel ?? undefined,
         image: Mappers.MapImageInfo(i.image)
@@ -558,7 +617,7 @@ export class Mappers {
     };
   };
 
-  static MapStayOffer = function (stayOffer: TStayOfferInfo): IStayOffer {
+  private static mapStayOfferCommon = function (stayOffer: TStayOfferInfo): Omit<IStayOffer, 'stay'> {
     return {
       id: stayOffer.id,
       createdUtc: stayOffer.createdUtc,
@@ -571,8 +630,26 @@ export class Mappers {
       kind: 'stays',
       dataHash: stayOffer.dataHash,
       isFavourite: stayOffer.offerUsers?.some(u => u.isFavourite) ?? false,
-      totalPrice: new Decimal(stayOffer.totalPrice),
+      totalPrice: new Decimal(stayOffer.totalPrice)
+    };
+  };
+
+  static MapStayOffer = function (stayOffer: TStayOfferInfo): IStayOffer {
+    return {
+      ...(Mappers.mapStayOfferCommon(stayOffer)),
       stay: Mappers.MapStayShort(stayOffer.hotel)
+    };
+  };
+
+  static MapStayOfferDetails = function (stayOffer: TStayOfferInfo): Omit<IStayOfferDetails, 'prices'> {
+    const stayDetails = Mappers.MapStayDetails(stayOffer.hotel);
+    return {
+      ...(Mappers.mapStayOfferCommon(stayOffer)),
+      stay: {
+        ...omit(stayDetails, ['reviews']),
+        reviewScore: stayDetails.reviews.length > 0 ? stayDetails.reviews.map(r => r.score).reduce((sum, v) => sum + v, 0) / stayDetails.reviews.length : DefaultStayReviewScore,
+        numReviews: stayDetails.reviews.length
+      }
     };
   };
 }

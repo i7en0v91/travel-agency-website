@@ -1,5 +1,5 @@
 import { defineConfig } from '@unlighthouse/core';
-import { CookieNames } from './shared/constants';
+import { CookieNames, PagePath } from './shared/constants';
 
 const excludedRoutesCommon = [
   '/ru',
@@ -13,6 +13,9 @@ export default defineConfig({
   chrome: {
     useSystem: false
   },
+  urls: [
+    `/${PagePath.StayDetails}/21` // scan only one page
+  ],
   scanner: {
     samples: 1,
     // use desktop to scan
@@ -22,24 +25,26 @@ export default defineConfig({
     ...(process.env.UNLIGHTHOUSE_MODE === 'authenticated'
       ? {
           exclude: [...excludedRoutesCommon,
-            '/forgot-password-complete',
-            '/forgot-password-set',
-            '/forgot-password-verify',
-            '/forgot-password',
-            '/login',
-            '/signup-complete',
-            '/signup-verify',
-            '/signup'
+            `/${PagePath.ForgotPasswordComplete}`,
+            `/${PagePath.ForgotPasswordSet}`,
+            `/${PagePath.ForgotPasswordVerify}`,
+            `/${PagePath.ForgotPassword}`,
+            `/${PagePath.Login}`,
+            `/${PagePath.SignupComplete}`,
+            `/${PagePath.SignupVerify}`,
+            `/${PagePath.Signup}`
           ]
         }
       : {
-          /*
+        /*
           exclude: [...excludedRoutesCommon,
-            '/email-verify-complete',
-            '/account'
+            `/${PagePath.EmailVerifyComplete}`,
+            `/${PagePath.Account}`
           ]
           */
-          include: ['/find-stays'] // scan only one page
+          include: [
+            `/${PagePath.StayDetails}/21` // scan only one page
+          ]
         })
   },
   cookies: process.env.UNLIGHTHOUSE_MODE === 'authenticated'

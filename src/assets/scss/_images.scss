@@ -11,6 +11,7 @@
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
     border-radius: inherit;
+    overflow: hidden;
 
     .static-image-stub {
       grid-row-start: 1;

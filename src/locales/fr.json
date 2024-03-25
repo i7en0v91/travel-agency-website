@@ -1,7 +1,6 @@
 {
   "appErrors": {
     "unknown": "une erreur inattendue est apparue",
-    "sessionInitFailed": "Erreur lors de la création d'une nouvelle session",
     "badRequest": "Requête invalide",
     "objectNotFound": "Objet non trouvé",
     "helm": "Erreur",
@@ -75,6 +74,9 @@
     "btnNo": "Non",
     "btnCancel": "Annuler"
   },
+  "maps": {
+    "disabled": "La carte interactive est désactivée dans la configuration du site Web"
+  },
   "searchOffers": {
     "addPromoCode": "Code promo",
     "showFlights": "Afficher les vols",
@@ -88,8 +90,7 @@
       "rating": "Notation",
       "noResultsStub": "Aucun résultat à filtrer",
       "checklistMoreItems": "+{count} plus",
-      "checklistCollapseItems": "effondrement",
-      "ariaLabelRangeHandler": "gestionnaire de curseur de plage"
+      "checklistCollapseItems": "effondrement"
     },
     "displayOptions": {
       "cheapest": "Le moins cher",
@@ -108,8 +109,7 @@
     },
     "reviewsCount": "revoir | commentairess",
     "startingPrice": "a partir de",
-    "pagingBtn": "Afficher plus de résultats",
-    "ariaLabelSearch": "lancer la recherche d'offres"
+    "pagingBtn": "Afficher plus de résultats"
   },
   "searchFlights": {
     "destinationCaption": "De - À",
@@ -129,9 +129,6 @@
     },
     "fieldPassengers": "Passagers",
     "fieldClass": "Classe de vol",
-    "ariaLabelFrom": "ville de départ",
-    "ariaLabelTo": "ville d'arrivée",
-    "ariaLabelSwap": "échanger la ville d'arrivée et de départ",
     "filters": {
       "departureTime": "Heure de départ",
       "airlines": "Compagnies aériennes",
@@ -162,7 +159,6 @@
     "numberOfGuests": "Invités",
     "numRooms": "chambre | chambres",
     "numGuests": "invité | invités",
-    "ariaLabelDestination": "ville de destination",
     "filters": {
       "freebies": "Cadeaux",
       "amenities": "Agréments"
@@ -198,16 +194,30 @@
     "viewPlace": "Voir le lieu",
     "hotelPhotoAlt": "rester photo principale",
     "stayRatingCaption": "Hôtel 5 étoiles",
-    "excludingTax": "excl. impôt"
+    "excludingTax": "excl. impôt",
+    "night": "nuit"
   },
   "ariaLabels": {
+    "ariaLabelToggleSection": "développer/réduire la section",
+    "ariaLabelDestination": "ville de destination",
+    "ariaLabelFrom": "ville de départ",
+    "ariaLabelTo": "ville d'arrivée",
+    "ariaLabelSwap": "échanger la ville d'arrivée et de départ",
+    "ariaLabelSearch": "lancer la recherche d'offres",
+    "ariaLabelRangeHandler": "gestionnaire de curseur de plage",
     "btnThemeSwitcher": "changeur de thème",
     "imgLinkMainPage": "lien vers l'image de la page principale",
     "footerSocialLinkTwitter": "lien image Twitter",
     "footerSocialLinkYoutube": "lien de l'image YouTube",
     "btnGithubLogin": "connexion via GitHub",
     "btnGoogleLogin": "connexion via Google",
-    "btnTestLocalLogin": "connexion via le fournisseur Test Local"
+    "btnTestLocalLogin": "connexion via le fournisseur Test Local",
+    "btnShareSocial": "partager sur les réseaux sociaux",
+    "btnGiveReview": "donner un avis",
+    "btnReviewEditorSend": "envoyer le texte de l'avis au serveur",
+    "btnReviewEditorCancel": "fermer l'éditeur de texte de révision",
+    "btnDeleteUserReview": "Supprimer",
+    "btnEditUserReview": "Modifier"
   },
   "footer": {
     "destinations": {
@@ -283,11 +293,7 @@
     }
   },
   "flightsPage": {
-    "title": "Vols",
-    "heading": {
-      "main": "Faites votre liste de souhaits de voyage, nous nous occupons du reste",
-      "sub": "Offres spéciales adaptées à votre forfait"
-    },
+    "title": "Trouver des vols",
     "letsGoPlacesSection": {
       "title": "Allons ensemble",
       "subtext": "Découvrez les dernières offres et actualités et commencez à planifier votre prochain voyage avec nous.",
@@ -298,21 +304,104 @@
       "cityTravelInfoAria": "accéder aux informations de voyage de la ville"
     }
   },
-  "findFlightsPage": {
-    "title": "Trouver des vols"
+  "searchPageCommon": {
+    "heading": {
+      "main": "Faites votre liste de souhaits de voyage, nous nous occupons du reste",
+      "sub": "Offres spéciales adaptées à votre forfait"
+    },
+    "mainImageAlt": "image principale de la page"
   },
   "staysPage": {
-    "title": "Hôtels"
+    "title": "Trouver des séjours",
+    "cityPlacesCount": "{n} lieu | {n} lieux",
+    "recentSearchesTitle": "Vos recherches récentes",
+    "searchHistoryEmpty": "Rien à afficher. Essayez de saisir le nom d'une ville populaire, par ex. {cityLink}"    
   },
-  "findStaysPage": {
-    "title": "Trouver des séjours"
+  "offerDetailsPage": {
+    "bookBtn": "Reserve"
+  },
+  "flightDetailsPage": {
+    "title": "Les détails du vol",
+    "titleExt": "Vol {from} - {to}",
+    "airplaneMainImageAlt": "photo d'avion",
+    "airplaneFeatureImageAlt": "photo d'avion",
+    "flightClassFeaturesTitle": "Fonctionnalités de base de la {class}",
+    "companyPolicies": {
+      "caption": "Politiques de {company}",
+      "cleaning": "Nettoyage avant vol, installation de filtres HEPA cabine.",
+      "screening": "Questions de dépistage de santé avant le vol."
+    }
+  },
+  "flightDetailsCard": {
+    "direction": {
+      "depart": "Partir {date}",
+      "arrive": "Retour {date}"
+    }
+  },
+  "stayDetailsPage": {
+    "title": "Détails de l'hôtel",
+    "titleExt": "Informations détaillées {stay} {from} - {to}",
+    "stayMainImageAlt": "photo de l'hôtel",
+    "stayServiceImageAlt": "photo de la chambre",
+    "overviewHightlights": {
+      "newPark": "Nouveau parc",
+      "nightlife": "Près de la vie nocturne",
+      "theater": "Près du théâtre",
+      "clean": "Hôtel propre"
+    },
+    "availableRooms": {
+      "title": "Chambres disponibles",
+      "base": "Chambre supérieure - 1 lit double ou 2 lits jumeaux",
+      "city": "Superior room - City view  - 1 double bed or 2 twin beds"
+    },
+    "location": {
+      "title": "Une carte",
+      "viewOnWebsite": "Afficher sur {webLink}"
+    },
+    "amenities": {
+      "title": "Agréments",
+      "moreItems": "+{count} plus",
+      "collapseItems": "effondrement"
+    },
+    "reviews": {
+      "title": "Commentaires",
+      "giveReviewBtn": "Donnez votre avis",
+      "count": "avis vérifié | avis vérifiés",
+      "avatarImgAlt": "revoir l'avatar de l'utilisateur",
+      "scorePickerTitle": "Veuillez choisir une note de 1 à 5",
+      "confirmDelete": "Confirmer l'opération de suppression?",
+      "validationErrEmptyReview": "Le texte de l'avis ne peut pas être vide",
+      "validationErrTooLongReview": "Le texte de l'avis est trop long",
+      "paging": "{of} sur {total}",
+      "noReviews": "Aucun avis",
+      "mustBeLoggedInToReview": "Vous devez vous connecter, ajouter un avis"
+    }
+  },
+  "reviewEditor": {
+    "buttons": {
+      "bold": "Texte en gras",
+      "italic": "Texte en italique",
+      "strikethrough": "Barré",
+      "underline": "Souligner", 
+      "bulletList": "Liste à puces",
+      "orderedList": "Liste ordonnée",
+      "blockquote": "Citation de bloc",
+      "undo": "Annuler",
+      "redo": "Refaire"
+    },
+    "controlButtons": {
+      "send": "Envoyer",
+      "cancel": "Annuler"
+    },
+    "placeholder": "Écrivez votre avis ici..."
   },
   "travelCities": {
     "title": "Tombez dans le voyage",
     "subtext": "Vous allez quelque part pour célébrer cette saison ? Que vous rentriez chez vous ou quelque part en itinérance, nous avons les outils de voyage pour vous amener à votre destination.",
     "btn": "Voir tout",
-    "card": {
-      "btnBook": "Réserver un vol"
+    "bookBtn": {
+      "flight": "Réserver un vol",
+      "stay": "Réserver un hôtel"
     }
   },
   "travelDetails": {
@@ -320,10 +409,6 @@
     "subtext": "Vous allez quelque part pour célébrer cette saison ? Que vous rentriez chez vous ou quelque part en itinérance, nous avons les outils de voyage pour vous amener à votre destination.",
     "btn": "Voir tout",
     "travelImgAlt": "une des photos de la ville",
-    "bookBtn": {
-      "flight": "Réserver un vol",
-      "stay": "Réserver un séjour"
-    },
     "priceFrom": "De"
   },
   "loginPage": {
@@ -599,8 +684,6 @@
     "text": "Ce site Web ou ses outils tiers utilisent des cookies afin que nous puissions afficher correctement ce site Web. En fermant cette bannière, en faisant défiler cette page, en cliquant sur un lien ou en poursuivant votre navigation, vous nous autorisez à utiliser des cookies et acceptez également {privacyLink}",
     "btnAccept": "D'accord"
   },
-  "searchPageImageAlt": "image principale de la page",
   "close": "fermer",
-  "calendarImgAlt": "icône du calendrier",
-  "ariaLabelToggleSection": "développer/réduire la section"
+  "calendarImgAlt": "icône du calendrier"
 }

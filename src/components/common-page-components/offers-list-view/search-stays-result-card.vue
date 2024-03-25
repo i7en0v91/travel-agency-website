@@ -2,11 +2,11 @@
 
 import range from 'lodash-es/range';
 import { type MakeSearchResultEntity, type IStayOffer, ImageCategory } from './../../../shared/interfaces';
-import { getI18nResName2, getI18nResName3, type I18nResName } from './../../../shared/i18n';
-import { getLocalizeableValue } from './../../../shared/common';
-import { type Locale, WebApiRoutes } from './../../../shared/constants';
-import { post } from './../../../client/rest-utils';
-import type { IToggleFavouriteOfferDto, IToggleFavouriteOfferResultDto } from './../../../server/dto';
+import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
+import { getLocalizeableValue, getScoreClassResName } from './../../../shared/common';
+import { type Locale, WebApiRoutes, PagePath } from './../../../shared/constants';
+import { post } from './../../../shared/rest-utils';
+import type { IToggleFavouriteOfferResultDto } from './../../../server/dto';
 
 interface IProps {
   ctrlKey: string,
@@ -23,20 +23,6 @@ const logger = CommonServicesLocator.getLogger();
 
 const isError = ref(false);
 
-function getScoreClassResName (score: number): I18nResName {
-  if (score >= 4.0) {
-    return getI18nResName3('searchOffers', 'scoreClass', 'veryGood');
-  } else if (score >= 3.0) {
-    return getI18nResName3('searchOffers', 'scoreClass', 'good');
-  } else if (score >= 2.0) {
-    return getI18nResName3('searchOffers', 'scoreClass', 'medium');
-  } else if (score >= 1.0) {
-    return getI18nResName3('searchOffers', 'scoreClass', 'low');
-  } else {
-    return getI18nResName3('searchOffers', 'scoreClass', 'veryLow');
-  }
-}
-
 const stay = props.offer.stay;
 const scoreClassResName = getScoreClassResName(stay.reviewScore);
 const reviewsCountText = `${stay.numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), stay.numReviews)}`;
@@ -46,10 +32,7 @@ const isFavourite = ref<boolean>(props.offer.isFavourite);
 async function toggleFavourite (): Promise<void> {
   const offerId = props.offer.id;
   logger.verbose(`(SearchStayResultCard) toggling favourite, offerId=${offerId}, current=${isFavourite.value}`);
-  const dto: IToggleFavouriteOfferDto = {
-    offerId
-  };
-  const resultDto = await post(WebApiRoutes.StaysFavourite, undefined, dto) as IToggleFavouriteOfferResultDto;
+  const resultDto = await post(WebApiRoutes.StayOfferFavourite(offerId), undefined, undefined) as IToggleFavouriteOfferResultDto;
   if (resultDto) {
     logger.verbose(`(SearchStayResultCard) favourite toggled, offerId=${offerId}, result=${resultDto.isFavourite}`);
     isFavourite.value = resultDto.isFavourite;
@@ -86,13 +69,13 @@ function favouriteBtnClick () {
         </div>
         <div class="search-stays-card-pricing-div mb-xs-3 mb-s-0">
           <div class="search-stays-card-price-caption">
-            {{ $t(getI18nResName3('searchOffers', 'startingPrice')) }}
+            {{ $t(getI18nResName2('searchOffers', 'startingPrice')) }}
           </div>
           <div class="search-stays-card-price">
-            <span>{{ $n(Math.floor(offer.totalPrice.toNumber()), 'currency') }}</span>
+            <span>{{ $n(Math.floor(offer.totalPrice.toNumber()), 'currency') }}<wbr>&#47;<span class="stays-price-night">{{ $t(getI18nResName2('searchStays', 'night')) }}</span></span>
           </div>
           <div class="search-stays-card-tax">
-            <span>{{ $t(getI18nResName3('searchStays', 'excludingTax')) }}</span>
+            <span>{{ $t(getI18nResName2('searchStays', 'excludingTax')) }}</span>
           </div>
         </div>
         <div class="search-stays-card-main">
@@ -109,7 +92,7 @@ function favouriteBtnClick () {
                   <div v-for="i in range(0, 5)" :key="`${props.ctrlKey}-HotelStar-${i}`" class="stay-card-star" />
                 </div>
                 <div class="search-stays-card-rating-caption mt-xs-1 mr-xs-2">
-                  {{ $t(getI18nResName3('searchStays', 'stayRatingCaption')) }}
+                  {{ $t(getI18nResName2('searchStays', 'stayRatingCaption')) }}
                 </div>
                 <div class="search-stays-card-amenities mt-xs-1">
                   <span class="search-stays-card-icon search-stays-card-amenity-icon mr-xs-2" />
@@ -142,7 +125,7 @@ function favouriteBtnClick () {
             kind="support"
             @click="favouriteBtnClick"
           />
-          <NuxtLink class="btn btn-primary brdr-1 mt-xs-3 search-stays-card-btn-details" :to="localePath('/find-stays')">
+          <NuxtLink class="btn btn-primary brdr-1 mt-xs-3 search-stays-card-btn-details" :to="localePath(`/${PagePath.StayDetails}/${props.offer.id}`)">
             {{ $t(getI18nResName2('searchStays', 'viewPlace')) }}
           </NuxtLink>
         </div>

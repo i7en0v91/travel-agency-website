@@ -1,7 +1,6 @@
 {
   "appErrors": {
     "unknown": "An unexpected error occurred",
-    "sessionInitFailed": "Error creating a new session",
     "badRequest": "Invalid request",
     "objectNotFound": "Object not found",
     "helm": "Error",
@@ -75,6 +74,9 @@
     "btnNo": "No",
     "btnCancel": "Cancel"
   },
+  "maps": {
+    "disabled": "Interactive map is disabled in website configuration"
+  },
   "searchOffers": {
     "addPromoCode": "Add Promo Code",
     "showFlights": "Show Flights",
@@ -88,8 +90,7 @@
       "rating": "Rating",
       "noResultsStub": "No results to filter",
       "checklistMoreItems": "+{count} more",
-      "checklistCollapseItems": "collapse",
-      "ariaLabelRangeHandler": "range slider handler"
+      "checklistCollapseItems": "collapse"
     },
     "displayOptions": {
       "cheapest": "Cheapest",
@@ -108,8 +109,7 @@
     },
     "reviewsCount": "review | reviews",
     "startingPrice": "starting from",
-    "pagingBtn": "Show more results",
-    "ariaLabelSearch": "start offers search"
+    "pagingBtn": "Show more results"
   },
   "searchFlights": {
     "destinationCaption": "From - To",
@@ -129,9 +129,6 @@
     },
     "fieldPassengers": "Passengers",
     "fieldClass": "Flight Class",
-    "ariaLabelFrom": "departure city",
-    "ariaLabelTo": "arrival city",
-    "ariaLabelSwap": "swap arrival & departure city",
     "filters": {
       "departureTime": "Departure Time",
       "airlines": "Airlines",
@@ -162,7 +159,6 @@
     "numberOfGuests": "Guests",
     "numRooms": "room | rooms",
     "numGuests": "guest | guests",
-    "ariaLabelDestination": "destination city",
     "filters": {
       "freebies": "Freebies",
       "amenities": "Amenities"
@@ -198,16 +194,30 @@
     "viewPlace": "View Place",
     "hotelPhotoAlt": "stay main photo",
     "stayRatingCaption": "5 Star Hotel",
-    "excludingTax": "excl. tax"
+    "excludingTax": "excl. tax",
+    "night": "night"
   },
   "ariaLabels": {
+    "ariaLabelToggleSection": "expand/collapse section",
+    "ariaLabelDestination": "destination city",
+    "ariaLabelFrom": "departure city",
+    "ariaLabelTo": "arrival city",
+    "ariaLabelSwap": "swap arrival & departure city",
+    "ariaLabelSearch": "start offers search",
+    "ariaLabelRangeHandler": "range slider handler",
     "btnThemeSwitcher": "theme switcher",
     "imgLinkMainPage": "main page image link",
     "footerSocialLinkTwitter": "Twitter image link",
     "footerSocialLinkYoutube": "YouTube image link",
     "btnGithubLogin": "login via GitHub",
     "btnGoogleLogin": "login via Google",
-    "btnTestLocalLogin": "login via Test Local provider"
+    "btnTestLocalLogin": "login via Test Local provider",
+    "btnShareSocial": "share on social networks",
+    "btnGiveReview": "give a review",
+    "btnReviewEditorSend": "send review text to server",
+    "btnReviewEditorCancel": "close review text editor",
+    "btnDeleteUserReview": "Delete",
+    "btnEditUserReview": "Edit"
   },
   "footer": {
     "destinations": {
@@ -283,11 +293,7 @@
     }
   },
   "flightsPage": {
-    "title": "Flights",
-    "heading": {
-      "main": "Make your travel whishlist, we’ll do the rest",
-      "sub": "Special offers to suit your plan"
-    },
+    "title": "Find Flights",
     "letsGoPlacesSection": {
       "title": "Let's go places together",
       "subtext": "Discover the latest offers and news and start planning your next trip with us.",
@@ -298,21 +304,104 @@
       "cityTravelInfoAria": "navigate to city's travel info"
     }
   },
-  "findFlightsPage": {
-    "title": "Find Flights"
+  "searchPageCommon": {
+    "heading": {
+      "main": "Make your travel whishlist, we’ll do the rest",
+      "sub": "Special offers to suit your plan"
+    },
+    "mainImageAlt": "page's main image"
   },
   "staysPage": {
-    "title": "Hotels"
+    "title": "Find Stays",
+    "recentSearchesTitle": "Your recent searches",
+    "searchHistoryEmpty": "Nothing to display. Try to type name of a popular city, e.g. {cityLink}",
+    "cityPlacesCount": "{n} place | {n} places"  
   },
-  "findStaysPage": {
-    "title": "Find Stays"
+  "offerDetailsPage": {
+    "bookBtn": "Book Now"
+  },
+  "flightDetailsPage": {
+    "title": "Flight Details",
+    "titleExt": "Flight {from} - {to}",
+    "airplaneMainImageAlt": "airplane photo",
+    "airplaneFeatureImageAlt": "airplane feature photo",
+    "flightClassFeaturesTitle": "Basic {class} features",
+    "companyPolicies": {
+      "caption": "{company} Policies",
+      "cleaning": "Pre-flight cleaning, installation of cabin HEPA filters.",
+      "screening": "Pre-flight health screening questions."
+    } 
+  },
+  "flightDetailsCard": {
+    "direction": {
+      "depart": "Depart {date}",
+      "arrive": "Return {date}"
+    }
+  },
+  "stayDetailsPage": {
+    "title": "Stay Details",
+    "titleExt": "Stay Details {stay} {from} - {to}",
+    "stayMainImageAlt": "hotel photo",
+    "stayServiceImageAlt": "room photo",
+    "overviewHightlights": {
+      "newPark": "New park",
+      "nightlife": "Near nightlife",
+      "theater": "Near theater",
+      "clean": "Clean Hotel"
+    },
+    "availableRooms": {
+      "title": "Available rooms",
+      "base": "Superior room - 1 double bed or 2 twin beds",
+      "city": "Superior room - City view  - 1 double bed or 2 twin beds"
+    },
+    "location": {
+      "title": "Location/Map",
+      "viewOnWebsite": "View on {webLink}"
+    },
+    "amenities": {
+      "title": "Amenities",
+      "moreItems": "+{count} more",
+      "collapseItems": "collapse"
+    },
+    "reviews": {
+      "title": "Reviews",
+      "giveReviewBtn": "Give your review",
+      "count": "verified review | verified reviews",
+      "avatarImgAlt": "review user's avatar",
+      "scorePickerTitle": "Please, choose rating from 1 to 5",
+      "confirmDelete": "Confirm delete operation?",
+      "validationErrEmptyReview": "Review text cannot be empty",
+      "validationErrTooLongReview": "Review text is too long",
+      "paging": "{of} of {total}",
+      "noReviews": "No reviews",
+      "mustBeLoggedInToReview": "You have to log in do add a review"
+    }
+  },
+  "reviewEditor": {
+    "buttons": {
+      "bold": "Bold",
+      "italic": "Italic",
+      "strikethrough": "Strikethrough",
+      "underline": "Underline", 
+      "bulletList": "Bullet list",
+      "orderedList": "Ordered list",
+      "blockquote": "Blockquote",
+      "undo": "Undo", 
+      "redo": "Redo"  
+    },
+    "controlButtons": {
+      "send": "Send",
+      "cancel": "Cancel"
+    },
+    "placeholder": "Write your review here..."
   },
   "travelCities": {
     "title": "Fall into travel",
     "subtext": "Going somewhere to celebrate this season? Whether you’re going home or somewhere to roam, we’ve got the travel tools to get you to your destination.",
     "btn": "See all",
-    "card": {
-      "btnBook": "Book Flight"
+    "bookBtn": {
+      "flight": "Book Flight",
+      "stay": "Book a Hotel"
     }
   },
   "travelDetails": {
@@ -320,10 +409,6 @@
     "subtext": "Going somewhere to celebrate this season? Whether you’re going home or somewhere to roam, we’ve got the travel tools to get you to your destination.",
     "btn": "See all",
     "travelImgAlt": "one of city photos",
-    "bookBtn": {
-      "flight": "Book Flight",
-      "stay": "Book Stay"
-    },
     "priceFrom": "From"
   },
   "accountPageCommon": {
@@ -599,8 +684,6 @@
     "text": "This website or its third-party tools use cookies so that we can display this website correctly. By closing this banner, scrolling this page, clicking a link or continuing to browse you allow us to use cookies and also agree to {privacyLink}",
     "btnAccept": "Agree"
   },
-  "searchPageImageAlt": "page's main image",
   "close": "Close",
-  "calendarImgAlt": "calendar icon",
-  "ariaLabelToggleSection": "expand/collapse section"
+  "calendarImgAlt": "calendar icon"
 }

@@ -1,5 +1,4 @@
 import { H3Event } from 'h3';
-import onHeaders from 'on-headers';
 import { WebApiRoutes } from '../../shared/constants';
 import { defineWebApiEventHandler } from './../utils/webapi-event-handler';
 import { type IPopularCityDto } from './../dto';
@@ -14,9 +13,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     });
   }
 
-  onHeaders(event.node.res, () => {
-    setHeader(event, 'content-type', 'application/json');
-  });
+  setHeader(event, 'content-type', 'application/json');
 
   const popularCityItems = await citiesLogic.getPopularCities();
   const result: IPopularCityDto[] = [];

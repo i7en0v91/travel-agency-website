@@ -2,7 +2,7 @@
 
 import PageSection from './../components/common-page-components/page-section.vue';
 import HeadingText from './../components/flights/flights-heading-text.vue';
-import { getI18nResName1, getI18nResName2, getI18nResName3 } from './../shared/i18n';
+import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
 import { ImageCategory, type EntityId } from './../shared/interfaces';
 import { FlightsTitleSlug, TravelDetailsHtmlAnchor } from './../shared/constants';
 import WorldMap from './../components/flights/world-map.vue';
@@ -10,8 +10,9 @@ import TravelCities from './../components/common-page-components/travel-details/
 import TravelDetails from './../components/common-page-components/travel-details/travel-details.vue';
 
 definePageMeta({
-  title: getI18nResName2('flightsPage', 'title')
+  title: { resName: getI18nResName2('flightsPage', 'title'), resArgs: undefined }
 });
+useOgImage();
 
 const logger = CommonServicesLocator.getLogger();
 
@@ -70,14 +71,14 @@ onMounted(() => {
       class="flights-page-head"
       :image-entity-src="{ slug: FlightsTitleSlug }"
       :category="ImageCategory.PageTitle"
-      :image-alt-res-name="getI18nResName1('searchPageImageAlt')"
+      :image-alt-res-name="getI18nResName2('searchPageCommon', 'mainImageAlt')"
       overlay-class="search-flights-page-head-overlay"
       single-tab="flights"
     >
       <HeadingText ctrl-key="FlightsPageHeading" />
     </SearchPageHead>
     <PageSection
-      ctrl-key="LetGoPlacesSection"
+      ctrl-key="LetGoPlacesSectionFlights"
       :header-res-name="getI18nResName3('flightsPage', 'letsGoPlacesSection', 'title')"
       :subtext-res-name="getI18nResName3('flightsPage', 'letsGoPlacesSection', 'subtext')"
       :btn-text-res-name="getI18nResName3('flightsPage', 'letsGoPlacesSection', 'btn')"
@@ -85,7 +86,7 @@ onMounted(() => {
     >
       <WorldMap ctrl-key="WorldMap" />
     </PageSection>
-    <TravelCities ctrl-key="FlightsTravelCitiesSection" />
+    <TravelCities ctrl-key="FlightsTravelCitiesSection" book-kind="flight" />
     <TravelDetails :id="TravelDetailsHtmlAnchor" ctrl-key="FlightsTravelDetailsSection" book-kind="flight" />
   </div>
 </template>

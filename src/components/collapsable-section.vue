@@ -3,23 +3,27 @@
 import throttle from 'lodash-es/throttle';
 import { updateTabIndices } from './../shared/dom';
 import { TabIndicesUpdateDefaultTimeout } from './../shared/constants';
-import { getI18nResName1 } from './../shared/i18n';
+import { getI18nResName2 } from './../shared/i18n';
 
 interface IProps {
   ctrlKey: string,
   collapseEnabled: boolean,
   collapsed: boolean,
-  tabbableGroupId?: string
+  tabbableGroupId?: string,
+  showCollapsableButton?: boolean,
+  persistent?: boolean
 }
 
 const props = withDefaults(defineProps<IProps>(), {
-  tabbableGroupId: undefined
+  tabbableGroupId: undefined,
+  showCollapsableButton: true,
+  persistent: true
 });
 
 const sectionHtmlElId = props.ctrlKey;
 
 const controlSettingsStore = useControlSettingsStore();
-const controlSingleValueSetting = controlSettingsStore.getControlValueSetting<'collapsed' | 'expanded' | undefined>(`${props.ctrlKey}-collapsed`, 'expanded', true);
+const controlSingleValueSetting = props.persistent ? controlSettingsStore.getControlValueSetting<'collapsed' | 'expanded' | undefined>(`${props.ctrlKey}-collapsed`, 'expanded', true) : undefined;
 
 const logger = CommonServicesLocator.getLogger();
 const toggling = ref(false);
@@ -28,12 +32,26 @@ function toggle () {
   if (!toggling.value) {
     const newValue = !props.collapsed;
     toggling.value = props.collapseEnabled && true;
-    controlSingleValueSetting.value = newValue ? 'collapsed' : 'expanded';
+    if (controlSingleValueSetting) {
+      controlSingleValueSetting.value = newValue ? 'collapsed' : 'expanded';
+    }
     if (!props.collapseEnabled) {
       setTimeout(updateSectionMaxHeightHtmlVar, 0);
     }
     logger.debug(`(CollapsableSection) changing state, ctrlKey=${props.ctrlKey}, new toggled=${newValue}`);
     $emit('update:collapsed', newValue);
+  }
+}
+
+function expand () {
+  if (props.collapsed) {
+    toggle();
+  }
+}
+
+function collapse () {
+  if (!props.collapsed) {
+    toggle();
   }
 }
 
@@ -72,22 +90,35 @@ const onWindowResize = () => setTimeout(throttle(function () {
 }), 100);
 
 onMounted(() => {
+  let initiallyCollapsed = props.collapsed;
   if (props.collapseEnabled) {
-    const initValue = controlSingleValueSetting.value === 'collapsed';
-    if (initValue !== props.collapsed) {
-      logger.debug(`(CollapsableSection) initial collapsed state in settings differs from passed in props, ctrlKey=${props.ctrlKey}, props=${props.collapsed}, settings=${initValue}`);
-      toggle();
+    if (controlSingleValueSetting) {
+      const initValue = controlSingleValueSetting.value === 'collapsed';
+      if (initValue !== props.collapsed) {
+        logger.debug(`(CollapsableSection) initial collapsed state in settings differs from passed in props, ctrlKey=${props.ctrlKey}, props=${props.collapsed}, settings=${initValue}`);
+        initiallyCollapsed = initValue;
+        toggle();
+      }
     }
+
     window.addEventListener('resize', onWindowResize);
   }
 
-  setTimeout(updateSectionMaxHeightHtmlVar, 0);
+  if (!initiallyCollapsed) {
+    setTimeout(updateSectionMaxHeightHtmlVar, 0);
+  }
 });
 
 onUnmounted(() => {
   if (props.collapseEnabled) {
     window.removeEventListener('resize', onWindowResize);
   }
+});
+
+defineExpose({
+  toggle,
+  expand,
+  collapse
 });
 
 </script>
@@ -104,9 +135,10 @@ onUnmounted(() => {
       <slot name="head" />
     </div>
     <button
+      v-if="showCollapsableButton"
       :class="`collapsable-section-btn brdr-1 pb-xs-1 mt-xs-1 ${(collapsed ? 'collapsed' : '')} ${tabbableGroupId ? `tabbable-group-${tabbableGroupId}` : ''}`"
       type="button"
-      :aria-label="$t(getI18nResName1('ariaLabelToggleSection'))"
+      :aria-label="$t(getI18nResName2('ariaLabels', 'ariaLabelToggleSection'))"
       @keyup.enter="toggle"
       @keyup.space="toggle"
       @click="toggle"

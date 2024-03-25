@@ -3,13 +3,13 @@
 import ComponentWaiterIndicator from './../../component-waiting-indicator.vue';
 import FlightsListItemCard from './search-flights-result-card.vue';
 import StaysListItemCard from './search-stays-result-card.vue';
-import { type MakeSearchResultEntity, type IFlightOffer, type IStayOffer, type SearchOfferKind } from './../../../shared/interfaces';
+import { type MakeSearchResultEntity, type IFlightOffer, type IStayOffer, type OfferKind } from './../../../shared/interfaces';
 
 declare type WaitingStubMode = 'hidden' | 'shown' | 'not-needed';
 
 interface IProps {
   ctrlKey: string,
-  offersKind: SearchOfferKind,
+  offersKind: OfferKind,
   items: TItem[]
 }
 const props = withDefaults(defineProps<IProps>(), {

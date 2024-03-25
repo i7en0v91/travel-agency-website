@@ -2,7 +2,6 @@ import { H3Event } from 'h3';
 import toPairs from 'lodash-es/toPairs';
 import dayjs from 'dayjs';
 import max from 'lodash-es/max';
-import onHeaders from 'on-headers';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import { WebApiRoutes } from '../../../shared/constants';
 import { ImageCategory } from '../../../shared/interfaces';
@@ -41,10 +40,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     cacheControls: ['must-revalidate']
   });
 
-  onHeaders(event.node.res, () => {
-    const response = event.node.res;
-    response.setHeader('content-type', 'application/json');
-  });
+  setHeader(event, 'content-type', 'application/json');
 
   const result: IImageDetailsDto[] = imageInfos.map((imageInfo) => {
     return {

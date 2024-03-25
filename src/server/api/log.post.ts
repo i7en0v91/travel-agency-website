@@ -9,7 +9,7 @@ export default defineWebApiEventHandler(async (event: H3Event) => {
   const body = await readBody(event);
   const logLevel = body?.level as (keyof typeof LogLevelEnum);
   if (!body || !logLevel) {
-    logger.warn('received empty/incorrect log data from client');
+    logger.warn('(api:log) received empty/incorrect log data from client');
     return;
   }
 

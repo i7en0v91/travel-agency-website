@@ -1,7 +1,7 @@
 import { type InferType, string, number, object, array, tuple, boolean, date, lazy } from 'yup';
 import { AppExceptionCodeEnum, type AppExceptionAppearance } from '../shared/exceptions';
-import { type AirplaneImageKind, type FlightOffersSortFactor, type CacheEntityType, type TripType, type FlightClass, AvailableFlightOffersSortFactor, AvailableStayOffersSortFactor } from '../shared/interfaces';
-import { AvailableLocaleCodes, AvailableThemeCodes, FlightMinPassengers, FlightMaxPassengers, StaysMaxRoomsCount, StaysMaxGuestsCount, SearchOffersListConstants } from '../shared/constants';
+import { type StayDescriptionParagraphType, type AirplaneImageKind, type FlightOffersSortFactor, type CacheEntityType, type TripType, type FlightClass, AvailableFlightOffersSortFactor, AvailableStayOffersSortFactor, type StayServiceLevel } from '../shared/interfaces';
+import { AvailableLocaleCodes, AvailableThemeCodes, FlightMinPassengers, FlightMaxPassengers, StaysMaxRoomsCount, StaysMaxGuestsCount, SearchOffersListConstants, MaxStayReviewLength } from '../shared/constants';
 
 /**
  * Dto Schemas
@@ -127,8 +127,9 @@ export const SearchStayOffersParamsDtoSchema = SearchStayOffersMainParamsDtoSche
   narrowFilterParams: boolean().required()
 });
 
-export const ToggleFavouriteOfferDtoSchema = object({
-  offerId: number().required()
+export const CreateOrUpdateStayReviewDtoSchema = object({
+  textOrHtml: string().max(MaxStayReviewLength).required(),
+  score: number().min(0).max(5).required()
 });
 
 /**
@@ -288,7 +289,7 @@ export interface ISearchFlightOffersMainParamsDto extends InferType<typeof Searc
 export interface ISearchFlightOffersParamsDto extends InferType<typeof SearchFlightOffersParamsDtoSchema> {};
 export interface ISearchStayOffersMainParamsDto extends InferType<typeof SearchStayOffersMainParamsDtoSchema> {};
 export interface ISearchStayOffersParamsDto extends InferType<typeof SearchStayOffersParamsDtoSchema> {};
-export interface IToggleFavouriteOfferDto extends InferType<typeof ToggleFavouriteOfferDtoSchema> {};
+export interface ICreateOrUpdateStayReviewDto extends InferType<typeof CreateOrUpdateStayReviewDtoSchema> {};
 
 export interface IListItemDto {
   id: number,
@@ -306,8 +307,11 @@ export interface IPopularCityDto {
   promoPrice: number,
   geo: IGeoPointDto,
   visibleOnWorldMap: boolean,
+  numStays: number,
   timestamp: number
 };
+
+export type ISearchedCityHistoryDto = Omit<IPopularCityDto, 'promoPrice'> & { numStays: number };
 
 export interface ICompanyReviewDto {
   id: number,
@@ -412,7 +416,6 @@ export interface ISearchedStayDto {
   cityId: number,
   geo: IGeoPointDto,
   name: ILocalizableValueDto,
-  rating: number,
   numReviews: number,
   reviewScore: number,
   photo: {
@@ -469,4 +472,83 @@ export interface ISearchStayOffersResultDto {
 
 export interface IToggleFavouriteOfferResultDto {
   isFavourite: boolean
+}
+
+export interface IOfferDetailsDto extends IOfferDto {
+  createdUtc: string,
+  modifiedUtc: string
+}
+
+export interface IFlightDto {
+  id: number,
+  airlineCompany: IAirlineCompanyDto,
+  airplane: IAirplaneDto,
+  departAirport: IAirportDto,
+  arriveAirport: IAirportDto,
+  departTimeUtc: string,
+  arriveTimeUtc: string
+}
+
+export interface IFlightOfferDetailsDto extends IOfferDetailsDto {
+  departFlight: IFlightDto,
+  arriveFlight?: IFlightDto,
+  numPassengers: number,
+  class: FlightClass
+}
+
+export interface IStayDescriptionDto {
+  id: number,
+  textStr: ILocalizableValueDto,
+  paragraphKind: StayDescriptionParagraphType,
+  order: number
+}
+
+export interface IStayReviewDto {
+  id: number,
+  user: {
+    id: number,
+    avatar?: {
+      slug: string,
+      timestamp: number,
+    },
+    firstName: string,
+    lastName: string
+  },
+  text: ILocalizableValueDto,
+  score: number,
+  order: number
+}
+
+export interface IStayDto {
+  id: number,
+  slug: string,
+  city: ICityDto,
+  geo: IGeoPointDto,
+  name: ILocalizableValueDto,
+  images: {
+    slug: string,
+    timestamp: number,
+    serviceLevel?: StayServiceLevel
+    order: number
+  }[],
+  description: IStayDescriptionDto[],
+  reviewScore: number,
+  numReviews: number
+}
+
+export interface IStayOfferDetailsDto extends IOfferDetailsDto {
+  stay: IStayDto,
+  checkInDate: string,
+  checkOutDate: string,
+  numGuests: number,
+  numRooms: number,
+  prices: { [SL in StayServiceLevel]: number }
+}
+
+export interface IModifyStayReviewResultDto {
+  reviewId: number
+}
+
+export interface IStayReviewsDto {
+  reviews: IStayReviewDto[]
 }

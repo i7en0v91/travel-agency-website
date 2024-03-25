@@ -10,21 +10,22 @@ import pick from 'lodash-es/pick';
 import cloneDeep from 'lodash-es/cloneDeep';
 import orderBy from 'lodash-es/orderBy';
 import fromPairs from 'lodash-es/fromPairs';
-import { type ISearchListItem, type ISearchOffersFilterVariant, type ISearchFlightOffersParams, type ISearchStayOffersParams, type SearchOfferKind, type ISearchStayOffersMainParams, type ISearchFlightOffersMainParams, type IEntityCacheCityItem, type ISearchFlightOffersDisplayOptions, type ISearchStayOffersDisplayOptions, type IStayOffer, type IFlightOffer, type FlightOffersSortFactor, type StayOffersSortFactor, type ISearchFlightOffersResult, type ISearchStayOffersResult, type ISearchOffersChecklistFilterProps, type ISearchOffersRangeFilterProps, type ISearchFlightOffersDisplayOption, type MakeSearchResultEntity, type ILocalizableValue } from '../shared/interfaces';
+import { type ISearchListItem, type ISearchOffersFilterVariant, type ISearchFlightOffersParams, type ISearchStayOffersParams, type OfferKind, type ISearchStayOffersMainParams, type ISearchFlightOffersMainParams, type IEntityCacheCityItem, type ISearchFlightOffersDisplayOptions, type ISearchStayOffersDisplayOptions, type IStayOffer, type IFlightOffer, type FlightOffersSortFactor, type StayOffersSortFactor, type ISearchFlightOffersResult, type ISearchStayOffersResult, type ISearchOffersChecklistFilterProps, type ISearchOffersRangeFilterProps, type ISearchFlightOffersDisplayOption, type MakeSearchResultEntity, type ILocalizableValue } from '../shared/interfaces';
 import { eraseTimeOfDay } from '../shared/common';
 import { NuxtDataKeys, WebApiRoutes, SearchOffersListConstants, FlightMinPassengers, UserNotificationLevel, AvailableLocaleCodes } from '../shared/constants';
 import { validateObject } from '../shared/validation';
+import { mapSearchFlightOffersResult, mapSearchStayOffersResult, mapSearchedFlightOffer, createSearchFlightOfferResultLookup } from '../shared/mappers';
+import { post } from '../shared/rest-utils';
 import { useFetchEx, type SSRAwareFetchResult } from './../shared/fetch-ex';
 import AppConfig from './../appconfig';
-import { post } from './../client/rest-utils';
 import { type ISearchFlightOffersMainParamsDto, type ISearchStayOffersMainParamsDto, SearchFlightOffersMainParamsDtoSchema, SearchStayOffersMainParamsDtoSchema, type ISearchFlightOffersParamsDto, type ISearchStayOffersParamsDto, type ISearchFlightOffersResultDto, type ISearchStayOffersResultDto } from './../server/dto';
 import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
-import { mapSearchFlightOffersResult, mapSearchStayOffersResult, mapSearchedFlightOffer, createSearchFlightOfferResultLookup } from './../client/mappers';
 import { getI18nResName2, getI18nResName3, type I18nResName } from './../shared/i18n';
+import { addPayload, getPayload } from './../shared/payload';
 
 export type OffersStoreInstanceFetchStatus = 'full-refetch' | 'filter-refetch' | 'sort-refetch' | 'page-fetch' | 'fetched' | 'error';
 export interface ISearchOffersStoreInstance<TParams extends ISearchFlightOffersParams | ISearchStayOffersParams, TMainParams = TParams extends ISearchFlightOffersParams ? ISearchFlightOffersMainParams : ISearchStayOffersMainParams, TDisplayOptions = TParams extends ISearchFlightOffersParams ? ISearchFlightOffersDisplayOptions : ISearchStayOffersDisplayOptions, TItem = TParams extends ISearchFlightOffersParams ? MakeSearchResultEntity<IFlightOffer> : MakeSearchResultEntity<IStayOffer>, TSortFactor = TParams extends ISearchFlightOffersParams ? FlightOffersSortFactor : StayOffersSortFactor> {
-  offersKind: SearchOfferKind,
+  offersKind: OfferKind,
   viewState: {
     currentSearchParams: Partial<TParams>, // partial, as values may not be filled, e.g. when user opens the app for the first time and input fields have nowhere to get initial values from
     displayOptions: TDisplayOptions
@@ -70,7 +71,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     cache: 'no-cache' as const,
     method: 'POST' as const
   };
-  const searchFlightOffersFetchRequest = useFetchEx<ISearchFlightOffersResultDto, ISearchFlightOffersResult, null>(WebApiRoutes.FlightsSearch, 'error-page',
+  const searchFlightOffersFetchRequest = useFetchEx<ISearchFlightOffersResultDto, ISearchFlightOffersResult, null>(WebApiRoutes.FlightOffersSearch, 'error-page',
     {
       ...commonOffersFetchOptions,
       transform: (resultDto: ISearchFlightOffersResultDto) => {
@@ -92,7 +93,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
       key: NuxtDataKeys.SearchFlightOffers
     });
 
-  const searchStayOffersFetchRequest = useFetchEx<ISearchStayOffersResultDto, ISearchStayOffersResult, null>(WebApiRoutes.StaysSearch, 'error-page',
+  const searchStayOffersFetchRequest = useFetchEx<ISearchStayOffersResultDto, ISearchStayOffersResult, null>(WebApiRoutes.StayOffersSearch, 'error-page',
     {
       ...commonOffersFetchOptions,
       transform: (resultDto: ISearchStayOffersResultDto) => {
@@ -142,24 +143,24 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
   };
 
   const normalizeFlightsSearchMainParams = (params: Partial<ISearchFlightOffersMainParamsDto>): Partial<ISearchFlightOffersParamsDto> => {
-    logger.debug(`(search-offers-store) normalizing main params, kind=${<SearchOfferKind>'flights'}, params=${JSON.stringify(params)}`);
+    logger.debug(`(search-offers-store) normalizing main params, kind=${<OfferKind>'flights'}, params=${JSON.stringify(params)}`);
 
     const datesNormalized = normalizeDateRanges({ from: params.dateFrom, to: params.dateTo });
     params.dateFrom = datesNormalized.from;
     params.dateTo = datesNormalized.to;
 
-    logger.debug(`(search-offers-store) main params normalized, kind=${<SearchOfferKind>'flights'}, params=${JSON.stringify(params)}`);
+    logger.debug(`(search-offers-store) main params normalized, kind=${<OfferKind>'flights'}, params=${JSON.stringify(params)}`);
     return params;
   };
 
   const normalizeStaysSearchMainParams = (params: Partial<ISearchStayOffersMainParamsDto>): Partial<ISearchStayOffersParamsDto> => {
-    logger.debug(`(search-offers-store) normalizing main params, kind=${<SearchOfferKind>'stays'}, params=${JSON.stringify(params)}`);
+    logger.debug(`(search-offers-store) normalizing main params, kind=${<OfferKind>'stays'}, params=${JSON.stringify(params)}`);
 
     const datesNormalized = normalizeDateRanges({ from: params.checkIn, to: params.checkOut });
     params.checkIn = datesNormalized.from;
     params.checkOut = datesNormalized.to;
 
-    logger.debug(`(search-offers-store) main params normalized, kind=${<SearchOfferKind>'flights'}, params=${JSON.stringify(params)}`);
+    logger.debug(`(search-offers-store) main params normalized, kind=${<OfferKind>'flights'}, params=${JSON.stringify(params)}`);
     return params;
   };
 
@@ -172,13 +173,13 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     } else {
       logger.verbose(`(search-offers-store) resolving city slugs (server), ids=${JSON.stringify(slugs)}`);
       const items = await serverEntityCacheLogic!.get<'City', IEntityCacheCityItem>(slugs, 'City');
-      nuxtApp.payload[NuxtDataKeys.EntityCacheItems] = uniqueBy([...((nuxtApp.payload[NuxtDataKeys.EntityCacheItems] ?? []) as EntityCacheItemsPayload), ...items], 'id');
+      addPayload(nuxtApp, NuxtDataKeys.EntityCacheItems, uniqueBy([...((nuxtApp.payload[NuxtDataKeys.EntityCacheItems] ?? []) as EntityCacheItemsPayload), ...items], 'id'));
       logger.verbose(`(search-offers-store) city slugs resolved (server), result=${JSON.stringify(items)}`);
       return items;
     }
   };
 
-  const parseMainParamsFromUrlQuery = async <TParams extends ISearchFlightOffersMainParams | ISearchStayOffersMainParams>(kind: SearchOfferKind): Promise<Partial<TParams> | undefined> => {
+  const parseMainParamsFromUrlQuery = async <TParams extends ISearchFlightOffersMainParams | ISearchStayOffersMainParams>(kind: OfferKind): Promise<Partial<TParams> | undefined> => {
     logger.verbose(`(search-offers-store) parsing url query for main params, kind=${kind}, query=${JSON.stringify(router.currentRoute.value.query)}, path=${router.currentRoute.value.path}`);
     const query = router.currentRoute.value.query;
     if (!query) {
@@ -404,7 +405,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     }
   };
 
-  const startWatchingForFetchResults = <TResultDto extends ISearchFlightOffersResultDto | ISearchStayOffersResultDto>(offerKind: SearchOfferKind, fetch: SSRAwareFetchResult<TResultDto | null>) => {
+  const startWatchingForFetchResults = <TResultDto extends ISearchFlightOffersResultDto | ISearchStayOffersResultDto>(offerKind: OfferKind, fetch: SSRAwareFetchResult<TResultDto | null>) => {
     watch(fetch.status, async () => {
       logger.verbose(`(search-offers-store) handling offers fetch status change, kind=${offerKind}, status=${fetch.status.value}`);
       if (fetch.status.value === 'idle' || fetch.status.value === 'pending') {
@@ -476,25 +477,26 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
         let responseDto: ISearchFlightOffersResultDto | ISearchStayOffersResultDto | undefined;
         let fetchResult: ISearchFlightOffersResult | ISearchStayOffersResult | undefined;
         const payloadKey = isFlightOffersInstance(instance) ? NuxtDataKeys.SearchFlightOffers : NuxtDataKeys.SearchStayOffers;
-        if (keys(nuxtApp.payload).includes(payloadKey)) {
+        const payload = getPayload(nuxtApp, payloadKey);
+        if (payload) {
           logger.debug(`(search-offers-store) reusing initial search offers data from payload, kind=${instance.offersKind}`);
-          fetchResult = nuxtApp.payload[payloadKey] as any;
+          fetchResult = payload;
         } else {
           logger.verbose(`(search-offers-store) creating initial search offers payload, kind=${instance.offersKind}`);
 
           if (isFlightOffersInstance(instance)) {
-            responseDto = await post<ISearchFlightOffersParamsDto, ISearchFlightOffersResultDto>(WebApiRoutes.FlightsSearch, undefined, searchParamsDto as ISearchFlightOffersParamsDto, 'throw');
+            responseDto = await post<ISearchFlightOffersParamsDto, ISearchFlightOffersResultDto>(WebApiRoutes.FlightOffersSearch, undefined, searchParamsDto as ISearchFlightOffersParamsDto, false, 'throw');
             if (responseDto) {
               fetchResult = mapSearchFlightOffersResult(responseDto);
             }
           } else {
-            responseDto = await post<ISearchStayOffersParamsDto, ISearchStayOffersResultDto>(WebApiRoutes.StaysSearch, undefined, searchParamsDto as ISearchStayOffersParamsDto, 'throw');
+            responseDto = await post<ISearchStayOffersParamsDto, ISearchStayOffersResultDto>(WebApiRoutes.StayOffersSearch, undefined, searchParamsDto as ISearchStayOffersParamsDto, false, 'throw');
             if (responseDto) {
               fetchResult = mapSearchStayOffersResult(responseDto);
             }
           }
 
-          nuxtApp.payload[payloadKey] = responseDto;
+          addPayload(nuxtApp, payloadKey, responseDto!);
           logger.verbose(`(search-offers-store) initial search offers payload created, kind=${instance.offersKind}, count=${instance.resultState.items.length}`);
         }
 
@@ -504,7 +506,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
         if (instance.resultState.initialDataFetched === 'no') {
           logger.verbose(`(search-offers-store) consuming initial search offers result data from payload, kind=${instance.offersKind}`);
           const payloadKey = isFlightOffersInstance(instance) ? NuxtDataKeys.SearchFlightOffers : NuxtDataKeys.SearchStayOffers;
-          const payload = nuxtApp.payload[payloadKey];
+          const payload = getPayload(nuxtApp, payloadKey);
           if (payload) {
             processFetchResult(instance, isFlightOffersInstance(instance) ? mapSearchFlightOffersResult(payload as ISearchFlightOffersResultDto) : mapSearchStayOffersResult(payload as ISearchStayOffersResultDto));
             const isAuthenticated = status.value === 'authenticated';
@@ -783,7 +785,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
   };
 
   const createSearchFlightOffersInstance = (initalParams?: Partial<ISearchFlightOffersMainParams> | undefined): ISearchOffersStoreInstance<ISearchFlightOffersParams> => {
-    logger.info(`(search-offers-store) creating store instance, kind=${<SearchOfferKind>'flights'}, initialParams=${JSON.stringify(initalParams)}`);
+    logger.info(`(search-offers-store) creating store instance, kind=${<OfferKind>'flights'}, initialParams=${JSON.stringify(initalParams)}`);
 
     const viewState = reactive({
       currentSearchParams: <ISearchFlightOffersParams>{ ...(initalParams || {}), filters: createSearchFlightOfferFilters() },
@@ -806,10 +808,10 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
       offersKind: 'flights' as const,
       setSorting: () => {},
       setMainSearchParams: (params: Partial<ISearchFlightOffersMainParams>): boolean => {
-        logger.debug(`(search-offers-store) updating main search params, kind=${<SearchOfferKind>'flights'}, params=${JSON.stringify(params)}`);
+        logger.debug(`(search-offers-store) updating main search params, kind=${<OfferKind>'flights'}, params=${JSON.stringify(params)}`);
         const changed = !isEqual(pick(viewState.currentSearchParams, keys(params)), params);
         assign(result.viewState.currentSearchParams, params);
-        logger.debug(`(search-offers-store) main search params updated, kind=${<SearchOfferKind>'flights'}, changed=${changed}`);
+        logger.debug(`(search-offers-store) main search params updated, kind=${<OfferKind>'flights'}, changed=${changed}`);
         return changed;
       },
       fetchData: async (offersFetchMode: Exclude<OffersStoreInstanceFetchStatus, 'fetched' | 'error'>): Promise<void> => {
@@ -820,12 +822,12 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
       }
     };
 
-    logger.info(`(search-offers-store) store instance created, kind=${<SearchOfferKind>'flights'}`);
+    logger.info(`(search-offers-store) store instance created, kind=${<OfferKind>'flights'}`);
     return result;
   };
 
   const createSearchStayOffersInstance = (initalParams?: Partial<ISearchStayOffersMainParams> | undefined): ISearchOffersStoreInstance<ISearchStayOffersParams> => {
-    logger.info(`(search-offers-store) creating store instance, kind=${<SearchOfferKind>'stays'}, initialParams=${JSON.stringify(initalParams)}`);
+    logger.info(`(search-offers-store) creating store instance, kind=${<OfferKind>'stays'}, initialParams=${JSON.stringify(initalParams)}`);
 
     const viewState = reactive({
       currentSearchParams: <ISearchStayOffersParams>{ ...(initalParams || {}), filters: createSearchStayOfferFilters() },
@@ -846,10 +848,10 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
       offersKind: 'stays',
       setSorting: () => {},
       setMainSearchParams: (params: Partial<ISearchStayOffersParams>): boolean => {
-        logger.debug(`(search-offers-store) updating main search params, kind=${<SearchOfferKind>'stays'}, params=${JSON.stringify(params)}`);
+        logger.debug(`(search-offers-store) updating main search params, kind=${<OfferKind>'stays'}, params=${JSON.stringify(params)}`);
         const changed = !isEqual(pick(viewState.currentSearchParams, keys(params)), params);
         assign(result.viewState.currentSearchParams, params);
-        logger.debug(`(search-offers-store) main search params updated, kind=${<SearchOfferKind>'stays'}, changed=${changed}`);
+        logger.debug(`(search-offers-store) main search params updated, kind=${<OfferKind>'stays'}, changed=${changed}`);
         return changed;
       },
       fetchData: async (offersFetchMode: Exclude<OffersStoreInstanceFetchStatus, 'fetched' | 'error'>): Promise<void> => {
@@ -859,18 +861,17 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
         resetFetchState(result!);
       }
     };
-    logger.info(`(search-offers-store) store instance created, kind=${<SearchOfferKind>'stays'}`);
+    logger.info(`(search-offers-store) store instance created, kind=${<OfferKind>'stays'}`);
     return result;
   };
 
   const fillCityCacheFromPayload = async (): Promise<void> => {
     const entityCache = ClientServicesLocator.getEntityCache();
-    const cachePayload = nuxtApp.payload[NuxtDataKeys.EntityCacheItems] as EntityCacheItemsPayload;
+    const cachePayload = getPayload<EntityCacheItemsPayload>(nuxtApp, NuxtDataKeys.EntityCacheItems);
     if (cachePayload) {
-      const cachedItems = nuxtApp.payload[NuxtDataKeys.EntityCacheItems] as EntityCacheItemsPayload;
-      logger.verbose(`(search-offers-store) filling city cache from payload, items=${JSON.stringify(cachedItems)}`);
-      for (let i = 0; i < cachedItems.length; i++) {
-        await entityCache.set(cachedItems[i], AppConfig.clientCache.expirationsSeconds.default);
+      logger.verbose(`(search-offers-store) filling city cache from payload, items=${JSON.stringify(cachePayload)}`);
+      for (let i = 0; i < cachePayload.length; i++) {
+        await entityCache.set(cachePayload[i], AppConfig.clientCache.expirationsSeconds.default);
       }
     }
   };

@@ -367,13 +367,13 @@
     },
     "main": {
       "en": "We are delighted to unveil a haven of timeless charm and contemporary luxury – the <%= hotelName %>. Nestled in the heart of dynamic city, our hotel invites you to experience a haven that seamlessly blends modern luxury with traditional warmth, promising an unforgettable journey",
-      "fr": "Nous sommes ravis de dévoiler un havre de charme intemporel et de luxe contemporain : le <%= hotelName %>. Niché au cœur d'une ville dynamique, notre hôtel vous invite à découvrir un havre de paix qui allie harmonieusement luxe moderne et chaleur traditionnelle, promettant un voyage inoubliable.",
-      "ru": "Мы рады представить вам оазис вневременного очарования и современной роскоши – <%= hotelName %>. Наш отель, расположенный в самом сердце динамичного города, приглашает вас окунуться в рай, в котором органично сочетаются современная роскошь и традиционное тепло, обещая незабываемое путешествие."
+      "fr": "Nous sommes ravis de dévoiler un havre de charme intemporel et de luxe contemporain : le <%= hotelName %>. Niché au cœur d'une ville dynamique, notre hôtel vous invite à découvrir un havre de paix qui allie harmonieusement luxe moderne et chaleur traditionnelle, promettant un voyage inoubliable",
+      "ru": "Мы рады представить Вам оазис очарования и современной роскоши – <%= hotelName %>. Наш отель, расположенный в самом сердце динамичного города, приглашает Вас окунуться в рай, в котором органично сочетаются современная роскошь и традиционное тепло, обещая незабываемое путешествие"
     },
     "footer": {
-      "en": "Welcome to a realm of harmony and elegance. Welcome to <%= hotelName %>. Reserve your extraordinary experience today and immerse yourself in cultural tapestry and luxury like never before.",
-      "fr": "Bienvenue dans un royaume d'harmonie et d'élégance. Bienvenue à <%= hotelName %>. Réservez votre expérience extraordinaire dès aujourd'hui et plongez-vous dans la tapisserie culturelle et le luxe comme jamais auparavant.",
-      "ru": "Добро пожаловать в царство гармонии и элегантности. Добро пожаловать в <%= hotelName %>. Забронируйте свой необыкновенный опыт сегодня и погрузитесь в культурное наследие и роскошь, как никогда раньше."
+      "en": "Welcome to a realm of harmony and elegance. Welcome to <%= hotelName %>. Reserve your extraordinary experience today and immerse yourself in cultural tapestry and luxury like never before",
+      "fr": "Bienvenue dans un royaume d'harmonie et d'élégance. Bienvenue à <%= hotelName %>. Réservez votre expérience extraordinaire dès aujourd'hui et plongez-vous dans la tapisserie culturelle et le luxe comme jamais auparavant",
+      "ru": "Добро пожаловать в <%= hotelName %>, в царство гармонии и элегантности. Забронируйте номер сегодня и погрузитесь в культурное наследие и роскошь, как никогда раньше"
     },
     "features": [
       {
@@ -385,7 +385,7 @@
         "text": {
           "en": "Be among the first to discover the seamless blend of luxury at <%= hotelName %>. Witness the majesty from the comfort of your elegant oasis",
           "fr": "Soyez parmi les premiers à découvrir le mélange harmonieux de luxe chez <%= hotelName %>. Soyez témoin de la majesté dans le confort de votre élégante oasis",
-          "ru": "Будьте одним из первых, кто откроет для себя безупречное сочетание роскоши в отеле <%= hotelName %>. Станьте свидетелем величия, не выходя из своего элегантного оазиса."
+          "ru": "Будьте одним из первых, кто откроет для себя безупречное сочетание роскоши в отеле <%= hotelName %>"
         }
       },
       {
@@ -397,7 +397,7 @@
         "text": {
           "en": "Elevate your experience to our rooftop oasis, offering panoramic views of iconic skyline. Witness the city's energy from a serene vantage point",
           "fr": "Élevez votre expérience dans notre oasis sur le toit, offrant une vue panoramique sur l'horizon emblématique. Observez l'énergie de la ville d'un point de vue serein",
-          "ru": "Повысьте уровень своих впечатлений в нашем оазисе на крыше, откуда открывается панорамный вид на знаменитый горизонт. Станьте свидетелем энергии города с безмятежной точки зрения"
+          "ru": "Повысьте уровень своих впечатлений на смотровой площадке отеля, откуда открывается панорамный вид на горизонт"
         }
       },
       {
@@ -409,31 +409,31 @@
         "text": {
           "en": "From intimate gatherings to grand celebrations, our event spaces are thoughtfully designed to host your cherished moments. Allow us to craft unforgettable memories",
           "fr": "Des rassemblements intimes aux grandes célébrations, nos espaces événementiels sont soigneusement conçus pour accueillir vos moments précieux. Permettez-nous de créer des souvenirs inoubliables",
-          "ru": "От камерных встреч до грандиозных торжеств — наши помещения для мероприятий тщательно спроектированы, чтобы провести ваши самые заветные моменты. Позвольте нам создать незабываемые воспоминания"
+          "ru": "От небольших компаний до грандиозных торжеств — наши помещения для мероприятий тщательно спроектированы, чтобы провести Ваши самые заветные моменты. Позвольте нам создать незабываемые воспоминания"
         }
       },
       {
         "caption": {
           "en": "Culinary Odyssey",
           "fr": "Odyssée culinaire",
-          "ru": "Кулинарная Одиссея"
+          "ru": "Кулинарная одиссея"
         },
         "text": {
-          "en": "Embark on a culinary adventure led by our master chefs who artfully blend international flavors with authentic gastronomic prowess. Every dish is a testament to the city's rich culinary heritage.",
-          "fr": "Embarquez pour une aventure culinaire dirigée par nos maîtres chefs qui mélangent astucieusement les saveurs internationales avec des prouesses gastronomiques authentiques. Chaque plat témoigne du riche patrimoine culinaire de la ville.",
-          "ru": "Отправьтесь в кулинарное приключение под руководством наших шеф-поваров, которые искусно сочетают вкусы интернациональной кухни с подлинным гастрономическим мастерством. Каждое блюдо является свидетельством богатого кулинарного наследия города."
+          "en": "Embark on a culinary adventure led by our master chefs who artfully blend international flavors with authentic gastronomic prowess. Every dish is a testament to the city's rich culinary heritage",
+          "fr": "Embarquez pour une aventure culinaire dirigée par nos maîtres chefs qui mélangent astucieusement les saveurs internationales avec des prouesses gastronomiques authentiques. Chaque plat témoigne du riche patrimoine culinaire de la ville",
+          "ru": "Отправьтесь в кулинарное приключение под руководством наших шеф-поваров, которые искусно сочетают вкусы интернациональной кухни с подлинным гастрономическим мастерством. Каждое блюдо отражает богатое кулинарное наследие города"
         }
       },
       {
         "caption": {
           "en": "Retailer's Paradise",
           "fr": "Le paradis des détaillants",
-          "ru": "Рай для шоппинга"
+          "ru": "Рай для шопинга"
         },
         "text": {
-          "en": "Immerse yourself in a shopping adventure with exclusive access to city's vibrant bazaars and markets. Discover treasures that echo rich cultural heritage",
-          "fr": "Plongez dans une aventure shopping avec un accès exclusif aux bazars et marchés animés de la ville. Découvrez des trésors qui font écho au riche patrimoine culturel",
-          "ru": "Погрузитесь в шопинг-приключение, получив эксклюзивный доступ к оживленным базарам и рынкам города. Откройте для себя сокровища, отражающие богатое культурное наследие"
+          "en": "Immerse yourself in a shopping adventure with exclusive access to city's vibrant bazaars and markets",
+          "fr": "Plongez dans une aventure shopping avec un accès exclusif aux bazars et marchés animés de la ville",
+          "ru": "Погрузитесь в шопинг-приключение, получив эксклюзивный доступ к оживленным базарам и рынкам города"
         }
       }
     ]
@@ -486,17 +486,17 @@
   {
     "en": "Attention to guest comfort is evident in every aspect of this hotel.",
     "fr": "L'attention portée au confort des clients est évidente dans tous les aspects de cet hôtel.",
-    "ru": "Внимание к комфорту гостей проявляется во всех аспектах этого отеля."
+    "ru": "Удобство и комфорт проявляется во всех аспектах этого отеля."
   },
   {
     "en": "A stay to remember! The staff's warmth made all the difference.",
     "fr": "Un séjour inoubliable ! La chaleur du personnel a fait toute la différence.",
-    "ru": "Незабываемый отдых! Теплота персонала имела решающее значение."
+    "ru": "Незабываемый отдых! Внимание персонала имела решающее значение."
   },
   {
     "en": "Everything about this hotel is first-class. Can't wait to return.",
     "fr": "Tout dans cet hôtel est de première classe. J'ai hâte d'y retourner.",
-    "ru": "Все в этом отеле первоклассное. Не могу дождаться, чтобы вернуться."
+    "ru": "Все в этом отеле первоклассно. Не могу дождаться, чтобы вернуться."
   },
   {
     "en": "From the decor to the cuisine, every detail was perfection.",
@@ -524,19 +524,14 @@
     "ru": "Превзошел все ожидания!"
   },
   {
-    "en": "An urban retreat that captures the essence of luxury.",
-    "fr": "Une retraite urbaine qui capture l'essence du luxe.",
-    "ru": "Городской отдых, отражающий суть роскоши."
-  },
-  {
     "en": "The staff's attentiveness made us feel like royalty. Wonderful!",
     "fr": "L'attention du personnel nous a fait sentir comme des rois. Merveilleux!",
-    "ru": "Внимательность персонала позволила нам почувствовать себя членами королевской семьи. Замечательный!"
+    "ru": "Внимательность персонала позволила нам почувствовать себя членами королевской семьи. Превосходно!"
   },
   {
     "en": "A hotel that sets the standard for excellence. Truly outstanding.",
     "fr": "Un hôtel qui établit la norme d’excellence. Vraiment exceptionnel.",
-    "ru": "Отель, который устанавливает стандарты качества. Действительно выдающийся."
+    "ru": "Отель, который устанавливает стандарты качества. Действительно впечатляет."
   },
   {
     "en": "Cherished every moment at this elegant and inviting hotel.",

@@ -5,7 +5,6 @@ import { UserNotificationLevel } from './constants';
 export enum AppExceptionCodeEnum {
   UNKNOWN = 12000,
   BAD_REQUEST = 12001,
-  SESSION_INIT_FAILED = 12002,
   OBJECT_NOT_FOUND = 12003,
   UNAUTHORIZED = 12004,
   CAPTCHA_VERIFICATION_FAILED = 12005,
@@ -79,12 +78,25 @@ export function flattenError (err: Error) : any {
   };
 }
 
+export function mapAppExceptionToHttpStatus (code: AppExceptionCodeEnum) {
+  switch (code) {
+    case AppExceptionCodeEnum.BAD_REQUEST:
+      return 400;
+    case AppExceptionCodeEnum.UNAUTHORIZED:
+      return 401;
+    case AppExceptionCodeEnum.CAPTCHA_VERIFICATION_FAILED:
+    case AppExceptionCodeEnum.FORBIDDEN:
+      return 403;
+    case AppExceptionCodeEnum.OBJECT_NOT_FOUND:
+      return 404;
+  }
+  return 500;
+}
+
 export function getUsrMsgResName (code: AppExceptionCodeEnum): I18nResName {
   switch (code) {
     case AppExceptionCodeEnum.BAD_REQUEST:
       return getI18nResName2('appErrors', 'badRequest');
-    case AppExceptionCodeEnum.SESSION_INIT_FAILED:
-      return getI18nResName2('appErrors', 'sessionInitFailed');
     case AppExceptionCodeEnum.OBJECT_NOT_FOUND:
       return getI18nResName2('appErrors', 'objectNotFound');
     case AppExceptionCodeEnum.CAPTCHA_VERIFICATION_FAILED:
@@ -119,15 +131,20 @@ export function defaultErrorHandler (err: any) {
 
 function defaultAppExceptionHandler (appException: AppException) {
   if (appException.code === AppExceptionCodeEnum.UNAUTHORIZED) {
-    const { signIn } = useAuth();
-    signIn('credentials');
-    return;
+    try {
+      const { signIn } = useAuth();
+      signIn('credentials');
+      return;
+    } catch (err: any) {
+      console.log('error occured while redirecting user to login page', err);
+    }
   }
 
   const createNuxtError = (appException: AppException): Partial<NuxtError> => {
     return createError({
       message: appException.internalMsg,
       fatal: false,
+      statusCode: mapAppExceptionToHttpStatus(appException.code),
       data: {
         code: appException.code,
         params: appException.params

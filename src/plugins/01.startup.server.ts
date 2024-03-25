@@ -4,14 +4,11 @@ import { Scope, createInjector } from 'typed-inject';
 import once from 'lodash-es/once';
 import { createStorage, type Storage, type StorageValue } from 'unstorage';
 import { resolve, join } from 'pathe';
-import { SessionLogic } from '../server-logic/session/session-logic';
 import { UserLogic } from '../server-logic/user-logic';
 import { ImageBytesProvider } from '../server-logic/image/image-bytes-provider';
 import { ServerLogger } from '../server-logic/helpers/logging';
 import type { IServerServicesLocator } from '../shared/serviceLocator';
 import { type IAppLogger } from '../shared/applogger';
-import { initializeSession } from '../server-logic/session/server';
-import { UserSessionOnServer } from '../server-logic/helpers/user-session';
 import { ImageLogic } from '../server-logic/image/image-logic';
 import { FileLogic } from '../server-logic/file-logic';
 import AppConfig from '../appconfig';
@@ -27,13 +24,15 @@ import { ImageCategoryLogic } from '../server-logic/image/image-category-logic';
 import { MailTemplateLogic } from '../server-logic/mail-template-logic';
 import { GeoLogic } from '../server-logic/geo-logic';
 import { AirportLogic } from '../server-logic/airport-logic';
-import { AssetsProvider } from '../server-logic/assets-provider';
+import { AppAssetsProvider } from '../server-logic/app-assets-provider';
 import { AirlineCompanyLogic } from './../server-logic/airline-company-logic';
 import { AirplaneLogic } from './../server-logic/airplane-logic';
 import { createPrismaClient } from './../prisma/client';
-import installLoggingHooks from './common/errors-hooks';
-import { isQuickStartEnv } from './../shared/common';
+import installLoggingHooks from './common/logging-hooks';
+import { getOgImageFileName } from './../shared/common';
+import { isQuickStartEnv } from './../shared/constants';
 import { resolveParentDirectory } from './../shared/fs';
+import { AllPagePaths, PagePath, OgImageDynamicPages, AvailableLocaleCodes, type Locale } from './../shared/constants';
 
 function createCache (): Storage<StorageValue> {
   return createStorage();
@@ -50,16 +49,16 @@ function ensureImageCacheDir (logger: IAppLogger): string {
   return cacheDir;
 }
 
-async function getPublicAssetsStorage (logger: IAppLogger): Promise<Storage<StorageValue>> {
-  const result = (globalThis as any).$publicAssetsStorage as Storage<StorageValue>;
+async function getAppAssetsStorage (logger: IAppLogger): Promise<Storage<StorageValue>> {
+  const result = (globalThis as any).$appDataStorage as Storage<StorageValue>;
   if (!result) {
-    logger.error('public assets storage is not available');
-    throw new Error('public assets storage is not available');
+    logger.error('app assets storage is not available');
+    throw new Error('app assets storage is not available');
   }
 
-  if (!(await result.getItem('geo/world-map.json'))) {
-    logger.error('public assets storage is miconfigured');
-    throw new Error('public assets storage is miconfigured');
+  if (!(await result.getItem('world-map.json'))) {
+    logger.error('app assets storage is miconfigured');
+    throw new Error('app assets storage is miconfigured');
   }
 
   return result;
@@ -91,18 +90,16 @@ async function buildServiceLocator (logger: IAppLogger) : Promise<IServerService
     dbUrlOverwrite = `file:${dbUrlOverwrite}`;
   }
 
-  const publicAssetsStorage = await getPublicAssetsStorage(logger);
+  const appAssetsStorage = await getAppAssetsStorage(logger);
 
   const injector = createInjector();
   const provider = injector
     .provideClass('logger', ServerLogger, Scope.Singleton)
     .provideValue('dbRepository', createPrismaClient(logger, dbUrlOverwrite))
     .provideValue('cache', createCache())
-    .provideValue('publicAssetsStorage', publicAssetsStorage)
+    .provideValue('appAssetsStorage', appAssetsStorage)
     .provideValue('imageCacheDir', ensureImageCacheDir(logger))
-    .provideClass('assetsProvider', AssetsProvider, Scope.Singleton)
-    .provideClass('sessionLogic', SessionLogic, Scope.Singleton)
-    .provideClass('userSession', UserSessionOnServer, Scope.Singleton)
+    .provideClass('appAssetsProvider', AppAssetsProvider, Scope.Singleton)
     .provideClass('fileLogic', FileLogic, Scope.Singleton)
     .provideClass('imageCategoryLogic', ImageCategoryLogic, Scope.Singleton)
     .provideClass('imageLogic', ImageLogic, Scope.Singleton)
@@ -124,9 +121,7 @@ async function buildServiceLocator (logger: IAppLogger) : Promise<IServerService
 
   return {
     getLogger: () => provider.resolve('logger'),
-    getAssetsProvider: () => provider.resolve('assetsProvider'),
-    getSessionLogic: () => provider.resolve('sessionLogic'),
-    getUserSession: () => provider.resolve('userSession'),
+    getAssetsProvider: () => provider.resolve('appAssetsProvider'),
     getUserLogic: () => provider.resolve('userLogic'),
     getImageLogic: () => provider.resolve('imageLogic'),
     getImageCategoryLogic: () => provider.resolve('imageCategoryLogic'),
@@ -147,6 +142,41 @@ async function buildServiceLocator (logger: IAppLogger) : Promise<IServerService
   };
 }
 
+async function checkOgImageConfiguration (logger: IAppLogger): Promise<void> {
+  if (!process.env.PUBLISH) {
+    logger.verbose('skipping OG images check for non-publish environment');
+    return;
+  }
+
+  if (!AppConfig.ogImage.enabled) {
+    logger.error('OG image is disabled!');
+    throw new Error('OG image is disabled!');
+  }
+
+  logger.verbose('starting OG images check');
+  const publicAssetsDir = await resolveParentDirectory('.', 'public');
+  if (!publicAssetsDir) {
+    logger.error('OG image check failed - cannot locate public directory!');
+    throw new Error('OG image check failed - cannot locate public directory!');
+  }
+
+  const ogImageDir = join(publicAssetsDir, 'img', 'og');
+  const imgPages: PagePath[] = AllPagePaths.filter(p => !OgImageDynamicPages.includes(p as PagePath));
+  for (let i = 0; i < imgPages.length; i++) {
+    for (let j = 0; j < AvailableLocaleCodes.length; j++) {
+      const imgPath = join(ogImageDir, getOgImageFileName(imgPages[i], AvailableLocaleCodes[j] as Locale));
+      try {
+        await access(imgPath);
+      } catch (err: any) {
+        logger.error(`og image was not found, page=${imgPath}`);
+        throw new Error('OG image check failed');
+      }
+    }
+  }
+
+  logger.info('OG images check completed');
+}
+
 const initApp = once(async () => {
   const logger = new ServerLogger(); // container has not built yet
   try {
@@ -156,10 +186,12 @@ const initApp = once(async () => {
       await ServerServicesLocator.getEmailSender().verifySetup();
     } else if (process.env.PUBLISH) {
       logger.error('Emailing is not configured!');
+      throw new Error('Emailing is not configured!');
     } else {
       logger.info('skipping email infrastructure check as it is disabled');
     }
     (globalThis as any).ServerServicesLocator.getServerI18n().initialize();
+    await checkOgImageConfiguration(logger);
   } catch (e) {
     logger.error('app initialization failed', e);
     throw e;
@@ -167,9 +199,10 @@ const initApp = once(async () => {
 });
 
 export default defineNuxtPlugin({
+  name: 'startup-server',
+  parallel: false,
   async setup (/* nuxtApp */) {
     await initApp();
-    await initializeSession(useRequestEvent()!);
   },
   hooks: {
     'app:created' () {

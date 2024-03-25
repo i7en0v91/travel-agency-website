@@ -1,5 +1,4 @@
 import { H3Event } from 'h3';
-import onHeaders from 'on-headers';
 import { WebApiRoutes } from '../../../shared/constants';
 import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';
 import type { EntityId } from '../../../shared/interfaces';
@@ -36,9 +35,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     modifiedTime: new Date(travelDetails.city.modifiedUtc.setMilliseconds(0)),
     cacheControls: ['must-revalidate']
   });
-  onHeaders(event.node.res, () => {
-    setHeader(event, 'content-type', 'application/json');
-  });
+  setHeader(event, 'content-type', 'application/json');
 
   const result: ITravelDetailsDto = {
     header: travelDetails.header,

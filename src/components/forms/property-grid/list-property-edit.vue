@@ -15,7 +15,7 @@ interface IProps {
   ctrlKey: string,
   captionResName: I18nResName,
   type: Exclude<SimplePropertyType, 'password'>,
-  validateAndSave: (newValues: (string | undefined)[], currentValues: (string | undefined)[], op: 'add' | 'change' | 'delete', propIdx: number | 'add', newValue?: string) => Promise<I18nResName | 'success'>,
+  validateAndSave: (newValues: (string | undefined)[], currentValues: (string | undefined)[], op: 'add' | 'change' | 'delete', propIdx: number | 'add', newValue?: string) => Promise<I18nResName | 'success' | 'cancel'>,
   placeholderResName?: I18nResName,
   values: (string | undefined)[],
   maxElementsCount: number,
@@ -85,7 +85,7 @@ function applyValuesOperation (currentValues: (string | undefined)[], op: 'add' 
   return newValues;
 }
 
-async function onValidateAndSave (op: 'add' | 'change' | 'delete', propIdx: number | 'add', value?: string): Promise<I18nResName | 'success'> {
+async function onValidateAndSave (op: 'add' | 'change' | 'delete', propIdx: number | 'add', value?: string): Promise<I18nResName | 'success' | 'cancel'> {
   logger.verbose(`(ListPropertyEdit) calling client save handler: ctrlKey=${props.ctrlKey}, op=${op}, propIdx=${propIdx}, value=${maskLog(value)}`);
   const currentValues = props.values.slice(0, props.values.length);
   const newValues = applyValuesOperation(currentValues, op, propIdx, value);
@@ -151,7 +151,7 @@ async function onControlButtonClick (button: PropertyGridControlButtonType, prop
         nextTick(() => {
           setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
         });
-      } else {
+      } else if (result !== 'cancel') {
         userNotificationStore.show({
           level: UserNotificationLevel.WARN,
           resName: result

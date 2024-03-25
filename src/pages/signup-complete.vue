@@ -2,7 +2,7 @@
 
 import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
 import AccountFormPhotos from './../components/account/form-photos.vue';
-import { WebApiRoutes, SecretValueMask } from './../shared/constants';
+import { WebApiRoutes, SecretValueMask, PagePath } from './../shared/constants';
 import { SignUpCompleteResultCode, type ISignUpCompleteResultDto } from './../server/dto';
 
 definePageMeta({
@@ -11,8 +11,9 @@ definePageMeta({
     unauthenticatedOnly: true,
     navigateAuthenticatedTo: '/'
   },
-  title: getI18nResName2('signUpCompletePage', 'title')
+  title: { resName: getI18nResName2('signUpCompletePage', 'title'), resArgs: undefined }
 });
+useOgImage();
 
 const localePath = useLocalePath();
 const completionResult = ref<SignUpCompleteResultCode | undefined>(undefined);
@@ -77,19 +78,19 @@ if (!tokenId || !tokenValue) {
       <div class="signup-complete-page-content">
         <div v-if="completionResult === SignUpCompleteResultCode.SUCCESS">
           {{ $t(getI18nResName3('signUpCompletePage', 'text', 'success')) }}
-          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath('/login')">
+          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${PagePath.Login}`)">
             {{ $t(getI18nResName2('accountPageCommon', 'login')) }}
           </NuxtLink>
         </div>
         <div v-else-if="completionResult === SignUpCompleteResultCode.ALREADY_CONSUMED">
           {{ $t(getI18nResName3('signUpCompletePage', 'text', 'alreadyConsumed')) }}
-          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath('/login')">
+          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${PagePath.Login}`)">
             {{ $t(getI18nResName2('accountPageCommon', 'login')) }}
           </NuxtLink>
         </div>
         <div v-else-if="completionResult === SignUpCompleteResultCode.LINK_EXPIRED">
           {{ $t(getI18nResName3('signUpCompletePage', 'text', 'linkExpired')) }}
-          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath('/signup')">
+          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${PagePath.Signup}`)">
             {{ $t(getI18nResName2('accountPageCommon', 'signUp')) }}
           </NuxtLink>
         </div>

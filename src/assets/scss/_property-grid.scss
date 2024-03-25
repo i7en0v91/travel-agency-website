@@ -174,19 +174,19 @@ $property-grid-value-font-size-small: 16px;
 }
 
 .icon-propCtrl-delete::before {
-  -webkit-mask-image: url('/img/icon-bin.svg');
-  mask-image: url('/img/icon-bin.svg');
+  -webkit-mask-image: url('~/public/img/icon-bin.svg');
+  mask-image: url('~/public/img/icon-bin.svg');
   margin-bottom: 3px;
 }
 
 .icon-propCtrl-change::before {
-  -webkit-mask-image: url('/img/icon-pen.svg');
-  mask-image: url('/img/icon-pen.svg');
+  -webkit-mask-image: url('~/public/img/icon-pen.svg');
+  mask-image: url('~/public/img/icon-pen.svg');
   margin-bottom: 2px;
 }
 
 .icon-propCtrl-add::before {
-  -webkit-mask-image: url('/img/icon-add.svg');
-  mask-image: url('/img/icon-add.svg');
+  -webkit-mask-image: url('~/public/img/icon-add.svg');
+  mask-image: url('~/public/img/icon-add.svg');
   margin-bottom: 3px;
 }

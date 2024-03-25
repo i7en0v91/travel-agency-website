@@ -118,7 +118,7 @@ function tooltipTextFormatter (value: any): string {
       :format="tooltipTextFormatter"
       :tooltips="true"
       :aria="{
-        'aria-label': t(getI18nResName3('searchOffers', 'filters', 'ariaLabelRangeHandler'))
+        'aria-label': t(getI18nResName3('ariaLabels', 'ariaLabelRangeHandler'))
       }"
       :style="{
         '--glb-slider-left-handle-pos': leftHandlePos.toFixed(4),

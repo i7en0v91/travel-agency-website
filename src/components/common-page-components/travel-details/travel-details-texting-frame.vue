@@ -2,6 +2,7 @@
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { type ITravelDetailsTextingData } from './../../../shared/interfaces';
 import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
+import { PagePath } from './../../../shared/constants';
 
 interface IProps {
   ctrlKey: string,
@@ -29,9 +30,9 @@ const cssClass = computed(() => {
 const bookLinkUrl = computed(() => {
   const citySlug = props.texting?.slug;
   if (!citySlug) {
-    return localePath(props.bookKind === 'flight' ? '/flights' : '/stays');
+    return localePath(props.bookKind === 'flight' ? `/${PagePath.Flights}` : `/${PagePath.Stays}`);
   }
-  return localePath(props.bookKind === 'flight' ? `/find-flights?fromCitySlug=${citySlug}` : `/find-stays?citySlug=${citySlug}`);
+  return localePath(props.bookKind === 'flight' ? `/${PagePath.FindFlights}?fromCitySlug=${citySlug}` : `/${PagePath.FindStays}?citySlug=${citySlug}`);
 });
 
 </script>
@@ -63,7 +64,7 @@ const bookLinkUrl = computed(() => {
       </p>
     </PerfectScrollbar>
     <NuxtLink :class="`btn btn-primary brdr-1 travel-details-book-btn ${ (!fadeIn && !isInitial) ? 'nontabbable' : '' }`" :to="bookLinkUrl">
-      {{ $t(getI18nResName3('travelDetails', 'bookBtn', bookKind)) }}
+      {{ $t(getI18nResName3('travelCities', 'bookBtn', bookKind)) }}
     </NuxtLink>
   </div>
 </template>

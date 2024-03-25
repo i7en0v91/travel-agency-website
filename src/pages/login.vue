@@ -11,6 +11,7 @@ import SimpleButton from './../components/forms/simple-button.vue';
 import { AppException, getUsrMsgResName } from './../shared/exceptions';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
+import { PagePath } from './../shared/constants';
 
 const { t } = useI18n();
 const localePath = useLocalePath();
@@ -21,8 +22,9 @@ definePageMeta({
     unauthenticatedOnly: true,
     navigateAuthenticatedTo: '/'
   },
-  title: getI18nResName2('loginPage', 'title')
+  title: { resName: getI18nResName2('loginPage', 'title'), resArgs: undefined }
 });
+useOgImage();
 
 const { signIn } = useAuth();
 
@@ -131,7 +133,7 @@ function onOAuthProviderClick (provider: AuthProvider) {
           </div>
         </div>
       </form>
-      <NuxtLink class="forgot-password-link mt-xs-4 brdr-1" :to="localePath('/forgot-password')">
+      <NuxtLink class="forgot-password-link mt-xs-4 brdr-1" :to="localePath(`/${PagePath.ForgotPassword}`)">
         {{ $t(getI18nResName3('loginPage', 'forms', 'forgotPassword')) }}
       </NuxtLink>
       <div v-if="loginErrorMsgResName?.length" class="form-error-msg mt-xs-3 mt-xs-5">
@@ -141,7 +143,7 @@ function onOAuthProviderClick (provider: AuthProvider) {
       <div class="having-account mt-xs-4">
         {{ $t(getI18nResName2('loginPage', 'havingAccount')) }}
         <span class="login-signup">
-          <NuxtLink class="brdr-1" :to="localePath('/signup')">{{ $t(getI18nResName2('accountPageCommon', 'signUp')) }}</NuxtLink>
+          <NuxtLink class="brdr-1" :to="localePath(`/${PagePath.Signup}`)">{{ $t(getI18nResName2('accountPageCommon', 'signUp')) }}</NuxtLink>
         </span>
       </div>
       <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" @click="onOAuthProviderClick" />

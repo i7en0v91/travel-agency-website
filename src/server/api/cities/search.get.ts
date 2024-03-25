@@ -1,5 +1,4 @@
 import { H3Event } from 'h3';
-import onHeaders from 'on-headers';
 import { validateObject } from '../../../shared/validation';
 import { WebApiRoutes } from '../../../shared/constants';
 import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';
@@ -12,7 +11,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   const query = getQuery(event);
 
   if (!query) {
-    logger.warn(`cities search query is empty, url=${event.node.req.url}`, undefined, query);
+    logger.warn(`(api:cities-search) cities search query is empty, url=${event.node.req.url}`, undefined, query);
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
       'search query parameters were not specified',
@@ -22,7 +21,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
 
   const validationError = validateObject(query, CitiesSearchQuerySchema);
   if (validationError) {
-    logger.warn(`cities search query does not match schema, url=${event.node.req.url}, msg=${validationError.message}, issues=${validationError.errors?.join('; ') ?? '[empty]'}]`, undefined, query);
+    logger.warn(`(api:cities-search) cities search query does not match schema, url=${event.node.req.url}, msg=${validationError.message}, issues=${validationError.errors?.join('; ') ?? '[empty]'}]`, undefined, query);
     throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'search query arguments has invalid format', 'error-stub');
   }
 
@@ -35,9 +34,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     });
   }
 
-  onHeaders(event.node.res, () => {
-    setHeader(event, 'content-type', 'application/json');
-  });
+  setHeader(event, 'content-type', 'application/json');
 
   return searchResults.map((r) => {
     const mapped: IListItemDto = {

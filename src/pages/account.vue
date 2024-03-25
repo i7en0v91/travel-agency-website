@@ -10,11 +10,12 @@ import { UIControlKeys } from './../shared/constants';
 definePageMeta({
   middleware: 'auth',
   auth: true,
-  title: getI18nResName2('accountPage', 'title')
+  title: { resName: getI18nResName2('accountPage', 'title'), resArgs: undefined }
 });
+useOgImage();
 
 const userAccountStore = useUserAccountStore();
-const userAccount = await userAccountStore.getUserAccount();
+const userAccount = await userAccountStore.initializeUserAccount();
 
 const accountTabHtmlId = useId();
 const historyTabHtmlId = useId();

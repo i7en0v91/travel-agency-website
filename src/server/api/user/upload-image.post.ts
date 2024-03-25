@@ -1,6 +1,5 @@
 import { H3Event } from 'h3';
 import isString from 'lodash-es/isString';
-import onHeaders from 'on-headers';
 import isBuffer from 'lodash-es/isBuffer';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import { type EntityId, ImageCategory } from '../../../shared/interfaces';
@@ -62,10 +61,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
 
   const result: IImageUploadResultDto = await userLogic.uploadUserImage(userId, category, imageBytes, CroppingImageFormat, fileName);
 
-  onHeaders(event.node.res, () => {
-    const response = event.node.res;
-    response.setHeader('content-type', 'application/json');
-  });
+  setHeader(event, 'content-type', 'application/json');
 
   return result;
 }, { logResponseBody: true, authorizedOnly: true });

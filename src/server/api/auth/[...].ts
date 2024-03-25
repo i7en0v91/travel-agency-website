@@ -6,7 +6,7 @@ import { AuthProvider, type IUserProfileInfo } from '../../../shared/interfaces'
 import { maskLog } from '../../../shared/applogger';
 import { type IAuthUserDto } from './../../dto';
 import { wrapI18nRedirect } from './../../utils/i18n-redirect-wrapper';
-import { isDevOrTestEnv, isQuickStartEnv } from './../../../shared/common';
+import { isDevOrTestEnv, isQuickStartEnv } from './../../../shared/constants';
 import { NuxtAuthHandler } from '#auth';
 
 function mapUserDto (user: IUserProfileInfo) : IAuthUserDto {

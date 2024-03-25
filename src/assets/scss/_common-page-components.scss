@@ -10,17 +10,27 @@ $calendar-icon-size: 24px;
 
 $main-title-image-xs-height: 701px;
 $main-title-image-m-height: 581px;
-$flights-title-image-xs-height: 657px;
-$flights-title-image-m-height: 737px;
+$search-page-title-image-xs-height: 657px;
+$search-page-title-image-m-height: 737px;
+
+$popular-city-card-width: markup-to-rem(370px);
+$popular-city-card-xs-width: markup-to-rem(340px);
+$popular-city-card-img-size: 90px;
+$popular-city-card-height: 120px;
+$popular-city-card-width-limit: 70vw;
 
 $travel-cities-swiper-xs-height: 420px;
 $travel-cities-swiper-s-height: 420px;
 $travel-city-card-xs-width: 296px;
 $travel-city-card-s-width: 296px;
 
-$travel-details-image-border-radius: 12px;
+$travel-details-image-border-radius: map.get($borders-radius, '3');
 $travel-details-column-layout-bkp: 600px;
 $travel-details-scrollbar-highlight-percent: 110%;
+
+$flight-details-feature-icon-size: 24px;
+$flight-transition-image-width: 168;
+$flight-transition-image-height: 48;
 
 @mixin for-travel-details-medium() {
   @media only screen and (min-width: $travel-details-column-layout-bkp) {
@@ -34,6 +44,121 @@ $travel-details-scrollbar-highlight-percent: 110%;
     min-width: $travel-city-card-s-width;
   }
   width: min-content;
+}
+
+.popular-city-grid {
+  display: grid;
+  grid-auto-flow: row;
+  grid-template-columns: repeat(auto-fill, minmax($popular-city-card-xs-width, 1fr));
+  grid-template-rows: auto auto auto auto auto;
+  grid-auto-rows: 0px;
+  overflow: hidden;
+  justify-content: center;
+  @include for-medium-and-large() {
+    grid-template-rows: auto auto auto;
+    grid-template-columns: repeat(auto-fill, minmax($popular-city-card-width, 1fr));
+  }
+  transform: translateY(-40px);
+
+  .popular-city-grid-item {
+    width: 100%;
+  }
+
+  .popular-city-card {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100vw;
+
+    margin-left: auto;
+    margin-right: auto;
+
+    @include for-small-and-above() {
+      min-width: $popular-city-card-xs-width;
+    }
+
+    .popular-city-card-container {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 16px;
+
+      width: auto;
+      height: 100%;
+      overflow: hidden;
+  
+      @include with-theme-color('shadow') using($css-var) {
+        box-shadow: 0px 4px 16px var($css-var);
+      }
+    
+      .popular-city-card-img {
+        width: $popular-city-card-img-size;
+        height: $popular-city-card-img-size;
+        max-width: $popular-city-card-img-size;
+        max-height: $popular-city-card-img-size;
+
+        flex: 1 0 auto;
+  
+        .static-image-stub {
+          border-radius: map.get($borders-radius, '3');
+        }
+  
+        img {
+          background-size: cover;
+          border-radius: map.get($borders-radius, '3');
+        }
+      }
+    
+      .popular-city-info {
+        width: fit-content;
+        height: max-content;
+
+        flex: 0 1 auto;
+    
+        .popular-city-name {
+          width: fit-content;
+          height: auto;
+
+          overflow: hidden;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+          white-space: pre-wrap;
+  
+          @include with-theme-color('secondary') using ($css-var) {
+            color: var(#{$css-var});
+          }
+          @include with-body-font('category-caption');
+        }
+  
+        .popular-city-links {
+          width: fit-content;
+          height: auto;
+          overflow: hidden;
+
+          display: flex;
+          flex-wrap: wrap;
+          flex-direction: row;
+          align-items: center;
+          gap: 8px;
+  
+          @include with-theme-color('input-ctrl-primary') using ($css-var) {
+            color: var(#{$css-var});
+          }
+  
+          a:focus-visible {
+            @include with-outline();
+          }
+  
+          a:hover {
+            text-decoration: underline;
+            text-decoration-thickness: markup-to-rem(1.5px);
+          }
+        }
+      }
+    }
+  }
 }
 
 .search-page-head {
@@ -84,14 +209,14 @@ $travel-details-scrollbar-highlight-percent: 110%;
         }
       }
 
-      .flights-page-head {
+      .flights-page-head, .stays-page-head {
         
         .search-page-head-content {
-          height: $flights-title-image-xs-height;
-          max-height: $flights-title-image-xs-height;
+          height: $search-page-title-image-xs-height;
+          max-height: $search-page-title-image-xs-height;
           @include for-medium-and-large() {
-            height: $flights-title-image-m-height;
-            max-height: $flights-title-image-m-height;
+            height: $search-page-title-image-m-height;
+            max-height: $search-page-title-image-m-height;
           }
 
           overflow: hidden;
@@ -103,21 +228,21 @@ $travel-details-scrollbar-highlight-percent: 110%;
         }
 
         .search-page-head-image {
-          height: $flights-title-image-xs-height;
-          max-height: $flights-title-image-xs-height;
+          height: $search-page-title-image-xs-height;
+          max-height: $search-page-title-image-xs-height;
           @include for-medium-and-large() {
-            height: $flights-title-image-m-height;
-            max-height: $flights-title-image-m-height;
+            height: $search-page-title-image-m-height;
+            max-height: $search-page-title-image-m-height;
           }
       
           img {
             object-position: top;
       
-            height: $flights-title-image-xs-height;
-            max-height: $flights-title-image-xs-height;
+            height: $search-page-title-image-xs-height;
+            max-height: $search-page-title-image-xs-height;
             @include for-medium-and-large() {
-              height: $flights-title-image-m-height;
-              max-height: $flights-title-image-m-height;
+              height: $search-page-title-image-m-height;
+              max-height: $search-page-title-image-m-height;
             }
           }
         }
@@ -132,6 +257,8 @@ $travel-details-scrollbar-highlight-percent: 110%;
   max-width: 1700px;
   margin-left: auto;
   margin-right: auto;
+
+  overflow-x: clip;
 
   transform: translateY(-10%);
 
@@ -251,13 +378,13 @@ $travel-details-scrollbar-highlight-percent: 110%;
     }
 
     .icon-increment::before {
-      -webkit-mask-image: url('/img/icon-add.svg');
-      mask-image: url('/img/icon-add.svg');
+      -webkit-mask-image: url('~/public/img/icon-add.svg');
+      mask-image: url('~/public/img/icon-add.svg');
     }
 
     .icon-decrement::before {
-      -webkit-mask-image: url('/img/icon-minus.svg');
-      mask-image: url('/img/icon-minus.svg');
+      -webkit-mask-image: url('~/public/img/icon-minus.svg');
+      mask-image: url('~/public/img/icon-minus.svg');
     }
   }
 }
@@ -324,8 +451,8 @@ $travel-details-scrollbar-highlight-percent: 110%;
           }
     
           content: '';
-          -webkit-mask-image: url('/img/icon-swap-horizontal.svg');
-          mask-image: url('/img/icon-swap-horizontal.svg');
+          -webkit-mask-image: url('~/public/img/icon-swap-horizontal.svg');
+          mask-image: url('~/public/img/icon-swap-horizontal.svg');
         }
       }
     }
@@ -386,6 +513,7 @@ $travel-details-scrollbar-highlight-percent: 110%;
       flex-wrap: nowrap;
       align-items: center;
 
+      width: 100%;
   
       .search-stays-destination {
         width: 100%;
@@ -505,18 +633,23 @@ $travel-details-scrollbar-highlight-percent: 110%;
 
   @at-root {
     .icon-paper-plane::before {
-      -webkit-mask-image: url('/img/icon-paper-plane.svg');
-      mask-image: url('/img/icon-paper-plane.svg');
+      -webkit-mask-image: url('~/public/img/icon-paper-plane.svg');
+      mask-image: url('~/public/img/icon-paper-plane.svg');
     }
 
     .icon-plus-simple::before {
-      -webkit-mask-image: url('/img/icon-plus-simple.svg');
-      mask-image: url('/img/icon-plus-simple.svg');
+      -webkit-mask-image: url('~/public/img/icon-plus-simple.svg');
+      mask-image: url('~/public/img/icon-plus-simple.svg');
     }
 
     .icon-magnifier::before {
-      -webkit-mask-image: url('/img/icon-magnifier.svg');
-      mask-image: url('/img/icon-magnifier.svg');
+      -webkit-mask-image: url('~/public/img/icon-magnifier.svg');
+      mask-image: url('~/public/img/icon-magnifier.svg');
+    }
+
+    .icon-share::before {
+      -webkit-mask-image: url('~/public/img/icon-share.svg');
+      mask-image: url('~/public/img/icon-share.svg');
     }
   }
 }
@@ -567,8 +700,8 @@ $travel-details-scrollbar-highlight-percent: 110%;
   
   @at-root {
     .icon-calendar {
-      -webkit-mask-image: url('/img/icon-calendar.svg');
-      mask-image: url('/img/icon-calendar.svg');
+      -webkit-mask-image: url('~/public/img/icon-calendar.svg');
+      mask-image: url('~/public/img/icon-calendar.svg');
     }
   }
 }
@@ -1130,6 +1263,684 @@ $travel-details-scrollbar-highlight-percent: 110%;
       .error-helm-stub {
         border-radius: $travel-details-image-border-radius;
       }
+    }
+  }
+}
+
+.offer-details-summary {
+  .offer-details-breadcrumbs {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+
+    @include with-body-font('body-secondary');     
+
+    .offer-details-breadcrumb {
+      display: inline-block;
+      vertical-align: middle;
+
+      &:not(:last-child) {
+        @include with-theme-color('highlighted-info') using($css-var) {
+          color: var($css-var);
+        }
+
+        a &:hover {
+          width: auto;
+          white-space: nowrap;
+
+          text-decoration: underline;
+          text-decoration-thickness: 1.5px;
+        }
+
+        &::after {
+          display: inline-block;
+
+          width: 0.33rem;
+          height: 0.6rem;
+          vertical-align: middle;
+
+          margin-left: map.get($spacings, '2');
+          //margin-top: 0.33rem;
+          //margin-right: 8px;
+          //position: absolute;
+          //right: 0;
+          //padding-right: markup-to-rem(map.get($spacings, '1'));
+          content: '';
+
+          -webkit-mask-image: escape-svg(svg.$icon-right-chevron);
+          mask-image: escape-svg(svg.$icon-right-chevron);
+          
+          -webkit-mask-size: contain;
+          mask-size: contain;
+          -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+          -webkit-mask-position: center center;
+          mask-position: center center;
+          vertical-align: middle;
+
+          @include with-theme-color('primary') using ($css-var) {
+            background-color: var($css-var);
+          }
+        }
+      }
+
+      &:last-child {
+        width: auto;
+
+        @include with-theme-color('primary') using($css-var) {
+          color: var($css-var);
+        }
+      }
+      
+    }
+  }
+
+  .offer-details-summary-grid {
+    display: grid;
+    justify-content: flex-start;
+    
+    grid-template-columns: 1fr auto;
+    grid-template-rows: repeat(3, auto);
+    @include for-small-and-above() {
+      grid-template-rows: auto auto;
+    }
+
+    .offer-details-summary-name {
+      grid-row-start: 1;
+      grid-row-end: 2;
+      grid-column-start: 1;
+      grid-column-end: 3;
+
+      @include for-small-and-above() {
+        grid-column-start: 1;
+        grid-column-end: 2;
+      }
+
+      display: contents;
+      white-space: normal;
+      width: fit-content;
+
+      @include with-header-font('4');
+      @include with-theme-color('input-ctrl-primary') using($css-var) {
+        color: var($css-var);
+      }
+
+      .offer-details-summary-title {
+        display: inline;
+      }
+
+      .offer-details-hotel-rating {
+        display: inline-flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 16px;
+
+        .offer-details-hotel-card-stars {
+          display: flex;
+          flex-direction: row;
+          flex-wrap: nowrap;
+          align-items: center;
+          gap: 2px;
+
+          transform: translateY(-0.1rem);
+        }
+
+        .offer-details-hotel-rating-caption {
+          font-size: markup-to-rem(12px);
+        }
+      }
+    }
+
+    .offer-details-summary-price {
+      grid-row-start: 1;
+      grid-row-end: 2;
+      grid-column-start: 2;
+      grid-column-end: 3;
+
+      justify-self: flex-end;
+
+      @include with-header-font('3');
+      font-family: $font-default;
+      @include with-theme-color('highlighted-info') using($css-var) {
+        color: var($css-var);
+      }
+
+      .stays-price-night {
+        font-size: markup-to-rem(16px);
+      }
+    }
+
+    .offer-details-summary-main {
+      grid-row-start: 2;
+      grid-row-end: 3;
+      grid-column-start: 1;
+      grid-column-end: 3;
+      @include for-small-and-above() {
+        grid-row-start: 2;
+        grid-row-end: 3;
+        grid-column-start: 1;
+        grid-column-end: 2;
+      }
+      
+      width: 100%;
+      display: block;
+
+      .offer-details-summary-info {
+        .offer-details-summary-location {
+          .offer-details-location-icon {
+            -webkit-mask-image: url('~/public/img/icon-location.svg');
+            mask-image: url('~/public/img/icon-location.svg');
+          }
+
+          .offer-details-summary-location-text {
+            font-size: markup-to-rem(12px);
+            @include with-theme-color('primary') using($css-var) {
+              color: var($css-var);
+            }
+          }
+        }  
+      }
+
+      .offer-details-summary-stats {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+
+        @include with-theme-color('input-ctrl-primary') using($css-var) {
+          color: var($css-var);
+        }
+
+        @include for-small-and-above() {
+          justify-content: flex-start;
+          margin-left: unset;
+        }
+
+        .offer-details-summary-score {
+          width: fit-content;
+          height: auto;
+
+          @include with-theme-color('control-bg') using($css-var) {
+            border: 1px solid var($css-var);
+          }
+          background-color: transparent;
+        }
+
+        .offer-details-summary-score-class {
+          width: fit-content;
+          height: auto;
+          white-space: nowrap;
+
+          @include with-header-font('5');
+          font-weight: map.get($weights-map, 'semi-bold');
+        }
+
+        .offer-details-summary-reviews {
+          width: fit-content;
+          height: auto;
+
+          @include with-body-font('body-secondary');
+          font-size: markup-to-rem(14px);  
+          white-space: nowrap;
+        }        
+      }
+    }
+
+    .offer-details-summary-buttons {
+      grid-row-start: 3;
+      grid-row-end: 4;
+      grid-column-start: 1;
+      grid-column-end: 3;
+
+      width: 100%;
+      height: min-content;
+
+      @include for-small-and-above() {
+        grid-row-start: 2;
+        grid-row-end: 3;
+        grid-column-start: 2;
+        grid-column-end: 3;
+      }
+
+      display: flex;
+      flex-direction: row-reverse;
+      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 16px;
+      justify-self: flex-end;
+
+      .btn-icon::before {
+        vertical-align: middle;
+      }
+
+      .offer-details-summary-btn-like, .offer-details-summary-btn-share {
+        width: max-content;
+        padding-top: unset;
+        padding-bottom: unset;
+      }
+
+      .offer-details-summary-btn-like {
+        height: auto;
+      }
+
+      .offer-details-summary-btn-share {
+        height: 100%;
+      }
+  
+      .offer-details-summary-btn-book {
+        width: max-content;
+        height: 100%;
+        text-align: center;
+        align-self: flex-end;
+
+        flex: 1 0 auto;
+
+        @include for-small-and-above() {
+          width: auto;
+        }
+      }
+    }
+  }
+
+  .offer-details-summary-icon {
+    width: 0.8rem;
+    height: 0.8rem;
+
+    display: inline-block;
+    
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center center;
+    mask-position: center center;
+    vertical-align: middle;
+
+    @include with-theme-color('input-ctrl-primary') using ($css-var) {
+      background-color: var($css-var);
+    }
+  }
+}
+
+.flight-details-card {
+  @include with-theme-color('shadow') using($css-var) {
+    box-shadow: 0px 4px 16px var($css-var);
+  }
+
+  .flight-details-additional-info {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+    width: 100%;
+
+    .flight-details-additional-info-title {
+      flex: 1 1 auto;
+      white-space: normal;
+      width: fit-content;
+
+      @include with-header-font('4');
+      @include with-theme-color('input-ctrl-primary') using($css-var) {
+        color: var($css-var);
+      }
+    }
+
+    .flight-details-additional-info-price {
+      flex: 0 0 auto;
+
+      @include with-header-font('3');
+      font-family: $font-default;
+      @include with-theme-color('highlighted-info') using($css-var) {
+        color: var($css-var);
+      }
+    }
+  }
+
+  .flight-details-datetime {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+    width: 100%;
+
+    .flight-details-datetime-date {
+      flex: 1 1 auto;
+      white-space: normal;
+      width: fit-content;
+
+      @include with-header-font('5');
+      font-family: $font-default;
+      @include with-theme-color('input-ctrl-primary') using($css-var) {
+        color: var($css-var);
+      }
+    }
+
+    .flight-details-datetime-duration {
+      flex: 0 0 auto;
+      white-space: nowrap;
+
+      @include with-body-font('body-primary');
+      @include with-font-size('h5');
+      @include with-theme-color('primary') using($css-var) {
+        color: var($css-var);
+      }
+    }
+  }
+
+
+
+    .flight-details-main {
+      width: auto;
+      overflow-x: hidden;
+      
+      display: flex;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      align-items: center;
+      @include for-medium-and-large() {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .flight-details-company-div {
+        flex: 0 1 auto;
+
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        
+        @include with-theme-color('control-frame') using($css-var) {
+          border: 1px solid  var($css-var);
+        }
+
+        .flight-details-company-logo {
+          width: 64px;
+          height: 64px;
+
+          .flight-details-company-logo-img {
+            object-fit: cover;
+          }
+        }
+
+        .flight-details-company-info {
+          flex: 1 0 auto;
+
+          width: auto;
+          min-width: 160px;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          flex-wrap: nowrap;
+          gap: 8px;
+
+          justify-content: center;
+          align-items: flex-start;
+
+          .flight-details-company-name {
+            display: block;
+            width: min-content;
+            min-width: 30vw;
+            height: auto;
+            white-space: normal;
+
+            @include with-header-font('4');
+            @include with-theme-color('input-ctrl-primary') using($css-var) {
+              color: var($css-var);
+            }
+          }
+
+          .flight-details-airplane-name {
+            display: block;
+            width: 100%;
+            height: auto;
+            white-space: normal;
+
+            @include with-body-font('body-secondary');
+            @include with-theme-color('secondary') using($css-var) {
+              color: var($css-var);
+            }
+          }
+        }
+      }
+
+      .flight-details-features {
+        flex: 0 1 min-content;
+        justify-self: flex-end;
+
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+
+        
+        li:not(:first-child) {         
+          @include with-theme-color('control-frame') using ($css-var) {
+            border-left: 1px solid var($css-var);
+          }
+        }
+
+        .flight-details-feature-icon {
+          flex: 0 0 auto;
+    
+          width: $flight-details-feature-icon-size;
+          height: $flight-details-feature-icon-size;
+          -webkit-mask-size: $flight-details-feature-icon-size;
+          mask-size: $flight-details-feature-icon-size;
+          -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+          -webkit-mask-position: center center;
+          mask-position: center center;
+          vertical-align: middle;
+          @include with-theme-color('input-ctrl-primary') using($css-var) {
+            background-color: var($css-var);
+          }
+
+          &.icon-airplane {
+            -webkit-mask-image: url('~/public/img/icon-airplane.svg');
+            mask-image: url('~/public/img/icon-airplane.svg');
+          }
+
+          &.icon-wifi {
+            -webkit-mask-image: url('~/public/img/icon-wifi.svg');
+            mask-image: url('~/public/img/icon-wifi.svg');
+          }
+
+          &.icon-stopwatch {
+            -webkit-mask-image: url('~/public/img/icon-stopwatch.svg');
+            mask-image: url('~/public/img/icon-stopwatch.svg');
+          }
+
+          &.icon-fastfood {
+            -webkit-mask-image: url('~/public/img/icon-fastfood.svg');
+            mask-image: url('~/public/img/icon-fastfood.svg');
+          }
+
+          &.icon-seat-recline {
+            -webkit-mask-image: url('~/public/img/icon-seat-recline.svg');
+            mask-image: url('~/public/img/icon-seat-recline.svg');
+          }
+        }
+      }
+
+      .flight-details-timing-div {
+        width: 100%;
+        display: block;
+        height: min-content;
+
+        .flight-details-timing {
+          flex: 1 1 auto;
+          align-self: flex-start;
+          width: max-content;
+
+          margin-top: 40px;
+          margin-left: auto;
+          margin-right: auto;
+
+          display: flex;
+          flex-direction: row;
+          flex-wrap: nowrap;
+          align-items: center;
+          justify-content: center;
+
+          .flight-details-timing-from, .flight-details-timing-to {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+
+            width: min-content;
+            @include for-medium-and-large() {
+              width: max-content;
+            }
+          }
+          .flight-details-timing-to {
+            text-align: end;
+          }
+
+          .flight-details-timeofday, .flight-details-airport-label {
+            min-width: 100px; // for text data loading stub
+          }
+
+          .flight-details-timeofday {
+            flex: 1 0 auto;
+
+            width: auto;
+            white-space: nowrap;
+
+            font-size: markup-to-rem(24px);
+            font-weight: map.get($weights-map, 'semi-bold');
+            @include with-theme-color('input-ctrl-primary') using($css-var) {
+              color: var($css-var);
+            }
+          }
+
+          .flight-details-airport-label {
+            flex: 1 0 auto;
+
+            width: auto;
+            white-space: nowrap;
+            
+            @include with-body-font('body-primary');
+            @include with-theme-color('secondary') using($css-var) {
+              color: var($css-var);
+            }
+          }
+
+          .flight-details-transition-image {
+            flex: 1 0 auto;
+
+            margin-left: 20px;
+            margin-right: 20px;
+            @include for-medium-and-large() {
+              margin-left: 80px;
+              margin-right: 80px;
+            }
+            
+
+            width: #{$flight-transition-image-width}px;
+            height: #{$flight-transition-image-height}px;
+            //aspect-ratio: #{$flight-transition-image-width '/' $flight-transition-image-height};
+      
+            -webkit-mask-image: url('~/public/img/flight-transition.svg');
+            mask-image: url('~/public/img/flight-transition.svg');
+            -webkit-mask-size: #{$flight-transition-image-width}px #{$flight-transition-image-height}px;
+            mask-size: #{$flight-transition-image-width}px #{$flight-transition-image-height}px;
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+            -webkit-mask-position: center center;
+            mask-position: center center;
+            vertical-align: middle;
+            @include with-theme-color('input-ctrl-primary') using($css-var) {
+              background-color: var($css-var);
+            }
+          }
+        }
+      }
+    }
+}
+
+.stay-card-star {
+  width: 0.9rem;
+  height: 0.9rem;
+
+  -webkit-mask-image: url('~/public/img/star.svg');
+  mask-image: url('~/public/img/star.svg');
+  
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center center;
+  mask-position: center center;
+  vertical-align: middle;
+
+  @include with-theme-color('highlighted-info') using ($css-var) {
+    background-color: var($css-var);
+  }
+}
+
+.interactive-map-waiting-indicator {
+  height: 100px;
+}
+
+.interactive-map {
+  .interactive-map-disabled {
+    width: 100%;
+    height: auto;
+    
+    @include with-body-font('regular');
+    @include with-theme-color('primary') using($css-var) {
+      color: var($css-var);
+    }
+  }
+
+  .interactive-map-container {
+    overflow: hidden;
+  }
+  
+  .interactive-map-location {
+    .interactive-map-location-icon {
+      width: 0.8rem;
+      height: 0.8rem;
+
+      display: inline-block;
+      
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center center;
+      mask-position: center center;
+      vertical-align: middle;
+
+      @include with-theme-color('input-ctrl-primary') using ($css-var) {
+        background-color: var($css-var);
+      }
+
+      -webkit-mask-image: url('~/public/img/icon-location.svg');
+      mask-image: url('~/public/img/icon-location.svg');
+    }
+
+    .interactive-map-location-text {
+      font-size: markup-to-rem(12px);
+      @include with-theme-color('primary') using($css-var) {
+        color: var($css-var);
+      }
+    }
+  }
+
+  .error-helm {
+    .error-helm-stub {
+      min-height: 200px;
     }
   }
 }

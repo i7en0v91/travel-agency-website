@@ -1,6 +1,7 @@
 import { destr } from 'destr';
 import { ImageCategory, type IImageCategoryInfo } from '../shared/interfaces';
 import { NuxtDataKeys } from '../shared/constants';
+import { getPayload, addPayload } from './../shared/payload';
 
 type CategoryInfoPayload = [string, IImageCategoryInfo];
 
@@ -58,15 +59,15 @@ export const useSystemConfigurationStore = defineStore('systemConfigurationStore
       if (!imageCategoryInfosPayload) {
         const nuxtApp = useNuxtApp();
         if (process.client) {
-          imageCategoryInfosPayload = destr<CategoryInfoPayload[]>(nuxtApp.payload[NuxtDataKeys.ImageSrcSizes]);
+          imageCategoryInfosPayload = getPayload<CategoryInfoPayload[]>(nuxtApp, NuxtDataKeys.ImageSrcSizes) ?? undefined;
         } else {
           imageCategoryInfosPayload = await buildImageCategoryInfoPayload();
-          nuxtApp.payload[NuxtDataKeys.ImageSrcSizes] = imageCategoryInfosPayload;
+          addPayload(nuxtApp, NuxtDataKeys.ImageSrcSizes, imageCategoryInfosPayload);
         }
       }
 
       if (!imageCategoryInfosMap) {
-        imageCategoryInfosMap = createImageCategoryInfosMap(imageCategoryInfosPayload);
+        imageCategoryInfosMap = createImageCategoryInfosMap(imageCategoryInfosPayload!);
       }
 
       initialized = true;

@@ -20,6 +20,8 @@ export function getImage (src: string, props: IImageProps, _: ImageCTX) {
     return 'image-size-was-not-specified';
   }
 
+  const satori = props.modifiers?.satori ?? false;
+
   const requestedWidth = props.modifiers.width;
   const requestedHeight = props.modifiers.height;
   const scaleRefreshStep = AppConfig.images.scaleStep;
@@ -39,7 +41,7 @@ export function getImage (src: string, props: IImageProps, _: ImageCTX) {
   }
 
   return {
-    url: `${src}&scale=${scale.toFixed(3)}`
+    url: satori ? `${src}&scale=${scale.toFixed(3)}&satori=1` : `${src}&scale=${scale.toFixed(3)}`
   };
 }
 

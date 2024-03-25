@@ -1,21 +1,47 @@
 import { Readable } from 'stream';
 import { H3Event } from 'h3';
 import isString from 'lodash-es/isString';
-import onHeaders from 'on-headers';
+import { getQuery } from 'ufo';
+import sharp from 'sharp';
 import { defineWebApiEventHandler } from '../utils/webapi-event-handler';
 import { WebApiRoutes } from '../../shared/constants';
 import { type EntityId, ImageCategory } from '../../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../../shared/exceptions';
 import { getServerSession } from '#auth';
 
+async function convertToJpeg (bytes: Buffer): Promise<Buffer> {
+  const sharpObj = sharp(bytes);
+  const metadata = await sharpObj.metadata();
+  if (!metadata.width || !metadata.height) {
+    throw new Error('failed to parse image');
+  }
+  return sharpObj.jpeg().toBuffer();
+}
+
 export default defineWebApiEventHandler(async (event : H3Event) => {
+  const logger = CommonServicesLocator.getLogger();
   const imageBytesProvider = ServerServicesLocator.getImageBytesProvider();
   const imageLogic = ServerServicesLocator.getImageLogic();
 
-  const query = getQuery(event);
+  let url = event.node.req.url;
+  if (!url) {
+    throw new AppException(
+      AppExceptionCodeEnum.BAD_REQUEST,
+      'query parameters were not specified',
+      'error-stub'
+    );
+  }
+
+  if (url.includes('&amp;')) {
+    url = url.replaceAll('&amp;', '&'); // fix for satori img requests
+  }
+  const query = getQuery(url);
+  // eslint-disable-next-line no-unneeded-ternary
+  const isSatori = query?.satori ? true : false;
+
   const slug = query?.slug?.toString();
   const categoryParam = query?.category?.toString();
-  const scaleParam = query?.scale?.toString();
+  const scaleParam = isSatori ? '1.000' : query?.scale?.toString();
 
   if (!slug) {
     throw new AppException(
@@ -29,16 +55,24 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   if (!category || !Object.values(ImageCategory).includes(category)) {
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
-      `category parameter was not (correctly) specified: slug=${slug}`,
+      `category parameter was not (correctly) specified: slug=${slug}, category=${category}`,
       'error-stub'
     );
   }
 
   let scale: number;
-  if (!scaleParam || !(scale = Number.parseFloat(scaleParam))) {
+  if (!scaleParam) {
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
-      `scale parameter was not (correctly) specified: slug=${slug}`,
+      `scale parameter was not specified: slug=${slug}`,
+      'error-stub'
+    );
+  }
+
+  if (!(scale = Number.parseFloat(scaleParam))) {
+    throw new AppException(
+      AppExceptionCodeEnum.BAD_REQUEST,
+      `scale parameter was incorrectly specified: slug=${slug}, scaleParam=${scaleParam}`,
       'error-stub'
     );
   }
@@ -73,24 +107,34 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  const modifiedSince = image.modifiedUtc;
-  modifiedSince.setMilliseconds(0);
-  handleCacheHeaders(event, {
-    maxAge: WebApiRoutes.ImageCacheLatency,
-    modifiedTime: modifiedSince,
-    cacheControls: ['must-revalidate']
-  });
-
-  onHeaders(event.node.res, () => {
-    const response = event.node.res;
-    response.setHeader('content-type', image.mimeType ?? 'image');
-    response.setHeader('content-length', image.bytes.length);
-    if (accessCheck === 'unprotected') {
-      response.setHeader('x-robots-tag', 'index, follow, archive');
-    } else {
-      response.setHeader('x-robots-tag', 'noindex, nofollow, noarchive');
+  if (isSatori && !image.mimeType?.includes('jpeg')) {
+    try {
+      logger.info(`(api:img) converting image to satori acceptable format (JPEG), slug=${slug}, mime=${image.mimeType}`);
+      image.mimeType = 'image/jpeg';
+      image.bytes = await convertToJpeg(image.bytes);
+    } catch (err: any) {
+      logger.warn(`(api:img) failed to convert image to satori acceptable format (JPEG), slug=${slug}, mime=${image.mimeType}`, err);
+      throw err;
     }
-  });
+  }
+
+  if (!isSatori) {
+    const modifiedSince = image.modifiedUtc;
+    modifiedSince.setMilliseconds(0);
+    handleCacheHeaders(event, {
+      maxAge: WebApiRoutes.ImageCacheLatency,
+      modifiedTime: modifiedSince,
+      cacheControls: ['must-revalidate']
+    });
+  }
+
+  setHeader(event, 'content-type', image.mimeType ?? 'image');
+  setHeader(event, 'content-length', image.bytes.length);
+  if (accessCheck === 'unprotected') {
+    setHeader(event, 'x-robots-tag', 'index, follow, archive');
+  } else {
+    setHeader(event, 'x-robots-tag', 'noindex, nofollow, noarchive');
+  }
 
   return await sendStream(event, Readable.from(image.bytes));
 }, { logResponseBody: false, authorizedOnly: false });

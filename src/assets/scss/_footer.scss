@@ -54,7 +54,7 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
         margin-right: unset;
       }
 
-      background-image: url('/img/logo-footer.svg');
+      background-image: url('~/public/img/logo-footer.svg');
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center bottom;

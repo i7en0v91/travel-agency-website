@@ -2,7 +2,7 @@
 
 import { getI18nResName2 } from './../shared/i18n';
 import SimpleButton from './forms/simple-button.vue';
-import { CookieNames, TabIndicesUpdateDefaultTimeout } from './../shared/constants';
+import { CookieNames, TabIndicesUpdateDefaultTimeout, PagePath } from './../shared/constants';
 import { updateTabIndices } from './../shared/dom';
 
 interface IProps {
@@ -35,7 +35,7 @@ function onAcceptBtnClick () {
       </h3>
       <i18n-t :keypath="getI18nResName2('cookieBanner', 'text')" tag="div" scope="global" class="cookie-banner-text mt-xs-2 mt-s-3">
         <template #privacyLink>
-          <NuxtLink class="cookie-banner-privacy-link brdr-1 tabbable-group-cookie-banner" target="_blank" :to="localePath('/privacy')">
+          <NuxtLink class="cookie-banner-privacy-link brdr-1 tabbable-group-cookie-banner" target="_blank" :to="localePath(`/${PagePath.Privacy}`)">
             {{ $t(getI18nResName2('signUpPage', 'privacyLinkText')) }}
           </NuxtLink>
         </template>
