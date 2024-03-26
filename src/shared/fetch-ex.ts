@@ -3,12 +3,10 @@ import type { NitroFetchRequest, AvailableRouterMethod as _AvailableRouterMethod
 import { destr } from 'destr';
 import isString from 'lodash-es/isString';
 import isNumber from 'lodash-es/isNumber';
+import { type IApiErrorDto } from '../server/dto';
+import { AppException, AppExceptionCodeEnum, type AppExceptionAppearance, defaultErrorHandler } from './exceptions';
 import type { KeysOf, PickFrom, AsyncDataExecuteOptions } from '#app/composables/asyncData.js';
 import type { UseFetchOptions } from '#app/composables';
-
-import { type IApiErrorDto } from '../server/dto';
-
-import { AppException, AppExceptionCodeEnum, type AppExceptionAppearance, defaultErrorHandler } from './exceptions';
 
 type AvailableRouterMethod<R extends NitroFetchRequest> = _AvailableRouterMethod<R> | Uppercase<_AvailableRouterMethod<R>>;
 
@@ -20,7 +18,7 @@ export type SSRAwareFetchResult<TFetchResult> = {
   error: Ref<AppException | undefined>,
   query: Ref<any>,
   body: Ref<any>,
-  execute: (opts?: AsyncDataExecuteOptions) => Promise<TFetchResult>,
+  execute: (opts?: AsyncDataExecuteOptions) => Promise<void>,
 } & _FetchResultOpProps & {
   throwIfErrorOnSSR(): void
 };
