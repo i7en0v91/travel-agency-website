@@ -25,7 +25,8 @@ Project uses a number of open source projects to work properly:
 - [Pinia](https://github.com/vuejs/pinia) - intuitive, type safe and flexible Store for Vue
 - [Nodemailer](https://github.com/nodemailer/nodemailer) - for sending emails
 - [Playwright](https://github.com/microsoft/playwright) - for Web Testing and Automation
-- [Winston](https://github.com/winstonjs/winston) - for logging 
+- [Winston](https://github.com/winstonjs/winston) - for logging
+- [Nuxt OgImage](https://github.com/nuxt-modules/og-image) - for generating OpenGraph images for entities on-the-fly using [Satori](https://github.com/vercel/satori)
 - Other third-party UI components:
   - [CropperJS](https://github.com/fengyuanchen/cropperjs) - for uploading photos
   - [VCalendar](https://github.com/nathanreyes/v-calendar) - An elegant calendar and date picker plugin for Vuejs
@@ -33,6 +34,7 @@ Project uses a number of open source projects to work properly:
   - [Floating Vue](https://github.com/Akryum/floating-vue) - for popups & drop downs
   - [Vue Toastification](https://github.com/Maronato/vue-toastification) - for notifications
   - [Vuelidate](https://github.com/vuelidate/vuelidate) - for user input validation
+  - [TipTap](https://github.com/ueberdosis/tiptap) - The headless rich text editor, was used for creating user reviews
 
 ## Installation
 
