@@ -1567,29 +1567,25 @@ async function checkNeedInitialSeeding () : Promise<boolean> {
 }
 
 let seedMethodExecuted = false;
-export default defineNuxtPlugin({
-  name: 'data-seed',
-  parallel: false,
-  async setup (/* nuxtApp */) {
-    if (seedMethodExecuted) {
+export default defineNuxtPlugin(async () => {
+  if (seedMethodExecuted) {
+    return;
+  } else {
+    seedMethodExecuted = true;
+  }
+
+  if (process.env.NODE_ENV === 'development' || isQuickStartEnv()) {
+    const seedingIsNeeded = await checkNeedInitialSeeding();
+    if (!seedingIsNeeded) {
       return;
-    } else {
-      seedMethodExecuted = true;
     }
 
-    if (process.env.NODE_ENV === 'development' || isQuickStartEnv()) {
-      const seedingIsNeeded = await checkNeedInitialSeeding();
-      if (!seedingIsNeeded) {
-        return;
-      }
-
-      const logger = CommonServicesLocator.getLogger();
-      logger.lowerWarnsWithoutErrorLevel(true);
-      try {
-        await seedDb();
-      } finally {
-        logger.lowerWarnsWithoutErrorLevel(false);
-      }
+    const logger = CommonServicesLocator.getLogger();
+    logger.lowerWarnsWithoutErrorLevel(true);
+    try {
+      await seedDb();
+    } finally {
+      logger.lowerWarnsWithoutErrorLevel(false);
     }
   }
 });
