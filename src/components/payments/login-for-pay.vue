@@ -15,7 +15,7 @@ const localePath = useLocalePath();
 const route = useRoute();
 
 async function onEmailLoginClick (): Promise<void> {
-  await navigateTo(withQuery(localePath(`/${PagePath.Login}`), { callbackUrl: route.path }));
+  await navigateTo(withQuery(localePath(`/${PagePath.Login}`), { callbackUrl: route.fullPath }));
 }
 
 function onOAuthProviderClick (provider: AuthProvider) {
