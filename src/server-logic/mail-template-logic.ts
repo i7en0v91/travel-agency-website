@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { type IAppLogger } from '../shared/applogger';
-import { EmailTemplate, type IMailTemplateLogic, type ILocalizableValue, type EntityId } from '../shared/interfaces';
-import { type Locale, LocaleEnum, DbConcurrencyVersions } from '../shared/constants';
+import type { EmailTemplate, IMailTemplateLogic, ILocalizableValue, EntityId } from '../shared/interfaces';
+import { type Locale, LocaleEnum, DbVersionInitial } from '../shared/constants';
 import { getLocalizeableValue } from '../shared/common';
 import { mapEnumValue } from './helpers/db';
 
@@ -49,7 +49,7 @@ export class MailTemplateLogic implements IMailTemplateLogic {
     const mailTemplateId = ((await this.dbRepository.mailTemplate.create({
       data: {
         kind: mapEnumValue(kind),
-        version: DbConcurrencyVersions.InitialVersion,
+        version: DbVersionInitial,
         isDeleted: false,
         templateStr: {
           create: markup

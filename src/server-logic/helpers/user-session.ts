@@ -1,10 +1,10 @@
 import { randomBytes } from 'crypto';
-import { H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import get from 'lodash-es/get';
 import fromPairs from 'lodash-es/fromPairs';
 import { type UserSession, type SessionValue, type SessionValues } from '../../shared/interfaces';
 import AppConfig from './../../appconfig';
-import { CookieNames } from './../../shared/constants';
+import { CookieSession } from './../../shared/constants';
 
 function createNewSessionId (): string {
   const result = randomBytes(32).toString('base64');
@@ -16,7 +16,7 @@ async function getH3Session (event: H3Event): Promise<ReturnType<typeof useSessi
   const maxAge = 60 * 60 * 24 * AppConfig.userSession.expirationDays;
   const session = await useSession<SessionValues>(event, {
     password: AppConfig.userSession.encryptionKey,
-    name: CookieNames.Session,
+    name: CookieSession,
     generateId: createNewSessionId,
     cookie: {
       httpOnly: true,

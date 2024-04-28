@@ -41,8 +41,8 @@ if (props.maxElementsCount > MaxListPropertyElementsCount) {
   logger.error(`(ListPropertyEdit) list property size exceeded maximum allowed, ctrlKey=${props.ctrlKey}, size=${props.maxElementsCount}`);
   throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'list property size exceeded maximum allowed', 'error-page');
 }
-const propList: Ref<InstanceType<typeof SimplePropertyEdit> | undefined>[] = range(0, props.maxElementsCount).map(() => { return ref<InstanceType<typeof SimplePropertyEdit> | undefined>(); });
-const propAdd = ref<InstanceType<typeof SimplePropertyEdit>>();
+const propList: Ref<InstanceType<typeof SimplePropertyEdit> | undefined>[] = range(0, props.maxElementsCount).map(() => { return shallowRef<InstanceType<typeof SimplePropertyEdit> | undefined>(); });
+const propAdd = shallowRef<InstanceType<typeof SimplePropertyEdit>>();
 const editValues = range(0, props.maxElementsCount).map((idx: number) => ref<string | undefined>(props.values[idx]));
 const addingNewValue = ref<string | undefined>('');
 

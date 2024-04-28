@@ -24,12 +24,12 @@ function toggleReviewText () {
 </script>
 
 <template>
-  <div class="company-review-card mx-xs-3">
+  <article class="company-review-card mx-xs-3">
     <div class="company-review-card-backface my-xs-3 my-s-4" />
     <div class="company-review-card-frontface py-xs-3 py-s-4">
-      <h4 :class="props.header ? 'review-card-header px-xs-3 px-s-4' : 'data-loading-stub text-data-loading mx-xs-3 mx-s-4 mb-xs-1'">
+      <h3 :class="`${props.header ? 'review-card-header px-xs-3 px-s-4' : 'data-loading-stub text-data-loading mx-xs-3 mx-s-4 mb-xs-1'} font-h4`">
         {{ props.header ? (props.header as any)[locale] : '&nbsp;' }}
-      </h4>
+      </h3>
       <PerfectScrollbar
         class="review-card-scroll-container"
         :options="{
@@ -70,5 +70,5 @@ function toggleReviewText () {
         </div>
       </PerfectScrollbar>
     </div>
-  </div>
+  </article>
 </template>

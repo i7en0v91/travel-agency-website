@@ -5,7 +5,7 @@ import { updateTabIndices } from '../shared/dom';
 import { ClientLogger } from '../client/logging';
 import { EntityCache } from '../client/entity-cache';
 import type { IClientServicesLocator } from '../shared/serviceLocator';
-import { TabIndicesUpdateDefaultTimeout, UIControlKeys } from '../shared/constants';
+import { TabIndicesUpdateDefaultTimeout, SearchFlightOffersDisplayOptions, SearchStayOffersDisplayOptions, FavouritesOptionButtonGroup } from '../shared/constants';
 import { getLastSelectedOptionStorageKey } from './../shared/common';
 import installLoggingHooks from './common/logging-hooks';
 import type { IAppLogger } from './../shared/applogger';
@@ -55,8 +55,13 @@ function buildServiceLocator () : IClientServicesLocator {
 
 function resetSearchOffersFilterSettings (logger: IAppLogger) {
   logger.verbose('resetting user filter settings');
-  localStorage.removeItem(getLastSelectedOptionStorageKey(UIControlKeys.SearchFlightOffersDisplayOptions));
-  localStorage.removeItem(getLastSelectedOptionStorageKey(UIControlKeys.SearchStayOffersDisplayOptions));
+  localStorage.removeItem(getLastSelectedOptionStorageKey(SearchFlightOffersDisplayOptions));
+  localStorage.removeItem(getLastSelectedOptionStorageKey(SearchStayOffersDisplayOptions));
+}
+
+function resetFavouritesTabSettings (logger: IAppLogger) {
+  logger.verbose('resetting user favourites tab settings');
+  localStorage.removeItem(getLastSelectedOptionStorageKey(FavouritesOptionButtonGroup));
 }
 
 const initApp = once(() => {
@@ -68,6 +73,7 @@ const initApp = once(() => {
     initializeBrowserPage();
 
     resetSearchOffersFilterSettings(logger);
+    resetFavouritesTabSettings(logger);
 
     const nuxtApp = useNuxtApp();
     nuxtApp.hook('app:mounted', () => {

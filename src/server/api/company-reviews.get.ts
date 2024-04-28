@@ -1,18 +1,21 @@
-import { H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import { defineWebApiEventHandler } from '../utils/webapi-event-handler';
-import { WebApiRoutes } from '../../shared/constants';
 import { type ICompanyReviewDto } from '../dto';
+import AppConfig from './../../appconfig';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const companyReviewsLogic = ServerServicesLocator.getCompanyReviewsLogic();
   const companyReviews = await companyReviewsLogic.getReviews();
   const modifiedSince = new Date(Math.max(...companyReviews.map(r => r.timestamp)));
   modifiedSince.setMilliseconds(0);
-  handleCacheHeaders(event, {
-    maxAge: WebApiRoutes.OneDayCacheLatency,
-    modifiedTime: modifiedSince,
-    cacheControls: ['must-revalidate']
-  });
+  handleCacheHeaders(event, 
+    AppConfig.caching.htmlPageCachingSeconds ? {
+      maxAge: AppConfig.caching.htmlPageCachingSeconds,
+      modifiedTime: modifiedSince,
+      cacheControls: ['must-revalidate']
+    } : {
+      cacheControls: ['no-cache']
+    });
 
   setHeader(event, 'content-type', 'application/json');
 

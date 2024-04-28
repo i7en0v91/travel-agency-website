@@ -18,6 +18,7 @@ import { ServerI18n } from '../server-logic/helpers/i18n';
 import { CitiesLogic } from '../server-logic/cities-logic';
 import { FlightsLogic } from '../server-logic/flights-logic';
 import { StaysLogic } from '../server-logic/stays-logic';
+import { BookingLogic } from '../server-logic/booking-logic';
 import { CompanyReviewLogic } from '../server-logic/company-review-logic';
 import { EntityCacheLogic } from '../server-logic/entity-cache-logic';
 import { ImageCategoryLogic } from '../server-logic/image/image-category-logic';
@@ -27,12 +28,17 @@ import { AirportLogic } from '../server-logic/airport-logic';
 import { AppAssetsProvider } from '../server-logic/app-assets-provider';
 import { AirlineCompanyLogic } from './../server-logic/airline-company-logic';
 import { AirplaneLogic } from './../server-logic/airplane-logic';
+import { DocumentCreator } from './../server-logic/document-creator';
 import { createPrismaClient } from './../prisma/client';
 import installLoggingHooks from './common/logging-hooks';
+import toPairs from 'lodash-es/toPairs';
 import { getOgImageFileName } from './../shared/common';
-import { isQuickStartEnv } from './../shared/constants';
+import { isQuickStartEnv, AllPagePaths, PdfFontMediumFile, EntityIdPages, AvailableLocaleCodes } from './../shared/constants';
 import { resolveParentDirectory } from './../shared/fs';
-import { AllPagePaths, PagePath, OgImageDynamicPages, AvailableLocaleCodes, type Locale } from './../shared/constants';
+import type { NitroRouteConfig } from 'nitropack';
+
+import type { PagePath, Locale } from './../shared/constants';
+
 
 function createCache (): Storage<StorageValue> {
   return createStorage();
@@ -59,6 +65,21 @@ async function getAppAssetsStorage (logger: IAppLogger): Promise<Storage<Storage
   if (!(await result.getItem('world-map.json'))) {
     logger.error('app assets storage is miconfigured');
     throw new Error('app assets storage is miconfigured');
+  }
+
+  return result;
+}
+
+async function getPdfFontsAssetsStorage (logger: IAppLogger): Promise<Storage<StorageValue>> {
+  const result = (globalThis as any).$pdfFontsStorage as Storage<StorageValue>;
+  if (!result) {
+    logger.error('pdf fonts assets storage is not available');
+    throw new Error('pdf fonts assets storage is not available');
+  }
+
+  if (!(await result.getItem(PdfFontMediumFile))) {
+    logger.error('pdf fonts assets storage is miconfigured');
+    throw new Error('pdf fonts assets storage is miconfigured');
   }
 
   return result;
@@ -91,6 +112,7 @@ async function buildServiceLocator (logger: IAppLogger) : Promise<IServerService
   }
 
   const appAssetsStorage = await getAppAssetsStorage(logger);
+  const pdfFontsAssetsStorage = await getPdfFontsAssetsStorage(logger);
 
   const injector = createInjector();
   const provider = injector
@@ -98,6 +120,7 @@ async function buildServiceLocator (logger: IAppLogger) : Promise<IServerService
     .provideValue('dbRepository', createPrismaClient(logger, dbUrlOverwrite))
     .provideValue('cache', createCache())
     .provideValue('appAssetsStorage', appAssetsStorage)
+    .provideValue('pdfFontsAssetsStorage', pdfFontsAssetsStorage)
     .provideValue('imageCacheDir', ensureImageCacheDir(logger))
     .provideClass('appAssetsProvider', AppAssetsProvider, Scope.Singleton)
     .provideClass('fileLogic', FileLogic, Scope.Singleton)
@@ -116,6 +139,8 @@ async function buildServiceLocator (logger: IAppLogger) : Promise<IServerService
     .provideClass('airportLogic', AirportLogic, Scope.Singleton)
     .provideClass('flightsLogic', FlightsLogic, Scope.Singleton)
     .provideClass('staysLogic', StaysLogic, Scope.Singleton)
+    .provideClass('bookingLogic', BookingLogic, Scope.Singleton)
+    .provideClass('documentCreator', DocumentCreator, Scope.Singleton)
     .provideClass('companyReviewsLogic', CompanyReviewLogic, Scope.Singleton)
     .provideClass('entityCacheLogic', EntityCacheLogic, Scope.Singleton);
 
@@ -138,7 +163,9 @@ async function buildServiceLocator (logger: IAppLogger) : Promise<IServerService
     getAirlineCompanyLogic: () => provider.resolve('airlineCompanyLogic'),
     getCitiesLogic: () => provider.resolve('citiesLogic'),
     getEntityCacheLogic: () => provider.resolve('entityCacheLogic'),
-    getCompanyReviewsLogic: () => provider.resolve('companyReviewsLogic')
+    getCompanyReviewsLogic: () => provider.resolve('companyReviewsLogic'),
+    getBookingLogic: () => provider.resolve('bookingLogic'),
+    getDocumentCreator: () => provider.resolve('documentCreator')
   };
 }
 
@@ -161,7 +188,7 @@ async function checkOgImageConfiguration (logger: IAppLogger): Promise<void> {
   }
 
   const ogImageDir = join(publicAssetsDir, 'img', 'og');
-  const imgPages: PagePath[] = AllPagePaths.filter(p => !OgImageDynamicPages.includes(p as PagePath));
+  const imgPages: PagePath[] = AllPagePaths.filter(p => !EntityIdPages.includes(p as PagePath));
   for (let i = 0; i < imgPages.length; i++) {
     for (let j = 0; j < AvailableLocaleCodes.length; j++) {
       const imgPath = join(ogImageDir, getOgImageFileName(imgPages[i], AvailableLocaleCodes[j] as Locale));
@@ -192,17 +219,25 @@ const initApp = once(async () => {
     }
     (globalThis as any).ServerServicesLocator.getServerI18n().initialize();
     await checkOgImageConfiguration(logger);
+    
   } catch (e) {
     logger.error('app initialization failed', e);
     throw e;
   }
 });
 
+const logRouteRulesOnce = once((routeRules: [string, NitroRouteConfig][]) => { 
+  const logger = CommonServicesLocator.getLogger();
+  logger.info(`Route rules config: ${JSON.stringify(routeRules.map(rr => `[${rr[0]}: ${JSON.stringify(rr[1])}]`))}`);
+});
+
 export default defineNuxtPlugin({
   name: 'startup-server',
   parallel: false,
-  async setup (/* nuxtApp */) {
+  async setup (nuxtApp) {
     await initApp();
+    const rules = toPairs(nuxtApp.$config.nitro?.routeRules) ?? [];
+    logRouteRulesOnce(rules);
   },
   hooks: {
     'app:created' () {

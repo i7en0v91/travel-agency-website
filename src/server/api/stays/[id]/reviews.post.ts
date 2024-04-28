@@ -1,4 +1,4 @@
-import { H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import isString from 'lodash-es/isString';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
 import { type EntityId } from '../../../../shared/interfaces';

@@ -1,13 +1,13 @@
 import deepmerge from 'lodash-es/merge';
 
 import AppConfig from '../appconfig';
-import { type IAppLogger, wrapLogDataArg, getErrorCustomLogLevel } from '../shared/applogger';
+import { type IAppLogger, wrapLogDataArg, getAppExceptionCustomLogLevel, getErrorAppExceptionCode } from '../shared/applogger';
 
-import { LogLevelEnum, type LogLevel, isDevOrTestEnv } from '../shared/constants';
+import { LogAlwaysLevel, LogLevelEnum, type LogLevel, isDevOrTestEnv } from '../shared/constants';
 import { flattenError, wrapExceptionIfNeeded } from '../shared/exceptions';
 
 export class ClientLogger implements IAppLogger {
-  logLevel = LogLevelEnum.warn;
+  logLevel: LogLevelEnum;
   lowerWarnsLevel = false;
 
   constructor () {
@@ -24,7 +24,7 @@ export class ClientLogger implements IAppLogger {
   }
 
   debug (msg: string, data?: object | undefined): void {
-    if (!this.checkPassLogLevel(LogLevelEnum.verbose)) {
+    if (!this.checkPassLogLevel(LogLevelEnum.debug)) {
       return;
     }
 
@@ -60,7 +60,7 @@ export class ClientLogger implements IAppLogger {
     }
 
     let loglevel: LogLevel = (this.lowerWarnsLevel && !err) ? 'info' : 'warn';
-    const customLogLevel = err ? getErrorCustomLogLevel(err) : undefined;
+    const customLogLevel = err ? getAppExceptionCustomLogLevel(getErrorAppExceptionCode(err)) : undefined;
     if (customLogLevel) {
       loglevel = customLogLevel;
     }
@@ -80,7 +80,7 @@ export class ClientLogger implements IAppLogger {
     }
 
     let loglevel: LogLevel = 'error';
-    const customLogLevel = err ? getErrorCustomLogLevel(err) : undefined;
+    const customLogLevel = err ? getAppExceptionCustomLogLevel(getErrorAppExceptionCode(err)) : undefined;
     if (customLogLevel) {
       loglevel = customLogLevel;
     }
@@ -92,6 +92,17 @@ export class ClientLogger implements IAppLogger {
     this.logProblemsToConsoleIfNeeded(logData, err);
 
     this.sendLogData(logData);
+  }
+
+  always (msg: string, data?: any): void {
+    let logData = { level: LogAlwaysLevel, msg } as any;
+    if (data) {
+      logData = deepmerge(wrapLogDataArg(data), logData);
+    }
+
+    this.sendLogData(logData);
+
+    console.log(`[${new Date().toISOString()}] ${msg} ${data ? ('data=[' + JSON.stringify(data) + ']') : ''}`);
   }
 
   logProblemsToConsoleIfNeeded (logData: { level: LogLevel, msg: string }, err: any) {
@@ -111,7 +122,7 @@ export class ClientLogger implements IAppLogger {
   }
 
   checkPassLogLevel (level: LogLevelEnum) : boolean {
-    return level >= this.logLevel;
+    return level.valueOf() >= this.logLevel.valueOf();
   }
 
   async sendLogData (logData: object) {

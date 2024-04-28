@@ -1,6 +1,6 @@
-/* eslint-disable camelcase */
+ 
 import { sign } from 'jsonwebtoken';
-import { H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import { withQuery } from 'ufo';
 import { OAUTH_SECRET, OAUTH_TESTUSER_PROFILE as testUserProfile } from '../../../../../shared/testing/common';
 import { AuthProvider, type EntityId } from '../../../../../shared/interfaces';

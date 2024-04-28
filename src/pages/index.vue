@@ -1,6 +1,5 @@
 <script setup lang="ts">
 
-import shuffle from 'lodash-es/shuffle';
 import { Navigation, Autoplay, Mousewheel } from 'swiper/modules';
 import range from 'lodash-es/range';
 import PageSection from './../components/common-page-components/page-section.vue';
@@ -8,7 +7,7 @@ import SearchPageImageLink from './../components/index/search-page-image-link.vu
 import PopularCityCard from './../components/index/popular-city-card.vue';
 import { type IPopularCityDto, type ICompanyReviewDto } from './../server/dto';
 import { getI18nResName3, getI18nResName2 } from './../shared/i18n';
-import { WebApiRoutes, TabIndicesUpdateDefaultTimeout } from './../shared/constants';
+import { ApiEndpointPopularCitiesList, ApiEndpointCompanyReviewsList, TabIndicesUpdateDefaultTimeout } from './../shared/constants';
 import { useFetchEx } from './../shared/fetch-ex';
 import CompanyReviewCard from './../components/index/company-review-card.vue';
 import { updateTabIndices } from './../shared/dom';
@@ -22,23 +21,23 @@ useOgImage();
 
 const logger = CommonServicesLocator.getLogger();
 
-const citiesListFetch = await useFetchEx<IPopularCityDto[], IPopularCityDto[], null[]>(WebApiRoutes.PopularCitiesList, 'error-page',
+const citiesListFetch = await useFetchEx<IPopularCityDto[], IPopularCityDto[], null[]>(ApiEndpointPopularCitiesList, 'error-page',
   {
     server: true,
     lazy: true,
     cache: 'default',
     default: () => { return range(0, 20, 1).map(_ => null); },
     transform: (response: IPopularCityDto[]) => {
-      logger.verbose(`(indexPage) received popular cities list response: ${JSON.stringify(response)}`);
+      logger.verbose('(indexPage) received popular cities list response');
       if (!response) {
         logger.warn('(indexPage) popular cities list response is empty');
         return []; // error should be logged by fetchEx
       }
-      return shuffle(response);
+      return response;
     }
   });
 
-const reviewsListFetch = await useFetchEx(WebApiRoutes.CompanyReviewsList, 'error-page',
+const reviewsListFetch = await useFetchEx(ApiEndpointCompanyReviewsList, 'error-page',
   {
     server: true,
     lazy: true,
@@ -50,7 +49,7 @@ const reviewsListFetch = await useFetchEx(WebApiRoutes.CompanyReviewsList, 'erro
         logger.warn('(indexPage) company review list response is empty');
         return []; // error should be logged by fetchEx
       }
-      return shuffle(response);
+      return response;
     }
   });
 
@@ -85,14 +84,14 @@ function onActiveSlideChanged () {
         />
       </ul>
     </PageSection>
-    <section class="page-section search-page-image-link-section">
+    <div class="page-section search-page-image-link-section">
       <div class="page-section-content content-padded search-image-links-section-content">
         <div class="search-page-image-links">
           <SearchPageImageLink ctrl-key="SearchFlightsImageLink" page="flights" />
           <SearchPageImageLink ctrl-key="SearchHotelsImageLink" page="stays" />
         </div>
       </div>
-    </section>
+    </div>
     <PageSection
       ctrl-key="CompanyReviewSection"
       class="company-reviews-section"

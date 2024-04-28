@@ -22,7 +22,7 @@
   .text-data-loading {
     height: 1em;
     min-width: 40px;
-    width: 50%;
+    width: 45%;
     display: inline-block;
     vertical-align: middle;
   }
@@ -54,6 +54,7 @@
     @include for-small-and-above() {
       margin-top: 40px;
     }
+    overflow-x: hidden;
 
     display: flex;
     flex-direction: row;
@@ -82,6 +83,8 @@
       flex-wrap: wrap;
       flex-direction: row;
       align-items: center;
+      justify-self: flex-end;
+      margin-left: auto;
       width: fit-content;
       gap: 27px;
 
@@ -206,6 +209,10 @@
       display: block;
       width: fit-content;
       white-space: normal;
+      word-break: break-word;
+      @include for-small-and-above() {
+        word-break: unset;
+      }
 
       @include with-header-font('4');
     }
@@ -217,7 +224,7 @@
       flex-wrap: wrap;
       align-items: center;
 
-      @include with-body-font('primary');
+      @include with-body-font('body-primary');
 
       .flight-details-policy-item {
         flex: 1 1 auto;
@@ -265,5 +272,9 @@
     display: block;
     width: 100%;
     margin-top: 40px;
+
+    .flight-details-main {
+      min-width: fit-content;
+    }
   }
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Dropdown } from 'floating-vue';
+import type { Dropdown } from 'floating-vue';
 import { type IDropdownListProps, type IDropdownListItemProps, type DropdownListValue } from './../../shared/interfaces';
 import { updateTabIndices } from './../../shared/dom';
 import FieldFrame from './../forms/field-frame.vue';
@@ -15,8 +15,8 @@ const props = withDefaults(defineProps<IDropdownListProps>(), {
   kind: 'primary'
 });
 
-const elBtn = ref<HTMLElement>();
-const dropdown = ref<InstanceType<typeof Dropdown>>();
+const elBtn = shallowRef<HTMLElement>();
+const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
 const hasMounted = ref(false);
 
 const logger = CommonServicesLocator.getLogger();

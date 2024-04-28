@@ -1,5 +1,6 @@
-import { H3Event } from 'h3';
-import { LogLevelEnum } from '../../shared/constants';
+import type { H3Event } from 'h3';
+import type { LogLevelEnum} from '../../shared/constants';
+import { LogAlwaysLevel } from '../../shared/constants';
 import { defineWebApiEventHandler } from '../utils/webapi-event-handler';
 
 export default defineWebApiEventHandler(async (event: H3Event) => {
@@ -7,7 +8,7 @@ export default defineWebApiEventHandler(async (event: H3Event) => {
 
   // client's message/error will be logged inside handler logging wrapper
   const body = await readBody(event);
-  const logLevel = body?.level as (keyof typeof LogLevelEnum);
+  const logLevel = (body?.level === LogAlwaysLevel) ? LogAlwaysLevel : (body?.level as (keyof typeof LogLevelEnum));
   if (!body || !logLevel) {
     logger.warn('(api:log) received empty/incorrect log data from client');
     return;
@@ -29,6 +30,9 @@ export default defineWebApiEventHandler(async (event: H3Event) => {
       break;
     case 'error':
       logger.error(msgPrefix, body);
+      break;
+    case (LogAlwaysLevel as any):
+      logger.always(msgPrefix, body);
       break;
   }
 

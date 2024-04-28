@@ -1,5 +1,5 @@
 import { verify, type JwtPayload } from 'jsonwebtoken';
-import { H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import { OAUTH_SECRET, OAUTH_TOKEN_TYPE } from '../../../../../shared/testing/common';
 
 const extractToken = (authHeaderValue: string) => {

@@ -2,7 +2,7 @@
 
 import { getI18nResName2 } from './../shared/i18n';
 import SimpleButton from './forms/simple-button.vue';
-import { CookieNames, TabIndicesUpdateDefaultTimeout, PagePath } from './../shared/constants';
+import { CookiePolicyConsent, TabIndicesUpdateDefaultTimeout, PagePath } from './../shared/constants';
 import { updateTabIndices } from './../shared/dom';
 
 interface IProps {
@@ -13,7 +13,7 @@ defineProps<IProps>();
 
 const ConsentCookieValue = 'consent-given';
 
-const consentCookie = useCookie(CookieNames.CookieAndPolicyConsent, { path: '/', maxAge: 2147483640 /** "never" expire */ });
+const consentCookie = useCookie(CookiePolicyConsent, { path: '/', maxAge: 2147483640 /** "never" expire */ });
 const localePath = useLocalePath();
 const logger = CommonServicesLocator.getLogger();
 

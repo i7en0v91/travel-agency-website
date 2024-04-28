@@ -1,9 +1,9 @@
-import { H3Event } from 'h3';
-import { WebApiRoutes } from '../../../shared/constants';
+import type { H3Event } from 'h3';
 import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';
 import type { EntityId } from '../../../shared/interfaces';
 import { type ITravelDetailsDto } from './../../dto';
 import { defineWebApiEventHandler } from './../../utils/webapi-event-handler';
+import AppConfig from './../../../appconfig';
 
 function readCityIdParameter (event : H3Event): EntityId {
   const query = getQuery(event);
@@ -30,10 +30,12 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
 
   const travelDetails = await citiesLogic.getTravelDetails(cityId);
   const price = (await flightsLogic.getFlightPromoPrice(cityId)).toNumber();
-  handleCacheHeaders(event, {
-    maxAge: WebApiRoutes.OneHourCacheLatency,
+  handleCacheHeaders(event, AppConfig.caching.htmlPageCachingSeconds ? {
+    maxAge: AppConfig.caching.htmlPageCachingSeconds,
     modifiedTime: new Date(travelDetails.city.modifiedUtc.setMilliseconds(0)),
     cacheControls: ['must-revalidate']
+  } : {
+    cacheControls: ['no-cache']
   });
   setHeader(event, 'content-type', 'application/json');
 

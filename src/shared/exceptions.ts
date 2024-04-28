@@ -1,4 +1,5 @@
 import { type NuxtError } from 'nuxt/app';
+import isObject from 'lodash-es/isObject';
 import { type I18nResName, getI18nResName2 } from './i18n';
 import { UserNotificationLevel } from './constants';
 
@@ -9,7 +10,8 @@ export enum AppExceptionCodeEnum {
   UNAUTHORIZED = 12004,
   CAPTCHA_VERIFICATION_FAILED = 12005,
   EMAILING_DISABLED = 12006,
-  FORBIDDEN = 12007
+  FORBIDDEN = 12007,
+  DOCUMENT_GENERATION_FAILED = 12008
 }
 export type AppExceptionCode = keyof typeof AppExceptionCodeEnum;
 
@@ -28,14 +30,21 @@ export class AppException extends Error {
     this.params = params;
   }
 
-  /**
-   * For unknown reasons in Nuxt instanceof operator doesn't work always as expected, so this is a workaround
-   * to test whether error object ({@link err}) is {@link AppException}.
-   * See also: https://github.com/Microsoft/TypeScript/wiki/FAQ#why-doesnt-extending-built-ins-like-error-array-and-map-work
-   */
   static isAppException (err: any) : err is AppException {
-    return err && 'appearance' in err;
+    return err && isObject(err) && 'appearance' in err;
   }
+}
+
+export function lookupAppExceptionCode (errCode: any): AppExceptionCode | undefined {
+  if (!errCode) {
+    return undefined;
+  }
+
+  const errEnumLookup = Object.entries(AppExceptionCodeEnum).filter(e => e[1].valueOf() === errCode.valueOf()).map(e => e[0].toUpperCase());
+  if (errEnumLookup.length === 0) {
+    return undefined;
+  }
+  return errEnumLookup[0].toUpperCase() as AppExceptionCode;
 }
 
 export class DbConcurrentUpdateException extends Error {
@@ -105,6 +114,8 @@ export function getUsrMsgResName (code: AppExceptionCodeEnum): I18nResName {
       return getI18nResName2('appErrors', 'emailingDisabled');
     case AppExceptionCodeEnum.FORBIDDEN:
       return getI18nResName2('appErrors', 'forbidden');
+    case AppExceptionCodeEnum.DOCUMENT_GENERATION_FAILED:
+      return getI18nResName2('appErrors', 'documentGenerationFailed');
   }
   return getI18nResName2('appErrors', 'unknown');
 }
@@ -152,7 +163,7 @@ function defaultAppExceptionHandler (appException: AppException) {
     });
   };
 
-  if (process.client) {
+  if (import.meta.client) {
     // normally client code should't reach that point as AppException must be handled via ErrorHelm component,
     // so this is a "fallback" place
     if (appException.appearance === 'error-page') {

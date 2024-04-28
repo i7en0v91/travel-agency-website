@@ -11,7 +11,10 @@
 $field-frame-y-padding: markup-to-rem(14px);
 
 :root {
-  font-size: 16px;
+  font-size: 14px;
+  @include for-small-and-above() {
+    font-size: 16px;
+  }
 }
 
 body {
@@ -26,6 +29,10 @@ body {
 
   @for $i from 1 through 5 {
     h#{$i} {
+      @include with-header-font(#{$i});
+    }
+
+    .font-h#{$i} {
       @include with-header-font(#{$i});
     }
   }
@@ -205,7 +212,7 @@ a {
 .text-data-loading {
   --#{$prefix}-col-data-loading-bg: var(--#{$prefix}-col-text-data-loading-stub);
   --#{$prefix}-col-data-loading-indicator: var(--#{$prefix}-col-text-data-loading-indicator);
-  width: 50%;
+  width: 45%;
   border-radius: map.get($borders-radius, '2');
 }
 

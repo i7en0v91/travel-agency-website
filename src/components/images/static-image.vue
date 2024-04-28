@@ -6,7 +6,7 @@ import isString from 'lodash-es/isString';
 import { type ImageCategory, ImageAuthRequiredCategories, type IImageEntitySrc } from './../../shared/interfaces';
 import { type I18nResName } from './../../shared/i18n';
 import { type IAppLogger } from './../../shared/applogger';
-import { WebApiRoutes } from './../../shared/constants';
+import { ApiEndpointImageDetails, ApiEndpointImage } from './../../shared/constants';
 import { type IImageDetailsDto } from './../../server/dto';
 import ErrorHelm from './../error-helm.vue';
 import type { NuxtImg } from '#build/components';
@@ -68,7 +68,7 @@ const imgUrl = computed(() => {
   }
   if (props.entitySrc) {
     if (!props.requestExtraDisplayOptions || detailsFetch.data.value) {
-      return `${WebApiRoutes.Image}?slug=${props.entitySrc!.slug}&category=${props.category}${props.entitySrc!.timestamp ? `&t=${props.entitySrc!.timestamp}` : ''}`;
+      return `${ApiEndpointImage}?slug=${props.entitySrc!.slug}&category=${props.category}${props.entitySrc!.timestamp ? `&t=${props.entitySrc!.timestamp}` : ''}`;
     }
   }
   return undefined;
@@ -77,10 +77,10 @@ const imgUrl = computed(() => {
 // custom stub css styling
 const logger = CommonServicesLocator.getLogger();
 
-const imgComponent = ref<InstanceType<typeof NuxtImg>>();
+const imgComponent = shallowRef<InstanceType<typeof NuxtImg>>();
 
 const invertForDarkTheme = ref<boolean>(false);
-const finalStubStyle = ref<CSSProperties | undefined>(!isString(props.stubStyle) ? (props.stubStyle as CSSProperties) : undefined);
+const finalStubStyle = shallowRef<CSSProperties | undefined>(!isString(props.stubStyle) ? (props.stubStyle as CSSProperties) : undefined);
 
 const detailsFetchUrl = ref<string>('');
 const detailsFetch = await useFetch<IFetchedImageDetails>(detailsFetchUrl,
@@ -88,7 +88,7 @@ const detailsFetch = await useFetch<IFetchedImageDetails>(detailsFetchUrl,
     server: true,
     lazy: true,
     watch: [detailsFetchUrl],
-    immediate: process.server,
+    immediate: import.meta.server,
     key: `${props.ctrlKey}-Details`,
     method: 'GET',
     transform: (response: any): IFetchedImageDetails => {
@@ -138,9 +138,9 @@ const imgCssClass = computed(() => {
 
 async function fetchDisplayDetailsIfNeeded (): Promise<void> {
   if (props.entitySrc && (props.stubStyle === 'custom-if-configured' || props.requestExtraDisplayOptions)) {
-    detailsFetchUrl.value = `${WebApiRoutes.ImageDetails}?slug=${props.entitySrc!.slug}&category=${props.category}`;
+    detailsFetchUrl.value = `${ApiEndpointImageDetails}?slug=${props.entitySrc!.slug}&category=${props.category}`;
     logger.verbose(`(StaticImage) fetching image details, ctrlKey=${props.ctrlKey}, url=${detailsFetchUrl.value}`);
-    if (process.server) {
+    if (import.meta.server) {
       await detailsFetch.refresh();
     }
   }

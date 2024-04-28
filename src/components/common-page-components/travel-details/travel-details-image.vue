@@ -1,3 +1,4 @@
+<!-- eslint-disable @typescript-eslint/unified-signatures -->
 <script setup lang="ts">
 
 import type { WatchStopHandle } from 'vue';
@@ -18,8 +19,8 @@ const logger = CommonServicesLocator.getLogger();
 const activeFrame = ref<'initial' | 'A' | 'B'>('initial');
 const frameStatusA = ref<TravelDetailsImageStatus | undefined>();
 const frameStatusB = ref<TravelDetailsImageStatus | undefined>();
-const elFrameA = ref<InstanceType<typeof TravelDetailsImageFrame>>();
-const elFrameB = ref<InstanceType<typeof TravelDetailsImageFrame>>();
+const elFrameA = shallowRef<InstanceType<typeof TravelDetailsImageFrame>>();
+const elFrameB = shallowRef<InstanceType<typeof TravelDetailsImageFrame>>();
 const isError = ref(false);
 const staticImageHidden = ref(false);
 const framesActivated = ref(false);
@@ -30,7 +31,7 @@ const dataBuf2 = ref<{ slug: string, timestamp: Timestamp, cityId: EntityId } | 
 
 const watches: WatchStopHandle[] = [];
 
-// eslint-disable-next-line func-call-spacing
+ 
 const $emit = defineEmits<{
   (event: 'update:currentStatus', status?: TravelDetailsImageStatus): void,
   (event: 'update:upcomingStatus', status?: TravelDetailsImageStatus): void
@@ -102,14 +103,14 @@ function fireStatusChange (kind: 'current' | 'upcoming', status: TravelDetailsIm
   }
 }
 
-if (process.client) {
+if (import.meta.client) {
   await startWatchingForDataChanges();
 }
 
 const storeInstance = await (travelDetailsStore.getInstance());
 if (storeInstance.current?.images && props.imageIndex < storeInstance.current.images.length) {
   onInitialDataReady(storeInstance.current);
-} else if (process.server) {
+} else if (import.meta.server) {
   isError.value = true;
   fireStatusChange('current', 'error');
 }

@@ -5,7 +5,7 @@ import { join } from 'pathe';
 import { joinURL } from 'ufo';
 import isString from 'lodash-es/isString';
 import { TEST_SERVER_PORT, delay, createLogger } from '../../shared/testing/common';
-import { type Locale, AvailableLocaleCodes, CookieNames, DefaultLocale, PagePath, AllPagePaths, OgImageDynamicPages, OgImageExt } from '../../shared/constants';
+import { type Locale, CookieI18nLocale, AvailableLocaleCodes, DefaultLocale, PagePath, AllPagePaths, EntityIdPages, OgImageExt } from '../../shared/constants';
 import type { IAppLogger } from '../../shared/applogger';
 import AppConfig from './../../appconfig';
 import { resolveParentDirectory } from './../../shared/fs';
@@ -21,10 +21,12 @@ const TestRunOptions: TestOptions = {
 
 const pageUrls: ReadonlyMap<PagePath, string | false> = new Map<PagePath, string | false>([
   [PagePath.Account, PagePath.Index.valueOf()],
+  [PagePath.Favourites, PagePath.Index.valueOf()],
   [PagePath.EmailVerifyComplete, PagePath.Index.valueOf()],
   [PagePath.FindFlights, PagePath.FindFlights.valueOf()],
   [PagePath.FindStays, PagePath.FindStays.valueOf()],
   [PagePath.FlightDetails, false], // rendered on-request
+  [PagePath.BookFlight, false], // rendered on-request
   [PagePath.Flights, PagePath.Flights.valueOf()],
   [PagePath.ForgotPassword, PagePath.ForgotPassword.valueOf()],
   [PagePath.ForgotPasswordComplete, PagePath.ForgotPassword.valueOf()],
@@ -37,7 +39,9 @@ const pageUrls: ReadonlyMap<PagePath, string | false> = new Map<PagePath, string
   [PagePath.SignupComplete, PagePath.Signup.valueOf()],
   [PagePath.SignupVerify, PagePath.Signup.valueOf()],
   [PagePath.Stays, PagePath.Stays.valueOf()],
-  [PagePath.StayDetails, false] // rendered on-request
+  [PagePath.StayDetails, false], // rendered on-request
+  [PagePath.BookStay, false], // rendered on-request
+  [PagePath.BookingDetails, false] // rendered on-request
 ]);
 
 class PageScreenshoter {
@@ -117,7 +121,7 @@ class PageScreenshoter {
       this.logger.verbose(`taking screenshot, url=${this.url}, locale=${this.locale}, fileName=${this.fileName}, dir=[${this.screenshotDir}]`);
 
       const localeCookie = {
-        name: CookieNames.I18nLocale,
+        name: CookieI18nLocale,
         domain: '127.0.0.1',
         expires: -1,
         httpOnly: false,
@@ -168,7 +172,7 @@ describe('og:image screenshots generation', async () => {
   });
 
   test('og images (screenshots) generation', TestRunOptions, async () => {
-    const imgPages: PagePath[] = AllPagePaths.filter(p => !OgImageDynamicPages.includes(p as PagePath));
+    const imgPages: PagePath[] = AllPagePaths.filter(p => !EntityIdPages.includes(p as PagePath));
     const publicAssetsDir = await resolveParentDirectory('.', 'public');
     if (!publicAssetsDir) {
       logger.error('screenshot generation FAILED - cannot locate public directory!');

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { Tooltip } from 'floating-vue';
+import type { Tooltip } from 'floating-vue';
 import { TooltipHideTimeout } from './../../shared/constants';
 import { type I18nResName, getI18nResName1 } from './../../shared/i18n';
 import SimpleButton from './../../components/forms/simple-button.vue';
@@ -22,7 +22,7 @@ const props = withDefaults(defineProps<IProps>(), {
   isError: false
 });
 
-const tooltip = ref<InstanceType<typeof Tooltip>>();
+const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
 
 const localePath = useLocalePath();
 
@@ -36,12 +36,12 @@ function scheduleTooltipAutoHide () {
   <section class="page-section">
     <div class="page-section-controls">
       <div class="page-section-texting">
-        <h3>
+        <h2 class="font-h3">
           {{ $t(headerResName) }}
-        </h3>
-        <div v-if="subtextResName" class="page-section-subtext mt-xs-3" role="heading" aria-level="5">
+        </h2>
+        <p v-if="subtextResName" class="page-section-subtext mt-xs-3">
           {{ $t(subtextResName) }}
-        </div>
+        </p>
       </div>
       <NuxtLink v-if="linkUrl && btnTextResName" class="page-section-button btn btn-support brdr-1 tabbable" :to="localePath(linkUrl)">
         {{ $t(btnTextResName) }}

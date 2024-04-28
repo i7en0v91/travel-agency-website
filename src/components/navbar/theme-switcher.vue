@@ -11,7 +11,7 @@ defineProps<IProps>();
 const themeSettings = useThemeSettings();
 const wasInteracted = ref(false);
 async function toggleTheme () {
-  if (!process.client) {
+  if (!import.meta.client) {
     return;
   }
   themeSettings.toggleTheme();

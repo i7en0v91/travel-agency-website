@@ -1,9 +1,10 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 import isString from 'lodash-es/isString';
 import Mime from 'mime';
 import { type IAppLogger } from '../../shared/applogger';
-import { type IImageBytes, type EntityId, ImageCategory, type IImageInfo, type IImageLogic, type ImageCheckAccessResult, ImageAuthRequiredCategories, ImagePublicSlugs, type IImageData, type IFileLogic, type Timestamp, type IImageCategoryLogic } from '../../shared/interfaces';
-import { Queries, Mappers } from '../queries';
+import type { ImageCategory, IImageBytes, EntityId, IImageInfo, IImageLogic, IImageData, IFileLogic, Timestamp, IImageCategoryLogic , ImageCheckAccessResult} from '../../shared/interfaces';
+import { ImageAuthRequiredCategories, ImagePublicSlugs } from  '../../shared/interfaces';
+import { ImageInfoQuery, MapImageInfo } from '../queries';
 import { AppException, AppExceptionCodeEnum } from '../../shared/exceptions';
 import { mapEnumValue } from './../helpers/db';
 
@@ -150,13 +151,13 @@ export class ImageLogic implements IImageLogic {
     this.logger.verbose(`(ImageLogic) loading image info, id=${idOrSlug}, category=${category}`);
     const queryResult = await this.dbRepository.image.findFirst({
       where: this.getIdQueryFilter(idOrSlug, category, undefined),
-      select: Queries.ImageInfoQuery.select
+      select: ImageInfoQuery.select
     });
     if (!queryResult) {
       this.logger.warn(`(ImageLogic) cannot found image, id=${idOrSlug}`);
       return undefined;
     }
-    const result = Mappers.MapImageInfo(queryResult);
+    const result = MapImageInfo(queryResult);
     this.logger.verbose(`(ImageLogic) image bytes loaded, id=${idOrSlug}`);
     return result;
   }
@@ -188,10 +189,10 @@ export class ImageLogic implements IImageLogic {
 
     const queryResult = await this.dbRepository.image.findMany({
       where: { category: { kind: mapEnumValue(category) }, file: { isDeleted: false } },
-      select: Queries.ImageInfoQuery.select,
+      select: ImageInfoQuery.select,
       orderBy: { id: 'desc' }
     });
-    const result = queryResult.map(Mappers.MapImageInfo);
+    const result = queryResult.map(MapImageInfo);
 
     this.logger.debug(`(ImageLogic) images by category: category=${category}, count=${result.length}`);
     return result;

@@ -14,9 +14,6 @@ interface IProps {
 const props = withDefaults(defineProps<IProps>(), {
 });
 
-const { status } = useAuth();
-const wasAuthenticated = status.value === 'authenticated';
-
 const searchOffersStoreAccessor = useSearchOffersStore();
 const searchOffersStore = await searchOffersStoreAccessor.getInstance(props.offersKind, true, true);
 
@@ -42,7 +39,6 @@ watch(() => searchOffersStore.resultState.status, () => {
 
 onMounted(() => {
   logger.verbose(`(ListView) mounted, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
-  updateWaitingStubValue();
 });
 
 </script>
@@ -54,14 +50,7 @@ onMounted(() => {
       <div v-if="!showWaitingStub" class="offers-list-view-grid">
         <FilterPanel :ctrl-key="`${ctrlKey}-FilterPanel`" :offers-kind="props.offersKind" />
         <DisplayOptions :ctrl-key="`${ctrlKey}-DisplayOptions`" :offers-kind="props.offersKind" />
-        <ClientOnly v-if="wasAuthenticated">
-          <!-- search results are personalised for authenticated users -->
-          <ResultItemsList :ctrl-key="`${ctrlKey}-ResultItemsList`" :items="searchOffersStore.resultState.items" :offers-kind="props.offersKind" />
-          <template #fallback>
-            <ComponentWaiterIndicator :ctrl-key="`${ctrlKey}-ResultItemsListFallback`" class="result-items-list" />
-          </template>
-        </ClientOnly>
-        <ResultItemsList v-else :ctrl-key="`${ctrlKey}-ResultItemsList`" :items="searchOffersStore.resultState.items" :offers-kind="props.offersKind" />
+        <ResultItemsList :ctrl-key="`${ctrlKey}-ResultItemsList`" :items="searchOffersStore.resultState.items" :offers-kind="props.offersKind" />
         <ListPaging :ctrl-key="`${ctrlKey}-ListPaging`" :offers-kind="$props.offersKind" />
       </div>
     </ErrorHelm>

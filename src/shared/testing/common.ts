@@ -92,6 +92,9 @@ function createFileLogger (prefix: string) : IAppLogger {
       },
       error: function (msg: string, err?: any, data?: object | undefined): void {
         appendFileSync(LogFilePath, `[${prefix}] ERROR ${msg}, err=${JSON.stringify(err)} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
+      },
+      always: function (msg: string, data?: object | undefined): void {
+        appendFileSync(LogFilePath, `[${prefix}] INFO ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
       }
     };
   }
@@ -122,30 +125,13 @@ function createConsoleLogger (prefix: string) : IAppLogger {
       },
       error: function (msg: string, err?: any, data?: object | undefined): void {
         log(chalk.red(`[${prefix}] ERROR ${msg}, err=${JSON.stringify(err)}`), data);
+      },
+      always: function (msg: string, data?: object | undefined): void {
+        log(chalk.green(`[${prefix}] INFO ${msg}`), data);
       }
     };
   }
   return consoleLogger;
-
-  /*
-  return {
-    debug: function (msg: string, data?: any): void {
-      log(`[${prefix}] ${msg}`, data);
-    },
-    verbose: function (msg: string, data?: object | undefined): void {
-      log(`[${prefix}] ${msg}`, data);
-    },
-    info: function (msg: string, data?: object | undefined): void {
-      log(`[${prefix}] ${msg}`, data);
-    },
-    warn: function (msg: string, err?: any, data?: object | undefined): void {
-      log(`[${prefix}] ${msg}, err=${JSON.stringify(err)}`, data);
-    },
-    error: function (msg: string, err?: any, data?: object | undefined): void {
-      log(`[${prefix}] ${msg}, err=${JSON.stringify(err)}`, data);
-    }
-  }
-  */
 }
 
 export function createLogger (prefix: string) : IAppLogger {

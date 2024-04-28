@@ -11,11 +11,9 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
 
     const logger = CommonServicesLocator.getLogger();
-    if (logger) {
-      logger.error('(nuxtApp.vueApp.config.exceptionHandler) ' + info, wrapExceptionIfNeeded(err));
-    }
+    logger?.error('(nuxtApp.vueApp.config.exceptionHandler) ' + info, wrapExceptionIfNeeded(err));
 
-    if (process.client && err.errorHelmed) {
+    if (import.meta.client && err.errorHelmed) {
       // error has been already processed by ErrorHelm component
       return;
     }
@@ -28,9 +26,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
 
     const logger = CommonServicesLocator.getLogger();
-    if (logger) {
-      logger.warn(`(nuxtApp.vueApp.config.warnHandler): ${msg}; trace: ${trace}`);
-    }
+    logger?.warn(`(nuxtApp.vueApp.config.warnHandler): ${msg}; trace: ${trace}`);
     console.warn(`Vue warn: ${msg}; trace: ${trace}`);
   };
 
@@ -40,11 +36,9 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
 
     const logger = CommonServicesLocator.getLogger();
-    if (logger) {
-      logger.error('(nuxtApp.hook vue:exception) ' + info, wrapExceptionIfNeeded(err));
-    }
+    logger?.error('(nuxtApp.hook vue:exception) ' + info, wrapExceptionIfNeeded(err));
 
-    if (process.client && err.errorHelmed) {
+    if (import.meta.client && err.errorHelmed) {
       // error has been already processed by ErrorHelm component
       return;
     }
@@ -53,16 +47,12 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   nuxtApp.hook('app:chunkError', (err: any) => {
     const logger = CommonServicesLocator.getLogger();
-    if (logger) {
-      logger.error('(app:chunkError) app error occured', wrapExceptionIfNeeded(err));
-    }
+    logger?.error('(app:chunkError) app error occured', wrapExceptionIfNeeded(err));
   });
 
   nuxtApp.hook('app:error', (err: any) => {
     const logger = CommonServicesLocator.getLogger();
-    if (logger) {
-      logger.error('(app:error) serious app error occured', wrapExceptionIfNeeded(err));
-    }
+    logger?.error('(app:error) serious app error occured', wrapExceptionIfNeeded(err));
 
     defaultErrorHandler(err);
   });

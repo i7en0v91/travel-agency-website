@@ -1,12 +1,12 @@
-import { FetchError, type FetchResponse } from 'ofetch';
+import type { FetchError, FetchResponse } from 'ofetch';
 import type { NitroFetchRequest, AvailableRouterMethod as _AvailableRouterMethod } from 'nitropack';
 import { destr } from 'destr';
 import isString from 'lodash-es/isString';
 import isNumber from 'lodash-es/isNumber';
-import { type IApiErrorDto } from '../server/dto';
-import { AppException, AppExceptionCodeEnum, type AppExceptionAppearance, defaultErrorHandler } from './exceptions';
 import type { KeysOf, PickFrom, AsyncDataExecuteOptions } from '#app/composables/asyncData.js';
 import type { UseFetchOptions } from '#app/composables';
+import { type IApiErrorDto } from '../server/dto';
+import { AppException, AppExceptionCodeEnum, type AppExceptionAppearance, defaultErrorHandler } from './exceptions';
 
 type AvailableRouterMethod<R extends NitroFetchRequest> = _AvailableRouterMethod<R> | Uppercase<_AvailableRouterMethod<R>>;
 
@@ -72,14 +72,9 @@ async function extractErrorInfoFromResponse (response: FetchResponse<any>) : Pro
   }
 }
 
-async function useFetchExInner<TDto, DataT, DefaultT = null, Method extends AvailableRouterMethod<NitroFetchRequest> = TDto extends void ? 'get' extends AvailableRouterMethod<NitroFetchRequest> ? 'get' : AvailableRouterMethod<NitroFetchRequest> : AvailableRouterMethod<NitroFetchRequest>, PickKeys extends KeysOf<DataT> = KeysOf<DataT>> (request: Ref<NitroFetchRequest> | NitroFetchRequest | (() => NitroFetchRequest), defautAppExceptionAppearance: AppExceptionAppearance, opts?: UseFetchOptions<TDto, DataT, PickKeys, DefaultT, NitroFetchRequest, Method>, ignoreAbortedRequestErrors?: boolean): Promise<SSRAwareFetchResult<PickFrom<DataT, PickKeys> | DefaultT>> {
+async function useFetchExInner<TDto, DataT, DefaultT = null, Method extends AvailableRouterMethod<NitroFetchRequest> = AvailableRouterMethod<NitroFetchRequest>, PickKeys extends KeysOf<DataT> = KeysOf<DataT>> (request: Ref<NitroFetchRequest> | NitroFetchRequest | (() => NitroFetchRequest), defautAppExceptionAppearance: AppExceptionAppearance, opts?: UseFetchOptions<TDto, DataT, PickKeys, DefaultT, NitroFetchRequest, Method>, ignoreAbortedRequestErrors?: boolean): Promise<SSRAwareFetchResult<PickFrom<DataT, PickKeys> | DefaultT>> {
   const logger = CommonServicesLocator.getLogger();
   ignoreAbortedRequestErrors ??= false;
-
-  /*
-  const innerOnRequestError = opts?.onRequestError;
-  const innerOnResponseError = opts?.onResponseError;
-  */
 
   const headers = useRequestHeaders(['cookie']) as HeadersInit;
   const caughtAppException = ref<AppException | undefined>();
@@ -89,7 +84,7 @@ async function useFetchExInner<TDto, DataT, DefaultT = null, Method extends Avai
     query: innerFetchQuery,
     body: innerFetchBody,
     ...opts,
-    ...(process.server
+    ...(import.meta.server
       ? {
           headers
         }
@@ -107,7 +102,7 @@ async function useFetchExInner<TDto, DataT, DefaultT = null, Method extends Avai
       caughtAppException.value = createAppException(undefined, defautAppExceptionAppearance!);
       if (caughtAppException.value) {
         triggerRef(caughtAppException);
-        if (process.client) {
+        if (import.meta.client) {
           defaultErrorHandler(caughtAppException.value);
         }
       }
@@ -128,7 +123,7 @@ async function useFetchExInner<TDto, DataT, DefaultT = null, Method extends Avai
       }
       if (caughtAppException.value) {
         triggerRef(caughtAppException);
-        if (process.client) {
+        if (import.meta.client) {
           defaultErrorHandler(caughtAppException.value);
         }
       }
@@ -146,7 +141,7 @@ async function useFetchExInner<TDto, DataT, DefaultT = null, Method extends Avai
     query: innerFetchQuery,
     body: innerFetchBody,
     throwIfErrorOnSSR: () => {
-      if (process.server && caughtAppException.value) {
+      if (import.meta.server && caughtAppException.value) {
         defaultErrorHandler(caughtAppException.value);
       }
     }
@@ -155,7 +150,7 @@ async function useFetchExInner<TDto, DataT, DefaultT = null, Method extends Avai
   return fetchState;
 };
 
-export function useFetchEx<TDto, DataT, DefaultT = null, Method extends AvailableRouterMethod<NitroFetchRequest> = TDto extends void ? 'get' extends AvailableRouterMethod<NitroFetchRequest> ? 'get' : AvailableRouterMethod<NitroFetchRequest> : AvailableRouterMethod<NitroFetchRequest>, PickKeys extends KeysOf<DataT> = KeysOf<DataT>> (request: Ref<NitroFetchRequest> | NitroFetchRequest | (() => NitroFetchRequest), defautAppExceptionAppearance: AppExceptionAppearance, opts?: UseFetchOptions<TDto, DataT, PickKeys, DefaultT, NitroFetchRequest, Method>, ignoreAbortedRequestErrors?: boolean): Promise<SSRAwareFetchResult<PickFrom<DataT, PickKeys> | DefaultT>> {
+export function useFetchEx<TDto, DataT, DefaultT = null, Method extends AvailableRouterMethod<NitroFetchRequest> = AvailableRouterMethod<NitroFetchRequest>, PickKeys extends KeysOf<DataT> = KeysOf<DataT>> (request: Ref<NitroFetchRequest> | NitroFetchRequest | (() => NitroFetchRequest), defautAppExceptionAppearance: AppExceptionAppearance, opts?: UseFetchOptions<TDto, DataT, PickKeys, DefaultT, NitroFetchRequest, Method>, ignoreAbortedRequestErrors?: boolean): Promise<SSRAwareFetchResult<PickFrom<DataT, PickKeys> | DefaultT>> {
   const doCall = useFetchExInner<TDto, DataT, DefaultT, Method, PickKeys>(request, defautAppExceptionAppearance, opts, ignoreAbortedRequestErrors);
   return doCall.then((result) => {
     result.throwIfErrorOnSSR();

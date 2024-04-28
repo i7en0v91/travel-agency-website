@@ -46,9 +46,10 @@ const bookLinkUrl = computed(() => {
           {{ texting?.price ? `\$${texting?.price}` : '&nbsp;' }}
         </div>
       </div>
-      <div :class="`${texting?.header ? 'travel-details-texting-title' : 'data-loading-stub text-data-loading'}`" role="heading" aria-level="3">
-        {{ texting?.header ? (texting?.header as any)[locale] : '&nbsp;' }}
-      </div>
+      <h3 v-if="texting?.header" class="travel-details-texting-title">
+        {{ (texting.header as any)[locale] }}
+      </h3>
+      <div v-else class="data-loading-stub text-data-loading"> &nbsp; </div>
     </div>
     <PerfectScrollbar
       :options="{
@@ -57,13 +58,13 @@ const bookLinkUrl = computed(() => {
       }"
       :watch-options="false"
       tag="div"
-      :class="texting?.text ? 'travel-details-texting-paragraph mt-xs-3' : 'data-loading-stub text-data-loading'"
+      :class="texting?.text ? 'travel-details-texting-paragraph my-xs-3' : 'data-loading-stub text-data-loading'"
     >
       <p>
         {{ texting?.text ? (texting?.text as any)[locale] : '&nbsp;' }}
       </p>
     </PerfectScrollbar>
-    <NuxtLink :class="`btn btn-primary brdr-1 travel-details-book-btn ${ (!fadeIn && !isInitial) ? 'nontabbable' : '' }`" :to="bookLinkUrl">
+    <NuxtLink :class="`btn btn-primary brdr-1 travel-details-book-btn ${ (!fadeIn && !isInitial) ? '' : 'nontabbable' }`" :to="bookLinkUrl">
       {{ $t(getI18nResName3('travelCities', 'bookBtn', bookKind)) }}
     </NuxtLink>
   </div>

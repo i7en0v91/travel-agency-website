@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { Tooltip } from 'floating-vue';
+import type { Tooltip } from 'floating-vue';
 import { TooltipHideTimeout } from './../../shared/constants';
 import { getI18nResName1 } from './../../shared/i18n';
 
@@ -13,8 +13,8 @@ const props = defineProps<IProps>();
 
 const { t } = useI18n();
 
-const elBtn = ref<HTMLElement>();
-const tooltip = ref<InstanceType<typeof Tooltip>>();
+const elBtn = shallowRef<HTMLElement>();
+const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
 
 const $emit = defineEmits(['click']);
 

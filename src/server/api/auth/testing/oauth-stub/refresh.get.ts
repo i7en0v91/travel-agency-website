@@ -1,5 +1,5 @@
 import { sign, verify } from 'jsonwebtoken';
-import { H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import { AuthProvider, type EntityId } from '../../../../../shared/interfaces';
 import { OAUTH_SECRET, OAUTH_TESTUSER_PROFILE as testUserProfile } from '../../../../../shared/testing/common';
 import { AppException, AppExceptionCodeEnum } from '../../../../../shared/exceptions';

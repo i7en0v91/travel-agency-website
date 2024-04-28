@@ -28,7 +28,7 @@ const themeSettings = useThemeSettings();
 const logger = CommonServicesLocator.getLogger();
 
 const isError = ref(false);
-const cropperImg = ref<InstanceType<typeof HTMLImageElement>>();
+const cropperImg = shallowRef<InstanceType<typeof HTMLImageElement>>();
 let cropper : Cropper | undefined;
 
 const imageSize = await systemConfigurationStore.getImageSrcSize(props.category);

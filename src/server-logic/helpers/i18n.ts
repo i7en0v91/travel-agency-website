@@ -19,19 +19,19 @@ export interface IServerI18n {
 
 export class ServerI18n implements IServerI18n {
   private logger: IAppLogger;
-  private localizationMap: ReadonlyMap<Locale, Object>;
+  private localizationMap: ReadonlyMap<Locale, NonNullable<unknown>>;
 
   public static inject = ['logger'] as const;
   constructor (logger: IAppLogger) {
     this.logger = logger;
-    this.localizationMap = new Map<Locale, Object>();
+    this.localizationMap = new Map<Locale, NonNullable<unknown>>();
   }
 
   initialize = (): void => {
     this.localizationMap = this.createLocalizationMap();
   };
 
-  getKeysRecusive = (currentList: [String[], any][], level: number): [String[], any][] => {
+  getKeysRecusive = (currentList: [string[], any][], level: number): [string[], any][] => {
     if (level > 10) {
       this.logger.error('(ServerI18n) cannot access localization file, recursion limit reached');
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'internal server error', 'error-page');
@@ -42,17 +42,17 @@ export class ServerI18n implements IServerI18n {
     }
 
     const listAfterIteration = flatten(currentList.map(
-      ([x, y]) => ((isObject(y) ? this.getKeysRecusive(toPairs(y).map(p => [[...x, p[0]], p[1]] as [String[], any]), level + 1) as [String[], any][] : [[x, y] as [String[], any]])) as [String[], any][]
+      ([x, y]) => ((isObject(y) ? this.getKeysRecusive(toPairs(y).map(p => [[...x, p[0]], p[1]] as [string[], any]), level + 1) as [string[], any][] : [[x, y] as [string[], any]])) as [string[], any][]
     ));
     return this.getKeysRecusive(listAfterIteration, level + 1);
   };
 
-  getKeys = (obj?: Object | undefined): String[] => {
+  getKeys = (obj?: NonNullable<unknown> | undefined): string[] => {
     if (!obj) {
       return [];
     }
 
-    return this.getKeysRecusive(toPairs(obj).map(p => [[p[0]], p[1]]), 0).map((x) => { return ((flatten(x[0]) as String[])).join(':'); });
+    return this.getKeysRecusive(toPairs(obj).map(p => [[p[0]], p[1]]), 0).map((x) => { return ((flatten(x[0]) as string[])).join(':'); });
   };
 
   getLocalizedResource = (resName: I18nResName, locale: Locale): string => {
@@ -67,11 +67,11 @@ export class ServerI18n implements IServerI18n {
     return result;
   };
 
-  loadLocalization = (locale: Locale): Object => {
+  loadLocalization = (locale: Locale): NonNullable<unknown> => {
     this.logger.verbose(`(ServerI18n) initializing localization map: locale=${locale}`);
 
     const filePath = join('./', 'locales', `${locale}.json`);
-    let result : object;
+    let result : NonNullable<unknown>;
     try {
       result = destr<any>(readFileSync(filePath, 'utf-8'));
     } catch (err: any) {
@@ -83,11 +83,11 @@ export class ServerI18n implements IServerI18n {
     return result;
   };
 
-  createLocalizationMap = (): ReadonlyMap<Locale, Object> => {
+  createLocalizationMap = (): ReadonlyMap<Locale, NonNullable<unknown>> => {
     this.logger.info('(ServerI18n) initializing localization map');
 
     let numEntries: number | undefined;
-    const resultMap = new Map<Locale, Object>([]);
+    const resultMap = new Map<Locale, NonNullable<unknown>>([]);
     for (let i = 0; i < AvailableLocaleCodes.length; i++) {
       const locale = <Locale>AvailableLocaleCodes[i];
       const entries = this.loadLocalization(locale);

@@ -5,7 +5,7 @@ import throttle from 'lodash-es/throttle';
 import groupBy from 'lodash-es/groupBy';
 import keys from 'lodash-es/keys';
 import flatten from 'lodash-es/flatten';
-import { type Theme, WindowBreakpoints, DeviceSizeEnum } from './constants';
+import { type Theme, DeviceSizeEnum, DeviceSizeS, getBreakpointForDevice } from './constants';
 import AppConfig from './../appconfig';
 
 export function isInViewport (element: HTMLElement, includeVeticallyScrollableTo = false) {
@@ -23,7 +23,7 @@ function testRectIntersection (rect1: DOMRect, rect2: DOMRect): boolean {
 
 function isElementItselfVisible (element: HTMLElement) {
   const isTransparent = ((element.style.opacity?.length ?? 0) > 0) && element.style.opacity.split('.').every((p) => { return parseInt(p) === 0; });
-  const isNotDisplayed = element.style.display === 'none';
+  const isNotDisplayed = element.style.display === 'none' && !element.className.includes('nav-search-page-links'); // handle .nav-search-page-links separately because of 'display: none' style added by vue's Trransition
   const isInvisible = window.getComputedStyle(element).visibility === 'hidden';
   const isOutOfViewport = !isInViewport(element, true);
   return !(isNotDisplayed || isInvisible || isOutOfViewport || isTransparent);
@@ -320,7 +320,7 @@ export function isPrefersReducedMotionEnabled (): boolean {
 }
 
 export async function callForCurrentDeviceSize<TResult> (fn: (currentSize: DeviceSizeEnum, breakpoint: number) => Promise<TResult>): Promise<TResult> {
-  const allDeviceSizes = orderBy(Object.values(DeviceSizeEnum).map((x) => { return { value: x, width: WindowBreakpoints.getBreakpointForDevice(DeviceSizeEnum[x] as DeviceSizeEnum) }; }), ['width'], ['desc']);
+  const allDeviceSizes = orderBy(Object.values(DeviceSizeEnum).map((x) => { return { value: x, width: getBreakpointForDevice(DeviceSizeEnum[x] as DeviceSizeEnum) }; }), ['width'], ['desc']);
   for (let i = 0; i < allDeviceSizes.length; i++) {
     const deviceSize = allDeviceSizes[i];
     const mediaQuery = window.matchMedia(`only screen and (min-width: ${deviceSize.width}px)`);
@@ -328,5 +328,5 @@ export async function callForCurrentDeviceSize<TResult> (fn: (currentSize: Devic
       return await fn(deviceSize.value, deviceSize.width);
     }
   }
-  return await fn(DeviceSizeEnum.S, WindowBreakpoints.S);
+  return await fn(DeviceSizeEnum.S, DeviceSizeS);
 }

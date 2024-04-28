@@ -1,8 +1,9 @@
 import dayjs from 'dayjs';
-import { type IFlightDto, type ICityDto, type IStayDto, type IFlightOfferDetailsDto, type IAirlineCompanyDto, type IAirplaneDto, type IAirportDto, type IStayOfferDetailsDto, type IStayReviewDto } from './../dto';
-import type { IStay, IStayReview, IStayImageShort, IFlight, ICity, IAirlineCompany, IAirplane, IAirport, IFlightOffer, MakeSearchResultEntity, IStayOfferDetails } from './../../shared/interfaces';
+import { CheckInOutDateUrlFormat } from './../../shared/constants';
+import { type ISearchedStayDto, type ISearchedStayOfferDto, type ISearchedFlightDto, type ISearchedFlightOfferDto, type IFlightDto, type ICityDto, type IStayDto, type IFlightOfferDetailsDto, type IAirlineCompanyDto, type IAirplaneDto, type IAirportDto, type IStayOfferDetailsDto, type IStayReviewDto, type IBookingDetailsDto } from './../dto';
+import type { ISearchStayOffersResult, IStayShort, IStayOffer, ISearchFlightOffersResult, EntityId, IOfferBooking, IStay, IStayReview, IStayImageShort, IFlight, ICity, IAirlineCompany, IAirplane, IAirport, IFlightOffer, EntityDataAttrsOnly, IStayOfferDetails } from './../../shared/interfaces';
 
-export function mapAirlineCompany (value: MakeSearchResultEntity<IAirlineCompany>): IAirlineCompanyDto {
+export function mapAirlineCompany (value: EntityDataAttrsOnly<IAirlineCompany>): IAirlineCompanyDto {
   const mapped: IAirlineCompanyDto = {
     id: value.id,
     logoImage: {
@@ -19,7 +20,7 @@ export function mapAirlineCompany (value: MakeSearchResultEntity<IAirlineCompany
   return mapped;
 }
 
-export function mapAirplane (value: MakeSearchResultEntity<IAirplane>): IAirplaneDto {
+export function mapAirplane (value: EntityDataAttrsOnly<IAirplane>): IAirplaneDto {
   const mapped: IAirplaneDto = {
     id: value.id,
     name: value.name,
@@ -38,7 +39,7 @@ export function mapAirplane (value: MakeSearchResultEntity<IAirplane>): IAirplan
   return mapped;
 }
 
-export function mapCity (city: MakeSearchResultEntity<ICity>): ICityDto {
+export function mapCity (city: EntityDataAttrsOnly<ICity>): ICityDto {
   return {
     id: city.id,
     name: city.name,
@@ -52,7 +53,7 @@ export function mapCity (city: MakeSearchResultEntity<ICity>): ICityDto {
   };
 }
 
-export function mapAirport (value: MakeSearchResultEntity<IAirport>): IAirportDto {
+export function mapAirport (value: EntityDataAttrsOnly<IAirport>): IAirportDto {
   const mapped: IAirportDto = {
     id: value.id,
     name: value.name,
@@ -62,7 +63,7 @@ export function mapAirport (value: MakeSearchResultEntity<IAirport>): IAirportDt
   return mapped;
 }
 
-function mapFlight (value: MakeSearchResultEntity<IFlight>): IFlightDto {
+export function mapFlight (value: EntityDataAttrsOnly<IFlight>): IFlightDto {
   const mapped: IFlightDto = {
     id: value.id,
     airlineCompany: mapAirlineCompany(value.airlineCompany),
@@ -78,6 +79,7 @@ function mapFlight (value: MakeSearchResultEntity<IFlight>): IFlightDto {
 export function mapFlightOffer (value: IFlightOffer): IFlightOfferDetailsDto {
   const mapped: IFlightOfferDetailsDto = {
     id: value.id,
+    kind: 'flights',
     isFavourite: value.isFavourite,
     totalPrice: value.totalPrice.toNumber(),
     class: value.class,
@@ -90,7 +92,7 @@ export function mapFlightOffer (value: IFlightOffer): IFlightOfferDetailsDto {
   return mapped;
 }
 
-export function mapStayReview (stayReview: MakeSearchResultEntity<IStayReview>, order: number): IStayReviewDto {
+export function mapStayReview (stayReview: EntityDataAttrsOnly<IStayReview>, order: number): IStayReviewDto {
   return {
     id: stayReview.id,
     order,
@@ -110,7 +112,7 @@ export function mapStayReview (stayReview: MakeSearchResultEntity<IStayReview>, 
   };
 }
 
-export function mapStay (stay: (Omit<MakeSearchResultEntity<IStay>, 'images' | 'reviews'> & { images: IStayImageShort[], numReviews: number, reviewScore: number })): IStayDto {
+export function mapStay (stay: (Omit<EntityDataAttrsOnly<IStay>, 'images' | 'reviews'> & { images: IStayImageShort[], numReviews: number, reviewScore: number })): IStayDto {
   return {
     id: stay.id,
     city: mapCity(stay.city),
@@ -144,10 +146,11 @@ export function mapStay (stay: (Omit<MakeSearchResultEntity<IStay>, 'images' | '
 export function mapStayOffer (value: IStayOfferDetails): IStayOfferDetailsDto {
   const mapped: IStayOfferDetailsDto = {
     id: value.id,
+    kind: 'stays',
     isFavourite: value.isFavourite,
     totalPrice: value.totalPrice.toNumber(),
-    checkInDate: dayjs(value.checkIn).format('YYYY-MM-DD'),
-    checkOutDate: dayjs(value.checkOut).format('YYYY-MM-DD'),
+    checkInDate: dayjs(value.checkIn).format(CheckInOutDateUrlFormat),
+    checkOutDate: dayjs(value.checkOut).format(CheckInOutDateUrlFormat),
     numGuests: value.numGuests,
     numRooms: value.numRooms,
     stay: mapStay(value.stay),
@@ -159,6 +162,143 @@ export function mapStayOffer (value: IStayOfferDetails): IStayOfferDetailsDto {
       'cityView-2': value.prices['cityView-2'].toNumber(),
       'cityView-3': value.prices['cityView-3'].toNumber()
     }
+  };
+  return mapped;
+}
+
+export function mapBooking (booking: IOfferBooking<IFlightOffer | IStayOfferDetails>): IBookingDetailsDto {
+  return {
+    id: booking.id,
+    kind: booking.offer.kind,
+    flightOffer: booking.offer.kind === 'flights' ? mapFlightOffer(booking.offer as IFlightOffer) : undefined,
+    stayOffer: booking.offer.kind === 'stays' ? mapStayOffer(booking.offer as IStayOfferDetails) : undefined,
+    bookedUser: {
+      id: booking.bookedUser.id,
+      avatar: booking.bookedUser.avatar,
+      firstName: booking.bookedUser.firstName,
+      lastName: booking.bookedUser.lastName
+    },
+    serviceLevel: booking.serviceLevel
+
+  };
+}
+
+export function mapSearchFlightOfferResultEntities (result: ISearchFlightOffersResult): {
+  airlineCompanies: IAirlineCompanyDto[],
+  airplanes: IAirplaneDto[],
+  airports: IAirportDto[]
+} {
+  const airlineCompaniesMap = new Map<EntityId, IAirlineCompanyDto>();
+  const airplanesMap = new Map<EntityId, IAirplaneDto>();
+  const airportsMap = new Map<EntityId, IAirportDto>();
+
+  const indexAirport = (airport: EntityDataAttrsOnly<IAirport>) => {
+    if (!airportsMap.get(airport.id)) {
+      airportsMap.set(airport.id, mapAirport(airport));
+    }
+  };
+
+  const indexAirplane = (airplane: EntityDataAttrsOnly<IAirplane>) => {
+    if (!airplanesMap.get(airplane.id)) {
+      airplanesMap.set(airplane.id, mapAirplane(airplane));
+    }
+  };
+
+  const indexAirlineCompany = (airlineCompany: EntityDataAttrsOnly<IAirlineCompany>) => {
+    if (!airlineCompaniesMap.get(airlineCompany.id)) {
+      airlineCompaniesMap.set(airlineCompany.id, mapAirlineCompany(airlineCompany));
+    }
+  };
+
+  const indexFlight = (flight: EntityDataAttrsOnly<IFlight>) => {
+    indexAirlineCompany(flight.airlineCompany);
+    indexAirplane(flight.airplane);
+    indexAirport(flight.departAirport);
+    indexAirport(flight.arriveAirport);
+  };
+
+  result.pagedItems.forEach((offer) => {
+    indexFlight(offer.departFlight);
+    if (offer.arriveFlight) {
+      indexFlight(offer.arriveFlight);
+    }
+  });
+
+  return {
+    airlineCompanies: [...airlineCompaniesMap.values()],
+    airplanes: [...airplanesMap.values()],
+    airports: [...airportsMap.values()]
+  };
+}
+
+export function mapSearchedFlight (value: EntityDataAttrsOnly<IFlight>): ISearchedFlightDto {
+  const mapped: ISearchedFlightDto = {
+    id: value.id,
+    airlineCompanyId: value.airlineCompany.id,
+    airplaneId: value.airplane.id,
+    arriveAirportId: value.arriveAirport.id,
+    departAirportId: value.departAirport.id,
+    arriveTimeUtc: value.arriveTimeUtc.toISOString(),
+    departTimeUtc: value.departTimeUtc.toISOString()
+  };
+  return mapped;
+}
+
+export function mapSearchedFlightOffer (value: EntityDataAttrsOnly<IFlightOffer>): ISearchedFlightOfferDto {
+  const mapped: ISearchedFlightOfferDto = {
+    id: value.id,
+    kind: 'flights',
+    isFavourite: value.isFavourite,
+    totalPrice: value.totalPrice.toNumber(),
+    class: value.class,
+    departFlight: mapSearchedFlight(value.departFlight),
+    arriveFlight: value.arriveFlight ? mapSearchedFlight(value.arriveFlight) : undefined,
+    numPassengers: value.numPassengers
+  };
+  return mapped;
+}
+
+export function mapSearchStayOfferResultEntities (result: ISearchStayOffersResult): { cities: ICityDto[] } {
+  const citiesMap = new Map<EntityId, ICityDto>();
+  result.pagedItems.forEach((offer) => {
+    const city = offer.stay.city;
+    if (!citiesMap.get(city.id)) {
+      citiesMap.set(city.id, city);
+    }
+  });
+
+  return {
+    cities: [...citiesMap.values()]
+  };
+}
+
+export function mapSearchedStay (value: EntityDataAttrsOnly<IStayShort>): ISearchedStayDto {
+  return {
+    cityId: value.city.id,
+    geo: value.geo,
+    id: value.id,
+    slug: value.slug,
+    name: value.name,
+    numReviews: value.numReviews,
+    reviewScore: value.reviewScore,
+    photo: {
+      slug: value.photo.slug,
+      timestamp: value.photo.timestamp
+    }
+  };
+}
+
+export function mapSearchedStayOffer (value: EntityDataAttrsOnly<IStayOffer>): ISearchedStayOfferDto {
+  const mapped: ISearchedStayOfferDto = {
+    id: value.id,
+    kind: 'stays',
+    isFavourite: value.isFavourite,
+    totalPrice: value.totalPrice.toNumber(),
+    checkInDate: value.checkIn.toISOString(),
+    checkOutDate: value.checkOut.toISOString(),
+    numGuests: value.numGuests,
+    numRooms: value.numRooms,
+    stay: mapSearchedStay(value.stay)
   };
   return mapped;
 }

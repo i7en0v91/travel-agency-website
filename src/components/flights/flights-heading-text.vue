@@ -10,10 +10,10 @@ defineProps<IProps>();
 </script>
 
 <template>
-  <div class="heading-text" role="heading" aria-level="1">
-    <h2>{{ $t(getI18nResName3('searchPageCommon', 'heading', 'main')) }}</h2>
+  <header class="heading-text">
+    <h1 class="font-h2">{{ $t(getI18nResName3('searchPageCommon', 'heading', 'main')) }}</h1>
     <p class="mt-xs-1">
       {{ $t(getI18nResName3('searchPageCommon', 'heading', 'sub')) }}
     </p>
-  </div>
+  </header>
 </template>

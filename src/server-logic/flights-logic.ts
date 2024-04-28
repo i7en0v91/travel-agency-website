@@ -1,20 +1,20 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { Decimal } from 'decimal.js';
 import dayjs from 'dayjs';
 import orderBy from 'lodash-es/orderBy';
 import uniqBy from 'lodash-es/uniqBy';
 import { murmurHash } from 'ohash';
 import flatten from 'lodash-es/flatten';
-import { type ICity, type IAirplaneLogic, type IAirportLogic, type FlightOffersSortFactor, type ISearchFlightOffersResultFilterParams, type IFlightOffersFilterParams, type IFlightsLogic, type IGeoLogic, type IPagination, type ISearchFlightOffersResult, type ISorting, type Price, type EntityId, type IFlight, type IAirlineCompany, type IAirplane, type IAirlineCompanyLogic, type DistanceUnitKm, type IFlightOffer, type FlightClass, type MakeSearchResultEntity, type TripType, type IAirport, type ITopFlightOfferInfo } from '../shared/interfaces';
+import { type ICity, type IAirplaneLogic, type IAirportLogic, type FlightOffersSortFactor, type ISearchFlightOffersResultFilterParams, type IFlightOffersFilterParams, type IFlightsLogic, type IGeoLogic, type IPagination, type ISearchFlightOffersResult, type ISorting, type Price, type EntityId, type IFlight, type IAirlineCompany, type IAirplane, type IAirlineCompanyLogic, type DistanceUnitKm, type IFlightOffer, type FlightClass, type EntityDataAttrsOnly, type TripType, type IAirport, type ITopFlightOfferInfo } from '../shared/interfaces';
 import { type IAppLogger } from '../shared/applogger';
 import { calculateDistanceKm, getTimeOfDay } from '../shared/common';
-import { DbConcurrencyVersions, SearchOffersListConstants, TemporaryEntityId } from '../shared/constants';
+import { FlightTimeOfDayIntervalMinutes, MaxOfferGenerationRouteCompaniesCount, MaxOfferGenerationRouteFlightsCount, MaxOfferGenerationMemoryBufferItems, SearchOffersPrimeOfferIterator, MaxOfferGenerationCityPairCount, DefaultFlightOffersSorting, DbVersionInitial, TemporaryEntityId } from '../shared/constants';
 import { normalizePrice, buildFlightUniqueDataKey, buildFlightOfferUniqueDataKey } from './helpers/utils';
-import { Queries, Mappers } from './queries';
+import { FlightOfferInfoQuery, MapFlightOffer, FlightInfoQuery, MapFlight } from './queries';
 import AppConfig from './../appconfig';
 import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
 
-declare type OfferWithSortFactors<TOffer extends IFlightOffer> = MakeSearchResultEntity<TOffer> & { primarySortFactor: number, secondarySortFactor: number };
+declare type OfferWithSortFactors<TOffer extends IFlightOffer> = EntityDataAttrsOnly<TOffer> & { primarySortFactor: number, secondarySortFactor: number };
 
 export class FlightsLogic implements IFlightsLogic {
   private logger: IAppLogger;
@@ -41,7 +41,7 @@ export class FlightsLogic implements IFlightsLogic {
         isDeleted: false,
         id
       },
-      select: Queries.FlightOfferInfoQuery(userId).select
+      select: FlightOfferInfoQuery(userId).select
     });
     if (!entity) {
       this.logger.warn(`(FlightsLogic) flight offer was not found, id=${id}, userId=${userId}`);
@@ -49,7 +49,7 @@ export class FlightsLogic implements IFlightsLogic {
     }
 
     this.logger.verbose(`(FlightsLogic) get flight offer - found, id=${id}, userId=${userId}, modifiedUtc=${entity.modifiedUtc}, price=${entity.totalPrice}`);
-    return Mappers.MapFlightOffer(entity);
+    return MapFlightOffer(entity);
   }
 
   async toggleFavourite (offerId: EntityId, userId: EntityId): Promise<boolean> {
@@ -86,7 +86,7 @@ export class FlightsLogic implements IFlightsLogic {
       result = true;
       await this.dbRepository.userFlightOffer.create({
         data: {
-          version: DbConcurrencyVersions.InitialVersion,
+          version: DbVersionInitial,
           isFavourite: result,
           userId,
           offerId
@@ -118,7 +118,7 @@ export class FlightsLogic implements IFlightsLogic {
     return new Decimal(normalizePrice(companyAdjustment + airportAdjustment + airplaneAdjustment + distanceAdjustment + flightClassAdjustment + durationAdjustment, 0));
   }
 
-  async calculateOfferPrice (offer: MakeSearchResultEntity<IFlightOffer>): Promise<Price> {
+  async calculateOfferPrice (offer: EntityDataAttrsOnly<IFlightOffer>): Promise<Price> {
     let result = await this.calculateFlightPrice(
       offer.departFlight.airlineCompany,
       offer.departFlight.departAirport,
@@ -155,8 +155,8 @@ export class FlightsLogic implements IFlightsLogic {
     this.logger.verbose(`(FlightsLogic) search offers, filter=${JSON.stringify(filter)}, userId=${userId}, primarySorting=${JSON.stringify(primarySorting)}, secondarySorting=${JSON.stringify(secondarySorting)}, pagination=${JSON.stringify(pagination)}, narrowFilterParams=${narrowFilterParams}, topOffersStats=${topOffersStats}`);
 
     try {
-      const primarySortFactor = primarySorting.factor ?? SearchOffersListConstants.DefaultFlightOffersSorting;
-      const secondarySortFactor = secondarySorting.factor ?? SearchOffersListConstants.DefaultFlightOffersSorting;
+      const primarySortFactor = primarySorting.factor ?? DefaultFlightOffersSorting;
+      const secondarySortFactor = secondarySorting.factor ?? DefaultFlightOffersSorting;
       let variants = await this.generateFlightOffersFull(filter, userId, primarySortFactor, secondarySortFactor);
       this.logger.debug(`(FlightsLogic) sorting flight offer variants, userId=${userId}`);
       variants = orderBy(variants, ['primarySortFactor', 'secondarySortFactor'], [primarySorting.direction, secondarySorting.direction]);
@@ -195,7 +195,75 @@ export class FlightsLogic implements IFlightsLogic {
     }
   }
 
-  async createFlightsAndFillIds (flights: MakeSearchResultEntity<IFlight>[]): Promise<void> {
+  async getUserFavouriteOffers (userId: EntityId): Promise<ISearchFlightOffersResult<IFlightOffer & { addDateUtc: Date }>> {
+    this.logger.verbose(`(FlightsLogic) get user favourite offers, userId=${userId}`);
+
+    const userOffers = await this.dbRepository.userFlightOffer.findMany({
+      where: {
+        isDeleted: false,
+        isFavourite: true,
+        userId
+      },
+      select: {
+        modifiedUtc: true,
+        offer: {
+          select: FlightOfferInfoQuery(userId).select
+        }
+      }
+    });
+
+    const mappedItems = userOffers.map((uo) => { return { addDateUtc: uo.modifiedUtc, ...(MapFlightOffer(uo.offer)) }; }).filter(o => !o.isDeleted);
+    const result: ISearchFlightOffersResult<IFlightOffer & { addDateUtc: Date }> = {
+      pagedItems: mappedItems,
+      paramsNarrowing: undefined,
+      topOffers: undefined,
+      totalCount: mappedItems.length
+    };
+
+    this.logger.verbose(`(FlightsLogic) get user favourite offers completed, userId=${userId}, count=${result.totalCount}`);
+    return result;
+  }
+
+  async getUserTickets(userId: EntityId): Promise<ISearchFlightOffersResult<IFlightOffer & { bookingId: EntityId, bookDateUtc: Date; }>> {
+    this.logger.verbose(`(FlightsLogic) get user tickets, userId=${userId}`);
+
+    const userOffers = await this.dbRepository.userFlightOffer.findMany({
+      where: {
+        isDeleted: false,
+        booking: {
+          isDeleted: false,
+          id: {
+            gt: 0
+          }
+        },
+        userId
+      },
+      select: {
+        offer: {
+          select: FlightOfferInfoQuery(userId).select
+        },
+        booking: {
+          select: {
+            id: true,
+            modifiedUtc: true
+          }
+        }
+      }
+    });
+
+    const mappedItems = userOffers.map((uo) => { return { bookingId: uo.booking!.id, bookDateUtc: uo.booking!.modifiedUtc, ...(MapFlightOffer(uo.offer)) }; }).filter(o => !o.isDeleted);
+    const result: ISearchFlightOffersResult<IFlightOffer & { bookingId: EntityId, bookDateUtc: Date; }> = {
+      pagedItems: mappedItems,
+      paramsNarrowing: undefined,
+      topOffers: undefined,
+      totalCount: mappedItems.length
+    };
+
+    this.logger.verbose(`(FlightsLogic) get user tickets completed, userId=${userId}, count=${result.totalCount}`);
+    return result;
+  }
+
+  async createFlightsAndFillIds (flights: EntityDataAttrsOnly<IFlight>[]): Promise<void> {
     this.logger.verbose(`(FlightsLogic) creating memory flights and filling IDs, count=${flights.length}`);
 
     await this.dbRepository.$transaction(async () => {
@@ -207,7 +275,7 @@ export class FlightsLogic implements IFlightsLogic {
           data: {
             arrivalUtc: flight.arriveTimeUtc,
             departmentUtc: flight.departTimeUtc,
-            version: DbConcurrencyVersions.InitialVersion,
+            version: DbVersionInitial,
             airlineCompanyId: flight.airlineCompany.id,
             airplaneId: flight.airplane.id,
             arrivalAirportId: flight.arriveAirport.id,
@@ -226,10 +294,10 @@ export class FlightsLogic implements IFlightsLogic {
     this.logger.verbose(`(FlightsLogic) creating memory flights and filling IDs - completed, count=${flights.length}`);
   }
 
-  async ensureFlightsInDatabase (flights: MakeSearchResultEntity<IFlight>[]): Promise<void> {
+  async ensureFlightsInDatabase (flights: EntityDataAttrsOnly<IFlight>[]): Promise<void> {
     this.logger.debug(`(FlightsLogic) ensuring flights in DB, count=${flights.length}`);
 
-    const memoryFlightsMap = new Map<string, MakeSearchResultEntity<IFlight>>(
+    const memoryFlightsMap = new Map<string, EntityDataAttrsOnly<IFlight>>(
       flights.map(f => [buildFlightUniqueDataKey(f), f]));
 
     const dbFlights = (await this.dbRepository.flight.findMany({
@@ -239,12 +307,12 @@ export class FlightsLogic implements IFlightsLogic {
           in: [...memoryFlightsMap.keys()]
         }
       },
-      select: Queries.FlightInfoQuery.select
-    })).map(Mappers.MapFlight);
+      select: FlightInfoQuery.select
+    })).map(MapFlight);
 
     const dbFlightsMap = new Map<string, IFlight>(dbFlights.map(o => [o.dataHash, o]));
 
-    const flightsToCreate = [] as MakeSearchResultEntity<IFlight>[];
+    const flightsToCreate = [] as EntityDataAttrsOnly<IFlight>[];
     let identifiedCount = 0;
     for (let i = 0; i < flights.length; i++) {
       const flight = flights[i];
@@ -283,7 +351,7 @@ export class FlightsLogic implements IFlightsLogic {
             numPassengers: offer.numPassengers,
             totalPrice: offer.totalPrice.toNumber(),
             departFlightId: flightIdsMap.get(buildFlightUniqueDataKey(offer.departFlight))!,
-            version: DbConcurrencyVersions.InitialVersion,
+            version: DbVersionInitial,
             returnFlightId: offer.arriveFlight ? flightIdsMap.get(buildFlightUniqueDataKey(offer.arriveFlight!)) : undefined,
             dataHash
           },
@@ -317,8 +385,8 @@ export class FlightsLogic implements IFlightsLogic {
           in: [...memoryOffersMap.keys()]
         }
       },
-      select: Queries.FlightOfferInfoQuery(userId).select
-    })).map(Mappers.MapFlightOffer);
+      select: FlightOfferInfoQuery(userId).select
+    })).map(MapFlightOffer);
 
     const dbOffersMap = new Map<string, IFlightOffer>(dbOffers.map(o => [o.dataHash, o]));
 
@@ -367,7 +435,7 @@ export class FlightsLogic implements IFlightsLogic {
     return result;
   }
 
-  getFlightOfferSortFactorValue = (offer: MakeSearchResultEntity<IFlightOffer>, factor: FlightOffersSortFactor): number => {
+  getFlightOfferSortFactorValue = (offer: EntityDataAttrsOnly<IFlightOffer>, factor: FlightOffersSortFactor): number => {
     if (factor === 'duration') {
       const departFlightDuration = Math.round((offer.departFlight.arriveTimeUtc.getTime() - offer.departFlight.departTimeUtc.getTime()) / 60000);
       const arriveFlightDuration = offer.arriveFlight ? Math.round((offer.arriveFlight.arriveTimeUtc.getTime() - offer.arriveFlight.departTimeUtc.getTime()) / 60000) : undefined;
@@ -524,10 +592,10 @@ export class FlightsLogic implements IFlightsLogic {
     if (toCitySlugs.length > fromCitySlugs.length && fromCitySlugs.length > 1 && (toCitySlugs.length % fromCitySlugs.length === 0)) {
       fromCitySlugs.splice(0, 1);
     }
-    const cityAirportVariants: { from: MakeSearchResultEntity<IAirport>, to: MakeSearchResultEntity<IAirport> }[] = [];
-    for (let i = 0; i < Math.min(SearchOffersListConstants.MaxOfferGenerationCityPairCount, Math.max(fromCitySlugs.length, toCitySlugs.length)); i++) {
-      const fromCitySlug = fromCitySlugs[((i + 1) * SearchOffersListConstants.PrimeOfferIterator) % fromCitySlugs.length];
-      const toCitySlug = toCitySlugs[((i + 2) * SearchOffersListConstants.PrimeOfferIterator) % toCitySlugs.length];
+    const cityAirportVariants: { from: EntityDataAttrsOnly<IAirport>, to: EntityDataAttrsOnly<IAirport> }[] = [];
+    for (let i = 0; i < Math.min(MaxOfferGenerationCityPairCount, Math.max(fromCitySlugs.length, toCitySlugs.length)); i++) {
+      const fromCitySlug = fromCitySlugs[((i + 1) * SearchOffersPrimeOfferIterator) % fromCitySlugs.length];
+      const toCitySlug = toCitySlugs[((i + 2) * SearchOffersPrimeOfferIterator) % toCitySlugs.length];
       const fromAirport = cityAirports.find(x => x.city.slug === fromCitySlug)!;
       const toAirport = cityAirports.find(x => x.city.slug === toCitySlug)!;
       cityAirportVariants.push({ from: fromAirport, to: toAirport });
@@ -548,7 +616,7 @@ export class FlightsLogic implements IFlightsLogic {
           const offers = await this.generateFlightOfferVariants(fromDate, toDate, routeVariant.from, routeVariant.to, tripType, numPassengers, flightClass, primarySortFactor, secondarySortFactor);
           result.push(...offers);
 
-          if (result.length > SearchOffersListConstants.MaxOfferGenerationMemoryBufferItems) {
+          if (result.length > MaxOfferGenerationMemoryBufferItems) {
             this.logger.warn(`(FlightsLogic) maximum number of flight offer items in memory buffer reached, stopping generation with current values, filter=${JSON.stringify(filter)}, userId=${userId}`);
             break;
           }
@@ -560,17 +628,17 @@ export class FlightsLogic implements IFlightsLogic {
     return result;
   }
 
-  async generateFlightOfferVariants (fromDate: Date, toDate: Date | undefined, fromAirport: MakeSearchResultEntity<IAirport>, toAirport: MakeSearchResultEntity<IAirport>, tripType: TripType, numPassengers: number, flightClass: FlightClass, primarySortFactor: FlightOffersSortFactor, secondarySortFactor: FlightOffersSortFactor): Promise<OfferWithSortFactors<IFlightOffer>[]> {
-    let flightPairs: {depart: MakeSearchResultEntity<IFlight>, arrive?: MakeSearchResultEntity<IFlight>}[] = [];
+  async generateFlightOfferVariants (fromDate: Date, toDate: Date | undefined, fromAirport: EntityDataAttrsOnly<IAirport>, toAirport: EntityDataAttrsOnly<IAirport>, tripType: TripType, numPassengers: number, flightClass: FlightClass, primarySortFactor: FlightOffersSortFactor, secondarySortFactor: FlightOffersSortFactor): Promise<OfferWithSortFactors<IFlightOffer>[]> {
+    let flightPairs: {depart: EntityDataAttrsOnly<IFlight>, arrive?: EntityDataAttrsOnly<IFlight>}[] = [];
     if (tripType === 'oneway') {
       flightPairs = (await this.generateFlightVariants(fromDate, fromAirport, toAirport)).map((f) => { return { depart: f, arrive: undefined }; });
     } else {
       const departFlights = await this.generateFlightVariants(fromDate, fromAirport, toAirport);
       const arriveFlights = await this.generateFlightVariants(toDate!, toAirport, fromAirport);
       arriveFlights.splice(0, 1);
-      for (let i = 0; i < Math.min(SearchOffersListConstants.MaxOfferGenerationRouteFlightsCount, Math.max(departFlights.length, arriveFlights.length)); i++) {
-        const departFlight = departFlights[((i + 1) * SearchOffersListConstants.PrimeOfferIterator) % departFlights.length];
-        const arriveFlight = arriveFlights[((i + 2) * SearchOffersListConstants.PrimeOfferIterator) % arriveFlights.length];
+      for (let i = 0; i < Math.min(MaxOfferGenerationRouteFlightsCount, Math.max(departFlights.length, arriveFlights.length)); i++) {
+        const departFlight = departFlights[((i + 1) * SearchOffersPrimeOfferIterator) % departFlights.length];
+        const arriveFlight = arriveFlights[((i + 2) * SearchOffersPrimeOfferIterator) % arriveFlights.length];
         flightPairs.push({ depart: departFlight, arrive: arriveFlight });
       }
     }
@@ -603,7 +671,7 @@ export class FlightsLogic implements IFlightsLogic {
     return result;
   }
 
-  async getNearestCompanies (city: MakeSearchResultEntity<ICity>): Promise<MakeSearchResultEntity<IAirlineCompany>[]> {
+  async getNearestCompanies (city: EntityDataAttrsOnly<ICity>): Promise<EntityDataAttrsOnly<IAirlineCompany>[]> {
     this.logger.debug(`(FlightsLogic) filtering nearest companies, cityId=${city.id}`);
 
     const allAirlineCompanies = await this.airlineCompanyLogic.getAllAirlineCompanies();
@@ -613,15 +681,15 @@ export class FlightsLogic implements IFlightsLogic {
     }
 
     let companiesWithDistance = allAirlineCompanies.map((c) => { return { company: c, distance: calculateDistanceKm(c.city.geo, city.geo) }; });
-    companiesWithDistance = orderBy(companiesWithDistance, ['distance'], ['asc']).slice(0, SearchOffersListConstants.MaxOfferGenerationRouteCompaniesCount);
+    companiesWithDistance = orderBy(companiesWithDistance, ['distance'], ['asc']).slice(0, MaxOfferGenerationRouteCompaniesCount);
     const result = companiesWithDistance.map(x => x.company);
 
     this.logger.debug(`(FlightsLogic) nearest companies filtered, cityId=${city.id}, count=${result.length}`);
     return result;
   }
 
-  async generateFlightVariants (date: Date, fromAirport: MakeSearchResultEntity<IAirport>, toAirport: MakeSearchResultEntity<IAirport>): Promise<(MakeSearchResultEntity<IFlight> & { dataHash: string })[]> {
-    const result: (MakeSearchResultEntity<IFlight> & { dataHash: string })[] = [];
+  async generateFlightVariants (date: Date, fromAirport: EntityDataAttrsOnly<IAirport>, toAirport: EntityDataAttrsOnly<IAirport>): Promise<(EntityDataAttrsOnly<IFlight> & { dataHash: string })[]> {
+    const result: (EntityDataAttrsOnly<IFlight> & { dataHash: string })[] = [];
 
     const airlineCompanies = await this.getNearestCompanies(fromAirport.city);
     if ((airlineCompanies?.length ?? 0) === 0) {
@@ -638,7 +706,7 @@ export class FlightsLogic implements IFlightsLogic {
     const utcOffsetMinutes = fromAirport.city.utcOffsetMin;
 
     const fromDateTimeUtc = dayjs(date).add(-utcOffsetMinutes, 'minute').utc().toDate();
-    for (let i = 0; i < SearchOffersListConstants.MaxOfferGenerationRouteFlightsCount; i++) {
+    for (let i = 0; i < MaxOfferGenerationRouteFlightsCount; i++) {
       const paramsHash = murmurHash(Buffer.concat([
         Uint8Array.of(date.getTime() / 60000),
         Uint8Array.from(Buffer.from(fromAirport.name.en, 'utf8')),
@@ -648,7 +716,7 @@ export class FlightsLogic implements IFlightsLogic {
       const airlineCompany = airlineCompanies[paramsHash % airlineCompanies.length];
       const airplane = allAirplanes[paramsHash % allAirplanes.length];
 
-      const departMinutes = (paramsHash % (24 * 60 / SearchOffersListConstants.FlightTimeOfDayIntervalMinutes)) * SearchOffersListConstants.FlightTimeOfDayIntervalMinutes;
+      const departMinutes = (paramsHash % (24 * 60 / FlightTimeOfDayIntervalMinutes)) * FlightTimeOfDayIntervalMinutes;
       const departTimeUtc = dayjs(fromDateTimeUtc).add(departMinutes, 'minute').utc().toDate();
 
       const duration = Math.ceil(calculateDistanceKm(fromAirport.geo, toAirport.geo) / 20 + 120 + paramsHash % 30);

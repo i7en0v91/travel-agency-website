@@ -6,7 +6,7 @@ import PageSection from './../components/common-page-components/page-section.vue
 import HeadingText from './../components/stays/stays-heading-text.vue';
 import { getI18nResName2 } from './../shared/i18n';
 import { ImageCategory } from './../shared/interfaces';
-import { WebApiRoutes, StaysTitleSlug, TravelDetailsHtmlAnchor, SearchOffersListConstants, PagePath, type Locale } from './../shared/constants';
+import { ApiEndpointStayOffersSearchHistory, ApiEndpointPopularCitiesList, MaxSearchHistorySize, StaysTitleSlug, TravelDetailsHtmlAnchor, PagePath, type Locale } from './../shared/constants';
 import TravelCities from './../components/common-page-components/travel-details/travel-cities.vue';
 import TravelDetails from './../components/common-page-components/travel-details/travel-details.vue';
 import { useFetchEx } from './../shared/fetch-ex';
@@ -25,7 +25,7 @@ const logger = CommonServicesLocator.getLogger();
 const localePath = useLocalePath();
 const { locale } = useI18n();
 
-const popularCitiesFetch = await useFetchEx<IPopularCityDto[], IPopularCityDto[], null[]>(WebApiRoutes.PopularCitiesList, 'error-stub',
+const popularCitiesFetch = await useFetchEx<IPopularCityDto[], IPopularCityDto[], null[]>(ApiEndpointPopularCitiesList, 'error-stub',
   {
     server: true,
     lazy: true,
@@ -34,12 +34,12 @@ const popularCitiesFetch = await useFetchEx<IPopularCityDto[], IPopularCityDto[]
     key: 'StaysPagePopulatCitiesList'
   });
 
-const searchHistoryFetch = await useFetchEx<ISearchedCityHistoryDto[], ISearchedCityHistoryDto[], null[]>(WebApiRoutes.StayOffersSearchHistory, 'error-stub',
+const searchHistoryFetch = await useFetchEx<ISearchedCityHistoryDto[], ISearchedCityHistoryDto[], null[]>(ApiEndpointStayOffersSearchHistory, 'error-stub',
   {
-    server: true,
+    server: false,
     lazy: true,
     cache: 'no-cache',
-    default: () => { return range(0, SearchOffersListConstants.MaxSearchHistorySize, 1).map(_ => null); },
+    default: () => { return range(0, MaxSearchHistorySize, 1).map(_ => null); },
     transform: (response: ISearchedCityHistoryDto[]) => {
       logger.verbose(`(StaysPage) received search cities history list response, count=${response.length}`);
       if (!response) {
@@ -82,7 +82,8 @@ watch(searchHistoryFetch.status, () => {
       :is-error="isError"
       :content-padded="true"
     >
-      <ComponentWaiterIndicator v-if="showWaitingStub && !isError" :ctrl-key="`${CtrlKey}-WaiterIndicator`" class="display-options-waiter" />
+    <ClientOnly>
+      <ComponentWaiterIndicator v-if="showWaitingStub && !isError" :ctrl-key="`${CtrlKey}-WaiterIndicator`" />
       <ul v-if="searchHistoryFetch.data.value.length > 0" class="popular-city-grid p-xs-2 p-s-3  hidden-overflow-nontabbable">
         <PopularCityCard
           v-for="(city, idx) in searchHistoryFetch.data.value"
@@ -105,6 +106,10 @@ watch(searchHistoryFetch.status, () => {
           </template>
         </i18n-t>
       </div>
+      <template #fallback>
+        <ComponentWaiterIndicator :ctrl-key="`${CtrlKey}-ClientFallback`" />
+      </template>
+    </ClientOnly>
     </PageSection>
     <TravelCities ctrl-key="StaysTravelCitiesSection" book-kind="stay" class="stays-page-travel-cities-section" />
     <TravelDetails :id="TravelDetailsHtmlAnchor" ctrl-key="StaysTravelDetailsSection" book-kind="stay" />

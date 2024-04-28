@@ -7,7 +7,7 @@ import OfferDetailsSummary from './../../components/common-page-components/offer
 import FlightDetailsCard from './../../components/common-page-components/flight-details-card.vue';
 import { getLocalizeableValue } from './../../shared/common';
 import { useFetchEx } from './../../shared/fetch-ex';
-import { type Locale, WebApiRoutes } from './../../shared/constants';
+import { type Locale, PagePath, ApiEndpointFlightOfferDetails } from './../../shared/constants';
 import { AvailableFlightClasses, ImageCategory, type IFlightOffer, type ILocalizableValue } from './../../shared/interfaces';
 import { type IFlightOfferDetailsDto } from './../../server/dto';
 import { mapFlightOfferDetails } from './../../shared/mappers';
@@ -41,7 +41,7 @@ definePageMeta({
 
 const CtrlKey = 'FlightOfferDetailsSummary';
 
-const flightDetailsFetchRequest = await useFetchEx<IFlightOfferDetailsDto, IFlightOfferDetailsDto>(WebApiRoutes.FlightOfferDetails(offerId ?? -1), 'error-page',
+const flightDetailsFetchRequest = await useFetchEx<IFlightOfferDetailsDto, IFlightOfferDetailsDto>(ApiEndpointFlightOfferDetails(offerId ?? -1), 'error-page',
   {
     server: true,
     lazy: true,
@@ -66,7 +66,7 @@ const flightOffer = ref<Omit<IFlightOffer, 'dataHash'> | undefined>(flightDetail
 const airplaneImages = computed(() => (offerDataAvailable.value && flightOffer.value?.departFlight) ? orderBy(flightOffer.value!.departFlight.airplane.images.filter(x => x.kind === 'window' || x.kind === 'common' || x.kind === flightOffer.value!.class), ['order'], ['asc']).map(x => x.image) : undefined);
 
 const nuxtApp = useNuxtApp();
-if (nuxtApp.isHydrating || process.server) {
+if (nuxtApp.isHydrating || import.meta.server) {
   useOgImage({
     name: 'OgOfferSummary',
     props: {
@@ -76,6 +76,8 @@ if (nuxtApp.isHydrating || process.server) {
       price: flightOffer.value!.totalPrice.toNumber(),
       reviewScore: flightOffer.value!.departFlight.airlineCompany.reviewScore,
       numReviews: flightOffer.value!.departFlight.airlineCompany.numReviews,
+      dateUnixUtc: flightOffer.value!.departFlight.departTimeUtc.getTime(),
+      utcOffsetMin: flightOffer.value!.departFlight.departAirport.city.utcOffsetMin,
       image: {
         ...flightOffer.value!.departFlight.airplane.images.find(x => x.kind === 'main')!.image,
         category: ImageCategory.Airplane
@@ -111,7 +113,7 @@ watch(flightDetailsFetch.status, () => {
 watch(locale, () => {
   updatePageTitle();
 });
-if (process.server) {
+if (import.meta.server) {
   updatePageTitle();
 }
 
@@ -122,19 +124,26 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flight-details-page no-hidden-parent-tabulation-check">
+  <article class="flight-details-page no-hidden-parent-tabulation-check">
     <ErrorHelm :is-error="isError" class="flight-details-page-error-helm">
+      <OfferDetailsBreadcrumbs
+        :ctrl-key="`${CtrlKey}-Breadcrumbs`"
+        offer-kind="flights"
+        :city="flightOffer?.departFlight?.departAirport.city"
+        :place-name="flightOffer?.departFlight?.departAirport.name"
+      />
       <OfferDetailsSummary
         :ctrl-key="CtrlKey"
+        class="mt-xs-4 mt-s-5"
         offer-kind="flights"
         :offer-id="offerId!"
         :city="flightOffer?.departFlight?.departAirport.city"
-        :place-name="flightOffer?.departFlight?.departAirport.name"
         :title="flightOffer?.departFlight?.airplane.name"
         :price="flightOffer?.totalPrice"
         :review-score="flightOffer?.departFlight?.airlineCompany.reviewScore"
         :num-reviews="flightOffer?.departFlight?.airlineCompany.numReviews"
-        :is-favourite="flightOffer?.isFavourite"
+        :btn-res-name="getI18nResName2('offerDetailsPage', 'bookBtn')"
+        :btn-link-url="flightOffer ? localePath(`/${PagePath.BookFlight}/${offerId}`) : route.fullPath"
       />
       <StaticImage
         :ctrl-key="`${CtrlKey}-MainImage`"
@@ -145,10 +154,10 @@ onMounted(() => {
         sizes="xs:100vw sm:100vw md:100vw lg:100vw xl:100vw"
         :alt-res-name="getI18nResName2('flightDetailsPage', 'airplaneMainImageAlt')"
       />
-      <div class="flight-details-class-features">
-        <div v-if="flightOffer?.departFlight" class="flight-details-class-features-caption mb-xs-1" role="heading" aria-level="4">
+      <section class="flight-details-class-features">
+        <h2 v-if="flightOffer?.departFlight" class="flight-details-class-features-caption mb-xs-1">
           {{ $t(getI18nResName2('flightDetailsPage', 'flightClassFeaturesTitle'), { class: t(getI18nResName3('searchFlights', 'class', flightOffer!.class)) }) }}
-        </div>
+        </h2>
         <div v-else class="data-loading-stub text-data-loading mb-xs-1" />
         <ol class="flight-details-class-checkmarks mb-xs-1">
           <li v-for="flightClass in AvailableFlightClasses" :key="`${CtrlKey}-${flightClass}Checkmark`" class="flight-details-class-checkmark-item">
@@ -158,8 +167,8 @@ onMounted(() => {
             </div>
           </li>
         </ol>
-      </div>
-      <div class="flight-details-class-images mt-xs-4">
+      </section>
+      <section class="flight-details-class-images mt-xs-4">
         <StaticImage
           v-for="(image, idx) in offerDataAvailable ? airplaneImages : range(0, NumAirplaneFeatureImages).map(_ => undefined)"
           :key="`${CtrlKey}-AirplaneImage-${idx}`"
@@ -170,11 +179,11 @@ onMounted(() => {
           sizes="xs:50vw sm:40vw md:30vw lg:20vw xl:10vw"
           :alt-res-name="getI18nResName2('flightDetailsPage', 'airplaneFeatureImageAlt')"
         />
-      </div>
-      <div class="flight-details-company-policies brdr-2 p-xs-3">
-        <div v-if="flightOffer?.departFlight" class="flight-details-policies-caption" role="heading" aria-level="4">
+      </section>
+      <section class="flight-details-company-policies brdr-2 p-xs-3">
+        <h2 v-if="flightOffer?.departFlight" class="flight-details-policies-caption">
           {{ $t(getI18nResName3('flightDetailsPage', 'companyPolicies', 'caption'), { company: getLocalizeableValue(flightOffer.departFlight.airlineCompany.name, locale as Locale) }) }}
-        </div>
+        </h2>
         <div v-else class="data-loading-stub text-data-loading" />
         <div class="flight-details-policies-details mt-xs-2">
           <div v-for="(item, idx) in ['cleaning', 'screening']" :key="`${CtrlKey}-CompanyPolicy-${idx}`" class="flight-details-policy-item mt-xs-1">
@@ -185,7 +194,7 @@ onMounted(() => {
             <div v-else class="data-loading-stub text-data-loading" />
           </div>
         </div>
-      </div>
+      </section>
       <FlightDetailsCard
         :ctrl-key="`${CtrlKey}-DepartFlightCard`"
         class="flight-details-flight-card"
@@ -197,6 +206,7 @@ onMounted(() => {
         :airplane-name="flightOffer?.departFlight?.airplane.name"
         :utc-offset-minutes="flightOffer?.departFlight?.departAirport.city.utcOffsetMin"
         kind="depart"
+        tag="h2"
       />
       <FlightDetailsCard
         v-if="flightOffer && flightOffer.arriveFlight"
@@ -210,7 +220,8 @@ onMounted(() => {
         :airplane-name="flightOffer?.arriveFlight.airplane.name"
         :utc-offset-minutes="flightOffer?.arriveFlight.departAirport.city.utcOffsetMin"
         kind="arrive"
+        tag="h2"
       />
     </ErrorHelm>
-  </div>
+  </article>
 </template>

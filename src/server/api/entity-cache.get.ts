@@ -1,4 +1,4 @@
-import { H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import orderBy from 'lodash-es/orderBy';
 import startCase from 'lodash-es/startCase';
 import isString from 'lodash-es/isString';
@@ -49,7 +49,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   let items = await entityCacheLogic.get(idsOrSlugs, requestParams.type);
   items = sortResultByRequestOrder(items, idsOrSlugs);
 
-  let httpCacheMaxAge = ((AppConfig.clientCache.expirationsSeconds as any)[requestParams.type.toLowerCase()] as number) ?? AppConfig.clientCache.expirationsSeconds.default;
+  let httpCacheMaxAge = ((AppConfig.caching.clientRuntime.expirationsSeconds as any)[requestParams.type.toLowerCase()] as number) ?? AppConfig.caching.clientRuntime.expirationsSeconds.default;
   httpCacheMaxAge = Math.round(httpCacheMaxAge * 2 / 3); // a bit lower cache time on server to prevent potentially unpredicted behavior at expiration boundary time
   handleCacheHeaders(event, {
     maxAge: httpCacheMaxAge

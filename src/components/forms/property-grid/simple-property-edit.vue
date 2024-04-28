@@ -46,7 +46,7 @@ const EmptyValuePlaceholder = '-';
 
 const logger = CommonServicesLocator.getLogger();
 
-const rootComponent = ref<InstanceType<typeof PropertyGridRow>>();
+const rootComponent = shallowRef<InstanceType<typeof PropertyGridRow>>();
 const isEditMode = ref(false);
 const customValidationErrMsgResName = ref<string | undefined>();
 const editValue = ref(props.value);
@@ -209,7 +209,7 @@ defineExpose({
         :type="type"
         :placeholder-res-name="props.placeholderResName"
         :max-length="props.maxLength"
-        @keyup.enter="() => { if(isEditMode) { onControlButtonClick('apply'); } }"
+        @keypress.enter="() => { if(isEditMode) { onControlButtonClick('apply'); } }"
         @keyup.escape="() => { if(isEditMode) { exitEditModeInternal(); } }"
       />
       <div v-else class="simple-property-view">

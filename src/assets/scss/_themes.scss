@@ -52,8 +52,15 @@ $theme-light: (
   'filter-panel-ctrl-btn': #FF8682,
   'highlighted-info': #FF8682,
   'choice-ctrl': white,
+  'choice-ctrl-highlight': #8DD3BB88,
   'review-editor-quotation-bg': #e1e1e1,
-  'review-editor-quotation': #2B2B2B
+  'review-editor-quotation': #2B2B2B,
+  'booking-ticket-general-bg': #8DD3BB,
+  'booking-ticket-dates-bg': #EBF6F2,
+  'booking-ticket-transition': $ambient-base-light,
+  'booking-ticket-item-bg': #EBF6F2,
+  'booking-ticket-item': #8DD3BB,
+  'booking-ticket-border': #EAEAEA
 );
 
 $ambient-base-dark: #FFFFFF;
@@ -102,8 +109,15 @@ $theme-dark: (
   'filter-panel-ctrl-btn': #FF8682,
   'highlighted-info': #FF8682,
   'choice-ctrl': white,
+  'choice-ctrl-highlight': #A259FF88,
   'review-editor-quotation-bg': #BBBBBB,
-  'review-editor-quotation': #2B2B2B
+  'review-editor-quotation': #2B2B2B,
+  'booking-ticket-general-bg': #A259FF88,
+  'booking-ticket-dates-bg': #3B3B3B,
+  'booking-ticket-transition': #BFCCC5,
+  'booking-ticket-item-bg': #A259FF,
+  'booking-ticket-item': white,
+  'booking-ticket-border': #676767
 );
 
 @mixin compile-theme($theme-name, $colormap) {

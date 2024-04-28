@@ -1,20 +1,18 @@
 <script setup lang="ts">
 
-import { getLocalizeableValue } from '../../shared/common';
-import type { GeoPoint, MakeSearchResultEntity, ICity } from './../../shared/interfaces';
-import { type Locale } from './../../shared/constants';
+import type { GeoPoint, EntityDataAttrsOnly, ICity } from './../../shared/interfaces';
 import AppConfig from './../../appconfig';
 import InteractiveMap from './../common-page-components/map/interactive-map.vue';
 import { getI18nResName3 } from './../../shared/i18n';
 import ComponentWaiterIndicator from './../component-waiting-indicator.vue';
 
-const { locale } = useI18n();
+const { t } = useI18n();
 
 interface IProps {
   ctrlKey: string,
   visibility: 'wait' | 'visible',
   location?: GeoPoint,
-  city?: MakeSearchResultEntity<ICity>
+  city?: EntityDataAttrsOnly<ICity>
 }
 
 defineProps<IProps>();
@@ -28,11 +26,11 @@ const webUrl = ref<string>();
 <template>
   <section class="stay-details-map">
     <div class="stay-details-map-heading">
-      <div class="stay-details-map-title  mt-xs-1" role="heading" aria-level="5">
+      <h2 class="stay-details-map-title  mt-xs-1">
         {{ $t(getI18nResName3('stayDetailsPage', 'location', 'title')) }}
-      </div>
+      </h2>
       <NuxtLink v-if="AppConfig.maps" class="btn btn-primary stay-details-map-weblink brdr-1  mt-xs-1" :to="webUrl ?? localePath('/')" target="_blank">
-        {{ $t(getI18nResName3('stayDetailsPage', 'location', 'viewOnWebsite'), { webLink: getLocalizeableValue(AppConfig.maps.providerDisplayName, locale as Locale) }) }}
+        {{ $t(getI18nResName3('stayDetailsPage', 'location', 'viewOnWebsite'), { webLink: t(AppConfig.maps.providerDisplayResName) }) }}
       </NuxtLink>
     </div>
     <ComponentWaiterIndicator v-if="!location || visibility === 'wait'" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="interactive-map-waiting-indicator my-xs-5" />

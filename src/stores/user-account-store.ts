@@ -1,9 +1,10 @@
 import assign from 'lodash-es/assign';
 import keys from 'lodash-es/keys';
-import { WebApiRoutes } from '../shared/constants';
+import { ApiEndpointUserAccount } from '../shared/constants';
 import { useFetchEx } from '../shared/fetch-ex';
 import { type IImageEntitySrc, type EntityId } from '../shared/interfaces';
 import { type IUserAccountDto } from './../server/dto';
+import type { UnwrapRef } from 'vue';
 
 export interface IUserAccount {
   userId?: EntityId,
@@ -16,18 +17,18 @@ export interface IUserAccount {
 
 export const useUserAccountStore = defineStore('userAccountStore', () => {
   const logger = CommonServicesLocator.getLogger();
-  const { status, data } = useAuth();
-  const userAccountFetch = useFetchEx<IUserAccountDto, IUserAccountDto>(WebApiRoutes.UserAccount, 'error-stub',
+  const { status, data, getSession } = useAuth();
+  const userAccountFetch = useFetchEx<IUserAccountDto, IUserAccountDto>(ApiEndpointUserAccount, 'error-page',
     {
-      server: true,
+      server: false, // prevent user data injection into html (potential personal data leaking via html page caching on the web)
       lazy: false, // lazy - false - important becase user cover slug must be known during page setup to be editable via EditableImage component
-      immediate: status.value === 'authenticated',
+      immediate: false,
       cache: 'no-cache',
       transform: (response: IUserAccountDto) => {
-        logger.verbose(`(userAccountStore) received user account data: ${JSON.stringify(response)}`);
+        logger.verbose(`(user-account-store) received user account data: ${JSON.stringify(response)}`);
         const dto = response as IUserAccountDto;
         if (!dto) {
-          logger.warn('(userAccountStore) server didnt return user account dto');
+          logger.warn('(user-account-store) server didnt return user account dto');
           return {}; // error should be logged by fetchEx
         }
         return dto;
@@ -50,23 +51,42 @@ export const useUserAccountStore = defineStore('userAccountStore', () => {
   };
 
   const fetchUserAccountData = async (userId: EntityId): Promise<void> => {
-    logger.verbose(`(userAccountStore) fetching user account data, userId=${userId}`);
+    logger.verbose(`(user-account-store) fetching user account data, userId=${userId}`);
+    let fetchStatus: UnwrapRef<Awaited<ReturnType<typeof useFetchEx>>['status']> | undefined;
     try {
       const accountFetch = await userAccountFetch;
+      fetchStatus = accountFetch.status.value;
+      switch(fetchStatus) {
+        case 'idle':
+          logger.verbose(`(user-account-store) executing user account data fetch, userId=${userId}`);
+          await accountFetch.execute();
+          break;
+        case 'success':
+        case 'error':
+          logger.verbose(`(user-account-store) refetching user account data, userId=${userId}`);
+          await accountFetch.refresh();
+          break;
+        case 'pending':
+          logger.debug(`(user-account-store) skipping account data fetch request, as it is currently in progress, userId=${userId}`);
+          return;
+      }
+      
       const fetchResult = await accountFetch;
       if (fetchResult.data?.value) {
-        logger.info(`(userAccountStore) user account data loaded, userId=${userId}`, fetchResult.data.value);
+        logger.info(`(user-account-store) user account data loaded, userId=${userId}`, fetchResult.data.value);
         const resultDto = mapUserAccountDto(fetchResult.data.value);
         assign(userAccountValue, resultDto);
         userAccountInitialized = true;
-        logger.verbose(`(userAccountStore) user account data fetched, userId=${userId}`);
+        logger.verbose(`(user-account-store) user account data fetched, userId=${userId}`);
+      } else {
+        fetchStatus = accountFetch.status.value;
       }
     } catch (err: any) {
-      logger.warn(`(userAccountStore) exception during initialization of user account data, setting empty, userId=${userId}`, err);
+      logger.warn(`(user-account-store) exception during initialization of user account data, setting empty, userId=${userId}, initialFetchStatus=${fetchStatus}`, err);
       setUserAccountEmptyValues();
     } finally {
-      if (!userAccountInitialized) {
-        logger.warn(`(userAccountStore) failed to initialize user account data, setting empty, userId=${userId}`);
+      if (!userAccountInitialized && fetchStatus !== 'pending') {
+        logger.warn(`(user-account-store) failed to initialize user account data, setting empty, userId=${userId}, initialFetchStatus=${fetchStatus}`);
         setUserAccountEmptyValues();
       }
     }
@@ -75,22 +95,37 @@ export const useUserAccountStore = defineStore('userAccountStore', () => {
   const userAccountValue = reactive<IUserAccount>({});
   let userAccountInitialized = false;
 
-  const initializeUserAccount = async (): Promise<IUserAccount> => {
+  const getUserAccount = async (): Promise<IUserAccount> => {
     if (!userAccountInitialized) {
+      await getSession({ force: true });
       if (status.value === 'authenticated') {
         const userId = (data.value as any)?.id;
-        logger.info(`(userAccountStore) initializing user account data, fetching, userId=${userId}`);
-        await fetchUserAccountData(userId);
+        logger.info(`(user-account-store) initializing user account data, fetching, userId=${userId}`);
+        fetchUserAccountData(userId);
       } else {
-        logger.info('(userAccountStore) initializing user account data - user is unauthenticated');
+        logger.info('(user-account-store) initializing user account data - user is unauthenticated');
         setUserAccountEmptyValues();
       }
     }
     return userAccountValue;
   };
 
+  watch(status, async () => {
+    logger.info(`(user-account-store) auth status changed, current=${status.value}`);
+    if (!userAccountInitialized) {
+      return;
+    }
+
+    if (status.value === 'authenticated') {
+      const userId = (data.value as any)?.id;
+      await fetchUserAccountData(userId);
+    } else {
+      setUserAccountEmptyValues();
+    }
+  });
+
   const notifyUserAccountChanged = (data: Partial<IUserAccount>) => {
-    logger.debug('(userAccountStore) notifying components about user account data changes');
+    logger.debug('(user-account-store) notifying components about user account data changes');
     if (data.avatar) {
       userAccountValue.avatar = data.avatar;
     }
@@ -109,8 +144,7 @@ export const useUserAccountStore = defineStore('userAccountStore', () => {
   };
 
   return {
-    initializeUserAccount,
-    notifyUserAccountChanged,
-    userAccountValue
+    getUserAccount,
+    notifyUserAccountChanged
   };
 });

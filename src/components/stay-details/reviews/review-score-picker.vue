@@ -2,25 +2,18 @@
 
 import { VueFinalModal } from 'vue-final-modal';
 import range from 'lodash-es/range';
-import { type I18nResName, getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
+import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
 import SimpleButton from './../../forms/simple-button.vue';
-import { type ConfirmBoxButton } from './../../../shared/interfaces';
-import { getLocalizeableValue } from './../../../shared/common';
-import { type Locale } from './../../../shared/constants';
 
 interface IProps {
   ctrlKey: string,
   setResultCallback: (result: number | 'cancel') => void
 }
 
-const { locale } = useI18n();
-
 const props = defineProps<IProps>();
 
 const logger = CommonServicesLocator.getLogger();
 const hoveredScore = ref<number>();
-
-const htmlRatingItems = ref<InstanceType<typeof HTMLElement>[]>();
 
 let resultSet = false;
 
@@ -72,14 +65,13 @@ function onPickerItemClicked (score: number) {
     @update:model-value="(val: boolean) => $emit('update:modelValue', val)"
   >
     <ClientOnly>
-      <div class="review-score-picker-title mt-xs-3 mt-s-4" role="heading" aria-level="3">
+      <h2 class="review-score-picker-title mt-xs-3 mt-s-4">
         {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'scorePickerTitle')) }}
-      </div>
+      </h2>
       <div class="review-score-picker-div my-xs-5">
         <div
           v-for="(i) in range(0, 5)"
           :key="`${$props.ctrlKey}-ScorePickerItem-${i}`"
-          ref="htmlRatingItems"
           :class="`review-score-picker-item ${ hoveredScore ? (i < hoveredScore ? 'highlight' : '') : '' }`"
           :data-score="i"
           @mouseover="() => { onPickerItemHovered(i + 1); }"

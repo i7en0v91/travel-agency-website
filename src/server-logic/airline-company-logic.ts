@@ -1,12 +1,12 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { type Storage, type StorageValue } from 'unstorage';
 import orderBy from 'lodash-es/orderBy';
 import { destr } from 'destr';
 import { type IAirlineCompanyLogic, type IAirlineCompany, type IAirlineCompanyData, type EntityId } from '../shared/interfaces';
 import { type IAppLogger } from '../shared/applogger';
 import { calculateDistanceKm } from '../shared/common';
-import { CurrentUserGeoLocation, DbConcurrencyVersions } from '../shared/constants';
-import { Queries, Mappers } from './queries';
+import { CurrentUserGeoLocation, DbVersionInitial } from '../shared/constants';
+import { AirlineCompanyInfoQuery, MapAirlineCompany } from './queries';
 
 export class AirlineCompanyLogic implements IAirlineCompanyLogic {
   private readonly AllCompaniesCacheKey = 'AllAirlineCompanies';
@@ -32,8 +32,8 @@ export class AirlineCompanyLogic implements IAirlineCompanyLogic {
         where: {
           isDeleted: false
         },
-        select: Queries.AirlineCompanyInfoQuery.select
-      })).map(Mappers.MapAirlineCompany);
+        select: AirlineCompanyInfoQuery.select
+      })).map(MapAirlineCompany);
       await this.cache.setItem(this.AllCompaniesCacheKey, result);
     }
 
@@ -61,7 +61,7 @@ export class AirlineCompanyLogic implements IAirlineCompanyLogic {
         },
         numReviews: companyData.numReviews,
         reviewScore: companyData.reviewScore,
-        version: DbConcurrencyVersions.InitialVersion
+        version: DbVersionInitial
       },
       select: {
         id: true
@@ -108,9 +108,9 @@ export class AirlineCompanyLogic implements IAirlineCompanyLogic {
         where: {
           id: nearestCompanyId
         },
-        ...Queries.AirlineCompanyInfoQuery
+        ...AirlineCompanyInfoQuery
       });
-      const result = Mappers.MapAirlineCompany(entity!);
+      const result = MapAirlineCompany(entity!);
 
       await this.cache.setItem(cacheKey, JSON.stringify(result));
       this.logger.verbose(`(AirlineCompanyLogic) nearest company calculated, id=${result.id}, name=${result.name.en}`);

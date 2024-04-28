@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Dropdown } from 'floating-vue';
+import type { Dropdown } from 'floating-vue';
 import { type IOtherOptionsButtonGroupProps } from './../../shared/interfaces';
 import { updateTabIndices } from './../../shared/dom';
 import { TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
@@ -17,7 +17,7 @@ const buttonLabel = computed(() => {
   return hasActiveItem.value ? t(props.selectedResName, { variantLabel: t(variantLabelResName!) }) : t(props.defaultResName);
 });
 
-const dropdown = ref<InstanceType<typeof Dropdown>>();
+const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
 
 function onActivate (itemCtrlKey: string) {
   $emit('itemClick', itemCtrlKey);
@@ -81,9 +81,9 @@ const htmlId = useId();
       <div :class="`option-button-div other-options-button-div`">
         <div class="option-button-icon option-button-icon-menu mr-xs-2" />
         <div class="other-options-button-content">
-          <h5 class="option-button-label">
+          <div class="option-button-label">
             {{ buttonLabel }}
-          </h5>
+          </div>
           <div v-if="subtextResName" class="option-button-subtext mt-xs-2">
             {{ $t(subtextResName, subtextResArgs) }}
           </div>

@@ -3,11 +3,12 @@ import { dirname } from 'pathe';
 import traverse from 'traverse';
 import deepmerge from 'lodash-es/merge';
 
-import { createLogger as createWinstonLogger, format as WinstonFormat, Logger as WinstonLogger } from 'winston';
+import type { Logger as WinstonLogger } from 'winston';
+import { createLogger as createWinstonLogger, format as WinstonFormat } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 
 import AppConfig from '../../appconfig';
-import { type IAppLogger, wrapLogDataArg, getErrorCustomLogLevel } from '../../shared/applogger';
+import { type IAppLogger, wrapLogDataArg, getAppExceptionCustomLogLevel, getErrorAppExceptionCode } from '../../shared/applogger';
 import { flattenError } from './../../shared/exceptions';
 
 const { combine, timestamp, json } = WinstonFormat;
@@ -57,8 +58,8 @@ export class ServerLogger implements IAppLogger {
         this.winstonLogger.warn(msg);
       }
     } else {
+      const customLogLevel = getAppExceptionCustomLogLevel(getErrorAppExceptionCode(err));
       const errPoco = (err && err instanceof Error) ? flattenError(err) : err;
-      const customLogLevel = getErrorCustomLogLevel(err);
       const msgObj = {};
       if (customLogLevel) {
         (msgObj as any)[customLogLevel] = msg;
@@ -80,8 +81,8 @@ export class ServerLogger implements IAppLogger {
     if (!err && !data) {
       this.winstonLogger.error(msg);
     } else {
+      const customLogLevel = getAppExceptionCustomLogLevel(getErrorAppExceptionCode(err));
       const errPoco = (err && err instanceof Error) ? flattenError(err) : err;
-      const customLogLevel = getErrorCustomLogLevel(err);
       const msgObj = {};
       if (customLogLevel) {
         (msgObj as any)[customLogLevel] = msg;
@@ -94,6 +95,14 @@ export class ServerLogger implements IAppLogger {
       } else {
         this.winstonLogger.error(logData);
       }
+    }
+  }
+
+  always (msg: string, data?: any): void {
+    if (data) {
+      this.winstonLogger.log('always', deepmerge(wrapLogDataArg(data), { info: msg }));
+    } else {
+      this.winstonLogger.log('always', msg);
     }
   }
 }
@@ -140,8 +149,18 @@ function createLogger () {
     });
   };
 
-  return createWinstonLogger({
+  const result: WinstonLogger = createWinstonLogger({
     level: loggingOptions.level,
+    levels: {
+      always: 0,
+      error: 1,
+      warn: 2,
+      info: 3,
+      http: 4,
+      verbose: 5,
+      debug: 6,
+      silly: 7
+    },
     format: combine(
       timestamp({ format: timezoned }),
       redactFormat,
@@ -156,4 +175,5 @@ function createLogger () {
       })
     ]
   });
+  return result;
 }

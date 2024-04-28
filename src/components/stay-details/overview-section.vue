@@ -6,14 +6,14 @@ import zip from 'lodash-es/zip';
 import range from 'lodash-es/range';
 import { getLocalizeableValue, getScoreClassResName } from '../../shared/common';
 import { type Locale } from '../../shared/constants';
-import type { MakeSearchResultEntity, IStayDescription } from './../../shared/interfaces';
+import type { EntityDataAttrsOnly, IStayDescription } from './../../shared/interfaces';
 import { getI18nResName3, getI18nResName2 } from './../../shared/i18n';
 
 const { t, locale } = useI18n();
 
 interface IProps {
   ctrlKey: string,
-  description?: MakeSearchResultEntity<IStayDescription>[],
+  description?: EntityDataAttrsOnly<IStayDescription>[],
   numReviews?: number,
   reviewScore?: number
 }
@@ -48,9 +48,9 @@ const reviewsCountText = computed(() => props.numReviews ? `${props.numReviews} 
 
 <template>
   <section class="stay-details-overview">
-    <div v-if="titleStr" class="stay-details-overview-heading" role="heading" aria-level="5">
+    <h2 v-if="titleStr" class="stay-details-overview-heading">
       {{ getLocalizeableValue(titleStr, locale as Locale) }}
-    </div>
+    </h2>
     <div v-else class="data-loading-stub text-data-loading" />
     <p v-if="mainStr" class="stay-details-overview-main mt-xs-3">
       {{ getLocalizeableValue(mainStr, locale as Locale) }}

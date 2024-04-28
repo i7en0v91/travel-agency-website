@@ -3,8 +3,8 @@ import isString from 'lodash-es/isString';
 import type { NuxtApp } from '#app';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
 import { type EntityId, type ILocalizableValue } from './../shared/interfaces';
-import { NuxtDataKeys, WebApiRoutes } from './../shared/constants';
-import { get, post, del } from './../shared/rest-utils';
+import { DataKeyStayDetailsReviews, ApiEndpointStayReviews } from './../shared/constants';
+import { getObject, post, del } from './../shared/rest-utils';
 import { type IAppLogger } from './../shared/applogger';
 import type { IUserAccount } from './user-account-store';
 import type { ICreateOrUpdateStayReviewDto, IModifyStayReviewResultDto, IStayReviewsDto } from './../server/dto';
@@ -62,10 +62,10 @@ async function sendCreateOrUpdateReviewRequest (stayId: EntityId, textOrHtml: st
     textOrHtml
   };
   logger.debug(`(stay-reviews-store) sending create or update HTTP request, stayId=${stayId}`);
-  const resultDto = await post(WebApiRoutes.StayReviews(stayId), undefined, bodyDto, true, 'default') as IModifyStayReviewResultDto;
+  const resultDto = await post(ApiEndpointStayReviews(stayId), undefined, bodyDto, undefined, true, 'default') as IModifyStayReviewResultDto;
   if (!resultDto) {
     logger.warn(`(stay-reviews-store) error occured while sending create or update HTTP request, stayId=${stayId}, textOrHtml=${textOrHtml}`);
-    throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpeted HTTP request error', 'error-stub');
+    throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
   }
   logger.debug(`(stay-reviews-store) create or update HTTP request completed, stayId=${stayId}, result=${JSON.stringify(resultDto)}`);
   return resultDto.reviewId;
@@ -73,20 +73,20 @@ async function sendCreateOrUpdateReviewRequest (stayId: EntityId, textOrHtml: st
 
 async function sendDeleteReviewRequest (stayId: EntityId, logger: IAppLogger): Promise<void> {
   logger.debug(`(stay-reviews-store) sending delete HTTP request, stayId=${stayId}`);
-  const resultDto = await del(WebApiRoutes.StayReviews(stayId), undefined, true, 'default') as IModifyStayReviewResultDto;
+  const resultDto = await del(ApiEndpointStayReviews(stayId), undefined, true, 'default') as IModifyStayReviewResultDto;
   if (!resultDto) {
     logger.warn(`(stay-reviews-store) error occured while sending delete HTTP request, stayId=${stayId}`);
-    throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpeted HTTP request error', 'error-stub');
+    throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
   }
   logger.debug(`(stay-reviews-store) delete HTTP request completed, stayId=${stayId}, result=${JSON.stringify(resultDto)}`);
 }
 
 async function sendFetchReviewsRequest (stayId: EntityId, logger: IAppLogger): Promise<IStayReviewItemInternal[]> {
   logger.debug(`(stay-reviews-store) sending get HTTP request, stayId=${stayId}`);
-  const resultDto = await get(WebApiRoutes.StayReviews(stayId), undefined, undefined, true, 'default') as IStayReviewsDto;
+  const resultDto = await getObject(ApiEndpointStayReviews(stayId), undefined, 'no-store', true, undefined, 'default') as IStayReviewsDto;
   if (!resultDto) {
     logger.warn(`(stay-reviews-store) error occured while sending get HTTP request, stayId=${stayId}`);
-    throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpeted HTTP request error', 'error-stub');
+    throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
   }
 
   const result: IStayReviewItemInternal[] = orderBy(resultDto.reviews, ['order'], ['asc']).map((r) => {
@@ -115,20 +115,21 @@ async function sendFetchReviewsRequest (stayId: EntityId, logger: IAppLogger): P
 async function getReviewItems (stayId: EntityId, nuxtApp: NuxtApp, logger: IAppLogger): Promise<IStayReviewItemInternal[] | undefined> {
   logger.debug(`(stay-reviews-store) get review data, stayId=${stayId}`);
   let reviewItems: IStayReviewItemInternal[] | undefined;
-  const payload = getPayload<IStayReviewsPayload>(nuxtApp, NuxtDataKeys.StayDetailsReviews);
-  if (process.client && nuxtApp.isHydrating && payload) {
+  const payload = getPayload<IStayReviewsPayload>(nuxtApp, DataKeyStayDetailsReviews(stayId));
+  if (import.meta.client && nuxtApp.isHydrating && payload) {
     logger.verbose(`(stay-reviews-store) retrieving review data from payload, stayId=${stayId}`);
     if (payload.stayId === stayId) {
       reviewItems = payload.reviewItems;
     }
-  } else if (process.server) {
-    const payload = await useAsyncData(NuxtDataKeys.StayDetailsReviews, async () => { return { stayId, reviewItems: await sendFetchReviewsRequest(stayId, logger) }; }, {
+  } else if (import.meta.server) {
+    const payload = await useAsyncData(DataKeyStayDetailsReviews(stayId), async () => { return { stayId, reviewItems: await sendFetchReviewsRequest(stayId, logger) }; }, {
       server: true,
       lazy: false,
       immediate: true
     });
     if (payload.error.value || !payload.data.value) {
       logger.warn(`(stay-reviews-store) failed to fetch review data, stayId=${stayId}`, payload.error.value);
+      throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to fetch review data', 'error-stub');
     } else {
       reviewItems = payload.data.value!.reviewItems;
     }
@@ -137,6 +138,7 @@ async function getReviewItems (stayId: EntityId, nuxtApp: NuxtApp, logger: IAppL
       reviewItems = await sendFetchReviewsRequest(stayId, logger);
     } catch (err: any) {
       logger.warn(`(stay-reviews-store) failed to fetch review data, stayId=${stayId}`, err);
+      throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to fetch review data', 'error-stub');
     }
   }
   logger.verbose(`(stay-reviews-store) get review data, stayId=${stayId}, result=${reviewItems?.length}`);
@@ -171,7 +173,7 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
           if (isAuthenticated) {
             if (!userAccount) {
               try {
-                userAccount = await userAccountStore.initializeUserAccount();
+                userAccount = await userAccountStore.getUserAccount();
               } catch (err: any) {
                 logger.warn('(stay-reviews-store) failed to process current user review when fetching reviews, cannot obtain user account data', err);
               }
@@ -183,12 +185,12 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
               if (currentUserReview) {
                 logger.debug(`(stay-reviews-store) updating current user's review, stayId=${stayId}, userId=${userId}, reviewId=${currentUserReview.id}`);
                 itemsData!.splice(itemsData!.indexOf(currentUserReview), 1);
-                if (process.client) {
+                if (import.meta.client) {
                   currentUserReview.user = 'current';
                   itemsData = [currentUserReview, ...itemsData!];
                 } else {
                   itemsData = [currentUserReview, ...itemsData!];
-                  addPayload<IStayReviewsPayload>(nuxtApp, NuxtDataKeys.StayDetailsReviews,
+                  addPayload<IStayReviewsPayload>(nuxtApp, DataKeyStayDetailsReviews(stayId),
                     {
                       stayId,
                       reviewItems: itemsData
@@ -329,7 +331,7 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
     let instance = allInstances.get(stayId);
     if (!instance) {
       instance = createInstance(stayId);
-      if (process.client) {
+      if (import.meta.client) {
         instance.fetchReviews();
       } else {
         await instance.fetchReviews();
@@ -352,12 +354,12 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
     }
   };
 
-  if (process.client) {
+  if (import.meta.client) {
     watch(status, async () => {
       logger.info(`(stay-reviews-store) auth status changed, status=${status.value}`);
       if (status.value === 'authenticated') {
         try {
-          userAccount = await userAccountStore.initializeUserAccount();
+          userAccount = await userAccountStore.getUserAccount();
         } catch (err: any) {
           logger.warn('(stay-reviews-store) failed to process auth status change, cannot obtain user account data', err);
           return;

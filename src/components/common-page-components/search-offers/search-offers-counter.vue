@@ -19,8 +19,8 @@ const props = withDefaults(defineProps<IProps>(), {
   initiallySelectedValue: undefined
 });
 
-const btnDecrement = ref<InstanceType<typeof SimpleButton>>();
-const btnIncrement = ref<InstanceType<typeof SimpleButton>>();
+const btnDecrement = shallowRef<InstanceType<typeof SimpleButton>>();
+const btnIncrement = shallowRef<InstanceType<typeof SimpleButton>>();
 const hasMounted = ref(false);
 
 const logger = CommonServicesLocator.getLogger();

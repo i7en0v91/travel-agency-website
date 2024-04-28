@@ -2,8 +2,7 @@
  * Prints stack trace from client app production logs using sourcemap files from .output/public/_nuxt directory.
  * To execute:
  * 1. Transform raw stack traces into lines with format [fileName.js]?[lineNumber]:[columnNumber] and paste it into "const errorStack = ..." below
- * 2. Temporary remove > "type": "module" line from package.json file
- * 3. Run 'npm run sourcemap-error'
+ * 2. Run 'npm run sourcemap-error'
  */
 
 import * as fs from 'fs';

@@ -1,0 +1,4 @@
+{
+  "typescript.tsserver.experimental.enableProjectDiagnostics": true,
+  "eslint.experimental.useFlatConfig": true
+}

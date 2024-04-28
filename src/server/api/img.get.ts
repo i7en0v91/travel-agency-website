@@ -1,13 +1,13 @@
 import { Readable } from 'stream';
-import { H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import isString from 'lodash-es/isString';
 import { getQuery } from 'ufo';
 import sharp from 'sharp';
 import { defineWebApiEventHandler } from '../utils/webapi-event-handler';
-import { WebApiRoutes } from '../../shared/constants';
 import { type EntityId, ImageCategory } from '../../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../../shared/exceptions';
 import { getServerSession } from '#auth';
+import AppConfig from './../../appconfig';
 
 async function convertToJpeg (bytes: Buffer): Promise<Buffer> {
   const sharpObj = sharp(bytes);
@@ -36,7 +36,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     url = url.replaceAll('&amp;', '&'); // fix for satori img requests
   }
   const query = getQuery(url);
-  // eslint-disable-next-line no-unneeded-ternary
+   
   const isSatori = query?.satori ? true : false;
 
   const slug = query?.slug?.toString();
@@ -121,10 +121,12 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   if (!isSatori) {
     const modifiedSince = image.modifiedUtc;
     modifiedSince.setMilliseconds(0);
-    handleCacheHeaders(event, {
-      maxAge: WebApiRoutes.ImageCacheLatency,
+    handleCacheHeaders(event, AppConfig.caching.imagesCachingSeconds ? {
+      maxAge: AppConfig.caching.imagesCachingSeconds,
       modifiedTime: modifiedSince,
       cacheControls: ['must-revalidate']
+    } : {
+      cacheControls: ['no-cache']
     });
   }
 

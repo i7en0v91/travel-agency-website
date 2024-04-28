@@ -1,15 +1,14 @@
-import shuffle from 'lodash-es/shuffle';
 import once from 'lodash-es/once';
 import { withQuery, encodeHash, stringifyParsedURL, type ParsedURL } from 'ufo';
-import type { AsyncDataRequestStatus } from '#app/composables/asyncData';
 import { type IPopularCityDto, type ITravelDetailsDto } from '../server/dto';
-import { TravelDetailsHtmlAnchor, WebApiRoutes, UserNotificationLevel, PagePath } from '../shared/constants';
+import { ApiEndpointPopularCityTravelDetails, ApiEndpointPopularCitiesList, TravelDetailsHtmlAnchor, UserNotificationLevel, PagePath } from '../shared/constants';
 import { type EntityId, type IEntityCacheCityItem, type ITravelDetailsData } from '../shared/interfaces';
 import { useFetchEx, type SSRAwareFetchResult } from '../shared/fetch-ex';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
-import { get } from '../shared/rest-utils';
+import { getObject } from '../shared/rest-utils';
 import AppConfig from './../appconfig';
 import { getI18nResName2 } from './../shared/i18n';
+import type { AsyncDataRequestStatus } from '#app/composables/asyncData';
 
 interface ITravelDetailsStoreState {
   current?: ITravelDetailsData | undefined,
@@ -58,8 +57,8 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
     }
 
     let cacheResult: IEntityCacheCityItem[] | undefined;
-    if (process.client) {
-      cacheResult = await ClientServicesLocator.getEntityCache().get<'City', IEntityCacheCityItem>([citySlug], 'City', { expireInSeconds: AppConfig.clientCache.expirationsSeconds.default });
+    if (import.meta.client) {
+      cacheResult = await ClientServicesLocator.getEntityCache().get<'City', IEntityCacheCityItem>([citySlug], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default });
     } else {
       cacheResult = await ServerServicesLocator.getEntityCacheLogic().get<'City', IEntityCacheCityItem>([citySlug], 'City');
     }
@@ -91,7 +90,7 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
   }
 
   const fetchCityId = ref<EntityId>();
-  const popularCitiesFetchRequest = useFetchEx<IPopularCityDto[] | null[], IPopularCityDto[] | null[], null[]>(WebApiRoutes.PopularCitiesList, 'error-page',
+  const popularCitiesFetchRequest = useFetchEx<IPopularCityDto[] | null[], IPopularCityDto[] | null[], null[]>(ApiEndpointPopularCitiesList, 'error-page',
     {
       server: true,
       lazy: true,
@@ -102,7 +101,7 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
           logger.warn('(travel-details-store) got empty popular cities list response');
           return []; // error should be logged by fetchEx
         }
-        return response[0] ? (shuffle(response)) as IPopularCityDto[] : response as null[];
+        return response[0] ? (response as IPopularCityDto[]) : response as null[];
       }
     });
 
@@ -201,7 +200,6 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
 
   const ensurePopularCities = (popularCitiesFetch: SSRAwareFetchResult<IPopularCityDto[] | null[]>): Promise<IPopularCityDto[] | null[]> => {
     logger.debug('(travel-details-store) ensuring popular cities initialization data fetched');
-    // eslint-disable-next-line promise/param-names
     return new Promise<IPopularCityDto[] | null[]>((resolve, _) => {
       if (['pending', 'idle'].includes(popularCitiesFetch.status.value)) {
         watch(popularCitiesFetch.status, () => {
@@ -235,7 +233,7 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
 
     try {
       travelDetails.value.status = 'pending';
-      const fetchResult = await get<ITravelDetailsDto>(WebApiRoutes.PopularCityTravelDetails, { cityId }, 'default', false, 'throw');
+      const fetchResult = await getObject<ITravelDetailsDto>(ApiEndpointPopularCityTravelDetails, { cityId }, 'default', false, undefined, 'throw');
       if (!fetchResult) {
         logger.warn(`(travel-details-store) failed to fetch travel details, empty response, cityId=${cityId}`);
         travelDetails.value.status = 'error';
@@ -513,7 +511,7 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
 
   const getInstance = async () : Promise<ITravelDetailsStoreState & ITravelDetailsStoreMethods> => {
     if (!instance.current) {
-      if (process.client) {
+      if (import.meta.client) {
         await startRunningOnClient();
       } else {
         await initializeStateOnServer();

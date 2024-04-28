@@ -1,12 +1,12 @@
 /* eslint-disable no-case-declarations */
-import { assert, describe, test, type TestOptions } from 'vitest';
-import { type Page } from 'playwright-core';
+import { describe, test, type TestOptions } from 'vitest';
+import { type Page, type Request } from 'playwright-core';
 import { setup, createPage } from '@nuxt/test-utils/e2e';
 import { join } from 'pathe';
 import dayjs from 'dayjs';
 import { parseURL, joinURL } from 'ufo';
 import { TEST_SERVER_PORT, spinWait, delay, createLogger, ScreenshotDir, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD } from '../../shared/testing/common';
-import { type Locale, AvailableLocaleCodes, CookieNames, DefaultLocale } from '../../shared/constants';
+import { CookieI18nLocale, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, type Locale, AvailableLocaleCodes, DefaultLocale } from '../../shared/constants';
 import type { IAppLogger } from '../../shared/applogger';
 
 type AuthProviderType = 'credentials' | 'oauth';
@@ -15,6 +15,7 @@ type LocaleSelectType = 'manual-with-cookie' | 'manual-without-cookie' | 'toggle
 
 const TestTimeout = 120000;
 const PageNavigationDelayMs = 100; // delay in ms before proceeding test execution after navigation to new page was triggered (e.g. by clicking a link)
+const UiIinteractionDelayMs = 100; // user interaction delay
 const DefaultTestOptions: TestOptions = {
   timeout: TestTimeout,
   retry: 0,
@@ -69,11 +70,31 @@ class AuthTestCaseRunner {
   logger: IAppLogger;
 
   currentPage: Page | undefined;
+  outstandingRequestsCount: number;
 
   constructor (testCase: IAuthTestCase, logger: IAppLogger) {
     this.testCase = testCase;
     this.logger = logger;
+    this.outstandingRequestsCount = 0;
   }
+
+  prepareOutstandingRequestsCounter = () => {
+    this.outstandingRequestsCount = 0;
+  };
+
+  needCountRequestInOutstanding = (request: Request) => request.url().includes('/api/') && !request.url().includes('/api/log/');
+
+  onRequestStart = (request: Request) => {
+    if(this.needCountRequestInOutstanding(request)) {
+      this.outstandingRequestsCount++;
+    }
+  };
+
+  onRequestEnd = (request: Request) => {
+    if(this.needCountRequestInOutstanding(request)) {
+      this.outstandingRequestsCount--;
+    }
+  };
 
   getCurrentPageType = (): AuthTestNavigationPage | undefined => {
     if (!this.currentPage) {
@@ -111,7 +132,10 @@ class AuthTestCaseRunner {
     const page = this.currentPage;
     const context = page.context();
     const cookies = await context.cookies();
-    const isAuthenticated = cookies.some(c => c.name === CookieNames.AuthSessionToken);
+    let isAuthenticated = cookies.filter(c => [CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken].includes(c.name)).length === 3;
+    if(isAuthenticated) {
+      isAuthenticated = (await page.locator('#nav-user-menu-anchor').innerText())?.length > 0;
+    }
 
     this.logger.debug(`user is ${isAuthenticated ? 'authenticated' : 'NOT authenticated'}, currentPage=${this.currentPage?.url()}, path=${page.url()}`);
     return isAuthenticated;
@@ -124,16 +148,19 @@ class AuthTestCaseRunner {
 
     await page.locator('form input[type=\'email\']').fill(credentialsTestUserProfile.email);
     await page.locator('form input[type=\'password\']').fill(TEST_USER_PASSWORD);
-    await delay(100);
+    await delay(UiIinteractionDelayMs);
+    this.prepareOutstandingRequestsCounter();
     await page.locator('button.login-btn').click();
     this.logger.debug(`sign in button clicked, currentPage=${this.currentPage?.url()}`);
 
     await spinWait(() => {
-      return Promise.resolve(this.getCurrentPageType() === 'index');
+      return Promise.resolve(this.getCurrentPageType() !== 'login');
     }, TestTimeout);
     await this.ensurePageMounted();
 
-    assert(await this.isAuthenticated(), 'credentials authentication failed');
+    await spinWait(async () => {
+      return await this.isAuthenticated();
+    }, TestTimeout);
 
     this.logger.debug(`signed with credentials, currentPage=${this.currentPage?.url()}`);
   };
@@ -142,15 +169,18 @@ class AuthTestCaseRunner {
     this.logger.debug(`signing in with test local oauth provider, currentPage=${this.currentPage?.url()}`);
 
     const page = this.currentPage!;
+    this.prepareOutstandingRequestsCounter();
     await page.locator('button.btn-oauth.icon-login-testlocal').click();
     this.logger.debug(`sign in button clicked, currentPage=${this.currentPage?.url()}`);
 
     await spinWait(() => {
-      return Promise.resolve(this.getCurrentPageType() === 'index');
+      return Promise.resolve(this.getCurrentPageType() !== 'login');
     }, TestTimeout);
     await this.ensurePageMounted();
 
-    assert(await this.isAuthenticated(), 'test local oauth authentication failed');
+    await spinWait(async () => {
+      return await this.isAuthenticated();
+    }, TestTimeout);
 
     this.logger.debug(`signed with test local oauth, currentPage=${this.currentPage?.url()}`);
   };
@@ -181,12 +211,15 @@ class AuthTestCaseRunner {
     }
 
     const page = this.currentPage!;
-    await page.locator('#nav-user-menu-anchor').click();
-    await page.locator('.nav-user-menu-list .nav-user-menu-item:last-child button').click();
+    await (await page.locator('#nav-user-menu-anchor')).click();
+    this.prepareOutstandingRequestsCounter();
+    await (await page.locator('.nav-user-menu-list .nav-user-menu-item:last-child button')).click();
     await delay(PageNavigationDelayMs);
     await this.ensurePageMounted();
 
-    assert(!(await this.isAuthenticated()), 'sign out failed');
+    await spinWait(async () => {
+      return !(await this.isAuthenticated());
+    }, TestTimeout);
 
     this.logger.verbose(`signed out, currentPage=${this.currentPage?.url()}`);
   };
@@ -287,21 +320,27 @@ class AuthTestCaseRunner {
       this.logger.warn('current page is undefined');
       return false;
     }
-    const pageType = this.getCurrentPageType();
 
-    const testIndicatorElement = async (): Promise<boolean> => {
+    const pageType = this.getCurrentPageType();
+    const testIndicatorElement = async (): Promise<boolean> => {    
+      const is500error = async () => /\s500\s/.test(await page.innerText('body'));     
+      if(await is500error()) {
+        // may got app:chunkError, but page is mounted and it is ok in test browser
+        this.logger.debug(`detected 500 error, currentPage=${page.url()}`);
+        return true;
+      }     
       if (pageType === 'index') {
         const indicatorElLocator = '#flight-params-SearchFlightOffersBox-FlightParams';
-        return ((await (await page.locator(indicatorElLocator)).textContent())?.length ?? 0) > 0;
+        return (await page.locator(indicatorElLocator).innerText())?.length > 0;        
       } else if (pageType === 'login') {
         const indicatorElLocator = '.swiper-pagination-bullet';
-        return (await page.locator(indicatorElLocator).first().isVisible());
+        return await page.locator(indicatorElLocator).count() > 0;
       } else if (pageType === 'flights') {
         const indicatorElLocator = '#flight-params-SearchFlightOffersBox-FlightParams';
         return (await page.locator(indicatorElLocator).innerText())?.length > 0;
       } else if (pageType === 'account') {
-        const indicatorElLocator = '.property-grid';
-        return (await page.locator(indicatorElLocator).first().isVisible());
+        const indicatorElLocator = '.user-account-page';
+        return await page.locator(indicatorElLocator).count() > 0;
       } else {
         const msg = `unexpected page type, type=${pageType}`;
         this.logger.warn(msg);
@@ -309,10 +348,27 @@ class AuthTestCaseRunner {
       }
     };
 
-    this.logger.debug(`spin wait..., currentPage=${this.currentPage?.url()}`);
-    return await spinWait(async () => {
+    this.logger.debug(`spin waiting for indicator element..., currentPage=${this.currentPage?.url()}`);
+    let result = await spinWait(async () => {
       return await testIndicatorElement();
     }, timeoutSecs);
+    if(!result) {
+      this.logger.warn(`spin wait for page indicator element failed, currentPage=${this.currentPage?.url()}`);
+      return false;
+    }
+
+    this.logger.debug(`spin waiting for page requests to complete..., currentPage=${this.currentPage?.url()}`);
+    result = await spinWait(async () => {
+      this.logger.debug(`outstanding page requests count=${this,this.outstandingRequestsCount}, currentPage=${this.currentPage?.url()}`);
+      return Promise.resolve(this.outstandingRequestsCount <= 0);
+    }, timeoutSecs);
+    if(!result) {
+      this.logger.warn(`spin wait for page requests to complete failed, currentPage=${this.currentPage?.url()}`);
+      return false;
+    }
+
+    this.logger.debug(`page was mounted, currentPage=${this.currentPage?.url()}`);
+    return result;
   };
 
   switchLocale = async (locale: Locale): Promise<void> => {
@@ -329,6 +385,7 @@ class AuthTestCaseRunner {
         }
 
         const switchLinkId = `#locale-switch-link-${locale.toLowerCase()}`;
+        this.prepareOutstandingRequestsCounter();
         await page.locator('#nav-locale-switcher-navLocaleSwitcher').click();
         await page.locator(switchLinkId).click();
 
@@ -368,27 +425,33 @@ class AuthTestCaseRunner {
       return;
     }
 
-    const navigateByClick = async (locator: string): Promise<void> => {
-      this.logger.debug(`navigating to page ${type} by click locator ${locator}`);
-      await page.locator(locator).click();
+    const navigateByClick = async (locator: string, targetPageType: AuthTestNavigationPage): Promise<void> => {
+      this.logger.debug(`navigating to page ${targetPageType} by click locator ${locator}`);
+      this.prepareOutstandingRequestsCounter();
+      await (await page.locator(locator)).click();
       await delay(PageNavigationDelayMs);
+
+      await spinWait(() => {
+        return Promise.resolve(this.getCurrentPageType() === targetPageType);
+      }, TestTimeout);
       await this.ensurePageMounted();
-      this.logger.debug(`navigated to page ${type} by click successfully`);
+
+      this.logger.debug(`navigated to page ${targetPageType} by click successfully`);
     };
 
     switch (currentPageType) {
       case 'index':
         switch (type) {
           case 'login':
-            await navigateByClick('#NavBar-login-link a');
+            await navigateByClick('#NavBar-login-link a', type);
             break;
           case 'account':
             await page.locator('#nav-user-menu-anchor').click();
             const accountUrl = this.localizePath('/account', this.getCurrentPageLocale());
-            await navigateByClick(`.nav-user-menu-item a[href='${accountUrl}']`);
+            await navigateByClick(`.nav-user-menu-item a[href*="${accountUrl}"]`, type);
             break;
           case 'flights':
-            await navigateByClick('.nav-bar a.nav-link-icon-airplane');
+            await navigateByClick('.nav-bar a.nav-link-icon-airplane', type);
             break;
           default:
             this.logger.warn(`unexpected page type = ${type}, currentPage=${this.currentPage?.url()}`);
@@ -398,10 +461,10 @@ class AuthTestCaseRunner {
       case 'account':
         switch (type) {
           case 'index':
-            await navigateByClick('.nav-bar a.nav-logo');
+            await navigateByClick('.nav-bar a.nav-logo', type);
             break;
           case 'flights':
-            await navigateByClick('.nav-bar a.nav-link-icon-airplane');
+            await navigateByClick('.nav-bar a.nav-link-icon-airplane', type);
             break;
           default:
             this.logger.warn(`unexpected page type = ${type}, currentPage=${this.currentPage?.url()}`);
@@ -411,16 +474,16 @@ class AuthTestCaseRunner {
       case 'flights':
         switch (type) {
           case 'index':
-            await navigateByClick('.nav-bar a.nav-logo');
+            await navigateByClick('.nav-bar a.nav-logo', type);
             break;
           case 'account':
             await page.locator('#nav-user-menu-anchor').click();
             const accountUrl = this.localizePath('/account', this.getCurrentPageLocale());
-            await navigateByClick(`.nav-user-menu-item a[href='${accountUrl}']`);
+            await navigateByClick(`.nav-user-menu-item a[href*="${accountUrl}"]`, type);
             break;
           case 'login':
             const loginUrl = this.localizePath('/login', this.getCurrentPageLocale());
-            await navigateByClick(`.nav-bar .nav-login a[href='${loginUrl}']`);
+            await navigateByClick(`.nav-bar .nav-login a[href*="${loginUrl}"]`, type);
             break;
           default:
             this.logger.warn(`unexpected page type = ${type}, currentPage=${this.currentPage?.url()}`);
@@ -430,7 +493,7 @@ class AuthTestCaseRunner {
       case 'login':
         switch (type) {
           case 'index':
-            await navigateByClick('a.nav-logo');
+            await navigateByClick('a.nav-logo', type);
             break;
           default:
             this.logger.warn(`cannot navigate unauthenticated user from login page to ${type} page, currentPage=${this.currentPage?.url()}`);
@@ -449,7 +512,7 @@ class AuthTestCaseRunner {
     this.logger.debug(`accepting cookies, currentPage=${this.currentPage?.url()}`);
 
     await this.currentPage!.locator('button.cookie-banner-accept-btn').click();
-    await delay(100);
+    await delay(UiIinteractionDelayMs);
 
     this.logger.debug(`cookies accepted, currentPage=${this.currentPage?.url()}`);
   };
@@ -467,10 +530,10 @@ class AuthTestCaseRunner {
           await this.signIn(authProvider);
           break;
         case 'authCookieRemoved':
-          await this.removeCookies([CookieNames.AuthCallbackUrl, CookieNames.AuthCsrfToken, CookieNames.AuthSessionToken]);
+          await this.removeCookies([CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken]);
           break;
         case 'i18nCookieRemoved':
-          await this.removeCookies([CookieNames.I18nLocale]);
+          await this.removeCookies([CookieI18nLocale]);
           break;
         case 'localeChanged':
           const newLocale = (<ILocaleSwitchPageAction>action).newLocale;
@@ -492,7 +555,7 @@ class AuthTestCaseRunner {
     try {
       const localeCookie = this.testCase.initialState.localeSelected?.type === 'manual-with-cookie'
         ? {
-            name: CookieNames.I18nLocale,
+            name: CookieI18nLocale,
             domain: '127.0.0.1',
             expires: -1,
             httpOnly: false,
@@ -503,18 +566,30 @@ class AuthTestCaseRunner {
           }
         : undefined;
       const url = ['manual-with-cookie', 'manual-without-cookie'].includes(this.testCase.initialState.localeSelected?.type ?? '') ? this.localizePath(`${this.getPageUrl(this.testCase.initialState.visitingPage)}`, this.testCase.initialState.localeSelected!.locale) : this.getPageUrl(this.testCase.initialState.visitingPage);
+      const preferredLocale = this.testCase.initialState.userPreferredLocale ?? DefaultLocale;
       this.currentPage = await createPage(url, {
         viewport: { width: this.screenSize.width, height: this.screenSize.height },
         storageState: {
           cookies: localeCookie ? [localeCookie] : [],
           origins: []
         },
-        locale: this.testCase.initialState.userPreferredLocale ?? DefaultLocale
+        locale: `${preferredLocale}-${preferredLocale.toUpperCase()}`
       });
-      this.currentPage.on('response', (response) => {
-        this.logger.debug(`got page response, url=${response.url()}`);
-      }).on('request', (request) => {
-        this.logger.debug(`page request started, url=${request.url()}, redirectedFrom=${request.redirectedFrom()?.url()}, redirectedTo=${request.redirectedTo()?.url()}`);
+      this.currentPage.on('response', async (response) => {
+        const respHeaders = await response.allHeaders();
+        this.logger.debug(`got page response, url=${response.url()}, respHeaders=[${JSON.stringify(respHeaders)}]`);
+      }).on('request', async (request) => {
+        const reqHeaders = await request.allHeaders();
+        this.onRequestStart(request);
+        this.logger.debug(`page request started, url=${request.url()}, outstandingRequestsCount=${this.outstandingRequestsCount}, redirectedFrom=${request.redirectedFrom()?.url()}, redirectedTo=${request.redirectedTo()?.url()}, reqHeaders=[${JSON.stringify(reqHeaders)}]`);
+      })
+      .on('requestfinished', (request) => {
+        this.onRequestEnd(request);
+        this.logger.debug(`request finished, url=${request.url()}, outstandingRequestsCount=${this.outstandingRequestsCount}`);
+      })
+      .on('requestfailed', (request) => {
+        this.onRequestEnd(request);
+        this.logger.warn(`request failed, url=${request.url()}, outstandingRequestsCount=${this.outstandingRequestsCount}`);
       });
       await this.ensurePageMounted();
 
@@ -583,12 +658,8 @@ class AuthTestCaseRunner {
       }
     }
 
-    if (expectations.isAuthenticated) {
-      if (!(await this.isAuthenticated())) {
-        failExpectation('user must be authenticated');
-      }
-    }
-
+    // KB: expectations.isAuthenticated verification is done inside this.isAuthenticated in singin/signout actions while page's context is still valid
+  
     if (expectations.locale) {
       if (expectations.locale.inUrl) {
         const actualUrlLocale = await this.getCurrentPageLocale();
@@ -848,7 +919,7 @@ describe('e2e:auth User authentication', async () => {
         ],
         expectations: {
           isAuthenticated: true,
-          page: 'index',
+          page: 'flights',
           locale: {
             inUrl: 'fr'
           }

@@ -9,7 +9,7 @@ import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
 import CheckBox from './../components/forms/check-box.vue';
 import SimpleButton from './../components/forms/simple-button.vue';
-import { WebApiRoutes, UserNotificationLevel, PagePath } from './../shared/constants';
+import { ApiEndpointSignUp, UserNotificationLevel, PagePath } from './../shared/constants';
 import { type ISignUpDto, type ISignUpResultDto, SignUpResultCode } from './../server/dto';
 import { isPasswordSecure } from './../shared/common';
 import { post } from './../shared/rest-utils';
@@ -43,7 +43,7 @@ const signUpErrorMsgResName = ref('');
 const agreeToPolicies = ref(false);
 
 const emailIsNotTakenByOtherUsers = ref(true);
-const captcha = ref<InstanceType<typeof CaptchaProtection>>();
+const captcha = shallowRef<InstanceType<typeof CaptchaProtection>>();
 
 const { createI18nMessage } = validators;
 const withI18nMessage = createI18nMessage({ t });
@@ -104,18 +104,18 @@ async function callServerSignUp (captchaToken?: string) : Promise<void> {
     captchaToken
   };
 
-  const resultDto = await post(WebApiRoutes.SignUp, undefined, postBody) as ISignUpResultDto;
+  const resultDto = await post(ApiEndpointSignUp, undefined, postBody, undefined, true, 'default') as ISignUpResultDto;
   if (resultDto) {
     switch (resultDto.code) {
       case SignUpResultCode.SUCCESS:
-        await navigateTo(localePath(PagePath.SignupVerify));
+        await navigateTo(localePath(`/${PagePath.SignupVerify}`));
         break;
       case SignUpResultCode.AUTOVERIFIED:
         userNotificationStore.show({
           level: UserNotificationLevel.WARN,
           resName: getI18nResName2('signUpPage', 'emailWasAutoverified')
         });
-        await navigateTo(localePath('login'));
+        await navigateTo(localePath(`/${PagePath.Login}`));
         break;
       case SignUpResultCode.ALREADY_EXISTS:
         emailIsNotTakenByOtherUsers.value = false;
@@ -147,9 +147,9 @@ function onOAuthProviderClick (provider: AuthProvider) {
     <AccountFormPhotos ctrl-key="SignUpPhotos" class="signup-account-forms-photos" />
     <div class="signup-page-content">
       <NavLogo ctrl-key="signupPageAppLogo" mode="inApp" />
-      <h2 class="signup-title">
+      <h1 class="signup-title font-h2">
         {{ t(getI18nResName2('signUpPage', 'title')) }}
-      </h2>
+      </h1>
       <div class="signup-subtitle mt-xs-3">
         {{ t(getI18nResName2('signUpPage', 'subTitle')) }}
       </div>

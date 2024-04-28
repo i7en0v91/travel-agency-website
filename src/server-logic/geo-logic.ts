@@ -1,8 +1,8 @@
 import { type Storage, type StorageValue } from 'unstorage';
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { type ICityShort, type ICityData, type ICountry, type ICountryData, type IGeoLogic, type EntityId, type GeoPoint, type DistanceUnitKm } from '../shared/interfaces';
 import { type IAppLogger } from '../shared/applogger';
-import { DbConcurrencyVersions, CurrentUserGeoLocation } from '../shared/constants';
+import { DbVersionInitial, CurrentUserGeoLocation } from '../shared/constants';
 import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
 import { calculateDistanceKm } from './../shared/common';
 
@@ -63,7 +63,7 @@ export class GeoLogic implements IGeoLogic {
 
     const countryId = (await this.dbRepository.country.create({
       data: {
-        version: DbConcurrencyVersions.InitialVersion,
+        version: DbVersionInitial,
         isDeleted: false,
         nameStr: {
           create: data.name
@@ -84,7 +84,7 @@ export class GeoLogic implements IGeoLogic {
     const textForSearch = `${data.name.en} ${data.name.ru} ${data.name.fr}`.toLowerCase();
     const cityId = (await this.dbRepository.city.create({
       data: {
-        version: DbConcurrencyVersions.InitialVersion,
+        version: DbVersionInitial,
         slug: data.slug,
         isDeleted: false,
         lat: data.geo.lat!,

@@ -2,7 +2,10 @@
 import { type IOptionButtonProps } from './../../shared/interfaces';
 
 const props = withDefaults(defineProps<IOptionButtonProps>(), {
-  isActive: false
+  isActive: false,
+  subtextResName: null,
+  subtextResArgs: null,
+  tabName: undefined
 });
 
 const $emit = defineEmits<{(event: 'click', ctrlKey: string): void}>();
@@ -25,6 +28,7 @@ const htmlId = useId();
     :aria-labelledby="htmlLabelId"
     :aria-controls="role.role === 'tab' ? (role as any).tabPanelId : undefined"
     :aria-selected="role.role === 'tab' ? isActive : undefined"
+    :data-tab-name="tabName"
     @click="onActivate"
     @keyup.enter="onActivate"
   >
@@ -38,6 +42,7 @@ const htmlId = useId();
         <div v-if="subtextResName" class="option-button-subtext mt-xs-2">
           {{ $t(subtextResName, subtextResArgs) }}
         </div>
+        <div v-else-if="subtextResName === undefined" class="text-data-loading data-loading-stub mt-xs-2" />
       </div>
     </div>
   </div>

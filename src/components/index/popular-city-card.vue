@@ -33,9 +33,9 @@ const localePath = useLocalePath();
           :show-stub="true"
         />
         <div class="popular-city-info">
-          <h5 :class="`pl-xs-2 pt-xs-2 ${text ? 'popular-city-name' : 'data-loading-stub text-data-loading m-xs-2'}`">
+          <div :class="`pl-xs-2 pt-xs-2 ${text ? 'popular-city-name' : 'data-loading-stub text-data-loading m-xs-2'} font-h5`">
             {{ props.text ? ((props.text as any)[locale]) : '&nbsp;' }}
-          </h5>
+          </div>
           <div v-if="searchKind === 'flight'" class="popular-city-links mt-xs-2 p-xs-2">
             <NuxtLink class="popular-city-link brdr-1 hidden-overflow-nontabbable" :to="citySlug ? localePath(`/${PagePath.FindFlights}?fromCitySlug=${citySlug}`) : localePath('/')">
               {{ $t(getI18nResName3('indexPage', 'popularCity', 'flights')) }}

@@ -1,9 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { type Storage, type StorageValue } from 'unstorage';
 import { type IAirplane, type EntityId, type IAirplaneLogic, type IAirplaneData } from '../shared/interfaces';
 import { type IAppLogger } from '../shared/applogger';
-import { DbConcurrencyVersions } from '../shared/constants';
-import { Queries, Mappers } from './queries';
+import { DbVersionInitial } from '../shared/constants';
+import { AirplaneInfoQuery, MapAirplane } from './queries';
 
 export class AirplaneLogic implements IAirplaneLogic {
   private readonly AllAirplanesCacheKey = 'AllAirplanes';
@@ -29,8 +29,8 @@ export class AirplaneLogic implements IAirplaneLogic {
         where: {
           isDeleted: false
         },
-        select: Queries.AirplaneInfoQuery.select
-      })).map(Mappers.MapAirplane);
+        select: AirplaneInfoQuery.select
+      })).map(MapAirplane);
       await this.cache.setItem(this.AllAirplanesCacheKey, result);
     }
 
@@ -48,7 +48,7 @@ export class AirplaneLogic implements IAirplaneLogic {
             create: data.name
           },
           isDeleted: false,
-          version: DbConcurrencyVersions.InitialVersion
+          version: DbVersionInitial
         },
         select: {
           id: true
@@ -64,7 +64,7 @@ export class AirplaneLogic implements IAirplaneLogic {
             kind: imageData.kind,
             order: imageData.order,
             isDeleted: false,
-            version: DbConcurrencyVersions.InitialVersion
+            version: DbVersionInitial
           }
         });
       }

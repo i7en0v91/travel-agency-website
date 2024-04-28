@@ -79,14 +79,14 @@ export const useControlSettingsStore = defineStore('controlSettingsStore', () =>
     let cached: any = (valueSettingsCache.get(ctrlKey) as IControlValueSetting<T>) ?? undefined;
     if (!cached) {
       logger.verbose(`(controlSettingsStore) registering new control value settings: ctrlKey=${ctrlKey}, persistent=${persistent}, defaultValue=${defaultValue}`);
-      const initialValue = process.client ? (readControlValueSetting(getControlValueSettingStorageKey(ctrlKey)) ?? defaultValue) : defaultValue;
+      const initialValue = import.meta.client ? (readControlValueSetting(getControlValueSettingStorageKey(ctrlKey)) ?? defaultValue) : defaultValue;
       cached = reactive({
         ctrlKey,
         value: initialValue
       });
       valueSettingsCache.set(ctrlKey, cached);
     }
-    if (persistent && process.client) {
+    if (persistent && import.meta.client) {
       watch(cached, () => {
         logger.debug(`(controlSettingsStore) value changed: ctrlKey=${ctrlKey}, persistent=${persistent}, value=${cached.value}`);
         persistControlValueSetting(ctrlKey, cached.value);

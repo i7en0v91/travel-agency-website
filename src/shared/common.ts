@@ -2,8 +2,9 @@ import toLower from 'lodash-es/toLower';
 import replace from 'lodash-es/replace';
 import { normalizeURL, parseURL } from 'ufo';
 import fromPairs from 'lodash-es/fromPairs';
+import dayjs from 'dayjs';
 import AppConfig from '../appconfig';
-import { type Locale, AvailableLocaleCodes, SearchOffersListConstants, PagePath, OgImageExt } from './constants';
+import { type Locale, AvailableLocaleCodes, PagePath, OgImageExt, NumMinutesInDay } from './constants';
 import type { ILocalizableValue, GeoPoint, DistanceUnitKm } from './interfaces';
 import { LocaleEnum } from './constants';
 import { type I18nResName, getI18nResName3 } from './../shared/i18n';
@@ -82,7 +83,7 @@ export function eraseTimeOfDay (dateTime: Date): Date {
 }
 
 export function convertTimeOfDay (timeOfDayMinutes: number): { hour24: number, minutes: number } {
-  timeOfDayMinutes = timeOfDayMinutes % SearchOffersListConstants.NumMinutesInDay;
+  timeOfDayMinutes = timeOfDayMinutes % NumMinutesInDay;
   const h = Math.max(0, Math.floor(timeOfDayMinutes / 60));
   const m = Math.max(0, Math.floor(timeOfDayMinutes - 60 * h)) % 60;
   return {
@@ -92,7 +93,36 @@ export function convertTimeOfDay (timeOfDayMinutes: number): { hour24: number, m
 }
 
 export function getTimeOfDay (dateTimeUtc: Date, utcOffsetMinutes: number): number {
-  return (dateTimeUtc.getHours() * 60 + dateTimeUtc.getMinutes() + utcOffsetMinutes) % SearchOffersListConstants.NumMinutesInDay;
+  return (dateTimeUtc.getHours() * 60 + dateTimeUtc.getMinutes() + utcOffsetMinutes) % NumMinutesInDay;
+}
+
+export function extractAirportCode (displayName: string) {
+  if (displayName.length < 3) {
+    return displayName.toUpperCase();
+  }
+  return displayName.substring(0, 3).toUpperCase();
+}
+
+export function getValueForTimeOfDayFormatting (dateTimeUtc: Date, utcOffsetMinutes: number): Date {
+  const timeOfDay = convertTimeOfDay(getTimeOfDay(dateTimeUtc, utcOffsetMinutes));
+  return dayjs().local().set('hour', timeOfDay.hour24).set('minute', timeOfDay.minutes).toDate();
+}
+
+export function getValueForFlightDurationFormatting (departTimeUtc: Date, arriveTimeUtc: Date): { hours: string, minutes: string } {
+  const departFlightDuration = Math.round((arriveTimeUtc.getTime() - departTimeUtc.getTime()) / 60000);
+  const duration = convertTimeOfDay(departFlightDuration);
+  return {
+    hours: duration.hour24.toFixed(0),
+    minutes: duration.minutes.toFixed(0)
+  };
+}
+
+export function getValueForFlightDayFormatting (dateTimeUtc: Date, utcOffsetMinutes: number): Date {
+  return dayjs(dateTimeUtc).local().add(utcOffsetMinutes, 'minute').toDate();
+}
+
+export function formatValidThruDate(dueDate: Date): string {
+  return `${dueDate.getMonth().toString().padStart(2, '0')}/${ (dueDate.getFullYear() % 100).toString().padStart(2, '0')}`;
 }
 
 export function parseEnumOrThrow (enumType: any, value?: string | number): any {

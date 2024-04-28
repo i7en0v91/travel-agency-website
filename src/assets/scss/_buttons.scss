@@ -16,7 +16,7 @@ $btn-icon-size: 16px;
   padding: map.get($spacings, '3');
   border-radius: map.get($borders-radius, '1');
   
-  white-space: nowrap;
+  white-space: normal;
   line-height: normal;
 
   &:focus-visible {
@@ -24,6 +24,10 @@ $btn-icon-size: 16px;
   }
   &:not(.disabled):hover {
     filter: brightness($active-highlight-percent);
+  }
+
+  @include for-small-and-above() {
+    white-space: nowrap;
   }
 }
 
@@ -63,7 +67,7 @@ $btn-icon-size: 16px;
     mask-repeat: no-repeat;
     -webkit-mask-position: center center;
     mask-position: center center;
-    vertical-align: bottom;
+    vertical-align: middle;
     
     @include with-theme-color('input-ctrl-primary') using($css-var) {
       background-color: var($css-var);

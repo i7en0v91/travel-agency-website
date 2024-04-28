@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { type EntityId, type CompanyReviewData, type ICompanyReview, type ICompanyReviewsLogic } from '../shared/interfaces';
 import { type IAppLogger } from '../shared/applogger';
-import { DbConcurrencyVersions } from '../shared/constants';
+import { DbVersionInitial } from '../shared/constants';
 
 export class CompanyReviewLogic implements ICompanyReviewsLogic {
   private logger: IAppLogger;
@@ -19,7 +19,7 @@ export class CompanyReviewLogic implements ICompanyReviewsLogic {
     const reviewId = (await this.dbRepository.companyReview.create({
       data: {
         isDeleted: false,
-        version: DbConcurrencyVersions.InitialVersion,
+        version: DbVersionInitial,
         image: {
           connect: {
             id: data.imageId

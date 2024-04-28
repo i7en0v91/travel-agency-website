@@ -1,8 +1,12 @@
 import { joinURL } from 'ufo';
 import { type RollupLog, type LogLevel, type LogOrStringHandler } from 'rollup';
-import { AvailableLocaleCodes, PagePath } from './shared/constants';
+import { AvailableLocaleCodes, PagePath, EntityIdPages, ApiEndpointUserAccount, ApiEndpointPrefix, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets, HeaderVaryRenderCache, CookieI18nLocale, DefaultLocale } from './shared/constants';
 import { TEST_SERVER_PORT } from './shared/testing/common';
 import AppConfig from './appconfig';
+import toPairs from 'lodash-es/toPairs';
+import fromPairs from 'lodash-es/fromPairs';
+import flatten from 'lodash-es/flatten';
+import { type NitroRouteConfig } from 'nitropack';
 
 const listLocalizedPaths = (enPath: string) => [enPath.startsWith('/') ? enPath : `/${enPath}`, ...AvailableLocaleCodes.filter(l => l !== 'en').map(l => joinURL(`/${l}`, `${enPath}`))];
 const rollupLogHandler = (
@@ -16,6 +20,40 @@ const rollupLogHandler = (
   defaultHandler(level, log);
 };
 
+// html pages caching rules
+const SwrCachingRouteRule: NitroRouteConfig = { 
+  cache: AppConfig.caching.htmlPageCachingSeconds ? { maxAge: AppConfig.caching.htmlPageCachingSeconds, staleMaxAge: -1 } : false,
+  auth: {
+    disableServerSideAuth: true
+  }
+} as any;
+const CachingDisabledRouteRule: NitroRouteConfig = { swr: false };
+const HtmlPageCachingRules: { [P in PagePath]: NitroRouteConfig } = {
+  '': SwrCachingRouteRule,
+  'signup': SwrCachingRouteRule,
+  'forgot-password': SwrCachingRouteRule,
+  'find-flights': SwrCachingRouteRule,
+  'find-stays': SwrCachingRouteRule,
+  'flight-details': SwrCachingRouteRule,
+  'flight-book': SwrCachingRouteRule,
+  'flights': SwrCachingRouteRule,
+  'login': SwrCachingRouteRule,
+  'privacy': SwrCachingRouteRule,
+  'stays': SwrCachingRouteRule,
+  'stay-details': SwrCachingRouteRule,
+  'stay-book': SwrCachingRouteRule,
+  'account': CachingDisabledRouteRule,
+  'favourites': CachingDisabledRouteRule,
+  'booking': { swr: false, cache: { name: 'no-store', maxAge: 0, varies: [HeaderVaryRenderCache] }, robots: false },
+  'signup-verify': CachingDisabledRouteRule,
+  'signup-complete': CachingDisabledRouteRule,
+  'forgot-password-verify': CachingDisabledRouteRule,
+  'forgot-password-complete': CachingDisabledRouteRule,
+  'forgot-password-set': CachingDisabledRouteRule,
+  'email-verify-complete': CachingDisabledRouteRule
+};
+const UserRelatedApiRoutes = [`${ApiEndpointPrefix}/booking/**`, ApiEndpointUserAccount, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets];
+
 export default defineNuxtConfig({
   devtools: { enabled: false },
   sourcemap: {
@@ -25,7 +63,15 @@ export default defineNuxtConfig({
   sitemap: {
     autoLastmod: false,
     exclude: [
-      ...listLocalizedPaths(`/${PagePath.Account}`)
+      ...listLocalizedPaths(`/${PagePath.Account}`),
+      ...listLocalizedPaths(`/${PagePath.Favourites}`),
+      ...listLocalizedPaths(`/${PagePath.EmailVerifyComplete}`),
+      ...listLocalizedPaths(`/${PagePath.ForgotPasswordComplete}`),
+      ...listLocalizedPaths(`/${PagePath.ForgotPasswordSet}`),
+      ...listLocalizedPaths(`/${PagePath.ForgotPasswordVerify}`),
+      ...listLocalizedPaths(`/${PagePath.SignupComplete}`),
+      ...listLocalizedPaths(`/${PagePath.SignupVerify}`),
+      ...listLocalizedPaths(`/${PagePath.BookingDetails}/**`),
     ]
   },
   features: {
@@ -33,7 +79,8 @@ export default defineNuxtConfig({
     devLogs: 'silent'
   },
   experimental: {
-    renderJsonPayloads: false
+    renderJsonPayloads: false,
+    clientNodeCompat: true
   },
   components: [
     {
@@ -66,6 +113,13 @@ export default defineNuxtConfig({
     strategy: 'prefix_except_default',
     compilation: {
       strictMessage: false
+    },
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: CookieI18nLocale,
+      alwaysRedirect: true,
+      fallbackLocale: DefaultLocale,
+      redirectOn: 'root' // recommended
     }
   },
   site: {
@@ -76,7 +130,7 @@ export default defineNuxtConfig({
     identity: {
       type: 'Person'
     },
-    email: 'support@demo.golobe'
+    email: 'support@golobe.demo'
   },
   googleFonts: {
     download: true,
@@ -85,7 +139,8 @@ export default defineNuxtConfig({
     stylePath: 'css/fonts.css',
     subsets: ['cyrillic', 'latin'],
     families: {
-      Montserrat: [400, 500, 600, 700]
+      Montserrat: [400, 500, 600, 700],
+      'Spectral+SC': [300]
     }
   },
   dayjs: {
@@ -96,12 +151,19 @@ export default defineNuxtConfig({
     defaults: {
       width: AppConfig.ogImage.screenSize.width,
       height: AppConfig.ogImage.screenSize.height,
-      cacheMaxAgeSeconds: 60 * 60 * 24
+      cacheMaxAgeSeconds: 24 * 60 * 60
     },
+    runtimeCacheStorage: true,
     componentDirs: ['og-image', 'og-image-template'],
     fonts: [
       'Montserrat:500',
-      'Montserrat:700'
+      'Montserrat:600',
+      'Montserrat:700',
+      {
+        name: 'Spectral SC',
+        weight: 300,
+        path: '/fonts/Spectral_SC-300.ttf' // nuxt-og-image^3.0.0-rc.52 - warn woff2 not supported
+      }
     ]
   },
   tiptap: {
@@ -119,17 +181,29 @@ export default defineNuxtConfig({
       scrollBehaviorType: 'smooth'
     }
   },
+  routeRules: {
+    ...(fromPairs(flatten(toPairs(HtmlPageCachingRules).map(rr => listLocalizedPaths(`/${rr[0]}`).map(lp => [EntityIdPages.some(idp => lp.includes(idp)) ? `${lp}/**` : lp, rr[1]]))))),
+    ...(fromPairs((UserRelatedApiRoutes.map(ur => [ur, { cache: false, swr: false, headers: { 'cache-control': 'no-store' } }])))),
+    '/__og-image__/image/**': { cache: { swr: false, varies: ['Host', HeaderVaryRenderCache], headersOnly: true }, headers: { 'cache-control': 'no-store' }, robots: false },
+    '/api/img/**': { headers:  AppConfig.caching.htmlPageCachingSeconds ? { 'cache-control': `public,max-age=${AppConfig.caching.htmlPageCachingSeconds},s-maxage=${AppConfig.caching.htmlPageCachingSeconds}` } : { 'cache-control': 'no-cache' } },
+    '/_ipx/**': { headers:  AppConfig.caching.htmlPageCachingSeconds ? { 'cache-control': `public,max-age=${AppConfig.caching.htmlPageCachingSeconds},s-maxage=${AppConfig.caching.htmlPageCachingSeconds}` } : { 'cache-control': 'no-cache' } },
+    '/js/**': { headers:  AppConfig.caching.htmlPageCachingSeconds ? { 'cache-control': `public,max-age=${AppConfig.caching.htmlPageCachingSeconds},s-maxage=${AppConfig.caching.htmlPageCachingSeconds}` } : { 'cache-control': 'no-cache' } }
+  },
   nitro: {
     publicAssets: [
       {
         baseURL: '/appdata',
         dir: './../assets/appdata',
-        maxAge: 60 * 60 * 24 * 7
+        maxAge: AppConfig.caching.htmlPageCachingSeconds ? AppConfig.caching.htmlPageCachingSeconds : 0
       }
     ],
     serverAssets: [{
       baseName: 'appdata',
       dir: './../assets/appdata'
+    },
+    {
+      baseName: 'pdf-fonts',
+      dir: './../assets/fonts/pdf'
     }]
   },
   modules: [
@@ -145,28 +219,22 @@ export default defineNuxtConfig({
     ['nuxt-swiper', {}],
     ['@samk-dev/nuxt-vcalendar', {}],
     ['@nuxt/test-utils/module', {}],
-    ['nuxt-tiptap-editor', {}]
     // ['@unlighthouse/nuxt', {}] // triggering run via npm scripts, see package.json
+    ['nuxt-tiptap-editor', {}],
+    ['@nuxt/eslint', {}]
   ],
   css: ['vue-final-modal/style.css'],
   build: {
     transpile: ['jsonwebtoken']
   },
-  vite: {
-    $client: {
-      build: {
-        rollupOptions: {
-          output: !process.env.PUBLISH
-            ? {
-                chunkFileNames: '_nuxt/[name].[hash].js',
-                entryFileNames: '_nuxt/[name].[hash].js'
-              }
-            : undefined
-        }
-      }
-    }
-  },
   $development: {
+    imports: {
+      imports: [
+        // needed for pdfkit
+        { name: 'Blob', from: 'node:buffer' },
+        { name: 'Buffer', from: 'node:buffer' }
+      ]
+    },
     vite: {
       optimizeDeps: {
         exclude: ['server-logic']
@@ -174,6 +242,13 @@ export default defineNuxtConfig({
     }
   },
   $test: {
+    ogImage: {
+      enabled: false
+    },
+    experimental: {
+      renderJsonPayloads: false,
+      clientNodeCompat: false // disable in Nuxt 3.11.2 - test run hangs on startup
+    },
     vite: {
       optimizeDeps: {
         exclude: ['server-logic']
@@ -185,7 +260,7 @@ export default defineNuxtConfig({
       }
     },
     build: {
-      transpile: ['lodash', 'vue-toastification']
+      transpile: ['lodash', 'vue-toastification', 'file-saver']
     },
     auth: {
       baseURL: `http://127.0.0.1:${TEST_SERVER_PORT}/api/auth`
@@ -198,7 +273,7 @@ export default defineNuxtConfig({
       identity: {
         type: 'Person'
       },
-      email: 'support@demo.golobe'
+      email: 'support@golobe.demo'
     },
     nitro: {
       rollupConfig: {
@@ -216,7 +291,7 @@ export default defineNuxtConfig({
   /** Production overrides */
   $production: {
     build: {
-      transpile: ['lodash', 'vue-toastification']
+      transpile: ['lodash', 'vue-toastification', 'file-saver']
     },
     auth: {
       baseURL: process.env.PUBLISH ? 'https://golobe.demo/api/auth' : 'http://localhost:3000/api/auth'
@@ -229,17 +304,18 @@ export default defineNuxtConfig({
       identity: {
         type: 'Person'
       },
-      email: 'support@demo.golobe'
+      email: 'support@golobe.demo'
     },
-    routeRules: {
-      // at the moment - Nuxt 3.7.4 - this route rules works only for production mode; cannot get it work in dev
-      '/img/**': { headers: { 'cache-control': `public,max-age=${24 * 60 * 60},s-maxage=${24 * 60 * 60}` } },
-      '/_ipx/**': { headers: { 'cache-control': `public,max-age=${24 * 60 * 60},s-maxage=${24 * 60 * 60}` } },
-      '/js/**': { headers: { 'cache-control': `public,max-age=${24 * 60 * 60},s-maxage=${24 * 60 * 60}` } }
+    imports: {
+      imports: [
+        // needed for pdfkit
+        { name: 'Blob', from: 'node:buffer' },
+        { name: 'Buffer', from: 'node:buffer' }
+      ]
     },
     nitro: {
       compressPublicAssets: {
-        gzip: true
+        gzip: !process.env.PUBLISH
       },
       rollupConfig: {
         output: {

@@ -7,7 +7,7 @@ import isNumber from 'lodash-es/isNumber';
 import cloneDeep from 'lodash-es/cloneDeep';
 import type { LogObject } from 'consola';
 import AppConfig from '../appconfig';
-import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
+import { type AppExceptionCode, AppException, lookupAppExceptionCode } from './../shared/exceptions';
 import type { LogLevel } from './../shared/constants';
 
 /** Log message will be suppressed only if all specified filters combined by AND mathches their input strings */
@@ -28,6 +28,8 @@ export interface IAppLogger {
   warn(msg: string, err?: any, data?: any): void;
 
   error(msg: string, err?: any, data?: any) : void;
+
+  always(msg: string, data?: any) : void;
 }
 
 export function maskLog (v?: string): string | undefined {
@@ -64,9 +66,9 @@ export function wrapLogDataArg (data?: any): object {
   return cloneDeep(data || {});
 }
 
-export function getErrorCustomLogLevel (err?: any): LogLevel | undefined {
+export function getErrorAppExceptionCode (err?: any): AppExceptionCode | undefined {
   if (!AppException.isAppException(err)) {
-    return undefined;
+    return lookupAppExceptionCode(err?.cause?.data?.code);
   }
 
   const appExceptionCode = (err as AppException)?.code;
@@ -74,12 +76,14 @@ export function getErrorCustomLogLevel (err?: any): LogLevel | undefined {
     return undefined;
   }
 
-  const errEnumLookup = Object.entries(AppExceptionCodeEnum).filter(e => e[1].valueOf() === appExceptionCode.valueOf()).map(e => e[0].toUpperCase());
-  if (errEnumLookup.length === 0) {
+  return lookupAppExceptionCode(appExceptionCode);
+}
+
+export function getAppExceptionCustomLogLevel (appExceptionCode: AppExceptionCode | undefined): LogLevel | undefined {
+  if (!appExceptionCode) {
     return undefined;
   }
-  const errCode = errEnumLookup[0].toUpperCase();
-  return (AppConfig.logging.common.appExceptionLogLevels.find(r => r.appExceptionCode === errCode))?.logLevel;
+  return (AppConfig.logging.common.appExceptionLogLevels.find(r => r.appExceptionCode === appExceptionCode))?.logLevel;
 }
 
 export function parseLevelFromNuxtLog (logItem: LogObject): LogLevel {

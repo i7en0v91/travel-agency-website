@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import isString from 'lodash-es/isString';
-import { Dropdown } from 'floating-vue';
-import { SessionConstants, TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
+import type { Dropdown } from 'floating-vue';
+import { SessionLocaleKey, TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
 import { updateTabIndices } from './../../shared/dom';
 
 type LocaleObject = {
@@ -17,19 +17,19 @@ interface IProps {
 }
 defineProps<IProps>();
 
-if (process.client) {
+if (import.meta.client) {
   watch(locale, () => {
     const newLocale = locale.value;
-    const oldLocale = localStorage.getItem(SessionConstants.ThemeKey) as string;
+    const oldLocale = localStorage.getItem(SessionLocaleKey) as string;
     if (oldLocale !== newLocale) {
-      localStorage.setItem(SessionConstants.LocaleKey, locale.value.toString());
+      localStorage.setItem(SessionLocaleKey, locale.value.toString());
     }
   });
 }
 
 const availableLocales = locales.value.filter(l => !isString(l)).map(l => l as LocaleObject);
-const elBtn = ref<HTMLElement>();
-const dropdown = ref<InstanceType<typeof Dropdown>>();
+const elBtn = shallowRef<HTMLElement>();
+const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
 
 function onMenuShown () {
   setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);

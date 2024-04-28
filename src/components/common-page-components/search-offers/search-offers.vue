@@ -1,11 +1,11 @@
 <script setup lang="ts">
 
-import { Tooltip } from 'floating-vue';
+import type { Tooltip } from 'floating-vue';
 import dayjs from 'dayjs';
 import isEqual from 'lodash-es/isEqual';
 import pick from 'lodash-es/pick';
-import { TooltipHideTimeout, PagePath } from './../../../shared/constants';
-import OptionButtonGroup from './../components/option-buttons/option-button-group.vue';
+import { CheckInOutDateUrlFormat, TooltipHideTimeout, PagePath } from './../../../shared/constants';
+import OptionButtonGroup from './../../../components/option-buttons/option-button-group.vue';
 import { getI18nResName1, getI18nResName2 } from './../../../shared/i18n';
 import SearchFlightOffers from './search-flight-offers.vue';
 import SearchStayOffers from './search-stay-offers.vue';
@@ -30,16 +30,16 @@ const SearchTabStays = `${props.ctrlKey}-TabStays`;
 const DefaultSearchTab = props.singleTab === 'stays' ? SearchTabStays : SearchTabFlights;
 
 const searchOffersStoreAccessor = useSearchOffersStore();
-const clientEntityCache = process.client ? ClientServicesLocator.getEntityCache() : undefined;
+const clientEntityCache = import.meta.client ? ClientServicesLocator.getEntityCache() : undefined;
 
 const controlSettingsStore = useControlSettingsStore();
 const activeSearchTab = controlSettingsStore.getControlValueSetting(`${props.ctrlKey}-TabControl`, DefaultSearchTab);
 if (props.singleTab) {
   activeSearchTab.value = props.singleTab === 'flights' ? SearchTabFlights : SearchTabStays;
 }
-const tooltip = ref<InstanceType<typeof Tooltip>>();
-const searchFlights = ref<InstanceType<typeof SearchFlightOffers> | undefined>();
-const searchStays = ref<InstanceType<typeof SearchStayOffers> | undefined>();
+const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
+const searchFlights = shallowRef<InstanceType<typeof SearchFlightOffers> | undefined>();
+const searchStays = shallowRef<InstanceType<typeof SearchStayOffers> | undefined>();
 
 const logger = CommonServicesLocator.getLogger();
 const router = useRouter();
@@ -63,7 +63,7 @@ async function resolveFlightCitiesSlugs (searchParams: Partial<ISearchFlightOffe
 
   try {
     logger.verbose(`(SearchOffers) resolving cities slugs, items=${JSON.stringify(citiesToResolve)}`);
-    const resolvedCities = (await clientEntityCache!.get<'City', IEntityCacheCityItem>(citiesToResolve.map(i => i.id), 'City', { expireInSeconds: AppConfig.clientCache.expirationsSeconds.default }))!;
+    const resolvedCities = (await clientEntityCache!.get<'City', IEntityCacheCityItem>(citiesToResolve.map(i => i.id), 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
     if (resolvedCities.length === 2) {
       fromCitySlug = resolvedCities[0].slug;
       toCitySlug = resolvedCities[1].slug;
@@ -96,7 +96,7 @@ async function resolveDestinationCitySlug (searchParams: Partial<ISearchStayOffe
   try {
     const cityId = searchParams.city.id;
     logger.verbose(`(SearchOffers) resolving stay's city slug', cityId=${cityId}`);
-    const resolvedCities = (await clientEntityCache!.get<'City', IEntityCacheCityItem>([cityId], 'City', { expireInSeconds: AppConfig.clientCache.expirationsSeconds.default }))!;
+    const resolvedCities = (await clientEntityCache!.get<'City', IEntityCacheCityItem>([cityId], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
     const result = resolvedCities[0].slug;
     logger.verbose(`(SearchOffers) slugs resolved with fetch request, result=${result}`);
     return result;
@@ -118,8 +118,8 @@ async function validateAndGetRouteParams (): Promise<RouteLocationRaw | undefine
       force: false,
       query: {
         class: userParams.class,
-        dateFrom: userParams.dateFrom ? dayjs(userParams.dateFrom!).format('YYYY-MM-DD') : undefined,
-        dateTo: userParams.dateTo ? dayjs(userParams.dateTo!).format('YYYY-MM-DD') : undefined,
+        dateFrom: userParams.dateFrom ? dayjs(userParams.dateFrom!).format(CheckInOutDateUrlFormat) : undefined,
+        dateTo: userParams.dateTo ? dayjs(userParams.dateTo!).format(CheckInOutDateUrlFormat) : undefined,
         fromCitySlug: resolvedCitySlugs.fromCitySlug,
         toCitySlug: resolvedCitySlugs.toCitySlug,
         numPassengers: userParams.numPassengers,
@@ -136,8 +136,8 @@ async function validateAndGetRouteParams (): Promise<RouteLocationRaw | undefine
       force: false,
       query: {
         citySlug: resolvedCitySlug,
-        checkIn: userParams.checkIn ? dayjs(userParams.checkIn!).format('YYYY-MM-DD') : undefined,
-        checkOut: userParams.checkOut ? dayjs(userParams.checkOut!).format('YYYY-MM-DD') : undefined,
+        checkIn: userParams.checkIn ? dayjs(userParams.checkIn!).format(CheckInOutDateUrlFormat) : undefined,
+        checkOut: userParams.checkOut ? dayjs(userParams.checkOut!).format(CheckInOutDateUrlFormat) : undefined,
         numGuests: userParams.numGuests,
         numRooms: userParams.numRooms
       }
@@ -245,7 +245,7 @@ const staysTabHtmlId = useId();
 </script>
 
 <template>
-  <div class="search-offers mx-xs-3 mx-m-5 px-xs-3 px-m-4 pt-xs-1 pb-xs-4" role="search">
+  <section class="search-offers mx-xs-3 mx-m-5 px-xs-3 px-m-4 pt-xs-1 pb-xs-4" role="search">
     <OptionButtonGroup
       v-if="!singleTab && !minimumButtons"
       v-model:active-option-ctrl="activeSearchTab.value"
@@ -257,9 +257,9 @@ const staysTabHtmlId = useId();
         { ctrlKey: SearchTabStays, labelResName: getI18nResName2('searchOffers', 'staysTab'), shortIcon: 'bed', enabled: true, role: { role: 'tab', tabPanelId: staysTabHtmlId } },
       ]"
     />
-    <div v-else-if="!minimumButtons" class="search-offers-single-header mt-xs-4 mt-s-5 mb-xs-5" role="heading" aria-level="5">
+    <h2 v-else-if="!minimumButtons" class="search-offers-single-header mt-xs-4 mt-s-5 mb-xs-5">
       {{ $t(getI18nResName2('searchOffers', 'whereToFly')) }}
-    </div>
+    </h2>
     <div :class="`mt-xs-4 ${minimumButtons ? 'search-offer-minimal-buttons-container' : ''}`">
       <KeepAlive>
         <SearchFlightOffers v-if="singleTab === 'flights' || activeSearchTab.value === SearchTabFlights" :id="flightsTabHtmlId" ref="searchFlights" ctrl-key="SearchFlightOffersBox" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
@@ -309,5 +309,5 @@ const staysTabHtmlId = useId();
         @click="onSearchBtnClick"
       />
     </div>
-  </div>
+  </section>
 </template>

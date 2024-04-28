@@ -71,20 +71,17 @@ $review-card-sz-s-height: calc(378px + $review-card-sz-header-height);
       top: 80px;
     }
 
-    h2, h1 {
+    .heading-text-pre, h1 {
       font-weight: bold;
     }
 
-    p {
+    p:not(.heading-text-pre) {
       font-weight: map.get($weights-map, 'semi-bold');
       font-size: markup-to-rem(20px);
     }
 
-    h2, h1, p {
-      word-break: break-all;
-      @include for-small-and-above() {
-        word-break: normal;
-      }
+    .heading-text-pre, h2, h1, p {
+      word-break: break-word;
     }
   }
 }
@@ -159,7 +156,7 @@ $review-card-sz-s-height: calc(378px + $review-card-sz-header-height);
         max-width: 80%;
       }
 
-      p, h2 {
+      p, h3 {
         text-align: center;
       }
 
@@ -175,8 +172,8 @@ $review-card-sz-s-height: calc(378px + $review-card-sz-header-height);
     }
   }
 
-  .search-stays-page-link-overlay {
-    background-image: linear-gradient(0deg, transparent 0%, #00000088 100%);
+  .search-stays-page-link-img {
+    filter: brightness(0.8);
   }
 }
 

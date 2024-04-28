@@ -2,7 +2,7 @@
 
 import { type I18nResName } from './../../shared/i18n';
 
-const elInput = ref<HTMLInputElement>();
+const elInput = shallowRef<HTMLInputElement>();
 
 interface IProps {
   ctrlKey: string,

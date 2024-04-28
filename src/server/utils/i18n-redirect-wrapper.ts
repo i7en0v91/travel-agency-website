@@ -1,7 +1,7 @@
 import { type EventHandler, type EventHandlerRequest, type EventHandlerResponse, getCookie } from 'h3';
 import onHeaders from 'on-headers';
 import { patchUrlWithLocale, getLocaleFromUrl } from '../../shared/i18n';
-import { DefaultLocale, CookieNames, type Locale } from '../../shared/constants';
+import { DefaultLocale, CookieI18nLocale, type Locale, HeaderLocation } from '../../shared/constants';
 
 export function wrapI18nRedirect<Request extends EventHandlerRequest = EventHandlerRequest, Response = EventHandlerResponse> (
   originalHandler: EventHandler<Request, Promise<Response>>, affectedUrls: RegExp[])
@@ -9,7 +9,6 @@ export function wrapI18nRedirect<Request extends EventHandlerRequest = EventHand
   return defineEventHandler(async (event) => {
     const url = event.node.req.url;
 
-    const LocationHeaderName = 'location';
     if (!(globalThis as any).ServerServicesLocator || !url) {
       return await originalHandler(event); // skipping as nuxt hasn't been fully started
     }
@@ -19,7 +18,7 @@ export function wrapI18nRedirect<Request extends EventHandlerRequest = EventHand
 
     let currentLocale: Locale | undefined;
     if (event.node.req.url) {
-      currentLocale = getCookie(event, CookieNames.I18nLocale) as Locale;
+      currentLocale = getCookie(event, CookieI18nLocale) as Locale;
       if (!currentLocale) {
         currentLocale = getLocaleFromUrl(event.node.req.url!);
         logger.debug(`(wrapI18nRedirect) cookie has no locale info, obtained from url: url=${url}, locale=${currentLocale}`);
@@ -37,7 +36,7 @@ export function wrapI18nRedirect<Request extends EventHandlerRequest = EventHand
       try {
         const response = event.node.res;
         const responseStatus = event.node.res.statusCode;
-        const location = response.getHeader(LocationHeaderName)?.toString();
+        const location = response.getHeader(HeaderLocation)?.toString();
         if (responseStatus === 302 && location && affectedUrls.some(r => r.test(url!))) {
           if (currentLocale) {
             logger.info(`(wrapI18nRedirect) updating redirect location with locale path: url=${url}, location=${location}, locale=${currentLocale}`);
@@ -47,7 +46,7 @@ export function wrapI18nRedirect<Request extends EventHandlerRequest = EventHand
               return;
             }
             logger.verbose(`(wrapI18nRedirect) updated redirect location is: location=${patchedLocation}`);
-            response.setHeader(LocationHeaderName, patchedLocation);
+            response.setHeader(HeaderLocation, patchedLocation);
           } else {
             logger.warn(`(wrapI18nRedirect) failed to update redirect location as cannot detect current locale: url=${url}, location=${location}`);
           }

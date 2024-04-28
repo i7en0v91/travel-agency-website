@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { Dropdown } from 'floating-vue';
+import type { Dropdown } from 'floating-vue';
 import dayjs from 'dayjs';
-import { WebApiRoutes, StaysMaxRoomsCount, StaysMaxGuestsCount, TabIndicesUpdateDefaultTimeout } from './../../../shared/constants';
+import { ApiEndpointCitiesSearch, StaysMaxRoomsCount, StaysMaxGuestsCount, TabIndicesUpdateDefaultTimeout } from './../../../shared/constants';
 import type { ISearchListItem, ISearchStayOffersMainParams, ISearchStayOffersParams } from './../../../shared/interfaces';
 import { updateTabIndices } from './../../../shared/dom';
-import SearchListInput from './../../components/forms/search-list-input.vue';
-import DatePicker from './../../components/forms/date-picker.vue';
+import SearchListInput from './../../../components/forms/search-list-input.vue';
+import DatePicker from './../../../components/forms/date-picker.vue';
 import { getI18nResName2 } from './../../../shared/i18n';
 import SearchOffersCounter from './search-offers-counter.vue';
 import AppConfig from './../../../appconfig';
@@ -21,9 +21,9 @@ const logger = CommonServicesLocator.getLogger();
 
 const { t } = useI18n();
 
-const dropdown = ref<InstanceType<typeof Dropdown>>();
+const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
 
-const elBtn = ref<HTMLElement>();
+const elBtn = shallowRef<HTMLElement>();
 const destinationCity = ref<ISearchListItem | undefined>();
 const checkInDate = ref<Date | undefined>();
 const checkOutDate = ref<Date | undefined>();
@@ -155,7 +155,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
           :initially-selected-value="takeInitialValuesFromUrlQuery ? (displayedSearchParams?.city ?? null) : undefined"
           :ctrl-key="`${props.ctrlKey}-DestinationCity`"
           class="search-stays-destination"
-          :item-search-url="`${WebApiRoutes.CitiesSearch}`"
+          :item-search-url="`${ApiEndpointCitiesSearch}`"
           :additional-query-params="{ includeCountry: true }"
           list-container-class="search-offers-dropdown-list-container"
           type="destination"

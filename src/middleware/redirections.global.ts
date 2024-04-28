@@ -1,12 +1,12 @@
-import { CookieNames, DefaultLocale } from '../shared/constants';
+import { CookieI18nLocale, DefaultLocale } from '../shared/constants';
 import { getLocaleFromUrl } from './../shared/i18n';
 import { isLandingPageUrl } from './../shared/common';
 
 export default defineNuxtRouteMiddleware((to, from) => {
-  if (process.server) {
+  if (import.meta.server) {
     const logger = CommonServicesLocator.getLogger();
     try {
-      const localeCookie = useCookie(CookieNames.I18nLocale);
+      const localeCookie = useCookie(CookieI18nLocale);
       logger.verbose(`(redirections.global) server, from=${from.path}, to=${to.path}`);
 
       const fromLocale = from ? getLocaleFromUrl(from.path) : undefined;

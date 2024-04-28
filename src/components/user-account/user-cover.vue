@@ -10,10 +10,10 @@ interface IProps {
 }
 const props = defineProps<IProps>();
 
-const userCoverImage = ref<InstanceType<typeof EditableImage>>();
+const userCoverImage = shallowRef<InstanceType<typeof EditableImage>>();
 
 const userAccountStore = useUserAccountStore();
-const userAccount = await userAccountStore.initializeUserAccount();
+const userAccount = await userAccountStore.getUserAccount();
 
 const logger = CommonServicesLocator.getLogger();
 

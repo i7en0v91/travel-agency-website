@@ -1,9 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import dayjs from 'dayjs';
 import { type IAppLogger } from '../shared/applogger';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
 import { type ITokenLogic, type ITokenIssueResult, TokenKind, type EntityId, type TokenConsumeResult } from '../shared/interfaces';
-import { DbConcurrencyVersions } from '../shared/constants';
+import { DbVersionInitial } from '../shared/constants';
 import AppConfig from '../appconfig';
 import { mapEnumValue } from './helpers/db';
 import { generateNewTokenValue, verifyTokenValue } from './helpers/crypto';
@@ -85,7 +85,7 @@ export class TokenLogic implements ITokenLogic {
       tokenEntity = await this.dbRepository.verificationToken.create({
         data: {
           kind: mapEnumValue(kind),
-          version: DbConcurrencyVersions.InitialVersion,
+          version: DbVersionInitial,
           attemptsMade: 0,
           hash: tokenValue.hash
         },
@@ -116,7 +116,7 @@ export class TokenLogic implements ITokenLogic {
       tokenEntity = await this.dbRepository.verificationToken.create({
         data: {
           kind: mapEnumValue(kind),
-          version: DbConcurrencyVersions.InitialVersion,
+          version: DbVersionInitial,
           attemptsMade: 0,
           hash: tokenValue.hash,
           user: {

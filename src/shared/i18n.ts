@@ -1,6 +1,6 @@
 import { joinURL, parseURL, stringifyParsedURL } from 'ufo';
-import en from '../locales/en.json';
-import { WebApiRoutes, type Locale } from './constants';
+import type en from '../locales/en.json';
+import { ApiEndpointAuthentication, ApiEndpointLogging, OgImagePathSegment, type Locale } from './constants';
 import { type IAppLogger } from './../shared/applogger';
 
 export type I18nResName = string;
@@ -48,19 +48,24 @@ export function patchUrlWithLocale (url: string, locale: string): string | undef
 export function getLocaleFromUrl (url: string) : Locale | undefined {
   const logger = (globalThis as any).CommonServicesLocator.getLogger() as IAppLogger;
 
-  logger?.debug(`(session:server) detecting locale from url: url=${url}`);
-  if (url.startsWith(`${WebApiRoutes.Logging}`) ||
-    url.startsWith(`${WebApiRoutes.Authentication}`)) {
+  logger?.debug(`detecting locale from url: url=${url}`);
+  if (url.startsWith(`${ApiEndpointLogging}`) ||
+    url.startsWith(`${ApiEndpointAuthentication}`)) {
     return undefined;
   }
 
+  if (url.includes(OgImagePathSegment)) {
+    url = url.replace(OgImagePathSegment, '');
+  }
+
   let result: Locale = 'en';
-  if (url.startsWith(`/${<Locale>'ru'}`)) {
+  if (url.startsWith(`/${<Locale>'ru'}`) || url.startsWith('ru')) {
     result = <Locale>'ru';
-  } else if (url.startsWith(`/${<Locale>'fr'}`)) {
+  } else if (url.startsWith(`/${<Locale>'fr'}`) || url.startsWith('fr')) {
     result = <Locale>'fr';
   }
 
+  logger?.debug(`locale from url detected: url=${url}, locale=${result}`);
   return result;
 }
 

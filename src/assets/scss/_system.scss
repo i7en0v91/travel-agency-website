@@ -9,13 +9,19 @@
 
 $font-default: 'Montserrat', sans-serif;
 $font-header: 'Montserrat', sans-serif;
+$font-ticket-title: 'Spectral SC', serif;
 $font-size-base-px: 16px; // used for REM computation with respect to markup design values: 16px
 $font-size-base: math.div($font-size-base-px, 1px); 
 $transition-default-interval: 1.4s;
 $default-outline-offset: 4px; 
+$default-ctrl-outline-margin: 8px; 
+
 $search-page-control-radius: 24px;
+$navbar-toggle-max-height: 15em;
+$navbar-toggle-animation-interval: 0.6s;
 
 $weights-map: (
+  'light': 300,
   'regular': 400,
   'medium': 500,
   'semi-bold': 600,
@@ -55,7 +61,10 @@ body {
   }
 }
 
-@function markup-to-rem($markup-size) {
+@function markup-to-rem($markup-size, $min-size: 0) {
+  @if($min-size > 0) {
+    @return calc(max($min-size, math.div($markup-size, $font-size-base-px) * 1rem));
+  }
   @return math.div($markup-size, $font-size-base-px) * 1rem;
 }
 
@@ -87,6 +96,12 @@ body {
   } 
 }
 
+@mixin with-ticket-stay-title($font-size: 'body-primary') {
+  font-weight: map.get($weights-map, 'light');
+  font-family: $font-ticket-title;
+  @include with-font-size($font-size);
+}
+
 //
 // Spacings
 //
@@ -97,7 +112,8 @@ $spacings: (
   '2': 8px,
   '3': 15px,
   '4': 24px,
-  '5': 32px
+  '5': 32px,
+  '6': 40px
 );
 
 @mixin compile-spacings($map, $cssPrefix, $cssClass, $deviceType) {
@@ -194,4 +210,3 @@ $borders-radius: (
     outline-color: var($css-var);
   }
 }
-  

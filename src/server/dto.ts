@@ -1,7 +1,7 @@
 import { type InferType, string, number, object, array, tuple, boolean, date, lazy } from 'yup';
-import { AppExceptionCodeEnum, type AppExceptionAppearance } from '../shared/exceptions';
-import { type StayDescriptionParagraphType, type AirplaneImageKind, type FlightOffersSortFactor, type CacheEntityType, type TripType, type FlightClass, AvailableFlightOffersSortFactor, AvailableStayOffersSortFactor, type StayServiceLevel } from '../shared/interfaces';
-import { AvailableLocaleCodes, AvailableThemeCodes, FlightMinPassengers, FlightMaxPassengers, StaysMaxRoomsCount, StaysMaxGuestsCount, SearchOffersListConstants, MaxStayReviewLength } from '../shared/constants';
+import type { AppExceptionCodeEnum, AppExceptionAppearance } from '../shared/exceptions';
+import { type StayDescriptionParagraphType, type AirplaneImageKind, type FlightOffersSortFactor, type CacheEntityType, type TripType, type FlightClass, AvailableFlightOffersSortFactor, AvailableStayOffersSortFactor, type StayServiceLevel, type OfferKind, type EntityId } from '../shared/interfaces';
+import { NumMinutesInDay, SearchOffersPriceRange, AvailableLocaleCodes, AvailableThemeCodes, FlightMinPassengers, FlightMaxPassengers, StaysMaxRoomsCount, StaysMaxGuestsCount, MaxStayReviewLength } from '../shared/constants';
 
 /**
  * Dto Schemas
@@ -74,6 +74,11 @@ export const EntityCacheQuerySchema = object({
   type: string<CacheEntityType>().max(64).lowercase().required()
 });
 
+export const BookingDownloadQuerySchema = object({
+  locale: string().max(4).oneOf(AvailableLocaleCodes).required(),
+  theme: string().max(32).oneOf(AvailableThemeCodes).required()
+});
+
 export const PaginationDtoSchema = object({
   skip: number().required().min(0).max(10000),
   take: number().required().min(0).max(100)
@@ -91,12 +96,12 @@ export const SearchFlightOffersMainParamsDtoSchema = object().shape({
 
 export const SearchFlightOffersParamsDtoSchema = SearchFlightOffersMainParamsDtoSchema.shape({
   price: object({
-    from: number().optional().min(SearchOffersListConstants.Price.min).max(SearchOffersListConstants.Price.max),
-    to: number().optional().min(SearchOffersListConstants.Price.min).max(SearchOffersListConstants.Price.max)
+    from: number().optional().min(SearchOffersPriceRange.min).max(SearchOffersPriceRange.max),
+    to: number().optional().min(SearchOffersPriceRange.min).max(SearchOffersPriceRange.max)
   }).optional(),
   departureTimeOfDay: object({
-    from: number().optional().min(0).max(SearchOffersListConstants.NumMinutesInDay - 1),
-    to: number().optional().min(0).max(SearchOffersListConstants.NumMinutesInDay - 1)
+    from: number().optional().min(0).max(NumMinutesInDay - 1),
+    to: number().optional().min(0).max(NumMinutesInDay - 1)
   }).optional(),
   airlineCompanyIds: array().of(number().required()).optional(),
   ratings: array().of(number().min(0).max(5).required()).optional(),
@@ -118,8 +123,8 @@ export const SearchStayOffersMainParamsDtoSchema = object({
 
 export const SearchStayOffersParamsDtoSchema = SearchStayOffersMainParamsDtoSchema.shape({
   price: object({
-    from: number().optional().min(SearchOffersListConstants.Price.min).max(SearchOffersListConstants.Price.max),
-    to: number().optional().min(SearchOffersListConstants.Price.min).max(SearchOffersListConstants.Price.max)
+    from: number().optional().min(SearchOffersPriceRange.min).max(SearchOffersPriceRange.max),
+    to: number().optional().min(SearchOffersPriceRange.min).max(SearchOffersPriceRange.max)
   }).optional(),
   ratings: array().of(number().min(0).max(5).required()).optional(),
   sort: string().max(32).oneOf(AvailableStayOffersSortFactor).required(),
@@ -284,6 +289,7 @@ export interface IUpdateAccountResultDto {
 
 export interface ICitiesSearchQuery extends InferType<typeof CitiesSearchQuerySchema> {};
 export interface IEntityCacheQuery extends InferType<typeof EntityCacheQuerySchema> {};
+export interface IBookingDownloadQuery extends InferType<typeof BookingDownloadQuerySchema> {};
 
 export interface ISearchFlightOffersMainParamsDto extends InferType<typeof SearchFlightOffersMainParamsDtoSchema> {};
 export interface ISearchFlightOffersParamsDto extends InferType<typeof SearchFlightOffersParamsDtoSchema> {};
@@ -389,6 +395,7 @@ export interface IAirlineCompanyDto {
 
 export interface IOfferDto {
   id: number,
+  kind: OfferKind,
   totalPrice: number,
   isFavourite: boolean
 }
@@ -438,13 +445,13 @@ export interface ITopFlightOfferInfoDto {
   duration: number // flight duration in minutes
 }
 
-export interface ISearchFlightOffersResultDto {
+export interface ISearchFlightOffersResultDto<TOfferDto = ISearchedFlightOfferDto> {
   entities: {
     airlineCompanies: IAirlineCompanyDto[],
     airplanes: IAirplaneDto[],
     airports: IAirportDto[]
   },
-  pagedItems: ISearchedFlightOfferDto[],
+  pagedItems: TOfferDto[],
   totalCount: number,
   paramsNarrowing?: {
     priceRange?: {
@@ -456,11 +463,11 @@ export interface ISearchFlightOffersResultDto {
   topOffers?: ITopFlightOfferInfoDto[]
 }
 
-export interface ISearchStayOffersResultDto {
+export interface ISearchStayOffersResultDto<TOfferDto = ISearchedStayOfferDto> {
   entities: {
     cities: ICityDto[]
   },
-  pagedItems: ISearchedStayOfferDto[],
+  pagedItems: TOfferDto[],
   totalCount: number,
   paramsNarrowing?: {
     priceRange?: {
@@ -552,3 +559,46 @@ export interface IModifyStayReviewResultDto {
 export interface IStayReviewsDto {
   reviews: IStayReviewDto[]
 }
+
+export interface IBookingDetailsDto {
+  id: number,
+  kind: OfferKind,
+  bookedUser: {
+    id: EntityId,
+    firstName?: string,
+    lastName?: string,
+    avatar?: {
+      slug: string,
+      timestamp?: number,
+    }
+  },
+  flightOffer?: IFlightOfferDetailsDto,
+  stayOffer?: IStayOfferDetailsDto,
+  serviceLevel?: StayServiceLevel
+}
+
+export interface IBookingResultDto {
+  bookingId: number
+}
+
+export interface IUserFavouriteFlightOfferDto extends ISearchedFlightOfferDto {
+  addTimestamp: number
+}
+export interface IUserFavouriteStayOfferDto extends ISearchedStayOfferDto {
+  addTimestamp: number
+}
+export interface IUserFavouritesResultDto {
+  flights: Omit<ISearchFlightOffersResultDto<IUserFavouriteFlightOfferDto>, 'paramsNarrowing' | 'topOffers'>,
+  stays: Omit<ISearchStayOffersResultDto<IUserFavouriteStayOfferDto>, 'paramsNarrowing'>
+};
+
+export interface IUserTicketDto {
+  bookedTimestamp: number,
+  bookingId: number
+}
+export type IUserFlightTicketDto = ISearchedFlightOfferDto & IUserTicketDto;
+export type IUserStayTicketDto = ISearchedStayOfferDto & IUserTicketDto;
+export interface IUserTicketsResultDto {
+  flights: Omit<ISearchFlightOffersResultDto<IUserFlightTicketDto>, 'paramsNarrowing' | 'topOffers'>,
+  stays: Omit<ISearchStayOffersResultDto<IUserStayTicketDto>, 'paramsNarrowing'>
+};

@@ -12,13 +12,22 @@ $theme-switcher-button-pad: 2px;
 $theme-switcher-stopper-adj: 6px;
 $theme-switcher-animation-interval: 0.2s;
 
-$search-page-link-menu-animation-interval: 0.6s;
+$navbar-toggle-animation-interval: 0.6s;
 $navlink-text-decoration-thickness: 1.5px;
 $navlink-menu-chevron-width: 0.33rem;
 $navlink-menu-chevron-height: 0.6rem;
 $navbar-outline-offset: $default-outline-offset + 1px;
 
 $nav-user-avatar-size: 44px;
+
+$nav-link-icon-size: markup-to-rem(24px);
+$nav-link-highlight-thickness: 5px;
+
+$nav-logo-width: markup-to-rem(110px);
+$nav-logo-height: markup-to-rem(36px);
+$nav-logo-inapp-padding: map.get($spacings, '3');
+$nav-logo-inapp-l-padding: map.get($spacings, '1');
+$nav-logo-inapp-l-offset: -1.3rem;
 
 .nav-bar {
   width: 100%;
@@ -36,17 +45,34 @@ $nav-user-avatar-size: 44px;
   flex-direction: row;
   flex-wrap: wrap;
 
+  overflow-y: hidden;
+
   align-items: center;
   @include for-large-and-extra-large() {
+    flex-direction: row-reverse;
+    flex-wrap: nowrap;
     align-items: center;
   }
   
+  .nav-page-link-cell {
+    height: max-content;
+    width: max-content;
+    display: contents;
+  }
 
   &.nav-bar-inapp {
+    position: sticky;
+    z-index: 5;
+    top: 0;
+
     @include with-theme-color('body-bg') using ($css-var) {
       background-color: var($css-var);
     }
-    padding: markup-to-rem(16px) calc(var(--#{$prefix}-page-padding-x) - $navbar-outline-offset) markup-to-rem(16px) calc(var(--#{$prefix}-page-padding-x) - $navbar-outline-offset);
+    padding: $nav-logo-inapp-padding calc(var(--#{$prefix}-page-padding-x) - $navbar-outline-offset) $nav-logo-inapp-padding calc(var(--#{$prefix}-page-padding-x) - $navbar-outline-offset);
+    @include for-large-and-extra-large() {
+      padding-top: $nav-logo-inapp-l-padding;
+      padding-bottom: 0;
+    }
   
     @include with-theme-color('shadow') using($css-var) {
       box-shadow: 0px 4px 16px var($css-var);
@@ -58,9 +84,45 @@ $nav-user-avatar-size: 44px;
       }
     }
 
+    .nav-page-link-cell {
+      border-bottom: $nav-link-highlight-thickness solid transparent;
+      @include for-large-and-extra-large() {
+        min-height: calc($nav-logo-height + 2 * $nav-logo-inapp-padding);
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+
+        &.active {
+          @include with-theme-color('control-bg') using ($css-var) {
+            border-bottom-color: var($css-var);
+          }
+        }
+      }
+    }
+
     .nav-link-icon::before {
       @include with-theme-color('input-ctrl-primary') using ($css-var) {
         background-color: var($css-var);
+      }
+    }
+
+    .theme-switcher {
+      @include for-large-and-extra-large() {
+        transform: translateY(-0.2rem);
+      }
+    }
+
+    .locale-switcher-nav-item {
+      transform: translateY(0.15rem);
+      @include for-large-and-extra-large() {
+        transform: translateY(-0.05rem);
+      }
+    }
+
+    @include for-large-and-extra-large() {
+      .btn-user-name {
+        transform: translateY(-0.05rem);
       }
     }
   }
@@ -83,10 +145,21 @@ $nav-user-avatar-size: 44px;
   }
 
   .nav-link-icon::before {
-    width: markup-to-rem(24px);
-    height: markup-to-rem(24px);
+    width: $nav-link-icon-size;
+    height: $nav-link-icon-size;
   
     display: inline-block;
+
+    position: static;
+    margin-right: map.get($spacings, '2');
+    margin-left: map.get($spacings, '1');
+    @include for-large-and-extra-large() {
+      position: absolute;
+      margin-top: -0.5 * $nav-link-icon-size;  
+      margin-right: 0;
+      transform: translate(-$nav-link-icon-size - markup-to-rem(map.get($spacings, '2')), 0.65rem);
+    }
+
     -webkit-mask-size: contain;
     mask-size: contain;
     -webkit-mask-repeat: no-repeat;
@@ -94,8 +167,6 @@ $nav-user-avatar-size: 44px;
     -webkit-mask-position: center center;
     mask-position: center center;
     vertical-align: middle;
-
-    margin-right: map.get($spacings, '1');
 
     content: '';
   }
@@ -107,40 +178,20 @@ $nav-user-avatar-size: 44px;
     }
     z-index: 2;
 
-    $toggle-max-height: 15em;
-
     width: 100%;
     flex: 0 1 auto;
 
     gap: map.get($spacings, '2');
 
-    overflow-y: clip;
-    max-height: $toggle-max-height;
-
-    max-height: 0px;
-    visibility: hidden;
-    padding-left: $navbar-outline-offset;
-
-    &.toggling {
-      animation: frames-collapse $search-page-link-menu-animation-interval ease-out;
-    }
-
-    &.expanded {
-      max-height: $toggle-max-height;
-      visibility: visible;
-
-      &.toggling {
-        animation: frames-expand $search-page-link-menu-animation-interval ease-out;  
-      }
-    }
+    overflow-y: hidden;
 
     @include for-large-and-extra-large() {
       flex: 1 1 auto;
 
-      overflow-y: auto;
+      overflow-y: visible;
       width: auto;
       &, &.expanded {
-        max-height: $toggle-max-height;
+        max-height: $navbar-toggle-max-height;
         visibility: visible;
       }
 
@@ -149,39 +200,6 @@ $nav-user-avatar-size: 44px;
       flex-wrap: wrap;
       justify-content: flex-start;
       gap: map.get($spacings, '3');
-    }
-
-    @keyframes frames-collapse {
-      0% { 
-        visibility: visible;
-        max-height: $toggle-max-height;
-      }
-
-      99% {
-        visibility: visible;
-        max-height: 0px;
-      }
-
-      100% {
-        visibility: hidden;
-        max-height: 0px;
-      }
-    }
-
-    @keyframes frames-expand {
-      0% { 
-        visibility: hidden;
-        max-height: 0px;
-      }
-
-      1% {
-        visibility: visible;
-      }
-
-      100% {
-        visibility: visible;
-        max-height: $toggle-max-height;
-      }
     }
   }
 
@@ -208,7 +226,10 @@ $nav-user-avatar-size: 44px;
     .nav-toggler {
       width: markup-to-rem(26px);
       height: markup-to-rem(26px);
-      margin-bottom: 6px;
+      margin-top: 4px;
+      @include for-small-and-above() {
+        margin-top: 2px;
+      }
 
       display: block;
 
@@ -231,17 +252,17 @@ $nav-user-avatar-size: 44px;
   .nav-controlbox {
     order: 3;
     flex: 0 1 auto;
-    justify-content: flex-start;
-    @include for-large-and-extra-large() {
-      flex: 1 1 auto;
-      order: 4;
-      justify-content: flex-end;
-    }
-    
+
     display: flex;
+    justify-content: flex-start;
     flex-direction: row;
     flex-wrap: wrap;
 
+    @include for-large-and-extra-large() {
+      order: 4;
+      display: contents;
+    }
+    
     gap: map.get($spacings, '2');
     @include for-large-and-extra-large() {
       gap: map.get($spacings, '3');
@@ -250,19 +271,23 @@ $nav-user-avatar-size: 44px;
     padding-right: $navbar-outline-offset;
 
     .nav-login {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      align-items: center;
+      display: contents;
 
-      margin-bottom: 4px;
-      gap: map.get($spacings, '3');
-      @include for-large-and-extra-large() {
-        margin-bottom: unset;
-        gap: map.get($spacings, '5');
+      .nav-page-link {
+        transform: translateY(-0.2rem);
+        @include for-small-and-above() {
+          transform: translateY(0.05rem);
+        }
       }
 
       .nav-signup-btn {
+        padding-top: map.get($spacings, '2');
+        padding-bottom: map.get($spacings, '2');
+        @include for-small-and-above() {
+          padding-top: map.get($spacings, '3');
+          padding-bottom: map.get($spacings, '3');
+        }
+
         border-radius: map.get($borders-radius, '2');
         @include with-theme-color('nav-signup-bg') using($css-var) {
           background-color: var($css-var);
@@ -270,11 +295,38 @@ $nav-user-avatar-size: 44px;
         @include with-theme-color('nav-signup') using($css-var) {
           color: var($css-var);
         }
+      }
+    }
 
-        padding: map.get($spacings, '2');
-        @include for-small-and-above() {
-          padding: map.get($spacings, '3');
+    .nav-user-favourites-div {
+      flex: 0 1 auto;
+      display: none;
+      @include for-extra-large-only() {
+        display: contents;
+        width: auto;
+        height: auto;            
+      }
+
+      margin-top: 0.05rem;
+
+      .nav-page-link {
+        @at-root {
+          .nav-bar.nav-bar-landing .nav-controlbox .nav-user-favourites-div .nav-page-link {
+            border-right: 2px solid $landing-color;
+          }
+
+          .nav-bar.nav-bar-inapp .nav-controlbox .nav-user-favourites-div .nav-page-link {
+            @include with-theme-color('input-ctrl-primary') using ($css-var) {
+              border-right: 2px solid var($css-var);
+            }
+          }
         }
+        // to make height of divisor smaller
+        margin-top: 0;
+        margin-bottom: 0;
+        margin-right: 0;
+        padding-top: 0;
+        padding-bottom: 0;
       }
     }
 
@@ -282,7 +334,7 @@ $nav-user-avatar-size: 44px;
       & > div {
 
         height: 100%;
-        display: flex;
+        display: block;
         flex-direction: row;
         flex-wrap: nowrap;
         align-items: center;
@@ -292,6 +344,12 @@ $nav-user-avatar-size: 44px;
           height: $nav-user-avatar-size;
           min-width: $nav-user-avatar-size;
           min-height: $nav-user-avatar-size;
+
+          position: absolute;
+
+          // center vertically
+          margin-top: -0.5 * $nav-user-avatar-size;
+          transform: translateY(0.55rem);
   
           display: inline-block;
           border-radius: 0.5 * $nav-user-avatar-size;
@@ -335,6 +393,8 @@ $nav-user-avatar-size: 44px;
           text-overflow: ellipsis;
           overflow: hidden;
           max-width: map.get($breakpoints, 'xs') - 110px;
+
+          margin-left: calc($nav-user-avatar-size + 8px);
   
           @include with-body-font('nav-link');
           &:focus-visible {
@@ -346,8 +406,27 @@ $nav-user-avatar-size: 44px;
             text-decoration-thickness: $navlink-text-decoration-thickness;
             cursor: pointer;
           }
-  
+
           @at-root {
+            .nav-user-avatar:not(.nav-user-avatar-default) {
+              + .btn-user-name {
+                transform: translateY(-0.05rem);
+              }
+            } 
+
+            @include for-large-and-extra-large() {
+              .nav-bar.nav-bar.nav-bar-inapp .nav-user-avatar.nav-user-avatar-default {
+                + .btn-user-name {
+                  transform: translateY(-0.15rem);
+                }
+              }
+              .nav-bar.nav-bar.nav-bar-inapp .nav-user-avatar:not(.nav-user-avatar-default) {
+                + .btn-user-name {
+                  transform: translateY(-0.15rem);
+                }
+              }
+            }
+  
             .btn-user-name {
               @include with-theme-color('input-ctrl-primary') using ($css-var) {
                 color: var(#{$css-var});
@@ -359,25 +438,28 @@ $nav-user-avatar-size: 44px;
             }
           }
         }
-  
-        .nav-user-avatar-default + .btn-user-name {
-          margin-bottom: 0.2rem;
-          @include for-large-and-extra-large() {
-            margin-bottom: unset;
-          }
-        }
-
       }
       
     }
   }    
 
   &.nav-bar-landing { 
+    .locale-switcher-nav-item {
+      transform: translateY(0.1rem);
+      @include for-large-and-extra-large() {
+        transform: translateY(0.1rem);
+      }
+    }
+
     .locale-switcher-btn {
       color: $landing-color;
     }
 
     .theme-switcher {
+      @include for-large-and-extra-large() {
+        transform: translateY(-0.1rem);
+      }
+
       button {
         border: 2px $landing-color solid;
         &::after {
@@ -413,12 +495,20 @@ $nav-user-avatar-size: 44px;
         background-image: escape-svg(svg.$icon-navbar-toggler-dark);
       }
     }
+  
   }
 }
 
 .nav-link {
   white-space: nowrap;
   @include with-body-font('nav-link');
+
+  &.nav-link-icon {
+    @include for-large-and-extra-large() {
+      margin-left: $nav-link-icon-size;
+    }
+  }
+
   &:focus-visible {
     @include with-outline();
   }
@@ -431,14 +521,28 @@ $nav-user-avatar-size: 44px;
 
 .nav-controlbox {
   .nav-page-settings {
-    display: none;
+    display: flex;
+    .locale-switcher-nav-item, .theme-switcher, .nav-user-favourites-div {
+      display: none;
+    }
     @include for-large-and-extra-large() {
-      display: flex;
+      .locale-switcher-nav-item, .theme-switcher {
+        display: block;
+      }
+    }
+    @include for-extra-large-only() {
+      .nav-user-favourites-div {
+        display: contents;
+      }
     }
   }  
 }
 
 .nav-search-page-links {
+  @include for-large-and-extra-large() {
+    display: flex!important; // override vue's <Transition> direct "display: none" style for v-show
+  }
+
   .nav-page-settings {
     display: flex;
     @include for-large-and-extra-large() {
@@ -451,6 +555,7 @@ $nav-user-avatar-size: 44px;
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
+  align-items: center;
   gap: map.get($spacings, '2');
 }
 
@@ -515,11 +620,7 @@ $nav-user-avatar-size: 44px;
       z-index: 1;
       border-radius: calc($theme-switcher-button-size * 0.5);
     }
-  
-    .locale-switcher-nav-item {
-      align-self: center;
-    }
-  
+
     @at-root :root[data-theme="light"] &::after {
       left: calc(($theme-switcher-aspect-ratio - 1) * $theme-switcher-button-size);
       margin-left: calc($theme-switcher-button-pad - $theme-switcher-stopper-adj);
@@ -731,8 +832,8 @@ $nav-user-avatar-size: 44px;
 
 .nav-logo {
   display: block;
-  width: markup-to-rem(110px);
-  height: markup-to-rem(36px);
+  width: $nav-logo-width;
+  height: $nav-logo-height;
   z-index: 2;
 
   @include for-large-and-extra-large() {
@@ -755,14 +856,14 @@ $nav-user-avatar-size: 44px;
     body {
       .nav-bar.nav-bar-landing .nav-logo {
         @include for-large-and-extra-large() {
-          top: calc(70px - 0.7rem);
+          top: calc(70px - 0.75rem);
         }
       }
 
       .nav-bar.nav-bar-inapp .nav-logo {
         @include for-large-and-extra-large() {
           top: unset;
-          transform: translateY(-1.2rem);
+          transform: translateY(calc($nav-logo-inapp-l-offset));
         }  
       }
 
@@ -794,6 +895,11 @@ $nav-user-avatar-size: 44px;
 .nav-link-icon-bed::before {
   -webkit-mask-image: escape-svg(svg.$icon-bed);
   mask-image: escape-svg(svg.$icon-bed);
+}
+
+.nav-link-icon-favourite::before {
+  -webkit-mask-image: escape-svg(svg.$icon-heart);
+  mask-image: escape-svg(svg.$icon-heart);
 }
 
 .nav-link-icon-heart {
@@ -837,7 +943,7 @@ $nav-user-avatar-size: 44px;
   height: markup-to-rem(28px);
   white-space: nowrap;
   width: 100%;
-  line-height: normal;
+  line-height: 1rem;
 
   @include with-theme-color('input-ctrl-primary') using ($css-var) {
     color: var(#{$css-var});

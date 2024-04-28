@@ -1,4 +1,5 @@
-import { type EventHandler, type EventHandlerRequest, type EventHandlerResponse, H3Event } from 'h3';
+import type { H3Event, EventHandler, EventHandlerRequest, EventHandlerResponse } from 'h3';
+
 import axios from 'axios';
 import { withQuery } from 'ufo';
 import { type ObjectSchema } from 'yup';
@@ -53,7 +54,9 @@ function wrapHandler<Request extends EventHandlerRequest = EventHandlerRequest, 
       if (contentType === 'json' || contentType === 'text') {
         reqBody = await readBody(event);
       }
-      logger?.info(`received request - ${event.node.req.url}`, reqBody ?? '');
+      
+      const isAuthorized = !!(await getServerSession(event));
+      logger?.info(`received request - ${event.node.req.url} (auth=${isAuthorized})`, reqBody ?? '');
 
       if (contentType === 'json' && validationSchema) {
         const validationError = validateObject(reqBody, validationSchema);
@@ -164,7 +167,9 @@ async function verifyCaptcha (captchaDto: ICaptchaVerificationDto, event: H3Even
     throw new AppException(AppExceptionCodeEnum.CAPTCHA_VERIFICATION_FAILED, 'captcha verification exception', 'error-stub');
   }
 
-  const { success, score } = (verificationResponse as any)?.data;
+  const success = (verificationResponse as any)?.data?.success;
+  const score = (verificationResponse as any)?.data?.score;
+//  const { success, score } = (verificationResponse as any)?.data;
   if (success) {
     logger?.info(`captcha verified on server successfully, url=${event.node.req.url}, score=${score}`);
   } else {

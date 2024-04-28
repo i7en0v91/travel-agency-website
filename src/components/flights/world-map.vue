@@ -21,7 +21,7 @@ interface IProps {
 }
 const props = defineProps<IProps>();
 
-const canvasEl = ref<HTMLCanvasElement>();
+const canvasEl = shallowRef<HTMLCanvasElement>();
 const logger = CommonServicesLocator.getLogger();
 
 const worldMapStore = useWorldMapStore();
@@ -171,7 +171,7 @@ function onScroll () {
   }
 }
 
-const isServer = process.server ?? false;
+const isServer = import.meta.server ?? false;
 const isMounted = ref(false);
 const cityLabelsVisibilityClass = computed(() => {
   if (isServer) {

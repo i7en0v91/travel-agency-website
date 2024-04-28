@@ -1,12 +1,12 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import uniq from 'lodash-es/uniq';
 import groupBy from 'lodash-es/groupBy';
 import values from 'lodash-es/values';
-import { type IAirportLogic, type IAirportShort, type IAirportData, type EntityId, type IAirport, type MakeSearchResultEntity, type ICitiesLogic } from '../shared/interfaces';
+import { type IAirportLogic, type IAirportShort, type IAirportData, type EntityId, type IAirport, type EntityDataAttrsOnly, type ICitiesLogic } from '../shared/interfaces';
 import { type IAppLogger } from '../shared/applogger';
-import { DbConcurrencyVersions } from '../shared/constants';
+import { DbVersionInitial } from '../shared/constants';
 import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
-import { Queries, Mappers } from './queries';
+import { AirportInfoQuery, MapAirport } from './queries';
 
 export class AirportLogic implements IAirportLogic {
   private logger: IAppLogger;
@@ -20,7 +20,7 @@ export class AirportLogic implements IAirportLogic {
     this.citiesLogic = citiesLogic;
   }
 
-  async getAirportsForSearch (citySlugs: string[], addPopular: boolean): Promise<MakeSearchResultEntity<IAirport>[]> {
+  async getAirportsForSearch (citySlugs: string[], addPopular: boolean): Promise<EntityDataAttrsOnly<IAirport>[]> {
     this.logger.debug(`(AirportLogic) get airports for search, city slugs=[${citySlugs.join(', ')}], addPopular=${addPopular}`);
 
     if (addPopular) {
@@ -43,8 +43,8 @@ export class AirportLogic implements IAirportLogic {
         },
         isDeleted: false
       },
-      select: Queries.AirportInfoQuery.select
-    })).map(Mappers.MapAirport);
+      select: AirportInfoQuery.select
+    })).map(MapAirport);
 
     // take only one first airport in each city in case it has more than 1 airport
     const result = values(groupBy(allAirportsInCities, (a: IAirport) => a.city.slug)).map(g => g[0]);
@@ -61,14 +61,14 @@ export class AirportLogic implements IAirportLogic {
         id,
         isDeleted: false
       },
-      select: Queries.AirportInfoQuery.select
+      select: AirportInfoQuery.select
     });
     if (!entity) {
       this.logger.warn(`(AirportLogic) airport not found, airportId=${id}`);
       throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'airport not found', 'error-stub');
     }
 
-    const result = Mappers.MapAirport(entity);
+    const result = MapAirport(entity);
 
     this.logger.debug(`(AirportLogic) get, airportId=${id}, result=${result.name.en}`);
     return result;
@@ -97,7 +97,7 @@ export class AirportLogic implements IAirportLogic {
 
     const airportId = (await this.dbRepository.airport.create({
       data: {
-        version: DbConcurrencyVersions.InitialVersion,
+        version: DbVersionInitial,
         isDeleted: false,
         lat: data.geo.lat!,
         lon: data.geo.lon!,

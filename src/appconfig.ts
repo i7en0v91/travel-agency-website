@@ -1,9 +1,13 @@
-import { type LogLevel, type Locale, SearchOffersListConstants, isDevOrTestEnv, isQuickStartEnv } from './shared/constants';
+import { type LogLevel, type Locale, isTestEnv, isDevEnv, isQuickStartEnv, FlexibleDatesRangeDays } from './shared/constants';
 import { type ILogSuppressionRule } from './shared/applogger';
 import { type AppExceptionCode } from './shared/exceptions';
+import type { I18nResName } from './shared/i18n';
 
+export const HostUrl = process.env.PUBLISH ? 'golobe.demo' : 'localhost:3000';
 // url used for showing users browser-navigateable links to the website
-const SiteUrl = process.env.PUBLISH ? 'https://golobe.demo' : 'http://localhost:3000';
+const SiteUrl = process.env.PUBLISH ? `https://${HostUrl}` : `http://${HostUrl}`;
+
+const HtmlPageCachingSeconds = 24 * 60 * 60;
 
 export interface IAppConfig {
   logging: {
@@ -81,10 +85,18 @@ export interface IAppConfig {
     worldMapFocusedCityDelayMs: number,
     retryTimeoutMs: number
   },
-  clientCache: {
-    expirationsSeconds: {
-      default: number
-    }
+  booking: {
+    companyName: string,
+    siteUrl: string
+  },
+  caching: {
+    clientRuntime: {
+      expirationsSeconds: {
+        default: number
+      }
+    },
+    htmlPageCachingSeconds: number | false,
+    imagesCachingSeconds: number | false
   },
   searchOffers: {
     listPageSize: number,
@@ -96,10 +108,11 @@ export interface IAppConfig {
     screenSize: {
       width: number,
       height: number
-    }
+    },
+    enforceAuthChecks: boolean
   },
   maps: {
-    providerDisplayName: {[L in Locale]: string},
+    providerDisplayResName: I18nResName,
     mapControlComponentName: string
   } | false
 }
@@ -108,8 +121,9 @@ const Config : IAppConfig = {
   logging: {
     common: {
       name: 'golobe',
-      /** error, warn, info, verbose, debug */
-      level: isDevOrTestEnv() ? 'debug' : 'warn',
+      /** error, warn, info, verbose, debug or never 
+       * KB: it is possible to temporary enable logging in tests, but some tests may hang because of some auth cookies-related testing logic */
+      level: isTestEnv() ? 'never' : (isDevEnv() ? 'debug' : 'warn'),
       /** fields in JSON data logged which are masked for security or large payload footprint reasons */
       redact: [
         'req.headers.cookie',
@@ -127,7 +141,10 @@ const Config : IAppConfig = {
       ],
       maskedNumCharsVisible: 1, // number of first and last characters visible in masked string
       appExceptionLogLevels: [ // custom remapping of AppException's default WARN logging level
-        { appExceptionCode: 'UNAUTHORIZED', logLevel: 'info' }
+        { appExceptionCode: 'UNAUTHORIZED', logLevel: 'info' },
+        { appExceptionCode: 'CAPTCHA_VERIFICATION_FAILED', logLevel: 'info' },
+        { appExceptionCode: 'FORBIDDEN', logLevel: 'info' },
+        { appExceptionCode: 'EMAILING_DISABLED', logLevel: 'info' }
       ]
     },
     server: {
@@ -197,11 +214,11 @@ const Config : IAppConfig = {
         host: 'localhost', // SMTP server host
         port: 587, // SMTP server port
         secure: true, // require SSL connection with SMTP server
-        from: 'noreply@demo.golobe', // email address from which to send mails
+        from: 'noreply@golobe.demo', // email address from which to send mails
         appName: 'Golobe', // website app name to be used in email templates
         siteUrl: SiteUrl
       }
-    // eslint-disable-next-line multiline-ternary
+     
     : ((!process.env.VITEST && !isQuickStartEnv()) ? {
         host: 'localhost',
         port: 1025,
@@ -215,7 +232,7 @@ const Config : IAppConfig = {
   autoInputDatesRangeDays: 7, // amount of days between start and end date which system uses to automatically calculate and set value in date picker before any user interaction (e.g. check-in and check-out dates)
   etcDirName: 'etc', // name of directory with configuration, support files e.t.c
   siteUrl: SiteUrl,
-  contactEmail: 'support@demo.golobe', // contact email for website users
+  contactEmail: 'support@golobe.demo', // contact email for website users
   reCaptcha: {
     enabled: !isQuickStartEnv(),
     language: 'en', // default language
@@ -233,30 +250,35 @@ const Config : IAppConfig = {
     worldMapFocusedCityDelayMs: 60000, // delay in ms for player to pause on city picked on world map
     retryTimeoutMs: 3000 // delay in ms to retry failed fetch request for travel details data
   },
-  clientCache: { // client-side entity cache-related settings
-    expirationsSeconds: { // cache item expiration in seconds, must not exceed "maxage" cache HTTP-header across involved entity types
-      default: 1800 // default expiration for any entity type
-    }
+  booking: { // text information used in booking Terms and Conditions
+    companyName: 'Golobe', // company's display name
+    siteUrl: SiteUrl // website with detailed information
+  },
+  caching: {
+    clientRuntime: { // client-side entity cache-related settings
+      expirationsSeconds: { // cache item expiration in seconds, must not exceed "maxage" cache HTTP-header across involved entity types
+        default: 1800 // default expiration for any entity type
+      }
+    },
+    htmlPageCachingSeconds: isTestEnv() ? false : HtmlPageCachingSeconds, // maximum amount of time in seconds that rendered html page's data can be cached and re-served to client while re-redering in background. False - caching disabled
+    imagesCachingSeconds: isTestEnv() ? false :HtmlPageCachingSeconds // maximum amount of time in seconds that image entity data can be reused (cached) on client. False - caching disabled
   },
   searchOffers: { // settings related to flight & stay offers search pages with filter & pagination
     listPageSize: 20, // pagination - number of offer items fetched from server in one request
-    flexibleDatesRangeDays: SearchOffersListConstants.FlexibleDatesRangeDays // allowed depart/return date adjustment in days for searched offers when "My Dates Are Flexible" flag is set
+    flexibleDatesRangeDays: FlexibleDatesRangeDays // allowed depart/return date adjustment in days for searched offers when "My Dates Are Flexible" flag is set
   },
   enableHtmlTabIndex: true, // if enabled, system will automatically compute and fill tabIndex property for all interactive html elements (including dropdowns, menus e.t.c). If disabled, tabIndex="-1" will be used
   ogImage: {
-    enabled: !process.env.VITEST && !isQuickStartEnv(), // if enabled, system will add og:image metadata tag to pages and setup (pre-)rendering logic
+    enabled: !process.env.VITEST, // if enabled, system will add og:image metadata tag to pages and setup (pre-)rendering logic
     screenSize: { // ogImage size (device width/height); 1200x630 is optimal image size for most social networks
       width: 1200,
       height: 630
-    }
+    },
+    enforceAuthChecks: !!process.env.PUBLISH // if enabled, system won't expose individual user data (bookings) through ogImage endpoints, i.e. login & authorization must be performed to get access to entity's page
   },
   maps: (!process.env.VITEST && !isQuickStartEnv())
     ? {
-        providerDisplayName: { // name of map's service provider
-          en: 'Yandex.Maps',
-          fr: 'Yandex.Maps',
-          ru: 'Яндекс.Карты'
-        },
+        providerDisplayResName: 'mapsProviderYandex', // i18n resource name of map's service provider
         mapControlComponentName: 'YandexMaps' // name of Vue component used to display interactive map
       }
     : false

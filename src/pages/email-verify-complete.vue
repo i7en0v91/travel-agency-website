@@ -2,7 +2,7 @@
 
 import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
 import AccountFormPhotos from './../components/account/form-photos.vue';
-import { WebApiRoutes, SecretValueMask, PagePath } from './../shared/constants';
+import { ApiEndpointEmailVerifyComplete, SecretValueMask, PagePath } from './../shared/constants';
 import { EmailVerifyCompleteResultCode, type IEmailVerifyCompleteResultDto } from './../server/dto';
 
 definePageMeta({
@@ -30,7 +30,7 @@ if (!tokenId || !tokenValue) {
   logger.info(`(EmailVerifyComplete) link doesnt contain token data: id=${tokenId}, value=${tokenValue ? SecretValueMask : '[empty]'}`);
   completionResult.value = EmailVerifyCompleteResultCode.LINK_INVALID;
 } else {
-  const { data, error } = await useFetch(WebApiRoutes.EmailVerifyComplete,
+  const { data, error } = await useFetch(ApiEndpointEmailVerifyComplete,
     {
       method: 'post',
       server: true,

@@ -173,7 +173,7 @@ $stay-image-border-radius: map.get($borders-radius, '3');
   .text-data-loading {
     height: 1em;
     min-width: 80px;
-    width: 50%;
+    width: 45%;
     display: inline-block;
     vertical-align: middle;
   }
@@ -512,7 +512,7 @@ $stay-image-border-radius: map.get($borders-radius, '3');
 
           .stay-details-highlight-text {
             display: block;
-            @include with-body-font('primary');
+            @include with-body-font('primarbody-primaryy');
           }
         }
       }
@@ -617,7 +617,6 @@ $stay-image-border-radius: map.get($borders-radius, '3');
               font-size: markup-to-rem(24px);
               font-weight: map.get($weights-map, 'bold');
 
-              
               flex: 0 1 auto;
               justify-self: flex-end;
 
@@ -625,7 +624,6 @@ $stay-image-border-radius: map.get($borders-radius, '3');
                 display: inline-block;
                 height: 100%;
               }
-
 
               .stays-price-night {
                 font-size: markup-to-rem(16px);
@@ -646,6 +644,14 @@ $stay-image-border-radius: map.get($borders-radius, '3');
               }
               @include for-medium-and-large() {
                 margin-left: 64px;
+              }
+
+              &:focus-visible {
+                margin-left: $default-ctrl-outline-margin;
+                @include for-small-and-above() {
+                  margin-left: unset;
+                  margin-right: $default-ctrl-outline-margin;
+                }
               }
             }
           }
@@ -1011,6 +1017,7 @@ $stay-image-border-radius: map.get($borders-radius, '3');
                 
                 gap: 8px;
 
+                @include with-body-font('body-primary');
                 font-weight: map.get($weights-map, 'semi-bold');
 
                 @include for-small-and-above() {

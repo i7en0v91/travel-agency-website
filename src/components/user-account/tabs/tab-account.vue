@@ -10,7 +10,7 @@ import { maskLog } from './../../../shared/applogger';
 import CaptchaProtection from './../../../components/forms/captcha-protection.vue';
 import { useCaptchaToken } from './../../../composables/captcha-token';
 import { post } from './../../../shared/rest-utils';
-import { TabIndicesUpdateDefaultTimeout, WebApiRoutes, UserNotificationLevel } from './../../../shared/constants';
+import { ApiEndpointUserAccount, TabIndicesUpdateDefaultTimeout, UserNotificationLevel } from './../../../shared/constants';
 import { type IUpdateAccountDto, type IUpdateAccountResultDto, UpdateAccountResultCode } from './../../../server/dto';
 
 interface IProps {
@@ -28,13 +28,7 @@ enum PropertyCtrlKeys {
 
 const userNotificationStore = useUserNotificationStore();
 const userAccountStore = useUserAccountStore();
-let userAccount: IUserAccount;
-if (process.server) {
-  userAccount = await userAccountStore.initializeUserAccount();
-} else {
-  userAccount = userAccountStore.userAccountValue;
-  userAccountStore.initializeUserAccount();
-}
+const userAccount = await userAccountStore.getUserAccount();
 const themeSettings = useThemeSettings();
 
 const { locale } = useI18n();
@@ -42,11 +36,11 @@ const logger = CommonServicesLocator.getLogger();
 
 const isError = ref(false);
 
-const captcha = ref<InstanceType<typeof CaptchaProtection>>();
-const propFirstName = ref<InstanceType<typeof SimplePropertyEdit>>();
-const propLastName = ref<InstanceType<typeof SimplePropertyEdit>>();
-const propPassword = ref<InstanceType<typeof SimplePropertyEdit>>();
-const propEmails = ref<InstanceType<typeof ListPropertyEdit>>();
+const captcha = shallowRef<InstanceType<typeof CaptchaProtection>>();
+const propFirstName = shallowRef<InstanceType<typeof SimplePropertyEdit>>();
+const propLastName = shallowRef<InstanceType<typeof SimplePropertyEdit>>();
+const propPassword = shallowRef<InstanceType<typeof SimplePropertyEdit>>();
+const propEmails = shallowRef<InstanceType<typeof ListPropertyEdit>>();
 
 const captchaToken = useCaptchaToken(captcha as any);
 let isCaptchaTokenRequestPending = false;
@@ -94,7 +88,7 @@ async function validateAndSaveChanges (dto: IUpdateAccountDto, emailForVerificat
   }
 
   logger.info(`(TabAccount) sending user account update dto: userId=${userAccount.userId}`);
-  const resultDto = await post(WebApiRoutes.UserAccount, undefined, dto) as IUpdateAccountResultDto;
+  const resultDto = await post(ApiEndpointUserAccount, undefined, dto, undefined, true, 'default') as IUpdateAccountResultDto;
   if (resultDto) {
     switch (resultDto.code) {
       case UpdateAccountResultCode.SUCCESS:
@@ -168,62 +162,67 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="account-tab-account px-xs-3 px-s-4 pt-xs-3 pt-s-4 pb-xs-2 pb-s-3 brdr-3" role="form">
-    <ErrorHelm v-model:is-error="isError" :appearance="'error-stub'" :user-notification="true">
-      <PropertyGrid ctrl-key="userAccountPropertyGrid">
-        <SimplePropertyEdit
-          ref="propFirstName"
-          v-model:value="firstName"
-          :ctrl-key="PropertyCtrlKeys.FirstName"
-          type="text"
-          :validate-and-save="async (value?: string) => { return await validateAndSaveSimpleChanges(PropertyCtrlKeys.FirstName, value); }"
-          :caption-res-name="getI18nResName3('accountPage', 'tabAccount', 'firstNameCaption')"
-          :placeholder-res-name="getI18nResName3('accountPage', 'tabAccount', 'firstNamePlaceholder')"
-          :max-length="128"
-          @enter-edit-mode="onPropertyEnterEditMode"
-        />
-        <SimplePropertyEdit
-          ref="propLastName"
-          v-model:value="lastName"
-          :ctrl-key="PropertyCtrlKeys.LastName"
-          type="text"
-          :validate-and-save="async (value?: string) => { return await validateAndSaveSimpleChanges(PropertyCtrlKeys.LastName, value); }"
-          :caption-res-name="getI18nResName3('accountPage', 'tabAccount', 'lastNameCaption')"
-          :placeholder-res-name="getI18nResName3('accountPage', 'tabAccount', 'lastNamePlaceholder')"
-          :max-length="128"
-          @enter-edit-mode="onPropertyEnterEditMode"
-        />
-        <SimplePropertyEdit
-          ref="propPassword"
-          v-model:value="password"
-          :ctrl-key="PropertyCtrlKeys.Password"
-          type="password"
-          :validate-and-save="async (value?: string) => { return await validateAndSaveSimpleChanges(PropertyCtrlKeys.Password, value); }"
-          :caption-res-name="getI18nResName3('accountPage', 'tabAccount', 'passwordLabel')"
-          :placeholder-res-name="getI18nResName3('accountPage', 'tabAccount', 'passwordPlaceholder')"
+  <div class="account-tab-container" role="form">
+    <h2 class="account-page-tab-name mb-xs-2 mb-s-3 font-h3">
+      {{ $t(getI18nResName3('accountPage', 'tabAccount', 'title')) }}
+    </h2>
+    <div class="account-tab-account px-xs-3 px-s-4 pt-xs-3 pt-s-4 pb-xs-2 pb-s-3 brdr-3" role="form">
+      <ErrorHelm v-model:is-error="isError" :appearance="'error-stub'" :user-notification="true">
+        <PropertyGrid ctrl-key="userAccountPropertyGrid">
+          <SimplePropertyEdit
+            ref="propFirstName"
+            v-model:value="firstName"
+            :ctrl-key="PropertyCtrlKeys.FirstName"
+            type="text"
+            :validate-and-save="async (value?: string) => { return await validateAndSaveSimpleChanges(PropertyCtrlKeys.FirstName, value); }"
+            :caption-res-name="getI18nResName3('accountPage', 'tabAccount', 'firstNameCaption')"
+            :placeholder-res-name="getI18nResName3('accountPage', 'tabAccount', 'firstNamePlaceholder')"
+            :max-length="128"
+            @enter-edit-mode="onPropertyEnterEditMode"
+          />
+          <SimplePropertyEdit
+            ref="propLastName"
+            v-model:value="lastName"
+            :ctrl-key="PropertyCtrlKeys.LastName"
+            type="text"
+            :validate-and-save="async (value?: string) => { return await validateAndSaveSimpleChanges(PropertyCtrlKeys.LastName, value); }"
+            :caption-res-name="getI18nResName3('accountPage', 'tabAccount', 'lastNameCaption')"
+            :placeholder-res-name="getI18nResName3('accountPage', 'tabAccount', 'lastNamePlaceholder')"
+            :max-length="128"
+            @enter-edit-mode="onPropertyEnterEditMode"
+          />
+          <SimplePropertyEdit
+            ref="propPassword"
+            v-model:value="password"
+            :ctrl-key="PropertyCtrlKeys.Password"
+            type="password"
+            :validate-and-save="async (value?: string) => { return await validateAndSaveSimpleChanges(PropertyCtrlKeys.Password, value); }"
+            :caption-res-name="getI18nResName3('accountPage', 'tabAccount', 'passwordLabel')"
+            :placeholder-res-name="getI18nResName3('accountPage', 'tabAccount', 'passwordPlaceholder')"
+            :max-length="256"
+            :min-length="8"
+            :auto-trim="false"
+            :required="true"
+            @enter-edit-mode="onPropertyEnterEditMode"
+          />
+        </PropertyGrid>
+        <ListPropertyEdit
+          ref="propEmails"
+          v-model:values="emails"
+          :ctrl-key="PropertyCtrlKeys.Emails"
+          type="email"
+          class="mt-xs-4 mt-s-5"
+          :validate-and-save="validateAndSaveEmailChanges"
+          :caption-res-name="getI18nResName2('accountPageCommon', 'emailLabel')"
+          :placeholder-res-name="getI18nResName3('accountPage', 'tabAccount', 'emailPlaceholder')"
           :max-length="256"
-          :min-length="8"
-          :auto-trim="false"
+          :auto-trim="true"
           :required="true"
+          :max-elements-count="AppConfig.maxUserEmailsCount"
           @enter-edit-mode="onPropertyEnterEditMode"
         />
-      </PropertyGrid>
-      <ListPropertyEdit
-        ref="propEmails"
-        v-model:values="emails"
-        :ctrl-key="PropertyCtrlKeys.Emails"
-        type="email"
-        class="mt-xs-4 mt-s-5"
-        :validate-and-save="validateAndSaveEmailChanges"
-        :caption-res-name="getI18nResName2('accountPageCommon', 'emailLabel')"
-        :placeholder-res-name="getI18nResName3('accountPage', 'tabAccount', 'emailPlaceholder')"
-        :max-length="256"
-        :auto-trim="true"
-        :required="true"
-        :max-elements-count="AppConfig.maxUserEmailsCount"
-        @enter-edit-mode="onPropertyEnterEditMode"
-      />
-      <CaptchaProtection ref="captcha" ctrl-key="UserAccountTabCaptchaProtection" @verified="captchaToken.onCaptchaVerified" @failed="captchaToken.onCaptchaFailed" />
-    </ErrorHelm>
+        <CaptchaProtection ref="captcha" ctrl-key="UserAccountTabCaptchaProtection" @verified="captchaToken.onCaptchaVerified" @failed="captchaToken.onCaptchaFailed" />
+      </ErrorHelm>
+    </div>
   </div>
 </template>

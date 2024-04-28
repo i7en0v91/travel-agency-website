@@ -1,12 +1,12 @@
-import { H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import toPairs from 'lodash-es/toPairs';
 import isString from 'lodash-es/isString';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
-import { WebApiRoutes } from '../../../shared/constants';
 import { type EntityId, ImageCategory } from '../../../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';
 import { type IImageDetailsDto } from '../../dto';
 import { getServerSession } from '#auth';
+import AppConfig from './../../../appconfig';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const imageLogic = ServerServicesLocator.getImageLogic();
@@ -64,10 +64,12 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
 
   const modifiedSince = imageInfo.file.modifiedUtc;
   modifiedSince.setMilliseconds(0);
-  handleCacheHeaders(event, {
-    maxAge: WebApiRoutes.ImageCacheLatency,
+  handleCacheHeaders(event, AppConfig.caching.imagesCachingSeconds ? {
+    maxAge: AppConfig.caching.imagesCachingSeconds,
     modifiedTime: modifiedSince,
     cacheControls: ['must-revalidate']
+  } : {
+    cacheControls: ['no-cache']
   });
   setHeader(event, 'content-type', 'application/json');
 

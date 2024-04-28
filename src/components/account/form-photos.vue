@@ -3,7 +3,7 @@
 import { Pagination, Autoplay } from 'swiper/modules';
 import { getI18nResName1 } from './../../shared/i18n';
 import { ImageCategory } from './../../shared/interfaces';
-import { WebApiRoutes } from './../../shared/constants';
+import { ApiEndpointImageList } from './../../shared/constants';
 import AuthFormsPhoto from './../../components/account/photo-slide.vue';
 import { type IImageDetailsDto } from './../../server/dto';
 
@@ -15,7 +15,7 @@ defineProps<IProps>();
 const isError = ref(false);
 const logger = CommonServicesLocator.getLogger();
 
-const authFormsImagesUrl = `${WebApiRoutes.ImageList}?category=${ImageCategory.AuthFormsImage}`;
+const authFormsImagesUrl = `${ApiEndpointImageList}?category=${ImageCategory.AuthFormsImage}`;
 const { error, data } = await useFetch(authFormsImagesUrl,
   {
     server: true,

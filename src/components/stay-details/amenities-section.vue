@@ -42,9 +42,9 @@ const amenities: IAmenityItem[] = [
 
 <template>
   <section class="stay-amenities">
-    <div class="stay-amenities-title" role="heading" aria-level="5">
+    <h2 class="stay-amenities-title">
       {{ $t(getI18nResName3('stayDetailsPage', 'amenities', 'title')) }}
-    </div>
+    </h2>
     <ul class="stay-amenities-grid mt-xs-5 pb-xs-2">
       <li v-for="(amenity, idx) in (listExpanded ? amenities : amenities.slice(0, CollapsedListSize))" :key="`${ctrlKey}-${idx}`" class="stay-amenities-item">
         <span :class="`stay-amenities-item-icon amenity-icon-${amenity.icon} mr-xs-2`" />

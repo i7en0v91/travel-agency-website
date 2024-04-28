@@ -17,12 +17,12 @@ const localePath = useLocalePath();
 
 <template>
   <!-- eslint-disable vue/no-v-html -->
-  <div class="privacy-page no-hidden-parent-tabulation-check">
-    <h3 class="privacy-title">
+  <article class="privacy-page no-hidden-parent-tabulation-check">
+    <h1 class="privacy-title font-h3">
       <strong>{{ $t(getI18nResName2('privacyPage', 'documentHeader')) }}</strong>
-    </h3>
+    </h1>
     <div class="privacy-section">
-      <h5>{{ $t(getI18nResName3('privacyPage', 'section1', 'header')) }}</h5>
+      <h2 class="font-h5">{{ $t(getI18nResName3('privacyPage', 'section1', 'header')) }}</h2>
       <div class="privacy-paragraph" v-html="$t(getI18nResName3('privacyPage', 'section1', 'text'))" />
       <ol class="privacy-paragraph">
         <li v-html="$t(getI18nResName3('privacyPage', 'section1', 'paragraph1'))" />
@@ -30,7 +30,7 @@ const localePath = useLocalePath();
       </ol>
     </div>
     <div class="privacy-section">
-      <h5>{{ $t(getI18nResName3('privacyPage', 'section2', 'header')) }}</h5>
+      <h2 class="font-h5">{{ $t(getI18nResName3('privacyPage', 'section2', 'header')) }}</h2>
       <ol class="privacy-paragraph">
         <li v-html="$t(getI18nResName3('privacyPage', 'section2', 'paragraph1'))" />
         <li v-html="$t(getI18nResName3('privacyPage', 'section2', 'paragraph2'))" />
@@ -49,7 +49,7 @@ const localePath = useLocalePath();
       </ol>
     </div>
     <div class="privacy-section">
-      <h5>{{ $t(getI18nResName3('privacyPage', 'section3', 'header')) }}</h5>
+      <h2 class="font-h5">{{ $t(getI18nResName3('privacyPage', 'section3', 'header')) }}</h2>
       <ol class="privacy-paragraph">
         <li v-html="$t(getI18nResName3('privacyPage', 'section3', 'paragraph1Header'))" />
         <li class="privacy-paragraph-statement-dashed" v-html="$t(getI18nResName3('privacyPage', 'section3', 'paragraph1Item1'))" />
@@ -67,7 +67,7 @@ const localePath = useLocalePath();
       </ol>
     </div>
     <div class="privacy-section">
-      <h5>{{ $t(getI18nResName3('privacyPage', 'section4', 'header')) }}</h5>
+      <h2 class="font-h5">{{ $t(getI18nResName3('privacyPage', 'section4', 'header')) }}</h2>
       <ol class="privacy-paragraph">
         <li v-html="$t(getI18nResName3('privacyPage', 'section4', 'paragraph1Header'))" />
         <li class="privacy-paragraph-statement-dashed" v-html="$t(getI18nResName3('privacyPage', 'section4', 'paragraph1Item1'))" />
@@ -83,7 +83,7 @@ const localePath = useLocalePath();
       </ol>
     </div>
     <div class="privacy-section">
-      <h5>{{ $t(getI18nResName3('privacyPage', 'section5', 'header')) }}</h5>
+      <h2 class="font-h5">{{ $t(getI18nResName3('privacyPage', 'section5', 'header')) }}</h2>
       <ol class="privacy-paragraph">
         <li v-html="$t(getI18nResName3('privacyPage', 'section5', 'paragraph1'))" />
         <li v-html="$t(getI18nResName3('privacyPage', 'section5', 'paragraph2'))" />
@@ -95,7 +95,7 @@ const localePath = useLocalePath();
       </ol>
     </div>
     <div class="privacy-section">
-      <h5>{{ $t(getI18nResName3('privacyPage', 'section6', 'header')) }}</h5>
+      <h2 class="font-h5">{{ $t(getI18nResName3('privacyPage', 'section6', 'header')) }}</h2>
       <div class="privacy-paragraph">
         <table class="privacy-purpose-table">
           <tbody>
@@ -131,7 +131,7 @@ const localePath = useLocalePath();
       </div>
     </div>
     <div class="privacy-section">
-      <h5>{{ $t(getI18nResName3('privacyPage', 'section7', 'header')) }}</h5>
+      <h2 class="font-h5">{{ $t(getI18nResName3('privacyPage', 'section7', 'header')) }}</h2>
       <ol class="privacy-paragraph">
         <li v-html="$t(getI18nResName3('privacyPage', 'section7', 'paragraph1'))" />
         <li v-html="$t(getI18nResName3('privacyPage', 'section7', 'paragraph2'))" />
@@ -143,9 +143,9 @@ const localePath = useLocalePath();
       </ol>
     </div>
     <div class="privacy-section">
-      <h5>
+      <h2 class="font-h5">
         {{ $t(getI18nResName3('privacyPage', 'section8', 'header')) }}
-      </h5>
+      </h2>
       <div class="privacy-paragraph" v-html="$t(getI18nResName3('privacyPage', 'section8', 'text'))" />
       <ol class="privacy-paragraph">
         <li v-html="$t(getI18nResName3('privacyPage', 'section8', 'paragraph1'))" />
@@ -160,34 +160,34 @@ const localePath = useLocalePath();
       </ol>
     </div>
     <div class="privacy-section">
-      <h5>
+      <h2 class="font-h5">
         {{ $t(getI18nResName3('privacyPage', 'section9', 'header')) }}
-      </h5>
+      </h2>
       <ol class="privacy-paragraph">
         <li v-html="$t(getI18nResName3('privacyPage', 'section9', 'paragraph1'))" />
         <li v-html="$t(getI18nResName3('privacyPage', 'section9', 'paragraph2'))" />
       </ol>
     </div>
     <div class="privacy-section">
-      <h5>{{ $t(getI18nResName3('privacyPage', 'section10', 'header')) }}</h5>
+      <h2 class="font-h5">{{ $t(getI18nResName3('privacyPage', 'section10', 'header')) }}</h2>
       <ol class="privacy-paragraph">
         <li v-html="$t(getI18nResName3('privacyPage', 'section10', 'paragraph1'))" />
         <li v-html="$t(getI18nResName3('privacyPage', 'section10', 'paragraph2'))" />
       </ol>
     </div>
     <div class="privacy-section">
-      <h5>{{ $t(getI18nResName3('privacyPage', 'section11', 'header')) }}</h5>
+      <h2 class="font-h5">{{ $t(getI18nResName3('privacyPage', 'section11', 'header')) }}</h2>
       <div class="privacy-paragraph">
         {{ $t(getI18nResName3('privacyPage', 'section11', 'text')) }}
       </div>
     </div>
     <div class="privacy-section">
-      <h5>{{ $t(getI18nResName3('privacyPage', 'section12', 'header')) }}</h5>
+      <h2 class="font-h5">{{ $t(getI18nResName3('privacyPage', 'section12', 'header')) }}</h2>
       <ol class="privacy-paragraph">
         <li v-html="$t(getI18nResName3('privacyPage', 'section12', 'paragraph1'), { contactEmail : AppConfig.contactEmail })" />
         <li v-html="$t(getI18nResName3('privacyPage', 'section12', 'paragraph2'))" />
         <li v-html="$t(getI18nResName3('privacyPage', 'section12', 'paragraph3'), { privacyUrl : joinURL(siteConfig.url, localePath(route.path)) })" />
       </ol>
     </div>
-  </div>
+  </article>
 </template>

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 
+import { withQuery } from 'ufo';
 import range from 'lodash-es/range';
 import CaptchaProtection from './../../components/forms/captcha-protection.vue';
 import { getI18nResName2 } from './../../shared/i18n';
 import OfferDetailsSummary from './../../components/common-page-components/offer-details-summary.vue';
 import { getLocalizeableValue } from './../../shared/common';
 import { useFetchEx } from './../../shared/fetch-ex';
-import { type Locale, WebApiRoutes, DefaultStayReviewScore } from './../../shared/constants';
+import { ApiEndpointStayOfferDetails, type Locale, DefaultStayReviewScore, PagePath } from './../../shared/constants';
 import { type IStayOfferDetails, type ILocalizableValue, ImageCategory } from './../../shared/interfaces';
 import { type IStayOfferDetailsDto } from './../../server/dto';
 import { mapStayOfferDetails } from './../../shared/mappers';
@@ -49,10 +50,10 @@ const CtrlKey = 'StayOfferDetailsSummary';
 
 const isRobotRequest = isRobot();
 
-const captcha = (process.client && AppConfig.maps && !isRobotRequest) ? ref<InstanceType<typeof CaptchaProtection>>() as Ref<InstanceType<typeof CaptchaProtection>> : undefined;
+const captcha = (import.meta.client && AppConfig.maps && !isRobotRequest) ? shallowRef<InstanceType<typeof CaptchaProtection>>() as Ref<InstanceType<typeof CaptchaProtection>> : undefined;
 const captchaToken = ref<ICaptchaTokenComposable>();
 
-const stayDetailsFetchRequest = await useFetchEx<IStayOfferDetailsDto, IStayOfferDetailsDto>(WebApiRoutes.StayOfferDetails(offerId ?? -1), 'error-page',
+const stayDetailsFetchRequest = await useFetchEx<IStayOfferDetailsDto, IStayOfferDetailsDto>(ApiEndpointStayOfferDetails(offerId ?? -1), 'error-page',
   {
     server: true,
     lazy: true,
@@ -76,7 +77,7 @@ const offerDataAvailable = computed(() => stayDetailsFetch.status.value === 'suc
 const stayOffer = ref<Omit<IStayOfferDetails, 'dataHash'> | undefined>(stayDetailsFetch.data?.value ? mapStayOfferDetails(stayDetailsFetch.data.value!) : undefined);
 
 const nuxtApp = useNuxtApp();
-if (nuxtApp.isHydrating || process.server) {
+if (nuxtApp.isHydrating || import.meta.server) {
   useOgImage({
     name: 'OgOfferSummary',
     props: {
@@ -86,6 +87,7 @@ if (nuxtApp.isHydrating || process.server) {
       price: stayOffer.value!.totalPrice.toNumber(),
       reviewScore: stayOffer.value!.stay.reviewScore,
       numReviews: stayOffer.value!.stay.numReviews,
+      dateUnixUtc: stayOffer.value!.checkIn.getTime(),
       image: {
         ...(stayOffer!.value!.stay.images.find(i => i.order === 0)),
         category: ImageCategory.Hotel
@@ -123,7 +125,7 @@ watch(stayDetailsFetch.status, () => {
 watch(locale, () => {
   updatePageTitle();
 });
-if (process.server) {
+if (import.meta.server) {
   updatePageTitle();
 }
 
@@ -165,21 +167,28 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="stay-details-page no-hidden-parent-tabulation-check">
+  <article class="stay-details-page no-hidden-parent-tabulation-check">
     <ErrorHelm :is-error="isError" class="stay-details-page-error-helm">
+      <OfferDetailsBreadcrumbs
+        :ctrl-key="`${CtrlKey}-Breadcrumbs`"
+        offer-kind="stays"
+        :city="stayOffer?.stay?.city"
+        :place-name="stayOffer?.stay?.name"
+      />
       <OfferDetailsSummary
         :ctrl-key="CtrlKey"
+        class="mt-xs-4 mt-s-5"
         offer-kind="stays"
         :offer-id="offerId!"
         :city="stayOffer?.stay?.city"
-        :place-name="stayOffer?.stay?.name"
         :title="stayOffer?.stay?.name"
         :price="stayOffer?.totalPrice"
         :review-score="stayOffer?.stay?.reviewScore"
         :num-reviews="stayOffer?.stay?.numReviews"
-        :is-favourite="stayOffer?.isFavourite"
+        :btn-res-name="getI18nResName2('offerDetailsPage', 'bookBtn')"
+        :btn-link-url="stayOffer ? withQuery(localePath(`/${PagePath.BookStay}/${offerId}`), { serviceLevel: 'base' }) : route.fullPath"
       />
-      <div class="stay-images mt-xs-5">
+      <section class="stay-images mt-xs-5">
         <StaticImage
           v-for="(image, idx) in (stayOffer?.stay?.images ?? range(0, 5).map(_ => undefined))"
           :key="`${CtrlKey}-StayImage-${idx}`"
@@ -191,7 +200,7 @@ onMounted(() => {
           :sizes="idx === 0 ? 'xs:100vw sm:100vw md:100vw lg:100vw xl:50vw' : 'xs:100vw sm:100vw md:50vw lg:50vw xl:30vw'"
           :alt-res-name="idx === 0 ? getI18nResName2('stayDetailsPage', 'stayMainImageAlt') : getI18nResName2('stayDetailsPage', 'stayServiceImageAlt')"
         />
-      </div>
+      </section>
       <hr class="stay-details-section-separator">
       <OverviewSection
         ctrl-key="StayDetailsOverviewSection"
@@ -223,5 +232,5 @@ onMounted(() => {
       <ComponentWaiterIndicator v-else :ctrl-key="`${CtrlKey}-ReviewsWaiterFallback`" class="stay-reviews-waiting-indicator my-xs-5" />
       <CaptchaProtection v-if="AppConfig.maps && !isRobotRequest" ref="captcha" ctrl-key="StayDetailsCaptchaProtection" @verified="onCaptchaVerified" @failed="onCaptchaFailed" />
     </ErrorHelm>
-  </div>
+  </article>
 </template>

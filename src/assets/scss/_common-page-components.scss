@@ -31,6 +31,8 @@ $travel-details-scrollbar-highlight-percent: 110%;
 $flight-details-feature-icon-size: 24px;
 $flight-transition-image-width: 168;
 $flight-transition-image-height: 48;
+$stay-interval-image-width: 168;
+$stay-interval-image-height: 48;
 
 @mixin for-travel-details-medium() {
   @media only screen and (min-width: $travel-details-column-layout-bkp) {
@@ -327,16 +329,6 @@ $flight-transition-image-height: 48;
     @include for-extra-large-only() {
       flex-direction: row;
     }
-  }
-
-  .option-button-icon-airplane {
-    -webkit-mask-image: escape-svg(svg.$icon-airplane);
-    mask-image: escape-svg(svg.$icon-airplane);
-  }
-
-  .option-button-icon-bed {
-    -webkit-mask-image: escape-svg(svg.$icon-bed);
-    mask-image: escape-svg(svg.$icon-bed);
   }
 
   .search-flights-params {
@@ -743,6 +735,8 @@ $flight-transition-image-height: 48;
       color: var($css-var);
     }
 
+    word-break: break-word;
+
     .page-section-subtext {
       @include with-body-font('regular');
     }
@@ -770,7 +764,7 @@ $flight-transition-image-height: 48;
 
     display: flex;
     flex-direction: column;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     justify-content: space-between;
     gap: 16px;
 
@@ -779,6 +773,7 @@ $flight-transition-image-height: 48;
 
     @include for-small-and-above() {
       flex-direction: row;
+      flex-wrap: nowrap;
     }
 
     a, button {
@@ -791,6 +786,7 @@ $flight-transition-image-height: 48;
     flex-direction: column;
     flex-wrap: nowrap;
     justify-content: flex-end;
+    margin-left: auto;
   }
 }
 
@@ -1054,9 +1050,9 @@ $flight-transition-image-height: 48;
           width: 100%;
           display: inline;
           overflow-wrap: anywhere;
-          word-break: break-all;
+          word-break: break-word;
   
-          @include with-header-font('2');
+          @include with-header-font('3');
           font-weight: bold;
         }
   
@@ -1268,75 +1264,17 @@ $flight-transition-image-height: 48;
 }
 
 .offer-details-summary {
-  .offer-details-breadcrumbs {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
+  width: auto;
+  overflow-x: hidden;
 
-    @include with-body-font('body-secondary');     
+  .error-helm {
+    border-radius: map.get($borders-radius, '5');
 
-    .offer-details-breadcrumb {
-      display: inline-block;
-      vertical-align: middle;
-
-      &:not(:last-child) {
-        @include with-theme-color('highlighted-info') using($css-var) {
-          color: var($css-var);
-        }
-
-        a &:hover {
-          width: auto;
-          white-space: nowrap;
-
-          text-decoration: underline;
-          text-decoration-thickness: 1.5px;
-        }
-
-        &::after {
-          display: inline-block;
-
-          width: 0.33rem;
-          height: 0.6rem;
-          vertical-align: middle;
-
-          margin-left: map.get($spacings, '2');
-          //margin-top: 0.33rem;
-          //margin-right: 8px;
-          //position: absolute;
-          //right: 0;
-          //padding-right: markup-to-rem(map.get($spacings, '1'));
-          content: '';
-
-          -webkit-mask-image: escape-svg(svg.$icon-right-chevron);
-          mask-image: escape-svg(svg.$icon-right-chevron);
-          
-          -webkit-mask-size: contain;
-          mask-size: contain;
-          -webkit-mask-repeat: no-repeat;
-          mask-repeat: no-repeat;
-          -webkit-mask-position: center center;
-          mask-position: center center;
-          vertical-align: middle;
-
-          @include with-theme-color('primary') using ($css-var) {
-            background-color: var($css-var);
-          }
-        }
-      }
-
-      &:last-child {
-        width: auto;
-
-        @include with-theme-color('primary') using($css-var) {
-          color: var($css-var);
-        }
-      }
-      
+    .error-helm-stub {
+      min-height: 200px;
     }
   }
-
+    
   .offer-details-summary-grid {
     display: grid;
     justify-content: flex-start;
@@ -1362,13 +1300,12 @@ $flight-transition-image-height: 48;
       white-space: normal;
       width: fit-content;
 
-      @include with-header-font('4');
-      @include with-theme-color('input-ctrl-primary') using($css-var) {
-        color: var($css-var);
-      }
-
       .offer-details-summary-title {
         display: inline;
+        @include with-header-font('4');
+        @include with-theme-color('input-ctrl-primary') using($css-var) {
+          color: var($css-var);
+        } 
       }
 
       .offer-details-hotel-rating {
@@ -1389,7 +1326,10 @@ $flight-transition-image-height: 48;
         }
 
         .offer-details-hotel-rating-caption {
-          font-size: markup-to-rem(12px);
+          font-size: markup-to-rem(12px, 12px);
+          @include with-theme-color('input-ctrl-primary') using($css-var) {
+            color: var($css-var);
+          } 
         }
       }
     }
@@ -1436,7 +1376,7 @@ $flight-transition-image-height: 48;
           }
 
           .offer-details-summary-location-text {
-            font-size: markup-to-rem(12px);
+            font-size: markup-to-rem(12px, 12px);
             @include with-theme-color('primary') using($css-var) {
               color: var($css-var);
             }
@@ -1448,7 +1388,7 @@ $flight-transition-image-height: 48;
         display: flex;
         flex-direction: row;
         flex-wrap: wrap;
-        align-items: center;
+        align-items: baseline;
         gap: 8px;
 
         @include with-theme-color('input-ctrl-primary') using($css-var) {
@@ -1542,6 +1482,28 @@ $flight-transition-image-height: 48;
         @include for-small-and-above() {
           width: auto;
         }
+
+        &:focus-visible {
+          margin-right: $default-ctrl-outline-margin;
+        }
+      }
+
+      &:last-child {
+        .btn:focus-visible {
+          margin-left: $default-ctrl-outline-margin;
+          @include for-small-and-above() {
+            margin-left: unset;
+          }
+        }
+      }
+    }
+
+    &.no-review-details {
+      @include for-small-and-above() {
+        .offer-details-summary-title, .offer-details-summary-main {
+          display: block;
+          transform: translateY(1rem);
+        }
       }
     }
   }
@@ -1566,7 +1528,84 @@ $flight-transition-image-height: 48;
   }
 }
 
+.offer-details-breadcrumbs-nav {
+  width: 100%;
+  height: auto;
+  display: block;
+
+  .offer-details-breadcrumbs {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  
+    @include with-body-font('body-secondary');     
+  
+    .offer-details-breadcrumb {
+      display: inline-block;
+      vertical-align: middle;
+  
+      &:not(:last-child) {
+        @include with-theme-color('highlighted-info') using($css-var) {
+          color: var($css-var);
+        }
+  
+        a:hover {
+          width: auto;
+          white-space: nowrap;
+  
+          text-decoration: underline;
+          text-decoration-thickness: 1.5px;
+        }
+  
+        a:focus-visible {
+          @include with-outline();
+        }
+  
+        &::after {
+          display: inline-block;
+  
+          width: 0.33rem;
+          height: 0.6rem;
+          vertical-align: middle;
+  
+          margin-left: map.get($spacings, '2');
+          content: '';
+  
+          -webkit-mask-image: escape-svg(svg.$icon-right-chevron);
+          mask-image: escape-svg(svg.$icon-right-chevron);
+          
+          -webkit-mask-size: contain;
+          mask-size: contain;
+          -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+          -webkit-mask-position: center center;
+          mask-position: center center;
+          vertical-align: middle;
+  
+          @include with-theme-color('primary') using ($css-var) {
+            background-color: var($css-var);
+          }
+        }
+      }
+  
+      &:last-child {
+        width: auto;
+  
+        @include with-theme-color('primary') using($css-var) {
+          color: var($css-var);
+        }
+      }
+    }
+  }
+}
+
+
 .flight-details-card {
+  width: auto;
+  overflow-x: hidden;
+
   @include with-theme-color('shadow') using($css-var) {
     box-shadow: 0px 4px 16px var($css-var);
   }
@@ -1576,13 +1615,15 @@ $flight-transition-image-height: 48;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
+    gap: map.get($spacings, '3');
     width: 100%;
 
     .flight-details-additional-info-title {
       flex: 1 1 auto;
       white-space: normal;
       width: fit-content;
+      max-width: 80%;
 
       @include with-header-font('4');
       @include with-theme-color('input-ctrl-primary') using($css-var) {
@@ -1607,6 +1648,7 @@ $flight-transition-image-height: 48;
     justify-content: space-between;
     align-items: center;
     flex-wrap: nowrap;
+    gap: map.get($spacings, '3');
     width: 100%;
 
     .flight-details-datetime-date {
@@ -1633,108 +1675,247 @@ $flight-transition-image-height: 48;
     }
   }
 
+  .flight-details-main {
+    width: auto;
+    overflow-x: hidden;
+    
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
 
+    @at-root {
+      .flight-details-card:not(.compact-layout) {
+        .flight-details-main {
+          @include for-medium-and-large() {
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+          }
+        }
+      }
+    }
 
-    .flight-details-main {
-      width: auto;
-      overflow-x: hidden;
-      
+    .flight-details-company-div {
+      flex: 0 1 auto;
+
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       flex-wrap: nowrap;
       align-items: center;
-      @include for-medium-and-large() {
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
+      
+      @include with-theme-color('control-frame') using($css-var) {
+        border: 1px solid  var($css-var);
       }
 
-      .flight-details-company-div {
-        flex: 0 1 auto;
+      .flight-details-company-logo {
+        width: 64px;
+        height: 64px;
+        min-width: 64px;
+        min-height: 64px;
+
+        .flight-details-company-logo-img {
+          object-fit: cover;
+        }
+      }
+
+      .flight-details-company-info {
+        flex: 1 0 auto;
+
+        width: auto;
+        min-width: 160px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        gap: 8px;
+
+        justify-content: center;
+        align-items: flex-start;
+
+        .flight-details-company-name {
+          display: block;
+          width: min-content;
+          min-width: calc(min(30vw, 600px));
+          height: auto;
+          white-space: normal;
+
+          @include with-header-font('4');
+          @include with-theme-color('input-ctrl-primary') using($css-var) {
+            color: var($css-var);
+          }
+        }
+
+        .flight-details-airplane-name {
+          display: block;
+          width: 100%;
+          height: auto;
+          white-space: normal;
+
+          @include with-body-font('body-secondary');
+          @include with-theme-color('secondary') using($css-var) {
+            color: var($css-var);
+          }
+        }
+      }
+    }
+
+    .flight-details-features {
+      flex: 0 1 min-content;
+      justify-self: flex-end;
+
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
+
+      
+      li:not(:first-child) {         
+        @include with-theme-color('control-frame') using ($css-var) {
+          border-left: 1px solid var($css-var);
+        }
+      }
+
+      .flight-details-feature-icon {
+        flex: 0 0 auto;
+  
+        width: $flight-details-feature-icon-size;
+        height: $flight-details-feature-icon-size;
+        -webkit-mask-size: $flight-details-feature-icon-size;
+        mask-size: $flight-details-feature-icon-size;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center center;
+        mask-position: center center;
+        vertical-align: middle;
+        @include with-theme-color('input-ctrl-primary') using($css-var) {
+          background-color: var($css-var);
+        }
+
+        &.icon-airplane {
+          -webkit-mask-image: url('~/public/img/icon-airplane.svg');
+          mask-image: url('~/public/img/icon-airplane.svg');
+        }
+
+        &.icon-wifi {
+          -webkit-mask-image: url('~/public/img/icon-wifi.svg');
+          mask-image: url('~/public/img/icon-wifi.svg');
+        }
+
+        &.icon-stopwatch {
+          -webkit-mask-image: url('~/public/img/icon-stopwatch.svg');
+          mask-image: url('~/public/img/icon-stopwatch.svg');
+        }
+
+        &.icon-fastfood {
+          -webkit-mask-image: url('~/public/img/icon-fastfood.svg');
+          mask-image: url('~/public/img/icon-fastfood.svg');
+        }
+
+        &.icon-seat-recline {
+          -webkit-mask-image: url('~/public/img/icon-seat-recline.svg');
+          mask-image: url('~/public/img/icon-seat-recline.svg');
+        }
+      }
+    }
+
+    .flight-details-timing-div {
+      width: 100%;
+      display: block;
+      height: min-content;
+
+      .flight-details-timing {
+        flex: 1 1 auto;
+        align-self: flex-start;
+        width: max-content;
+
+        margin-top: 40px;
+        margin-left: auto;
+        margin-right: auto;
 
         display: flex;
         flex-direction: row;
         flex-wrap: nowrap;
         align-items: center;
-        
-        @include with-theme-color('control-frame') using($css-var) {
-          border: 1px solid  var($css-var);
-        }
+        justify-content: center;
 
-        .flight-details-company-logo {
-          width: 64px;
-          height: 64px;
+        .flight-details-timing-from, .flight-details-timing-to {
+          display: flex;
+          flex-direction: row;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 8px;
 
-          .flight-details-company-logo-img {
-            object-fit: cover;
+          width: min-content;
+          @at-root {
+            .flight-details-card:not(.compact-layout) {
+              .flight-details-timing-div .flight-details-timing {
+                .flight-details-timing-from, .flight-details-timing-to {
+                  @include for-medium-and-large() {
+                    width: max-content;
+                  }
+                }
+              }
+            }
           }
         }
+        .flight-details-timing-to {
+          text-align: end;
+        }
 
-        .flight-details-company-info {
+        .flight-details-timeofday, .flight-details-airport-label {
+          min-width: 100px; // for text data loading stub
+        }
+
+        .flight-details-timeofday {
           flex: 1 0 auto;
 
           width: auto;
-          min-width: 160px;
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          flex-wrap: nowrap;
-          gap: 8px;
+          white-space: nowrap;
 
-          justify-content: center;
-          align-items: flex-start;
-
-          .flight-details-company-name {
-            display: block;
-            width: min-content;
-            min-width: 30vw;
-            height: auto;
-            white-space: normal;
-
-            @include with-header-font('4');
-            @include with-theme-color('input-ctrl-primary') using($css-var) {
-              color: var($css-var);
-            }
-          }
-
-          .flight-details-airplane-name {
-            display: block;
-            width: 100%;
-            height: auto;
-            white-space: normal;
-
-            @include with-body-font('body-secondary');
-            @include with-theme-color('secondary') using($css-var) {
-              color: var($css-var);
-            }
-          }
-        }
-      }
-
-      .flight-details-features {
-        flex: 0 1 min-content;
-        justify-self: flex-end;
-
-        display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        align-items: center;
-
-        
-        li:not(:first-child) {         
-          @include with-theme-color('control-frame') using ($css-var) {
-            border-left: 1px solid var($css-var);
+          font-size: markup-to-rem(24px);
+          font-weight: map.get($weights-map, 'semi-bold');
+          @include with-theme-color('input-ctrl-primary') using($css-var) {
+            color: var($css-var);
           }
         }
 
-        .flight-details-feature-icon {
-          flex: 0 0 auto;
+        .flight-details-airport-label {
+          flex: 1 0 auto;
+
+          width: auto;
+          white-space: nowrap;
+          
+          @include with-body-font('body-primary');
+          @include with-theme-color('secondary') using($css-var) {
+            color: var($css-var);
+          }
+        }
+
+        .flight-details-transition-image {
+          flex: 1 0 auto;
+
+          margin-left: 20px;
+          margin-right: 20px;
+          @at-root {
+            .flight-details-card:not(.compact-layout) {
+              .flight-details-timing-div .flight-details-timing .flight-details-transition-image {
+                @include for-medium-and-large() {
+                  margin-left: 80px;
+                  margin-right: 80px;
+                }
+              }
+            }
+            
+          }        
+          width: #{$flight-transition-image-width}px;
+          height: #{$flight-transition-image-height}px;
     
-          width: $flight-details-feature-icon-size;
-          height: $flight-details-feature-icon-size;
-          -webkit-mask-size: $flight-details-feature-icon-size;
-          mask-size: $flight-details-feature-icon-size;
+          -webkit-mask-image: url('~/public/img/flight-transition.svg');
+          mask-image: url('~/public/img/flight-transition.svg');
+          -webkit-mask-size: #{$flight-transition-image-width}px #{$flight-transition-image-height}px;
+          mask-size: #{$flight-transition-image-width}px #{$flight-transition-image-height}px;
           -webkit-mask-repeat: no-repeat;
           mask-repeat: no-repeat;
           -webkit-mask-position: center center;
@@ -1743,129 +1924,240 @@ $flight-transition-image-height: 48;
           @include with-theme-color('input-ctrl-primary') using($css-var) {
             background-color: var($css-var);
           }
-
-          &.icon-airplane {
-            -webkit-mask-image: url('~/public/img/icon-airplane.svg');
-            mask-image: url('~/public/img/icon-airplane.svg');
-          }
-
-          &.icon-wifi {
-            -webkit-mask-image: url('~/public/img/icon-wifi.svg');
-            mask-image: url('~/public/img/icon-wifi.svg');
-          }
-
-          &.icon-stopwatch {
-            -webkit-mask-image: url('~/public/img/icon-stopwatch.svg');
-            mask-image: url('~/public/img/icon-stopwatch.svg');
-          }
-
-          &.icon-fastfood {
-            -webkit-mask-image: url('~/public/img/icon-fastfood.svg');
-            mask-image: url('~/public/img/icon-fastfood.svg');
-          }
-
-          &.icon-seat-recline {
-            -webkit-mask-image: url('~/public/img/icon-seat-recline.svg');
-            mask-image: url('~/public/img/icon-seat-recline.svg');
-          }
-        }
-      }
-
-      .flight-details-timing-div {
-        width: 100%;
-        display: block;
-        height: min-content;
-
-        .flight-details-timing {
-          flex: 1 1 auto;
-          align-self: flex-start;
-          width: max-content;
-
-          margin-top: 40px;
-          margin-left: auto;
-          margin-right: auto;
-
-          display: flex;
-          flex-direction: row;
-          flex-wrap: nowrap;
-          align-items: center;
-          justify-content: center;
-
-          .flight-details-timing-from, .flight-details-timing-to {
-            display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-            align-items: center;
-
-            width: min-content;
-            @include for-medium-and-large() {
-              width: max-content;
-            }
-          }
-          .flight-details-timing-to {
-            text-align: end;
-          }
-
-          .flight-details-timeofday, .flight-details-airport-label {
-            min-width: 100px; // for text data loading stub
-          }
-
-          .flight-details-timeofday {
-            flex: 1 0 auto;
-
-            width: auto;
-            white-space: nowrap;
-
-            font-size: markup-to-rem(24px);
-            font-weight: map.get($weights-map, 'semi-bold');
-            @include with-theme-color('input-ctrl-primary') using($css-var) {
-              color: var($css-var);
-            }
-          }
-
-          .flight-details-airport-label {
-            flex: 1 0 auto;
-
-            width: auto;
-            white-space: nowrap;
-            
-            @include with-body-font('body-primary');
-            @include with-theme-color('secondary') using($css-var) {
-              color: var($css-var);
-            }
-          }
-
-          .flight-details-transition-image {
-            flex: 1 0 auto;
-
-            margin-left: 20px;
-            margin-right: 20px;
-            @include for-medium-and-large() {
-              margin-left: 80px;
-              margin-right: 80px;
-            }
-            
-
-            width: #{$flight-transition-image-width}px;
-            height: #{$flight-transition-image-height}px;
-            //aspect-ratio: #{$flight-transition-image-width '/' $flight-transition-image-height};
-      
-            -webkit-mask-image: url('~/public/img/flight-transition.svg');
-            mask-image: url('~/public/img/flight-transition.svg');
-            -webkit-mask-size: #{$flight-transition-image-width}px #{$flight-transition-image-height}px;
-            mask-size: #{$flight-transition-image-width}px #{$flight-transition-image-height}px;
-            -webkit-mask-repeat: no-repeat;
-            mask-repeat: no-repeat;
-            -webkit-mask-position: center center;
-            mask-position: center center;
-            vertical-align: middle;
-            @include with-theme-color('input-ctrl-primary') using($css-var) {
-              background-color: var($css-var);
-            }
-          }
         }
       }
     }
+  }
+}
+
+.stay-details-card {
+  width: auto;
+  overflow-x: hidden;
+
+  @include with-theme-color('shadow') using($css-var) {
+    box-shadow: 0px 4px 16px var($css-var);
+  }
+
+  .stay-details-card-general {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: map.get($spacings, '3');
+    width: 100%;
+
+    .stay-details-card-general-title {
+      flex: 1 1 auto;
+      white-space: normal;
+      width: fit-content;
+      max-width: 80%;
+
+      @include with-header-font('4');
+      @include with-theme-color('input-ctrl-primary') using($css-var) {
+        color: var($css-var);
+      }
+    }
+
+    .stay-details-card-general-price {
+      flex: 0 0 auto;
+
+      @include with-header-font('3');
+      font-family: $font-default;
+      @include with-theme-color('highlighted-info') using($css-var) {
+        color: var($css-var);
+      }
+    }
+  }
+
+  .stay-details-card-info {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 24px;
+
+    @include with-theme-color('control-bg') using($css-var) {
+      border: 1px solid var($css-var);
+    }
+
+    .stay-details-card-logo {
+      $stay-details-card-logo-size: markup-to-rem(72px);
+      flex: 0 1 auto;
+      height: auto;
+      min-height: $stay-details-card-logo-size;
+      min-width: $stay-details-card-logo-size;
+      aspect-ratio: 1 / 1;
+      width: min-content;
+
+      display: flex;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+
+      font-family: $font-ticket-title;
+      line-height: 0.75rem;
+
+      @include with-theme-color('primary') using($css-var) {
+        color: var($css-var);
+      }
+
+      .stay-details-card-logo-name, .stay-details-card-logo-city {
+        margin-top: 4px;
+        white-space: normal;
+        word-break: break-word;
+        font-size: 10px;
+      }
+    
+      .stay-details-card-logo-name {
+        @include with-theme-color('primary') using($css-var) {
+          border-bottom: 1px solid var($css-var);
+        }
+      }
+    }
+
+    .stay-details-card-texting {
+      flex: 1 1 auto;
+      
+      display: flex;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      align-items: flex-start;
+      gap: 8px;
+
+      .stay-details-card-stayname {
+        width: auto;
+        height: auto;
+        display: block;
+        white-space: normal;
+
+        @include with-font-size('h4');
+        font-weight: map.get($weights-map, 'semi-bold');
+        @include with-theme-color('input-ctrl-primary') using($css-var) {
+          color: var($css-var);
+        }
+      }
+
+      .stay-details-card-location {
+        width: auto;
+        height: auto;
+        display: block;
+
+        .stay-details-card-location-icon {
+          width: 1rem;
+          height: 1rem;
+
+          display: inline-block;
+          
+          -webkit-mask-size: contain;
+          mask-size: contain;
+          -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+          -webkit-mask-position: center center;
+          mask-position: center center;
+          vertical-align: middle;
+
+          @include with-theme-color('input-ctrl-primary') using ($css-var) {
+            background-color: var($css-var);
+          }
+    
+          -webkit-mask-image: url('~/public/img/icon-location.svg');
+          mask-image: url('~/public/img/icon-location.svg');
+        }
+
+        .stay-details-card-location-text {
+          font-size: markup-to-rem(14px);
+          @include with-theme-color('primary') using($css-var) {
+            color: var($css-var);
+          }
+        }
+      }  
+    }
+  }
+
+  .stay-details-card-dates-div {
+    width: 100%;
+    display: block;
+    height: min-content;
+
+    .stay-details-card-dates {
+      width: max-content;
+
+      margin-top: 40px;
+      margin-left: auto;
+      margin-right: auto;
+
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
+      justify-content: center;
+
+      .stay-details-card-dates-checkin, .stay-details-card-dates-checkout {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+
+        width: min-content;
+      }
+      .stay-details-card-dates-checkout {
+        text-align: end;
+      }
+
+      .stay-details-card-day {
+        flex: 1 0 auto;
+
+        min-width: 100px; // for text data loading stub
+        width: auto;
+        white-space: nowrap;
+
+        @include with-header-font('5');
+        font-family: $font-default;
+        @include with-theme-color('input-ctrl-primary') using($css-var) {
+          color: var($css-var);
+        }
+      }
+
+      .stay-details-card-date-type {
+        flex: 1 0 auto;
+
+        width: auto;
+        white-space: nowrap;
+        
+        @include with-body-font('body-secondary');
+        @include with-theme-color('secondary') using($css-var) {
+          color: var($css-var);
+        }
+      }
+
+      .stay-details-card-dates-image {
+        flex: 1 0 auto;
+
+        margin-left: 20px;
+        margin-right: 20px;
+        
+        width: #{$stay-interval-image-width}px;
+        height: #{$stay-interval-image-height}px;
+  
+        -webkit-mask-image: url('~/public/img/stay-interval.svg');
+        mask-image: url('~/public/img/stay-interval.svg');
+        -webkit-mask-size: #{$stay-interval-image-width}px #{$stay-interval-image-height}px;
+        mask-size: #{$stay-interval-image-width}px #{$stay-interval-image-height}px;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center center;
+        mask-position: center center;
+        vertical-align: middle;
+        @include with-theme-color('input-ctrl-primary') using($css-var) {
+          background-color: var($css-var);
+        }
+      }
+    }
+  }
 }
 
 .stay-card-star {
@@ -1885,6 +2177,625 @@ $flight-transition-image-height: 48;
 
   @include with-theme-color('highlighted-info') using ($css-var) {
     background-color: var($css-var);
+  }
+}
+
+.search-flights-result-card {
+  border-radius: map.get($borders-radius, '3');
+  @include with-theme-color('shadow') using($css-var) {
+    box-shadow: 0px 4px 16px var($css-var);
+  }
+
+  max-width: calc(100vw - 2 * var(--glb-page-padding-x));
+  overflow-x: auto;
+  @include for-small-and-above() {
+    max-width: unset;
+    overflow-x: unset;
+  }
+
+  .search-flights-result-card-grid {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    gap: 24px;
+
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    @include for-small-and-above() {
+      grid-template-columns: 160px 1fr;
+      grid-template-rows: auto 1fr;
+    }
+
+    .search-flights-card-company-logo {
+      grid-column-start: 1;
+      grid-column-end: 2;
+      grid-row-start: 1;
+      grid-row-end: 2;
+      @include for-small-and-above() {
+        grid-row-end: 3;
+      } 
+
+      width: 100%;
+      height: 100%;
+
+      .airline-company-logo {
+        width: 160px;
+        height: auto;
+
+        .airline-company-logo-img {
+          object-fit: cover;
+        }
+      }
+    }
+
+    .search-flights-card-summary {
+      grid-column-start: 2;
+      grid-column-end: 3;
+      grid-row-start: 1;
+      grid-row-end: 2;
+
+      width: 100%;
+      height: min-content;
+    
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+
+      font-size: markup-to-rem(12px, 12px);
+
+      .search-flights-card-stats {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+
+        justify-content: flex-end;
+        margin-left: auto;
+        @include for-small-and-above() {
+          justify-content: flex-start;
+          margin-left: unset;
+        }
+
+        .search-flights-card-score {
+          width: fit-content;
+          height: auto;
+
+          @include with-theme-color('input-ctrl-primary') using($css-var) {
+            color: var($css-var);
+          }
+          @include with-theme-color('control-bg') using($css-var) {
+            border: 1px solid var($css-var);
+          }
+          background-color: transparent;
+        }
+
+        .search-flights-card-score-class {
+          width: fit-content;
+          height: auto;
+
+          font-weight: map.get($weights-map, 'semi-bold');
+        }
+
+        .search-flights-card-reviews {
+          width: fit-content;
+          height: auto;
+        }
+      }
+
+      .search-flights-card-pricing-div {
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: flex-end;
+
+        margin-left: auto;
+        
+        .search-flights-card-price-caption, .search-stays-card-tax {
+          @include with-theme-color('primary') using($css-var) {
+            color: var($css-var);
+          }
+        }
+
+        .search-stays-card-tax {
+          justify-self: flex-end;
+        }
+
+        .search-flights-card-price {
+          font-size: markup-to-rem(24px);
+          @include with-theme-color('highlighted-info') using($css-var) {
+            color: var($css-var);
+          }
+          font-weight: map.get($weights-map, 'bold');
+        }
+      }
+    }
+
+    .search-flights-card-main {
+      grid-column-start: 1;
+      grid-column-end: 3;
+      grid-row-start: 2;
+      grid-row-end: 3;
+      @include for-small-and-above() {
+        grid-column-start: 2;
+        grid-column-end: 3;
+      }
+
+      width: 100%;
+      display: block;
+      height: min-content;
+
+      .search-flights-card-main-div {
+        width: 100%;
+        display: grid;
+        grid-template-rows: 1fr;
+        grid-template-columns: 1fr;
+        justify-content: flex-start;
+      }
+      
+      .search-flights-card-details {
+        grid-row-start: 1;
+        grid-row-end: 2;
+        grid-column-start: 1;
+        grid-column-end: 2;
+        width: auto;   
+        
+        display: grid;
+        grid-template-columns: repeat(4, max-content);
+        grid-auto-flow: row;
+        grid-auto-rows: auto;
+
+        .search-flights-card-timing {
+          display: contents;
+          width: 100%;
+        }
+
+        .search-flights-card-checkbox {
+          width: 18px;
+          height: 18px;
+          align-self: flex-start;
+
+          grid-column-start: 1;
+          grid-column-end: 2;
+
+          @include with-theme-color('input-ctrl-primary-bg') using($css-var) {
+            background-color: var($css-var);
+          }
+          @include with-theme-color('control-frame') using($css-var) {
+            border: 2px solid var($css-var);
+          }
+        }
+
+        .search-flights-card-interval {
+          width: max-content;
+          grid-column-start: 2;
+          grid-column-end: 3;
+
+          .search-flights-card-daytime {
+            width: fit-content;
+
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            align-items: center;
+
+            font-weight: map.get($weights-map, 'semi-bold');
+          }
+
+          .search-flights-card-city {
+            @include with-body-font('body-secondary');
+            font-size: markup-to-rem(14px);  
+            white-space: nowrap;
+          }
+        }
+
+        .search-flights-card-nonstop {
+          width: 100%;
+          text-align: center;
+          grid-column-start: 3;
+          grid-column-end: 4;
+          justify-self: center;
+
+          margin-left: 40px;
+          margin-right: 40px;
+          max-width: 250px;
+
+          font-size: markup-to-rem(14px);  
+          font-weight: map.get($weights-map, 'semi-bold');
+          white-space: nowrap;
+        }
+
+        .search-flights-card-range {
+          grid-column-start: 4;
+          grid-column-end: 5;
+          width: fit-content;
+
+          .search-flights-card-duration {
+            width: fit-content;
+
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            align-items: center;
+
+            font-weight: map.get($weights-map, 'semi-bold');
+          }
+
+          .search-flights-card-airports {
+            @include with-body-font('body-secondary');
+            font-size: markup-to-rem(14px);  
+            white-space: nowrap;
+          }
+        }
+      }
+    }
+
+    .search-flights-card-buttons {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      gap: 16px;
+
+      @include with-theme-color('control-group-divisor') using ($css-var) {
+        border-top: 1px solid var($css-var);
+      }
+
+      .search-flights-card-btn-like {
+        width: max-content;
+        height: max-content;
+
+        &::before {
+          vertical-align: middle;
+        }
+      }
+
+      .search-flights-card-btn-details {
+        width: 100%;
+        text-align: center;
+        height: auto;
+      }
+    }
+  }
+}
+
+.search-stays-result-card {
+  border-radius: map.get($borders-radius, '3');
+
+  @include with-theme-color('shadow') using($css-var) {
+    box-shadow: 0px 4px 16px var($css-var);
+  }
+
+  max-width: calc(100vw - 2 * var(--glb-page-padding-x));
+  overflow-x: auto;
+  @include for-small-and-above() {
+    max-width: unset;
+    overflow-x: unset;
+  }
+
+  .search-stays-result-card-grid {
+    $stay-photo-l-size: 320px;
+    $stay-photo-border-radius: map.get($borders-radius, '3');
+
+    width: 100%;
+    height: 100%;
+    display: grid;
+    gap: 0px;
+
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    @at-root {
+      .search-stays-result-card .static-image .static-image-div {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        border-top-left-radius: $stay-photo-border-radius;
+        border-top-right-radius: $stay-photo-border-radius;
+      }
+    }
+
+    @at-root {
+      .search-stays-result-card.expand-for-large {
+        @include for-large-and-extra-large() {
+          .search-stays-result-card-grid {
+            grid-template-columns: $stay-photo-l-size 1fr;
+            grid-template-rows: auto;
+            .static-image .static-image-div {
+              border-bottom-left-radius: $stay-photo-border-radius;
+              border-top-left-radius: $stay-photo-border-radius;
+              border-bottom-right-radius: 0;
+              border-top-right-radius: 0;
+            }
+          }
+        }
+      }
+  
+      .search-stays-result-card:not(.expand-for-large) {
+        @include for-extra-large-only() {
+          .search-stays-result-card-grid {
+            grid-template-columns: $stay-photo-l-size 1fr;
+            grid-template-rows: auto;
+            .static-image .static-image-div {
+              border-bottom-left-radius: $stay-photo-border-radius;
+              border-top-left-radius: $stay-photo-border-radius;
+              border-bottom-right-radius: 0;
+              border-top-right-radius: 0;
+            }
+          }
+        }
+      }
+    }
+    
+
+    .search-stays-card-stay-photo {
+      grid-column-start: 1;
+      grid-column-end: 2;
+      grid-row-start: 1;
+      grid-row-end: 2;
+      
+      width: 100%;
+      height: 100%;
+
+      .stay-photo {
+        width: 100%;
+        height: 100%;
+
+        .stay-photo-img {
+          object-fit: cover;
+        }
+      }
+    }
+    
+    .search-stays-card-main-div {
+      width: auto;
+      height: 100%;
+      overflow-x: hidden;
+
+      .search-stays-card-main-scroll {
+        width: auto;
+        height: 100%;
+      }
+
+      .search-stays-card-main-grid {
+        display: grid;
+        min-width: 100%;
+        width: fit-content;
+        height: 100%;
+
+        grid-template-columns: 1fr auto;
+        grid-template-rows: repeat(3, auto);
+        @include for-large-and-extra-large() {
+          grid-template-columns: 1fr auto;
+          grid-template-rows: auto 1fr auto;
+        }
+  
+        .search-stays-card-stay-name {
+          grid-column-start: 1;
+          grid-column-end: 2;
+          grid-row-start: 1;
+          grid-row-end: 2;
+          
+          @include with-header-font('5');
+          @include with-theme-color('input-ctrl-primary') using ($css-var) {
+            color: var($css-var);
+          }
+        }
+  
+        .search-stays-card-pricing-div {
+          grid-column-start: 2;
+          grid-column-end: 3;
+          grid-row-start: 1;
+          grid-row-end: 3;
+          /*
+          @include for-large-and-extra-large() {
+            grid-column-start: 2;
+            grid-column-end: 3;
+            grid-row-start: 1;
+            grid-row-end: 3;
+          } 
+          */
+  
+          display: flex;
+          flex-direction: column;
+          flex-wrap: nowrap;
+          align-items: flex-end;
+  
+          margin-left: auto;
+          
+          .search-stays-card-price-caption {
+            font-size: markup-to-rem(12px, 12px);
+            @include with-theme-color('primary') using($css-var) {
+              color: var($css-var);
+            }
+          }
+  
+          .search-stays-card-price {
+            font-size: markup-to-rem(24px);
+            @include with-theme-color('highlighted-info') using($css-var) {
+              color: var($css-var);
+            }
+            font-weight: map.get($weights-map, 'bold');
+  
+            .stays-price-night {
+              font-size: markup-to-rem(16px);
+            }
+          }
+        }
+  
+        .search-stays-card-main {
+          grid-column-start: 1;
+          grid-column-end: 3;
+          grid-row-start: 2;
+          grid-row-end: 3;
+          
+          width: 100%;
+          display: block;
+          height: 100%;
+  
+          .search-stays-card-main-div {
+            width: 100%;
+            display: block;
+  
+            .search-stays-card-info {
+              .search-stays-card-location {
+                .search-stays-location-icon {
+                  -webkit-mask-image: url('~/public/img/icon-location.svg');
+                  mask-image: url('~/public/img/icon-location.svg');
+                }
+  
+                .search-stays-card-location-text {
+                  font-size: markup-to-rem(12px, 12px);
+                  @include with-theme-color('primary') using($css-var) {
+                    color: var($css-var);
+                  }
+                }
+              }  
+  
+              .search-stays-card-features {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: center;
+  
+                max-width: 300px;
+  
+                font-size: markup-to-rem(12px, 12px);
+                @include with-theme-color('input-ctrl-primary') using ($css-var) {
+                  color: var($css-var);
+                }
+  
+                .search-stays-card-stars {
+                  flex: 1 0 initial;
+                  justify-self: flex-start;
+  
+                  display: flex;
+                  flex-direction: row;
+                  flex-wrap: nowrap;
+                  align-items: center;
+                  gap: 2px;
+                }
+  
+                .search-stays-card-rating-caption {
+                  flex: 1 0 initial;
+                  justify-self: flex-start;
+  
+                  white-space: nowrap;
+                }
+  
+                .search-stays-card-amenities {
+                  flex: 1 0 initial;
+                  justify-self: flex-end;
+  
+                  display: flex;
+                  flex-direction: row;
+                  flex-wrap: nowrap;
+                  align-items: center;
+                  gap: 2px;
+  
+                  .search-stays-card-amenity-icon {
+                    -webkit-mask-image: url('~/public/img/icon-cup.svg');
+                    mask-image: url('~/public/img/icon-cup.svg');
+                  }
+                }
+              }
+            }
+  
+            .search-stays-card-stats {
+              display: flex;
+              flex-direction: row;
+              flex-wrap: wrap;
+              align-items: center;
+              gap: 8px;
+  
+              @include for-small-and-above() {
+                justify-content: flex-start;
+                margin-left: unset;
+              }
+  
+              .search-stays-card-score {
+                width: fit-content;
+                height: auto;
+  
+                @include with-theme-color('input-ctrl-primary') using($css-var) {
+                  color: var($css-var);
+                }
+                @include with-theme-color('control-bg') using($css-var) {
+                  border: 1px solid var($css-var);
+                }
+                background-color: transparent;
+              }
+  
+              .search-stays-card-score-class {
+                width: fit-content;
+                height: auto;
+  
+                font-weight: map.get($weights-map, 'semi-bold');
+              }
+  
+              .search-stays-card-reviews {
+                width: fit-content;
+                height: auto;
+              }        
+            }
+          }
+        }
+  
+        .search-stays-card-buttons {
+          grid-column-start: 1;
+          grid-column-end: 3;
+          grid-row-start: 3;
+          grid-row-end: 4;
+          
+          display: flex;
+          flex-direction: row;
+          flex-wrap: nowrap;
+          align-items: center;
+          gap: 16px;
+  
+          @include with-theme-color('control-group-divisor') using ($css-var) {
+            border-top: 1px solid var($css-var);
+          }
+  
+          .search-stays-card-btn-like {
+            width: max-content;
+            height: max-content;
+            align-self: flex-end;
+  
+            &::before {
+              vertical-align: middle;
+            }
+          }
+  
+          .search-stays-card-btn-details {
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            align-self: flex-end;
+            white-space: nowrap;
+          }
+        }
+      }
+    }  
+  }
+
+  .search-stays-card-icon {
+    width: 0.8rem;
+    height: 0.8rem;
+
+    display: inline-block;
+    
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center center;
+    mask-position: center center;
+    vertical-align: middle;
+
+    @include with-theme-color('input-ctrl-primary') using ($css-var) {
+      background-color: var($css-var);
+    }
   }
 }
 
@@ -1931,7 +2842,7 @@ $flight-transition-image-height: 48;
     }
 
     .interactive-map-location-text {
-      font-size: markup-to-rem(12px);
+      font-size: markup-to-rem(12px, 12px);
       @include with-theme-color('primary') using($css-var) {
         color: var($css-var);
       }
@@ -1941,6 +2852,273 @@ $flight-transition-image-height: 48;
   .error-helm {
     .error-helm-stub {
       min-height: 200px;
+    }
+  }
+}
+
+.offer-booking {
+  width: 100%;
+  height: auto;
+
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(3, auto);
+  gap: map.get($spacings, '4');
+  @include for-large-and-extra-large() {
+    grid-template-columns: 3fr 2fr;
+    grid-template-rows: auto auto;
+    gap: map.get($spacings, '6');
+  }
+
+  .offer-booking-card-div {
+    width: 100%;
+    max-width: calc(100vw - 2 * var(--#{$prefix}-page-padding-x));
+    height: auto;
+
+    grid-row-start: 1;
+    grid-row-end: 2;
+    grid-column-start: 1;
+    grid-column-end: 2;
+
+    @include for-large-and-extra-large() {
+      max-width: 55vw;
+    }
+  }
+
+  .payment-controller-div {
+    width: 100%;
+    height: auto;
+
+    grid-row-start: 3;
+    grid-row-end: 4;
+    grid-column-start: 1;
+    grid-column-end: 2;
+    @include for-large-and-extra-large() { 
+      grid-row-start: 2;
+      grid-row-end: 3;
+    }
+  }
+
+  .pricing-details-div {
+    width: 100%;
+    height: auto;
+
+    grid-row-start: 2;
+    grid-row-end: 3;
+    grid-column-start: 1;
+    grid-column-end: 2;
+    @include for-large-and-extra-large() { 
+      grid-row-start: 1;
+      grid-row-end: 3;
+      grid-column-start: 2;
+      grid-column-end: 3;
+    }
+  }
+
+  
+  .pricing-details {
+    display: block;
+    width: 100%;
+
+    @include with-theme-color('shadow') using($css-var) {
+      box-shadow: 0px 4px 16px var($css-var);
+    }
+
+    .pricing-details-subject {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: normal;
+      align-items: flex-start;
+      gap: 24px;
+      
+      word-break: break-all;
+      @include for-small-and-above() {
+        word-break: unset;
+      }
+
+      .pricing-details-photo {
+        width: 120px;
+        height: 120px;
+        min-width: 120px;
+        min-height: 120px;
+        display: block;
+
+        border-radius: map.get($borders-radius, '3');
+        .pricing-details-photo-img {
+          object-fit: cover;
+          border-radius: map.get($borders-radius, '3');
+        }
+      }
+
+      .pricing-subject-info {
+        display: inline;
+        width: auto;
+
+        .pricing-subject-heading-sub {
+          @include with-body-font('body-primary');
+          @include with-theme-color('primary') using($css-var) {
+            color: var($css-var);
+          }
+        }
+
+        .pricing-subject-heading-main {
+          @include with-header-font('5');
+          @include with-theme-color('input-ctrl-primary') using($css-var) {
+            color: var($css-var);
+          }
+          
+          display: block;
+        }
+
+        .pricing-subject-heading-sub, .pricing-subject-heading-main, .pricing-subject-info-score-reviews {
+          white-space: normal;     
+          word-break: break-word;     
+        }
+        
+        .pricing-subject-info-stats {
+          display: flex;
+          flex-direction: row;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 8px;
+
+          justify-content: flex-start;
+          
+          @include with-theme-color('input-ctrl-primary') using($css-var) {
+            color: var($css-var);
+          }
+
+          .pricing-subject-info-score {
+            width: fit-content;
+            height: auto;
+
+            @include with-theme-color('input-ctrl-primary') using($css-var) {
+              color: var($css-var);
+            }
+            @include with-theme-color('control-bg') using($css-var) {
+              border: 1px solid var($css-var);
+            }
+            background-color: transparent;
+          }
+
+          .pricing-subject-info-score-class {
+            width: fit-content;
+            height: auto;
+
+            font-weight: map.get($weights-map, 'semi-bold');
+          }
+
+          .pricing-subject-info-reviews {
+            width: fit-content;
+            height: auto;
+          }
+        }
+      }
+    }
+
+    .pricing-details-section-separator {
+      width: 100%;
+      height: 1px;
+      display: block;
+      @include with-theme-color('control-group-divisor') using ($css-var) {
+        background-color: var($css-var);
+      }
+      margin: 16px 0px 16px 0px;
+    }
+
+    .pricing-details-payment-protected {
+      @include with-body-font('body-primary');
+      @include with-theme-color('primary') using($css-var) {
+        color: var($css-var);
+      }
+      white-space: normal;
+    }
+
+    .pricing-details-decomposition {
+      @include with-body-font('body-primary');
+      @include with-theme-color('input-ctrl-primary') using($css-var) {
+        color: var($css-var);
+      }
+      white-space: normal;
+      @include for-small-and-above() {
+        white-space: nowrap;
+      }
+      overflow-x: hidden;
+
+      .pricing-details-decomposition-caption {
+        @include with-body-font('body-primary');
+        font-weight: map.get($weights-map, 'bold');
+      }
+
+      .pricing-details-decomposition-item {
+        .pricing-details-decomposition-label {
+          width: min-content;
+          display: inline-block;
+          margin-right: auto;
+        }
+  
+        .pricing-details-decomposition-amount {
+          width: fit-content;
+          display: block;
+          font-weight: map.get($weights-map, 'semi-bold');
+          float: right;
+        }
+      }
+    }
+  }
+}
+
+.option-button-icon-airplane {
+  -webkit-mask-image: escape-svg(svg.$icon-airplane);
+  mask-image: escape-svg(svg.$icon-airplane);
+}
+
+.option-button-icon-bed {
+  -webkit-mask-image: escape-svg(svg.$icon-bed);
+  mask-image: escape-svg(svg.$icon-bed);
+}
+
+.offer-tab {
+  .offer-tab-no-offers {
+    display: block;
+    white-space: normal;
+    text-align: center;
+
+    @include with-body-font('primary');
+    font-family: $font-default;
+  }
+
+  .offer-tab-list {
+
+    @include for-extra-large-only() {
+      .search-flights-result-card {
+        height: 100%;
+        .search-flights-card-main {
+          height: 100%;
+
+          display: flex;
+          flex-direction: column;
+          flex-wrap: nowrap;
+          align-items: stretch;
+          justify-content: space-between;
+        }
+
+        .search-flights-result-card-grid {
+          grid-template-columns: 250px 1fr;
+          .airline-company-logo {
+            width: 250px;
+          }
+        }
+      }
+    }
+    
+
+    .search-stays-result-card {
+      .search-stays-result-card-grid {
+        @include for-extra-large-only() {
+          grid-template-columns: 420px 1fr;
+        }
+      }
     }
   }
 }

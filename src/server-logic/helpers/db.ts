@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import slugify from 'slugify';
 import { type IConcurrentlyModifyingEntity } from '../../shared/interfaces';
-import { DbConcurrencyVersions } from '../../shared/constants';
+import { DbVersionDraft } from '../../shared/constants';
 import { DbConcurrentUpdateException } from '../../shared/exceptions';
 import AppConfig from '../../appconfig';
 
@@ -11,7 +11,7 @@ export async function executeWithConcurrencyErrorCheck (concurrentEntity: IConcu
   } catch (e: any) {
     if (e instanceof Prisma.PrismaClientKnownRequestError) {
       if (e.code === 'P2002') {
-        if (concurrentEntity.version === DbConcurrencyVersions.DraftVersion) {
+        if (concurrentEntity.version === DbVersionDraft) {
           // real duplication
           throw e;
         } else {
@@ -27,7 +27,7 @@ export async function executeWithConcurrentUpdateRetries (concurrentEntity: () =
   const logger = ServerServicesLocator.getLogger();
 
   let numRetries = 0;
-  while (true) {
+  while (numRetries <= AppConfig.maxDbConcurrentUpdateAttemps) {
     const entity = concurrentEntity();
     try {
       await executeWithConcurrencyErrorCheck(entity, async () => { await dbOperation(entity); });
@@ -35,18 +35,18 @@ export async function executeWithConcurrentUpdateRetries (concurrentEntity: () =
     } catch (err: any) {
       if (err instanceof DbConcurrentUpdateException) {
         const concurrentErr = err as DbConcurrentUpdateException;
-        if (numRetries < AppConfig.maxDbConcurrentUpdateAttemps) {
-          numRetries++;
-          logger?.info(`concurrent update collision detected, retrying ${numRetries} attempt, version=${entity.version}`);
-          try {
-            await onCollision();
-          } catch (err: any) {
-            logger?.warn(`failed to handle udpate collision, version=${entity.version}`, err);
-            throw err;
-          }
-        } else {
+        numRetries++;
+        if(numRetries >= AppConfig.maxDbConcurrentUpdateAttemps) {
           logger?.warn(`maximum concurrent update collisions reached, version=${concurrentEntity().version}`, concurrentErr.dbException);
           throw concurrentErr.dbException;
+        }
+
+        logger?.info(`concurrent update collision detected, retrying ${numRetries} attempt, version=${entity.version}`);
+        try {
+          await onCollision();
+        } catch (err: any) {
+          logger?.warn(`failed to handle udpate collision, version=${entity.version}`, err);
+          throw err;
         }
       } else {
         throw err;

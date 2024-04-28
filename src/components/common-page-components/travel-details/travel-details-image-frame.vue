@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import { ImageCategory, type TravelDetailsImageStatus, type Timestamp } from './../../../shared/interfaces';
-import { WebApiRoutes } from './../../../shared/constants';
+import { ApiEndpointImage } from './../../../shared/constants';
 import { getI18nResName2 } from './../../../shared/i18n';
 import type { NuxtImg } from '#build/components';
 
@@ -21,7 +21,7 @@ const logger = CommonServicesLocator.getLogger();
 
 const systemConfigurationStore = useSystemConfigurationStore();
 
-const imgEl = ref<InstanceType<typeof NuxtImg>>();
+const imgEl = shallowRef<InstanceType<typeof NuxtImg>>();
 const $emit = defineEmits<{(event: 'update:status', status?: TravelDetailsImageStatus): void}>();
 
 function fireStatusChange (status: TravelDetailsImageStatus) {
@@ -34,7 +34,7 @@ function fireStatusChange (status: TravelDetailsImageStatus) {
 }
 
 function getImgUrl (slug?: string, timestamp?: Timestamp): string | undefined {
-  return slug ? `${WebApiRoutes.Image}?slug=${slug}&category=${ImageCategory.TravelBlock}${timestamp ? `&t=${timestamp}` : ''}` : undefined;
+  return slug ? `${ApiEndpointImage}?slug=${slug}&category=${ImageCategory.TravelBlock}${timestamp ? `&t=${timestamp}` : ''}` : undefined;
 };
 const imgUrl = computed(() => { return getImgUrl(props.slug, props.timestamp); });
 

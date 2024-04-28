@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Dropdown } from 'floating-vue';
+import type { Dropdown } from 'floating-vue';
 import isArray from 'lodash-es/isArray';
 import isString from 'lodash-es/isString';
 import isObject from 'lodash-es/isObject';
@@ -46,7 +46,7 @@ const exclusionIds: Ref<EntityId[]> = ref([]);
 
 const hasMounted = ref(false);
 
-const inputEl = ref<HTMLInputElement>();
+const inputEl = shallowRef<HTMLInputElement>();
 const logger = CommonServicesLocator.getLogger();
 
 const controlSettingsStore = useControlSettingsStore();
@@ -64,7 +64,7 @@ const getControlValueSetting = () => controlSettingsStore.getControlValueSetting
 async function setupInitialValue () {
   if (props.initiallySelectedValue && props.initiallySelectedValue.displayName) {
     const controlValueSetting = getControlValueSetting();
-    const displayName = (process.client ? (await tryLookupLocalizeableDisplayNameOnClient(props.initiallySelectedValue.id)) : undefined) ?? getItemDisplayText(props.initiallySelectedValue.displayName)!;
+    const displayName = (import.meta.client ? (await tryLookupLocalizeableDisplayNameOnClient(props.initiallySelectedValue.id)) : undefined) ?? getItemDisplayText(props.initiallySelectedValue.displayName)!;
     controlValueSetting.value = props.initiallySelectedValue.id;
     selectedItemName = searchTerm.value = getItemDisplayText(displayName);
   } else if (props.initiallySelectedValue === null) {
@@ -194,7 +194,7 @@ function getCacheEntityType (): CacheEntityType {
 }
 
 async function updateClientEntityCacheIfNeeded (items: ISearchListItem[]): Promise<void> {
-  if (!process.client || !items.length) {
+  if (!import.meta.client || !items.length) {
     return;
   }
 
@@ -212,7 +212,7 @@ async function updateClientEntityCacheIfNeeded (items: ISearchListItem[]): Promi
         slug: dto.slug,
         displayName: dto.displayName
       } as IEntityCacheCityItem;
-      await entityCache.set(item, AppConfig.clientCache.expirationsSeconds.default);
+      await entityCache.set(item, AppConfig.caching.clientRuntime.expirationsSeconds.default);
     } else if (import.meta.env.MODE === 'development') {
       logger.warn(`(SearchListInput) unexpected item type: ctrlKey=${props.ctrlKey}, type=${props.type}`);
     }
@@ -220,7 +220,7 @@ async function updateClientEntityCacheIfNeeded (items: ISearchListItem[]): Promi
 }
 
 async function tryLookupLocalizeableDisplayNameOnClient (id: EntityId): Promise<ILocalizableValue | undefined> {
-  if (!process.client) {
+  if (!import.meta.client) {
     return undefined;
   }
 
@@ -230,7 +230,7 @@ async function tryLookupLocalizeableDisplayNameOnClient (id: EntityId): Promise<
 async function getCityFromCache (cityId: EntityId, fetchFromServer: boolean): Promise<IEntityCacheCityItem | undefined> {
   const entityCache = ClientServicesLocator.getEntityCache();
   const entityCacheType = getCacheEntityType();
-  const lookupResult = await entityCache.get<'City', IEntityCacheCityItem>([cityId], entityCacheType, fetchFromServer ? { expireInSeconds: AppConfig.clientCache.expirationsSeconds.default } : false);
+  const lookupResult = await entityCache.get<'City', IEntityCacheCityItem>([cityId], entityCacheType, fetchFromServer ? { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default } : false);
   return (lookupResult?.length ?? 0) > 0 ? lookupResult![0] : undefined;
 }
 
@@ -279,7 +279,7 @@ watch(status, () => {
   }
 
   if (showOnDataChanged && (status.value === 'success' || status.value === 'error')) {
-    if (status.value === 'success' && (data.value?.filter(d => !exclusionIds.value.includes(d.id) /* && d.id !== props.selectedId */).length ?? 0) > 0) {
+    if (status.value === 'success' && (data.value?.filter(d => !exclusionIds.value.includes(d.id)).length ?? 0) > 0) {
       if (!isSuggestionPopupShown()) {
         logger.verbose(`(SearchListInput) showing dropdown, ctrlKey=${props.ctrlKey}, url=${props.itemSearchUrl}, count=${data.value!.length}`);
         setTimeout(() => {
@@ -358,7 +358,7 @@ function onInputTextChanged () {
   }
 }
 
-const dropdown = ref<InstanceType<typeof Dropdown>>();
+const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
 
 function getItemDisplayText (text?: string | ILocalizableValue): string | undefined {
   if (!text) {
@@ -443,9 +443,9 @@ onMounted(async () => {
       <template #popper>
         <div :class="`search-list-input-select-div ${listContainerClass}`" :data-popper-anchor="ctrlKey">
           <ClientOnly>
-            <ol v-if="(data?.filter(d => !exclusionIds.includes(d.id) /*&& d.id !== selectedId*/).length ?? 0) > 0" role="select">
+            <ol v-if="(data?.filter(d => !exclusionIds.includes(d.id)).length ?? 0) > 0" role="select">
               <li
-                v-for="(v, idx) in (data?.filter(d => !exclusionIds.includes(d.id) /*&& d.id !== selectedId*/))"
+                v-for="(v, idx) in (data?.filter(d => !exclusionIds.includes(d.id)))"
                 :key="`${props.ctrlKey}-SearchRes-${idx}`"
                 :class="`search-list-input-item p-xs-1 brdr-1 tabbable`"
                 @click="() => { onActivate(v); }"

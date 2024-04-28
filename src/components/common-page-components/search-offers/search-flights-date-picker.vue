@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Dropdown } from 'floating-vue';
+import type { Dropdown } from 'floating-vue';
 import dayjs from 'dayjs';
 import { updateTabIndices } from './../../../shared/dom';
 import FieldFrame from './../../forms/field-frame.vue';
@@ -35,8 +35,8 @@ const rangeValue = ref({
 const singleValue = ref(today);
 const hasMounted = ref(false);
 
-const elBtn = ref<HTMLElement>();
-const dropdown = ref<InstanceType<typeof Dropdown>>();
+const elBtn = shallowRef<HTMLElement>();
+const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
 
 const logger = CommonServicesLocator.getLogger();
 

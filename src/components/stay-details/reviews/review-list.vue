@@ -27,12 +27,12 @@ const { status } = useAuth();
 const props = defineProps<IProps>();
 const logger = CommonServicesLocator.getLogger();
 
-const swiper = ref<InstanceType<typeof Swiper>>();
+const swiper = shallowRef<InstanceType<typeof Swiper>>();
 const isSwiperReady = ref(false);
 const showNoReviewStub = computed(() => reviewStore.status !== 'error' && reviewStore.items !== undefined && reviewStore.items.length === 0);
 const isNavButtonsVisible = computed(() => reviewStore.status !== 'error' && reviewStore.items !== undefined && isSwiperReady.value && !showNoReviewStub.value);
 const pagingState = ref<{ of: number, total: number } | undefined>();
-const slideAnimationEnabled = process.client && !isPrefersReducedMotionEnabled();
+const slideAnimationEnabled = import.meta.client && !isPrefersReducedMotionEnabled();
 
 function refreshPagingState () {
   logger.debug(`(ReviewList) refreshing paging state, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
@@ -80,7 +80,7 @@ watch(() => reviewStore.status, () => {
 async function refreshUserAccount (): Promise<void> {
   if (status.value === 'authenticated') {
     try {
-      userAccount.value = await userAccountStore.initializeUserAccount();
+      userAccount.value = await userAccountStore.getUserAccount();
     } catch (err: any) {
       logger.warn(`(ReviewList) failed to initialize user account info, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`, err);
       userAccount.value = undefined;
@@ -156,7 +156,7 @@ function onNavPrevBtnClick () {
         :modules="[Navigation, Grid]"
         :slides-per-view="1"
         :allow-touch-move="true"
-        :simulate-touch="true"
+        :simulate-touch="false"
         :rewind="true"
         :effect="slideAnimationEnabled ? 'slide' : 'fade'"
         :speed="slideAnimationEnabled ? 300 : 0"
@@ -175,7 +175,7 @@ function onNavPrevBtnClick () {
           class="stay-reviews-list-item"
         >
           <hr class="stay-details-section-separator review-item-separator">
-          <div class="stay-reviews-card">
+          <article class="stay-reviews-card">
             <div class="stay-reviews-card-avatar">
               <StaticImage
                 v-if="review.user === 'current' ? !!(userAccount?.avatar) : !!(review.user.avatar)"
@@ -202,7 +202,7 @@ function onNavPrevBtnClick () {
                 class="stay-reviews-card-content-scroll"
               >
                 <div :class="`stay-reviews-card-content ${isTestUserReview(review) ? 'test-user-review' : ''} pb-xs-2 mr-xs-1`">
-                  <div class="stay-reviews-card-scoring">
+                  <h3 class="stay-reviews-card-scoring">
                     <div class="stay-reviews-card-score-class">
                       {{ `${review.score.toFixed(1)} ${$t(getScoreClassResName(review.score))}` }}
                     </div>
@@ -210,12 +210,12 @@ function onNavPrevBtnClick () {
                     <div class="stay-reviews-card-username">
                       {{ `${review.user === 'current' ? (userAccount ? `${userAccount.firstName} ${userAccount.lastName}` : '...') : (`${review.user.firstName} ${review.user.lastName}`)}` }}
                     </div>
-                  </div>
-                  <div v-if="isTestUserReview(review)" class="stay-reviews-card-text">
+                  </h3>
+                  <p v-if="isTestUserReview(review)" class="stay-reviews-card-text">
                     {{ getLocalizeableValue(review.text, locale as Locale) }}
-                  </div>
+                  </p>
                   <!-- eslint-disable-next-line vue/no-v-html -->
-                  <div v-else v-html="review.text.en" /> <!-- to prevent attack additional sanitizing is applied on server -->
+                  <p v-else v-html="review.text.en" /> <!-- to prevent attack additional sanitizing is applied on server -->
                 </div>
               </PerfectScrollbar>
             </div>
@@ -242,11 +242,11 @@ function onNavPrevBtnClick () {
                 />
               </div>
             </div>
-          </div>
+          </article>
         </SwiperSlide>
       </Swiper>
       <hr v-if="!showNoReviewStub" class="stay-details-section-separator review-item-separator">
-      <div v-if="isNavButtonsVisible" :class="`reviews-list-nav-buttons ${(pagingState?.total ?? 0) <= 1 ? 'one-page' : ''} mt-xs-2 mt-s-3`">
+      <section v-if="isNavButtonsVisible" :class="`reviews-list-nav-buttons ${(pagingState?.total ?? 0) <= 1 ? 'one-page' : ''} mt-xs-2 mt-s-3`">
         <SimpleButton
           kind="support"
           class="reviews-list-nav-btn btn-prev"
@@ -264,7 +264,7 @@ function onNavPrevBtnClick () {
           icon="nav-next"
           @click="onNavNextBtnClick"
         />
-      </div>
+      </section>
       <div v-if="showNoReviewStub" class="reviews-list-noitems-stub my-xs-3 my-s-5 px-xs-3">
         {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'noReviews')) }}
       </div>

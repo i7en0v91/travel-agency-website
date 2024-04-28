@@ -1,30 +1,36 @@
 <script setup lang="ts">
 
 import { withQuery, joinURL } from 'ufo';
-import { type ILocalizableValue, type ICity, type MakeSearchResultEntity, type IImageEntitySrc, ImageCategory, type IImageCategoryInfo, type OfferKind } from './../../shared/interfaces';
-import { getLocalizeableValue, getScoreClassResName, getOgImageFileName } from './../../shared/common';
-import { type Locale, WebApiRoutes, PagePath } from './../../shared/constants';
+import type { ImageCategory, ILocalizableValue, ICity, EntityDataAttrsOnly, IImageEntitySrc, IImageCategoryInfo, OfferKind } from './../../shared/interfaces';
+import { getLocalizeableValue, getScoreClassResName, getOgImageFileName, getValueForFlightDayFormatting } from './../../shared/common';
+import { ApiEndpointImage, type Locale, PagePath, DefaultLocale } from './../../shared/constants';
 import { getI18nResName2 } from './../../shared/i18n';
 import AppConfig from './../../appconfig';
 
 interface IProps {
   kind: OfferKind,
   title: ILocalizableValue,
-  city: MakeSearchResultEntity<ICity>,
+  city: EntityDataAttrsOnly<ICity>,
   price: number,
   reviewScore: number,
   numReviews: number,
+  dateUnixUtc: number,
+  utcOffsetMin?: number | undefined,
   image: IImageEntitySrc & { category: ImageCategory }
 }
 
 const isError = ref(false);
 const props = defineProps<IProps>();
 
-const { t, locale } = useI18n();
-
-const defaultImgUrl = joinURL('/img', 'og', getOgImageFileName(PagePath.Index, locale.value as Locale));
+const { t, d, locale } = useI18n();
+const requestLocale = (useRequestEvent()?.context.ogImageRequest?.locale) ?? DefaultLocale;
+locale.value = requestLocale;
 
 const logger = CommonServicesLocator.getLogger();
+
+const dateStr = props.kind === 'flights' ? d(getValueForFlightDayFormatting(new Date(props.dateUnixUtc), props.utcOffsetMin!), 'day') : d(new Date(props.dateUnixUtc), 'day');
+
+const defaultImgUrl = joinURL('/img', 'og', getOgImageFileName(PagePath.Index, locale.value as Locale));
 
 let imageSize: IImageCategoryInfo;
 try {
@@ -37,7 +43,7 @@ try {
 
 const scoreClassResName = getScoreClassResName(props.reviewScore);
 const reviewsCountText = `${props.numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), props.numReviews)}`;
-const imgUrl = withQuery(WebApiRoutes.Image, { slug: props.image.slug, category: props.image.category });
+const imgUrl = withQuery(ApiEndpointImage, { slug: props.image.slug, category: props.image.category });
 
 function onError (err: any) {
   logger.warn('(OgOfferSummary) render error', err);
@@ -95,6 +101,9 @@ function onError (err: any) {
         </div>
         <div v-else class="offer-price font-body font-bold color-highlight">
           {{ Math.floor(price) }}$&#47;{{ $t(getI18nResName2('searchStays', 'night')) }}
+        </div>
+        <div class="offer-date font-body font-bold">
+          {{ dateStr }}
         </div>
         <nuxt-img
           :src="imgUrl"
@@ -222,7 +231,7 @@ function onError (err: any) {
     padding: 8px;
   }
 
-  .offer-price {
+  .offer-price, .offer-date {
     flex: 0 0 auto;
     white-space: nowrap;
     text-align: right;
@@ -230,8 +239,14 @@ function onError (err: any) {
     font-size: 48px;
 
     position: absolute;
-    top: 100px;
     right: 30px;
+  }
+
+  .offer-price {
+    top: 100px;
+  }
+  .offer-date {
+    top: 160px;
   }
 
   .offer-image {

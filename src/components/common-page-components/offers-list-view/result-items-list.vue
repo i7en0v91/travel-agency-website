@@ -1,9 +1,9 @@
-<script setup lang="ts" generic="TItem extends MakeSearchResultEntity<IFlightOffer> | MakeSearchResultEntity<IStayOffer>">
+<script setup lang="ts" generic="TItem extends EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>">
 
 import ComponentWaiterIndicator from './../../component-waiting-indicator.vue';
 import FlightsListItemCard from './search-flights-result-card.vue';
 import StaysListItemCard from './search-stays-result-card.vue';
-import { type MakeSearchResultEntity, type IFlightOffer, type IStayOffer, type OfferKind } from './../../../shared/interfaces';
+import { type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, type OfferKind } from './../../../shared/interfaces';
 
 declare type WaitingStubMode = 'hidden' | 'shown' | 'not-needed';
 
@@ -42,7 +42,7 @@ watch(() => searchOffersStore.resultState.status, () => {
 </script>
 
 <template>
-  <div class="result-items-list">
+  <section class="result-items-list">
     <ComponentWaiterIndicator v-if="waitingStubMode === 'shown' && !isError" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="result-items-list-waiter mt-xs-5" />
     <ErrorHelm v-model:is-error="isError">
       <ol v-if="waitingStubMode === 'not-needed' && items.length > 0">
@@ -51,10 +51,10 @@ watch(() => searchOffersStore.resultState.status, () => {
           :key="`${props.ctrlKey}-Offer-${offer.id}`"
           class="result-list-item-div"
         >
-          <FlightsListItemCard v-if="offersKind === 'flights'" :ctrl-key="`${ctrlKey}-FlightsCard-${idx}`" :offer="(offer as MakeSearchResultEntity<IFlightOffer>)" />
-          <StaysListItemCard v-else :ctrl-key="`${ctrlKey}-StaysCard-${idx}`" :offer="(offer as MakeSearchResultEntity<IStayOffer>)" />
+          <FlightsListItemCard v-if="offersKind === 'flights'" :ctrl-key="`${ctrlKey}-FlightsCard-${idx}`" :offer="(offer as EntityDataAttrsOnly<IFlightOffer>)" />
+          <StaysListItemCard v-else :ctrl-key="`${ctrlKey}-StaysCard-${idx}`" :offer="(offer as EntityDataAttrsOnly<IStayOffer>)" />
         </li>
       </ol>
     </ErrorHelm>
-  </div>
+  </section>
 </template>

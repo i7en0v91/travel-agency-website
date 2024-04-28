@@ -2,7 +2,7 @@
 
 import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
 import AccountFormPhotos from './../components/account/form-photos.vue';
-import { WebApiRoutes, SecretValueMask, PagePath } from './../shared/constants';
+import { ApiEndpointSignUpComplete, SecretValueMask, PagePath } from './../shared/constants';
 import { SignUpCompleteResultCode, type ISignUpCompleteResultDto } from './../server/dto';
 
 definePageMeta({
@@ -34,7 +34,7 @@ if (!tokenId || !tokenValue) {
   logger.info(`(SignUpComplete) link doesnt contain token data: id=${tokenId}, value=${tokenValue ? SecretValueMask : '[empty]'}`);
   completionResult.value = SignUpCompleteResultCode.LINK_INVALID;
 } else {
-  const { data, error } = await useFetch(WebApiRoutes.SignUpComplete,
+  const { data, error } = await useFetch(ApiEndpointSignUpComplete,
     {
       method: 'post',
       server: true,

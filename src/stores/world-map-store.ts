@@ -1,7 +1,7 @@
 import range from 'lodash-es/range';
 import clamp from 'lodash-es/clamp';
 import { type IWorldMapDataDto, type IPopularCityDto } from '../server/dto';
-import { NuxtDataKeys, WebApiRoutes } from '../shared/constants';
+import { DataKeyWorldMapData, ApiEndpointPopularCitiesList } from '../shared/constants';
 import { type ILocalizableValue, type EntityId, type GeoPoint } from '../shared/interfaces';
 import type { IAppLogger } from '../shared/applogger';
 import AppConfig from './../appconfig';
@@ -68,7 +68,7 @@ interface IWorldMapPointInternal extends IWorldMapPoint {
 }
 
 function isAnimationNeeded () : boolean {
-  if (process.server ?? false) {
+  if (import.meta.server ?? false) {
     return false;
   }
   return !isPrefersReducedMotionEnabled();
@@ -247,7 +247,7 @@ function onPrepareNewFrame (map: IWorldMapInternal): 'continue-animation' | 'sto
 
 export const useWorldMapStore = defineStore('world-map-store', () => {
   const logger = CommonServicesLocator.getLogger();
-  const citiesListFetchRequest = useFetchEx<IPopularCityDto[] | null[], IPopularCityDto[], null[]>(WebApiRoutes.PopularCitiesList, 'error-stub',
+  const citiesListFetchRequest = useFetchEx<IPopularCityDto[] | null[], IPopularCityDto[], null[]>(ApiEndpointPopularCitiesList, 'error-stub',
     {
       server: true,
       lazy: true,
@@ -262,7 +262,7 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
   const getWorldMapDataOnServer = async (): Promise<IWorldMapDataDto> => {
     logger.verbose('(world-map-store) loading world map data from assets');
     try {
-      const worldMapDto = await ServerServicesLocator.getAssetsProvider().getAsset('world-map.json') as IWorldMapDataDto;
+      const worldMapDto = await ServerServicesLocator.getAssetsProvider().getAppData('world-map.json') as IWorldMapDataDto;
       if (!worldMapDto) {
         throw new Error('failed to load world map data from assets');
       }
@@ -274,8 +274,8 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
     }
   };
 
-  const worldMapDataFetch = process.server
-    ? useAsyncData(NuxtDataKeys.WorldMapData, getWorldMapDataOnServer, {
+  const worldMapDataFetch = import.meta.server
+    ? useAsyncData(DataKeyWorldMapData, getWorldMapDataOnServer, {
       server: true,
       lazy: false,
       immediate: true
@@ -286,7 +286,7 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
         lazy: true,
         immediate: true,
         cache: 'default',
-        key: NuxtDataKeys.WorldMapData,
+        key: DataKeyWorldMapData,
         onResponse: () => { logger.verbose('(world-map-store) received world map data response'); },
         onResponseError: (ctx) => { logger.warn('(world-map-store) got world map data response exception', ctx.error); },
         onRequestError: (ctx) => { logger.warn('(world-map-store) got world map data request exception', ctx.error); }

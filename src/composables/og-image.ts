@@ -1,5 +1,5 @@
 import { joinURL } from 'ufo';
-import { PagePath, AllPagePaths, OgImageDynamicPages, type Locale } from './../shared/constants';
+import { PagePath, AllPagePaths, EntityIdPages, type Locale } from './../shared/constants';
 import { getOgImageFileName, isLandingPageUrl } from './../shared/common';
 import AppConfig from './../appconfig';
 
@@ -24,7 +24,7 @@ export function useOgImage (component?: { name: string, props: any}) {
     return;
   }
 
-  const isDynamicOgImagePage = OgImageDynamicPages.includes(currentPage!);
+  const isDynamicOgImagePage = EntityIdPages.includes(currentPage!);
   if (isDynamicOgImagePage && !component) {
     logger.warn(`(og-image) page requires a component to generate image, using default, path=${route.path}, page=${currentPage}, url=${defaultImgUrl}`);
     defineOgImage({

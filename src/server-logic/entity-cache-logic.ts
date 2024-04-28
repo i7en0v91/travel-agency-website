@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import isString from 'lodash-es/isString';
 import { type IEntityCacheItem, type IEntityCacheLogic, type CacheEntityType, type IEntityCacheCityItem, type EntityId } from '../shared/interfaces';
 import { type IAppLogger } from '../shared/applogger';

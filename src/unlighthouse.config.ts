@@ -1,5 +1,5 @@
 import { defineConfig } from '@unlighthouse/core';
-import { CookieNames, PagePath } from './shared/constants';
+import { CookieI18nLocale, PagePath } from './shared/constants';
 
 const excludedRoutesCommon = [
   '/ru',
@@ -77,7 +77,7 @@ export default defineConfig({
           sameSite: 'Lax'
         },
         {
-          name: CookieNames.I18nLocale,
+          name: CookieI18nLocale,
           value: 'en',
           domain: 'localhost',
           path: '/',

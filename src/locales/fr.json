@@ -8,7 +8,8 @@
     "unauthorized": "La connexion est requise pour continuer",
     "captchaError": "Erreur de vérification d'accès. Vérifiez votre connectivité réseau, puis rechargez la page et réessayez",
     "emailingDisabled": "L'opération ne peut pas être effectuée car elle nécessite l'activation de la fonction Emailing sur le site Web",
-    "forbidden": "L'accès est interdit"
+    "forbidden": "L'accès est interdit",
+    "documentGenerationFailed": "Échec de la génération du document"
   },
   "httpCodes": {
     "401": "Non autorisé",
@@ -76,6 +77,24 @@
   },
   "maps": {
     "disabled": "La carte interactive est désactivée dans la configuration du site Web"
+  },
+  "payments": {
+    "methods": {
+      "fullHeader": "Payer en entier",
+      "fullText": "Payez le total et vous êtes prêt",
+      "partHeader": "Payez une partie maintenant, une partie plus tard",
+      "partText": "Payez {now} maintenant et le reste ({rest}) sera automatiquement débité avec le même mode de paiement le {date}. Pas de frais supplémentaires.",
+      "moreInfo": "Plus d'informations"
+    },
+    "loginToPay": {
+      "title": "Connectez-vous ou inscrivez-vous pour réserver",
+      "withEmail": "Continuer avec l'e-mail"
+    },
+    "cards": {
+      "add": "Ajouter une nouvelle carte",
+      "validThru": "Valide jusqu'au"
+    },
+    "payBtn": "Payer"
   },
   "searchOffers": {
     "addPromoCode": "Code promo",
@@ -217,7 +236,13 @@
     "btnReviewEditorSend": "envoyer le texte de l'avis au serveur",
     "btnReviewEditorCancel": "fermer l'éditeur de texte de révision",
     "btnDeleteUserReview": "Supprimer",
-    "btnEditUserReview": "Modifier"
+    "btnEditUserReview": "Modifier",
+    "btnLoginViaEmail": "Connectez-vous par e-mail",
+    "btnAddPaymentCard": "ajouter une nouvelle carte de paiement",
+    "btnRemovePaymentCard": "supprimer la carte de paiement",
+    "navOfferBreadcrumbs": "proposer du fil d'Ariane",
+    "navMain": "principale",
+    "navFooter": "supplémentaire"
   },
   "footer": {
     "destinations": {
@@ -352,11 +377,12 @@
     "availableRooms": {
       "title": "Chambres disponibles",
       "base": "Chambre supérieure - 1 lit double ou 2 lits jumeaux",
-      "city": "Superior room - City view  - 1 double bed or 2 twin beds"
+      "city": "Chambre Supérieure - Vue Ville - 1 lit double ou 2 lits jumeaux"
     },
     "location": {
       "title": "Une carte",
-      "viewOnWebsite": "Afficher sur {webLink}"
+      "viewOnWebsite": "Afficher sur {webLink}",
+      "demoMarker": "Un point d'échantillonnage sur une carte, pas un objet réel (DEMO)"
     },
     "amenities": {
       "title": "Agréments",
@@ -376,6 +402,80 @@
       "noReviews": "Aucun avis",
       "mustBeLoggedInToReview": "Vous devez vous connecter, ajouter un avis"
     }
+  },
+  "stayDetailsCard": {
+    "checkIn": "Enregistrement",
+    "checkOut": "Vérifier"
+  },
+  "bookingCommon": {
+    "pageTitle": "Les détails de réservation",
+    "bookingProtected": "Votre réservation est protégée par { by }",
+    "protectedBy": "golobe",
+    "pricingDecomposition": {
+      "caption": "Détails du prix",
+      "fare": "Tarif de base",
+      "discount": "Rabais",
+      "taxes": "Impôts",
+      "fee": "Frais",
+      "total": "Total"
+    },
+    "generatingDoc": "Génération du document...",
+    "docFileNamePrefix": "billet"
+  },
+  "ticket": {
+    "avatarImgAlt": "photo du passager",
+    "flightClass": "classe de",
+    "boardingPass": "Carte d'embarquement N’123",
+    "checkIn": "Enregistrement",
+    "checkOut": "Vérifier",
+    "cityImgAlt": "@:flightsPage.worldMap.cityImgAlt",
+    "class": {
+      "economy": "@:ticket.flightClass @:searchFlights.class.economy",
+      "comfort": "@:ticket.flightClass @:searchFlights.class.comfort",
+      "business": "@:ticket.flightClass @:searchFlights.class.business",
+      "base": "Chambre supérieure",
+      "city": "Chambre Supérieure - Vue Ville"
+    },
+    "details": {
+      "date": "Date",
+      "duration": "Temps de vol",
+      "gate": "Grille",
+      "seat": "Siège",
+      "checkInTime": "Heure d'arrivée",
+      "checkOutTime": "Heure de départ",
+      "room": "Chambre numéro.",
+      "onArrival": "À l'arrivée"
+    },
+    "pdf": {
+      "title": "Billet"
+    }
+  },
+  "bookingPage": {
+    "pageTitle": "@:bookingCommon.pageTitle - Billet",
+    "flightTitleExt": "Billet - @:flightDetailsPage.titleExt",
+    "stayTitleExt": "Billet - @:stayDetailsPage.titleExt",
+    "downloadBtn": "Télécharger"
+  },
+  "bookingTnC": {
+    "title": "Conditions générales",
+    "payments": {
+      "title": "Paiements",
+      "paragraph1": "Si vous achetez votre billet en utilisant une carte de débit ou de crédit via le site Web, nous traiterons ces paiements via la passerelle de paiement commune sécurisée et automatisée qui sera soumise à des fins de détection de fraude.",
+      "paragraph2": "Si vous ne fournissez pas l'adresse de facturation de la carte et/ou les informations du titulaire de la carte, votre réservation ne sera pas confirmée et le coût global pourra augmenter. Nous nous réservons le droit d'annuler votre réservation si le paiement est refusé pour quelque raison que ce soit ou si vous avez fourni des informations de carte incorrectes. Si nous avons connaissance ou sommes informés d'une fraude ou d'une activité illégale associée au paiement de la réservation, la réservation sera annulée et vous serez responsable de tous les coûts et dépenses en découlant. annulation, sans préjudice de toute action qui pourrait être entreprise à notre encontre.",
+      "paragraph3": "{companyName} peut exiger du titulaire de la carte qu'il fournisse une vérification supplémentaire du paiement sur demande, soit en soumettant un formulaire en ligne, soit en se rendant au bureau {companyName} le plus proche, ou à l'aéroport au moment de l'enregistrement. {companyName} se réserve le droit de refuser l'embarquement. ou pour percevoir un paiement de garantie (en espèces ou à partir d'une autre carte de crédit) si la carte initialement utilisée pour l'achat ne peut pas être présentée par le titulaire de la carte lors de l'enregistrement ou lors du retrait des billets, ou dans le cas où le paiement initial a été retenu ou contestée par la banque émettrice de la carte. Les détails de la carte de crédit sont conservés dans un environnement sécurisé et transférés via un système internationalement accepté."
+    },
+    "contactUs": {
+      "title": "Contactez-nous",
+      "directions": "Si vous avez des questions concernant notre site Web ou nos conditions d'utilisation, veuillez utiliser les coordonnées que vous pouvez trouver sur {siteUrl}"
+    }
+  },
+  "flightBookingPage": {
+    "title": "@:bookingCommon.pageTitle",
+    "titleExt": "@:bookingCommon.pageTitle - @:flightDetailsPage.titleExt"
+  },
+  "stayBookingPage": {
+    "title": "@:bookingCommon.pageTitle",
+    "titleExt": "@:bookingCommon.pageTitle - @:stayDetailsPage.titleExt"
   },
   "reviewEditor": {
     "buttons": {
@@ -419,6 +519,16 @@
     },
     "havingAccount": "Vous n'avez pas de compte?",
     "invalidCredentials": "La connexion avec l'e-mail et le mot de passe fournis a échoué"
+  },
+  "favouritesPage": {
+    "title": "@:nav.userBox.favourites",
+    "flightsTab": "Vols",
+    "staysTab": "Lieux",
+    "numMarked": "{count} marqué",
+    "noMarkedOffers": {
+      "flights": "Aucun vol favori",
+      "stays": "Aucun endroit favori"
+    }
   },
   "accountPageCommon": {
     "emailLabel": "E-mail",
@@ -521,7 +631,13 @@
       "emailWasAutoverified": "DEVELOPMENT ONLY: L'e-mail fourni a été automatiquement vérifié par le système et vous pouvez désormais vous connecter en l'utilisant. Vous pouvez également activer l'envoi d'e-mails dans la configuration du serveur pour utiliser les e-mails réels à des fins de vérification dans le flux d'inscription."
     },
     "tabHistory": {
-      "title": "Historique"
+      "title": "Billets/Réservations",
+      "upcoming": "A venir",
+      "passed": "Passé",
+      "flightsTab": "@:searchOffers.flightsTab",
+      "staysTab": "@:searchOffers.staysTab",
+      "noOffers": "Pas de billets/réservations",
+      "btnDownload": "Télécharger le billet"
     },
     "tabPayments": {
       "title": "Paiements"
@@ -685,5 +801,6 @@
     "btnAccept": "D'accord"
   },
   "close": "fermer",
-  "calendarImgAlt": "icône du calendrier"
+  "calendarImgAlt": "icône du calendrier",
+  "mapsProviderYandex": "Yandex.Maps"
 }

@@ -79,7 +79,8 @@ function loginClick () {
 }
 
 function onOAuthProviderClick (provider: AuthProvider) {
-  const oauthOptions = { callbackUrl: localePath('/'), external: true, redirect: true };
+  const route = useRoute();
+  const oauthOptions = { callbackUrl: route.query.callbackUrl?.toString() ?? '/', external: true, redirect: true };
   switch (provider) {
     case AuthProvider.Google:
       signIn('google', oauthOptions);
@@ -99,9 +100,9 @@ function onOAuthProviderClick (provider: AuthProvider) {
   <div class="login-page account-page no-hidden-parent-tabulation-check">
     <div class="login-page-content no-hidden-parent-tabulation-check">
       <NavLogo ctrl-key="loginPageAppLogo" mode="inApp" />
-      <h2 class="login-title">
+      <h1 class="login-title font-h2">
         {{ t(getI18nResName2('loginPage', 'title')) }}
-      </h2>
+      </h1>
       <div class="login-subtitle mt-xs-3">
         {{ t(getI18nResName2('loginPage', 'subTitle')) }}
       </div>

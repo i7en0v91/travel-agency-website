@@ -35,7 +35,7 @@ interface ContextParams {
 const ContentDirName = 'content';
 const PublicResDirName = 'public';
 const AppDataDirName = 'appdata';
-const AdminUserEmail = 'admin@demo.golobe';
+const AdminUserEmail = 'admin@golobe.demo';
 
 const StayNameTemplateParam = 'hotelName';
 
@@ -771,7 +771,7 @@ async function addGeoData (ctx: ContextParams) : Promise<void> {
 async function addPopularCities (ctx: ContextParams) : Promise<void> {
   ctx.logger.info('>>> adding popular cities');
 
-  type PopularCityJson = { name: string, rating: number, promoLine: { en: string, ru: string, fr: string }, visibleOnWorldMap?: boolean };
+  type PopularCityJson = { name: string, rating: number, geo: { lon: number, lat: number }, promoLine: { en: string, ru: string, fr: string }, visibleOnWorldMap?: boolean };
   type TravelDetailsJson = {
     slug: string,
     header: ILocalizableValue,
@@ -815,7 +815,8 @@ async function addPopularCities (ctx: ContextParams) : Promise<void> {
       travelHeaderStr: travelDetails.header,
       travelTextStr: travelDetails.text,
       visibleOnWorldMap: popularCityJson.visibleOnWorldMap ?? false,
-      rating: popularCityJson.rating
+      rating: popularCityJson.rating,
+      geo: popularCityJson.geo
     });
 
     ctx.logger.info(`adding popular cities - ${popularCityJson.name} created`);
@@ -1299,7 +1300,7 @@ async function ensureReviewUsers (ctx: ContextParams, userNames: string[]): Prom
   const names = [...userNames].sort((a, b) => a.localeCompare(b));
   for (let i = 0; i < names.length; i++) {
     const userName = names[i];
-    const email = `${slugify(userName)}@demo.golobe`;
+    const email = `${slugify(userName)}@golobe.demo`;
     const userInfo = await userLogic.findUserByEmail(email, false, 'minimal');
     if (userInfo) {
       result.push(userInfo.id);
@@ -1574,7 +1575,7 @@ export default defineNuxtPlugin(async () => {
     seedMethodExecuted = true;
   }
 
-  if (process.env.NODE_ENV === 'development' || isQuickStartEnv()) {
+  if (process.env.NODE_ENV === DEV_ENV_MODE || isQuickStartEnv()) {
     const seedingIsNeeded = await checkNeedInitialSeeding();
     if (!seedingIsNeeded) {
       return;

@@ -1,17 +1,16 @@
 <script setup lang="ts">
 
-import dayjs from 'dayjs';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
-import { type MakeSearchResultEntity, type IFlight, type IFlightOffer, ImageCategory } from './../../../shared/interfaces';
+import { type EntityDataAttrsOnly, type IFlightOffer, type OfferKind, ImageCategory } from './../../../shared/interfaces';
 import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
-import { getLocalizeableValue, convertTimeOfDay, getTimeOfDay, getScoreClassResName } from './../../../shared/common';
-import { type Locale, WebApiRoutes, PagePath } from './../../../shared/constants';
-import { post } from './../../../shared/rest-utils';
-import type { IToggleFavouriteOfferResultDto } from './../../../server/dto';
+import { getLocalizeableValue, getScoreClassResName, extractAirportCode, getValueForFlightDurationFormatting, getValueForTimeOfDayFormatting } from './../../../shared/common';
+import { type Locale, PagePath } from './../../../shared/constants';
+import { useUserFavouritesStore } from './../../../stores/user-favourites-store';
+import { useOfferFavouriteStatus } from './../../../composables/offer-favourite-status';
 
 interface IProps {
   ctrlKey: string,
-  offer: MakeSearchResultEntity<IFlightOffer>
+  offer: EntityDataAttrsOnly<IFlightOffer>
 }
 const props = withDefaults(defineProps<IProps>(), {
 });
@@ -21,6 +20,7 @@ const { locale, t } = useI18n();
 const localePath = useLocalePath();
 
 const logger = CommonServicesLocator.getLogger();
+const userFavouritesStore = useUserFavouritesStore();
 
 const isError = ref(false);
 
@@ -30,50 +30,25 @@ const scoreClassResName = getScoreClassResName(airlineCompany.reviewScore);
 const reviewsCountText = `${airlineCompany.numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), airlineCompany.numReviews)}`;
 
 const offerFlights = props.offer.arriveFlight ? [props.offer.departFlight, props.offer.arriveFlight] : [props.offer.departFlight];
-const isFavourite = ref<boolean>(props.offer.isFavourite);
-
-function getValueForTimeOfDayFormatting (dateTimeUtc: Date, utcOffsetMinutes: number): Date {
-  const timeOfDay = convertTimeOfDay(getTimeOfDay(dateTimeUtc, utcOffsetMinutes));
-  return dayjs().local().set('hour', timeOfDay.hour24).set('minute', timeOfDay.minutes).toDate();
-}
-
-function getValueForFlightDurationFormatting (flight: MakeSearchResultEntity<IFlight>): { hours: string, minutes: string } {
-  const departFlightDuration = Math.round((flight.arriveTimeUtc.getTime() - flight.departTimeUtc.getTime()) / 60000);
-  const duration = convertTimeOfDay(departFlightDuration);
-  return {
-    hours: duration.hour24.toFixed(0),
-    minutes: duration.minutes.toFixed(0)
-  };
-}
-
-function extractAirportCode (displayName: string) {
-  if (displayName.length < 3) {
-    return displayName.toUpperCase();
-  }
-  return displayName.substring(0, 3).toUpperCase();
-}
+const favouriteStatusWatcher = useOfferFavouriteStatus(props.offer.id, props.offer.kind);
 
 async function toggleFavourite (): Promise<void> {
   const offerId = props.offer.id;
-  logger.verbose(`(SearchFlightsResultCard) toggling favourite, offerId=${offerId}, current=${isFavourite.value}`);
-  const resultDto = await post(WebApiRoutes.FlightOfferFavourite(offerId), undefined, undefined) as IToggleFavouriteOfferResultDto;
-  if (resultDto) {
-    logger.verbose(`(SearchFlightsResultCard) favourite toggled, offerId=${offerId}, result=${resultDto.isFavourite}`);
-    isFavourite.value = resultDto.isFavourite;
-  } else {
-    logger.warn(`(SearchFlightsResultCard) error occured while toggling favourite offer on server, offerId=${offerId}, current=${isFavourite.value}`);
-  }
+  logger.verbose(`(SearchFlightsResultCard) toggling favourite, offerId=${offerId}, current=${favouriteStatusWatcher.isFavourite}`);
+  const store = await userFavouritesStore.getInstance();
+  const result = await store.toggleFavourite(offerId, 'flights' as OfferKind, props.offer);
+  logger.verbose(`(SearchFlightsResultCard) favourite toggled, offerId=${offerId}, isFavourite=${result}`);
 }
 
-function favouriteBtnClick () {
-  logger.debug(`(SearchFlightsResultCard) favourite button clicked, ctrlKey=${props.ctrlKey}, current=${isFavourite.value}`);
-  toggleFavourite();
+async function favouriteBtnClick (): Promise<void> {
+  logger.debug(`(SearchFlightsResultCard) favourite button clicked, ctrlKey=${props.ctrlKey}, current=${favouriteStatusWatcher.isFavourite}`);
+  await toggleFavourite();
 }
 
 </script>
 
 <template>
-  <div class="search-flights-result-card p-xs-3">
+  <article class="search-flights-result-card p-xs-3">
     <ErrorHelm v-model:is-error="isError">
       <div class="search-flights-result-card-grid">
         <div class="search-flights-card-company-logo">
@@ -139,7 +114,7 @@ function favouriteBtnClick () {
                 </div>
                 <div class="search-flights-card-range  mb-xs-3">
                   <div class="search-flights-card-duration">
-                    {{ $t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting(flight)) }}
+                    {{ $t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting(flight.departTimeUtc, flight.arriveTimeUtc)) }}
                   </div>
                   <div class="search-flights-card-airports">
                     {{ extractAirportCode(getLocalizeableValue(flight.departAirport.city.name, locale as Locale)) }}
@@ -150,12 +125,12 @@ function favouriteBtnClick () {
               </div>
             </PerfectScrollbar>
           </div>
-          <div class="search-flights-card-buttons mt-xs-3">
+          <div class="search-flights-card-buttons pt-xs-3">
             <SimpleButton
               v-if="status === 'authenticated'"
               class="search-flights-card-btn-like"
               :ctrl-key="`${props.ctrlKey}-LikeBtn`"
-              :icon="`${isFavourite ? 'heart' : 'like'}`"
+              :icon="`${favouriteStatusWatcher.isFavourite ? 'heart' : 'like'}`"
               kind="support"
               @click="favouriteBtnClick"
             />
@@ -166,5 +141,5 @@ function favouriteBtnClick () {
         </div>
       </div>
     </ErrorHelm>
-  </div>
+  </article>
 </template>

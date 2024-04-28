@@ -7,7 +7,7 @@ import { basename, extname } from 'pathe';
 import { type ImageCategory, type IImageEntitySrc } from './../../shared/interfaces';
 import { type I18nResName, getI18nResName2, getI18nResName3 } from './../../shared/i18n';
 import StaticImage from './static-image.vue';
-import { UserNotificationLevel, CroppingImageDataKey, WebApiRoutes } from './../../shared/constants';
+import { UserNotificationLevel, CroppingImageDataKey, ApiEndpointUserImageUpload } from './../../shared/constants';
 import AppConfig from './../../appconfig';
 import CroppingBox from './cropping-box.vue';
 import ModalWaitingIndicator from './../modal-waiting-indicator.vue';
@@ -67,8 +67,8 @@ const modalWaitingIndicator = useModal({
     labelResName: getI18nResName2('editableImage', 'uploading')
   }
 });
-const fileInputEl = ref<HTMLInputElement>();
-const staticImageComponent = ref<InstanceType<typeof StaticImage>>();
+const fileInputEl = shallowRef<HTMLInputElement>();
+const staticImageComponent = shallowRef<InstanceType<typeof StaticImage>>();
 
 const userNotificationStore = useUserNotificationStore();
 const logger = CommonServicesLocator.getLogger();
@@ -90,10 +90,10 @@ async function uploadCroppedImage () : Promise<void> {
     try {
       const imageBytes = toUint8Array(imageDataBase64);
       logger.info(`(editable-image) starting to upload image data, size=${imageBytes.length}, fileName=${uploadingFileName}`);
-      modalWaitingIndicator.open();
+      await modalWaitingIndicator.open();
 
       const query = uploadingFileName.length > 0 ? { fileName: uploadingFileName, category: props.category } : undefined;
-      const uploadedImageInfo = await post<any, IImageUploadResultDto>(WebApiRoutes.UserImageUpload, query, imageBytes);
+      const uploadedImageInfo = await post<any, IImageUploadResultDto>(ApiEndpointUserImageUpload, query, imageBytes, undefined, true, 'default');
       if (uploadedImageInfo) {
         logger.info(`(editable-image) image uploaded, size=${imageBytes.length}, fileName=${uploadingFileName}`);
         $emit('update:entitySrc', uploadedImageInfo);
@@ -103,7 +103,7 @@ async function uploadCroppedImage () : Promise<void> {
       throw err;
     } finally {
       resetCurrentImageData();
-      modalWaitingIndicator.close();
+      await modalWaitingIndicator.close();
     }
   } else {
     resetCurrentImageData();

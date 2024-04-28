@@ -1,6 +1,6 @@
 import { type IServerI18n } from '../server-logic/helpers/i18n';
 import { type IAppLogger } from './applogger';
-import { type IAirplaneLogic, type IAirportLogic, type IStaysLogic, type IFlightsLogic, type IAirlineCompanyLogic, type IMailTemplateLogic, type IUserLogic, type IImageBytesProvider, type IImageLogic, type IImageCategoryLogic, type IEmailSender, type ITokenLogic, type ICitiesLogic, type ICompanyReviewsLogic, type IEntityCache, type IEntityCacheLogic, type IGeoLogic, type IAppAssetsProvider } from './interfaces';
+import { type IDocumentCreator, type IBookingLogic, type IAirplaneLogic, type IAirportLogic, type IStaysLogic, type IFlightsLogic, type IAirlineCompanyLogic, type IMailTemplateLogic, type IUserLogic, type IImageBytesProvider, type IImageLogic, type IImageCategoryLogic, type IEmailSender, type ITokenLogic, type ICitiesLogic, type ICompanyReviewsLogic, type IEntityCache, type IEntityCacheLogic, type IGeoLogic, type IAppAssetsProvider } from './interfaces';
 
 export interface ICommonServicesLocator {
   getLogger() : IAppLogger,
@@ -24,7 +24,9 @@ export interface IServerServicesLocator extends ICommonServicesLocator {
   getStaysLogic(): IStaysLogic,
   getAirlineCompanyLogic(): IAirlineCompanyLogic,
   getCitiesLogic(): ICitiesLogic,
-  getCompanyReviewsLogic(): ICompanyReviewsLogic
+  getCompanyReviewsLogic(): ICompanyReviewsLogic,
+  getBookingLogic(): IBookingLogic,
+  getDocumentCreator(): IDocumentCreator
 }
 
 export interface IClientServicesLocator extends ICommonServicesLocator {

@@ -1,11 +1,11 @@
-import { H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import isString from 'lodash-es/isString';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { WebApiRoutes } from '../../../../shared/constants';
 import { type EntityId } from '../../../../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
 import { mapStayOffer } from '../../../utils/mappers';
 import { getServerSession } from '#auth';
+import AppConfig from './../../../../appconfig';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const logger = ServerServicesLocator.getLogger();
@@ -41,8 +41,10 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
 
   const stayOffer = await staysLogic.getStayOffer(offerId, userId ?? 'guest');
 
-  handleCacheHeaders(event, {
-    maxAge: WebApiRoutes.OneHourCacheLatency
+  handleCacheHeaders(event, AppConfig.caching.htmlPageCachingSeconds ? {
+    maxAge: AppConfig.caching.htmlPageCachingSeconds,
+  } : {
+    cacheControls: ['no-cache']
   });
   setHeader(event, 'content-type', 'application/json');
 

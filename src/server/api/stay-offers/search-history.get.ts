@@ -1,6 +1,6 @@
-import { H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import { destr } from 'destr';
-import { SessionConstants } from '../../../shared/constants';
+import { SessionStaySearchHistory } from '../../../shared/constants';
 import { type IStaySearchHistory } from '../../../shared/interfaces';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import { type ISearchedCityHistoryDto } from '../../dto';
@@ -18,7 +18,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   setHeader(event, 'content-type', 'application/json');
 
   const result: ISearchedCityHistoryDto[] = [];
-  const searchedCities = destr<IStaySearchHistory | undefined>(await getValue(event, SessionConstants.StaySearchHistory));
+  const searchedCities = destr<IStaySearchHistory | undefined>(await getValue(event, SessionStaySearchHistory));
   if (searchedCities?.popularCityIds?.length) {
     const popularCities = await citiesLogic.getPopularCities();
     const searchedItems = searchedCities!.popularCityIds.map(cid => popularCities.find(c => c.id === cid)).filter(c => c);

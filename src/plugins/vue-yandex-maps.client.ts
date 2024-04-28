@@ -1,9 +1,8 @@
-import plugin from 'vue-yandex-maps';
+import { createYmaps, type VueYandexMaps } from 'vue-yandex-maps';
 import AppConfig from '../appconfig';
 import { type IAppLogger } from '../shared/applogger';
 import { DefaultLocale, type Locale } from './../shared/constants';
 import { getLocaleFromUrl } from './../shared/i18n';
-import { getCurrentThemeSettings } from './../client/helpers';
 
 function getLocaleUrlParam (locale: Locale): string {
   switch (locale) {
@@ -33,17 +32,12 @@ export default defineNuxtPlugin((nuxtApp) => {
   const locale = (path ? getLocaleFromUrl(path) : undefined) ?? DefaultLocale;
   const localeWithRegion = getLocaleUrlParam(locale);
 
-  const theme = getCurrentThemeSettings();
-
-  const settings = {
-    apiKey,
+  const settings: VueYandexMaps.PluginSettings = {
+    apikey: apiKey,
     lang: localeWithRegion,
-    coordorder: 'latlong',
-    debug: false,
-    theme,
-    version: '2.1'
+    version: 'v3'
   };
 
-  nuxtApp.vueApp.use(plugin, settings);
-  logger?.info(`yandex maps plugin installed, locale=${localeWithRegion}, theme=${theme}`);
+  nuxtApp.vueApp.use(createYmaps(settings));
+  logger?.info(`yandex maps plugin installed, locale=${localeWithRegion}`);
 });

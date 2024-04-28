@@ -11,7 +11,7 @@ interface IProps {
 }
 defineProps<IProps>();
 
-const elInput = ref<HTMLInputElement | undefined>();
+const elInput = shallowRef<HTMLInputElement | undefined>();
 const useremail = ref('');
 const userNotificationStore = useUserNotificationStore();
 

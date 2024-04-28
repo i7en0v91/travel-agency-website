@@ -1,6 +1,6 @@
 import { isbot } from 'isbot';
 import type { IAppLogger } from './../shared/applogger';
-import { HeaderNames } from './../shared/constants';
+import { HeaderUserAgent } from './../shared/constants';
 
 export function isRobot () {
   const logger = (globalThis as any)?.CommonServicesLocator?.getLogger() as IAppLogger | undefined;
@@ -10,14 +10,14 @@ export function isRobot () {
     return false;
   }
 
-  if (process.client) {
+  if (import.meta.client) {
     const result = window.navigator?.userAgent ? isbot(window.navigator.userAgent!) : true;
     logger?.debug(`(is-robot) client, userAgent=[${window.navigator?.userAgent}], result=${result}`);
     return result;
   } else {
     try {
       const requestEvent = useRequestEvent();
-      const userAgentHeader = requestEvent?.headers?.get(HeaderNames.UserAgent);
+      const userAgentHeader = requestEvent?.headers?.get(HeaderUserAgent);
       if (userAgentHeader) {
         const result = isbot(userAgentHeader);
         logger?.debug(`(is-robot) server, userAgent=[${userAgentHeader}], result=${result}`);

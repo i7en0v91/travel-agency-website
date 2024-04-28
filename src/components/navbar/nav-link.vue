@@ -1,7 +1,6 @@
 <script setup lang="ts">
 
 import { type I18nResName } from './../../shared/i18n';
-import { type NavBarMode } from './../../shared/interfaces';
 
 const localePath = useLocalePath();
 
@@ -9,11 +8,15 @@ interface IProps {
   ctrlKey: string,
   to: string,
   textResName: I18nResName,
-  mode: NavBarMode,
   icon?: string,
-  linkClass?: string
+  linkClass?: string,
+  isActive?: boolean
 }
-const props = defineProps<IProps>();
+const props = withDefaults(defineProps<IProps>(), {
+  icon: undefined,
+  linkClass: undefined,
+  isActive: false
+});
 
 const logger = CommonServicesLocator.getLogger();
 
@@ -34,9 +37,11 @@ const $emit = defineEmits(['click']);
 </script>
 
 <template>
-  <div class="nav-item nav-page-link my-xs-2 py-l-2 my-l-0">
-    <NuxtLink :class="getClass()" :to="localePath(to)" @click="onClick">
-      {{ $t(textResName) }}
-    </NuxtLink>
+  <div :class="`nav-page-link-cell ${isActive ? 'active' : ''}`">
+    <div class="nav-item nav-page-link mx-l-2 my-xs-2 py-l-2 my-l-0">
+      <NuxtLink :class="getClass()" :to="localePath(to)" @click="onClick">
+        {{ $t(textResName) }}
+      </NuxtLink>
+    </div>
   </div>
 </template>

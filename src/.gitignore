@@ -17,8 +17,6 @@ logs
 
 # Cache
 .img.cache
-# pregenerated OG images
-public/img/og/*
 
 # Misc
 .DS_Store

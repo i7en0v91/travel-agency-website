@@ -7,9 +7,11 @@ import OAuthBtn from './oauth-btn.vue';
 
 interface IProps {
   ctrlKey: string,
-  divisorLabelResName: I18nResName
+  divisorLabelResName?: I18nResName | undefined
 }
-const props = defineProps<IProps>();
+withDefaults(defineProps<IProps>(), {
+  divisorLabelResName: undefined
+});
 
 const showTestLocalProvider = isDevOrTestEnv() || isQuickStartEnv();
 const thirdPartyOAuthEnabled = !isQuickStartEnv();
@@ -23,9 +25,9 @@ function onAuthBtnBlick (provider: AuthProvider) {
 
 <template>
   <div class="oauth-providers-list-div">
-    <div class="providers-list-divisor">
+    <div v-if="divisorLabelResName" class="providers-list-divisor">
       <div class="providers-list-divisor-label pl-xs-3 pr-xs-3">
-        {{ $t(props.divisorLabelResName) }}
+        {{ $t(divisorLabelResName) }}
       </div>
     </div>
     <ol class="oauth-providers-list">

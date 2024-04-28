@@ -1,8 +1,8 @@
 import { TYPE, useToast } from 'vue-toastification';
 import { type I18nResName } from '../shared/i18n';
-import { UserNotificationLevel, NuxtDataKeys } from '../shared/constants';
-import AppConfig from './../appconfig';
-import { getPayload, addPayload } from './../shared/payload';
+import { UserNotificationLevel } from '../shared/constants';
+import { isDevOrTestEnv } from './../shared/constants';
+import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
 
 export interface IUserNotificationParams {
   level: UserNotificationLevel;
@@ -13,11 +13,8 @@ export interface IUserNotificationParams {
 export const useUserNotificationStore = defineStore('userNotificationStore', () => {
   const logger = CommonServicesLocator.getLogger();
   const { t } = useI18n();
-  const nuxtApp = useNuxtApp();
 
-  const notificationsToHydate: IUserNotificationParams[] = [];
-  const toastManager = process.client ? useToast() : undefined;
-  let isMounted = false;
+  const toastManager = import.meta.client ? useToast() : undefined;
 
   const doShowOnClient = (params: IUserNotificationParams) => {
     const msg = t(params.resName, params.resArgs);
@@ -34,35 +31,30 @@ export const useUserNotificationStore = defineStore('userNotificationStore', () 
     }
   };
 
-  const handleAppMount = () => {
-    if (isMounted) {
-      logger.verbose('(useUserNotificationStore): appMount handler is called multiple times');
-      return;
-    }
-    isMounted = true;
-
-    const nuxtApp = useNuxtApp();
-    const notifications = getPayload<IUserNotificationParams[]>(nuxtApp, NuxtDataKeys.UserNotifications);
-    notifications?.forEach(n => doShowOnClient(n));
-  };
-
   const show = (params: IUserNotificationParams) => {
-    if (process.client) {
-      logger.verbose('(useUserNotificationStore): showing new notification', params);
+    if (import.meta.client) {
+      logger.verbose('(user-notification-store): showing new notification', params);
       doShowOnClient(params);
     } else {
-      logger.verbose('(useUserNotificationStore): saving new notification on server for restoring on client', params);
+      // TODO: implement passing notification data in payload, but in this case preventing page from being cached (in Nitro cache also)
+      logger.warn('(user-notification-store): showing notification from server side is not implemented', params);
+      if(isDevOrTestEnv()) {
+        throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'showing notification from server side is not implemented', 'error-page');
+      }
+      /*
+      logger.verbose('(user-notification-store): saving new notification on server for restoring on client', params);
       if (notificationsToHydate.length >= AppConfig.userNotifications.maxItems) {
-        logger.warn('(useUserNotificationStore): cannot add new notification on server, maximum number of items exceeded', null, params);
+        logger.warn('(user-notification-store): cannot add new notification on server, maximum number of items exceeded', null, params);
         return;
       }
+      
       notificationsToHydate.push(params);
-      addPayload(nuxtApp, NuxtDataKeys.UserNotifications, notificationsToHydate);
+      addPayload(nuxtApp, DataKeyUserNotifications, notificationsToHydate);
+      */
     }
   };
 
   return {
-    handleAppMount,
     show
   };
 });

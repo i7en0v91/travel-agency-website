@@ -1,7 +1,8 @@
+import { type H3Event } from 'h3';
 import { type CSSProperties } from 'vue';
-import { Decimal } from 'decimal.js';
+import type { Decimal } from 'decimal.js';
 import { type ICitiesSearchQuery } from '../server/dto';
-import { type Locale, DefaultUserCoverSlug, DefaultUserAvatarSlug, type Theme } from './constants';
+import { type PagePath, type Locale, DefaultUserCoverSlug, DefaultUserAvatarSlug, type Theme } from './constants';
 import { type I18nResName } from './i18n';
 
 export type Price = Decimal;
@@ -21,8 +22,13 @@ export interface IEditableEntity extends IEntity {
 export interface IConcurrentlyModifyingEntity {
   version: number;
 }
-
 export type Timestamp = number;
+export interface IImageEntitySrc {
+  slug: string,
+  timestamp?: Timestamp
+};
+
+export type PaymentMethodType = 'full' | 'part';
 
 export interface ILocalizableValue {
   en: string,
@@ -57,13 +63,14 @@ export interface IOffer extends IEditableEntity, ISoftDeleteEntity {
   dataHash: string,
   isFavourite: boolean
 }
-export type MakeSearchResultEntity<TEntity extends IEditableEntity & ISoftDeleteEntity> = Omit<TEntity, keyof IEditableEntity | keyof ISoftDeleteEntity | 'dataHash'> & { id: EntityId };
+export type EntityDataAttrsOnly<TEntity extends IEditableEntity & ISoftDeleteEntity> = Omit<TEntity, keyof IEditableEntity | keyof ISoftDeleteEntity | 'dataHash'> & { id: EntityId };
 
 /**
  * Assets provider
  */
 export interface IAppAssetsProvider {
-  getAsset(filename: string): Promise<Object | undefined>;
+  getAppData(filename: string): Promise<NonNullable<unknown>>;
+  getPdfFont(filename: string): Promise<Buffer>;
 }
 
 /**
@@ -316,7 +323,8 @@ export interface IPopularCityData {
   promoLineStr: ILocalizableValue,
   travelHeaderStr: ILocalizableValue,
   travelTextStr: ILocalizableValue,
-  visibleOnWorldMap: boolean
+  visibleOnWorldMap: boolean,
+  geo?: GeoPoint
 }
 
 export interface ICitiesLogic {
@@ -361,7 +369,7 @@ export interface IAirplaneImage extends IEditableEntity, ISoftDeleteEntity {
 
 export interface IAirplane extends IEditableEntity, ISoftDeleteEntity {
   name: ILocalizableValue,
-  images: MakeSearchResultEntity<IAirplaneImage>[]
+  images: EntityDataAttrsOnly<IAirplaneImage>[]
 }
 
 export interface IAirplaneData {
@@ -380,7 +388,7 @@ export interface IAirplaneLogic {
 /** Airport logic */
 export interface IAirport extends IEditableEntity, ISoftDeleteEntity {
   name: ILocalizableValue,
-  city: MakeSearchResultEntity<ICity>
+  city: EntityDataAttrsOnly<ICity>
   geo: GeoPoint
 }
 
@@ -390,23 +398,23 @@ export interface IAirportLogic {
   getAirport(id: EntityId): Promise<IAirport>;
   getAllAirportsShort(): Promise<IAirportShort[]>;
   createAirport(data: IAirportData): Promise<EntityId>;
-  getAirportsForSearch(citySlugs: string[], addPopular: boolean): Promise<MakeSearchResultEntity<IAirport>[]>;
+  getAirportsForSearch(citySlugs: string[], addPopular: boolean): Promise<EntityDataAttrsOnly<IAirport>[]>;
 };
 
 /** Flights logic */
 export interface IFlight extends IEditableEntity, ISoftDeleteEntity {
-  airlineCompany: MakeSearchResultEntity<IAirlineCompany>,
-  airplane: MakeSearchResultEntity<IAirplane>,
-  departAirport: MakeSearchResultEntity<IAirport>,
-  arriveAirport: MakeSearchResultEntity<IAirport>,
+  airlineCompany: EntityDataAttrsOnly<IAirlineCompany>,
+  airplane: EntityDataAttrsOnly<IAirplane>,
+  departAirport: EntityDataAttrsOnly<IAirport>,
+  arriveAirport: EntityDataAttrsOnly<IAirport>,
   departTimeUtc: Date,
   arriveTimeUtc: Date,
   dataHash: string
 }
 
 export interface IFlightOffer extends IOffer {
-  departFlight: MakeSearchResultEntity<IFlight>,
-  arriveFlight?: MakeSearchResultEntity<IFlight>,
+  departFlight: EntityDataAttrsOnly<IFlight>,
+  arriveFlight?: EntityDataAttrsOnly<IFlight>,
   numPassengers: number,
   class: FlightClass
 }
@@ -459,8 +467,8 @@ export interface ISearchFlightOffersResultFilterParams {
   }[],
 }
 
-export interface ISearchFlightOffersResult {
-  pagedItems: MakeSearchResultEntity<IFlightOffer>[],
+export interface ISearchFlightOffersResult<TOffer extends IFlightOffer = IFlightOffer> {
+  pagedItems: EntityDataAttrsOnly<TOffer>[],
   totalCount: number,
   paramsNarrowing?: ISearchFlightOffersResultFilterParams,
   topOffers?: ITopFlightOfferInfo[]
@@ -470,6 +478,8 @@ export interface IFlightsLogic {
   getFlightPromoPrice(cityId: EntityId): Promise<Price>;
   getFlightOffer(id: EntityId, userId: EntityId | 'guest'): Promise<IFlightOffer>;
   searchOffers(filter: IFlightOffersFilterParams, userId: EntityId | 'guest', primarySorting: ISorting<FlightOffersSortFactor>, secondarySorting: ISorting<FlightOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean, topOffersStats: boolean): Promise<ISearchFlightOffersResult>;
+  getUserFavouriteOffers(userId: EntityId): Promise<ISearchFlightOffersResult<IFlightOffer & { addDateUtc: Date }>>;
+  getUserTickets(userId: EntityId): Promise<ISearchFlightOffersResult<IFlightOffer & { bookingId: EntityId, bookDateUtc: Date; }>>;
   toggleFavourite(offerId: EntityId, userId: EntityId): Promise<boolean>;
 };
 
@@ -522,12 +532,12 @@ export interface IStayImageShort {
 }
 
 export interface IStay extends IEditableEntity, ISoftDeleteEntity {
-  city: MakeSearchResultEntity<ICity>,
+  city: EntityDataAttrsOnly<ICity>,
   slug: string,
   geo: GeoPoint,
   name: ILocalizableValue,
-  description: MakeSearchResultEntity<IStayDescription>[],
-  reviews: MakeSearchResultEntity<IStayReview>[],
+  description: EntityDataAttrsOnly<IStayDescription>[],
+  reviews: EntityDataAttrsOnly<IStayReview>[],
   images: IStayImageShort[]
 }
 export type IStayData = Omit<IStay, keyof (IEditableEntity & ISoftDeleteEntity) | 'description' | 'reviews' | 'images' | 'city'> & {
@@ -547,19 +557,15 @@ export type IStayShort = Omit<IStay, 'description' | 'reviews' | 'images'> & {
 };
 
 export interface IStayOffer extends IOffer {
-  stay: MakeSearchResultEntity<IStayShort>,
+  stay: EntityDataAttrsOnly<IStayShort>,
   checkIn: Date,
   checkOut: Date,
   numGuests: number,
   numRooms: number
 }
 
-export interface IStayOfferDetails extends IOffer {
-  stay: (Omit<MakeSearchResultEntity<IStay>, 'images' | 'reviews'> & { images: IStayImageShort[], numReviews: number, reviewScore: number }),
-  checkIn: Date,
-  checkOut: Date,
-  numGuests: number,
-  numRooms: number,
+export interface IStayOfferDetails extends Omit<IStayOffer, 'stay'> {
+  stay: EntityDataAttrsOnly<Omit<EntityDataAttrsOnly<IStay>, 'images' | 'reviews'> & { images: IStayImageShort[] } & IStayShort>,
   prices: { [SL in StayServiceLevel]: Price }
 }
 
@@ -583,8 +589,8 @@ export interface ISearchStayOffersResultFilterParams {
   }
 }
 
-export interface ISearchStayOffersResult {
-  pagedItems: MakeSearchResultEntity<IStayOffer>[],
+export interface ISearchStayOffersResult<TOffer extends IStayOffer = IStayOffer> {
+  pagedItems: EntityDataAttrsOnly<TOffer>[],
   totalCount: number,
   paramsNarrowing?: ISearchStayOffersResultFilterParams
 }
@@ -594,14 +600,46 @@ export interface IStaySearchHistory {
 }
 
 export interface IStaysLogic {
+  calculatePrice(stay: EntityDataAttrsOnly<IStayShort>, serviceLevel: StayServiceLevel): Price;
   createStay(data: IStayData): Promise<EntityId>;
   getStayOffer(id: EntityId, userId: EntityId | 'guest'): Promise<IStayOfferDetails>;
   findStay(idOrSlug: EntityId | string): Promise<IStay | undefined>;
   searchOffers(filter: IStayOffersFilterParams, userId: EntityId | 'guest', sorting: ISorting<StayOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean): Promise<ISearchStayOffersResult>;
+  getUserFavouriteOffers(userId: EntityId): Promise<ISearchStayOffersResult<IStayOffer & { addDateUtc: Date }>>;
+  getUserTickets(userId: EntityId): Promise<ISearchStayOffersResult<IStayOffer & { bookingId: EntityId, bookDateUtc: Date; }>>;
   toggleFavourite(offerId: EntityId, userId: EntityId): Promise<boolean>;
   createOrUpdateReview(stayId: EntityId, textOrHtml: string, score: number, userId: EntityId): Promise<EntityId>;
   deleteReview(stayId: EntityId, userId: EntityId): Promise<EntityId | undefined>;
-  getStayReviews(stayId: EntityId): Promise<MakeSearchResultEntity<IStayReview>[]>;
+  getStayReviews(stayId: EntityId): Promise<EntityDataAttrsOnly<IStayReview>[]>;
+};
+
+/**
+ *  Booking logic
+ */
+export interface IBooking extends IEditableEntity, ISoftDeleteEntity {
+  bookedUser: {
+    id: EntityId,
+    avatar: IImageEntitySrc | undefined,
+    firstName?: string,
+    lastName?: string
+  }
+}
+
+export interface IOfferBooking<TOffer extends IFlightOffer | IStayOfferDetails> extends IBooking {
+  offer: EntityDataAttrsOnly<TOffer>
+  serviceLevel: TOffer extends IStayOffer ? StayServiceLevel : undefined
+}
+
+export type IOfferBookingData = {
+  offerId: EntityId,
+  kind: OfferKind,
+  bookedUserId: EntityId,
+  serviceLevel?: StayServiceLevel
+};
+
+export interface IBookingLogic {
+  getBooking(id: EntityId): Promise<IOfferBooking<IFlightOffer | IStayOfferDetails>>;
+  createBooking(data: IOfferBookingData): Promise<EntityId>;
 };
 
 /**
@@ -643,6 +681,16 @@ export interface ITokenLogic {
   consumeToken(id: EntityId, value: string): Promise<TokenConsumeResult>;
 };
 
+/** Document generation */
+export type DocumentCommonParams = {
+  theme: Theme,
+  locale: Locale
+};
+
+export interface IDocumentCreator {
+  getBookingTicket(booking: IOfferBooking<IFlightOffer | IStayOfferDetails>, params: DocumentCommonParams, event: H3Event | undefined): Promise<Buffer>;
+}
+
 /** Emails */
 export interface IEmailParams {
   to: string,
@@ -680,12 +728,9 @@ export type PropertyGridControlButtonType = 'change' | 'apply' | 'cancel' | 'del
 
 export type ConfirmBoxButton = 'yes' | 'no' | 'cancel';
 
+export type ActivePageLink = PagePath.Flights | PagePath.Stays | PagePath.Favourites;
 export type NavBarMode = 'landing' | 'inApp';
 export type ButtonKind = 'default' | 'accent' | 'support' | 'icon';
-export interface IImageEntitySrc {
-  slug: string,
-  timestamp?: Timestamp
-};
 
 /** Client - entity cache */
 export interface IEntityCache {
@@ -702,9 +747,10 @@ export interface IOptionButtonProps {
   enabled: boolean,
   isActive?: boolean,
   labelResName: I18nResName,
-  subtextResName?: I18nResName,
+  subtextResName?: I18nResName | null | undefined,
   subtextResArgs?: any,
   shortIcon?: string,
+  tabName?: string,
   role: IOptionButtonRole
 }
 
@@ -862,3 +908,59 @@ export interface IMapControlProps {
 
 /** Components - review editor */
 export type ReviewEditorButtonType = 'bold' | 'italic' | 'strikethrough' | 'underline' | 'bulletList' | 'orderedList' | 'blockquote' | 'undo' | 'redo';
+
+/** Components - booking ticket */
+export interface IBookingTicketGeneralProps {
+  ctrlKey: string,
+  avatar?: IImageEntitySrc | null | undefined,
+  texting?: {
+    name: string,
+    sub?: I18nResName | null | undefined
+  },
+  classResName?: I18nResName
+}
+
+export interface IBookingTicketDatesItemProps {
+  ctrlKey: string,
+  label?: string | undefined,
+  sub?: ILocalizableValue | I18nResName | undefined
+}
+
+export interface IBookingTicketDatesProps {
+  ctrlKey: string,
+  from?: IBookingTicketDatesItemProps | undefined,
+  to?: IBookingTicketDatesItemProps | undefined,
+  offerKind?: OfferKind
+}
+
+export interface IBookingTicketDetailsItemProps {
+  ctrlKey: string,
+  icon: string,
+  caption: I18nResName,
+  text?: I18nResName | undefined
+}
+
+export interface IBookingTicketDetailsProps {
+  ctrlKey: string,
+  items?: IBookingTicketDetailsItemProps[]
+}
+
+export interface IBookingTicketStayTitleProps {
+  ctrlKey: string,
+  stayName: ILocalizableValue,
+  cityName: ILocalizableValue
+}
+
+export interface IBookingTicketFlightGfxProps {
+  ctrlKey: string,
+  userName: string
+}
+
+export interface IBookingTicketProps {
+  ctrlKey: string,
+  offerKind?: OfferKind,
+  generalInfo?: IBookingTicketGeneralProps | undefined,
+  dates?: Omit<IBookingTicketDatesProps, 'offerKind'> | undefined,
+  details?: IBookingTicketDetailsProps | undefined,
+  titleOrGfx?: IBookingTicketFlightGfxProps | IBookingTicketStayTitleProps | undefined
+}

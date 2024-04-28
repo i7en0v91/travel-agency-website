@@ -113,10 +113,11 @@ function onButtonClicked (type: ReviewEditorButtonType) {
   }
 }
 
-// eslint-disable-next-line func-call-spacing
+ 
 const $emit = defineEmits<{
 (event: 'submitReview', reviewHtml: string, score: number): void,
 (event: 'cancelEdit'): void,
+// eslint-disable-next-line @typescript-eslint/unified-signatures
 (event: 'startEdit'): void
 }>();
 

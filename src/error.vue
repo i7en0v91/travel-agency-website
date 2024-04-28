@@ -1,7 +1,8 @@
 <script setup lang="ts">
 
 import { destr } from 'destr';
-import { getUsrMsgResName, AppExceptionCodeEnum } from './shared/exceptions';
+import type { AppExceptionCodeEnum } from './shared/exceptions';
+import { getUsrMsgResName } from './shared/exceptions';
 import ErrorBox from './components/error-box.vue';
 import { getI18nResName2 } from './shared/i18n';
 

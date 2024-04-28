@@ -82,7 +82,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div
+  <section
     :class="`option-button-group ${useAdaptiveButtonWidth ? 'adaptive-buttons-width' : ''}`"
     :style="useAdaptiveButtonWidth ? {
       '--glb-option-button-group-size': ((otherOptions?.variants.length ?? 0) > 0 ? (options.length + 1) : options.length)
@@ -99,6 +99,7 @@ onMounted(() => {
       :subtext-res-name="o.subtextResName"
       :subtext-res-args="o.subtextResArgs"
       :enabled="o.enabled"
+      :tab-name="o.tabName"
       :role="role === 'radiogroup' ? { role: 'radio' } : { role: 'tab', tabPanelId: (o.role as any).tabPanelId }"
       @click="onOptionButtonClick"
     />
@@ -119,5 +120,5 @@ onMounted(() => {
       :enabled="props.otherOptions!.enabled"
       @item-click="onOptionButtonClick"
     />
-  </div>
+  </section>
 </template>

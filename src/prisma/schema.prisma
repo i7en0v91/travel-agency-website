@@ -197,7 +197,7 @@ model UserFlightOffer {
   offer               FlightOffer           @relation(name: "OfferOnUserFlightOffer", fields: [offerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   booking             Booking?              @relation(name: "BookingOnUserFlightOffer")
 
-  @@index([userId])
+  @@index([userId, offerId])
 }
 
 model UserStayOffer {
@@ -215,7 +215,7 @@ model UserStayOffer {
   offer               StayOffer             @relation(name: "OfferOnUserStayOffer", fields: [offerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   booking             Booking?              @relation(name: "BookingOnUserStayOffer")
 
-  @@index([userId])
+  @@index([userId, offerId])
 }
 
 model Hotel {

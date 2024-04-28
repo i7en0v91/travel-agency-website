@@ -18,6 +18,8 @@ const $emit = defineEmits(['update:modelValue']);
   <VueFinalModal
     class="modal-waiting-indicator"
     content-class="modal-waiting-indicator-content"
+    :click-to-close="false"
+    :esc-to-close="false"
     :lock-scroll="false"
     @update:model-value="(val: boolean) => $emit('update:modelValue', val)"
   >

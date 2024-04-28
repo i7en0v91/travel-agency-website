@@ -3,7 +3,7 @@
 import { getLocalizeableValue } from '../../../shared/common';
 import { type Locale } from '../../../shared/constants';
 import { getI18nResName2 } from './../../../shared/i18n';
-import type { GeoPoint, MakeSearchResultEntity, ICity } from './../../../shared/interfaces';
+import type { GeoPoint, EntityDataAttrsOnly, ICity } from './../../../shared/interfaces';
 import ComponentWaiterIndicator from './../../component-waiting-indicator.vue';
 import AppConfig from './../../../appconfig';
 
@@ -12,7 +12,7 @@ interface IProps {
   origin: GeoPoint,
   cssClass?: string,
   webUrl?: string,
-  city?: MakeSearchResultEntity<ICity>
+  city?: EntityDataAttrsOnly<ICity>
 }
 
 const props = withDefaults(defineProps<IProps>(), {

@@ -1,9 +1,10 @@
 import { Decimal } from 'decimal.js';
-import type { IStayOfferDetails, IStay, ICity, ISearchFlightOffersResult, ISearchStayOffersResult, MakeSearchResultEntity, IFlightOffer, IFlight, IAirlineCompany, IAirport, IAirplane, IStayOffer, IStayShort, StayServiceLevel } from './interfaces';
-import type { IStayDto, IFlightDto, IFlightOfferDetailsDto, IStayOfferDetailsDto, ICityDto, ISearchStayOffersResultDto, IAirlineCompanyDto, ISearchedFlightDto, ISearchedFlightOfferDto, IAirportDto, IAirplaneDto, ISearchedStayOfferDto, ISearchFlightOffersResultDto, ISearchedStayDto } from './../server/dto';
+import orderBy from 'lodash-es/orderBy';
+import type { EntityId, Timestamp, IOfferBooking, IStayImageShort, IStayOfferDetails, IStay, ICity, ISearchFlightOffersResult, ISearchStayOffersResult, EntityDataAttrsOnly, IFlightOffer, IFlight, IAirlineCompany, IAirport, IAirplane, IStayOffer, IStayShort } from './interfaces';
+import type { IUserFavouritesResultDto, IStayDto, IFlightDto, IFlightOfferDetailsDto, IStayOfferDetailsDto, ICityDto, ISearchStayOffersResultDto, IAirlineCompanyDto, ISearchedFlightDto, ISearchedFlightOfferDto, IAirportDto, IAirplaneDto, ISearchedStayOfferDto, ISearchFlightOffersResultDto, ISearchedStayDto, IBookingDetailsDto, IUserTicketsResultDto } from './../server/dto';
 import { AppException, AppExceptionCodeEnum } from './exceptions';
 
-export function mapAirlineCompany (dto: IAirlineCompanyDto): MakeSearchResultEntity<IAirlineCompany> {
+export function mapAirlineCompany (dto: IAirlineCompanyDto): EntityDataAttrsOnly<IAirlineCompany> {
   return {
     id: dto.id,
     logoImage: dto.logoImage,
@@ -16,7 +17,7 @@ export function mapAirlineCompany (dto: IAirlineCompanyDto): MakeSearchResultEnt
   };
 }
 
-function mapCity (dto: ICityDto): MakeSearchResultEntity<ICity> {
+function mapCity (dto: ICityDto): EntityDataAttrsOnly<ICity> {
   return {
     id: dto.id,
     country: {
@@ -30,7 +31,7 @@ function mapCity (dto: ICityDto): MakeSearchResultEntity<ICity> {
   };
 }
 
-function mapAirport (dto: IAirportDto): MakeSearchResultEntity<IAirport> {
+function mapAirport (dto: IAirportDto): EntityDataAttrsOnly<IAirport> {
   return {
     id: dto.id,
     name: dto.name,
@@ -39,7 +40,7 @@ function mapAirport (dto: IAirportDto): MakeSearchResultEntity<IAirport> {
   };
 }
 
-function mapAirplane (dto: IAirplaneDto): MakeSearchResultEntity<IAirplane> {
+function mapAirplane (dto: IAirplaneDto): EntityDataAttrsOnly<IAirplane> {
   return {
     id: dto.id,
     name: dto.name,
@@ -58,16 +59,16 @@ function mapAirplane (dto: IAirplaneDto): MakeSearchResultEntity<IAirplane> {
 }
 
 export interface ISearchFlightOffersResultLookup {
-  lookupAirlineCompany: (id: number) => MakeSearchResultEntity<IAirlineCompany>,
-  lookupAirplane: (id: number) => MakeSearchResultEntity<IAirplane>,
-  lookupAirport: (id: number) => MakeSearchResultEntity<IAirport>
+  lookupAirlineCompany: (id: number) => EntityDataAttrsOnly<IAirlineCompany>,
+  lookupAirplane: (id: number) => EntityDataAttrsOnly<IAirplane>,
+  lookupAirport: (id: number) => EntityDataAttrsOnly<IAirport>
 }
 
 export interface ISearchStayOffersResultLookup {
-  lookupCity: (id: number) => MakeSearchResultEntity<ICity>,
+  lookupCity: (id: number) => EntityDataAttrsOnly<ICity>,
 }
 
-export function mapSearchedFlight (dto: ISearchedFlightDto, lookup: ISearchFlightOffersResultLookup): MakeSearchResultEntity<IFlight> {
+export function mapSearchedFlight (dto: ISearchedFlightDto, lookup: ISearchFlightOffersResultLookup): EntityDataAttrsOnly<IFlight> {
   return {
     id: dto.id,
     airlineCompany: lookup.lookupAirlineCompany(dto.airlineCompanyId),
@@ -79,7 +80,7 @@ export function mapSearchedFlight (dto: ISearchedFlightDto, lookup: ISearchFligh
   };
 }
 
-export function mapSearchedFlightOffer (dto: ISearchedFlightOfferDto, lookup: ISearchFlightOffersResultLookup): MakeSearchResultEntity<IFlightOffer> {
+export function mapSearchedFlightOffer (dto: ISearchedFlightOfferDto, lookup: ISearchFlightOffersResultLookup): EntityDataAttrsOnly<IFlightOffer> {
   return {
     id: dto.id,
     kind: 'flights',
@@ -92,7 +93,7 @@ export function mapSearchedFlightOffer (dto: ISearchedFlightOfferDto, lookup: IS
   };
 }
 
-function mapFlight (dto: IFlightDto): MakeSearchResultEntity<IFlight> {
+function mapFlight (dto: IFlightDto): EntityDataAttrsOnly<IFlight> {
   return {
     id: dto.id,
     airlineCompany: mapAirlineCompany(dto.airlineCompany),
@@ -120,7 +121,7 @@ export function mapFlightOfferDetails (dto: IFlightOfferDetailsDto): Omit<IFligh
   };
 }
 
-function mapStay (dto: IStayDto): (Omit<MakeSearchResultEntity<IStay>, 'images' | 'reviews'> & { images: { slug: string, timestamp: number, order: number, serviceLevel?: StayServiceLevel }[], numReviews: number, reviewScore: number }) {
+function mapStay (dto: IStayDto): EntityDataAttrsOnly<Omit<IStay, 'images' | 'reviews'> & { images: IStayImageShort[] } & IStayShort> {
   return {
     id: dto.id,
     city: mapCity(dto.city),
@@ -147,27 +148,13 @@ function mapStay (dto: IStayDto): (Omit<MakeSearchResultEntity<IStay>, 'images' 
       };
     }),
     numReviews: dto.numReviews,
-    reviewScore: dto.reviewScore
-    /*,
-    reviews: dto.reviews.map((r, _) => {
+    reviewScore: dto.reviewScore,
+    photo: dto.images.filter(i => i.order === 0).map((i) => {
       return {
-        id: r.id,
-        score: r.score,
-        order: r.order,
-        text: r.text,
-        user: {
-          id: r.user.id,
-          avatar: r.user.avatar
-            ? {
-                slug: r.user.avatar.slug,
-                timestamp: r.user.avatar.timestamp
-              }
-            : undefined,
-          firstName: r.user.firstName,
-          lastName: r.user.lastName
-        }
+        slug: i.slug,
+        timestamp: i.timestamp
       };
-    }) */
+    })[0]
   };
 }
 
@@ -195,9 +182,9 @@ export function mapStayOfferDetails (dto: IStayOfferDetailsDto): Omit<IStayOffer
 }
 
 export function createSearchFlightOfferResultLookup (resultDto: ISearchFlightOffersResultDto): ISearchFlightOffersResultLookup {
-  const airlineCompaniesMap = new Map<number, MakeSearchResultEntity<IAirlineCompany>>();
-  const airplanesMap = new Map<number, MakeSearchResultEntity<IAirplane>>();
-  const airportsMap = new Map<number, MakeSearchResultEntity<IAirport>>();
+  const airlineCompaniesMap = new Map<number, EntityDataAttrsOnly<IAirlineCompany>>();
+  const airplanesMap = new Map<number, EntityDataAttrsOnly<IAirplane>>();
+  const airportsMap = new Map<number, EntityDataAttrsOnly<IAirport>>();
 
   const indexAirport = (airport: IAirportDto) => {
     if (!airportsMap.get(airport.id)) {
@@ -240,14 +227,14 @@ export function createSearchFlightOfferResultLookup (resultDto: ISearchFlightOff
   };
 
   return {
-    lookupAirlineCompany (id: number): MakeSearchResultEntity<IAirlineCompany> { return wrapThrowExceptionOnLookupFailed((id: number) => { return airlineCompaniesMap.get(id); })(id); },
-    lookupAirport (id: number): MakeSearchResultEntity<IAirport> { return wrapThrowExceptionOnLookupFailed((id: number) => { return airportsMap.get(id); })(id); },
-    lookupAirplane (id: number): MakeSearchResultEntity<IAirplane> { return wrapThrowExceptionOnLookupFailed((id: number) => { return airplanesMap.get(id); })(id); }
+    lookupAirlineCompany (id: number): EntityDataAttrsOnly<IAirlineCompany> { return wrapThrowExceptionOnLookupFailed((id: number) => { return airlineCompaniesMap.get(id); })(id); },
+    lookupAirport (id: number): EntityDataAttrsOnly<IAirport> { return wrapThrowExceptionOnLookupFailed((id: number) => { return airportsMap.get(id); })(id); },
+    lookupAirplane (id: number): EntityDataAttrsOnly<IAirplane> { return wrapThrowExceptionOnLookupFailed((id: number) => { return airplanesMap.get(id); })(id); }
   };
 }
 
 export function createSearchStayOfferResultLookup (resultDto: ISearchStayOffersResultDto): ISearchStayOffersResultLookup {
-  const citiesMap = new Map<number, MakeSearchResultEntity<ICity>>();
+  const citiesMap = new Map<number, EntityDataAttrsOnly<ICity>>();
 
   resultDto.entities.cities.forEach((city) => {
     if (!citiesMap.get(city.id)) {
@@ -274,7 +261,7 @@ export function createSearchStayOfferResultLookup (resultDto: ISearchStayOffersR
   };
 
   return {
-    lookupCity (id: number): MakeSearchResultEntity<ICity> { return wrapThrowExceptionOnLookupFailed((id: number) => { return citiesMap.get(id); })(id); }
+    lookupCity (id: number): EntityDataAttrsOnly<ICity> { return wrapThrowExceptionOnLookupFailed((id: number) => { return citiesMap.get(id); })(id); }
   };
 }
 
@@ -294,7 +281,7 @@ export function mapSearchFlightOffersResult (resultDto: ISearchFlightOffersResul
   };
 }
 
-export function mapSearchedStay (dto: ISearchedStayDto, lookup: ISearchStayOffersResultLookup): MakeSearchResultEntity<IStayShort> {
+export function mapSearchedStay (dto: ISearchedStayDto, lookup: ISearchStayOffersResultLookup): EntityDataAttrsOnly<IStayShort> {
   return {
     city: lookup.lookupCity(dto.cityId),
     id: dto.id,
@@ -310,7 +297,7 @@ export function mapSearchedStay (dto: ISearchedStayDto, lookup: ISearchStayOffer
   };
 }
 
-export function mapSearchedStayOffer (dto: ISearchedStayOfferDto, lookup: ISearchStayOffersResultLookup): MakeSearchResultEntity<IStayOffer> {
+export function mapSearchedStayOffer (dto: ISearchedStayOfferDto, lookup: ISearchStayOffersResultLookup): EntityDataAttrsOnly<IStayOffer> {
   return {
     id: dto.id,
     kind: 'stays',
@@ -332,3 +319,39 @@ export function mapSearchStayOffersResult (resultDto: ISearchStayOffersResultDto
     paramsNarrowing: resultDto.paramsNarrowing
   };
 };
+
+export function mapUserFavouriteOffersResult (resultDto: IUserFavouritesResultDto): (EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>)[] {
+  const mappedOffers: { offer: (EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>), timestamp: number }[] = [];
+
+  const flightsLookup = createSearchFlightOfferResultLookup(resultDto.flights);
+  mappedOffers.push(...resultDto.flights.pagedItems.map((i) => { return { offer: mapSearchedFlightOffer(i, flightsLookup), timestamp: i.addTimestamp }; }));
+  const staysLookup = createSearchStayOfferResultLookup(resultDto.stays);
+  mappedOffers.push(...resultDto.stays.pagedItems.map((i) => { return { offer: mapSearchedStayOffer(i, staysLookup), timestamp: i.addTimestamp }; }));
+
+  return orderBy(mappedOffers, ['timestamp'], ['desc']).map(o => o.offer);
+}
+
+export function mapUserTicketsResult (resultDto: IUserTicketsResultDto): ((EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>) & { bookingId: EntityId, bookingDateUtc: Date })[] {
+  const mappedOffers: { offer: (EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>), timestamp: Timestamp, bookingId: EntityId }[] = [];
+
+  const flightsLookup = createSearchFlightOfferResultLookup(resultDto.flights);
+  mappedOffers.push(...resultDto.flights.pagedItems.map((i) => { return { offer: mapSearchedFlightOffer(i, flightsLookup), timestamp: i.bookedTimestamp, bookingId: i.bookingId}; }));
+  const staysLookup = createSearchStayOfferResultLookup(resultDto.stays);
+  mappedOffers.push(...resultDto.stays.pagedItems.map((i) => { return { offer: mapSearchedStayOffer(i, staysLookup), timestamp: i.bookedTimestamp, bookingId: i.bookingId }; }));
+
+  return orderBy(mappedOffers, ['timestamp'], ['desc']).map(o => { return { ...o.offer, bookingId: o.bookingId, bookingDateUtc: new Date(o.timestamp) }; });
+}
+
+export function mapBookingDetails (dto: IBookingDetailsDto): EntityDataAttrsOnly<IOfferBooking<IFlightOffer | IStayOfferDetails>> {
+  return {
+    id: dto.id,
+    bookedUser: {
+      id: dto.bookedUser.id,
+      avatar: dto.bookedUser.avatar,
+      firstName: dto.bookedUser.firstName,
+      lastName: dto.bookedUser.lastName
+    },
+    offer: dto.kind === 'flights' ? mapFlightOfferDetails(dto.flightOffer!) : mapStayOfferDetails(dto.stayOffer!),
+    serviceLevel: dto.kind === 'stays' ? dto.serviceLevel : undefined
+  };
+}

@@ -18,7 +18,7 @@ async function getTestUserId () : Promise<EntityId> {
 
 export default function TestLocal<P extends ITestLocalProfile> (): OAuthConfig<P> {
   const config = useRuntimeConfig();
-  const authBaseUrl = config.public.auth.baseURL;
+  const authBaseUrl = (config.public.auth as any).baseURL;
   return {
     id: 'testlocal',
     name: AuthProvider.TestLocal.toString(),

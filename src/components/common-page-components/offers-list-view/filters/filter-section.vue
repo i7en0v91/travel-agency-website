@@ -20,9 +20,9 @@ const isCollapsed = ref(false);
   <div class="filter-section pb-xs-5 mr-m-3 mt-xs-5">
     <CollapsableSection v-model:collapsed="isCollapsed" :ctrl-key="`${$props.ctrlKey}-CollapseWrapper`" :collapse-enabled="true" :tabbable-group-id="SearchOffersFilterTabGroupId">
       <template #head>
-        <div class="filter-section-caption">
+        <h3 class="filter-section-caption">
           {{ $t($props.captionResName) }}
-        </div>
+        </h3>
       </template>
       <template #content>
         <div v-if="!showNoResultsStub" class="filter-section-content">

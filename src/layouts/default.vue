@@ -2,7 +2,7 @@
 
 import 'vue-toastification/dist/index.css';
 import 'cropperjs/dist/cropper.css';
-import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css';
+import 'vue3-perfect-scrollbar/style.css';
 import '@vueform/slider/themes/default.css';
 
 import Toast, { type PluginOptions, POSITION as ToastPosition } from 'vue-toastification';
@@ -75,11 +75,6 @@ nuxtApp.vueApp.use(Toast, toastOptions);
 const systemConfigurationStore = useSystemConfigurationStore();
 await systemConfigurationStore.initialize();
 
-const userNotificationStore = useUserNotificationStore();
-onMounted(() => {
-  userNotificationStore.handleAppMount();
-});
-
 function filterNotificationDuplicates (
   toast: any,
   toasts: any[]
@@ -120,7 +115,9 @@ const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.val
       <slot />
       <AppFooter v-if="showDefaultComponents" ctrl-key="footer" />
     </AppContainer>
-    <CookieBanner ctrl-key="CookieBanner" />
+    <ClientOnly>
+      <CookieBanner ctrl-key="CookieBanner" />
+    </ClientOnly>
     <ModalsContainer />
   </div>
 </template>
@@ -153,4 +150,9 @@ const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.val
     @use "~/assets/scss/search-stays-page";
     @use "~/assets/scss/flight-details-page";
     @use "~/assets/scss/stay-details-page";
+    @use "~/assets/scss/flight-book-page";
+    @use "~/assets/scss/stay-book-page";
+    @use "~/assets/scss/payments";
+    @use "~/assets/scss/booking-details-page";
+    @use "~/assets/scss/favourites-page";
 </style>

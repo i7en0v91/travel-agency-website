@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { type Storage, type StorageValue } from 'unstorage';
 import { type IAppLogger } from '../../shared/applogger';
 import { type IImageCategoryLogic, ImageCategory, type IImageCategoryInfo, type EntityId } from '../../shared/interfaces';

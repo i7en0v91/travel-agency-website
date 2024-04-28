@@ -1,5 +1,6 @@
 <script setup lang="ts">
 
+import { withQuery } from 'ufo';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import range from 'lodash-es/range';
 import { PagePath } from '../../shared/constants';
@@ -33,9 +34,9 @@ withDefaults(defineProps<IProps>(), {
 
 <template>
   <section class="stay-available-rooms">
-    <div class="available-rooms-title" role="heading" aria-level="5">
+    <h2 class="available-rooms-title">
       {{ $t(getI18nResName3('stayDetailsPage', 'availableRooms', 'title')) }}
-    </div>
+    </h2>
     <div class="available-rooms-list-div">
       <PerfectScrollbar
         :options="{
@@ -70,7 +71,7 @@ withDefaults(defineProps<IProps>(), {
                 <span v-if="room">{{ $n(Math.floor(room.price.toNumber()), 'currency') }}<wbr>&#47;<span class="stays-price-night">{{ $t(getI18nResName2('searchStays', 'night')) }}</span></span>
                 <div v-else class="data-loading-stub text-data-loading" />
               </div>
-              <NuxtLink class="btn btn-primary available-room-book-btn brdr-1" :to="offerId ? localePath(`/${PagePath.Stays}`) : localePath(route.fullPath)">
+              <NuxtLink class="btn btn-primary available-room-book-btn brdr-1" :to="offerId ? withQuery(localePath(`/${PagePath.BookStay}/${offerId!}`), { serviceLevel: room!.serviceLevel }) : localePath(route.fullPath)">
                 {{ $t(getI18nResName2('offerDetailsPage', 'bookBtn')) }}
               </NuxtLink>
             </div>

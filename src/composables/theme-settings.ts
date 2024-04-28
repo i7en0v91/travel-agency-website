@@ -1,4 +1,4 @@
-import { SessionConstants, type Theme } from '../shared/constants';
+import { SessionThemeKey, type Theme } from '../shared/constants';
 import { getCurrentThemeSettings, setCurrentThemeSettings } from './../client/helpers';
 
 export interface IThemeSettings {
@@ -20,7 +20,7 @@ export function useThemeSettings (): IThemeSettings {
     const targetValue: Theme = instance.currentTheme.value === 'light' ? 'dark' : 'light';
     logger.verbose(`(useThemeSettings) toggling theme to ${targetValue}`);
 
-    localStorage.setItem(SessionConstants.ThemeKey, targetValue.toString());
+    localStorage.setItem(SessionThemeKey, targetValue.toString());
     setCurrentThemeSettings(targetValue);
     themeValue!.value = targetValue;
   };
@@ -28,7 +28,7 @@ export function useThemeSettings (): IThemeSettings {
   if (!instance) {
     logger.verbose('(useThemeSettings) initializing theme settings');
     // this must be initialized in page-load.js script
-    const initialValue: Theme = process.client ? getCurrentThemeSettings() : 'light';
+    const initialValue: Theme = import.meta.client ? getCurrentThemeSettings() : 'light';
     logger.verbose(`(useThemeSettings) theme settings initialized with: ${initialValue}`);
     themeValue = ref(initialValue);
     instance = {

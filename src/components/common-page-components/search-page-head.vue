@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import { type I18nResName } from './../../shared/i18n';
-import StaticImage from './../components/images/static-image.vue';
+import StaticImage from './../../components/images/static-image.vue';
 import SearchOffers from './search-offers/search-offers.vue';
 import { type ImageCategory, type IImageEntitySrc } from './../../shared/interfaces';
 
@@ -18,7 +18,7 @@ defineProps<IProps>();
 </script>
 
 <template>
-  <section class="search-page-head">
+  <div class="search-page-head">
     <div class="search-page-head-media">
       <StaticImage
         :ctrl-key="`${ctrlKey}-MainImage`"
@@ -36,5 +36,5 @@ defineProps<IProps>();
       </div>
     </div>
     <SearchOffers :ctrl-key="`${ctrlKey}-SearchOffers`" :single-tab="singleTab" />
-  </section>
+  </div>
 </template>

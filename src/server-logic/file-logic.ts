@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import dayjs from 'dayjs';
-import { DbConcurrencyVersions } from '../shared/constants';
+import { DbVersionInitial } from '../shared/constants';
 import { type IAppLogger } from '../shared/applogger';
 import { type EntityId, type Timestamp, type IFileData, type IFileInfo, type IFileLogic } from '../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
@@ -81,7 +81,7 @@ export class FileLogic implements IFileLogic {
     const entity = (await this.dbRepository.file.create({
       data: {
         bytes: data.bytes,
-        version: DbConcurrencyVersions.InitialVersion,
+        version: DbVersionInitial,
         isDeleted: false,
         originalName: data.originalName,
         ownerId: data.ownerId,

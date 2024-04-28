@@ -8,7 +8,8 @@
     "unauthorized": "Для продолжения необходимо войти в систему",
     "captchaError": "Ошибка верификации доступа. Проверьте подключение к сети, затем перезагрузите страницу и повторите попытку",
     "emailingDisabled": "Операцию невозможно выполнить, поскольку для этого на веб-сайте необходимо включить функцию отправки электронных писем",
-    "forbidden": "Доступ запрещен"
+    "forbidden": "Доступ запрещен",
+    "documentGenerationFailed": "Ошибка формирования документа"
   },
   "httpCodes": {
     "401": "Отсутствует авторизация",
@@ -76,6 +77,24 @@
   },
   "maps": {
     "disabled": "Интерактивная карта отключена в конфигурации веб-сайта"
+  },
+  "payments": {
+    "methods": {
+      "fullHeader": "Полная оплата",
+      "fullText": "Оплатите сразу полную стоимость",
+      "partHeader": "Частичная оплата",
+      "partText": "Оплатите {now} сейчас, а оставшаяся сумма ({rest}) будет автоматически списана с той же карты {date}. Без дополнительной комиссии.",
+      "moreInfo": "Подробнее"
+    },
+    "loginToPay": {
+      "title": "Войдите или зарегистрируйтесь для оплаты",
+      "withEmail": "Войти с помощью email"
+    },
+    "cards": {
+      "add": "Добавить новую карту",
+      "validThru": "Срок действия"
+    },
+    "payBtn": "Оплатить"
   },
   "searchOffers": {
     "addPromoCode": "Добавить промокод",
@@ -217,7 +236,13 @@
     "btnReviewEditorSend": "отправить текст отзыва на серве",
     "btnReviewEditorCancel": "закрыть редактор текста отзыва",
     "btnDeleteUserReview": "Удалить",
-    "btnEditUserReview": "Редактировать"
+    "btnEditUserReview": "Редактировать",
+    "btnLoginViaEmail": "Войти с помощью email",
+    "btnAddPaymentCard": "добавить платежную карту",
+    "btnRemovePaymentCard": "удалить платежную карту",
+    "navOfferBreadcrumbs": "хлебные крошки",
+    "navMain": "основная",
+    "navFooter": "дополнительная"
   },
   "footer": {
     "destinations": {
@@ -356,7 +381,8 @@
     },
     "location": {
       "title": "Местоположение на карте",
-      "viewOnWebsite": "На {webLink}"
+      "viewOnWebsite": "На {webLink}",
+      "demoMarker": "Маркер расположения, не является реальным объектом (ДЕМО)"
     },
     "amenities": {
       "title": "Инфраструктура",
@@ -376,6 +402,80 @@
       "noReviews": "Нет отзывов",
       "mustBeLoggedInToReview": "Для добавления отзывов необходимо войти в систему"
     }
+  },
+  "stayDetailsCard": {
+    "checkIn": "Заезд",
+    "checkOut": "Выезд"
+  },
+  "bookingCommon": {
+    "pageTitle": "Подробности бронирования",
+    "bookingProtected": "Безопасность бронирования обеспечивается { by }",
+    "protectedBy": "golobe",
+    "pricingDecomposition": {
+      "caption": "Детали платежа",
+      "fare": "Стоимость услуг",
+      "discount": "Скидка",
+      "taxes": "Налоги",
+      "fee": "Сервисный сбор",
+      "total": "Всего"
+    },
+    "generatingDoc": "Идёт формирование документа...",
+    "docFileNamePrefix": "билет"
+  },
+  "ticket": {
+    "avatarImgAlt": "фото пассажира",
+    "flightClass": "класс",
+    "boardingPass": "Посадочный билет N’123",
+    "checkIn": "Заезд",
+    "checkOut": "Выезд",
+    "cityImgAlt": "@:flightsPage.worldMap.cityImgAlt",
+    "class": {
+      "economy": "@:searchFlights.class.economy @:ticket.flightClass",
+      "comfort": "@:searchFlights.class.comfort @:ticket.flightClass",
+      "business": "@:searchFlights.class.business @:ticket.flightClass",
+      "base": "Улучшенный номер",
+      "city": "Улучшенный номер - Вид на город"
+    },
+    "details": {
+      "date": "Дата",
+      "duration": "Время в пути",
+      "gate": "Выход",
+      "seat": "Место",
+      "checkInTime": "Время заезда",
+      "checkOutTime": "Время выезда",
+      "room": "Комната №",
+      "onArrival": "По прибытию"
+    },
+    "pdf": {
+      "title": "Билет"
+    }
+  },
+  "bookingPage": {
+    "pageTitle": "@:bookingCommon.pageTitle - билет",
+    "flightTitleExt": "Билет - @:flightDetailsPage.titleExt",
+    "stayTitleExt": "Билет - @:stayDetailsPage.titleExt",
+    "downloadBtn": "Скачать"
+  },
+  "bookingTnC": {
+    "title": "Пользовательское соглашение",
+    "payments": {
+      "title": "Платежи",
+      "paragraph1": "Если Вы покупаете билет с помощью дебетовой или кредитной карты через веб-сайт, мы будем обрабатывать эти платежи через автоматизированный безопасный общий платежный шлюз, который будет подвергаться проверке на мошенничество.",
+      "paragraph2": "Если Вы не предоставите правильный адрес для выставления счета по карте и/или информацию о владельце карты, Ваше бронирование не будет подтверждено, и общая стоимость может увеличиться. Мы оставляем за собой право отменить Ваше бронирование, если оплата будет отклонена по какой-либо причине или если Вы предоставили неверные данные карты. Если нам станет известно или мы будем уведомлены о любом мошенничестве или незаконной деятельности, связанной с оплатой бронирования, бронирование будет отменено, и Вы будете нести ответственность за все расходы и издержки, возникающие в результате таких действий.",
+      "paragraph3": "{companyName} может потребовать от владельца карты предоставить дополнительное подтверждение платежа по запросу, отправив онлайн-форму, посетив ближайший офис {companyName} или в аэропорту во время регистрации. {companyName} оставляет за собой право отказать в посадке или получении гарантийного платежа (наличными или с другой кредитной карты), если карта, первоначально использованная для покупки, не может быть предъявлена владельцем карты при регистрации или при получении билетов, или в случае, если первоначальный платеж был удержан или оспаривается банком-эмитентом карты. Данные кредитной карты хранятся в защищенной среде и передаются через международно-признанную систему."
+    },
+    "contactUs": {
+      "title": "Свяжитесь с нами",
+      "directions": "Если у Вас есть какие-либо вопросы о нашем веб-сайте или наших Условиях использования, свяжитесь с нами используя контактную информацию, размещённую на {siteUrl}"
+    }
+  },
+  "flightBookingPage": {
+    "title": "@:bookingCommon.pageTitle",
+    "titleExt": "@:bookingCommon.pageTitle - @:flightDetailsPage.titleExt"
+  },
+  "stayBookingPage": {
+    "title": "@:bookingCommon.pageTitle",
+    "titleExt": "@:bookingCommon.pageTitle - @:stayDetailsPage.titleExt"
   },
   "reviewEditor": {
     "buttons": {
@@ -410,6 +510,16 @@
     "btn": "Просмотреть все",
     "travelImgAlt": "одна из фотографий города",
     "priceFrom": "От"
+  },
+  "favouritesPage": {
+    "title": "@:nav.userBox.favourites",
+    "flightsTab": "@:searchOffers.flightsTab",
+    "staysTab": "@:searchOffers.staysTab",
+    "numMarked": "{count} отмечено",
+    "noMarkedOffers": {
+      "flights": "Нет избранных авиабилетов",
+      "stays": "Нет избранных мест"
+    }
   },
   "accountPageCommon": {
     "emailLabel": "Email",
@@ -521,7 +631,13 @@
       "emailWasAutoverified": "DEVELOPMENT ONLY: указанный адрес электронной почты был автоматически подтвержден системой, и теперь Вы можете войти с его помощью. Вы также можете включить функцию отправки электронных писем в конфигурационном файле сервера, чтобы использовать реальные электронные письма для верифицикации"
     },
     "tabHistory": {
-      "title": "История"
+      "title": "Билеты/Бронь",
+      "upcoming": "Предстоящие", 
+      "passed": "Прошедшие",
+      "flightsTab": "@:searchOffers.flightsTab",
+      "staysTab": "@:searchOffers.staysTab",
+      "noOffers": "Билеты/бронь отсутствуют",
+      "btnDownload": "Скачать"
     },
     "tabPayments": {
       "title": "Платежи"
@@ -685,5 +801,6 @@
     "btnAccept": "Согласен"
   },
   "close": "Закрыть",
-  "calendarImgAlt": "значок календаря"
+  "calendarImgAlt": "значок календаря",
+  "mapsProviderYandex": "Яндекс.Карты"
 }

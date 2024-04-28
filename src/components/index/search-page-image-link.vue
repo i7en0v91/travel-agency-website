@@ -7,7 +7,7 @@ interface IProps {
   ctrlKey: string,
   page: 'flights' | 'stays'
 }
-const props = defineProps<IProps>();
+defineProps<IProps>();
 
 const localePath = useLocalePath();
 
@@ -20,17 +20,17 @@ const localePath = useLocalePath();
       :asset-src="{ filename: `image-link-${$props.page}.webp`, width: 590, height: 550 }"
       sizes="xs:40vw sm:40vw md:40vw lg:40vw xl:40vw"
       class="image-link-img"
-      :overlay-class="`search-${props.page}-page-link-overlay`"
+      img-class="search-stays-page-link-img"
       :alt-res-name="getI18nResName2('indexPage', 'imgLinkAlt')"
     />
-    <div class="image-link-texting mb-xs-4">
-      <h2>{{ $t(getI18nResName3('indexPage', `${page}ImgLink`, 'title')) }}</h2>
+    <section class="image-link-texting mb-xs-4">
+      <h3 class="font-h2">{{ $t(getI18nResName3('indexPage', `${page}ImgLink`, 'title')) }}</h3>
       <p class="mt-xs-2">
         {{ $t(getI18nResName3('indexPage', `${page}ImgLink`, 'sub')) }}
       </p>
       <NuxtLink class="btn btn-primary btn-icon icon-paper-plane brdr-1 mt-xs-3" :to="localePath(`${page === 'flights' ? `/${PagePath.Flights}` : `/${PagePath.Stays}`}`)">
         {{ $t(getI18nResName3('indexPage', `${page}ImgLink`, 'btn')) }}
       </NuxtLink>
-    </div>
+    </section>
   </div>
 </template>

@@ -1,16 +1,16 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import dayjs from 'dayjs';
 import groupBy from 'lodash-es/groupBy';
 import values from 'lodash-es/values';
 import { type IUserProfileInfo, type UserResponseDataSet, type RegisterVerificationFlow, type RegisterUserByEmailResponse, type IUserLogic, AuthProvider, type IUserMinimalInfo, type IImageLogic, type ITokenLogic, type IEmailSender, TokenKind, type IEmailParams, EmailTemplate, type PasswordRecoveryResult, type EntityId, ImageCategory, type IImageBytesProvider, type Timestamp, type UpdateUserAccountResult } from '../shared/interfaces';
 import { type IAppLogger } from '../shared/applogger';
 import { isPasswordSecure } from '../shared/common';
-import { DbConcurrencyVersions, type Locale, type Theme, SecretValueMask, DefaultEmailTheme, DefaultLocale } from '../shared/constants';
+import { DbVersionInitial, type Locale, type Theme, SecretValueMask, DefaultEmailTheme, DefaultLocale } from '../shared/constants';
 import { maskLog } from '../shared/applogger';
 import { getI18nResName3 } from '../shared/i18n';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
 import AppConfig from '../appconfig';
-import { Queries, Mappers } from './queries';
+import { MapUserEntityMinimal, UserProfileQuery, MapUserEntityProfile, UserMinimalQuery } from './queries';
 import { type IServerI18n } from './helpers/i18n';
 import { mapEnumValue, obtainFreeSlug } from './helpers/db';
 import { calculatePasswordHash, getSomeSalt, verifyPassword } from './helpers/crypto';
@@ -97,7 +97,7 @@ export class UserLogic implements IUserLogic {
         data: {
           email: emailToAdd,
           order: ((userInfo.emails?.length ?? 0) > 0 ? Math.max(...userInfo.emails.map(x => x.order)) : 0) + 1,
-          version: DbConcurrencyVersions.InitialVersion,
+          version: DbVersionInitial,
           isVerified: isAutoVerified,
           user: {
             connect: {
@@ -458,7 +458,7 @@ export class UserLogic implements IUserLogic {
       data: {
         authProvider: 'EMAIL',
         providerIdentity: email,
-        version: DbConcurrencyVersions.InitialVersion,
+        version: DbVersionInitial,
         firstName: firstName ?? null,
         lastName: lastName ?? null,
         passwordSalt,
@@ -467,7 +467,7 @@ export class UserLogic implements IUserLogic {
           create: {
             email,
             order: 0,
-            version: DbConcurrencyVersions.InitialVersion,
+            version: DbVersionInitial,
             isVerified: verification === 'verified'
           }
         }
@@ -530,7 +530,7 @@ export class UserLogic implements IUserLogic {
     if (dataSet === 'profile') {
       const userProfileQuery = {
         where: filterQuery,
-        select: Queries.UserProfileQuery.select
+        select: UserProfileQuery.select
       };
       const userEntity = await this.dbRepository.user.findFirst(userProfileQuery);
       if (!userEntity) {
@@ -539,11 +539,11 @@ export class UserLogic implements IUserLogic {
       }
 
       this.logger.verbose(`(UserLogic) get user - found: id=${userId}}`);
-      return Mappers.MapUserEntityProfile(userEntity);
+      return MapUserEntityProfile(userEntity);
     } else {
       const userMinimalQuery = {
         where: filterQuery,
-        select: Queries.UserMinimalQuery.select
+        select: UserMinimalQuery.select
       };
       const userEntity = await this.dbRepository.user.findFirst(userMinimalQuery);
       if (!userEntity) {
@@ -552,7 +552,7 @@ export class UserLogic implements IUserLogic {
       }
 
       this.logger.verbose(`(UserLogic) get user - found: id=${userId}}`);
-      return Mappers.MapUserEntityMinimal(userEntity);
+      return MapUserEntityMinimal(userEntity);
     }
   };
 
@@ -566,7 +566,7 @@ export class UserLogic implements IUserLogic {
           providerIdentity,
           isDeleted: false
         },
-        select: Queries.UserProfileQuery.select
+        select: UserProfileQuery.select
       };
       const userEntity = await this.dbRepository.user.findFirst(userProfileQuery);
       if (!userEntity) {
@@ -575,7 +575,7 @@ export class UserLogic implements IUserLogic {
       }
 
       this.logger.verbose(`(UserLogic) user found: id=${userEntity.id}, authProvider=${authProvider}, providerIdentity=${providerIdentity}`);
-      return Mappers.MapUserEntityProfile(userEntity);
+      return MapUserEntityProfile(userEntity);
     } else {
       const userMinimalQuery = {
         where: {
@@ -583,7 +583,7 @@ export class UserLogic implements IUserLogic {
           providerIdentity,
           isDeleted: false
         },
-        select: Queries.UserMinimalQuery.select
+        select: UserMinimalQuery.select
       };
       const userEntity = await this.dbRepository.user.findFirst(userMinimalQuery);
       if (!userEntity) {
@@ -592,7 +592,7 @@ export class UserLogic implements IUserLogic {
       }
 
       this.logger.verbose(`(UserLogic) user found: id=${userEntity.id}, authProvider=${authProvider}, providerIdentity=${providerIdentity}`);
-      return Mappers.MapUserEntityMinimal(userEntity);
+      return MapUserEntityMinimal(userEntity);
     }
   };
 
@@ -614,7 +614,7 @@ export class UserLogic implements IUserLogic {
     if (dataSet === 'profile') {
       const userProfileQuery = {
         where: filterQuery,
-        select: Queries.UserProfileQuery.select
+        select: UserProfileQuery.select
       };
       const userEntity = await this.dbRepository.user.findFirst(userProfileQuery);
       if (!userEntity) {
@@ -623,11 +623,11 @@ export class UserLogic implements IUserLogic {
       }
 
       this.logger.verbose(`(UserLogic) user found: id=${userEntity.id}, email=${maskLog(email)}, mustBeVerified=${mustBeVerified}`);
-      return Mappers.MapUserEntityProfile(userEntity);
+      return MapUserEntityProfile(userEntity);
     } else {
       const userMinimalQuery = {
         where: filterQuery,
-        select: Queries.UserMinimalQuery.select
+        select: UserMinimalQuery.select
       };
       const userEntity = await this.dbRepository.user.findFirst(userMinimalQuery);
       if (!userEntity) {
@@ -636,7 +636,7 @@ export class UserLogic implements IUserLogic {
       }
 
       this.logger.verbose(`(UserLogic) user found: id=${userEntity.id}, email=${maskLog(email)}, mustBeVerified=${mustBeVerified}`);
-      return Mappers.MapUserEntityMinimal(userEntity);
+      return MapUserEntityMinimal(userEntity);
     }
   };
 
@@ -654,12 +654,12 @@ export class UserLogic implements IUserLogic {
 
     const userProfileQuery = {
       where: filterQuery,
-      select: Queries.UserProfileQuery.select
+      select: UserProfileQuery.select
     };
     const userEntity = await this.dbRepository.user.findFirst(userProfileQuery);
     if (userEntity) {
       this.logger.verbose(`(UserLogic) oauth user found: id=${userEntity.id}, authProvider=${authProvider}, providerIdentity=${providerIdentity}`);
-      return Mappers.MapUserEntityProfile(userEntity);
+      return MapUserEntityProfile(userEntity);
     }
 
     this.logger.info(`(UserLogic) oauth user not found, creating new: authProvider=${authProvider}, providerIdentity=${providerIdentity}, email=${maskLog(email)}, emailVerified=${emailVerified}, firstName=${maskLog(firstName)}, lastName=${maskLog(lastName)}`);
@@ -668,7 +668,7 @@ export class UserLogic implements IUserLogic {
           create: [{
             email,
             order: 0,
-            version: DbConcurrencyVersions.InitialVersion,
+            version: DbVersionInitial,
             isVerified: emailVerified
           }]
         }
@@ -677,15 +677,15 @@ export class UserLogic implements IUserLogic {
       data: {
         authProvider: mapEnumValue(authProvider),
         providerIdentity,
-        version: DbConcurrencyVersions.InitialVersion,
+        version: DbVersionInitial,
         emails,
         firstName,
         lastName
       },
-      select: Queries.UserMinimalQuery.select
+      select: UserMinimalQuery.select
     });
 
-    const result: IUserProfileInfo = Mappers.MapUserEntityMinimal(newUserEntity);
+    const result: IUserProfileInfo = MapUserEntityMinimal(newUserEntity);
     this.logger.info(`(UserLogic) new oauth user created: id=${result.id}, authProvider=${authProvider}, providerIdentity=${providerIdentity}`);
 
     return result;

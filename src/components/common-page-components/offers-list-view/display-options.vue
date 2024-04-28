@@ -3,7 +3,7 @@
 import throttle from 'lodash-es/throttle';
 import ComponentWaiterIndicator from './../../component-waiting-indicator.vue';
 import { getI18nResName3 } from './../../../shared/i18n';
-import { UIControlKeys, DeviceSizeEnum, SearchOffersListConstants } from './../../../shared/constants';
+import { SearchStayOffersDisplayOptions, SearchFlightOffersDisplayOptions, DefaultStayOffersSorting, DefaultFlightOffersSorting, DeviceSizeEnum } from './../../../shared/constants';
 import { callForCurrentDeviceSize } from './../../../shared/dom';
 import { convertTimeOfDay } from './../../../shared/common';
 import { StayOffersSortFactorEnum, type ISearchFlightOffersParams, type ISearchStayOffersParams, type ISearchStayOffersDisplayOptions, type IDropdownListItemProps, type StayOffersSortFactor, type FlightOffersSortFactor, type OtherOptionButtonVariant, type IOtherOptionsButtonGroupProps, type OfferKind, type IOptionButtonProps, type ISearchFlightOffersDisplayOption, type ISearchFlightOffersDisplayOptions, type DropdownListValue } from './../../../shared/interfaces';
@@ -42,7 +42,7 @@ function getOptionCtrlKey (optionType: string): string {
 
 function getInitialActiveOptionCtrl () : string {
   if (searchOffersStore.offersKind === 'flights') {
-    return getOptionCtrlKey((searchOffersStore.viewState.displayOptions as ISearchFlightOffersDisplayOptions)?.primaryOptions.find(x => x.isActive)?.type ?? SearchOffersListConstants.DefaultFlightOffersSorting);
+    return getOptionCtrlKey((searchOffersStore.viewState.displayOptions as ISearchFlightOffersDisplayOptions)?.primaryOptions.find(x => x.isActive)?.type ?? DefaultFlightOffersSorting);
   } else {
     return getOptionCtrlKey(SearchStaysOptionButtons[0]);
   }
@@ -243,7 +243,7 @@ function refreshResultListAsIfSortChanged () {
   }
 
   if (searchOffersStore.offersKind === 'flights') {
-    const activatedPrimaryOptionType = (optionButtonsProps.value.find(p => p.ctrlKey === activeOptionCtrl.value)?.type ?? (otherSortDropdownProps.value?.variants.find(x => x.ctrlKey === activeOptionCtrl.value) as IOtherDisplayOptionButtonProps)?.type) ?? SearchOffersListConstants.DefaultFlightOffersSorting;
+    const activatedPrimaryOptionType = (optionButtonsProps.value.find(p => p.ctrlKey === activeOptionCtrl.value)?.type ?? (otherSortDropdownProps.value?.variants.find(x => x.ctrlKey === activeOptionCtrl.value) as IOtherDisplayOptionButtonProps)?.type) ?? DefaultFlightOffersSorting;
     if (!activatedPrimaryOptionType) {
       throw new Error('cannot detect primary sort mode');
     }
@@ -274,7 +274,7 @@ function refreshResultListAsIfSortChanged () {
     }
   } else {
     const resultSortingType = (searchOffersStore as ISearchOffersStoreInstance<ISearchStayOffersParams>).resultState.usedSearchParams?.displayOptions.sorting;
-    const activatedSortType = secondarySort.value ?? SearchOffersListConstants.DefaultStayOffersSorting;
+    const activatedSortType = secondarySort.value ?? DefaultStayOffersSorting;
     const userSortingChanged = resultSortingType !== undefined && resultSortingType !== activatedSortType;
     if (!userSortingChanged) {
       logger.verbose(`(DisplayOptions) no need to refresh results (as if sorting changed) - sort mode hasn't changed, ctrlKey=${props.ctrlKey}, sort=${activatedSortType}`);
@@ -304,7 +304,7 @@ function refreshDisplayedOptionButtons () {
     } else {
       optionButtonsProps.value = [];
       otherSortDropdownProps.value = undefined;
-      secondarySort.value = SearchOffersListConstants.DefaultFlightOffersSorting;
+      secondarySort.value = DefaultFlightOffersSorting;
       secondarySortDropdownItemsProps.value = [];
     }
   } else {
@@ -320,7 +320,7 @@ function refreshDisplayedOptionButtons () {
     } else {
       optionButtonsProps.value = [];
       otherSortDropdownProps.value = undefined;
-      secondarySort.value = SearchOffersListConstants.DefaultStayOffersSorting;
+      secondarySort.value = DefaultStayOffersSorting;
       secondarySortDropdownItemsProps.value = [];
     }
   }
@@ -388,7 +388,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
+  <section
     class="display-options"
   >
     <ComponentWaiterIndicator v-if="showWaitingStub && !isError" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="display-options-waiter" />
@@ -397,7 +397,7 @@ onUnmounted(() => {
         v-if="!showWaitingStub"
         v-model:active-option-ctrl="activeOptionCtrl"
         class="offers-list-display-options"
-        :ctrl-key="props.offersKind === 'flights' ? UIControlKeys.SearchFlightOffersDisplayOptions : UIControlKeys.SearchStayOffersDisplayOptions"
+        :ctrl-key="props.offersKind === 'flights' ? SearchFlightOffersDisplayOptions : SearchStayOffersDisplayOptions"
         :options="optionButtonsProps"
         :other-options="otherSortDropdownProps"
         :use-adaptive-button-width="true"
@@ -432,5 +432,5 @@ onUnmounted(() => {
         </div>
       </div>
     </ErrorHelm>
-  </div>
+  </section>
 </template>

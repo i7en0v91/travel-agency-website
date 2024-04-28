@@ -10,10 +10,10 @@ interface IProps {
 }
 const props = defineProps<IProps>();
 
-const userAvatarImage = ref<InstanceType<typeof EditableImage>>();
+const userAvatarImage = shallowRef<InstanceType<typeof EditableImage>>();
 
 const userAccountStore = useUserAccountStore();
-const userAccount = await userAccountStore.initializeUserAccount();
+const userAccount = await userAccountStore.getUserAccount();
 
 const logger = CommonServicesLocator.getLogger();
 
@@ -60,7 +60,7 @@ onMounted(() => {
     v-model:entity-src="imageSrc"
     :category="ImageCategory.UserAvatar"
     ctrl-key="userAvatar"
-    class="avatar-box"
+    :class="`avatar-box ${!(userAccount.avatar) ? 'avatar-default' : ''}`"
     sizes="xs:50vw sm:30vw md:20vw lg:10vw xl:10vw"
     :fill-alpha="false"
     :show-stub="false"

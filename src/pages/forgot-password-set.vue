@@ -7,7 +7,7 @@ import { getI18nResName2 } from './../shared/i18n';
 import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
 import SimpleButton from './../components/forms/simple-button.vue';
-import { WebApiRoutes, SecretValueMask, PagePath } from './../shared/constants';
+import { ApiEndpointPasswordRecoveryComplete, SecretValueMask, PagePath } from './../shared/constants';
 import { type IRecoverPasswordCompleteDto, type IRecoverPasswordCompleteResultDto, RecoverPasswordCompleteResultCode } from './../server/dto';
 import { post } from './../shared/rest-utils';
 import AccountFormPhotos from './../components/account/form-photos.vue';
@@ -63,7 +63,7 @@ const callServerPasswordSet = async (password: string) => {
       password
     };
 
-    const resultDto = await post(WebApiRoutes.PasswordRecoveryComplete, undefined, postBody) as IRecoverPasswordCompleteResultDto;
+    const resultDto = await post(ApiEndpointPasswordRecoveryComplete, undefined, postBody, undefined, true, 'default') as IRecoverPasswordCompleteResultDto;
     if (resultDto) {
       const resultCode = resultDto.code;
       navigateTo(localePath(`/${PagePath.ForgotPasswordComplete}?result=${resultCode}`));
@@ -86,9 +86,9 @@ function submitClick () {
   <div class="set-password-page account-page no-hidden-parent-tabulation-check">
     <div class="set-password-page-content">
       <NavLogo ctrl-key="setPasswordPageAppLogo" mode="inApp" />
-      <h2 class="set-password-title">
+      <h1 class="set-password-title font-h2">
         {{ t(getI18nResName2('forgotPasswordSetPage', 'title')) }}
-      </h2>
+      </h1>
       <div class="set-password-subtitle mt-xs-3">
         {{ t(getI18nResName2('forgotPasswordSetPage', 'subTitle')) }}
       </div>

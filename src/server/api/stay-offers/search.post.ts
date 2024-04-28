@@ -1,14 +1,15 @@
-import { H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import { Decimal } from 'decimal.js';
 import isString from 'lodash-es/isString';
 import { destr } from 'destr';
 import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';
-import { SessionConstants, SearchOffersListConstants } from '../../../shared/constants';
+import { MaxSearchHistorySize, SessionStaySearchHistory } from '../../../shared/constants';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
-import { type ISearchedStayOfferDto, type ISearchStayOffersResultDto, type ISearchStayOffersParamsDto, SearchStayOffersParamsDtoSchema, type ICityDto, type ISearchedStayDto } from '../../dto';
-import type { MakeSearchResultEntity, ISearchStayOffersResult, IStayOffersFilterParams, EntityId, ISorting, StayOffersSortFactor, IStayOffer, IStayShort, IStaySearchHistory, ICitiesLogic } from '../../../shared/interfaces';
+import { type ISearchStayOffersResultDto, type ISearchStayOffersParamsDto, SearchStayOffersParamsDtoSchema } from '../../dto';
+import type { IStayOffersFilterParams, EntityId, ISorting, StayOffersSortFactor, IStaySearchHistory, ICitiesLogic } from '../../../shared/interfaces';
 import type { IAppLogger } from '../../../shared/applogger';
 import { getValue, setValue } from '../../../server-logic/helpers/user-session';
+import { mapSearchedStayOffer, mapSearchStayOfferResultEntities } from './../../utils/mappers';
 import { getServerSession } from '#auth';
 
 function performAdditionalDtoValidation (dto: ISearchStayOffersParamsDto, event : H3Event, logger: IAppLogger) {
@@ -21,50 +22,6 @@ function performAdditionalDtoValidation (dto: ISearchStayOffersParamsDto, event 
     logger.warn(`(api:stay-search) search stay query date range is incorrect, url=${event.node.req.url}`, undefined, dto);
     throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'search query arguments are incorrect', 'error-stub');
   }
-}
-
-function mapSearchStayOfferResultEntities (result: ISearchStayOffersResult): { cities: ICityDto[] } {
-  const citiesMap = new Map<EntityId, ICityDto>();
-  result.pagedItems.forEach((offer) => {
-    const city = offer.stay.city;
-    if (!citiesMap.get(city.id)) {
-      citiesMap.set(city.id, city);
-    }
-  });
-
-  return {
-    cities: [...citiesMap.values()]
-  };
-}
-
-function mapStay (value: MakeSearchResultEntity<IStayShort>): ISearchedStayDto {
-  return {
-    cityId: value.city.id,
-    geo: value.geo,
-    id: value.id,
-    slug: value.slug,
-    name: value.name,
-    numReviews: value.numReviews,
-    reviewScore: value.reviewScore,
-    photo: {
-      slug: value.photo.slug,
-      timestamp: value.photo.timestamp
-    }
-  };
-}
-
-function mapOffer (value: MakeSearchResultEntity<IStayOffer>): ISearchedStayOfferDto {
-  const mapped: ISearchedStayOfferDto = {
-    id: value.id,
-    isFavourite: value.isFavourite,
-    totalPrice: value.totalPrice.toNumber(),
-    checkInDate: value.checkIn.toISOString(),
-    checkOutDate: value.checkOut.toISOString(),
-    numGuests: value.numGuests,
-    numRooms: value.numRooms,
-    stay: mapStay(value.stay)
-  };
-  return mapped;
 }
 
 function getSortDirection (sort: StayOffersSortFactor): 'asc' | 'desc' {
@@ -86,7 +43,7 @@ async function addCityToSearchHistory (citySlug: string | undefined, citiesLogic
     try {
       logger.verbose(`(api:stay-search) adding popular city to search history, citySlug=${citySlug}, id=${cityId}`);
 
-      let searchHistory = destr<IStaySearchHistory | undefined>(await getValue(event, SessionConstants.StaySearchHistory));
+      let searchHistory = destr<IStaySearchHistory | undefined>(await getValue(event, SessionStaySearchHistory));
       if (!searchHistory) {
         searchHistory = { popularCityIds: [] };
       }
@@ -95,11 +52,11 @@ async function addCityToSearchHistory (citySlug: string | undefined, citiesLogic
         return;
       }
       searchHistory.popularCityIds = [cityId, ...searchHistory.popularCityIds];
-      if (searchHistory.popularCityIds.length > SearchOffersListConstants.MaxSearchHistorySize) {
+      if (searchHistory.popularCityIds.length > MaxSearchHistorySize) {
         searchHistory.popularCityIds.pop();
       }
       logger.debug(`(api:stay-search) city search history updated, result=${JSON.stringify(searchHistory.popularCityIds)}`);
-      await setValue(event, SessionConstants.StaySearchHistory, JSON.stringify(searchHistory));
+      await setValue(event, SessionStaySearchHistory, JSON.stringify(searchHistory));
     } catch (err: any) {
       logger.warn(`(api:stay-search) failed to add popular city to search history, citySlug=${citySlug}, id=${cityId}`, err);
     }
@@ -150,7 +107,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   const result: ISearchStayOffersResultDto = {
     entities: mapSearchStayOfferResultEntities(searchResults),
     pagedItems: searchResults.pagedItems.map((item) => {
-      return mapOffer(item);
+      return mapSearchedStayOffer(item);
     }),
     totalCount: searchResults.totalCount,
     paramsNarrowing: searchResults.paramsNarrowing

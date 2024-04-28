@@ -1,9 +1,9 @@
-import { H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import { validateObject } from '../../../shared/validation';
-import { WebApiRoutes } from '../../../shared/constants';
 import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';
 import { defineWebApiEventHandler } from './../../utils/webapi-event-handler';
 import { CitiesSearchQuerySchema, type IListItemDto } from './../../dto';
+import AppConfig from './../../../appconfig'; 
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const logger = ServerServicesLocator.getLogger();
@@ -28,12 +28,12 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   const searchParams = CitiesSearchQuerySchema.cast(query);
   const searchResults = await citiesLogic.search(searchParams);
 
-  if (process.env.NODE_ENV !== 'development') {
-    handleCacheHeaders(event, {
-      maxAge: WebApiRoutes.OneDayCacheLatency
+  handleCacheHeaders(event, 
+    AppConfig.caching.htmlPageCachingSeconds ? {
+      maxAge: AppConfig.caching.htmlPageCachingSeconds,
+    } : {
+      cacheControls: ['no-cache']
     });
-  }
-
   setHeader(event, 'content-type', 'application/json');
 
   return searchResults.map((r) => {

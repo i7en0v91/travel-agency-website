@@ -16,7 +16,7 @@ interface IProps {
 const props = defineProps<IProps>();
 
 const logger = CommonServicesLocator.getLogger();
-const clickedButton = ref<ConfirmBoxButton>();
+const clickedButton = shallowRef<ConfirmBoxButton>();
 
 const $emit = defineEmits(['update:modelValue']);
 

@@ -1,6 +1,6 @@
 import { Decimal } from 'decimal.js';
 import { sha256 } from 'ohash';
-import type { Price, MakeSearchResultEntity, IFlight, IFlightOffer, IStayOffer } from './../../shared/interfaces';
+import type { Price, EntityDataAttrsOnly, IFlight, IFlightOffer, IStayOffer } from './../../shared/interfaces';
 
 export function normalizePrice (value: Price | number, numZeros: number): Price {
   const raw = Math.floor(value instanceof Decimal ? value.toNumber() : value);
@@ -16,7 +16,7 @@ export function normalizePrice (value: Price | number, numZeros: number): Price 
 /***
    * Creates a unique string from @param flight data which can be used to identify the flight
    */
-export function buildFlightUniqueDataKey (flight: MakeSearchResultEntity<IFlight>): string {
+export function buildFlightUniqueDataKey (flight: EntityDataAttrsOnly<IFlight>): string {
   const strData = `F-${flight.departAirport.id}-${flight.arriveAirport.id}-${Math.floor(flight.departTimeUtc.getTime() / 60000)}-${Math.floor(flight.arriveTimeUtc.getTime() / 60000)}-${flight.airlineCompany.id}-${flight.airplane.id}`;
   return sha256(strData);
 };
@@ -24,7 +24,7 @@ export function buildFlightUniqueDataKey (flight: MakeSearchResultEntity<IFlight
 /***
  * Creates a unique string from @param offer data which can be used to identify the offer
  */
-export function buildFlightOfferUniqueDataKey (offer: MakeSearchResultEntity<IFlightOffer>): string {
+export function buildFlightOfferUniqueDataKey (offer: EntityDataAttrsOnly<IFlightOffer>): string {
   const strData = `FO-${buildFlightUniqueDataKey(offer.departFlight)}-${offer.arriveFlight ? buildFlightUniqueDataKey(offer.arriveFlight) : '0'}-${offer.class}-${offer.numPassengers}`;
   return sha256(strData);
 }
@@ -32,7 +32,7 @@ export function buildFlightOfferUniqueDataKey (offer: MakeSearchResultEntity<IFl
 /***
  * Creates a unique string from @param offer data which can be used to identify the offer
  */
-export function buildStayOfferUniqueDataKey (offer: MakeSearchResultEntity<IStayOffer>): string {
-  const strData = `SO-${offer.stay.id}-${Math.floor(offer.checkIn.getDate() / 60000)}-${Math.floor(offer.checkOut.getDate() / 60000)}-${offer.numGuests}-${offer.numRooms}`;
+export function buildStayOfferUniqueDataKey (offer: EntityDataAttrsOnly<IStayOffer>): string {
+  const strData = `SO-${offer.stay.id}-${Math.floor(offer.checkIn.getTime() / 60000)}-${Math.floor(offer.checkOut.getTime() / 60000)}-${offer.numGuests}-${offer.numRooms}`;
   return sha256(strData);
 }

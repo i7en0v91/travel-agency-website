@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { Decimal } from 'decimal.js';
 import dayjs from 'dayjs';
 import orderBy from 'lodash-es/orderBy';
@@ -6,15 +6,15 @@ import isString from 'lodash-es/isString';
 import { type Storage, type StorageValue } from 'unstorage';
 import { murmurHash } from 'ohash';
 import sanitize from 'sanitize-html';
-import { type IStayOfferDetails, type IStayReview, type StayServiceLevel, type ISearchStayOffersResultFilterParams, type ICity, type ISearchStayOffersResult, type StayOffersSortFactor, type IStayOffersFilterParams, type IStaysLogic, type IPagination, type ISorting, type Price, type EntityId, type IStayShort, type MakeSearchResultEntity, type IStayOffer, type IStay, type IStayData } from '../shared/interfaces';
+import { type IStayOfferDetails, type IStayReview, type StayServiceLevel, type ISearchStayOffersResultFilterParams, type ICity, type ISearchStayOffersResult, type StayOffersSortFactor, type IStayOffersFilterParams, type IStaysLogic, type IPagination, type ISorting, type Price, type EntityId, type IStayShort, type EntityDataAttrsOnly, type IStayOffer, type IStay, type IStayData } from '../shared/interfaces';
 import { type IAppLogger } from '../shared/applogger';
-import { DbConcurrencyVersions, SearchOffersListConstants, TemporaryEntityId, DefaultStayReviewScore } from '../shared/constants';
+import { MaxOfferGenerationMemoryBufferItems, DefaultStayOffersSorting, DbVersionInitial, TemporaryEntityId, DefaultStayReviewScore } from '../shared/constants';
 import AppConfig from '../appconfig';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
 import { normalizePrice, buildStayOfferUniqueDataKey } from './helpers/utils';
-import { Queries, Mappers } from './queries';
+import { MapStayReview, StayReviewsQuery, MapStayOffer, MapStayShort, StayInfoQuery, MapStay, StayOfferInfoQuery, MapStayOfferDetails } from './queries';
 
-declare type OfferWithSortFactor<TOffer extends IStayOffer> = MakeSearchResultEntity<TOffer> & { sortFactor: number };
+declare type OfferWithSortFactor<TOffer extends IStayOffer> = EntityDataAttrsOnly<TOffer> & { sortFactor: number };
 
 export class StaysLogic implements IStaysLogic {
   private readonly AllStaysCacheKey = 'AllStaysCacheKey';
@@ -47,7 +47,7 @@ export class StaysLogic implements IStaysLogic {
           lat: data.geo.lat,
           lon: data.geo.lon,
           slug: data.slug,
-          version: DbConcurrencyVersions.InitialVersion
+          version: DbVersionInitial
         },
         select: {
           id: true
@@ -68,7 +68,7 @@ export class StaysLogic implements IStaysLogic {
             },
             paragraphKind: descriptionData.paragraphKind,
             order: descriptionData.order,
-            version: DbConcurrencyVersions.InitialVersion
+            version: DbVersionInitial
           }
         });
       }
@@ -89,7 +89,7 @@ export class StaysLogic implements IStaysLogic {
             },
             order: imageData.order,
             serviceLevel: imageData.serviceLevel,
-            version: DbConcurrencyVersions.InitialVersion
+            version: DbVersionInitial
           }
         });
       }
@@ -112,7 +112,7 @@ export class StaysLogic implements IStaysLogic {
               }
             },
             score: reviewData.score,
-            version: DbConcurrencyVersions.InitialVersion
+            version: DbVersionInitial
           }
         });
       }
@@ -132,7 +132,7 @@ export class StaysLogic implements IStaysLogic {
         id: (isString(idOrSlug) ? undefined : idOrSlug),
         slug: (isString(idOrSlug) ? idOrSlug : undefined)
       },
-      select: Queries.StayInfoQuery.select
+      select: StayInfoQuery.select
     });
     if (!entity) {
       this.logger.warn(`(StaysLogic) cannot found stay, id=${idOrSlug}`);
@@ -140,7 +140,7 @@ export class StaysLogic implements IStaysLogic {
     }
 
     this.logger.verbose(`(StaysLogic) stay found, id=${entity.id}, slug=${entity.slug}, numDescriptions=${entity.description.length}, numReviews=${entity.reviews.length}, numImages=${entity.images.length}`);
-    return Mappers.MapStay(entity);
+    return MapStay(entity);
   }
 
   async getStayOffer (id: EntityId, userId: EntityId | 'guest'): Promise<IStayOfferDetails> {
@@ -151,7 +151,7 @@ export class StaysLogic implements IStaysLogic {
         isDeleted: false,
         id
       },
-      select: Queries.StayOfferInfoQuery(userId).select
+      select: StayOfferInfoQuery(userId).select
     });
     if (!entity) {
       this.logger.warn(`(StaysLogic) stay offer was not found, id=${id}, userId=${userId}`);
@@ -159,14 +159,14 @@ export class StaysLogic implements IStaysLogic {
     }
 
     this.logger.verbose(`(StaysLogic) get stay offer - found, id=${id}, userId=${userId}, modifiedUtc=${entity.modifiedUtc}, price=${entity.totalPrice}`);
-    const offerDetails = Mappers.MapStayOfferDetails(entity);
+    const offerDetails = MapStayOfferDetails(entity);
     return {
       ...offerDetails,
       prices: {
-        base: this.calculateStayPrice(offerDetails.stay.city, offerDetails.stay, 'base'),
-        'cityView-1': this.calculateStayPrice(offerDetails.stay.city, offerDetails.stay, 'cityView-1'),
-        'cityView-2': this.calculateStayPrice(offerDetails.stay.city, offerDetails.stay, 'cityView-2'),
-        'cityView-3': this.calculateStayPrice(offerDetails.stay.city, offerDetails.stay, 'cityView-3')
+        base: this.doCalculatePrice(offerDetails.stay.city, offerDetails.stay, 'base'),
+        'cityView-1': this.doCalculatePrice(offerDetails.stay.city, offerDetails.stay, 'cityView-1'),
+        'cityView-2': this.doCalculatePrice(offerDetails.stay.city, offerDetails.stay, 'cityView-2'),
+        'cityView-3': this.doCalculatePrice(offerDetails.stay.city, offerDetails.stay, 'cityView-3')
       }
     };
   }
@@ -181,7 +181,7 @@ export class StaysLogic implements IStaysLogic {
         where: {
           isDeleted: false
         },
-        select: Queries.StayInfoQuery.select,
+        select: StayInfoQuery.select,
         orderBy: {
           city: {
             population: 'desc'
@@ -189,7 +189,7 @@ export class StaysLogic implements IStaysLogic {
         }
       });
 
-      result = stayEntities.map(Mappers.MapStayShort);
+      result = stayEntities.map(MapStayShort);
       await this.cache.setItem(this.AllStaysCacheKey, result);
     }
 
@@ -231,7 +231,7 @@ export class StaysLogic implements IStaysLogic {
       result = true;
       await this.dbRepository.userStayOffer.create({
         data: {
-          version: DbConcurrencyVersions.InitialVersion,
+          version: DbVersionInitial,
           isFavourite: result,
           userId,
           offerId
@@ -247,7 +247,7 @@ export class StaysLogic implements IStaysLogic {
     this.logger.verbose(`(StaysLogic) search offers, filter=${JSON.stringify(filter)}, userId=${userId}, sorting=${JSON.stringify(sorting)}, pagination=${JSON.stringify(pagination)}, narrowFilterParams=${narrowFilterParams}`);
 
     try {
-      const sortFactor = sorting.factor ?? SearchOffersListConstants.DefaultStayOffersSorting;
+      const sortFactor = sorting.factor ?? DefaultStayOffersSorting;
       let variants = await this.generateStayOffersFull(filter, userId, sortFactor);
       this.logger.debug(`(StaysLogic) sorting stay offer variants, userId=${userId}`);
       variants = orderBy(variants, ['sortFactor'], [sorting.direction]);
@@ -281,6 +281,72 @@ export class StaysLogic implements IStaysLogic {
     }
   }
 
+  async getUserFavouriteOffers (userId: EntityId): Promise<ISearchStayOffersResult<IStayOffer & { addDateUtc: Date; }>> {
+    this.logger.verbose(`(StaysLogic) get user favourite offers, userId=${userId}`);
+
+    const userOffers = await this.dbRepository.userStayOffer.findMany({
+      where: {
+        isDeleted: false,
+        isFavourite: true,
+        userId
+      },
+      select: {
+        modifiedUtc: true,
+        offer: {
+          select: StayOfferInfoQuery(userId).select
+        }
+      }
+    });
+
+    const mappedItems = userOffers.map((uo) => { return { addDateUtc: uo.modifiedUtc, ...(MapStayOffer(uo.offer)) }; }).filter(o => !o.isDeleted);
+    const result: ISearchStayOffersResult<IStayOffer & { addDateUtc: Date }> = {
+      pagedItems: mappedItems,
+      paramsNarrowing: undefined,
+      totalCount: mappedItems.length
+    };
+
+    this.logger.verbose(`(StaysLogic) get user favourite offers completed, userId=${userId}, count=${result.totalCount}`);
+    return result;
+  }
+
+  async getUserTickets(userId: EntityId): Promise<ISearchStayOffersResult<IStayOffer & { bookingId: EntityId, bookDateUtc: Date; }>> {
+    this.logger.verbose(`(StaysLogic) get user tickets, userId=${userId}`);
+
+    const userOffers = await this.dbRepository.userStayOffer.findMany({
+      where: {
+        isDeleted: false,
+        booking: {
+          isDeleted: false,
+          id: {
+            gt: 0
+          }
+        },
+        userId
+      },
+      select: {
+        offer: {
+          select: StayOfferInfoQuery(userId).select
+        },
+        booking: {
+          select: {
+            id: true,
+            modifiedUtc: true
+          }
+        }
+      }
+    });
+
+    const mappedItems = userOffers.map((uo) => { return { bookingId: uo.booking!.id, bookDateUtc: uo.booking!.modifiedUtc, ...(MapStayOffer(uo.offer)) }; }).filter(o => !o.isDeleted);
+    const result: ISearchStayOffersResult<IStayOffer & { bookingId: EntityId, bookDateUtc: Date; }> = {
+      pagedItems: mappedItems,
+      paramsNarrowing: undefined,
+      totalCount: mappedItems.length
+    };
+
+    this.logger.verbose(`(StaysLogic) get user tickets completed, userId=${userId}, count=${result.totalCount}`);
+    return result;
+  }
+
   async createOffersAndFillIds (offers: OfferWithSortFactor<IStayOffer>[]): Promise<void> {
     this.logger.verbose(`(StaysLogic) creating memory offers and filling IDs, count=${offers.length}`);
     if (offers.length === 0) {
@@ -302,7 +368,7 @@ export class StaysLogic implements IStaysLogic {
             totalPrice: offer.totalPrice.toNumber(),
             dataHash,
             hotelId: offer.stay.id,
-            version: DbConcurrencyVersions.InitialVersion,
+            version: DbVersionInitial,
             isDeleted: false
           },
           select: {
@@ -330,8 +396,8 @@ export class StaysLogic implements IStaysLogic {
           in: [...memoryOffersMap.keys()]
         }
       },
-      select: Queries.StayOfferInfoQuery(userId).select
-    })).map(Mappers.MapStayOffer);
+      select: StayOfferInfoQuery(userId).select
+    })).map(MapStayOffer);
 
     const dbOffersMap = new Map<string, IStayOffer>(dbOffers.map(o => [o.dataHash, o]));
 
@@ -434,7 +500,7 @@ export class StaysLogic implements IStaysLogic {
       reviewId = (await this.dbRepository.hotelReview.create({
         data: {
           score,
-          version: DbConcurrencyVersions.InitialVersion,
+          version: DbVersionInitial,
           hotel: {
             connect: {
               id: stayId
@@ -503,7 +569,7 @@ export class StaysLogic implements IStaysLogic {
     }
   }
 
-  async getStayReviews (stayId: EntityId): Promise<MakeSearchResultEntity<IStayReview>[]> {
+  async getStayReviews (stayId: EntityId): Promise<EntityDataAttrsOnly<IStayReview>[]> {
     this.logger.verbose(`(StaysLogic) get reviews, stayId=${stayId}`);
 
     const reviewEntities = await this.dbRepository.hotelReview.findMany({
@@ -511,10 +577,10 @@ export class StaysLogic implements IStaysLogic {
         isDeleted: false,
         hotelId: stayId
       },
-      include: Queries.StayReviewsQuery.include
+      include: StayReviewsQuery.include
     });
 
-    const result: MakeSearchResultEntity<IStayReview>[] = reviewEntities.map(Mappers.MapStayReview);
+    const result: EntityDataAttrsOnly<IStayReview>[] = reviewEntities.map(MapStayReview);
     this.logger.verbose(`(StaysLogic) get reviews - completed, stayId=${stayId}, count=${result.length}`);
     return result;
   }
@@ -567,7 +633,11 @@ export class StaysLogic implements IStaysLogic {
     return result;
   }
 
-  calculateStayPrice (city: Pick<ICity, 'name'>, stay: Pick<IStayShort, 'name'>, serviceLevel: StayServiceLevel): Price {
+  calculatePrice = (stay: EntityDataAttrsOnly<IStayShort>, serviceLevel: StayServiceLevel): Price => {
+    return this.doCalculatePrice(stay.city, stay, serviceLevel);
+  };
+
+  doCalculatePrice (city: Pick<ICity, 'name'>, stay: Pick<IStayShort, 'name'>, serviceLevel: StayServiceLevel): Price {
     const hashString = (value: string) => murmurHash(Buffer.from(value).toString('base64'));
 
     let serviceLevelPrice = 150;
@@ -589,13 +659,13 @@ export class StaysLogic implements IStaysLogic {
     return new Decimal(normalizePrice(cityAdjustment + stayAdjustment + serviceLevelPrice, 0));
   }
 
-  calculateOfferPrice (offer: MakeSearchResultEntity<IStayOffer>): Price {
-    let result = this.calculateStayPrice(offer.stay.city, offer.stay, 'base');
+  calculateOfferPrice (offer: EntityDataAttrsOnly<IStayOffer>): Price {
+    let result = this.doCalculatePrice(offer.stay.city, offer.stay, 'base');
     result = result.times(offer.numRooms);
     return result;
   }
 
-  getStayOfferSortFactorValue = (offer: MakeSearchResultEntity<IStayOffer>, factor: StayOffersSortFactor): number => {
+  getStayOfferSortFactorValue = (offer: EntityDataAttrsOnly<IStayOffer>, factor: StayOffersSortFactor): number => {
     switch (factor) {
       case 'price':
         return offer.totalPrice.toNumber();
@@ -674,7 +744,7 @@ export class StaysLogic implements IStaysLogic {
             result.push(offer);
             usedDataHashes.add(dataHash);
 
-            if (result.length > SearchOffersListConstants.MaxOfferGenerationMemoryBufferItems) {
+            if (result.length > MaxOfferGenerationMemoryBufferItems) {
               this.logger.warn(`(StaysLogic) maximum number of stay offer items in memory buffer reached, stopping generation with current values, filter=${JSON.stringify(filter)}, userId=${userId}`);
               break;
             }

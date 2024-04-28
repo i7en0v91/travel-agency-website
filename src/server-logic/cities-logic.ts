@@ -1,12 +1,12 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import { type Storage, type StorageValue } from 'unstorage';
 import { type EntityId, type ICitiesLogic, type ICitySearchItem, type ICity, type IPopularCityData, type IPopularCityItem, type ITravelDetails } from '../shared/interfaces';
 import { type IAppLogger } from '../shared/applogger';
-import { DbConcurrencyVersions } from '../shared/constants';
+import { DbVersionInitial } from '../shared/constants';
 import type { ICitiesSearchQuery } from '../server/dto';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
 import { mapLocalizeableValues } from '../shared/common';
-import { Mappers, Queries } from './queries';
+import { CityInfoQuery, MapCity } from './queries';
 
 export class CitiesLogic implements ICitiesLogic {
   private readonly AllPopularCitiesCacheKey = 'AllPopularCities';
@@ -30,7 +30,7 @@ export class CitiesLogic implements ICitiesLogic {
         isDeleted: false,
         slug
       },
-      select: Queries.CityInfoQuery.select
+      select: CityInfoQuery.select
     });
     if (!cityEntity) {
       this.logger.warn(`(CitiesLogic) city not found: slug=${slug}`);
@@ -40,7 +40,7 @@ export class CitiesLogic implements ICitiesLogic {
         'error-stub');
     }
 
-    const result: ICity = Mappers.MapCity(cityEntity);
+    const result: ICity = MapCity(cityEntity);
 
     this.logger.verbose(`(CitiesLogic) city loaded, slug=${slug}, id=${result.id}`);
     return result;
@@ -49,29 +49,44 @@ export class CitiesLogic implements ICitiesLogic {
   async makeCityPopular (data: IPopularCityData): Promise<void> {
     this.logger.verbose(`(CitiesLogic) adding popular city data, cityId=${data.cityId}`);
 
-    await this.dbRepository.popularCity.create({
-      data: {
-        city: {
-          connect: {
+    await this.dbRepository.$transaction(async () => {
+      await this.dbRepository.popularCity.create({
+        data: {
+          city: {
+            connect: {
+              id: data.cityId
+            }
+          },
+          rating: data.rating,
+          promoLineStr: {
+            create: data.promoLineStr
+          },
+          travelHeaderStr: {
+            create: data.travelHeaderStr
+          },
+          travelTextStr: {
+            create: data.travelTextStr
+          },
+          visibleOnWorldMap: data.visibleOnWorldMap ?? false
+        },
+        select: {
+          id: true
+        }
+      });
+
+      if (data.geo) {
+        await this.dbRepository.city.update({
+          where: {
             id: data.cityId
+          },
+          data: {
+            lon: data.geo.lon,
+            lat: data.geo.lat
           }
-        },
-        rating: data.rating,
-        promoLineStr: {
-          create: data.promoLineStr
-        },
-        travelHeaderStr: {
-          create: data.travelHeaderStr
-        },
-        travelTextStr: {
-          create: data.travelTextStr
-        },
-        visibleOnWorldMap: data.visibleOnWorldMap ?? false
-      },
-      select: {
-        id: true
+        });
       }
     });
+
     this.logger.debug('(CitiesLogic) adding popular city, resetting cache');
     await this.cache.removeItem(this.AllPopularCitiesCacheKey);
 
@@ -89,7 +104,7 @@ export class CitiesLogic implements ICitiesLogic {
         }
       },
       select: {
-        city: Queries.CityInfoQuery,
+        city: CityInfoQuery,
         travelHeaderStr: true,
         travelTextStr: true,
         images: {
@@ -127,7 +142,7 @@ export class CitiesLogic implements ICitiesLogic {
       header: popularCityEntity.travelHeaderStr,
       text: popularCityEntity.travelTextStr,
       images: popularCityEntity.images.map((i) => { return { slug: i.image.slug, timestamp: i.image.file.modifiedUtc.getTime() }; }),
-      city: Mappers.MapCity(popularCityEntity.city)
+      city: MapCity(popularCityEntity.city)
     };
 
     this.logger.verbose(`(CitiesLogic) city travel details loaded, cityId=${cityId}, numImages=${result.images.length}, lastModified=${result.city.modifiedUtc}`);
@@ -176,7 +191,7 @@ export class CitiesLogic implements ICitiesLogic {
           await this.dbRepository.popularCityImage.create({
             data: {
               order: image.order,
-              version: DbConcurrencyVersions.InitialVersion,
+              version: DbVersionInitial,
               isDeleted: false,
               imageId: image.id,
               popularCityId

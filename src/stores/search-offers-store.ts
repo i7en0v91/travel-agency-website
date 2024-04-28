@@ -1,4 +1,4 @@
-import { ValidationError } from 'yup';
+import type { ValidationError } from 'yup';
 import dayjs from 'dayjs';
 import uniqueBy from 'lodash-es/unionBy';
 import assign from 'lodash-es/assign';
@@ -10,9 +10,9 @@ import pick from 'lodash-es/pick';
 import cloneDeep from 'lodash-es/cloneDeep';
 import orderBy from 'lodash-es/orderBy';
 import fromPairs from 'lodash-es/fromPairs';
-import { type ISearchListItem, type ISearchOffersFilterVariant, type ISearchFlightOffersParams, type ISearchStayOffersParams, type OfferKind, type ISearchStayOffersMainParams, type ISearchFlightOffersMainParams, type IEntityCacheCityItem, type ISearchFlightOffersDisplayOptions, type ISearchStayOffersDisplayOptions, type IStayOffer, type IFlightOffer, type FlightOffersSortFactor, type StayOffersSortFactor, type ISearchFlightOffersResult, type ISearchStayOffersResult, type ISearchOffersChecklistFilterProps, type ISearchOffersRangeFilterProps, type ISearchFlightOffersDisplayOption, type MakeSearchResultEntity, type ILocalizableValue } from '../shared/interfaces';
+import { type ISearchListItem, type ISearchOffersFilterVariant, type ISearchFlightOffersParams, type ISearchStayOffersParams, type OfferKind, type ISearchStayOffersMainParams, type ISearchFlightOffersMainParams, type IEntityCacheCityItem, type ISearchFlightOffersDisplayOptions, type ISearchStayOffersDisplayOptions, type IStayOffer, type IFlightOffer, type FlightOffersSortFactor, type StayOffersSortFactor, type ISearchFlightOffersResult, type ISearchStayOffersResult, type ISearchOffersChecklistFilterProps, type ISearchOffersRangeFilterProps, type ISearchFlightOffersDisplayOption, type EntityDataAttrsOnly, type ILocalizableValue } from '../shared/interfaces';
 import { eraseTimeOfDay } from '../shared/common';
-import { NuxtDataKeys, WebApiRoutes, SearchOffersListConstants, FlightMinPassengers, UserNotificationLevel, AvailableLocaleCodes } from '../shared/constants';
+import { StaysAmenitiesFilterItemId, StaysAmenitiesFilterId, StaysFreebiesFilterItemId, StaysFreebiesFilterId, NumMinutesInDay, StaysPriceFilterId, DefaultStayOffersSorting, StaysRatingFilterId, FlightsTripTypeFilterFlexibleDatesItemId, SearchOffersPriceRange, FlightsTripTypeFilterId, FlightsPriceFilterId, FlightsDepartureTimeFilterId, FlightsRatingFilterId, FlightsAirlineCompanyFilterId, DefaultFlightOffersSorting, DataKeyEntityCacheItems, FlightMinPassengers, UserNotificationLevel, AvailableLocaleCodes, ApiEndpointFlightOffersSearch, DataKeySearchFlightOffers, DataKeySearchStayOffers, ApiEndpointStayOffersSearch } from '../shared/constants';
 import { validateObject } from '../shared/validation';
 import { mapSearchFlightOffersResult, mapSearchStayOffersResult, mapSearchedFlightOffer, createSearchFlightOfferResultLookup } from '../shared/mappers';
 import { post } from '../shared/rest-utils';
@@ -24,7 +24,7 @@ import { getI18nResName2, getI18nResName3, type I18nResName } from './../shared/
 import { addPayload, getPayload } from './../shared/payload';
 
 export type OffersStoreInstanceFetchStatus = 'full-refetch' | 'filter-refetch' | 'sort-refetch' | 'page-fetch' | 'fetched' | 'error';
-export interface ISearchOffersStoreInstance<TParams extends ISearchFlightOffersParams | ISearchStayOffersParams, TMainParams = TParams extends ISearchFlightOffersParams ? ISearchFlightOffersMainParams : ISearchStayOffersMainParams, TDisplayOptions = TParams extends ISearchFlightOffersParams ? ISearchFlightOffersDisplayOptions : ISearchStayOffersDisplayOptions, TItem = TParams extends ISearchFlightOffersParams ? MakeSearchResultEntity<IFlightOffer> : MakeSearchResultEntity<IStayOffer>, TSortFactor = TParams extends ISearchFlightOffersParams ? FlightOffersSortFactor : StayOffersSortFactor> {
+export interface ISearchOffersStoreInstance<TParams extends ISearchFlightOffersParams | ISearchStayOffersParams, TMainParams = TParams extends ISearchFlightOffersParams ? ISearchFlightOffersMainParams : ISearchStayOffersMainParams, TDisplayOptions = TParams extends ISearchFlightOffersParams ? ISearchFlightOffersDisplayOptions : ISearchStayOffersDisplayOptions, TItem = TParams extends ISearchFlightOffersParams ? EntityDataAttrsOnly<IFlightOffer> : EntityDataAttrsOnly<IStayOffer>, TSortFactor = TParams extends ISearchFlightOffersParams ? FlightOffersSortFactor : StayOffersSortFactor> {
   offersKind: OfferKind,
   viewState: {
     currentSearchParams: Partial<TParams>, // partial, as values may not be filled, e.g. when user opens the app for the first time and input fields have nowhere to get initial values from
@@ -71,7 +71,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     cache: 'no-cache' as const,
     method: 'POST' as const
   };
-  const searchFlightOffersFetchRequest = useFetchEx<ISearchFlightOffersResultDto, ISearchFlightOffersResult, null>(WebApiRoutes.FlightOffersSearch, 'error-page',
+  const searchFlightOffersFetchRequest = useFetchEx<ISearchFlightOffersResultDto, ISearchFlightOffersResult, null>(ApiEndpointFlightOffersSearch, 'error-page',
     {
       ...commonOffersFetchOptions,
       transform: (resultDto: ISearchFlightOffersResultDto) => {
@@ -90,28 +90,27 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
           })
         };
       },
-      key: NuxtDataKeys.SearchFlightOffers
+      key: DataKeySearchFlightOffers
     });
 
-  const searchStayOffersFetchRequest = useFetchEx<ISearchStayOffersResultDto, ISearchStayOffersResult, null>(WebApiRoutes.StayOffersSearch, 'error-page',
+  const searchStayOffersFetchRequest = useFetchEx<ISearchStayOffersResultDto, ISearchStayOffersResult, null>(ApiEndpointStayOffersSearch, 'error-page',
     {
       ...commonOffersFetchOptions,
       transform: (resultDto: ISearchStayOffersResultDto) => {
         logger.verbose('(search-offers-store) transforming search stay offers result dto');
         return mapSearchStayOffersResult(resultDto);
       },
-      key: NuxtDataKeys.SearchStayOffers
+      key: DataKeySearchStayOffers
     });
 
   const userNotificationStore = useUserNotificationStore();
 
   const nuxtApp = useNuxtApp();
   const router = useRouter();
-  const { status } = useAuth();
   const { t } = useI18n();
 
-  const clientEntityCache = process.client ? ClientServicesLocator.getEntityCache() : undefined;
-  const serverEntityCacheLogic = process.server ? ServerServicesLocator.getEntityCacheLogic() : undefined;
+  const clientEntityCache = import.meta.client ? ClientServicesLocator.getEntityCache() : undefined;
+  const serverEntityCacheLogic = import.meta.server ? ServerServicesLocator.getEntityCacheLogic() : undefined;
 
   let searchStayOffersInstance: ISearchOffersStoreInstance<ISearchStayOffersParams> | undefined;
   let searchFlightOffersInstance: ISearchOffersStoreInstance<ISearchFlightOffersParams> | undefined;
@@ -158,22 +157,22 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
 
     const datesNormalized = normalizeDateRanges({ from: params.checkIn, to: params.checkOut });
     params.checkIn = datesNormalized.from;
-    params.checkOut = datesNormalized.to;
+    params.checkOut = datesNormalized.to;    
 
-    logger.debug(`(search-offers-store) main params normalized, kind=${<OfferKind>'flights'}, params=${JSON.stringify(params)}`);
+    logger.debug(`(search-offers-store) main params normalized, kind=${<OfferKind>'stays'}, params=${JSON.stringify(params)}`);
     return params;
   };
 
   const resolveCitySlugs = async (slugs: string[]) : Promise<IEntityCacheCityItem[]> => {
-    if (process.client) {
+    if (import.meta.client) {
       logger.verbose(`(search-offers-store) resolving city slugs (client), ids=${JSON.stringify(slugs)}`);
-      const items = (await clientEntityCache!.get<'City', IEntityCacheCityItem>(slugs, 'City', { expireInSeconds: AppConfig.clientCache.expirationsSeconds.default }))!;
+      const items = (await clientEntityCache!.get<'City', IEntityCacheCityItem>(slugs, 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
       logger.verbose(`(search-offers-store) city slugs resolved (client), result=${JSON.stringify(items)}`);
       return items;
     } else {
       logger.verbose(`(search-offers-store) resolving city slugs (server), ids=${JSON.stringify(slugs)}`);
       const items = await serverEntityCacheLogic!.get<'City', IEntityCacheCityItem>(slugs, 'City');
-      addPayload(nuxtApp, NuxtDataKeys.EntityCacheItems, uniqueBy([...((nuxtApp.payload[NuxtDataKeys.EntityCacheItems] ?? []) as EntityCacheItemsPayload), ...items], 'id'));
+      addPayload(nuxtApp, DataKeyEntityCacheItems, uniqueBy([...((nuxtApp.payload[DataKeyEntityCacheItems] ?? []) as EntityCacheItemsPayload), ...items], 'id'));
       logger.verbose(`(search-offers-store) city slugs resolved (server), result=${JSON.stringify(items)}`);
       return items;
     }
@@ -246,7 +245,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     }
 
     const entityCache = ClientServicesLocator.getEntityCache();
-    const cached = (await entityCache.get<'City', IEntityCacheCityItem>([cityItem.id], 'City', { expireInSeconds: AppConfig.clientCache.expirationsSeconds.default }));
+    const cached = (await entityCache.get<'City', IEntityCacheCityItem>([cityItem.id], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }));
     if ((cached?.length ?? 0) === 0) {
       logger.warn(`(search-offers-store) failed to ensure city item slug: cityId=${cityItem.id}`);
       userNotificationStore.show({
@@ -279,16 +278,16 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
           skip: offersFetchMode === 'page-fetch' ? instance.resultState.items.length : 0,
           take: AppConfig.searchOffers.listPageSize
         },
-        primarySort: instance.viewState.displayOptions.primaryOptions.find(o => o.isActive)?.type ?? SearchOffersListConstants.DefaultFlightOffersSorting,
-        secondarySort: instance.viewState.displayOptions.additionalSorting ?? SearchOffersListConstants.DefaultFlightOffersSorting,
-        airlineCompanyIds: (instance.viewState.currentSearchParams.filters?.find(f => f.filterId === SearchOffersListConstants.FlightsAirlineCompanyFilterId) as ISearchOffersChecklistFilterProps)?.currentValue?.map(v => parseInt(v)) as number[] | undefined,
-        ratings: (instance.viewState.currentSearchParams.filters?.find(f => f.filterId === SearchOffersListConstants.FlightsRatingFilterId) as ISearchOffersChecklistFilterProps)?.currentValue?.map(v => getRatingFromFilterVariantId(v)) as number[] | undefined,
-        departureTimeOfDay: mapNumberRangeFilterValue((instance.viewState.currentSearchParams.filters?.find(f => f.filterId === SearchOffersListConstants.FlightsDepartureTimeFilterId) as ISearchOffersRangeFilterProps)?.currentValue),
-        price: mapNumberRangeFilterValue((instance.viewState.currentSearchParams.filters?.find(f => f.filterId === SearchOffersListConstants.FlightsPriceFilterId) as ISearchOffersRangeFilterProps)?.currentValue) ?? { from: 1, to: SearchOffersListConstants.Price.max },
-        flexibleDates: (instance.viewState.currentSearchParams.filters?.find(f => f.filterId === SearchOffersListConstants.FlightsTripTypeFilterId) as ISearchOffersChecklistFilterProps)?.currentValue?.includes(SearchOffersListConstants.FlightsTripTypeFilterFlexibleDatesItemId) ?? false,
+        primarySort: instance.viewState.displayOptions.primaryOptions.find(o => o.isActive)?.type ?? DefaultFlightOffersSorting,
+        secondarySort: instance.viewState.displayOptions.additionalSorting ?? DefaultFlightOffersSorting,
+        airlineCompanyIds: (instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsAirlineCompanyFilterId) as ISearchOffersChecklistFilterProps)?.currentValue?.map(v => parseInt(v)) as number[] | undefined,
+        ratings: (instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsRatingFilterId) as ISearchOffersChecklistFilterProps)?.currentValue?.map(v => getRatingFromFilterVariantId(v)) as number[] | undefined,
+        departureTimeOfDay: mapNumberRangeFilterValue((instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsDepartureTimeFilterId) as ISearchOffersRangeFilterProps)?.currentValue),
+        price: mapNumberRangeFilterValue((instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsPriceFilterId) as ISearchOffersRangeFilterProps)?.currentValue) ?? { from: 1, to: SearchOffersPriceRange.max },
+        flexibleDates: (instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsTripTypeFilterId) as ISearchOffersChecklistFilterProps)?.currentValue?.includes(FlightsTripTypeFilterFlexibleDatesItemId) ?? false,
         class: instance.viewState.currentSearchParams.class ?? 'economy',
-        dateFrom: instance.viewState.currentSearchParams.dateFrom /* ?? defaultDateFrom */ /* range of dates will be used on server */,
-        dateTo: instance.viewState.currentSearchParams.tripType === 'return' ? (instance.viewState.currentSearchParams.dateTo /* ?? defaultDateTo */ /* range of dates will be used on server */) : undefined,
+        dateFrom: instance.viewState.currentSearchParams.dateFrom /* range of dates will be used on server */,
+        dateTo: instance.viewState.currentSearchParams.tripType === 'return' ? (instance.viewState.currentSearchParams.dateTo /* range of dates will be used on server */) : undefined,
         tripType: instance.viewState.currentSearchParams.tripType ?? 'oneway',
         numPassengers: instance.viewState.currentSearchParams.numPassengers ?? FlightMinPassengers,
         fromCitySlug: instance.viewState.currentSearchParams.fromCity?.slug,
@@ -305,11 +304,11 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
           skip: offersFetchMode === 'page-fetch' ? instance.resultState.items.length : 0,
           take: AppConfig.searchOffers.listPageSize
         },
-        sort: instance.viewState.displayOptions.sorting ?? SearchOffersListConstants.DefaultStayOffersSorting,
-        price: mapNumberRangeFilterValue((instance.viewState.currentSearchParams.filters?.find(f => f.filterId === SearchOffersListConstants.StaysPriceFilterId) as ISearchOffersRangeFilterProps)?.currentValue) ?? { from: 0, to: SearchOffersListConstants.Price.max },
-        ratings: (instance.viewState.currentSearchParams.filters?.find(f => f.filterId === SearchOffersListConstants.StaysRatingFilterId) as ISearchOffersChecklistFilterProps)?.currentValue?.map(v => getRatingFromFilterVariantId(v)) as number[] | undefined,
-        checkIn: instance.viewState.currentSearchParams.checkIn /* ?? defaultDateFrom */ /* range of dates will be used on server */,
-        checkOut: instance.viewState.currentSearchParams.checkOut /* ?? defaultDateTo */ /* range of dates will be used on server */,
+        sort: instance.viewState.displayOptions.sorting ?? DefaultStayOffersSorting,
+        price: mapNumberRangeFilterValue((instance.viewState.currentSearchParams.filters?.find(f => f.filterId === StaysPriceFilterId) as ISearchOffersRangeFilterProps)?.currentValue) ?? { from: 0, to: SearchOffersPriceRange.max },
+        ratings: (instance.viewState.currentSearchParams.filters?.find(f => f.filterId === StaysRatingFilterId) as ISearchOffersChecklistFilterProps)?.currentValue?.map(v => getRatingFromFilterVariantId(v)) as number[] | undefined,
+        checkIn: instance.viewState.currentSearchParams.checkIn /* range of dates will be used on server */,
+        checkOut: instance.viewState.currentSearchParams.checkOut /* range of dates will be used on server */,
         citySlug: instance.viewState.currentSearchParams.city?.slug,
         numGuests: instance.viewState.currentSearchParams.numGuests ?? 1,
         numRooms: instance.viewState.currentSearchParams.numRooms ?? 1
@@ -325,7 +324,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
       { type: 'rating', isActive: false },
       { type: 'timetodeparture', isActive: false }
     ] as ISearchFlightOffersDisplayOption[];
-    result.forEach((o) => { o.isActive = (o.type === SearchOffersListConstants.DefaultStayOffersSorting); });
+    result.forEach((o) => { o.isActive = (o.type === DefaultStayOffersSorting); });
     return result;
   };
 
@@ -347,14 +346,14 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
         const fetchResult = result as ISearchFlightOffersResult;
 
         // parameters narrowing
-        const priceFilter = instance.viewState.currentSearchParams.filters?.find(f => f.filterId === SearchOffersListConstants.FlightsPriceFilterId) as ISearchOffersRangeFilterProps;
+        const priceFilter = instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsPriceFilterId) as ISearchOffersRangeFilterProps;
         if (priceFilter && fetchResult.paramsNarrowing?.priceRange) {
           const narrowingRange = fetchResult.paramsNarrowing.priceRange;
           logger.debug(`(search-offers-store) applying price narrowing, kind=${instance.offersKind}, offersFetchMode=${instance.resultState.status}, from=${narrowingRange.from}, to=${narrowingRange.to}`);
           priceFilter.applyNarrowing(narrowingRange.from, narrowingRange.to);
         }
 
-        const airlineCompaniesFilter = instance.viewState.currentSearchParams.filters?.find(f => f.filterId === SearchOffersListConstants.FlightsAirlineCompanyFilterId) as ISearchOffersChecklistFilterProps;
+        const airlineCompaniesFilter = instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsAirlineCompanyFilterId) as ISearchOffersChecklistFilterProps;
         if (airlineCompaniesFilter && fetchResult.paramsNarrowing?.airlineCompanies) {
           const narrowingVariants = fetchResult.paramsNarrowing.airlineCompanies.map((i) => { return { id: i.id.toString(), displayText: i.name } as ISearchOffersFilterVariant; });
           logger.debug(`(search-offers-store) applying airline companies narrowing, kind=${instance.offersKind}, offersFetchMode=${instance.resultState.status}, count=${narrowingVariants.length}`);
@@ -363,7 +362,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
 
         // update display options state
         if (instance.resultState.status !== 'page-fetch' && instance.resultState.status !== 'sort-refetch') {
-          const currentlyActiveOption = instance.viewState.displayOptions.primaryOptions.find(x => x.isActive)?.type ?? SearchOffersListConstants.DefaultFlightOffersSorting;
+          const currentlyActiveOption = instance.viewState.displayOptions.primaryOptions.find(x => x.isActive)?.type ?? DefaultFlightOffersSorting;
           instance.viewState.displayOptions.primaryOptions = fetchResult.topOffers?.map((o) => {
             return <ISearchFlightOffersDisplayOption>{
               duration: o.duration,
@@ -377,7 +376,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
         const fetchResult = result as ISearchStayOffersResult;
 
         // parameters narrowing
-        const priceFilter = instance.viewState.currentSearchParams.filters?.find(f => f.filterId === SearchOffersListConstants.StaysPriceFilterId) as ISearchOffersRangeFilterProps;
+        const priceFilter = instance.viewState.currentSearchParams.filters?.find(f => f.filterId === StaysPriceFilterId) as ISearchOffersRangeFilterProps;
         if (priceFilter && fetchResult.paramsNarrowing?.priceRange) {
           const narrowingRange = fetchResult.paramsNarrowing.priceRange;
           logger.debug(`(search-offers-store) applying price narrowing, kind=${instance.offersKind}, offersFetchMode=${instance.resultState.status}, from=${narrowingRange.from}, to=${narrowingRange.to}`);
@@ -473,10 +472,10 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     let searchParamsDto = await getFetchRequestParams(instance, offersFetchMode);
     instance.resultState.usedSearchParams = { ...cloneDeep(instance.viewState.currentSearchParams), displayOptions: cloneDeep(instance.viewState.displayOptions) as any };
     try {
-      if (process.server) {
+      if (import.meta.server) {
         let responseDto: ISearchFlightOffersResultDto | ISearchStayOffersResultDto | undefined;
         let fetchResult: ISearchFlightOffersResult | ISearchStayOffersResult | undefined;
-        const payloadKey = isFlightOffersInstance(instance) ? NuxtDataKeys.SearchFlightOffers : NuxtDataKeys.SearchStayOffers;
+        const payloadKey = isFlightOffersInstance(instance) ? DataKeySearchFlightOffers : DataKeySearchStayOffers;
         const payload = getPayload(nuxtApp, payloadKey);
         if (payload) {
           logger.debug(`(search-offers-store) reusing initial search offers data from payload, kind=${instance.offersKind}`);
@@ -485,12 +484,12 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
           logger.verbose(`(search-offers-store) creating initial search offers payload, kind=${instance.offersKind}`);
 
           if (isFlightOffersInstance(instance)) {
-            responseDto = await post<ISearchFlightOffersParamsDto, ISearchFlightOffersResultDto>(WebApiRoutes.FlightOffersSearch, undefined, searchParamsDto as ISearchFlightOffersParamsDto, false, 'throw');
+            responseDto = await post<ISearchFlightOffersParamsDto, ISearchFlightOffersResultDto>(ApiEndpointFlightOffersSearch, undefined, searchParamsDto as ISearchFlightOffersParamsDto, undefined, false, 'throw');
             if (responseDto) {
               fetchResult = mapSearchFlightOffersResult(responseDto);
             }
           } else {
-            responseDto = await post<ISearchStayOffersParamsDto, ISearchStayOffersResultDto>(WebApiRoutes.StayOffersSearch, undefined, searchParamsDto as ISearchStayOffersParamsDto, false, 'throw');
+            responseDto = await post<ISearchStayOffersParamsDto, ISearchStayOffersResultDto>(ApiEndpointStayOffersSearch, undefined, searchParamsDto as ISearchStayOffersParamsDto, undefined, false, 'throw');
             if (responseDto) {
               fetchResult = mapSearchStayOffersResult(responseDto);
             }
@@ -505,18 +504,10 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
         let needFullRefetch = false;
         if (instance.resultState.initialDataFetched === 'no') {
           logger.verbose(`(search-offers-store) consuming initial search offers result data from payload, kind=${instance.offersKind}`);
-          const payloadKey = isFlightOffersInstance(instance) ? NuxtDataKeys.SearchFlightOffers : NuxtDataKeys.SearchStayOffers;
+          const payloadKey = isFlightOffersInstance(instance) ? DataKeySearchFlightOffers : DataKeySearchStayOffers;
           const payload = getPayload(nuxtApp, payloadKey);
           if (payload) {
             processFetchResult(instance, isFlightOffersInstance(instance) ? mapSearchFlightOffersResult(payload as ISearchFlightOffersResultDto) : mapSearchStayOffersResult(payload as ISearchStayOffersResultDto));
-            const isAuthenticated = status.value === 'authenticated';
-            if (isAuthenticated) {
-            // refetch as search results are user-specific (e.g. favourites)
-              logger.verbose(`(search-offers-store) initial search offers result data was consumed from payload, kind=${instance.offersKind}`);
-              instance.resultState.status = 'sort-refetch';
-              instance.resultState.usedSearchParams = { ...cloneDeep(instance.viewState.currentSearchParams), displayOptions: cloneDeep(instance.viewState.displayOptions) as any };
-              needFullRefetch = true;
-            }
           } else {
             logger.verbose(`(search-offers-store) won't consume initial search offers data from payload, it is empty, kind=${instance.offersKind}`);
             needFullRefetch = true;
@@ -564,7 +555,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
       if (Math.abs(currentValue.min - currentValue.max) < 0.01) {
         logger.verbose(`(search-offers-store) flight price filter min & max values are the same, adjusting range, value=${currentValue.min}`);
         newRange.min = Math.max(1, currentValue.min - 1);
-        newRange.max = Math.min(SearchOffersListConstants.Price.max, currentValue.max + 1);
+        newRange.max = Math.min(SearchOffersPriceRange.max, currentValue.max + 1);
         filter.valueRange = newRange;
       }
     } else {
@@ -589,15 +580,15 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     logger.debug('(search-offers-store) creating flight offer filters initial config');
 
     const priceFilter: ISearchOffersRangeFilterProps = {
-      filterId: SearchOffersListConstants.FlightsPriceFilterId,
+      filterId: FlightsPriceFilterId,
       captionResName: getI18nResName3('searchOffers', 'filters', 'price'),
       displayOrder: 0,
       type: 'range',
       valueRange: {
         min: 1,
-        max: SearchOffersListConstants.Price.max
+        max: SearchOffersPriceRange.max
       },
-      currentValue: { min: 1, max: SearchOffersListConstants.Price.max },
+      currentValue: { min: 1, max: SearchOffersPriceRange.max },
       limitLabelFormatter: 'price',
       applyNarrowing: (min: number, max: number) => {
         logger.debug(`(search-offers-store) applying flight price filter params narrowing, min=${min}, max=${max}`);
@@ -605,7 +596,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
           logger.debug(`(search-offers-store) flight price filter params narrowing wont be applied as instance is not initialized, min=${min}, max=${max}`);
           return;
         }
-        const priceFilter = (searchFlightOffersInstance.viewState.currentSearchParams.filters?.find(f => f.filterId === SearchOffersListConstants.FlightsPriceFilterId) as ISearchOffersRangeFilterProps);
+        const priceFilter = (searchFlightOffersInstance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsPriceFilterId) as ISearchOffersRangeFilterProps);
         if (!priceFilter) {
           logger.warn(`(search-offers-store) flight price filter params narrowing wont be applied as filter was not found, min=${min}, max=${max}`);
           return;
@@ -616,15 +607,15 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     };
 
     const departureTimeFilter: ISearchOffersRangeFilterProps = {
-      filterId: SearchOffersListConstants.FlightsDepartureTimeFilterId,
+      filterId: FlightsDepartureTimeFilterId,
       captionResName: getI18nResName3('searchFlights', 'filters', 'departureTime'),
       displayOrder: 1,
       type: 'range',
       valueRange: {
         min: 0,
-        max: SearchOffersListConstants.NumMinutesInDay - 1
+        max: NumMinutesInDay - 1
       },
-      currentValue: { min: 0, max: SearchOffersListConstants.NumMinutesInDay - 1 },
+      currentValue: { min: 0, max: NumMinutesInDay - 1 },
       limitLabelFormatter: 'daytime',
       applyNarrowing: (min: number, max: number) => {
         logger.debug(`(search-offers-store) applying flight departure time filter params narrowing, min=${min}, max=${max}`);
@@ -632,7 +623,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
           logger.debug(`(search-offers-store) flight departure time filter params narrowing wont be applied as instance is not initialized, min=${min}, max=${max}`);
           return;
         }
-        const departureTimeFilter = (searchFlightOffersInstance.viewState.currentSearchParams.filters?.find(f => f.filterId === SearchOffersListConstants.FlightsDepartureTimeFilterId) as ISearchOffersRangeFilterProps);
+        const departureTimeFilter = (searchFlightOffersInstance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsDepartureTimeFilterId) as ISearchOffersRangeFilterProps);
         if (!departureTimeFilter) {
           logger.warn(`(search-offers-store) flight departure time filter params narrowing wont be applied as filter was not found, min=${min}, max=${max}`);
           return;
@@ -643,7 +634,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     };
 
     const ratingFilter: ISearchOffersChecklistFilterProps = {
-      filterId: SearchOffersListConstants.FlightsRatingFilterId,
+      filterId: FlightsRatingFilterId,
       captionResName: getI18nResName3('searchOffers', 'filters', 'rating'),
       displayOrder: 2,
       type: 'checklist',
@@ -659,7 +650,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     };
 
     const companiesFilter: ISearchOffersChecklistFilterProps = {
-      filterId: SearchOffersListConstants.FlightsAirlineCompanyFilterId,
+      filterId: FlightsAirlineCompanyFilterId,
       captionResName: getI18nResName3('searchFlights', 'filters', 'airlines'),
       displayOrder: 3,
       type: 'checklist',
@@ -672,7 +663,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
           logger.debug(`(search-offers-store) flight companies filter params narrowing wont be applied as instance is not initialized, variants=[${variants.map(v => v.id).join(', ')}]`);
           return;
         }
-        const companiesFilter = (searchFlightOffersInstance.viewState.currentSearchParams.filters?.find(f => f.filterId === SearchOffersListConstants.FlightsAirlineCompanyFilterId) as ISearchOffersChecklistFilterProps);
+        const companiesFilter = (searchFlightOffersInstance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsAirlineCompanyFilterId) as ISearchOffersChecklistFilterProps);
         if (!companiesFilter) {
           logger.warn(`(search-offers-store) flight companies filter params narrowing wont be applied as filter was not found, variants=[${variants.map(v => v.id).join(', ')}]`);
           return;
@@ -683,13 +674,13 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     };
 
     const tripsFilter: ISearchOffersChecklistFilterProps = {
-      filterId: SearchOffersListConstants.FlightsTripTypeFilterId,
+      filterId: FlightsTripTypeFilterId,
       captionResName: getI18nResName3('searchFlights', 'filters', 'trips'),
       displayOrder: 4,
       type: 'checklist',
       display: 'list',
       variants: [{
-        id: SearchOffersListConstants.FlightsTripTypeFilterFlexibleDatesItemId,
+        id: FlightsTripTypeFilterFlexibleDatesItemId,
         displayText: getFilterVariantLocalizableText(getI18nResName3('searchFlights', 'filters', 'tripsDatesFlexible'))
       }],
       currentValue: undefined,
@@ -704,15 +695,15 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     logger.debug('(search-offers-store) creating stay offer filters initial config');
 
     const priceFilter: ISearchOffersRangeFilterProps = {
-      filterId: SearchOffersListConstants.StaysPriceFilterId,
+      filterId: StaysPriceFilterId,
       captionResName: getI18nResName3('searchOffers', 'filters', 'price'),
       displayOrder: 0,
       type: 'range',
       valueRange: {
         min: 1,
-        max: SearchOffersListConstants.Price.max
+        max: SearchOffersPriceRange.max
       },
-      currentValue: { min: 1, max: SearchOffersListConstants.Price.max },
+      currentValue: { min: 1, max: SearchOffersPriceRange.max },
       limitLabelFormatter: 'price',
       applyNarrowing: (min: number, max: number) => {
         logger.debug(`(search-offers-store) applying stay price filter params narrowing, min=${min}, max=${max}`);
@@ -720,7 +711,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
           logger.debug(`(search-offers-store) stay price filter params narrowing wont be applied as instance is not initialized, min=${min}, max=${max}`);
           return;
         }
-        const priceFilter = (searchStayOffersInstance.viewState.currentSearchParams.filters?.find(f => f.filterId === SearchOffersListConstants.StaysPriceFilterId) as ISearchOffersRangeFilterProps);
+        const priceFilter = (searchStayOffersInstance.viewState.currentSearchParams.filters?.find(f => f.filterId === StaysPriceFilterId) as ISearchOffersRangeFilterProps);
         if (!priceFilter) {
           logger.warn(`(search-offers-store) stay price filter params narrowing wont be applied as filter was not found, min=${min}, max=${max}`);
           return;
@@ -731,7 +722,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     };
 
     const ratingFilter: ISearchOffersChecklistFilterProps = {
-      filterId: SearchOffersListConstants.StaysRatingFilterId,
+      filterId: StaysRatingFilterId,
       captionResName: getI18nResName3('searchOffers', 'filters', 'rating'),
       displayOrder: 1,
       type: 'checklist',
@@ -748,14 +739,14 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
 
     const freebiesLabels = ['breakfast', 'parking', 'internet', 'shuttle', 'cancellation'];
     const freebiesFilter: ISearchOffersChecklistFilterProps = {
-      filterId: SearchOffersListConstants.StaysFreebiesFilterId,
+      filterId: StaysFreebiesFilterId,
       captionResName: getI18nResName3('searchStays', 'filters', 'freebies'),
       displayOrder: 2,
       type: 'checklist',
       display: 'list',
       variants: freebiesLabels.map((fl) => {
         return {
-          id: SearchOffersListConstants.StaysFreebiesFilterItemId(fl),
+          id: StaysFreebiesFilterItemId(fl),
           displayText: getFilterVariantLocalizableText(getI18nResName3('searchStays', 'freebies', fl as any))
         };
       }),
@@ -765,14 +756,14 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
 
     const amenitiesLabels = ['frontDesk', 'airConditioner', 'fitness', 'indoorPool', 'outdoorPool', 'spa', 'restaraunt', 'roomService', 'bar', 'wifi', 'teaCoffee'];
     const amenitiesFilter: ISearchOffersChecklistFilterProps = {
-      filterId: SearchOffersListConstants.StaysAmenitiesFilterId,
+      filterId: StaysAmenitiesFilterId,
       captionResName: getI18nResName3('searchStays', 'filters', 'amenities'),
       displayOrder: 3,
       type: 'checklist',
       display: 'list',
       variants: amenitiesLabels.map((al) => {
         return {
-          id: SearchOffersListConstants.StaysAmenitiesFilterItemId(al),
+          id: StaysAmenitiesFilterItemId(al),
           displayText: getFilterVariantLocalizableText(getI18nResName3('searchStays', 'amenities', al as any))
         };
       }),
@@ -790,7 +781,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     const viewState = reactive({
       currentSearchParams: <ISearchFlightOffersParams>{ ...(initalParams || {}), filters: createSearchFlightOfferFilters() },
       displayOptions: <ISearchFlightOffersDisplayOptions>{
-        additionalSorting: SearchOffersListConstants.DefaultFlightOffersSorting,
+        additionalSorting: DefaultFlightOffersSorting,
         primaryOptions: [],
         totalCount: 0
       }
@@ -802,7 +793,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
       usedSearchParams: undefined
     });
 
-    const result: ISearchOffersStoreInstance<ISearchFlightOffersParams, ISearchFlightOffersMainParams, ISearchFlightOffersDisplayOptions, MakeSearchResultEntity<IFlightOffer>> = {
+    const result: ISearchOffersStoreInstance<ISearchFlightOffersParams, ISearchFlightOffersMainParams, ISearchFlightOffersDisplayOptions, EntityDataAttrsOnly<IFlightOffer>> = {
       viewState,
       resultState,
       offersKind: 'flights' as const,
@@ -832,7 +823,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     const viewState = reactive({
       currentSearchParams: <ISearchStayOffersParams>{ ...(initalParams || {}), filters: createSearchStayOfferFilters() },
       displayOptions: <ISearchStayOffersDisplayOptions>{
-        sorting: SearchOffersListConstants.DefaultStayOffersSorting,
+        sorting: DefaultStayOffersSorting,
         totalCount: 0
       }
     });
@@ -842,7 +833,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
       status: 'fetched' as const,
       usedSearchParams: undefined
     });
-    const result : ISearchOffersStoreInstance<ISearchStayOffersParams, ISearchStayOffersMainParams, ISearchStayOffersDisplayOptions, MakeSearchResultEntity<IStayOffer>> = {
+    const result : ISearchOffersStoreInstance<ISearchStayOffersParams, ISearchStayOffersMainParams, ISearchStayOffersDisplayOptions, EntityDataAttrsOnly<IStayOffer>> = {
       viewState,
       resultState,
       offersKind: 'stays',
@@ -867,11 +858,11 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
 
   const fillCityCacheFromPayload = async (): Promise<void> => {
     const entityCache = ClientServicesLocator.getEntityCache();
-    const cachePayload = getPayload<EntityCacheItemsPayload>(nuxtApp, NuxtDataKeys.EntityCacheItems);
+    const cachePayload = getPayload<EntityCacheItemsPayload>(nuxtApp, DataKeyEntityCacheItems);
     if (cachePayload) {
       logger.verbose(`(search-offers-store) filling city cache from payload, items=${JSON.stringify(cachePayload)}`);
       for (let i = 0; i < cachePayload.length; i++) {
-        await entityCache.set(cachePayload[i], AppConfig.clientCache.expirationsSeconds.default);
+        await entityCache.set(cachePayload[i], AppConfig.caching.clientRuntime.expirationsSeconds.default);
       }
     }
   };
@@ -887,7 +878,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     switch (offersKind) {
       case 'flights':
         if (!searchFlightOffersInstance) {
-          if (process.client) {
+          if (import.meta.client) {
             await fillCityCacheFromPayload();
             await startWatchingForFetchResults('flights', <SSRAwareFetchResult<ISearchFlightOffersResultDto| null>>(await searchFlightOffersFetchRequest));
           }
@@ -909,7 +900,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
         break;
       default:
         if (!searchStayOffersInstance) {
-          if (process.client) {
+          if (import.meta.client) {
             await fillCityCacheFromPayload();
             await startWatchingForFetchResults('stays', <SSRAwareFetchResult<ISearchStayOffersResultDto| null>>(await searchStayOffersFetchRequest));
           }

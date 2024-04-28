@@ -20,8 +20,8 @@ const logger = CommonServicesLocator.getLogger();
 const travelDetailsStore = useTravelDetailsStore();
 const isError = ref(false);
 
-const textingComponent = ref<InstanceType<typeof TravelDetailsTexting>>();
-const imageComponents = ref<InstanceType<typeof TravelDetailsImage>[]>();
+const textingComponent = shallowRef<InstanceType<typeof TravelDetailsTexting>>();
+const imageComponents = shallowRef<InstanceType<typeof TravelDetailsImage>[]>();
 const imagesCurrentStatuses = range(0, 4).map((_: any) => ref<TravelDetailsImageStatus | undefined>());
 const imagesUpcomingStatuses = range(0, 4).map((_: any) => ref<TravelDetailsImageStatus | undefined>());
 
@@ -80,7 +80,7 @@ function processUpcomingStatusChanges () {
   }
 }
 
-if (process.client && storeInstance) {
+if (import.meta.client && storeInstance) {
   storeInstance.onComponentAttached();
   watches.push(watch(() => storeInstance!.isError, () => {
     isError.value = storeInstance!.isError;
@@ -120,7 +120,7 @@ onMounted(() => {
     :content-padded="true"
     :is-error="isError"
   >
-    <div class="travel-details">
+    <article class="travel-details">
       <TravelDetailsTexting ref="textingComponent" :ctrl-key="`${ctrlKey}-TravelDetailsTexting`" :book-kind="bookKind" />
       <TravelDetailsImage
         v-for="(idx) in range(0, 4).map((i: any) => i)"
@@ -131,6 +131,6 @@ onMounted(() => {
         @update:current-status="(status?: TravelDetailsImageStatus) => imagesCurrentStatuses[idx].value = status"
         @update:upcoming-status="(status?: TravelDetailsImageStatus) => imagesUpcomingStatuses[idx].value = status"
       />
-    </div>
+    </article>
   </PageSection>
 </template>

@@ -1,4 +1,4 @@
-import { H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import isString from 'lodash-es/isString';
 import isBuffer from 'lodash-es/isBuffer';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
@@ -61,6 +61,9 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
 
   const result: IImageUploadResultDto = await userLogic.uploadUserImage(userId, category, imageBytes, CroppingImageFormat, fileName);
 
+  handleCacheHeaders(event, {
+    cacheControls: ['no-store']
+  });
   setHeader(event, 'content-type', 'application/json');
 
   return result;

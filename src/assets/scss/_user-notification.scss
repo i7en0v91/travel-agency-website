@@ -45,6 +45,7 @@ $vue-toastification-prefix: 'Vue-Toastification';
   .#{$vue-toastification-prefix}__toast-body {
     cursor: default;
     line-height: normal;
+    padding-top: markup-to-rem(1px);
   }
 
   &.#{$vue-toastification-prefix}__toast--warning {

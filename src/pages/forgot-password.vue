@@ -7,7 +7,7 @@ import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
 import { AuthProvider } from './../shared/interfaces';
 import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
-import { PagePath, WebApiRoutes } from './../shared/constants';
+import { PagePath, ApiEndpointPasswordRecovery } from './../shared/constants';
 import SimpleButton from './../components/forms/simple-button.vue';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
@@ -17,7 +17,7 @@ import { post } from './../shared/rest-utils';
 
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
-const captcha = ref<InstanceType<typeof CaptchaProtection>>();
+const captcha = shallowRef<InstanceType<typeof CaptchaProtection>>();
 
 definePageMeta({
   middleware: 'auth',
@@ -54,11 +54,11 @@ async function callServerPasswordRecovery (email: string, captchaToken?: string)
     theme: themeSettings.currentTheme.value
   };
 
-  const resultDto = await post(WebApiRoutes.PasswordRecovery, undefined, postBody) as IRecoverPasswordResultDto;
+  const resultDto = await post(ApiEndpointPasswordRecovery, undefined, postBody, undefined, true, 'default') as IRecoverPasswordResultDto;
   if (resultDto) {
     switch (resultDto.code) {
       case RecoverPasswordResultCode.SUCCESS:
-        await navigateTo(localePath(`${PagePath.ForgotPasswordVerify}`));
+        await navigateTo(localePath(`/${PagePath.ForgotPasswordVerify}`));
         break;
       case RecoverPasswordResultCode.USER_NOT_FOUND:
         useremailServerError.value = getI18nResName2('forgotPasswordPage', 'userNotFound');
@@ -109,9 +109,9 @@ function onOAuthProviderClick (provider: AuthProvider) {
       <NuxtLink class="back-to-login-link brdr-1" :to="localePath(`/${PagePath.Login}`)">
         {{ t(getI18nResName2('accountPageCommon', 'backToLogin')) }}
       </NuxtLink>
-      <h2 class="forgot-password-title mt-xs-3">
+      <h1 class="forgot-password-title mt-xs-3 font-h2">
         {{ t(getI18nResName2('forgotPasswordPage', 'title')) }}
-      </h2>
+      </h1>
       <div class="forgot-password-subtitle mt-xs-3">
         {{ t(getI18nResName2('forgotPasswordPage', 'subTitle')) }}
       </div>

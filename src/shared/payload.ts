@@ -7,9 +7,9 @@ function getLogger (): IAppLogger | undefined {
   return ((globalThis as any)?.CommonServicesLocator as any)?.getLogger() as IAppLogger;
 }
 
-export function addPayload<TPayload extends Object = any> (nuxtApp: NuxtApp, key: string, payload: TPayload | null) {
+export function addPayload<TPayload extends NonNullable<unknown> = NonNullable<unknown>> (nuxtApp: NuxtApp, key: string, payload: TPayload | null) {
   const logger = getLogger();
-  if (process.client) {
+  if (import.meta.client) {
     logger?.warn(`adding payload is not possible on client side, key=${key}`);
     return;
   }
@@ -22,7 +22,7 @@ export function addPayload<TPayload extends Object = any> (nuxtApp: NuxtApp, key
   }
 }
 
-export function getPayload<TPayload extends Object = any> (nuxtApp: NuxtApp, key: string): TPayload | null | undefined {
+export function getPayload<TPayload extends NonNullable<unknown> = any> (nuxtApp: NuxtApp, key: string): TPayload | null | undefined {
   const logger = getLogger();
   logger?.debug(`get payload, key=${key}`);
   if (!nuxtApp.payload) {

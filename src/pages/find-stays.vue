@@ -9,7 +9,7 @@ definePageMeta({
 });
 useOgImage();
 
-if (process.client) {
+if (import.meta.client) {
   const searchOffersStoreAccessor = useSearchOffersStore();
   const searchOffersStore = await searchOffersStoreAccessor.getInstance('stays', false, false);
   if (searchOffersStore.resultState.initialDataFetched !== 'no') {
@@ -21,6 +21,9 @@ if (process.client) {
 
 <template>
   <div class="search-stays-page no-hidden-parent-tabulation-check">
+    <h1 class="search-stays-page-title mb-xs-4">
+      {{ $t(getI18nResName2('staysPage', 'title')) }}
+    </h1>
     <SearchOffers :ctrl-key="`StaysListingPage-SearchOffers`" :minimum-buttons="true" class="search-stays-offers-box" :take-initial-values-from-url-query="true" single-tab="stays" />
     <OffersListView ctrl-key="StaysListingPage-OffersListView" offers-kind="stays" class="mt-xs-5" />
   </div>

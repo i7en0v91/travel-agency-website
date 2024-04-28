@@ -1,13 +1,13 @@
+import { type H3Event, getRequestHeader } from 'h3';
 import isString from 'lodash-es/isString';
-import { splitCookiesString } from 'h3';
 import { FetchError } from 'ofetch';
 import { destr } from 'destr';
 import flatten from 'lodash-es/flatten';
-import isArray from 'lodash-es/isArray';
 import { AppException, AppExceptionCodeEnum, defaultErrorHandler } from './exceptions';
 import { type IApiErrorDto } from './../server/dto';
 import type { IAppLogger } from './../shared/applogger';
-import { HeaderNames, CookieNames } from './../shared/constants';
+import { CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, HeaderCookies } from './../shared/constants';
+import { HostUrl } from './../appconfig';
 
 /**
  * all exceptions from fetch responses are converted into {@link AppException} retaining all
@@ -20,23 +20,30 @@ export type FetchErrorHandlingMode = 'default' | 'throw';
 
 type HTTPMethod = 'GET' | 'HEAD' | 'PATCH' | 'POST' | 'PUT' | 'DELETE' | 'CONNECT' | 'OPTIONS' | 'TRACE';
 
-function getCurrentAuthCookies (logger: IAppLogger): string[] | null {
-  logger.debug('(api-client) get current auth cookies');
+function getCurrentAuthCookies (event: H3Event | undefined, logger: IAppLogger): string[] | null {
+  logger.debug(`(api-client) get current auth cookies, event=${!!event}`);
 
-  const authCookieNames = [CookieNames.AuthCallbackUrl, CookieNames.AuthCsrfToken, CookieNames.AuthSessionToken];
+  const authCookieNames = [CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken];
 
   let inputCookies: string | undefined;
   let inputAuthCookies: string[] | undefined;
 
+  if(event?.context?.authCookies) {
+    inputAuthCookies = event?.context.authCookies;
+    logger.debug(`(api-client) returning current auth cookies for middleware, count=${inputAuthCookies!.length}`);
+    return inputAuthCookies;
+  }
+
   let errReadFromRequest: any;
   let errReadViaHeaders: any;
   try {
-    const requestEvent = useRequestEvent();
-    if (requestEvent) {
-      logger.debug('(api-client) reading cookies from request event');
-      const allHeaders = requestEvent.node.req.headers;
-      inputCookies = allHeaders[HeaderNames.Cookies];
+    logger.debug('(api-client) reading cookies from request event');
+    inputCookies = event ? (getRequestHeader(event, HeaderCookies) ?? (event.node.req.headers.cookie)) : undefined;
+    if(!inputCookies) {
+      event = useRequestEvent();
+      inputCookies = event ? (getRequestHeader(event, HeaderCookies) ?? (event.node.req.headers.cookie)) : undefined;
     }
+   
   } catch (err: any) {
     logger.debug(`(api-client) exception while reading cookies from request event, msg=${err?.message}`);
     errReadFromRequest = err;
@@ -47,7 +54,7 @@ function getCurrentAuthCookies (logger: IAppLogger): string[] | null {
       const requestHeaders = useRequestHeaders();
       if (requestHeaders) {
         logger.debug('(api-client) reading cookies via headers');
-        inputCookies = requestHeaders[HeaderNames.Cookies];
+        inputCookies = requestHeaders[HeaderCookies];
       }
     } catch (err: any) {
       logger.debug(`(api-client) exception while reading cookies via headers, msg=${err?.message}`);
@@ -76,75 +83,88 @@ function getCurrentAuthCookies (logger: IAppLogger): string[] | null {
   return inputAuthCookies!;
 }
 
-async function doFetch<TReq, TResp> (method: HTTPMethod, route: string, query?: any, body?: TReq, cache?: RequestCache, addAuthCookies?: boolean, errorHandling?: FetchErrorHandlingMode) {
+async function doFetch<TReq, TResp> (method: HTTPMethod, route: string, query: any,  body: TReq | undefined, headers: HeadersInit | undefined, cache: RequestCache, addAuthCookies: boolean, event: H3Event | undefined, errorHandling: FetchErrorHandlingMode, isByteResponse: boolean): Promise<TResp | undefined> {
   const logger = CommonServicesLocator.getLogger();
   errorHandling ??= 'default';
 
-  let headers: HeadersInit | undefined;
+  let outgoingHeaders: HeadersInit = {
+    ...(headers ?? {}),
+    Host: HostUrl
+  };
   const isText = body && isString(body);
   const isArr = body && body instanceof Uint8Array;
   if (body) {
-    headers = {
+    outgoingHeaders = {
+      ...outgoingHeaders,
       'Content-Type': isArr ? 'application/octet-stream' : (isText ? 'text/plain' : 'application/json')
     };
   }
-  if (addAuthCookies ?? false) {
-    const authCookies = getCurrentAuthCookies(logger);
+  if (addAuthCookies && import.meta.server) {
+    const authCookies = getCurrentAuthCookies(event, logger);
     if ((authCookies?.length ?? 0) > 0) {
-      headers = {
-        ...(headers ?? {}),
+      outgoingHeaders = {
+        ...outgoingHeaders,
         cookie: authCookies!.join('; ')
       };
     }
   }
 
   try {
-    logger.verbose(`(api-client) sending ${method}: route=${route}, query=${JSON.stringify(query)}, addAuthCookies=${addAuthCookies}, cache=${cache}`);
-    const response = await $fetch<TResp>(route,
+    logger.verbose(`(api-client) sending ${method}: route=${route}, query=${JSON.stringify(query)}, addAuthCookies=${addAuthCookies}, cache=${cache}, event=${!!event}`);
+    const response = await $fetch(route,
       {
         method,
         cache,
         body: body ? ((isArr || isText) ? body : JSON.stringify(body)) : undefined,
         query,
-        headers,
-        parseResponse: destr
-      });
+        headers: outgoingHeaders,
+        responseType: isByteResponse ? 'blob' : undefined,
+        parseResponse: isByteResponse ? undefined : destr
+      }) as TResp;
     logger.verbose(`(api-client) ${method} completed: route=${route}, query=${JSON.stringify(query)}, addAuthCookies=${addAuthCookies}, cache=${cache}`);
     return response;
   } catch (err: any) {
-    logger.warn(`(api-client) failed to send ${method}: route=${route}, query=${JSON.stringify(query)}, addAuthCookies=${addAuthCookies}, cache=${cache}`, err);
-    await handleFetchError(err, errorHandling);
+    await handleFetchError(err, errorHandling, (appErr) => {
+      logger.warn(`(api-client) failed to send ${method}: route=${route}, query=${JSON.stringify(query)}, addAuthCookies=${addAuthCookies}, cache=${cache}`, appErr);
+    });
   }
 }
 
-function handleFetchError (err: any, errorHandling: FetchErrorHandlingMode) {
+function handleFetchError (err: any, errorHandling: FetchErrorHandlingMode, logFn: (err: AppException) => void) {
   let appException: AppException;
 
-  if (err instanceof FetchError) {
-    const fetchError = err as FetchError;
-    const errorDto = destr<IApiErrorDto>(fetchError.data);
-    // simple check that reponse is a well-known error (AppException)
-    if (errorDto?.code >= AppExceptionCodeEnum.UNKNOWN) {
-      appException = new AppException(
-        errorDto.code,
-        errorDto.internalMsg,
-        errorDto.appearance,
-        errorDto.params);
+  try {
+    if (err instanceof FetchError) {
+      const fetchError = err as FetchError;
+      const errorDto = destr<IApiErrorDto>(fetchError.data);
+      // simple check that reponse is a well-known error (AppException)
+      if (errorDto?.code >= AppExceptionCodeEnum.UNKNOWN) {
+        appException = new AppException(
+          errorDto.code,
+          errorDto.internalMsg,
+          errorDto.appearance,
+          errorDto.params);
+      } else {
+        appException = new AppException(
+          AppExceptionCodeEnum.UNKNOWN,
+          'recevied error response from api client',
+          'error-stub');
+      }
+    } else if (AppException.isAppException(err)) {
+      appException = err as AppException;
     } else {
       appException = new AppException(
         AppExceptionCodeEnum.UNKNOWN,
-        'recevied error response from api client',
+        'recevied unexpected error response from api client',
         'error-stub');
     }
-  } else if (AppException.isAppException(err)) {
-    appException = err as AppException;
-  } else {
-    appException = new AppException(
-      AppExceptionCodeEnum.UNKNOWN,
-      'recevied unexpected error response from api client',
-      'error-stub');
+  } catch (innerErr: any) {
+    logFn(err);
+    logFn(innerErr);
+    return;
   }
 
+  logFn(appException);
   if (errorHandling === 'default') {
     defaultErrorHandler(appException);
   } else {
@@ -152,14 +172,22 @@ function handleFetchError (err: any, errorHandling: FetchErrorHandlingMode) {
   }
 }
 
-export async function post<TReq, TResp> (route: string, query?: any, body?: TReq, addAuthCookies?: boolean, errorHandling?: FetchErrorHandlingMode) : Promise<TResp | undefined> {
-  return await doFetch('POST', route, query, body, 'no-cache', addAuthCookies ?? false, errorHandling);
+export async function post<TReq, TResp> (route: string, query: any, body: TReq | undefined, headers: HeadersInit | undefined, addAuthCookies: boolean, errorHandling: FetchErrorHandlingMode) : Promise<TResp | undefined> {
+  return await doFetch<TReq, TResp>('POST', route, query, body, headers, 'no-cache', addAuthCookies, undefined, errorHandling, false);
 }
 
-export async function del (route: string, query?: any, addAuthCookies?: boolean, errorHandling?: FetchErrorHandlingMode) {
-  return await doFetch('DELETE', route, query, null, 'no-cache', addAuthCookies ?? false, errorHandling);
+export async function del (route: string, query: any, addAuthCookies: boolean, errorHandling: FetchErrorHandlingMode) {
+  return await doFetch('DELETE', route, query, null, undefined, 'no-cache', addAuthCookies, undefined, errorHandling, false);
 }
 
-export async function get<TResp> (route: string, query?: any, cache?: RequestCache, addAuthCookies?: boolean, errorHandling?: FetchErrorHandlingMode) : Promise<TResp | undefined> {
-  return await doFetch('GET', route, query, null, cache, addAuthCookies ?? false, errorHandling);
+export async function getObject<TResp> (route: string, query: any, cache: RequestCache, addAuthCookies: boolean, event: H3Event | undefined, errorHandling: FetchErrorHandlingMode) : Promise<TResp | undefined> {
+  return await doFetch<null, TResp>('GET', route, query, null, undefined, cache, addAuthCookies, event, errorHandling, false);
+}
+
+export async function getBytes (route: string, query: any, headers: HeadersInit | undefined, cache: RequestCache, addAuthCookies: boolean, event: H3Event | undefined, errorHandling: FetchErrorHandlingMode) : Promise<Buffer | undefined> {
+  const result = await doFetch<null, Blob>('GET', route, query, null, headers, cache, addAuthCookies, event, errorHandling, true);
+  if (!result) {
+    return undefined;
+  }
+  return Buffer.from((await (result as Blob).arrayBuffer()));
 }

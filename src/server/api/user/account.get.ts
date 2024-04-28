@@ -1,4 +1,4 @@
-import { H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import isString from 'lodash-es/isString';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import { type EntityId } from '../../../shared/interfaces';
@@ -33,7 +33,6 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   const modifiedSince = user.modifiedUtc;
   modifiedSince.setMilliseconds(0);
   handleCacheHeaders(event, {
-    modifiedTime: modifiedSince,
     cacheControls: ['no-store']
   });
   setHeader(event, 'content-type', 'application/json');

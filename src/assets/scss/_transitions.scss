@@ -1,6 +1,31 @@
 @use 'system' as *;
 @use 'utils' as *; 
 
+// Navbar page links dropdown animation
+
+.nav-page-links-enter-active,
+.nav-page-links-leave-active {
+  transition: max-height $navbar-toggle-animation-interval ease-out;
+}
+
+.nav-page-links-enter-from,
+.nav-page-links-leave-to {
+  max-height: 0;
+}
+
+.nav-page-links-enter-to,
+.nav-page-links-leave-from {
+  max-height: $navbar-toggle-max-height;
+}
+
+@media (prefers-reduced-motion) {
+  .nav-page-links-enter-active,
+  .nav-page-links-leave-active {
+    transition: unset;
+  }
+}
+
+
 // Travel Details block animation
 
 .travel-details-fade-enter-active,

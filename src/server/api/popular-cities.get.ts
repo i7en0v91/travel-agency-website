@@ -1,18 +1,17 @@
-import { H3Event } from 'h3';
-import { WebApiRoutes } from '../../shared/constants';
+import type { H3Event } from 'h3';
 import { defineWebApiEventHandler } from './../utils/webapi-event-handler';
 import { type IPopularCityDto } from './../dto';
+import AppConfig from './../../appconfig';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const citiesLogic = ServerServicesLocator.getCitiesLogic();
   const flightsLogic = ServerServicesLocator.getFlightsLogic();
 
-  if (process.env.NODE_ENV !== 'development') {
-    handleCacheHeaders(event, {
-      maxAge: WebApiRoutes.OneDayCacheLatency
-    });
-  }
-
+  handleCacheHeaders(event, AppConfig.caching.htmlPageCachingSeconds ? {
+    maxAge: AppConfig.caching.htmlPageCachingSeconds,
+  } : {
+    cacheControls: ['no-cache']
+  });
   setHeader(event, 'content-type', 'application/json');
 
   const popularCityItems = await citiesLogic.getPopularCities();

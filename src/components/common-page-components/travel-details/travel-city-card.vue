@@ -21,14 +21,14 @@ const { locale } = useI18n();
 </script>
 
 <template>
-  <div class="travel-city-card">
+  <article class="travel-city-card">
     <div class="travel-city-card-dim brdr-3" />
     <div class="travel-city-card-details p-xs-4">
       <div class="travel-city-card-texts">
         <div class="travel-city-card-place-info">
-          <h4 :class="props.cityName ? '' : 'data-loading-stub text-data-loading'">
+          <h3 :class="`${props.cityName ? '' : 'data-loading-stub text-data-loading'} font-h4`">
             {{ props.cityName ? (props.cityName as any)[locale] : '&nbsp;' }}
-          </h4>
+          </h3>
           <div :class="props.promoLine ? '' : 'data-loading-stub text-data-loading mt-xs-1'">
             {{ props.promoLine ? (props.promoLine as any)[locale] : '&nbsp;' }}
           </div>
@@ -50,5 +50,5 @@ const { locale } = useI18n();
       :alt-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'imgAlt')"
       :show-stub="true"
     />
-  </div>
+  </article>
 </template>

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 
-import { WebApiRoutes, FlightMinPassengers } from './../../../shared/constants';
+import { FlightMinPassengers, ApiEndpointCitiesSearch } from './../../../shared/constants';
 import FieldFrame from './../../forms/field-frame.vue';
 import SearchListInput from './../../forms/search-list-input.vue';
 import { getI18nResName2 } from './../../../shared/i18n';
 import type { FlightClass, ISearchFlightOffersMainParams, ISearchFlightOffersParams, TripType, ISearchListItem } from './../../../shared/interfaces';
-import DropdownList from './../../components/forms/dropdown-list.vue';
+import DropdownList from './../../../components/forms/dropdown-list.vue';
 import SearchFlightDatePicker from './search-flights-date-picker.vue';
 import SearchFlightsParams from './search-flights-params.vue';
 
@@ -25,9 +25,9 @@ const flightParams = ref<{ passengers: number, class: FlightClass } | undefined>
 const tripType = ref<TripType>('return');
 const tripDates = ref<Date[]>([]);
 
-const fromComponent = ref<InstanceType<typeof SearchListInput>>();
-const toComponent = ref<InstanceType<typeof SearchListInput>>();
-const tripTypeComponent = ref<InstanceType<typeof DropdownList>>();
+const fromComponent = shallowRef<InstanceType<typeof SearchListInput>>();
+const toComponent = shallowRef<InstanceType<typeof SearchListInput>>();
+const tripTypeComponent = shallowRef<InstanceType<typeof DropdownList>>();
 
 const searchOffersStoreAccessor = useSearchOffersStore();
 
@@ -95,7 +95,7 @@ function onDestinationChanged (isFrom: boolean, newValue?: ISearchListItem | und
       toComponent.value?.setInputFocus();
     }
   } else {
-    // eslint-disable-next-line no-lonely-if
+     
     if (newValue) {
       fromComponent.value?.setExclusionIds([newValue.id]);
     } else {
@@ -153,7 +153,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchFlightOffers
             v-model:selected-value="fromCity"
             :initially-selected-value="takeInitialValuesFromUrlQuery ? (displayedSearchParams?.fromCity ?? null) : undefined"
             :ctrl-key="`${props.ctrlKey}-From`"
-            :item-search-url="WebApiRoutes.CitiesSearch"
+            :item-search-url="ApiEndpointCitiesSearch"
             :persistent="true"
             type="destination"
             list-container-class="search-offers-dropdown-list-container"
@@ -167,7 +167,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchFlightOffers
             v-model:selected-value="toCity"
             :initially-selected-value="takeInitialValuesFromUrlQuery ? (displayedSearchParams?.toCity ?? null) : undefined"
             :ctrl-key="`${props.ctrlKey}-To`"
-            :item-search-url="WebApiRoutes.CitiesSearch"
+            :item-search-url="ApiEndpointCitiesSearch"
             :persistent="true"
             type="destination"
             list-container-class="search-offers-dropdown-list-container"

@@ -12,8 +12,8 @@ const props = defineProps<IProps>();
 
 const logger = CommonServicesLocator.getLogger();
 const activeFrame = ref<'initial' | 'A' | 'B'>('initial');
-const elFrameA = ref<InstanceType<typeof TravelDetailsTextingFrame>>();
-const elFrameB = ref<InstanceType<typeof TravelDetailsTextingFrame>>();
+const elFrameA = shallowRef<InstanceType<typeof TravelDetailsTextingFrame>>();
+const elFrameB = shallowRef<InstanceType<typeof TravelDetailsTextingFrame>>();
 const isError = ref(false);
 const initialFrameHidden = ref(false);
 const clientFramesActivated = ref(false);
@@ -52,14 +52,14 @@ defineExpose({
 
 const travelDetailsStore = useTravelDetailsStore();
 
-if (process.client) {
+if (import.meta.client) {
   await startWatchingForDataChanges();
 }
 
 const storeInstance = await (travelDetailsStore.getInstance());
 if (storeInstance.current?.texting) {
   onInitialDataReady(storeInstance.current);
-} else if (process.server) {
+} else if (import.meta.server) {
   isError.value = true;
 }
 

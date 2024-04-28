@@ -72,7 +72,7 @@ function refreshFilterParams () {
   setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
   logger.debug(`(FilterPanel) filter params refreshed, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
 }
-if (process.server) {
+if (import.meta.server) {
   refreshFilterParams();
 }
 
@@ -163,9 +163,9 @@ function onResetBtnClick () {
         <!-- TODO: found SSR-aware UI components & remove ClientOnly -->
         <CollapsableSection v-model:collapsed="isCollapsed" :ctrl-key="`${$props.ctrlKey}-FilterPanelSection`" :collapse-enabled="true" :tabbable-group-id="SearchOffersFilterTabGroupId">
           <template #head>
-            <div class="filter-panel-header" role="heading" aria-level="5">
+            <h2 class="filter-panel-header">
               {{ $t(getI18nResName3('searchOffers', 'filters', 'panelHeader')) }}
-            </div>
+            </h2>
           </template>
           <template #content>
             <div class="filter-panel-div">
