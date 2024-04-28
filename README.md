@@ -3,14 +3,14 @@ A sample SPA/SSR application built with reactive framework [Vue 3](https://githu
 
 ## Features
 - Single-Page application with Server-Side Rendering
-- Localization to different languages
-- Personal account with email confirmation registration flow, photo's uploading, favourite & booking history
 - Authentication via third-party OAuth providers
-- OpenGraph image for SEO - prerendered or generated on-the-fly for dynamic entities
 - Support different databases
+- Localization to multiple languages
+- OpenGraph images for SEO - prerendered or generated on-the-fly for dynamic entities
 - Configurable HTML pages & images caching
-- PDF generation for ticket/booking documents
 - UI: adaptive layout, light/dark theme support, input/selected values validation & prompting
+- Personal account with email confirmation registration flow, reviews, photos uploading, favourites & booking history
+- PDF generation for ticket/booking documents
 - Advanced error handling: error page / popup notification / HTML error stub on problematic component depending on source and severity of error as well as additional logging on server-side and on client-side (via REST endpoint)
 
 ## Tech
