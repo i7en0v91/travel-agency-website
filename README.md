@@ -4,10 +4,13 @@ A sample SPA/SSR application built with reactive framework [Vue 3](https://githu
 ## Features
 - Single-Page application with Server-Side Rendering
 - Localization to different languages
-- Personal account registration flow with email confirmation
+- Personal account with email confirmation registration flow, photo's uploading, favourite & booking history
 - Authentication via third-party OAuth providers
+- OpenGraph image for SEO - prerendered or generated on-the-fly for dynamic entities
 - Support different databases
-- UI: adaptive layout, light/dark theme support
+- Configurable HTML pages & images caching
+- PDF generation for ticket/booking documents
+- UI: adaptive layout, light/dark theme support, input/selected values validation & prompting
 - Advanced error handling: error page / popup notification / HTML error stub on problematic component depending on source and severity of error as well as additional logging on server-side and on client-side (via REST endpoint)
 
 ## Tech
@@ -27,6 +30,8 @@ Project uses a number of open source projects to work properly:
 - [Playwright](https://github.com/microsoft/playwright) - for Web Testing and Automation
 - [Winston](https://github.com/winstonjs/winston) - for logging
 - [Nuxt OgImage](https://github.com/nuxt-modules/og-image) - for generating OpenGraph images for entities on-the-fly using [Satori](https://github.com/vercel/satori)
+- [Vue Yandex Maps](https://github.com/yandex-maps-unofficial/vue-yandex-maps) - for marking hotel locations on interactive world map
+- [PDFKit](https://github.com/foliojs/pdfkit) - A JavaScript PDF generation library for Node and the browser
 - Other third-party UI components:
   - [CropperJS](https://github.com/fengyuanchen/cropperjs) - for uploading photos
   - [VCalendar](https://github.com/nathanreyes/v-calendar) - An elegant calendar and date picker plugin for Vuejs
@@ -35,6 +40,7 @@ Project uses a number of open source projects to work properly:
   - [Vue Toastification](https://github.com/Maronato/vue-toastification) - for notifications
   - [Vuelidate](https://github.com/vuelidate/vuelidate) - for user input validation
   - [TipTap](https://github.com/ueberdosis/tiptap) - The headless rich text editor, was used for creating user reviews
+  - [vue3-perfect-scrollbar](https://github.com/mercs600/vue3-perfect-scrollbar) - A minimalistic yet powerful Vue.js wrapper for [Perfect Scrollbar](https://perfectscrollbar.com)
 
 ## Installation
 
@@ -50,7 +56,7 @@ npm run quickstart
 ```
 
 This will start the website with minimum external services configuration: emailing disabled, no CAPTCHA, only local OAuth provider e.t.c. SQLite database will be created locally. 
-Open browser and type `http://localhost:3000`.  First-time visit will take time because of initial database data seeding
+Open browser and type `http://localhost:3000`.  First-time page visit will take a couple of minutes to start the server because of initial database data seeding
 
 ## License
 
