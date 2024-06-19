@@ -7,7 +7,8 @@ A sample SPA/SSR application built with reactive framework [Vue 3](https://githu
 - Support different databases
 - Localization to multiple languages
 - OpenGraph images for SEO - prerendered or generated on-the-fly for dynamic entities
-- Configurable HTML pages & images caching
+- [Acsys CMS](https://github.com/acsysio/acsys) - out-of-the-box CMS integration
+- HTML pages & images caching, configurable cache refresh policies on changes (e.g. via CMS)
 - UI: adaptive layout, light/dark theme support, input/selected values validation & prompting
 - Personal account with email confirmation registration flow, reviews, photos uploading, favourites & booking history
 - PDF generation for ticket/booking documents
@@ -47,6 +48,8 @@ Project uses a number of open source projects to work properly:
 Project requires [Node.js](https://nodejs.org/) v20+ to be installed. 
 (it should also run on Node v18 but was not tested in that configuration)
 
+### Without CMS (default)
+
 Install the dependencies and run server.
 
 ```sh
@@ -57,6 +60,26 @@ npm run quickstart
 
 This will start the website with minimum external services configuration: emailing disabled, no CAPTCHA, only local OAuth provider e.t.c. SQLite database will be created locally. 
 Open browser and type `http://localhost:3000`.  First-time page visit will take a couple of minutes to start the server because of initial database data seeding
+
+### With Acsys CMS
+
+You will need to download Acsys sources, enable CMS in project config and then proceed with quickstart build as described previously. The following script can be used:
+
+```sh
+git clone https://github.com/acsysio/acsys.git ./externals/acsys
+cd ./externals/acsys
+npm install
+cd ./../../src
+
+# Now edit .env file and uncomment #CMS=acsys first line
+
+npm install
+npm run quickstart
+```
+
+After server is started CMS will be available at `http://localhost:9000`, admin login and password should be already pre-filled.
+Almost any type of entities are available for editing, but some operations may be restricted or won't take any effect for a couple of auto-generated entities or fields whose modifications should trigger non-trivial app logic.
+**NOTE**: by default SSR caches rendered html page markup in Nitro cache, so changes made in CMS won't be immediately reflected in browser even when reloading with browser-side caching disabled. 10 minute-interval refresh task is running in background on server. Not to wait for 10 minutes you should either disable caching in project config [here](https://github.com/i7en0v91/travel-agency-website/blob/10037865c9da947be8056151e84600e2d40c3f72/src/appconfig.ts#L11) or call POST /api/purge-cache API endpoint
 
 ## License
 
