@@ -1,35 +1,27 @@
 <script setup lang="ts">
 
 import { type Locale } from './../../shared/constants';
-import { ImageCategory, type EntityDataAttrsOnly, type IFlightOffer, type ILocalizableValue } from './../../shared/interfaces';
+import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
+import { ImageCategory, type EntityDataAttrsOnly, type IFlightOffer, type ILocalizableValue, type EntityId } from './../../shared/interfaces';
 import { getI18nResName3, getI18nResName2, type I18nResName } from './../../shared/i18n';
 import { getLocalizeableValue } from './../../shared/common';
 import OfferBooking from './../../components/booking-page/offer-booking.vue';
-import { useOfferBookingStoreFactory, type IOfferBookingStoreFactory } from './../../stores/offer-booking-store';
+import { type IOfferBookingStoreFactory } from './../../stores/offer-booking-store';
 import OfferDetailsBreadcrumbs from './../../components/common-page-components/offer-details-breadcrumbs.vue';
 import FlightDetailsCard from './../../components/common-page-components/flight-details-card.vue';
-import { AppException, AppExceptionCodeEnum } from './../../shared/exceptions';
 
 const { locale } = useI18n();
 const localePath = useLocalePath();
 
 const route = useRoute();
-const logger = CommonServicesLocator.getLogger();
 
 const isError = ref(false);
 
 const offerParam = route.params?.id?.toString() ?? '';
 if (offerParam.length === 0) {
-  navigateTo(localePath('/'));
+  await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.Index)}`));
 }
-
-let offerId: number | undefined;
-try {
-  offerId = parseInt(offerParam);
-} catch (err: any) {
-  logger.warn(`(FlightOfferBooking) failed to parse flight offer id: param=${offerParam}`, err);
-  throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'invalid offer id argument', 'error-page');
-}
+const offerId: EntityId = offerParam;
 
 definePageMeta({
   title: { resName: getI18nResName2('flightBookingPage', 'title'), resArgs: undefined }
@@ -44,7 +36,7 @@ const PriceDecompositionWeights: { labelResName: I18nResName, amount: number }[]
   { labelResName: getI18nResName3('bookingCommon', 'pricingDecomposition', 'fee'), amount: 0.05 }
 ];
 
-const offerBookingStoreFactory = useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
+const offerBookingStoreFactory = await useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
 const offerBookingStore = await offerBookingStoreFactory.createNewBooking<IFlightOffer>(offerId!, 'flights', undefined);
 
 const flightOffer = ref<EntityDataAttrsOnly<IFlightOffer> | undefined>(offerBookingStore.booking?.offer);

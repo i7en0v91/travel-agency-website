@@ -5,7 +5,8 @@ import SearchOffers from './../components/common-page-components/search-offers/s
 import OffersListView from './../components/common-page-components/offers-list-view/list-view.vue';
 
 definePageMeta({
-  title: { resName: getI18nResName2('staysPage', 'title'), resArgs: undefined }
+  title: { resName: getI18nResName2('staysPage', 'title'), resArgs: undefined },
+  middleware: ['redirect-with-search-stays-date-filled']
 });
 useOgImage();
 

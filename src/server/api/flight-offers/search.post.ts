@@ -1,13 +1,13 @@
 import type { H3Event } from 'h3';
 import { Decimal } from 'decimal.js';
-import isString from 'lodash-es/isString';
 import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import { type ISearchFlightOffersParamsDto, SearchFlightOffersParamsDtoSchema, type ISearchFlightOffersResultDto } from '../../dto';
-import type { IFlightOffersFilterParams, EntityId, ISorting, FlightOffersSortFactor } from '../../../shared/interfaces';
+import type { IFlightOffersFilterParams, ISorting, FlightOffersSortFactor } from '../../../shared/interfaces';
 import type { IAppLogger } from '../../../shared/applogger';
 import { mapSearchFlightOfferResultEntities, mapSearchedFlightOffer } from '../../utils/mappers';
 import { getServerSession } from '#auth';
+import { extractUserIdFromSession } from './../../../server/utils/auth';
 
 function performAdditionalDtoValidation (dto: ISearchFlightOffersParamsDto, event : H3Event, logger: IAppLogger) {
   if (dto.price?.to && dto.price?.from && dto.price.from > dto.price.to) {
@@ -68,11 +68,8 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   };
 
   const authSession = await getServerSession(event);
-  let userId : EntityId | undefined = (authSession as any)?.id as EntityId;
-  if (userId && isString(userId)) {
-    userId = parseInt(userId);
-  }
-
+  const userId = extractUserIdFromSession(authSession);
+  
   const primaryFactor = searchParamsDto.primarySort as FlightOffersSortFactor;
   const primarySorting: ISorting<FlightOffersSortFactor> = {
     factor: primaryFactor,

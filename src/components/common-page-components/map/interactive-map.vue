@@ -35,7 +35,7 @@ function onWebUrlChange (value: string) {
 }
 
 function onMapError (err: any) {
-  logger.warn(`(InteractiveMap) got error from map component, ctrlKey=${props.ctrlKey}`, err);
+  logger.warn(`(InteractiveMap) got exception from map component, ctrlKey=${props.ctrlKey}`, err);
   isError.value = true;
 }
 

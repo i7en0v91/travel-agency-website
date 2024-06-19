@@ -4,6 +4,7 @@ import isBuffer from 'lodash-es/isBuffer';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import { type EntityId, ImageCategory } from '../../../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';
+import { extractUserIdFromSession } from './../../../server/utils/auth';
 import { type IImageUploadResultDto } from '../../dto';
 import { CroppingImageFormat } from '../../../shared/constants';
 import { getServerSession } from '#auth';
@@ -14,10 +15,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   const query = getQuery(event);
 
   const authSession = await getServerSession(event);
-  let userId : EntityId | undefined = (authSession as any)?.id as EntityId;
-  if (userId && isString(userId)) {
-    userId = parseInt(userId);
-  }
+  const userId: EntityId | undefined = extractUserIdFromSession(authSession);
   if (!userId) {
     throw new AppException(
       AppExceptionCodeEnum.UNAUTHORIZED,
@@ -59,7 +57,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  const result: IImageUploadResultDto = await userLogic.uploadUserImage(userId, category, imageBytes, CroppingImageFormat, fileName);
+  const result: IImageUploadResultDto = await userLogic.uploadUserImage(userId, category, imageBytes, CroppingImageFormat, fileName, event);
 
   handleCacheHeaders(event, {
     cacheControls: ['no-store']

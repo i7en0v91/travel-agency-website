@@ -6,12 +6,14 @@ import PageSection from './../components/common-page-components/page-section.vue
 import HeadingText from './../components/stays/stays-heading-text.vue';
 import { getI18nResName2 } from './../shared/i18n';
 import { ImageCategory } from './../shared/interfaces';
-import { ApiEndpointStayOffersSearchHistory, ApiEndpointPopularCitiesList, MaxSearchHistorySize, StaysTitleSlug, TravelDetailsHtmlAnchor, PagePath, type Locale } from './../shared/constants';
+import { ApiEndpointStayOffersSearchHistory, ApiEndpointPopularCitiesList, MaxSearchHistorySize, StaysTitleSlug, TravelDetailsHtmlAnchor, type Locale } from './../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../shared/page-query-params';
 import TravelCities from './../components/common-page-components/travel-details/travel-cities.vue';
 import TravelDetails from './../components/common-page-components/travel-details/travel-details.vue';
 import { useFetchEx } from './../shared/fetch-ex';
 import { type ISearchedCityHistoryDto, type IPopularCityDto } from './../server/dto';
 import { mapLocalizeableValues, getLocalizeableValue } from './../shared/common';
+import AppConfig from './../appconfig';
 
 definePageMeta({
   title: { resName: getI18nResName2('staysPage', 'title'), resArgs: undefined }
@@ -29,7 +31,7 @@ const popularCitiesFetch = await useFetchEx<IPopularCityDto[], IPopularCityDto[]
   {
     server: true,
     lazy: true,
-    cache: 'default',
+    cache: AppConfig.caching.htmlPageCachingSeconds ? 'default' : 'no-cache',
     default: () => { return range(0, 20, 1).map(_ => null); },
     key: 'StaysPagePopulatCitiesList'
   });
@@ -100,7 +102,7 @@ watch(searchHistoryFetch.status, () => {
       <div v-else class="search-history-empty-div mt-xs-2">
         <i18n-t :keypath="getI18nResName2('staysPage', 'searchHistoryEmpty')" tag="div" scope="global" class="search-history-empty">
           <template #cityLink>
-            <NuxtLink class="search-history-city-link brdr-1" :to="localePath(`/${PagePath.FindStays}?citySlug=${somePopularCity!.slug}`)">
+            <NuxtLink v-if="somePopularCity" class="search-history-city-link brdr-1" :to="localePath(`/${getHtmlPagePath(HtmlPage.FindStays)}?citySlug=${somePopularCity!.slug}`)">
               {{ getLocalizeableValue(somePopularCity!.cityDisplayName, locale as Locale) }}
             </NuxtLink>
           </template>

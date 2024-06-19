@@ -2,11 +2,12 @@
 
 import dayjs from 'dayjs';
 import { type Locale } from './../../shared/constants';
-import { type StayServiceLevel, ImageCategory, type EntityDataAttrsOnly, type IStayOfferDetails, type ILocalizableValue } from './../../shared/interfaces';
+import { type BookStayCacheParams, HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
+import { type StayServiceLevel, ImageCategory, type EntityDataAttrsOnly, type IStayOfferDetails, type ILocalizableValue, type EntityId, AvailableStayServiceLevel } from './../../shared/interfaces';
 import { getI18nResName3, getI18nResName2, type I18nResName } from './../../shared/i18n';
 import { getLocalizeableValue } from './../../shared/common';
 import OfferBooking from './../../components/booking-page/offer-booking.vue';
-import { useOfferBookingStoreFactory, type IOfferBookingStoreFactory } from './../../stores/offer-booking-store';
+import { type IOfferBookingStoreFactory } from './../../stores/offer-booking-store';
 import OfferDetailsBreadcrumbs from './../../components/common-page-components/offer-details-breadcrumbs.vue';
 import { AppException, AppExceptionCodeEnum } from './../../shared/exceptions';
 
@@ -20,19 +21,14 @@ const isError = ref(false);
 
 const offerParam = route.params?.id?.toString() ?? '';
 if (offerParam.length === 0) {
-  navigateTo(localePath('/'));
+  await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.Index)}`));
 }
-let offerId: number | undefined;
-try {
-  offerId = parseInt(offerParam);
-} catch (err: any) {
-  logger.warn(`(StayOfferBooking) failed to parse stay offer id: param=${offerParam}`, err);
-  throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'invalid offer id argument', 'error-page');
-}
+const offerId: EntityId = offerParam;
 
 const reqEvent = import.meta.server ? useRequestEvent() : undefined;
-const serviceLevel = ((reqEvent?.context.ogImageRequest?.serviceLevel ?? route.query.serviceLevel)?.toString() ?? '').trim() as StayServiceLevel;
-if (!['base', 'cityView-1', 'cityView-2', 'cityView-3'].includes(serviceLevel)) {
+const stayBookOgImageQueryInfo = reqEvent?.context.cacheablePageParams as BookStayCacheParams;
+const serviceLevel = ((stayBookOgImageQueryInfo?.serviceLevel ?? route.query.serviceLevel)?.toString() ?? '').trim() as StayServiceLevel;
+if (!AvailableStayServiceLevel.includes(serviceLevel)) {
   logger.warn(`(StayOfferBooking) failed to parse service level argument: serviceLevel=${serviceLevel}, offerId=${offerParam}`);
   throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'invalid service level argument', 'error-page');
 }
@@ -50,7 +46,7 @@ const PriceDecompositionWeights: { labelResName: I18nResName, amount: number }[]
   { labelResName: getI18nResName3('bookingCommon', 'pricingDecomposition', 'fee'), amount: 0.05 }
 ];
 
-const offerBookingStoreFactory = useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
+const offerBookingStoreFactory = await useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
 const offerBookingStore = await offerBookingStoreFactory.createNewBooking<IStayOfferDetails>(offerId!, 'stays', serviceLevel);
 
 const stayOffer = ref<EntityDataAttrsOnly<IStayOfferDetails> | undefined>(offerBookingStore.booking?.offer);

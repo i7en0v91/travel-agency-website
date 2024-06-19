@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import { getI18nResName2 } from './../../shared/i18n';
-import { ImageCategory } from './../../shared/interfaces';
+import { ImageCategory, type IImageEntitySrc } from './../../shared/interfaces';
 import { DefaultUserAvatarSlug } from './../../shared/constants';
 import EditableImage from './../images/editable-image.vue';
 
@@ -22,17 +22,38 @@ const imageSrc = ref(userAccount.avatar
   : { slug: DefaultUserAvatarSlug, timestamp: undefined }
 );
 
+function checkImageSrcDiffers(firstSrc: IImageEntitySrc | undefined, secondSrc: IImageEntitySrc | undefined): boolean {
+  if(!firstSrc && !secondSrc) {
+    logger.debug(`(UserAvatar) image src are the same, ctrlKey=${props.ctrlKey}, first=${JSON.stringify(firstSrc)}, second=${JSON.stringify(secondSrc)}`);
+    return false;
+  }
+
+  if(firstSrc?.slug !== secondSrc?.slug) {
+    logger.debug(`(UserAvatar) image src slugs differ, ctrlKey=${props.ctrlKey}, first=${JSON.stringify(firstSrc)}, second=${JSON.stringify(secondSrc)}`);
+    return true;
+  }
+
+  if(firstSrc?.timestamp !== secondSrc?.timestamp) {
+    logger.debug(`(UserAvatar) image src timestamps differ, ctrlKey=${props.ctrlKey}, first=${JSON.stringify(firstSrc)}, second=${JSON.stringify(secondSrc)}`);
+    return true;
+  }
+
+  logger.debug(`(UserAvatar) image src are the same, ctrlKey=${props.ctrlKey}, first=${JSON.stringify(firstSrc)}, second=${JSON.stringify(secondSrc)}`);
+  return false;
+}
+
 watch(userAccount, () => {
   logger.debug(`(UserAvatar) user account watch handler, ctrlKey=${props.ctrlKey}`);
-  if (userAccount.avatar && imageSrc.value?.slug !== userAccount.avatar?.slug) {
-    logger.verbose(`(UserAvatar) user image changed, ctrlKey=${props.ctrlKey}, editSlug=${imageSrc.value?.slug}, newSlug=${userAccount.avatar?.slug}`);
+  if (userAccount.avatar && checkImageSrcDiffers(imageSrc.value, userAccount.avatar)) {
+    logger.verbose(`(UserAvatar) user image changed, ctrlKey=${props.ctrlKey}`);
     userAvatarImage.value?.setImage(userAccount.avatar!);
   }
 });
 
 watch(imageSrc, () => {
   logger.debug(`(UserAvatar) edit image watch handler, ctrlKey=${props.ctrlKey}, editSlug=${imageSrc.value?.slug}`);
-  if (imageSrc.value) {
+  if (imageSrc.value && checkImageSrcDiffers(imageSrc.value, userAccount.avatar)) {
+    logger.verbose(`(UserAvatar) user image changed, ctrlKey=${props.ctrlKey}`);
     userAccountStore.notifyUserAccountChanged({
       avatar: {
         slug: imageSrc.value.slug,
@@ -43,7 +64,7 @@ watch(imageSrc, () => {
 });
 
 onMounted(() => {
-  if (userAccount.avatar && imageSrc.value?.slug !== userAccount.avatar?.slug) {
+  if (userAccount.avatar && checkImageSrcDiffers(imageSrc.value, userAccount.avatar)) {
     logger.verbose(`(UserAvatar) setting up initial image, ctrlKey=${props.ctrlKey}, editSlug=${imageSrc.value?.slug}, newSlug=${userAccount.avatar?.slug}`);
     userAvatarImage.value!.setImage(userAccount.avatar!);
   }

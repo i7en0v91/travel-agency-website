@@ -1,16 +1,16 @@
 import type { H3Event } from 'h3';
 import { Decimal } from 'decimal.js';
-import isString from 'lodash-es/isString';
 import { destr } from 'destr';
 import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';
 import { MaxSearchHistorySize, SessionStaySearchHistory } from '../../../shared/constants';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import { type ISearchStayOffersResultDto, type ISearchStayOffersParamsDto, SearchStayOffersParamsDtoSchema } from '../../dto';
-import type { IStayOffersFilterParams, EntityId, ISorting, StayOffersSortFactor, IStaySearchHistory, ICitiesLogic } from '../../../shared/interfaces';
+import type { IStayOffersFilterParams, ISorting, StayOffersSortFactor, IStaySearchHistory, ICitiesLogic } from '../../../shared/interfaces';
 import type { IAppLogger } from '../../../shared/applogger';
 import { getValue, setValue } from '../../../server-logic/helpers/user-session';
 import { mapSearchedStayOffer, mapSearchStayOfferResultEntities } from './../../utils/mappers';
 import { getServerSession } from '#auth';
+import { extractUserIdFromSession } from './../../../server/utils/auth';
 
 function performAdditionalDtoValidation (dto: ISearchStayOffersParamsDto, event : H3Event, logger: IAppLogger) {
   if (dto.price?.to && dto.price?.from && dto.price.from > dto.price.to) {
@@ -88,11 +88,8 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   };
 
   const authSession = await getServerSession(event);
-  let userId : EntityId | undefined = (authSession as any)?.id as EntityId;
-  if (userId && isString(userId)) {
-    userId = parseInt(userId);
-  }
-
+  const userId = extractUserIdFromSession(authSession);
+  
   const sortFactor = searchParamsDto.sort as StayOffersSortFactor;
   const sorting: ISorting<StayOffersSortFactor> = {
     factor: sortFactor,

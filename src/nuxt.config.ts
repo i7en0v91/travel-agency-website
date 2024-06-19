@@ -1,12 +1,14 @@
 import { joinURL } from 'ufo';
 import { type RollupLog, type LogLevel, type LogOrStringHandler } from 'rollup';
-import { AvailableLocaleCodes, PagePath, EntityIdPages, ApiEndpointUserAccount, ApiEndpointPrefix, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets, HeaderVaryRenderCache, CookieI18nLocale, DefaultLocale } from './shared/constants';
+import { AvailableLocaleCodes, ApiEndpointUserAccount, ApiEndpointPrefix, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets, CookieI18nLocale, DefaultLocale, isTestEnv } from './shared/constants';
+import { HtmlPage, EntityIdPages, getHtmlPagePath } from './shared/page-query-params';
 import { TEST_SERVER_PORT } from './shared/testing/common';
-import AppConfig from './appconfig';
+import AppConfig, { AcsysModuleOptions } from './appconfig';
 import toPairs from 'lodash-es/toPairs';
 import fromPairs from 'lodash-es/fromPairs';
 import flatten from 'lodash-es/flatten';
 import { type NitroRouteConfig } from 'nitropack';
+import { parseEnumOrThrow } from './shared/common';
 
 const listLocalizedPaths = (enPath: string) => [enPath.startsWith('/') ? enPath : `/${enPath}`, ...AvailableLocaleCodes.filter(l => l !== 'en').map(l => joinURL(`/${l}`, `${enPath}`))];
 const rollupLogHandler = (
@@ -22,37 +24,41 @@ const rollupLogHandler = (
 
 // html pages caching rules
 const SwrCachingRouteRule: NitroRouteConfig = { 
-  cache: AppConfig.caching.htmlPageCachingSeconds ? { maxAge: AppConfig.caching.htmlPageCachingSeconds, staleMaxAge: -1 } : false,
+  cache: AppConfig.caching.htmlPageCachingSeconds ? 
+    { 
+      maxAge:  !isTestEnv() ? AppConfig.caching.htmlPageCachingSeconds : 0, /** only SWR is tested in e2e */
+      staleMaxAge: -1
+    } : false,
   auth: {
     disableServerSideAuth: true
   }
 } as any;
-const CachingDisabledRouteRule: NitroRouteConfig = { swr: false };
-const HtmlPageCachingRules: { [P in PagePath]: NitroRouteConfig } = {
-  '': SwrCachingRouteRule,
-  'signup': SwrCachingRouteRule,
-  'forgot-password': SwrCachingRouteRule,
-  'find-flights': SwrCachingRouteRule,
-  'find-stays': SwrCachingRouteRule,
-  'flight-details': SwrCachingRouteRule,
-  'flight-book': SwrCachingRouteRule,
-  'flights': SwrCachingRouteRule,
-  'login': SwrCachingRouteRule,
-  'privacy': SwrCachingRouteRule,
-  'stays': SwrCachingRouteRule,
-  'stay-details': SwrCachingRouteRule,
-  'stay-book': SwrCachingRouteRule,
-  'account': CachingDisabledRouteRule,
-  'favourites': CachingDisabledRouteRule,
-  'booking': { swr: false, cache: { name: 'no-store', maxAge: 0, varies: [HeaderVaryRenderCache] }, robots: false },
-  'signup-verify': CachingDisabledRouteRule,
-  'signup-complete': CachingDisabledRouteRule,
-  'forgot-password-verify': CachingDisabledRouteRule,
-  'forgot-password-complete': CachingDisabledRouteRule,
-  'forgot-password-set': CachingDisabledRouteRule,
-  'email-verify-complete': CachingDisabledRouteRule
+const CachingDisabledRouteRule: NitroRouteConfig = { swr: false, cache: false, headers: { 'cache-control': 'no-store' } };
+const HtmlPageCachingRules: { [P in HtmlPage]: NitroRouteConfig } = {
+  'Index': SwrCachingRouteRule,
+  'Signup': SwrCachingRouteRule,
+  'ForgotPassword': SwrCachingRouteRule,
+  'FindFlights': CachingDisabledRouteRule,
+  'FindStays': CachingDisabledRouteRule,
+  'FlightDetails': SwrCachingRouteRule,
+  'BookFlight': SwrCachingRouteRule,
+  'Flights': SwrCachingRouteRule,
+  'Login': SwrCachingRouteRule,
+  'Privacy': SwrCachingRouteRule,
+  'Stays': SwrCachingRouteRule,
+  'StayDetails': SwrCachingRouteRule,
+  'BookStay': SwrCachingRouteRule,
+  'Account': { ...CachingDisabledRouteRule, robots: false },
+  'Favourites': { ...CachingDisabledRouteRule, robots: false },
+  'BookingDetails': { ...SwrCachingRouteRule, robots: false },
+  'SignupVerify': SwrCachingRouteRule,
+  'SignupComplete': CachingDisabledRouteRule,
+  'ForgotPasswordVerify': SwrCachingRouteRule,
+  'ForgotPasswordComplete': SwrCachingRouteRule,
+  'ForgotPasswordSet': CachingDisabledRouteRule,
+  'EmailVerifyComplete': CachingDisabledRouteRule
 };
-const UserRelatedApiRoutes = [`${ApiEndpointPrefix}/booking/**`, ApiEndpointUserAccount, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets];
+const ApiRoutesWithCachingDisabled = [`${ApiEndpointPrefix}/stays/**`, `${ApiEndpointPrefix}/booking/**`, ApiEndpointUserAccount, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets];
 
 export default defineNuxtConfig({
   devtools: { enabled: false },
@@ -63,15 +69,15 @@ export default defineNuxtConfig({
   sitemap: {
     autoLastmod: false,
     exclude: [
-      ...listLocalizedPaths(`/${PagePath.Account}`),
-      ...listLocalizedPaths(`/${PagePath.Favourites}`),
-      ...listLocalizedPaths(`/${PagePath.EmailVerifyComplete}`),
-      ...listLocalizedPaths(`/${PagePath.ForgotPasswordComplete}`),
-      ...listLocalizedPaths(`/${PagePath.ForgotPasswordSet}`),
-      ...listLocalizedPaths(`/${PagePath.ForgotPasswordVerify}`),
-      ...listLocalizedPaths(`/${PagePath.SignupComplete}`),
-      ...listLocalizedPaths(`/${PagePath.SignupVerify}`),
-      ...listLocalizedPaths(`/${PagePath.BookingDetails}/**`),
+      ...listLocalizedPaths(`/${HtmlPage.Account}`),
+      ...listLocalizedPaths(`/${HtmlPage.Favourites}`),
+      ...listLocalizedPaths(`/${HtmlPage.EmailVerifyComplete}`),
+      ...listLocalizedPaths(`/${HtmlPage.ForgotPasswordComplete}`),
+      ...listLocalizedPaths(`/${HtmlPage.ForgotPasswordSet}`),
+      ...listLocalizedPaths(`/${HtmlPage.ForgotPasswordVerify}`),
+      ...listLocalizedPaths(`/${HtmlPage.SignupComplete}`),
+      ...listLocalizedPaths(`/${HtmlPage.SignupVerify}`),
+      ...listLocalizedPaths(`/${HtmlPage.BookingDetails}/**`),
     ]
   },
   features: {
@@ -82,6 +88,68 @@ export default defineNuxtConfig({
     renderJsonPayloads: false,
     clientNodeCompat: true
   },
+  plugins: [
+    {
+      name: 'backend-acsys.server',
+      mode: 'server',
+      order: 0,
+      src: '~/plugins/backend-acsys.server.ts'
+    },
+    {
+      name: 'backend-prisma.server',
+      mode: 'server',
+      order: 1,
+      src: '~/plugins/backend-prisma.server.ts'
+    },
+    {
+      name: 'logging-hooks',
+      mode: 'all',
+      order: 2,
+      src: '~/plugins/logging-hooks.ts'
+    },
+    {
+      name: 'data-seed.server',
+      mode: 'server',
+      order: 3,
+      src: '~/plugins/data-seed.server.ts'
+    },
+    {
+      name: 'startup.server',
+      mode: 'server',
+      order: 4,
+      src: '~/plugins/startup.server.ts'
+    },
+    {
+      name: 'startup.client',
+      mode: 'client',
+      order: 0,
+      src: '~/plugins/startup.client.ts'
+    },
+    {
+      name: 'floating-vue.client',
+      mode: 'client',
+      order: 3,
+      src: '~/plugins/floating-vue.client.ts'
+    },
+    {
+      name: 'vue-yandex-maps.client',
+      mode: 'client',
+      order: 4,
+      src: '~/plugins/vue-yandex-maps.client.ts'
+    },
+    {
+      name: 'cacheable-page',
+      mode: 'server',
+      order: 5,
+      src: '~/plugins/cacheable-page.ts'
+    },
+    {
+      name: 'vue-final-modal',
+      mode: 'all',
+      order: 6,
+      src: '~/plugins/vue-final-modal.ts'
+    }
+  ],
   components: [
     {
       path: '~/components',
@@ -122,6 +190,7 @@ export default defineNuxtConfig({
       redirectOn: 'root' // recommended
     }
   },
+  acsys: AcsysModuleOptions,
   site: {
     url: 'http://localhost:3000',
     name: 'Test website (dev)',
@@ -182,12 +251,12 @@ export default defineNuxtConfig({
     }
   },
   routeRules: {
-    ...(fromPairs(flatten(toPairs(HtmlPageCachingRules).map(rr => listLocalizedPaths(`/${rr[0]}`).map(lp => [EntityIdPages.some(idp => lp.includes(idp)) ? `${lp}/**` : lp, rr[1]]))))),
-    ...(fromPairs((UserRelatedApiRoutes.map(ur => [ur, { cache: false, swr: false, headers: { 'cache-control': 'no-store' } }])))),
-    '/__og-image__/image/**': { cache: { swr: false, varies: ['Host', HeaderVaryRenderCache], headersOnly: true }, headers: { 'cache-control': 'no-store' }, robots: false },
+    ...(fromPairs(flatten(toPairs(HtmlPageCachingRules).map(rr => listLocalizedPaths(`/${getHtmlPagePath(parseEnumOrThrow(HtmlPage, rr[0]))}`).map(lp => [EntityIdPages.some(idp => lp.includes(getHtmlPagePath(idp))) ? `${lp}/**` : lp, rr[1]]))))),
+    ...(fromPairs((ApiRoutesWithCachingDisabled.map(ur => [ur, { cache: false, headers: { 'cache-control': 'no-store' } }])))),
     '/api/img/**': { headers:  AppConfig.caching.htmlPageCachingSeconds ? { 'cache-control': `public,max-age=${AppConfig.caching.htmlPageCachingSeconds},s-maxage=${AppConfig.caching.htmlPageCachingSeconds}` } : { 'cache-control': 'no-cache' } },
     '/_ipx/**': { headers:  AppConfig.caching.htmlPageCachingSeconds ? { 'cache-control': `public,max-age=${AppConfig.caching.htmlPageCachingSeconds},s-maxage=${AppConfig.caching.htmlPageCachingSeconds}` } : { 'cache-control': 'no-cache' } },
-    '/js/**': { headers:  AppConfig.caching.htmlPageCachingSeconds ? { 'cache-control': `public,max-age=${AppConfig.caching.htmlPageCachingSeconds},s-maxage=${AppConfig.caching.htmlPageCachingSeconds}` } : { 'cache-control': 'no-cache' } }
+    '/js/**': { headers:  AppConfig.caching.htmlPageCachingSeconds ? { 'cache-control': `public,max-age=${AppConfig.caching.htmlPageCachingSeconds},s-maxage=${AppConfig.caching.htmlPageCachingSeconds}` } : { 'cache-control': 'no-cache' } },
+    '/api/testing/**': !isTestEnv() ? { redirect: '/' } : {}
   },
   nitro: {
     publicAssets: [
@@ -242,9 +311,6 @@ export default defineNuxtConfig({
     }
   },
   $test: {
-    ogImage: {
-      enabled: false
-    },
     experimental: {
       renderJsonPayloads: false,
       clientNodeCompat: false // disable in Nuxt 3.11.2 - test run hangs on startup
@@ -266,7 +332,7 @@ export default defineNuxtConfig({
       baseURL: `http://127.0.0.1:${TEST_SERVER_PORT}/api/auth`
     },
     site: {
-      url: `http://localhost:${TEST_SERVER_PORT}`,
+      url: `http://127.0.0.1:${TEST_SERVER_PORT}`,
       name: 'Golobe',
       description: 'Travel Agency Demo Website (Test)',
       defaultLocale: 'en',

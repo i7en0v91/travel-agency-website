@@ -2,7 +2,7 @@
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { type ITravelDetailsTextingData } from './../../../shared/interfaces';
 import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
-import { PagePath } from './../../../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../../../shared/page-query-params';
 
 interface IProps {
   ctrlKey: string,
@@ -30,9 +30,9 @@ const cssClass = computed(() => {
 const bookLinkUrl = computed(() => {
   const citySlug = props.texting?.slug;
   if (!citySlug) {
-    return localePath(props.bookKind === 'flight' ? `/${PagePath.Flights}` : `/${PagePath.Stays}`);
+    return localePath(props.bookKind === 'flight' ? `/${getHtmlPagePath(HtmlPage.Flights)}` : `/${getHtmlPagePath(HtmlPage.Stays)}`);
   }
-  return localePath(props.bookKind === 'flight' ? `/${PagePath.FindFlights}?fromCitySlug=${citySlug}` : `/${PagePath.FindStays}?citySlug=${citySlug}`);
+  return localePath(props.bookKind === 'flight' ? `/${getHtmlPagePath(HtmlPage.FindFlights)}?fromCitySlug=${citySlug}` : `/${getHtmlPagePath(HtmlPage.FindStays)}?citySlug=${citySlug}`);
 });
 
 </script>

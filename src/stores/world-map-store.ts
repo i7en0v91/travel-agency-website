@@ -8,6 +8,7 @@ import AppConfig from './../appconfig';
 import { isPrefersReducedMotionEnabled } from './../shared/dom';
 import { useFetchEx } from './../shared/fetch-ex';
 import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
+import { HeaderAppVersion } from './../shared/constants';
 
 export interface IWorldMapPoint {
   coord: {
@@ -252,11 +253,11 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
       server: true,
       lazy: true,
       immediate: true,
-      cache: 'default',
+      cache: AppConfig.caching.htmlPageCachingSeconds ? 'default' : 'no-cache',
       default: (): null[] => { return range(0, 20, 1).map(_ => null); },
       onResponse: () => { logger.verbose('(world-map-store) received popular cities response'); },
-      onResponseError: (ctx) => { logger.warn('(world-map-store) got popular cities response exception', ctx.error); },
-      onRequestError: (ctx) => { logger.warn('(world-map-store) got popular cities request exception', ctx.error); }
+      onResponseError: (ctx: { error: any; }) => { logger.warn('(world-map-store) got popular cities response exception', ctx.error); },
+      onRequestError: (ctx: { error: any; }) => { logger.warn('(world-map-store) got popular cities request exception', ctx.error); }
     });
 
   const getWorldMapDataOnServer = async (): Promise<IWorldMapDataDto> => {
@@ -284,6 +285,7 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
       {
         server: true,
         lazy: true,
+        headers: [[HeaderAppVersion, AppConfig.versioning.appVersion.toString()]],
         immediate: true,
         cache: 'default',
         key: DataKeyWorldMapData,

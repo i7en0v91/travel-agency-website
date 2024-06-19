@@ -1,6 +1,5 @@
 import { type Storage, type StorageValue } from 'unstorage';
 import dayjs from 'dayjs';
-import isString from 'lodash-es/isString';
 import { type IAppLogger } from '../shared/applogger';
 import { type IEntityCache, type IEntityCacheItem, type IEntityCacheSlugItem, type CacheEntityType, type EntityId } from '../shared/interfaces';
 import { ApiEndpointEntityCache } from '../shared/constants';
@@ -25,10 +24,10 @@ export class EntityCache implements IEntityCache {
     return `EntityCache-${type}-${idOrSlug}`;
   };
 
-  fetchFromServer = async <TEntityType extends CacheEntityType, TCacheItem extends { type: TEntityType; } & IEntityCacheItem>(idsOrSlugs: EntityId[] | string[], type: TEntityType): Promise<TCacheItem[]> => {
-    this.logger.verbose(`(entity-cache) fetching from server: idsOrSlugs=${JSON.stringify(idsOrSlugs)}, type=${type}`);
-    const dtos = await getObject<TCacheItem[]>(ApiEndpointEntityCache, isString(idsOrSlugs[0]) ? { slugs: idsOrSlugs, type: type.toLowerCase() } : { ids: idsOrSlugs, type: type.toLowerCase() }, 'default', false, undefined, 'throw');
-    this.logger.verbose(`(entity-cache) item fetched: idsOrSlugs=${JSON.stringify(idsOrSlugs)}, type=${type}, item=${JSON.stringify(dtos)}`);
+  fetchFromServer = async <TEntityType extends CacheEntityType, TCacheItem extends { type: TEntityType; } & IEntityCacheItem>(ids: EntityId[], slugs: string[], type: TEntityType): Promise<TCacheItem[]> => {
+    this.logger.verbose(`(entity-cache) fetching from server: ids=${JSON.stringify(ids)}, slugs=${JSON.stringify(slugs)}, type=${type}`);
+    const dtos = await getObject<TCacheItem[]>(ApiEndpointEntityCache, slugs.length ? { slugs, type: type.toLowerCase() } : { ids, type: type.toLowerCase() }, 'default', false, undefined, 'throw');
+    this.logger.verbose(`(entity-cache) item fetched: ids=${JSON.stringify(ids)}, slugs=${JSON.stringify(slugs)}, type=${type}, item=${JSON.stringify(dtos)}`);
     return dtos!;
   };
 
@@ -45,69 +44,71 @@ export class EntityCache implements IEntityCache {
     }
   };
 
-  remove = async <TEntityType extends CacheEntityType>(idOrSlug: EntityId | string, type: TEntityType): Promise<void> => {
-    this.logger.debug(`(entity-cache) remove: idOrSlug=${idOrSlug}, type=${type}`);
-    const key = this.getItemKey(idOrSlug, type);
+  remove = async <TEntityType extends CacheEntityType>(id: EntityId | undefined, slug: string | undefined, type: TEntityType): Promise<void> => {
+    this.logger.debug(`(entity-cache) remove: id=${id}, slug=${slug}, type=${type}`);
+    const key = this.getItemKey((id ?? slug)!, type);
     await this.cache?.removeItem(key);
   };
 
-  getSingle = async <TEntityType extends CacheEntityType, TCacheItem extends { type: TEntityType; } & IEntityCacheItem>(idOrSlug: EntityId | string, type: TEntityType): Promise<TCacheItem | undefined> => {
-    this.logger.debug(`(entity-cache) getSingle: idOrSlug=${idOrSlug}, type=${type}`);
-    const key = this.getItemKey(idOrSlug, type);
+  getSingle = async <TEntityType extends CacheEntityType, TCacheItem extends { type: TEntityType; } & IEntityCacheItem>(id: EntityId | undefined, slug: string | undefined, type: TEntityType): Promise<TCacheItem | undefined> => {
+    this.logger.debug(`(entity-cache) getSingle: id=${id}, slug=${slug}, type=${type}`);
+    const key = this.getItemKey((id ?? slug)!, type);
     const cacheEntry = await this.cache?.getItem<IEntityCacheItemEntry<TCacheItem>>(key);
     if (cacheEntry) {
       if (cacheEntry.expireAt) {
         if (dayjs(new Date()).isBefore(cacheEntry.expireAt)) {
-          this.logger.debug(`(entity-cache) getSingle, hit: idOrSlug=${idOrSlug}, item=${JSON.stringify(cacheEntry.item)}, expiration=${cacheEntry.expireAt}`);
+          this.logger.debug(`(entity-cache) getSingle, hit: id=${id}, slug=${slug}, item=${JSON.stringify(cacheEntry.item)}, expiration=${cacheEntry.expireAt}`);
           return cacheEntry.item;
         } else {
-          this.logger.debug(`(entity-cache) getSingle, miss, expired: idOrSlug=${idOrSlug}, item=${JSON.stringify(cacheEntry.item)}, expiration=${cacheEntry.expireAt}`);
+          this.logger.debug(`(entity-cache) getSingle, miss, expired: id=${id}, slug=${slug}, item=${JSON.stringify(cacheEntry.item)}, expiration=${cacheEntry.expireAt}`);
           return undefined;
         }
       } else {
-        this.logger.debug(`(entity-cache) getSingle, hit (no expiration): idOrSlug=${idOrSlug}, item=${JSON.stringify(cacheEntry.item)}`);
+        this.logger.debug(`(entity-cache) getSingle, hit (no expiration): id=${id}, slug=${slug}, item=${JSON.stringify(cacheEntry.item)}`);
         return cacheEntry.item;
       }
     } else {
-      this.logger.debug(`(entity-cache) getSingle, miss: idOrSlug=${idOrSlug}, type=${type}`);
+      this.logger.debug(`(entity-cache) getSingle, miss: id=${id}, slug=${slug}, type=${type}`);
       return undefined;
     }
   };
 
-  get = async <TEntityType extends CacheEntityType, TCacheItem extends { type: TEntityType; } & IEntityCacheItem>(idsOrSlugs: EntityId[] | string[], type: TEntityType, fetchOnCacheMiss: false | { expireInSeconds: number | undefined }): Promise<TCacheItem[] | undefined> => {
-    this.logger.debug(`(entity-cache) get: idsOrSlugs=${JSON.stringify(idsOrSlugs)}, type=${type}, fetchOnCacheMiss=${JSON.stringify(fetchOnCacheMiss)}`);
-    if (idsOrSlugs.length === 0) {
+  get = async <TEntityType extends CacheEntityType, TCacheItem extends { type: TEntityType; } & IEntityCacheItem>(ids: EntityId[], slugs: string[], type: TEntityType, fetchOnCacheMiss: false | { expireInSeconds: number | undefined }): Promise<TCacheItem[] | undefined> => {
+    this.logger.debug(`(entity-cache) get: ids=${JSON.stringify(ids)}, slugs=${JSON.stringify(slugs)}, type=${type}, fetchOnCacheMiss=${JSON.stringify(fetchOnCacheMiss)}`);
+    if (ids.length === 0 && slugs.length === 0) {
       return [];
     }
+
+    const useIds = ids.length > 0;
 
     const result : (TCacheItem | undefined)[] = [];
     const idsOrSlugsMissed : (EntityId | string)[] = [];
     const missedIndices: number[] = [];
-    for (let i = 0; i < idsOrSlugs.length; i++) {
-      const item = await this.getSingle<TEntityType, TCacheItem>(idsOrSlugs[i], type);
+    for (let i = 0; i < (useIds ? ids.length : slugs.length); i++) {
+      const item = await this.getSingle<TEntityType, TCacheItem>(useIds ? ids[i] : undefined, useIds ? undefined : slugs[i], type);
       result.push(item);
       if (!item) {
-        idsOrSlugsMissed.push(idsOrSlugs[i]);
+        idsOrSlugsMissed.push(useIds ? ids[i] : slugs[i]);
         missedIndices.push(i);
       }
     }
 
     if (idsOrSlugsMissed.length) {
       if (fetchOnCacheMiss) {
-        const fetchedItems = await this.fetchFromServer<TEntityType, TCacheItem>(idsOrSlugsMissed as any, type);
+        const fetchedItems = await this.fetchFromServer<TEntityType, TCacheItem>(useIds ? idsOrSlugsMissed : [], useIds ? [] : idsOrSlugsMissed, type);
         for (let i = 0; i < fetchedItems.length; i++) {
           const fetchedItem = fetchedItems[i];
           await this.set(fetchedItem, fetchOnCacheMiss.expireInSeconds);
           result[missedIndices[i]] = fetchedItem;
         }
-        this.logger.debug(`(entity-cache) get, some hits, rest were fetched: idsOrSlugs=${JSON.stringify(idsOrSlugs)}`);
+        this.logger.debug(`(entity-cache) get, some hits, rest were fetched: ids=${JSON.stringify(ids)}, slugs=${JSON.stringify(slugs)}`);
         return result as TCacheItem[];
       } else {
-        this.logger.debug(`(entity-cache) get, got cache misses: idsOrSlugs=${JSON.stringify(idsOrSlugs)}, missed=${JSON.stringify(idsOrSlugsMissed)}`);
+        this.logger.debug(`(entity-cache) get, got cache misses: ids=${JSON.stringify(ids)}, slugs=${JSON.stringify(slugs)}, missed=${JSON.stringify(idsOrSlugsMissed)}`);
         return undefined;
       }
     } else {
-      this.logger.debug(`(entity-cache) get, all hits: idsOrSlugs=${JSON.stringify(idsOrSlugs)}`);
+      this.logger.debug(`(entity-cache) get, all hits: ids=${JSON.stringify(ids)}, slugs=${JSON.stringify(slugs)}`);
       return result as TCacheItem[];
     }
   };

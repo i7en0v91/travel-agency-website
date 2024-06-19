@@ -4,7 +4,7 @@ import axios from 'axios';
 import { withQuery } from 'ufo';
 import { type ObjectSchema } from 'yup';
 import { testHeaderValue } from '../../shared/common';
-import { isQuickStartEnv } from '../../shared/constants';
+import { isQuickStartEnv, HeaderAppVersion } from '../../shared/constants';
 import { validateObject } from '../../shared/validation';
 import { AppException, AppExceptionCodeEnum, mapAppExceptionToHttpStatus } from '../../shared/exceptions';
 import { type IAppLogger } from '../../shared/applogger';
@@ -32,7 +32,11 @@ function wrapHandler<Request extends EventHandlerRequest = EventHandlerRequest, 
 
     const { logResponseBody, authorizedOnly, validationSchema, captchaProtected, allowedEnvironments } = options;
 
+    let requestAppVersion: string = '';
+
     try {
+      requestAppVersion = getRequestHeader(event, HeaderAppVersion) ?? '';
+
       if (!checkAllowedEnvironments(allowedEnvironments)) {
         logger?.warn(`endpoint is not available in current environment, url=${event.node.req.url}, env=${process.env.NODE_ENV}`);
         throw new AppException(AppExceptionCodeEnum.FORBIDDEN, 'endpoint is not available', 'error-page');
@@ -56,7 +60,7 @@ function wrapHandler<Request extends EventHandlerRequest = EventHandlerRequest, 
       }
       
       const isAuthorized = !!(await getServerSession(event));
-      logger?.info(`received request - ${event.node.req.url} (auth=${isAuthorized})`, reqBody ?? '');
+      logger?.info(`received request (appVer=${requestAppVersion}) - ${event.node.req.url} (auth=${isAuthorized})`, reqBody ?? '');
 
       if (contentType === 'json' && validationSchema) {
         const validationError = validateObject(reqBody, validationSchema);
@@ -84,20 +88,20 @@ function wrapHandler<Request extends EventHandlerRequest = EventHandlerRequest, 
       }
       return result;
     } catch (err: any) {
-      const { errorDto, httpStatus } = handleErrorResponse(event, err, logger);
+      const { errorDto, httpStatus } = handleErrorResponse(event, err, requestAppVersion, logger);
       setResponseStatus(event, httpStatus);
       return errorDto;
     }
   });
 }
 
-function handleErrorResponse (event: H3Event, err: any, logger?: IAppLogger): { errorDto: IApiErrorDto, httpStatus: number } {
+function handleErrorResponse (event: H3Event, err: any, requestAppVersion: string, logger?: IAppLogger): { errorDto: IApiErrorDto, httpStatus: number } {
   let httpStatus: number = 500;
   let errorDto: IApiErrorDto;
 
   if (AppException.isAppException(err)) {
     const appException = err as AppException;
-    logger?.warn(`app exception at ${event.node.req.url} - ${appException.internalMsg}, code: ${appException.code}, stack: [${appException.stack}]`, err);
+    logger?.warn(`app exception at ${event.node.req.url} (appVer=${requestAppVersion}) - ${appException.internalMsg}, code: ${appException.code}, stack: [${appException.stack}]`, err);
     errorDto = buildErrorResponseDtoFromAppException(appException);
     httpStatus = mapAppExceptionToHttpStatus(appException.code);
   } else {

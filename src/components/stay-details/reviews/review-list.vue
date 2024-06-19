@@ -29,8 +29,8 @@ const logger = CommonServicesLocator.getLogger();
 
 const swiper = shallowRef<InstanceType<typeof Swiper>>();
 const isSwiperReady = ref(false);
-const showNoReviewStub = computed(() => reviewStore.status !== 'error' && reviewStore.items !== undefined && reviewStore.items.length === 0);
-const isNavButtonsVisible = computed(() => reviewStore.status !== 'error' && reviewStore.items !== undefined && isSwiperReady.value && !showNoReviewStub.value);
+const showNoReviewStub = computed(() => reviewStore.status === 'success' && reviewStore.items !== undefined && reviewStore.items.length === 0);
+const isNavButtonsVisible = computed(() => reviewStore.status === 'error' && reviewStore.items !== undefined && isSwiperReady.value && !showNoReviewStub.value);
 const pagingState = ref<{ of: number, total: number } | undefined>();
 const slideAnimationEnabled = import.meta.client && !isPrefersReducedMotionEnabled();
 
@@ -268,7 +268,7 @@ function onNavPrevBtnClick () {
       <div v-if="showNoReviewStub" class="reviews-list-noitems-stub my-xs-3 my-s-5 px-xs-3">
         {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'noReviews')) }}
       </div>
-      <ComponentWaiterIndicator v-if="!(reviewStore.status !== 'error' && reviewStore.items !== undefined) || !isSwiperReady" :ctrl-key="`${ctrlKey}-ReviewListWaiterFallback`" class="stay-reviews-waiting-indicator my-xs-5" />
+      <ComponentWaiterIndicator v-if="reviewStore.status === 'pending' || !(reviewStore.status !== 'error' && reviewStore.items !== undefined) || !isSwiperReady" :ctrl-key="`${ctrlKey}-ReviewListWaiterFallback`" class="stay-reviews-waiting-indicator my-xs-5" />
     </ErrorHelm>
   </div>
 </template>

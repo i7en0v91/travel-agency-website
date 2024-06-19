@@ -25,7 +25,7 @@ const citiesListFetch = await useFetchEx<IPopularCityDto[], IPopularCityDto[], n
   {
     server: true,
     lazy: true,
-    cache: 'default',
+    cache: AppConfig.caching.htmlPageCachingSeconds ? 'default' : 'no-cache',
     default: () => { return range(0, 20, 1).map(_ => null); },
     transform: (response: IPopularCityDto[]) => {
       logger.verbose('(indexPage) received popular cities list response');
@@ -41,7 +41,7 @@ const reviewsListFetch = await useFetchEx(ApiEndpointCompanyReviewsList, 'error-
   {
     server: true,
     lazy: true,
-    cache: 'default',
+    cache: 'no-cache',
     default: () => { return range(0, 10, 1).map(_ => null); },
     transform: (response: ICompanyReviewDto[]) => {
       logger.verbose(`(indexPage) received company reviews list response: ${JSON.stringify(response)}`);

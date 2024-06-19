@@ -65,7 +65,7 @@ export const useUserFavouritesStore = defineStore('userFavouritesStore', () => {
 
     const resultDto = await getObject(ApiEndpointUserFavourites, undefined, 'no-store', true, undefined, 'default') as IUserFavouritesResultDto;
     if (!resultDto) {
-      logger.warn(`(user-favourites-store) error occured while sending get HTTP request, userId=${userAccount?.userId}`);
+      logger.warn(`(user-favourites-store) exception occured while sending get HTTP request, userId=${userAccount?.userId}`);
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
     }
 
@@ -97,7 +97,7 @@ export const useUserFavouritesStore = defineStore('userFavouritesStore', () => {
       fetchFavourites: async (): Promise<void> => {
         logger.verbose(`(user-favourites-store) obtaining favourites, userId=${userAccount?.userId}`);
         if (result.status === 'error') {
-          logger.warn('(user-favourites-store) cannot obtain favourites, store is in error state');
+          logger.warn('(user-favourites-store) cannot obtain favourites, store is in failed state');
           throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown error occured', 'error-stub');
         }
 
@@ -118,7 +118,7 @@ export const useUserFavouritesStore = defineStore('userFavouritesStore', () => {
       toggleFavourite: async <TOfferKind extends OfferKind, TOffer extends (EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>) & { kind: TOfferKind }>(offerId: EntityId, kind: TOfferKind, offer?: TOffer): Promise<boolean> => {
         logger.verbose(`(user-favourites-store) toggling favourite, offerId=${offerId}, offerKind=${kind}`);
         if (result.status === 'error') {
-          logger.warn(`(user-favourites-store) cannot toggle offer, store is in error state, offerId=${offerId}, offerKind=${kind}`);
+          logger.warn(`(user-favourites-store) cannot toggle offer, store is in failed state, offerId=${offerId}, offerKind=${kind}`);
           throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown error occured', 'error-stub');
         }
 
@@ -128,7 +128,7 @@ export const useUserFavouritesStore = defineStore('userFavouritesStore', () => {
         try {
           const resultDto = await post(kind === 'flights' ? ApiEndpointFlightOfferFavourite(offerId) : ApiEndpointStayOfferFavourite(offerId), undefined, undefined, undefined, true, 'default') as IToggleFavouriteOfferResultDto;
           if (!resultDto) {
-            logger.warn(`(user-favourites-store) error occured while toggling favourite offer on server, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
+            logger.warn(`(user-favourites-store) exception occured while toggling favourite offer on server, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
             throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown error occured', 'error-stub');
           }
           const isFavourite = resultDto.isFavourite;
@@ -157,7 +157,7 @@ export const useUserFavouritesStore = defineStore('userFavouritesStore', () => {
           result.status = 'success';
           return isFavourite;
         } catch (err: any) {
-          logger.warn(`(user-favourites-store) error occured while toggling favourite, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
+          logger.warn(`(user-favourites-store) exception occured while toggling favourite, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
           result.status = 'error';
           throw err;
         }

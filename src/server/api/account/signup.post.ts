@@ -1,7 +1,7 @@
-import { type Locale, type Theme } from '../../../shared/constants';
+import { type Locale, type Theme, SignUpResultEnum } from '../../../shared/constants';
 import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';
 import { defineWebApiEventHandler } from './../../utils/webapi-event-handler';
-import { type ISignUpDto, SignUpDtoSchema, type ISignUpResultDto, SignUpResultCode } from './../../dto';
+import { type ISignUpDto, SignUpDtoSchema, type ISignUpResultDto } from './../../dto';
 import AppConfig from './../../../appconfig';
 
 export default defineWebApiEventHandler(async (event) => {
@@ -9,12 +9,12 @@ export default defineWebApiEventHandler(async (event) => {
 
   const emailingEnabled = AppConfig.email;
   const userLogic = ServerServicesLocator.getUserLogic();
-  const registrationResult = await userLogic.registerUserByEmail(signUpDto.email, signUpDto.password, emailingEnabled ? 'send-email' : 'verified', signUpDto.firstName, signUpDto.lastName, signUpDto.theme as Theme, signUpDto.locale as Locale);
+  const registrationResult = await userLogic.registerUserByEmail(signUpDto.email, signUpDto.password, emailingEnabled ? 'send-email' : 'verified', signUpDto.firstName, signUpDto.lastName, signUpDto.theme as Theme, signUpDto.locale as Locale, event);
   let responseDto: ISignUpResultDto | undefined;
   switch (registrationResult) {
     case 'already-exists':
       responseDto = {
-        code: SignUpResultCode.ALREADY_EXISTS
+        code: SignUpResultEnum.ALREADY_EXISTS
       };
       break;
     case 'insecure-password':
@@ -24,11 +24,11 @@ export default defineWebApiEventHandler(async (event) => {
     default:
       if (emailingEnabled) {
         responseDto = {
-          code: SignUpResultCode.SUCCESS
+          code: SignUpResultEnum.SUCCESS
         };
       } else {
         responseDto = {
-          code: SignUpResultCode.AUTOVERIFIED
+          code: SignUpResultEnum.AUTOVERIFIED
         };
       }
       break;

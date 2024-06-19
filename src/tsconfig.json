@@ -8,16 +8,5 @@
     "types": [
       "@nuxtjs/i18n"
     ]
-  },
-  "ts-node": {
-    "compilerOptions": {
-      "module": "CommonJS",
-      "allowJs": true,
-      "verbatimModuleSyntax": false,
-      "types": [
-        "node"
-      ],
-    },
-    "require": ["mime"]
   }
 }

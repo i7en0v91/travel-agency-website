@@ -44,14 +44,14 @@ function onMapStatusChanged () {
     const isLoaded = VueYandexMaps.isLoaded.value;
     const loadError = VueYandexMaps.loadError.value;
     const loadStatus = VueYandexMaps.loadStatus.value;
-    logger.verbose(`(YandexMaps) map status changed, ctrlKey=${props.ctrlKey}, isLoaded=${isLoaded}, loadStatus=${loadStatus}, hasError=${!!loadError}`);
+    logger.verbose(`(YandexMaps) map status changed, ctrlKey=${props.ctrlKey}, isLoaded=${isLoaded}, loadStatus=${loadStatus}, hasException=${!!loadError}`);
     if (loadStatus === 'error' || loadError) {
       const errMsg = isString(loadError) ? loadError : ((loadError as any)?.message ?? '');
-      logger.warn(`(YandexMaps) error occured, mode=${isFullscreen.value}, ctrlKey=${props.ctrlKey}, isLoaded=${isLoaded}, loadStatus=${loadStatus}, errMsg=${errMsg}`, !isString(loadError) ? loadError : undefined);
+      logger.warn(`(YandexMaps) exception occured, mode=${isFullscreen.value}, ctrlKey=${props.ctrlKey}, isLoaded=${isLoaded}, loadStatus=${loadStatus}, errMsg=${errMsg}`, !isString(loadError) ? loadError : undefined);
       $emit('onerror', loadError);
     }
   } catch (err: any) {
-    logger.warn(`(YandexMaps) error occured while processing map status chage, mode=${isFullscreen.value}, ctrlKey=${props.ctrlKey}`, err);
+    logger.warn(`(YandexMaps) exception occured while processing map status chage, mode=${isFullscreen.value}, ctrlKey=${props.ctrlKey}`, err);
     $emit('onerror', err);
   }
 }

@@ -1,13 +1,13 @@
 import { Readable } from 'stream';
 import type { H3Event } from 'h3';
-import isString from 'lodash-es/isString';
 import { getQuery } from 'ufo';
 import sharp from 'sharp';
 import { defineWebApiEventHandler } from '../utils/webapi-event-handler';
-import { type EntityId, ImageCategory } from '../../shared/interfaces';
+import { ImageCategory } from '../../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../../shared/exceptions';
 import { getServerSession } from '#auth';
 import AppConfig from './../../appconfig';
+import { extractUserIdFromSession } from '../utils/auth';
 
 async function convertToJpeg (bytes: Buffer): Promise<Buffer> {
   const sharpObj = sharp(bytes);
@@ -78,12 +78,9 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   }
 
   const authSession = await getServerSession(event);
-  let userId : EntityId | undefined = (authSession as any)?.id as EntityId;
-  if (userId && isString(userId)) {
-    userId = parseInt(userId);
-  }
+  const userId = extractUserIdFromSession(authSession);
 
-  const accessCheck = await imageLogic.checkAccess(slug, category, userId);
+  const accessCheck = await imageLogic.checkAccess(undefined, slug, category, userId);
   if (accessCheck === undefined) {
     throw new AppException(
       AppExceptionCodeEnum.OBJECT_NOT_FOUND,
@@ -98,7 +95,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  const image = await imageBytesProvider.getImageBytes(slug, category, scale);
+  const image = await imageBytesProvider.getImageBytes(undefined, slug, category, scale, event);
   if (!image) {
     throw new AppException(
       AppExceptionCodeEnum.OBJECT_NOT_FOUND,
@@ -107,7 +104,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  if (isSatori && !image.mimeType?.includes('jpeg')) {
+  if (isSatori && !image.mimeType.includes('jpeg')) {
     try {
       logger.info(`(api:img) converting image to satori acceptable format (JPEG), slug=${slug}, mime=${image.mimeType}`);
       image.mimeType = 'image/jpeg';
@@ -130,7 +127,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     });
   }
 
-  setHeader(event, 'content-type', image.mimeType ?? 'image');
+  setHeader(event, 'content-type', image.mimeType);
   setHeader(event, 'content-length', image.bytes.length);
   if (accessCheck === 'unprotected') {
     setHeader(event, 'x-robots-tag', 'index, follow, archive');

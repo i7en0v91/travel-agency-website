@@ -3,7 +3,7 @@ import { getI18nResName2 } from './../../shared/i18n';
 import { type ActivePageLink, type NavBarMode } from './../../shared/interfaces';
 import ThemeSwitcher from './../../components/navbar/theme-switcher.vue';
 import LocaleSwitcher from './../../components/navbar/locale-switcher.vue';
-import { PagePath } from './../../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
 
 interface IProps {
   ctrlKey: string,
@@ -66,18 +66,18 @@ const isErrorPage = useError().value;
       </div>
       <NavLink
         ctrl-key="navLinkFlights"
-        :to="localePath(`/${PagePath.Flights}`)"
+        :to="localePath(`/${getHtmlPagePath(HtmlPage.Flights)}`)"
         :text-res-name="getI18nResName2('nav', 'findFlights')"
         icon="airplane"
-        :is-active="activePageLink === PagePath.Flights"
+        :is-active="activePageLink === HtmlPage.Flights"
         @click="onLinkClicked"
       />
       <NavLink
         ctrl-key="navLinkStays"
-        :to="localePath(`/${PagePath.Stays}`)"
+        :to="localePath(`/${getHtmlPagePath(HtmlPage.Stays)}`)"
         :text-res-name="getI18nResName2('nav', 'findStays')"
         icon="bed"
-        :is-active="activePageLink === PagePath.Stays"
+        :is-active="activePageLink === HtmlPage.Stays"
         @click="onLinkClicked"
       />
     </div>

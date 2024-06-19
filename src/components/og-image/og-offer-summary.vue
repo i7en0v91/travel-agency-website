@@ -3,7 +3,8 @@
 import { withQuery, joinURL } from 'ufo';
 import type { ImageCategory, ILocalizableValue, ICity, EntityDataAttrsOnly, IImageEntitySrc, IImageCategoryInfo, OfferKind } from './../../shared/interfaces';
 import { getLocalizeableValue, getScoreClassResName, getOgImageFileName, getValueForFlightDayFormatting } from './../../shared/common';
-import { ApiEndpointImage, type Locale, PagePath, DefaultLocale } from './../../shared/constants';
+import { ApiEndpointImage, type Locale, DefaultLocale } from './../../shared/constants';
+import { HtmlPage } from './../../shared/page-query-params';
 import { getI18nResName2 } from './../../shared/i18n';
 import AppConfig from './../../appconfig';
 
@@ -23,14 +24,15 @@ const isError = ref(false);
 const props = defineProps<IProps>();
 
 const { t, d, locale } = useI18n();
-const requestLocale = (useRequestEvent()?.context.ogImageRequest?.locale) ?? DefaultLocale;
+const requestLocale = useRequestEvent()?.context.ogImageContext?.locale ?? DefaultLocale;
 locale.value = requestLocale;
 
 const logger = CommonServicesLocator.getLogger();
+logger.verbose('(OgOfferSummary) component setup', props.image);
 
 const dateStr = props.kind === 'flights' ? d(getValueForFlightDayFormatting(new Date(props.dateUnixUtc), props.utcOffsetMin!), 'day') : d(new Date(props.dateUnixUtc), 'day');
 
-const defaultImgUrl = joinURL('/img', 'og', getOgImageFileName(PagePath.Index, locale.value as Locale));
+const defaultImgUrl = joinURL('/img', 'og', getOgImageFileName(HtmlPage.Index, locale.value as Locale));
 
 let imageSize: IImageCategoryInfo;
 try {
@@ -46,7 +48,7 @@ const reviewsCountText = `${props.numReviews} ${t(getI18nResName2('searchOffers'
 const imgUrl = withQuery(ApiEndpointImage, { slug: props.image.slug, category: props.image.category });
 
 function onError (err: any) {
-  logger.warn('(OgOfferSummary) render error', err);
+  logger.warn('(OgOfferSummary) render exception', err);
   isError.value = true;
 }
 

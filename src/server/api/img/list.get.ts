@@ -31,7 +31,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  const imageInfos = await imageLogic.getAllImagesByCategory(category);
+  const imageInfos = await imageLogic.getAllImagesByCategory(category, event);
   const modifiedSince = max(imageInfos.map(x => x.file.modifiedUtc)) ?? dayjs().utc().toDate();
   modifiedSince.setMilliseconds(0);
   handleCacheHeaders(event,  AppConfig.caching.imagesCachingSeconds ? {

@@ -6,8 +6,9 @@ import flatten from 'lodash-es/flatten';
 import { AppException, AppExceptionCodeEnum, defaultErrorHandler } from './exceptions';
 import { type IApiErrorDto } from './../server/dto';
 import type { IAppLogger } from './../shared/applogger';
-import { CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, HeaderCookies } from './../shared/constants';
-import { HostUrl } from './../appconfig';
+import AppConfig, { HostUrl } from './../appconfig' ;
+import { HeaderAppVersion, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, HeaderCookies } from './../shared/constants';
+import fromPairs from 'lodash-es/fromPairs';
 
 /**
  * all exceptions from fetch responses are converted into {@link AppException} retaining all
@@ -66,8 +67,8 @@ function getCurrentAuthCookies (event: H3Event | undefined, logger: IAppLogger):
     const allCookies = flatten(inputCookies.split(';').map(c => c.trim()));
     inputAuthCookies = allCookies.filter(c => authCookieNames.some(ac => c.trim().startsWith(ac)));
   } else if (errReadFromRequest && errReadViaHeaders) {
-    logger.warn('(api-client) error while trying to get current auth cookies', errReadFromRequest);
-    logger.warn('(api-client) error while trying to get current auth cookies', errReadViaHeaders);
+    logger.warn('(api-client) exception while trying to get current auth cookies', errReadFromRequest);
+    logger.warn('(api-client) exception while trying to get current auth cookies', errReadViaHeaders);
     throw new AppException(
       AppExceptionCodeEnum.UNKNOWN,
       'cannot access request cookies',
@@ -88,8 +89,9 @@ async function doFetch<TReq, TResp> (method: HTTPMethod, route: string, query: a
   errorHandling ??= 'default';
 
   let outgoingHeaders: HeadersInit = {
-    ...(headers ?? {}),
-    Host: HostUrl
+    Host: HostUrl,
+    ...(fromPairs([[HeaderAppVersion, AppConfig.versioning.appVersion]])),
+    ...(headers ?? {})
   };
   const isText = body && isString(body);
   const isArr = body && body instanceof Uint8Array;

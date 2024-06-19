@@ -1,7 +1,6 @@
 import { joinURL, parseURL, stringifyParsedURL } from 'ufo';
 import type en from '../locales/en.json';
-import { ApiEndpointAuthentication, ApiEndpointLogging, OgImagePathSegment, type Locale } from './constants';
-import { type IAppLogger } from './../shared/applogger';
+import { AvailableLocaleCodes, DefaultLocale, ApiEndpointAuthentication, ApiEndpointLogging, OgImagePathSegment, type Locale } from './constants';
 
 export type I18nResName = string;
 export function getI18nResName1<P1 extends keyof NonNullable<typeof en>> (p1: P1): I18nResName {
@@ -46,9 +45,6 @@ export function patchUrlWithLocale (url: string, locale: string): string | undef
 }
 
 export function getLocaleFromUrl (url: string) : Locale | undefined {
-  const logger = (globalThis as any).CommonServicesLocator.getLogger() as IAppLogger;
-
-  logger?.debug(`detecting locale from url: url=${url}`);
   if (url.startsWith(`${ApiEndpointLogging}`) ||
     url.startsWith(`${ApiEndpointAuthentication}`)) {
     return undefined;
@@ -65,7 +61,6 @@ export function getLocaleFromUrl (url: string) : Locale | undefined {
     result = <Locale>'fr';
   }
 
-  logger?.debug(`locale from url detected: url=${url}, locale=${result}`);
   return result;
 }
 
@@ -92,3 +87,28 @@ export function RuPluralizationRule (choice: number, choicesLength: number, _: a
 
   return clampMatchedChoice(choice < 5 ? 2 : 3);
 }
+
+export function localizePath(path: string, locale: Locale ): string {
+  if(path.startsWith('http')) {
+    const parsedUrl = parseURL(path);
+    parsedUrl.host = undefined;
+    parsedUrl.protocol = undefined;
+    path = stringifyParsedURL(parsedUrl);
+  };
+  if(!path.startsWith('/')) {
+    path = `/${path}`;
+  }
+
+  const localePrefix = AvailableLocaleCodes.filter(l => l !== DefaultLocale && (path.startsWith(`/${l}`)));
+  if (localePrefix.length > 0) {
+    path = path.replace(`/${localePrefix[0]}`, '/');
+    if (path.startsWith('//')) {
+      path = path.replace('//', '/');
+    }
+  }
+  let result = path;
+  if (locale !== DefaultLocale) {
+    result = joinURL(`/${locale}`, path);
+  }
+  return result;
+};

@@ -7,11 +7,13 @@ import { getI18nResName2 } from './../shared/i18n';
 import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
 import SimpleButton from './../components/forms/simple-button.vue';
-import { ApiEndpointPasswordRecoveryComplete, SecretValueMask, PagePath } from './../shared/constants';
-import { type IRecoverPasswordCompleteDto, type IRecoverPasswordCompleteResultDto, RecoverPasswordCompleteResultCode } from './../server/dto';
+import { ApiEndpointPasswordRecoveryComplete, SecretValueMask, RecoverPasswordCompleteResultEnum } from './../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../shared/page-query-params';
+import { type IRecoverPasswordCompleteDto, type IRecoverPasswordCompleteResultDto } from './../server/dto';
 import { post } from './../shared/rest-utils';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import { isPasswordSecure } from './../shared/common';
+import { type EntityId } from './../shared/interfaces';
 
 const { t } = useI18n();
 const localePath = useLocalePath();
@@ -46,10 +48,10 @@ const v$ = useVuelidate(rules, { password, confirmPassword, $lazy: true });
 
 const logger = CommonServicesLocator.getLogger();
 const route = useRoute();
-let tokenId: number | undefined;
+let tokenId: EntityId | undefined;
 let tokenValue = '';
 try {
-  tokenId = parseInt(route.query.token_id?.toString() ?? '');
+  tokenId = route.query.token_id?.toString() ?? '';
   tokenValue = route.query.token_value?.toString() ?? '';
 } catch (err: any) {
   logger.info(`(ForgotPasswordSet) failed to parse token data: id=${tokenId}, value=${tokenValue ? SecretValueMask : '[empty]'}`);
@@ -66,10 +68,10 @@ const callServerPasswordSet = async (password: string) => {
     const resultDto = await post(ApiEndpointPasswordRecoveryComplete, undefined, postBody, undefined, true, 'default') as IRecoverPasswordCompleteResultDto;
     if (resultDto) {
       const resultCode = resultDto.code;
-      navigateTo(localePath(`/${PagePath.ForgotPasswordComplete}?result=${resultCode}`));
+      await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.ForgotPasswordComplete)}?result=${resultCode}`));
     }
   } else {
-    navigateTo(localePath(`/${PagePath.ForgotPasswordComplete}?result=${RecoverPasswordCompleteResultCode.LINK_INVALID}`));
+    await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.ForgotPasswordComplete)}?result=${RecoverPasswordCompleteResultEnum.LINK_INVALID}`));
   }
 };
 

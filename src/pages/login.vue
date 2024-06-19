@@ -11,7 +11,7 @@ import SimpleButton from './../components/forms/simple-button.vue';
 import { AppException, getUsrMsgResName } from './../shared/exceptions';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
-import { PagePath } from './../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../shared/page-query-params';
 
 const { t } = useI18n();
 const localePath = useLocalePath();
@@ -54,7 +54,7 @@ const mySignInHandler = async (username: string, password: string) => {
       if (signInResult.error) {
         loginErrorMsgResName.value = getI18nResName2('loginPage', 'invalidCredentials');
       } else {
-        return navigateTo(signInResult.url, { external: true });
+        return await navigateTo(signInResult.url, { external: true });
       }
     } else {
       loginErrorMsgResName.value = getI18nResName2('loginPage', 'invalidCredentials');
@@ -134,7 +134,7 @@ function onOAuthProviderClick (provider: AuthProvider) {
           </div>
         </div>
       </form>
-      <NuxtLink class="forgot-password-link mt-xs-4 brdr-1" :to="localePath(`/${PagePath.ForgotPassword}`)">
+      <NuxtLink class="forgot-password-link mt-xs-4 brdr-1" :to="localePath(`/${getHtmlPagePath(HtmlPage.ForgotPassword)}`)">
         {{ $t(getI18nResName3('loginPage', 'forms', 'forgotPassword')) }}
       </NuxtLink>
       <div v-if="loginErrorMsgResName?.length" class="form-error-msg mt-xs-3 mt-xs-5">
@@ -144,7 +144,7 @@ function onOAuthProviderClick (provider: AuthProvider) {
       <div class="having-account mt-xs-4">
         {{ $t(getI18nResName2('loginPage', 'havingAccount')) }}
         <span class="login-signup">
-          <NuxtLink class="brdr-1" :to="localePath(`/${PagePath.Signup}`)">{{ $t(getI18nResName2('accountPageCommon', 'signUp')) }}</NuxtLink>
+          <NuxtLink class="brdr-1" :to="localePath(`/${getHtmlPagePath(HtmlPage.Signup)}`)">{{ $t(getI18nResName2('accountPageCommon', 'signUp')) }}</NuxtLink>
         </span>
       </div>
       <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" @click="onOAuthProviderClick" />

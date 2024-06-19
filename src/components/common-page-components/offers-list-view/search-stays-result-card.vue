@@ -5,7 +5,8 @@ import range from 'lodash-es/range';
 import { type EntityDataAttrsOnly, type IStayOffer, type OfferKind, ImageCategory } from './../../../shared/interfaces';
 import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
 import { getLocalizeableValue, getScoreClassResName } from './../../../shared/common';
-import { type Locale, PagePath } from './../../../shared/constants';
+import { type Locale } from './../../../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../../../shared/page-query-params';
 import { useUserFavouritesStore } from './../../../stores/user-favourites-store';
 import { useOfferFavouriteStatus } from './../../../composables/offer-favourite-status';
 
@@ -134,7 +135,7 @@ async function favouriteBtnClick (): Promise<void> {
                   kind="support"
                   @click="favouriteBtnClick"
                 />
-                <NuxtLink class="btn btn-primary brdr-1 search-stays-card-btn-details" :to="localePath(`/${PagePath.StayDetails}/${props.offer.id}`)">
+                <NuxtLink class="btn btn-primary brdr-1 search-stays-card-btn-details" :to="localePath(`/${getHtmlPagePath(HtmlPage.StayDetails)}/${props.offer.id}`)">
                   {{ $t(getI18nResName2('searchStays', 'viewPlace')) }}
                 </NuxtLink>
               </div>

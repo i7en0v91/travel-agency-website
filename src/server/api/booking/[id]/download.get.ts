@@ -1,6 +1,5 @@
 import { Readable } from 'stream';
 import type { H3Event } from 'h3';
-import isString from 'lodash-es/isString';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
 import { type Locale, type Theme } from '../../../../shared/constants';
 import { type EntityId, type DocumentCommonParams } from '../../../../shared/interfaces';
@@ -8,6 +7,7 @@ import { AppException, AppExceptionCodeEnum } from '../../../../shared/exception
 import { validateObject } from '../../../../shared/validation';
 import { BookingDownloadQuerySchema } from './../../../dto';
 import { getServerSession } from '#auth';
+import { extractUserIdFromSession } from './../../../../server/utils/auth';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const logger = ServerServicesLocator.getLogger();
@@ -24,18 +24,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  let bookingId: EntityId | undefined;
-  try {
-    bookingId = parseInt(bookingParam);
-  } catch (err: any) {
-    logger.warn(`(api:booking-download) failed to parse booking id: param=${bookingParam}`);
-    throw new AppException(
-      AppExceptionCodeEnum.BAD_REQUEST,
-      'failed to parse booking id parameter',
-      'error-page'
-    );
-  }
-
+  const bookingId: EntityId | undefined = bookingParam;
   const query = getQuery(event);
   const validationError = validateObject(query, BookingDownloadQuerySchema);
   if (validationError) {
@@ -46,12 +35,10 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
 
   const booking = await bookingLogic.getBooking(bookingId);
   const authSession = await getServerSession(event);
-  let userId : EntityId | undefined = (authSession as any)?.id as EntityId;
-  if (userId && isString(userId)) {
-    userId = parseInt(userId);
-  }
+  const userId = extractUserIdFromSession(authSession);
 
   if (booking.bookedUser.id !== userId) {
+    logger.warn(`(api:booking-download) user has no access to booking, url=${event.node.req.url}, bookedUserId=${booking.bookedUser.id}, authUserId=${userId}`, undefined, query);
     throw new AppException(
       AppExceptionCodeEnum.FORBIDDEN,
       'access to the booking is forbidden',

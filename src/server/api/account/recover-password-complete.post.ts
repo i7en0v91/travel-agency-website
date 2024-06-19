@@ -1,5 +1,6 @@
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
-import { type IRecoverPasswordCompleteDto, RecoverPasswordCompleteDtoSchema, type IRecoverPasswordCompleteResultDto, RecoverPasswordCompleteResultCode } from '../../dto';
+import { type IRecoverPasswordCompleteDto, RecoverPasswordCompleteDtoSchema, type IRecoverPasswordCompleteResultDto } from '../../dto';
+import { RecoverPasswordCompleteResultEnum } from './../../../shared/constants';
 import { isPasswordSecure } from '../../../shared/common';
 import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';
 
@@ -21,23 +22,23 @@ export default defineWebApiEventHandler(async (event) => {
     case 'success':
       await userLogic.setUserPassword(registrationResult.userId!, recoverPasswordCompleteDto.password);
       responseDto = {
-        code: RecoverPasswordCompleteResultCode.SUCCESS
+        code: RecoverPasswordCompleteResultEnum.SUCCESS
       };
       break;
     case 'already-consumed':
       responseDto = {
-        code: RecoverPasswordCompleteResultCode.ALREADY_CONSUMED
+        code: RecoverPasswordCompleteResultEnum.ALREADY_CONSUMED
       };
       break;
     case 'token-expired':
       responseDto = {
-        code: RecoverPasswordCompleteResultCode.LINK_EXPIRED
+        code: RecoverPasswordCompleteResultEnum.LINK_EXPIRED
       };
       break;
     case 'not-found':
     case 'failed':
       responseDto = {
-        code: RecoverPasswordCompleteResultCode.LINK_INVALID
+        code: RecoverPasswordCompleteResultEnum.LINK_INVALID
       };
       break;
   }

@@ -3,7 +3,7 @@
 import { withQuery } from 'ufo';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import range from 'lodash-es/range';
-import { PagePath } from '../../shared/constants';
+import { HtmlPage,getHtmlPagePath } from '../../shared/page-query-params';
 import { type Timestamp, type StayServiceLevel, type EntityId, type Price, ImageCategory } from './../../shared/interfaces';
 import { getI18nResName3, getI18nResName2 } from './../../shared/i18n';
 
@@ -62,7 +62,7 @@ withDefaults(defineProps<IProps>(), {
             </div>
             <div class="available-room-description-div px-xs-3">
               <div v-if="room" class="available-room-description">
-                {{ $t(getI18nResName3('stayDetailsPage', 'availableRooms', room.serviceLevel === 'base' ? 'base' : 'city')) }}
+                {{ $t(getI18nResName3('stayDetailsPage', 'availableRooms', room.serviceLevel === 'Base' ? 'base' : 'city')) }}
               </div>
               <div v-else class="data-loading-stub text-data-loading" />
             </div>
@@ -71,7 +71,7 @@ withDefaults(defineProps<IProps>(), {
                 <span v-if="room">{{ $n(Math.floor(room.price.toNumber()), 'currency') }}<wbr>&#47;<span class="stays-price-night">{{ $t(getI18nResName2('searchStays', 'night')) }}</span></span>
                 <div v-else class="data-loading-stub text-data-loading" />
               </div>
-              <NuxtLink class="btn btn-primary available-room-book-btn brdr-1" :to="offerId ? withQuery(localePath(`/${PagePath.BookStay}/${offerId!}`), { serviceLevel: room!.serviceLevel }) : localePath(route.fullPath)">
+              <NuxtLink class="btn btn-primary available-room-book-btn brdr-1" :to="offerId ? withQuery(localePath(`/${getHtmlPagePath(HtmlPage.BookStay)}/${offerId!}`), { serviceLevel: room!.serviceLevel }) : localePath(route.fullPath)">
                 {{ $t(getI18nResName2('offerDetailsPage', 'bookBtn')) }}
               </NuxtLink>
             </div>

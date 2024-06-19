@@ -4,22 +4,58 @@ import { normalizeURL, parseURL } from 'ufo';
 import fromPairs from 'lodash-es/fromPairs';
 import dayjs from 'dayjs';
 import AppConfig from '../appconfig';
-import { type Locale, AvailableLocaleCodes, PagePath, OgImageExt, NumMinutesInDay } from './constants';
-import type { ILocalizableValue, GeoPoint, DistanceUnitKm } from './interfaces';
+import { type Locale, AvailableLocaleCodes, OgImageExt, NumMinutesInDay } from './constants';
+import { HtmlPage, AllHtmlPages, getHtmlPagePath, EntityIdPages } from './page-query-params';
+import type { ILocalizableValue, GeoPoint, DistanceUnitKm, EntityId } from './interfaces';
 import { LocaleEnum } from './constants';
 import { type I18nResName, getI18nResName3 } from './../shared/i18n';
+import random from 'lodash-es/random';
 
-export function isLandingPageUrl (url: string): boolean {
-  if (!url?.trim()) {
-    return true;
+export function newUniqueId(): EntityId {
+  const getPart = () => (random(10000000000000) + new Date().getTime()).toString(20);
+  const high = getPart();
+  const low = getPart();
+  return `${high}${low}`;
+}
+
+export function lookupPageByUrl(urlOrPathname: string): HtmlPage | undefined {
+  if (!urlOrPathname?.trim()) {
+    return HtmlPage.Index;
   }
 
-  const urlObj = parseURL(normalizeURL(url));
+  const urlObj = parseURL(normalizeURL(urlOrPathname));
   if (!urlObj.pathname) {
-    return true;
+    return HtmlPage.Index;
+  }
+  
+  if (urlObj.pathname.includes('/index')) {
+    return HtmlPage.Index;
   }
 
-  return AvailableLocaleCodes.some(c => ['/', `/${c}`, `/${c}/`].includes(urlObj.pathname.toLowerCase()));
+  const slashedPathName = urlObj.pathname.startsWith('/') ? urlObj.pathname : `/${urlObj.pathname}`;
+  if(AvailableLocaleCodes.some(c => ['/', `/${c}`, `/${c}/`].includes(slashedPathName.toLowerCase()))) {
+    return HtmlPage.Index;
+  }
+
+  return AllHtmlPages.find(pp => pp !== HtmlPage.Index && slashedPathName.includes(`/${getHtmlPagePath(pp)}`));
+};
+
+export function extractIdFromUrl(urlOrPathname: string): EntityId | undefined {
+  const page = lookupPageByUrl(urlOrPathname);
+  if(!page) {
+    return undefined;
+  }
+  if(!EntityIdPages.includes(page)) {
+    return undefined;
+  }
+
+  const urlParts = urlOrPathname.split('/');
+  const pagePathIdx = urlParts.indexOf(getHtmlPagePath(page));
+  if(pagePathIdx < 0 || (pagePathIdx >= urlParts.length - 1)) {
+    return undefined;
+  }
+
+  return urlParts.splice(0, pagePathIdx + 2).pop();
 }
 
 export function testHeaderValue (header: string, testValue: string) : boolean {
@@ -77,6 +113,10 @@ export function getLocalizeableValue (localizeableValue: Pick<ILocalizableValue,
   return localizeableValue[locale];
 }
 
+export function getCurrentTimeUtc(): Date {
+  return dayjs().utc().toDate();
+}
+
 export function eraseTimeOfDay (dateTime: Date): Date {
   const totalMs = dateTime.getTime();
   return new Date(totalMs - totalMs % (1000 * 60 * 60 * 24));
@@ -125,9 +165,9 @@ export function formatValidThruDate(dueDate: Date): string {
   return `${dueDate.getMonth().toString().padStart(2, '0')}/${ (dueDate.getFullYear() % 100).toString().padStart(2, '0')}`;
 }
 
-export function parseEnumOrThrow (enumType: any, value?: string | number): any {
+export function tryParseEnum (enumType: any, value?: string | number): any {
   if (!value) {
-    throw new Error('enum value empty');
+    return undefined;
   }
 
   const testValue = value.toString().toLowerCase();
@@ -140,10 +180,23 @@ export function parseEnumOrThrow (enumType: any, value?: string | number): any {
 
   const matchedMembers = Object.entries(enumType).filter(e => compareValues(e[1]));
   if (matchedMembers.length === 0) {
-    throw new Error(`unexpected enum value: ${value}`);
+    return undefined;
   }
 
   return enumType[matchedMembers[0][0]];
+}
+
+export function parseEnumOrThrow (enumType: any, value?: string | number): any {
+  if (!value) {
+    throw new Error('enum value empty');
+  }
+
+  const result = tryParseEnum(enumType, value);
+  if (!result) {
+    throw new Error(`unexpected enum value: ${JSON.stringify(value)}`);
+  }
+
+  return result;
 }
 
 export function mapLocalizeableValues (f: (...lv: string[]) => string, ...localizeableValues: ILocalizableValue[]): ILocalizableValue {
@@ -182,6 +235,37 @@ export function getScoreClassResName (score: number): I18nResName {
   }
 }
 
-export function getOgImageFileName (page: PagePath, locale: Locale): string {
-  return `${page === PagePath.Index ? 'index' : page.valueOf()}_${locale.toLowerCase()}.${OgImageExt}`;
+export function getOgImageFileName (page: HtmlPage, locale: Locale): string {
+  return `${page === HtmlPage.Index ? 'index' : getHtmlPagePath(page)}_${locale.toLowerCase()}.${OgImageExt}`;
+}
+
+export async function delay (milliseconds: number) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  await new Promise<void>((resolve, reject) => { setTimeout(() => resolve(), milliseconds); });
+}
+
+/**
+ * Spin waits until specified condition is TRUE
+ * @param condition predicate to check
+ * @param timeoutSecs maximum number of seconds to wait for {@link condition} to become TRUE
+ * @returns TRUE if condition has been met until timeout; FALSE otherwise
+ */
+export async function spinWait (condition: () => Promise<boolean>, timeoutSecs: number): Promise<boolean> {
+  const startWait = process.uptime();
+  let conditionMet = await condition();
+  if (conditionMet) {
+    return true;
+  }
+
+  while (!conditionMet) {
+    const elapsedSecs = process.uptime() - startWait;
+    if (elapsedSecs > timeoutSecs) {
+      return false;
+    }
+
+    await delay(1000);
+    conditionMet = await condition();
+  }
+
+  return true;
 }

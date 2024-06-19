@@ -1,7 +1,8 @@
 import { destr } from 'destr';
-import type { ImageCategory, IImageCategoryInfo } from '../shared/interfaces';
-import { DataKeyImageSrcSizes } from '../shared/constants';
+import { ImageCategory, type IImageCategoryInfo } from '../shared/interfaces';
+import { DataKeyImageSrcSizes, TemporaryEntityId } from '../shared/constants';
 import { getPayload, addPayload } from './../shared/payload';
+import { parseEnumOrThrow } from '~/shared/common';
 
 type CategoryInfoPayload = [string, IImageCategoryInfo];
 
@@ -40,7 +41,7 @@ export const useSystemConfigurationStore = defineStore('systemConfigurationStore
       logger.verbose('(systemConfigurationStore) building image category infos map');
       const result = new Map<ImageCategory, IImageCategoryInfo>([]);// = new Map<ImageCategory, IImageCategoryInfo>(payload);
       for (let i = 0; i < payload.length; i++) {
-        const category = payload[i][0] as ImageCategory;
+        const category = parseEnumOrThrow(ImageCategory, payload[i][0]) as ImageCategory;
         const size = destr<IImageCategoryInfo>(payload[i][1]);
         result.set(category, size);
       }
@@ -83,7 +84,7 @@ export const useSystemConfigurationStore = defineStore('systemConfigurationStore
     let info = imageCategoryInfosMap!.get(category);
     if (!info) {
       logger.warn(`(systemConfigurationStore) unexpected category: ${category}, fallback size will be used`);
-      info = { width: 1, height: 1, id: 0 };
+      info = { width: 1, height: 1, id: TemporaryEntityId };
     }
 
     logger.verbose(`(systemConfigurationStore) image source size for category=${category} is {width: ${info.width}, height: ${info.height}}`);

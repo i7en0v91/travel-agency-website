@@ -1,10 +1,10 @@
 import type { H3Event } from 'h3';
-import isString from 'lodash-es/isString';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
 import { type IToggleFavouriteOfferResultDto } from '../../../dto';
 import type { EntityId } from '../../../../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
 import { getServerSession } from '#auth';
+import { extractUserIdFromSession } from './../../../../server/utils/auth';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const logger = ServerServicesLocator.getLogger();
@@ -20,24 +20,17 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  let offerId: number | undefined;
-  try {
-    offerId = parseInt(offerParam);
-  } catch (err: any) {
-    logger.warn(`(api:stay-favourite) failed to parse stay offer id: param=${offerParam}`);
+  const offerId: EntityId | undefined = offerParam;
+  const authSession = await getServerSession(event);
+  const userId = await extractUserIdFromSession(authSession);
+  if(!userId) {
+    logger.warn('(api:stay-favourite) failed to obtain user id');
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
-      'failed to parse offerId parameter',
+      'failed to obtain user id',
       'error-stub'
     );
   }
-
-  const authSession = await getServerSession(event);
-  let userId : EntityId | undefined = (authSession as any)?.id as EntityId;
-  if (userId && isString(userId)) {
-    userId = parseInt(userId);
-  }
-
   const isFavourite = await staysLogic.toggleFavourite(offerId, userId);
 
   setHeader(event, 'content-type', 'application/json');

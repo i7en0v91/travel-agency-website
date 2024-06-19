@@ -2,7 +2,8 @@
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { type EntityId, type IStayOffer, type IFlightOffer, type EntityDataAttrsOnly } from './../../../shared/interfaces';
 import { getI18nResName3 } from './../../../shared/i18n';
-import { PagePath, type Locale } from './../../../shared/constants';
+import { type Locale } from './../../../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../../../shared/page-query-params';
 
 interface IProps {
   ctrlKey: string,
@@ -63,7 +64,7 @@ async function onBtnClick(): Promise<void> {
           :label-res-name="getI18nResName3('accountPage', 'tabHistory', 'btnDownload')"
           @click="onBtnClick"
         />
-        <NuxtLink class="ticket-card-booking-link btn btn-icon icon-nav-link btn-support brdr-1 tabbable" :to="localePath(`/${PagePath.BookingDetails}/${bookingId}`)"/>
+        <NuxtLink class="ticket-card-booking-link btn btn-icon icon-nav-link btn-support brdr-1 tabbable" :to="localePath(`/${getHtmlPagePath(HtmlPage.BookingDetails)}/${bookingId}`)"/>
       </div>
     </div>
   </article>

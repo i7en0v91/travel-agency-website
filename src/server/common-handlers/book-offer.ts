@@ -1,10 +1,10 @@
 import type { H3Event } from 'h3';
-import isString from 'lodash-es/isString';
 import { defineWebApiEventHandler } from '../utils/webapi-event-handler';
-import { type EntityId, type IOfferBookingData, type OfferKind, type StayServiceLevel } from '../../shared/interfaces';
+import { AvailableStayServiceLevel, type EntityId, type IOfferBookingData, type OfferKind, type StayServiceLevel } from '../../shared/interfaces';
 import { type IBookingResultDto } from '../dto';
 import { AppException, AppExceptionCodeEnum } from '../../shared/exceptions';
 import { getServerSession } from '#auth';
+import { extractUserIdFromSession } from '../utils/auth';
 
 const defineBookOfferWebApiHandler = (offerKind: OfferKind) => defineWebApiEventHandler(async (event : H3Event) => {
   const logger = ServerServicesLocator.getLogger();
@@ -20,14 +20,12 @@ const defineBookOfferWebApiHandler = (offerKind: OfferKind) => defineWebApiEvent
     );
   }
 
-  let offerId: EntityId | undefined;
-  try {
-    offerId = parseInt(offerIdParam);
-  } catch (err: any) {
-    logger.warn(`(api:book-offer) failed to parse offer id: param=${offerIdParam}`);
+  const offerId: EntityId | undefined = offerIdParam;
+  if(!offerId) {
+    logger.warn(`(api:book-offer) offer id parameter is not specified: param=${offerIdParam}`);
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
-      'failed to parse offer id parameter',
+      'offer id parameter not specified',
       'error-stub'
     );
   }
@@ -35,14 +33,14 @@ const defineBookOfferWebApiHandler = (offerKind: OfferKind) => defineWebApiEvent
   let serviceLevel: StayServiceLevel | undefined;
   if (offerKind === 'stays') {
     serviceLevel = ((getQuery(event).serviceLevel)?.toString() ?? '').trim() as StayServiceLevel;
-    if (!['base', 'cityView-1', 'cityView-2', 'cityView-3'].includes(serviceLevel)) {
+    if (!AvailableStayServiceLevel.includes(serviceLevel)) {
       logger.warn(`(api:book-offer) failed to parse service level query parameter: serviceLevel=${serviceLevel}, offerId=${offerId}`);
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'invalid service level argument', 'error-stub');
     }
   }
 
   const authSession = await getServerSession(event);
-  let userId : EntityId | undefined = (authSession as any)?.id as EntityId;
+  const userId : EntityId | undefined = extractUserIdFromSession(authSession);
   if (!userId) {
     logger.warn(`(api:book-offer) unauthorized attempt: offerId=${offerId}`);
     throw new AppException(
@@ -50,10 +48,6 @@ const defineBookOfferWebApiHandler = (offerKind: OfferKind) => defineWebApiEvent
       'only authorized users can book offers',
       'error-stub'
     );
-  }
-
-  if (isString(userId)) {
-    userId = parseInt(userId);
   }
 
   const offerBookingData: IOfferBookingData = {

@@ -166,12 +166,12 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
   const resolveCitySlugs = async (slugs: string[]) : Promise<IEntityCacheCityItem[]> => {
     if (import.meta.client) {
       logger.verbose(`(search-offers-store) resolving city slugs (client), ids=${JSON.stringify(slugs)}`);
-      const items = (await clientEntityCache!.get<'City', IEntityCacheCityItem>(slugs, 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
+      const items = (await clientEntityCache!.get<'City', IEntityCacheCityItem>([], slugs, 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
       logger.verbose(`(search-offers-store) city slugs resolved (client), result=${JSON.stringify(items)}`);
       return items;
     } else {
       logger.verbose(`(search-offers-store) resolving city slugs (server), ids=${JSON.stringify(slugs)}`);
-      const items = await serverEntityCacheLogic!.get<'City', IEntityCacheCityItem>(slugs, 'City');
+      const items = await serverEntityCacheLogic!.get<'City', IEntityCacheCityItem>([], slugs, 'City');
       addPayload(nuxtApp, DataKeyEntityCacheItems, uniqueBy([...((nuxtApp.payload[DataKeyEntityCacheItems] ?? []) as EntityCacheItemsPayload), ...items], 'id'));
       logger.verbose(`(search-offers-store) city slugs resolved (server), result=${JSON.stringify(items)}`);
       return items;
@@ -245,7 +245,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     }
 
     const entityCache = ClientServicesLocator.getEntityCache();
-    const cached = (await entityCache.get<'City', IEntityCacheCityItem>([cityItem.id], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }));
+    const cached = (await entityCache.get<'City', IEntityCacheCityItem>([cityItem.id], [], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }));
     if ((cached?.length ?? 0) === 0) {
       logger.warn(`(search-offers-store) failed to ensure city item slug: cityId=${cityItem.id}`);
       userNotificationStore.show({
@@ -418,7 +418,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
       }
 
       if (fetch.status.value === 'error') {
-        logger.warn(`(search-offers-store) error occured while fetching offers, kind=${instance.offersKind}, offersFetchMode=${instance.resultState.status}`, fetch.error.value, instance.resultState.usedSearchParams);
+        logger.warn(`(search-offers-store) exception occured while fetching offers, kind=${instance.offersKind}, offersFetchMode=${instance.resultState.status}`, fetch.error.value, instance.resultState.usedSearchParams);
         instance.resultState.items = [];
         instance.resultState.status = 'error';
         return;

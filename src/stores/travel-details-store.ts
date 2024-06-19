@@ -1,7 +1,8 @@
 import once from 'lodash-es/once';
 import { withQuery, encodeHash, stringifyParsedURL, type ParsedURL } from 'ufo';
 import { type IPopularCityDto, type ITravelDetailsDto } from '../server/dto';
-import { ApiEndpointPopularCityTravelDetails, ApiEndpointPopularCitiesList, TravelDetailsHtmlAnchor, UserNotificationLevel, PagePath } from '../shared/constants';
+import { ApiEndpointPopularCityTravelDetails, ApiEndpointPopularCitiesList, TravelDetailsHtmlAnchor, UserNotificationLevel } from '../shared/constants';
+import { HtmlPage } from '../shared/page-query-params';
 import { type EntityId, type IEntityCacheCityItem, type ITravelDetailsData } from '../shared/interfaces';
 import { useFetchEx, type SSRAwareFetchResult } from '../shared/fetch-ex';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
@@ -48,44 +49,61 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
 
   async function getCityFromUrl (): Promise<IEntityCacheCityItem | undefined> {
     const route = router.currentRoute.value;
-    logger.debug(`(world-map-store) parsing city from url, query=${JSON.stringify(route.query)}`);
+    logger.debug(`(travel-details-store) parsing city from url, query=${JSON.stringify(route.query)}`);
 
-    const citySlug = route.query?.city?.toString();
+    const citySlug = route.query?.citySlug?.toString();
     if (!citySlug) {
-      logger.debug('(world-map-store) city slug parameter was not specified');
+      logger.debug('(travel-details-store) city slug parameter was not specified');
       return undefined;
     }
 
     let cacheResult: IEntityCacheCityItem[] | undefined;
-    if (import.meta.client) {
-      cacheResult = await ClientServicesLocator.getEntityCache().get<'City', IEntityCacheCityItem>([citySlug], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default });
-    } else {
-      cacheResult = await ServerServicesLocator.getEntityCacheLogic().get<'City', IEntityCacheCityItem>([citySlug], 'City');
+    try {
+      if (import.meta.client) {
+        cacheResult = await ClientServicesLocator.getEntityCache().get<'City', IEntityCacheCityItem>([], [citySlug], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default });
+      } else {
+        cacheResult = await ServerServicesLocator.getEntityCacheLogic().get<'City', IEntityCacheCityItem>([], [citySlug], 'City');
+      }
+    } catch(err: any) {
+      logger.warn(`(travel-details-store) exception occured looking up city by slug, slug=${citySlug}`, err);
+      if(import.meta.client) {
+        userNotificationStore.show({
+          level: UserNotificationLevel.ERROR,
+          resName: getI18nResName2('appErrors', 'unknown')
+        });
+        return undefined;  
+      }
     }
+    
     if (!cacheResult || cacheResult.length === 0) {
-      logger.warn(`(world-map-store) failed to lookup city by slug, slug=${citySlug}`);
-      userNotificationStore.show({
-        level: UserNotificationLevel.WARN,
-        resName: getI18nResName2('appErrors', 'objectNotFound')
-      });
-      return undefined;
+      logger.warn(`(travel-details-store) city not found, slug=${citySlug}`);
+      if(import.meta.client) {
+        userNotificationStore.show({
+          level: UserNotificationLevel.WARN,
+          resName: getI18nResName2('appErrors', 'objectNotFound')
+        });
+        return undefined;
+      } else {
+        logger.warn(`(travel-details-store) failed to lookup city by slug, slug=${citySlug}`);
+        throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'city not found', 'error-page');
+      }
     }
-    const result = cacheResult[0];
 
-    logger.debug(`(world-map-store) city from url parsed, query=${route.query}, id=${result.id}`);
+    const result = cacheResult[0];
+    logger.debug(`(travel-details-store) city from url parsed, query=${route.query}, id=${result.id}`);
     return result;
   }
 
   function buildTravelCityUrl (citySlug: string): string {
-    logger.debug(`(world-map-store) build city url, slug=${citySlug}`);
+    logger.debug(`(travel-details-store) build city url, slug=${citySlug}`);
 
     const url: Partial<ParsedURL> = {
-      pathname: localePath(`/${PagePath.Flights}`),
+      pathname: localePath(`/${HtmlPage.Flights}`),
       hash: encodeHash(`#${TravelDetailsHtmlAnchor}`)
     };
-    const result = withQuery(stringifyParsedURL(url), { city: citySlug });
+    const result = withQuery(stringifyParsedURL(url), { citySlug });
 
-    logger.debug(`(world-map-store) city url, slug=${citySlug}, url=${result}`);
+    logger.debug(`(travel-details-store) city url, slug=${citySlug}, url=${result}`);
     return result;
   }
 
@@ -324,7 +342,7 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
     }
   });
 
-  const initializeStateOnServer = once(async (): Promise<void> => {
+  const initializeStateOnServer = async (): Promise<void> => {
     logger.info('(travel-details-store) initializing server state');
     const popularCities = await ensurePopularCities(await popularCitiesFetchRequest);
     if (!(popularCities?.length ?? 0) || !popularCities[0]) {
@@ -362,7 +380,7 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
       images: travelDetailsDto.images
     };
     logger.info('(travel-details-store) server state initialization finished');
-  });
+  };
 
   const onPreRenderCompletedInternal = (cityId: EntityId): void => {
     logger.verbose(`(travel-details-store) onPreRenderCompleted, cityId=${cityId}, current cityId=${instance.current?.cityId}, upcoming cityId=${instance.upcoming?.cityId}`);

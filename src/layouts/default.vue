@@ -13,8 +13,9 @@ import NavBar from './../components/navbar/nav-bar.vue';
 import HeadingText from './../components/index/main-heading-text.vue';
 import AppConfig from './../appconfig';
 import { type NavBarMode, ImageCategory } from './../shared/interfaces';
-import { isLandingPageUrl } from './../shared/common';
-import { MainTitleSlug, PagePath } from './../shared/constants';
+import { lookupPageByUrl } from './../shared/common';
+import { MainTitleSlug } from './../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../shared/page-query-params';
 import AppFooter from './../components/footer/app-footer.vue';
 import CookieBanner from './../components/cookie-banner.vue';
 import SearchPageHead from './../components/common-page-components/search-page-head.vue';
@@ -88,10 +89,10 @@ function filterNotificationDuplicates (
 }
 
 const navBarMode : ComputedRef<NavBarMode> = computed(
-  () => (isLandingPageUrl(route.path) && !error.value) ? 'landing' : 'inApp');
+  () => (lookupPageByUrl(route.path) === HtmlPage.Index && !error.value) ? 'landing' : 'inApp');
 
 const error = useError();
-const isAuthFormsPage = computed(() => route.path.includes(`/${PagePath.Login}`) || route.path.includes(`/${PagePath.Signup}`) || route.path.includes(`/${PagePath.ForgotPassword}`) || route.path.includes(`/${PagePath.EmailVerifyComplete}`));
+const isAuthFormsPage = computed(() => route.path.includes(`/${getHtmlPagePath(HtmlPage.Login)}`) || route.path.includes(`/${getHtmlPagePath(HtmlPage.Signup)}`) || route.path.includes(`/${getHtmlPagePath(HtmlPage.ForgotPassword)}`) || route.path.includes(`/${getHtmlPagePath(HtmlPage.EmailVerifyComplete)}`));
 const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.value);
 
 </script>

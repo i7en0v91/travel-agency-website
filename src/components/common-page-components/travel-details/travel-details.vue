@@ -9,6 +9,7 @@ import { getI18nResName2 } from './../../../shared/i18n';
 import { type TravelDetailsImageStatus } from './../../../shared/interfaces';
 import { updateTabIndices } from './../../../shared/dom';
 import { TabIndicesUpdateDefaultTimeout } from './../../../shared/constants';
+import { AppException, AppExceptionCodeEnum, defaultErrorHandler } from './../../../shared/exceptions';
 
 interface IProps {
   ctrlKey: string,
@@ -30,6 +31,9 @@ try {
   storeInstance = await travelDetailsStore.getInstance();
   isError.value = storeInstance.isError;
 } catch (err: any) {
+  if(import.meta.server && AppException.isAppException(err) && err.code === AppExceptionCodeEnum.OBJECT_NOT_FOUND) {
+    defaultErrorHandler(err);
+  };
   logger.warn(`(TravelDetails) failed to obtain travel details store, ctrlKey=${props.ctrlKey}`, err);
   isError.value = true;
 }

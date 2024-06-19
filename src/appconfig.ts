@@ -1,13 +1,14 @@
-import { type LogLevel, type Locale, isTestEnv, isDevEnv, isQuickStartEnv, FlexibleDatesRangeDays } from './shared/constants';
-import { type ILogSuppressionRule } from './shared/applogger';
+import { type LogLevel, type Locale, isTestEnv, isDevEnv, isQuickStartEnv, FlexibleDatesRangeDays, AcsysExecDir } from './shared/constants';
+import { type ILogSuppressionRule, type ILogVueSuppressionRule } from './shared/applogger';
 import { type AppExceptionCode } from './shared/exceptions';
 import type { I18nResName } from './shared/i18n';
 
 export const HostUrl = process.env.PUBLISH ? 'golobe.demo' : 'localhost:3000';
 // url used for showing users browser-navigateable links to the website
-const SiteUrl = process.env.PUBLISH ? `https://${HostUrl}` : `http://${HostUrl}`;
+export const SiteUrl = process.env.PUBLISH ? `https://${HostUrl}` : `http://${HostUrl}`;
 
 const HtmlPageCachingSeconds = 24 * 60 * 60;
+const htmlPageCachingEnabled = isTestEnv() || isQuickStartEnv() || process.env.PUBLISH;
 
 export interface IAppConfig {
   logging: {
@@ -28,7 +29,8 @@ export interface IAppConfig {
       path: string
     },
     suppress: {
-      vue : ILogSuppressionRule[]
+      vue : ILogVueSuppressionRule[],
+      server : ILogSuppressionRule[]
     }
   },
   userNotifications: {
@@ -96,7 +98,16 @@ export interface IAppConfig {
       }
     },
     htmlPageCachingSeconds: number | false,
-    imagesCachingSeconds: number | false
+    imagesCachingSeconds: number | false,
+    invalidation: {
+      intervalSeconds: number,
+      maxChangedPagesForPurge: number,
+      retries: {
+        attemptsCount: number,
+        intervalMs: number
+      },
+      ogImageCachePrefix: string
+    }
   },
   searchOffers: {
     listPageSize: number,
@@ -108,13 +119,38 @@ export interface IAppConfig {
     screenSize: {
       width: number,
       height: number
-    },
-    enforceAuthChecks: boolean
+    }
   },
   maps: {
     providerDisplayResName: I18nResName,
     mapControlComponentName: string
-  } | false
+  } | false,
+  versioning: {
+    nuxt: string,
+    appVersion: number
+  }
+}
+
+/** Acsys */
+export interface IUserOptions {
+  email: string,
+  name: string,
+  password: string,
+  autoFillCredsOnLoginPage: boolean
+}
+export type StorageDriverType = 'local';
+export interface IAcsysModuleOptions {
+  srcDir: string,
+  execDir: string,
+  storageDriver: StorageDriverType,
+  port: number,
+  startupTimeoutMs: number,
+  projectName: string,
+  users: {
+    admin: IUserOptions,
+    standard: IUserOptions,
+    viewer: IUserOptions
+  }
 }
 
 const Config : IAppConfig = {
@@ -175,6 +211,9 @@ const Config : IAppConfig = {
          * \ndispose@http://localhost:3000/_nuxt/node_modules/.cache/vite/client/deps/floating-vue.js:1803:91\nbeforeUnmount@http://localhost:3000/_nuxt/node_modules/.cache/vite/client/deps/floating-vue.js:1773:17\ncallWithErrorHandling)
          * */
         { messageFitler: /.*beforeUnmount hook.*/gi, componentNameFilter: /.*floating-vue.*/gi }
+      ],
+      server: [
+        // not yet
       ]
     }
   },
@@ -219,7 +258,7 @@ const Config : IAppConfig = {
         siteUrl: SiteUrl
       }
      
-    : ((!process.env.VITEST && !isQuickStartEnv()) ? {
+    : ((!isTestEnv() && !isQuickStartEnv()) ? {
         host: 'localhost',
         port: 1025,
         secure: false,
@@ -260,8 +299,18 @@ const Config : IAppConfig = {
         default: 1800 // default expiration for any entity type
       }
     },
-    htmlPageCachingSeconds: isTestEnv() ? false : HtmlPageCachingSeconds, // maximum amount of time in seconds that rendered html page's data can be cached and re-served to client while re-redering in background. False - caching disabled
-    imagesCachingSeconds: isTestEnv() ? false :HtmlPageCachingSeconds // maximum amount of time in seconds that image entity data can be reused (cached) on client. False - caching disabled
+    htmlPageCachingSeconds: htmlPageCachingEnabled ? HtmlPageCachingSeconds : false, // maximum amount of time in seconds that rendered html page's data can be cached and re-served to client while re-redering in background. False - caching disabled
+    imagesCachingSeconds: htmlPageCachingEnabled ? HtmlPageCachingSeconds : false, // maximum amount of time in seconds that image entity data can be reused (cached) on client. False - caching disabled
+    invalidation:  // rendered page cache invalidation options when html content has been changed e.g. from CMS
+    {
+      intervalSeconds: isTestEnv() ? 21 * 24 * 60 * 60 : 10 * 60, // invalidation timer task interval in seconds (almost disabled in tests as triggered via test endpoint)
+      maxChangedPagesForPurge: 500, // maximum number of changed pages during interval upon exceeding which full cache purge will be performed (instead of removing pages by it's keys individually) - optimization
+      retries: { // retry policy for a single page
+        attemptsCount: 3, // number of attempts
+        intervalMs: 1000 // interval between successive attempts in milliseconds
+      },
+      ogImageCachePrefix: 'cache:nuxt-og-image@3.0.0-rc.53' // prefix for og-image cache keys
+    }
   },
   searchOffers: { // settings related to flight & stay offers search pages with filter & pagination
     listPageSize: 20, // pagination - number of offer items fetched from server in one request
@@ -269,19 +318,36 @@ const Config : IAppConfig = {
   },
   enableHtmlTabIndex: true, // if enabled, system will automatically compute and fill tabIndex property for all interactive html elements (including dropdowns, menus e.t.c). If disabled, tabIndex="-1" will be used
   ogImage: {
-    enabled: !process.env.VITEST, // if enabled, system will add og:image metadata tag to pages and setup (pre-)rendering logic
+    enabled: true, // if enabled, system will add og:image metadata tag to pages and setup (pre-)rendering logic
     screenSize: { // ogImage size (device width/height); 1200x630 is optimal image size for most social networks
       width: 1200,
       height: 630
-    },
-    enforceAuthChecks: !!process.env.PUBLISH // if enabled, system won't expose individual user data (bookings) through ogImage endpoints, i.e. login & authorization must be performed to get access to entity's page
+    }
   },
-  maps: (!process.env.VITEST && !isQuickStartEnv())
+  maps: (!isTestEnv() && !isQuickStartEnv())
     ? {
         providerDisplayResName: 'mapsProviderYandex', // i18n resource name of map's service provider
         mapControlComponentName: 'YandexMaps' // name of Vue component used to display interactive map
       }
-    : false
+    : false,
+  versioning: {
+    appVersion: 1_00_00, // application version passed from user's browser in HTTP request header when calling server API enpoints
+    nuxt: '3.11.2'
+  } 
+};
+
+export const AcsysModuleOptions : IAcsysModuleOptions = {
+  srcDir: './../externals/acsys',
+  execDir: `./${AcsysExecDir}`,
+  storageDriver: 'local',
+  port: 9000,
+  startupTimeoutMs: 15000,
+  projectName: 'golobe',
+  users: {
+    admin: { name: 'cms_admin', email: 'cms_admin@golobe.demo', password: process.env.ACSYS_ADMIN_USER_PASSWORD as string, autoFillCredsOnLoginPage: !process.env.PUBLISH },
+    standard: { name: 'cms_standard', email: 'cms_standard@golobe.demo', password: process.env.ACSYS_STANDARD_USER_PASSWORD as string, autoFillCredsOnLoginPage: false },
+    viewer: { name: 'cms_viewer', email: 'cms_viewer@golobe.demo', password: process.env.ACSYS_VIEWER_USER_PASSWORD as string, autoFillCredsOnLoginPage: !!process.env.PUBLISH }
+  }
 };
 
 export default Config;

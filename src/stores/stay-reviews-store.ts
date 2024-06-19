@@ -3,12 +3,11 @@ import isString from 'lodash-es/isString';
 import type { NuxtApp } from '#app';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
 import { type EntityId, type ILocalizableValue } from './../shared/interfaces';
-import { DataKeyStayDetailsReviews, ApiEndpointStayReviews } from './../shared/constants';
+import { ApiEndpointStayReviews } from './../shared/constants';
 import { getObject, post, del } from './../shared/rest-utils';
 import { type IAppLogger } from './../shared/applogger';
 import type { IUserAccount } from './user-account-store';
 import type { ICreateOrUpdateStayReviewDto, IModifyStayReviewResultDto, IStayReviewsDto } from './../server/dto';
-import { addPayload, getPayload } from './../shared/payload';
 
 interface IStayReviewUser {
   avatar?: {
@@ -28,11 +27,6 @@ export interface IStayReviewItem {
 interface IStayReviewItemInternal extends IStayReviewItem {
   user: (IStayReviewUser & { id: EntityId }) | 'current',
   id: EntityId
-}
-
-interface IStayReviewsPayload {
-  reviewItems: IStayReviewItemInternal[],
-  stayId: EntityId
 }
 
 export interface IStayReviewsStore {
@@ -64,7 +58,7 @@ async function sendCreateOrUpdateReviewRequest (stayId: EntityId, textOrHtml: st
   logger.debug(`(stay-reviews-store) sending create or update HTTP request, stayId=${stayId}`);
   const resultDto = await post(ApiEndpointStayReviews(stayId), undefined, bodyDto, undefined, true, 'default') as IModifyStayReviewResultDto;
   if (!resultDto) {
-    logger.warn(`(stay-reviews-store) error occured while sending create or update HTTP request, stayId=${stayId}, textOrHtml=${textOrHtml}`);
+    logger.warn(`(stay-reviews-store) exception occured while sending create or update HTTP request, stayId=${stayId}, textOrHtml=${textOrHtml}`);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
   }
   logger.debug(`(stay-reviews-store) create or update HTTP request completed, stayId=${stayId}, result=${JSON.stringify(resultDto)}`);
@@ -75,7 +69,7 @@ async function sendDeleteReviewRequest (stayId: EntityId, logger: IAppLogger): P
   logger.debug(`(stay-reviews-store) sending delete HTTP request, stayId=${stayId}`);
   const resultDto = await del(ApiEndpointStayReviews(stayId), undefined, true, 'default') as IModifyStayReviewResultDto;
   if (!resultDto) {
-    logger.warn(`(stay-reviews-store) error occured while sending delete HTTP request, stayId=${stayId}`);
+    logger.warn(`(stay-reviews-store) exception occured while sending delete HTTP request, stayId=${stayId}`);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
   }
   logger.debug(`(stay-reviews-store) delete HTTP request completed, stayId=${stayId}, result=${JSON.stringify(resultDto)}`);
@@ -85,7 +79,7 @@ async function sendFetchReviewsRequest (stayId: EntityId, logger: IAppLogger): P
   logger.debug(`(stay-reviews-store) sending get HTTP request, stayId=${stayId}`);
   const resultDto = await getObject(ApiEndpointStayReviews(stayId), undefined, 'no-store', true, undefined, 'default') as IStayReviewsDto;
   if (!resultDto) {
-    logger.warn(`(stay-reviews-store) error occured while sending get HTTP request, stayId=${stayId}`);
+    logger.warn(`(stay-reviews-store) exception occured while sending get HTTP request, stayId=${stayId}`);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
   }
 
@@ -112,36 +106,10 @@ async function sendFetchReviewsRequest (stayId: EntityId, logger: IAppLogger): P
   return result;
 }
 
-async function getReviewItems (stayId: EntityId, nuxtApp: NuxtApp, logger: IAppLogger): Promise<IStayReviewItemInternal[] | undefined> {
-  logger.debug(`(stay-reviews-store) get review data, stayId=${stayId}`);
-  let reviewItems: IStayReviewItemInternal[] | undefined;
-  const payload = getPayload<IStayReviewsPayload>(nuxtApp, DataKeyStayDetailsReviews(stayId));
-  if (import.meta.client && nuxtApp.isHydrating && payload) {
-    logger.verbose(`(stay-reviews-store) retrieving review data from payload, stayId=${stayId}`);
-    if (payload.stayId === stayId) {
-      reviewItems = payload.reviewItems;
-    }
-  } else if (import.meta.server) {
-    const payload = await useAsyncData(DataKeyStayDetailsReviews(stayId), async () => { return { stayId, reviewItems: await sendFetchReviewsRequest(stayId, logger) }; }, {
-      server: true,
-      lazy: false,
-      immediate: true
-    });
-    if (payload.error.value || !payload.data.value) {
-      logger.warn(`(stay-reviews-store) failed to fetch review data, stayId=${stayId}`, payload.error.value);
-      throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to fetch review data', 'error-stub');
-    } else {
-      reviewItems = payload.data.value!.reviewItems;
-    }
-  } else {
-    try {
-      reviewItems = await sendFetchReviewsRequest(stayId, logger);
-    } catch (err: any) {
-      logger.warn(`(stay-reviews-store) failed to fetch review data, stayId=${stayId}`, err);
-      throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to fetch review data', 'error-stub');
-    }
-  }
-  logger.verbose(`(stay-reviews-store) get review data, stayId=${stayId}, result=${reviewItems?.length}`);
+async function fetchItems (stayId: EntityId, nuxtApp: NuxtApp, logger: IAppLogger): Promise<IStayReviewItemInternal[] | undefined> {
+  logger.debug(`(stay-reviews-store) fetch review data, stayId=${stayId}`);
+  const reviewItems = await sendFetchReviewsRequest(stayId, logger);
+  logger.verbose(`(stay-reviews-store) fetch review data, stayId=${stayId}, result=${reviewItems?.length}`);
   return reviewItems;
 }
 
@@ -166,7 +134,7 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
         logger.verbose(`(stay-reviews-store) obtaining reviews, stayId=${stayId}, userId=${userAccount?.userId}`);
         result.status = 'pending';
         try {
-          let itemsData = await getReviewItems(stayId, nuxtApp, logger);
+          let itemsData = await fetchItems(stayId, nuxtApp, logger);
           logger.verbose(`(stay-reviews-store) reviews obtained, stayId=${stayId}, count=${itemsData?.length}`);
 
           const isAuthenticated = status.value === 'authenticated';
@@ -187,15 +155,8 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
                 itemsData!.splice(itemsData!.indexOf(currentUserReview), 1);
                 if (import.meta.client) {
                   currentUserReview.user = 'current';
-                  itemsData = [currentUserReview, ...itemsData!];
-                } else {
-                  itemsData = [currentUserReview, ...itemsData!];
-                  addPayload<IStayReviewsPayload>(nuxtApp, DataKeyStayDetailsReviews(stayId),
-                    {
-                      stayId,
-                      reviewItems: itemsData
-                    });
                 }
+                itemsData = [currentUserReview, ...itemsData!];
               }
             } else {
               logger.verbose(`(stay-reviews-store) skipping current user's review data update, user info is empty, stayId=${stayId}`);
@@ -213,7 +174,7 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
       createOrUpdateReview: async (text: string, score: number): Promise<void> => {
         logger.verbose(`(stay-reviews-store) create or update review, stayId=${stayId}, text=${text}, score=${score}`);
         if (result.status === 'error') {
-          logger.warn(`(stay-reviews-store) cannot create or update review, store is in error state, stayId=${stayId}`);
+          logger.warn(`(stay-reviews-store) cannot create or update review, store is in failed state, stayId=${stayId}`);
           return;
         }
 
@@ -254,7 +215,7 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
       deleteReview: async (): Promise<void> => {
         logger.verbose(`(stay-reviews-store) delete review, stayId=${stayId}`);
         if (result.status === 'error') {
-          logger.warn(`(stay-reviews-store) cannot delete review, store is in error state, stayId=${stayId}`);
+          logger.warn(`(stay-reviews-store) cannot delete review, store is in failed state, stayId=${stayId}`);
           return;
         }
 

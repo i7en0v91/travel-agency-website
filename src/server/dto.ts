@@ -1,17 +1,35 @@
-import { type InferType, string, number, object, array, tuple, boolean, date, lazy } from 'yup';
+import { type InferType, string, number, object, array, boolean, date, lazy } from 'yup';
 import type { AppExceptionCodeEnum, AppExceptionAppearance } from '../shared/exceptions';
 import { type StayDescriptionParagraphType, type AirplaneImageKind, type FlightOffersSortFactor, type CacheEntityType, type TripType, type FlightClass, AvailableFlightOffersSortFactor, AvailableStayOffersSortFactor, type StayServiceLevel, type OfferKind, type EntityId } from '../shared/interfaces';
-import { NumMinutesInDay, SearchOffersPriceRange, AvailableLocaleCodes, AvailableThemeCodes, FlightMinPassengers, FlightMaxPassengers, StaysMaxRoomsCount, StaysMaxGuestsCount, MaxStayReviewLength } from '../shared/constants';
+import { NumMinutesInDay, SearchOffersPriceRange, AvailableLocaleCodes, AvailableThemeCodes, FlightMinPassengers, FlightMaxPassengers, StaysMaxRoomsCount, StaysMaxGuestsCount, MaxStayReviewLength, type SignUpResultEnum, type SignUpCompleteResultEnum, type RecoverPasswordResultEnum, type RecoverPasswordCompleteResultEnum } from '../shared/constants';
+import { AllHtmlPages } from '../shared/page-query-params';
+
+const EntityIdMaxLength = 256;
+
+export enum TestingPageCacheActionEnum {
+  Prepare = 'Prepare',
+  Change = 'Change',
+  Complete = 'Complete'
+}
+const AllTestingPageCacheActions = Object.values(TestingPageCacheActionEnum).map(e => e.valueOf());
 
 /**
  * Dto Schemas
  */
-export const SessionDtoSchema = object({
-  sessionId: string().max(256).required(),
-  values: array().of(tuple([
-    string().max(256).required(),
-    string().max(1024).defined().required()
-  ]).required()).required()
+export const TestingInvalidateCacheDtoSchema = object({
+  values: array().of(
+    object({
+      page: string().max(128).oneOf(AllHtmlPages.map(p => p.valueOf())),
+      id: string().max(EntityIdMaxLength).optional(),
+      query: object().optional()
+    }).required()).min(1).required()
+});
+
+export const TestingPageCacheActionDtoSchema = object({
+  page: string().max(128).oneOf(AllHtmlPages.map(p => p.toString())).required(),
+  action: string().max(128).oneOf(AllTestingPageCacheActions).required(),
+  testId: string().max(EntityIdMaxLength).optional(),
+  testToken: string().max(256).optional()
 });
 
 export const SignUpDtoSchema = object({
@@ -25,7 +43,7 @@ export const SignUpDtoSchema = object({
 });
 
 export const SignUpCompleteDtoSchema = object({
-  id: number().required(),
+  id: string().max(EntityIdMaxLength).required(),
   value: string().max(256).required()
 });
 
@@ -37,7 +55,7 @@ export const RecoverPasswordDtoSchema = object({
 });
 
 export const RecoverPasswordCompleteDtoSchema = object({
-  id: number().required(),
+  id: string().max(EntityIdMaxLength).required(),
   value: string().max(256).required(),
   password: string().max(256).required()
 });
@@ -57,7 +75,7 @@ export const UpdateAccountDtoSchema = object({
 });
 
 export const EmailVerifyCompleteDtoSchema = object({
-  id: number().required(),
+  id: string().max(EntityIdMaxLength).required(),
   value: string().max(256).required()
 });
 
@@ -69,7 +87,7 @@ export const CitiesSearchQuerySchema = object({
 });
 
 export const EntityCacheQuerySchema = object({
-  ids: lazy(val => (Array.isArray(val) ? array().of(number().required().min(0)) : number().required().min(0))).optional(),
+  ids: lazy(val => (Array.isArray(val) ? array().of(string().max(EntityIdMaxLength).required()) : string().max(EntityIdMaxLength).required())).optional(),
   slugs: lazy(val => (Array.isArray(val) ? array().of(string().required().max(256)) : string().required().max(256))).optional(),
   type: string<CacheEntityType>().max(64).lowercase().required()
 });
@@ -103,7 +121,7 @@ export const SearchFlightOffersParamsDtoSchema = SearchFlightOffersMainParamsDto
     from: number().optional().min(0).max(NumMinutesInDay - 1),
     to: number().optional().min(0).max(NumMinutesInDay - 1)
   }).optional(),
-  airlineCompanyIds: array().of(number().required()).optional(),
+  airlineCompanyIds: array().of(string().max(EntityIdMaxLength).required()).optional(),
   ratings: array().of(number().min(0).max(5).required()).optional(),
   flexibleDates: boolean().optional(),
   primarySort: string().max(32).oneOf(AvailableFlightOffersSortFactor).required(),
@@ -154,7 +172,6 @@ export interface IGeoPointDto {
 export interface ICaptchaVerificationDto {
   captchaToken?: string
 }
-export interface ISessionDto extends InferType<typeof SessionDtoSchema> {};
 
 export interface IAuthUserDto {
   id: string,
@@ -206,50 +223,33 @@ export interface IImageDetailsDto {
   stubCssStyle: [string, string][]
 };
 
-export enum SignUpResultCode {
-  SUCCESS = 'SUCCESS',
-  ALREADY_EXISTS = 'ALREADY_EXISTS',
-  AUTOVERIFIED = 'AUTOVERIFIED'
-}
+
 export interface ISignUpResultDto {
-  code: SignUpResultCode
+  code: SignUpResultEnum
 }
 export interface ISignUpDto extends InferType<typeof SignUpDtoSchema> {};
 
-export enum SignUpCompleteResultCode {
-  SUCCESS = 'SUCCESS',
-  ALREADY_CONSUMED = 'ALREADY_CONSUMED',
-  LINK_INVALID = 'LINK_INVALID',
-  LINK_EXPIRED = 'LINK_EXPIRED'
-}
+
 export interface ISignUpCompleteResultDto {
-  code: SignUpCompleteResultCode
+  code: SignUpCompleteResultEnum
 }
 export interface ISignUpCompleteDto extends ICaptchaVerificationDto, InferType<typeof SignUpCompleteDtoSchema> {};
 
-export enum RecoverPasswordResultCode {
-  SUCCESS = 'SUCCESS',
-  USER_NOT_FOUND = 'USER_NOT_FOUND',
-  EMAIL_NOT_VERIFIED = 'EMAIL_NOT_VERIFIED'
-}
+
+
 export interface IRecoverPasswordResultDto {
-  code: RecoverPasswordResultCode
+  code: RecoverPasswordResultEnum
 }
 export interface IRecoverPasswordDto extends ICaptchaVerificationDto, InferType<typeof RecoverPasswordDtoSchema> {};
 
-export enum RecoverPasswordCompleteResultCode {
-  SUCCESS = 'SUCCESS',
-  ALREADY_CONSUMED = 'ALREADY_CONSUMED',
-  LINK_INVALID = 'LINK_INVALID',
-  LINK_EXPIRED = 'LINK_EXPIRED'
-}
+
 export interface IRecoverPasswordCompleteResultDto {
-  code: RecoverPasswordCompleteResultCode
+  code: RecoverPasswordCompleteResultEnum
 }
 export interface IRecoverPasswordCompleteDto extends InferType<typeof RecoverPasswordCompleteDtoSchema> {};
 
 export interface IUserAccountDto {
-  userId?: number,
+  userId?: string,
   firstName?: string,
   lastName?: string,
   emails?: string[],
@@ -260,7 +260,7 @@ export interface IUserAccountDto {
 };
 
 export interface IImageUploadResultDto {
-  id: number,
+  id: string,
   slug: string,
   timestamp: number
 };
@@ -291,20 +291,22 @@ export interface ICitiesSearchQuery extends InferType<typeof CitiesSearchQuerySc
 export interface IEntityCacheQuery extends InferType<typeof EntityCacheQuerySchema> {};
 export interface IBookingDownloadQuery extends InferType<typeof BookingDownloadQuerySchema> {};
 
+export interface ITestingInvalidateCacheDto extends InferType<typeof TestingInvalidateCacheDtoSchema>{};
 export interface ISearchFlightOffersMainParamsDto extends InferType<typeof SearchFlightOffersMainParamsDtoSchema> {};
 export interface ISearchFlightOffersParamsDto extends InferType<typeof SearchFlightOffersParamsDtoSchema> {};
 export interface ISearchStayOffersMainParamsDto extends InferType<typeof SearchStayOffersMainParamsDtoSchema> {};
 export interface ISearchStayOffersParamsDto extends InferType<typeof SearchStayOffersParamsDtoSchema> {};
 export interface ICreateOrUpdateStayReviewDto extends InferType<typeof CreateOrUpdateStayReviewDtoSchema> {};
+export interface ITestingPageCacheActionDto extends InferType<typeof TestingPageCacheActionDtoSchema> {};
 
 export interface IListItemDto {
-  id: number,
+  id: string,
   slug?: string,
   displayName: ILocalizableValueDto
 };
 
 export interface IPopularCityDto {
-  id: number,
+  id: string,
   slug: string,
   imgSlug: string,
   cityDisplayName: ILocalizableValueDto,
@@ -320,7 +322,7 @@ export interface IPopularCityDto {
 export type ISearchedCityHistoryDto = Omit<IPopularCityDto, 'promoPrice'> & { numStays: number };
 
 export interface ICompanyReviewDto {
-  id: number,
+  id: string,
   header: ILocalizableValueDto,
   body: ILocalizableValueDto,
   userName: ILocalizableValueDto,
@@ -332,7 +334,7 @@ export interface ICompanyReviewDto {
 
 export interface ITravelDetailsDto {
   city: {
-    id: number,
+    id: string,
     slug: string
   },
   header: ILocalizableValueDto,
@@ -345,7 +347,7 @@ export interface ITravelDetailsDto {
 }
 
 export interface IAirplaneImageDto {
-  id: number,
+  id: string,
   kind: AirplaneImageKind,
   order: number,
   image: {
@@ -355,32 +357,32 @@ export interface IAirplaneImageDto {
 };
 
 export interface IAirplaneDto {
-  id: number,
+  id: string,
   name: ILocalizableValueDto,
   images: IAirplaneImageDto[]
 }
 
 export interface ICityDto {
-  id: number,
+  id: string,
   slug: string,
   name: ILocalizableValueDto,
   geo: IGeoPointDto,
   utcOffsetMin: number,
   country: {
-    id: number,
+    id: string,
     name: ILocalizableValueDto
   }
 }
 
 export interface IAirportDto {
-  id: number,
+  id: string,
   name: ILocalizableValueDto,
   city: ICityDto,
   geo: IGeoPointDto
 }
 
 export interface IAirlineCompanyDto {
-  id: number,
+  id: string,
   name: ILocalizableValueDto,
   logoImage: {
     slug: string,
@@ -394,18 +396,18 @@ export interface IAirlineCompanyDto {
 }
 
 export interface IOfferDto {
-  id: number,
+  id: string,
   kind: OfferKind,
   totalPrice: number,
   isFavourite: boolean
 }
 
 export interface ISearchedFlightDto {
-  id: number,
-  airlineCompanyId: number,
-  airplaneId: number,
-  departAirportId: number,
-  arriveAirportId: number,
+  id: string,
+  airlineCompanyId: string,
+  airplaneId: string,
+  departAirportId: string,
+  arriveAirportId: string,
   departTimeUtc: string,
   arriveTimeUtc: string
 }
@@ -418,9 +420,9 @@ export interface ISearchedFlightOfferDto extends IOfferDto {
 }
 
 export interface ISearchedStayDto {
-  id: number,
+  id: string,
   slug: string,
-  cityId: number,
+  cityId: string,
   geo: IGeoPointDto,
   name: ILocalizableValueDto,
   numReviews: number,
@@ -458,7 +460,7 @@ export interface ISearchFlightOffersResultDto<TOfferDto = ISearchedFlightOfferDt
       from: number,
       to: number
     },
-    airlineCompanyIds?: number[]
+    airlineCompanyIds?: EntityId[]
   },
   topOffers?: ITopFlightOfferInfoDto[]
 }
@@ -487,7 +489,7 @@ export interface IOfferDetailsDto extends IOfferDto {
 }
 
 export interface IFlightDto {
-  id: number,
+  id: string,
   airlineCompany: IAirlineCompanyDto,
   airplane: IAirplaneDto,
   departAirport: IAirportDto,
@@ -504,16 +506,16 @@ export interface IFlightOfferDetailsDto extends IOfferDetailsDto {
 }
 
 export interface IStayDescriptionDto {
-  id: number,
+  id: string,
   textStr: ILocalizableValueDto,
   paragraphKind: StayDescriptionParagraphType,
   order: number
 }
 
 export interface IStayReviewDto {
-  id: number,
+  id: string,
   user: {
-    id: number,
+    id: string,
     avatar?: {
       slug: string,
       timestamp: number,
@@ -527,7 +529,7 @@ export interface IStayReviewDto {
 }
 
 export interface IStayDto {
-  id: number,
+  id: string,
   slug: string,
   city: ICityDto,
   geo: IGeoPointDto,
@@ -553,7 +555,7 @@ export interface IStayOfferDetailsDto extends IOfferDetailsDto {
 }
 
 export interface IModifyStayReviewResultDto {
-  reviewId: number
+  reviewId: string
 }
 
 export interface IStayReviewsDto {
@@ -561,10 +563,10 @@ export interface IStayReviewsDto {
 }
 
 export interface IBookingDetailsDto {
-  id: number,
+  id: string,
   kind: OfferKind,
   bookedUser: {
-    id: EntityId,
+    id: string,
     firstName?: string,
     lastName?: string,
     avatar?: {
@@ -578,7 +580,7 @@ export interface IBookingDetailsDto {
 }
 
 export interface IBookingResultDto {
-  bookingId: number
+  bookingId: string
 }
 
 export interface IUserFavouriteFlightOfferDto extends ISearchedFlightOfferDto {
@@ -594,7 +596,7 @@ export interface IUserFavouritesResultDto {
 
 export interface IUserTicketDto {
   bookedTimestamp: number,
-  bookingId: number
+  bookingId: string
 }
 export type IUserFlightTicketDto = ISearchedFlightOfferDto & IUserTicketDto;
 export type IUserStayTicketDto = ISearchedStayOfferDto & IUserTicketDto;
@@ -602,3 +604,11 @@ export interface IUserTicketsResultDto {
   flights: Omit<ISearchFlightOffersResultDto<IUserFlightTicketDto>, 'paramsNarrowing' | 'topOffers'>,
   stays: Omit<ISearchStayOffersResultDto<IUserStayTicketDto>, 'paramsNarrowing'>
 };
+
+export interface ITestingInvalidateCacheResultDto {
+  success: boolean
+}
+export interface ITestingPageCacheActionResultDto {
+  testId: EntityId | undefined
+}
+

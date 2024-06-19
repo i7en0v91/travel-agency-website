@@ -2,6 +2,7 @@
 
 import { type NavBarMode } from './../../shared/interfaces';
 import { getI18nResName2 } from './../../shared/i18n';
+import { getHtmlPagePath, HtmlPage } from './../../shared/page-query-params';
 
 const localePath = useLocalePath();
 
@@ -19,6 +20,6 @@ const logoCssClass = computed(() => {
 
 <template>
   <div class="nav-item nav-logo-list-item mt-xs-2">
-    <NuxtLink :class="logoCssClass" :to="localePath('/')" :aria-label="$t(getI18nResName2('ariaLabels', 'imgLinkMainPage'))" />
+    <NuxtLink :class="logoCssClass" :to="localePath(`/${getHtmlPagePath(HtmlPage.Index)}`)" :aria-label="$t(getI18nResName2('ariaLabels', 'imgLinkMainPage'))" />
   </div>
 </template>

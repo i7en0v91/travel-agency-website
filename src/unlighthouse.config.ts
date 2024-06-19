@@ -1,5 +1,6 @@
 import { defineConfig } from '@unlighthouse/core';
-import { CookieI18nLocale, PagePath } from './shared/constants';
+import { CookieI18nLocale } from './shared/constants';
+import { HtmlPage } from './shared/page-query-params';
 
 const excludedRoutesCommon = [
   '/ru',
@@ -14,7 +15,7 @@ export default defineConfig({
     useSystem: false
   },
   urls: [
-    `/${PagePath.StayDetails}/21` // scan only one page
+    `/${HtmlPage.StayDetails}/21` // scan only one page
   ],
   scanner: {
     samples: 1,
@@ -25,25 +26,25 @@ export default defineConfig({
     ...(process.env.UNLIGHTHOUSE_MODE === 'authenticated'
       ? {
           exclude: [...excludedRoutesCommon,
-            `/${PagePath.ForgotPasswordComplete}`,
-            `/${PagePath.ForgotPasswordSet}`,
-            `/${PagePath.ForgotPasswordVerify}`,
-            `/${PagePath.ForgotPassword}`,
-            `/${PagePath.Login}`,
-            `/${PagePath.SignupComplete}`,
-            `/${PagePath.SignupVerify}`,
-            `/${PagePath.Signup}`
+            `/${HtmlPage.ForgotPasswordComplete}`,
+            `/${HtmlPage.ForgotPasswordSet}`,
+            `/${HtmlPage.ForgotPasswordVerify}`,
+            `/${HtmlPage.ForgotPassword}`,
+            `/${HtmlPage.Login}`,
+            `/${HtmlPage.SignupComplete}`,
+            `/${HtmlPage.SignupVerify}`,
+            `/${HtmlPage.Signup}`
           ]
         }
       : {
         /*
           exclude: [...excludedRoutesCommon,
-            `/${PagePath.EmailVerifyComplete}`,
-            `/${PagePath.Account}`
+            `/${HtmlPage.EmailVerifyComplete}`,
+            `/${HtmlPage.Account}`
           ]
           */
           include: [
-            `/${PagePath.StayDetails}/21` // scan only one page
+            `/${HtmlPage.StayDetails}/21` // scan only one page
           ]
         })
   },

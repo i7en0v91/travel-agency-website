@@ -4,7 +4,8 @@ import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { type EntityDataAttrsOnly, type IFlightOffer, type OfferKind, ImageCategory } from './../../../shared/interfaces';
 import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
 import { getLocalizeableValue, getScoreClassResName, extractAirportCode, getValueForFlightDurationFormatting, getValueForTimeOfDayFormatting } from './../../../shared/common';
-import { type Locale, PagePath } from './../../../shared/constants';
+import { type Locale } from './../../../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../../../shared/page-query-params';
 import { useUserFavouritesStore } from './../../../stores/user-favourites-store';
 import { useOfferFavouriteStatus } from './../../../composables/offer-favourite-status';
 
@@ -134,7 +135,7 @@ async function favouriteBtnClick (): Promise<void> {
               kind="support"
               @click="favouriteBtnClick"
             />
-            <NuxtLink class="btn btn-primary brdr-1 search-flights-card-btn-details" :to="localePath(`/${PagePath.FlightDetails}/${offer.id}`)">
+            <NuxtLink class="btn btn-primary brdr-1 search-flights-card-btn-details" :to="localePath(`/${getHtmlPagePath(HtmlPage.FlightDetails)}/${offer.id}`)">
               {{ $t(getI18nResName2('searchFlights', 'viewDetails')) }}
             </NuxtLink>
           </div>

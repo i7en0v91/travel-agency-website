@@ -1,9 +1,10 @@
 import { joinURL } from 'ufo';
-import { PagePath, AllPagePaths, EntityIdPages, type Locale } from './../shared/constants';
-import { getOgImageFileName, isLandingPageUrl } from './../shared/common';
+import { type Locale } from './../shared/constants';
+import { HtmlPage, EntityIdPages } from '../shared/page-query-params';
+import { getOgImageFileName, lookupPageByUrl } from './../shared/common';
 import AppConfig from './../appconfig';
 
-export function useOgImage (component?: { name: string, props: any}) {
+export function useOgImage (component?: { name: string, props: any}, skipCache: boolean = false) {
   const route = useRoute();
   const { locale } = useI18n();
 
@@ -13,9 +14,9 @@ export function useOgImage (component?: { name: string, props: any}) {
     return;
   }
 
-  const defaultImgUrl = joinURL('/img', 'og', getOgImageFileName(PagePath.Index, locale.value as Locale));
+  const defaultImgUrl = joinURL('/img', 'og', getOgImageFileName(HtmlPage.Index, locale.value as Locale));
 
-  const currentPage = isLandingPageUrl(route.path) ? PagePath.Index : AllPagePaths.find(pp => pp !== PagePath.Index && route.path.includes(`/${pp.valueOf()}`));
+  const currentPage = lookupPageByUrl(route.path);
   if (currentPage === undefined) {
     logger.warn(`(og-image) failed to detect current page, using default, path=${route.path}, url=${defaultImgUrl}`);
     defineOgImage({
@@ -34,8 +35,10 @@ export function useOgImage (component?: { name: string, props: any}) {
   }
 
   if (component) {
-    logger.verbose(`(og-image) using component for og image, path=${route.path}, page=${currentPage}, component=${component.name}, props=${JSON.stringify(component.props)}`);
-    defineOgImageComponent(component.name, component.props);
+    logger.verbose(`(og-image) using component for og image, path=${route.path}, page=${currentPage}, component=${component.name}, skipCache=${skipCache}, props=${JSON.stringify(component.props)}`);
+    defineOgImageComponent(component.name, component.props, {
+      cacheMaxAgeSeconds: skipCache ? 0 : undefined
+    });
     return;
   }
 

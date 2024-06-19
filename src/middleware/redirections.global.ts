@@ -1,6 +1,7 @@
 import { CookieI18nLocale, DefaultLocale } from '../shared/constants';
+import { HtmlPage } from '../shared/page-query-params';
 import { getLocaleFromUrl } from './../shared/i18n';
-import { isLandingPageUrl } from './../shared/common';
+import { lookupPageByUrl } from './../shared/common';
 
 export default defineNuxtRouteMiddleware((to, from) => {
   if (import.meta.server) {
@@ -15,7 +16,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
       if (toLocale && (!fromLocale || toLocale !== fromLocale)) {
         logger.verbose(`(redirections.global) server, detected locale change, from=${fromLocale ?? '[none]'} to=${toLocale ?? '[none]'}`);
       } else if (!localeCookie.value && toLocale) {
-        if (toLocale !== DefaultLocale || !isLandingPageUrl(to.path)) {
+        if (toLocale !== DefaultLocale || lookupPageByUrl(to.path) !== HtmlPage.Index) {
           logger.verbose(`(redirections.global) server, setting locale cookie: ${toLocale}`);
           localeCookie.value = toLocale;
         }

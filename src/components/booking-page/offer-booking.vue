@@ -4,7 +4,8 @@ import { type ILocalizableValue, ImageCategory, type StayServiceLevel, type Enti
 import PaymentController from './../payments/payment-controller.vue';
 import PricingDetails from './pricing-details.vue';
 import { type I18nResName, getI18nResName2, getI18nResName3 } from './../../shared/i18n';
-import { AvailableLocaleCodes, PagePath, UserNotificationLevel } from './../../shared/constants';
+import { AvailableLocaleCodes, UserNotificationLevel } from './../../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
 import ComponentWaiterIndicator from './../../components/component-waiting-indicator.vue';
 
 interface IProps {
@@ -22,7 +23,7 @@ const { t } = useI18n();
 const localePath = useLocalePath();
 
 const userNotificationStore = useUserNotificationStore();
-const offerBookingStoreFactory = useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
+const offerBookingStoreFactory = await useOfferBookingStoreFactory();
 const offerBookingStore = await offerBookingStoreFactory.createNewBooking<TOffer>(props.offerId, props.offerKind, props.serviceLevel);
 
 const offer = ref<EntityDataAttrsOnly<IFlightOffer | IStayOfferDetails> | undefined>(offerBookingStore.booking?.offer as EntityDataAttrsOnly<TOffer>);
@@ -48,10 +49,10 @@ async function onPay (): Promise<void> {
   paymentProcessing.value = true;
   try {
     const bookingId = await offerBookingStore.store();
-    await navigateTo(localePath(`/${PagePath.BookingDetails}/${bookingId}`));
+    await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.BookingDetails)}/${bookingId}`));
     logger.debug(`(OfferBooking) pay handler completed, ctrlKey=${props.ctrlKey}, offerId=${props.offerId}, kind=${props.offerKind}`);
   } catch (err: any) {
-    logger.warn(`(OfferBooking) error occured while executing book HTTP request, ctrlKey=${props.ctrlKey}, offerId=${props.offerId}, kind=${props.offerKind}`, err);
+    logger.warn(`(OfferBooking) exception occured while executing book HTTP request, ctrlKey=${props.ctrlKey}, offerId=${props.offerId}, kind=${props.offerKind}`, err);
     userNotificationStore.show({
       level: UserNotificationLevel.ERROR,
       resName: getI18nResName2('appErrors', 'unknown')
@@ -93,7 +94,7 @@ async function onPay (): Promise<void> {
             reviewsCount: (offer as EntityDataAttrsOnly<IFlightOffer>).departFlight.airlineCompany.numReviews
           } : {
             sub: (offer as EntityDataAttrsOnly<IStayOfferDetails>).stay.name,
-            main: getI18ResAsLocalizableValue(getI18nResName3('stayDetailsPage', 'availableRooms', props.serviceLevel === 'base' ? 'base' : 'city')),
+            main: getI18ResAsLocalizableValue(getI18nResName3('stayDetailsPage', 'availableRooms', props.serviceLevel === 'Base' ? 'base' : 'city')),
             reviewScore: (offer as EntityDataAttrsOnly<IStayOfferDetails>).stay.reviewScore,
             reviewsCount: (offer as EntityDataAttrsOnly<IStayOfferDetails>).stay.numReviews
           }) : undefined"

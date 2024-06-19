@@ -1,18 +1,15 @@
 import type { H3Event } from 'h3';
-import isString from 'lodash-es/isString';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import { type EntityId } from '../../../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';
 import { type IUserAccountDto } from '../../dto';
 import { getServerSession } from '#auth';
+import { extractUserIdFromSession } from './../../../server/utils/auth';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const userLogic = ServerServicesLocator.getUserLogic();
   const authSession = await getServerSession(event);
-  let userId : EntityId | undefined = (authSession as any)?.id as EntityId;
-  if (userId && isString(userId)) {
-    userId = parseInt(userId);
-  }
+  const userId : EntityId | undefined = extractUserIdFromSession(authSession);
   if (!userId) {
     throw new AppException(
       AppExceptionCodeEnum.UNAUTHORIZED,
@@ -21,7 +18,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  const user = await userLogic.getUser(userId, 'profile');
+  const user = await userLogic.getUser(userId, 'profile', event);
   if (!user) {
     throw new AppException(
       AppExceptionCodeEnum.OBJECT_NOT_FOUND,

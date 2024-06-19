@@ -157,10 +157,10 @@ export function mapStayOffer (value: IStayOfferDetails): IStayOfferDetailsDto {
     createdUtc: value.createdUtc.toISOString(),
     modifiedUtc: value.modifiedUtc.toISOString(),
     prices: {
-      base: value.prices.base.toNumber(),
-      'cityView-1': value.prices['cityView-1'].toNumber(),
-      'cityView-2': value.prices['cityView-2'].toNumber(),
-      'cityView-3': value.prices['cityView-3'].toNumber()
+      Base: value.prices.Base.toNumber(),
+      CityView1: value.prices.CityView1.toNumber(),
+      CityView2: value.prices.CityView2.toNumber(),
+      CityView3: value.prices.CityView3.toNumber()
     }
   };
   return mapped;

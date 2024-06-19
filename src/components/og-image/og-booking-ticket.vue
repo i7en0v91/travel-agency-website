@@ -4,7 +4,8 @@ import { withQuery, joinURL } from 'ufo';
 import isString from 'lodash-es/isString';
 import { type IBookingTicketStayTitleProps, ImageCategory, type IBookingTicketProps, type IImageCategoryInfo, type IBookingTicketFlightGfxProps } from './../../shared/interfaces';
 import { getLocalizeableValue, getOgImageFileName } from './../../shared/common';
-import { ApiEndpointImage, type Locale, PagePath, type Theme, DefaultLocale } from './../../shared/constants';
+import { OgImageExt, ApiEndpointImage, type Locale, type Theme, DefaultLocale } from './../../shared/constants';
+import { HtmlPage } from './../../shared/page-query-params';
 import AppConfig from './../../appconfig';
 import { getI18nResName2 } from './../../shared/i18n';
 
@@ -36,10 +37,10 @@ const isError = ref(false);
 const props = defineProps<Required<IBookingTicketProps & { theme: Theme }>>();
 
 const logger = CommonServicesLocator.getLogger();
-logger.verbose(`(OgBookingTicket) starting, ctrlKey=${props.ctrlKey}, offerKind=${props.offerKind}, gfx=${JSON.stringify(props.titleOrGfx)}, theme=${props.theme}`);
+logger.verbose(`(OgBookingTicket) component setup, ctrlKey=${props.ctrlKey}, offerKind=${props.offerKind}, gfx=${JSON.stringify(props.titleOrGfx)}, theme=${props.theme}`);
 
 const { locale } = useI18n();
-const requestLocale = (useRequestEvent()?.context.ogImageRequest?.locale) ?? DefaultLocale;
+const requestLocale = useRequestEvent()?.context.ogImageContext?.locale ?? DefaultLocale;
 locale.value = requestLocale;
 
 let avatarImageSize: IImageCategoryInfo;
@@ -51,9 +52,9 @@ try {
   isError.value = true;
 }
 
-const defaultImgUrl = joinURL('/img', 'og', getOgImageFileName(PagePath.Index, locale.value as Locale));
+const defaultImgUrl = joinURL('/img', 'og', getOgImageFileName(HtmlPage.Index, locale.value as Locale));
 const avatarImgUrl = props.generalInfo.avatar ? withQuery(ApiEndpointImage, { slug: props.generalInfo.avatar!.slug, category: ImageCategory.UserAvatar }) : undefined;
-const flightRouteLabelImgUrl = joinURL('/img', 'og', 'og-image-link-flights.png');
+const flightRouteLabelImgUrl = joinURL('/img', 'og', `og-image-link-flights.${OgImageExt}`);
 
 const detailsIconStyle = {
   width: '22px',
@@ -104,7 +105,7 @@ const gfxFlightRouteLabelStyles = [
 ];
 
 function onError (err: any) {
-  logger.warn('(OgBookingTicket) render error', err);
+  logger.warn('(OgBookingTicket) render exception', err);
   isError.value = true;
 }
 

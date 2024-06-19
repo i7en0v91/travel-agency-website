@@ -1,21 +1,18 @@
 import type { H3Event } from 'h3';
-import isString from 'lodash-es/isString';
 import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import { type IUserFavouritesResultDto } from '../../dto';
 import type { EntityId } from '../../../shared/interfaces';
 import { mapSearchFlightOfferResultEntities, mapSearchedFlightOffer, mapSearchedStayOffer, mapSearchStayOfferResultEntities } from './../../utils/mappers';
 import { getServerSession } from '#auth';
+import { extractUserIdFromSession } from './../../../server/utils/auth';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const flightsLogic = ServerServicesLocator.getFlightsLogic();
   const staysLogic = ServerServicesLocator.getStaysLogic();
 
   const authSession = await getServerSession(event);
-  let userId : EntityId | undefined = (authSession as any)?.id as EntityId;
-  if (userId && isString(userId)) {
-    userId = parseInt(userId);
-  }
+  const userId: EntityId | undefined = extractUserIdFromSession(authSession);
   if (!userId) {
     throw new AppException(
       AppExceptionCodeEnum.FORBIDDEN,

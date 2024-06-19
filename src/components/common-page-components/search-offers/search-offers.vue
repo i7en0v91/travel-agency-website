@@ -4,7 +4,8 @@ import type { Tooltip } from 'floating-vue';
 import dayjs from 'dayjs';
 import isEqual from 'lodash-es/isEqual';
 import pick from 'lodash-es/pick';
-import { CheckInOutDateUrlFormat, TooltipHideTimeout, PagePath } from './../../../shared/constants';
+import { CheckInOutDateUrlFormat, TooltipHideTimeout } from './../../../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../../../shared/page-query-params';
 import OptionButtonGroup from './../../../components/option-buttons/option-button-group.vue';
 import { getI18nResName1, getI18nResName2 } from './../../../shared/i18n';
 import SearchFlightOffers from './search-flight-offers.vue';
@@ -63,7 +64,7 @@ async function resolveFlightCitiesSlugs (searchParams: Partial<ISearchFlightOffe
 
   try {
     logger.verbose(`(SearchOffers) resolving cities slugs, items=${JSON.stringify(citiesToResolve)}`);
-    const resolvedCities = (await clientEntityCache!.get<'City', IEntityCacheCityItem>(citiesToResolve.map(i => i.id), 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
+    const resolvedCities = (await clientEntityCache!.get<'City', IEntityCacheCityItem>(citiesToResolve.map(i => i.id), [], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
     if (resolvedCities.length === 2) {
       fromCitySlug = resolvedCities[0].slug;
       toCitySlug = resolvedCities[1].slug;
@@ -96,7 +97,7 @@ async function resolveDestinationCitySlug (searchParams: Partial<ISearchStayOffe
   try {
     const cityId = searchParams.city.id;
     logger.verbose(`(SearchOffers) resolving stay's city slug', cityId=${cityId}`);
-    const resolvedCities = (await clientEntityCache!.get<'City', IEntityCacheCityItem>([cityId], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
+    const resolvedCities = (await clientEntityCache!.get<'City', IEntityCacheCityItem>([cityId], [], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
     const result = resolvedCities[0].slug;
     logger.verbose(`(SearchOffers) slugs resolved with fetch request, result=${result}`);
     return result;
@@ -114,7 +115,7 @@ async function validateAndGetRouteParams (): Promise<RouteLocationRaw | undefine
     const resolvedCitySlugs = await resolveFlightCitiesSlugs(userParams);
 
     return {
-      path: localePath(PagePath.FindFlights),
+      path: localePath(getHtmlPagePath(HtmlPage.FindFlights)),
       force: false,
       query: {
         class: userParams.class,
@@ -132,7 +133,7 @@ async function validateAndGetRouteParams (): Promise<RouteLocationRaw | undefine
     const resolvedCitySlug = await resolveDestinationCitySlug(userParams);
 
     return {
-      path: localePath(`${PagePath.FindStays}`),
+      path: localePath(`${getHtmlPagePath(HtmlPage.FindStays)}`),
       force: false,
       query: {
         citySlug: resolvedCitySlug,
@@ -165,7 +166,7 @@ async function applyParamsAndFetchData (): Promise<void> {
   if (searchRoute) {
     store.resetFetchState();
 
-    const isOnSearchPage = router.currentRoute.value.path.includes(PagePath.FindFlights) || router.currentRoute.value.path.includes(PagePath.FindStays);
+    const isOnSearchPage = router.currentRoute.value.path.includes(getHtmlPagePath(HtmlPage.FindFlights)) || router.currentRoute.value.path.includes(getHtmlPagePath(HtmlPage.FindStays));
     if (isOnSearchPage) {
       logger.info(`(SearchOffers) replacing search page query params, ctrlKey=${props.ctrlKey}`, searchRoute);
       router.replace(searchRoute);

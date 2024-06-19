@@ -11,6 +11,7 @@ import AppConfig from './../../appconfig';
 import { type IListItemDto } from './../../server/dto';
 import { UserNotificationLevel, type Locale, TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
 import { AppException, AppExceptionCodeEnum } from './../../shared/exceptions';
+import { HeaderAppVersion } from './../../shared/constants';
 
 interface IProps {
   ctrlKey: string,
@@ -230,7 +231,7 @@ async function tryLookupLocalizeableDisplayNameOnClient (id: EntityId): Promise<
 async function getCityFromCache (cityId: EntityId, fetchFromServer: boolean): Promise<IEntityCacheCityItem | undefined> {
   const entityCache = ClientServicesLocator.getEntityCache();
   const entityCacheType = getCacheEntityType();
-  const lookupResult = await entityCache.get<'City', IEntityCacheCityItem>([cityId], entityCacheType, fetchFromServer ? { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default } : false);
+  const lookupResult = await entityCache.get<'City', IEntityCacheCityItem>([cityId], [], entityCacheType, fetchFromServer ? { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default } : false);
   return (lookupResult?.length ?? 0) > 0 ? lookupResult![0] : undefined;
 }
 
@@ -240,6 +241,7 @@ const { data, error, status, refresh } = await useFetch(props.itemSearchUrl,
     method: 'get',
     server: false,
     lazy: true,
+    headers: [[HeaderAppVersion, AppConfig.versioning.appVersion.toString()]],
     query: {
       locale,
       size: props.maxSuggestionItemsCount,

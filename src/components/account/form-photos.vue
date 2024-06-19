@@ -2,10 +2,10 @@
 
 import { Pagination, Autoplay } from 'swiper/modules';
 import { getI18nResName1 } from './../../shared/i18n';
-import { ImageCategory } from './../../shared/interfaces';
-import { ApiEndpointImageList } from './../../shared/constants';
+import { ApiEndpointAuthFormPhotos, HeaderAppVersion } from './../../shared/constants';
 import AuthFormsPhoto from './../../components/account/photo-slide.vue';
 import { type IImageDetailsDto } from './../../server/dto';
+import AppConfig from './../../appconfig';
 
 interface IProps {
   ctrlKey: string
@@ -15,11 +15,12 @@ defineProps<IProps>();
 const isError = ref(false);
 const logger = CommonServicesLocator.getLogger();
 
-const authFormsImagesUrl = `${ApiEndpointImageList}?category=${ImageCategory.AuthFormsImage}`;
+const authFormsImagesUrl = ApiEndpointAuthFormPhotos;
 const { error, data } = await useFetch(authFormsImagesUrl,
   {
     server: true,
     lazy: true,
+    headers: [[HeaderAppVersion, AppConfig.versioning.appVersion.toString()]],
     transform: (response: any) => {
       const dto = response as IImageDetailsDto[];
       if (!dto) {

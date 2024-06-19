@@ -27,7 +27,7 @@ export function isRobot () {
         return false;
       }
     } catch (err: any) {
-      logger?.warn('(is-robot) got error while checking for bot', err);
+      logger?.warn('(is-robot) got exception while checking for bot', err);
       return true;
     }
   }

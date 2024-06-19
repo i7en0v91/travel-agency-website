@@ -8,7 +8,8 @@ import { getI18nResName3 } from './../../shared/i18n';
 import { clampTextLine, getLastSelectedOptionStorageKey } from './../../shared/common';
 import { updateTabIndices } from './../../shared/dom';
 import NavUserMenuItem from './nav-user-menu-item.vue';
-import { UserAccountTabAccount, UserAccountTabPayments, UserAccountOptionButtonGroup, TabIndicesUpdateDefaultTimeout, PagePath, UserAccountOptionButtonPayments, UserAccountOptionButtonAccount } from './../../shared/constants';
+import { UserAccountTabAccount, UserAccountTabPayments, UserAccountOptionButtonGroup, TabIndicesUpdateDefaultTimeout, UserAccountOptionButtonPayments, UserAccountOptionButtonAccount } from './../../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
 import AppConfig from './../../appconfig';
 
 
@@ -46,12 +47,12 @@ async function getBookingPageSignOutUrl (): Promise<string> {
     const route = useRoute();
 
     const bookingParam = route.params.id!.toString();
-    const bookingId = parseInt(bookingParam);
-    const offerBookingStoreFactory = useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
-    const offerBookingStore = await offerBookingStoreFactory.getUserBooking(bookingId, !!nuxtApp.ssrContext?.event.context.ogImageRequest, nuxtApp.ssrContext?.event);
+    const bookingId = bookingParam;
+    const offerBookingStoreFactory = await useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
+    const offerBookingStore = await offerBookingStoreFactory.getUserBooking(bookingId, !!nuxtApp.ssrContext?.event.context.ogImageContext, nuxtApp.ssrContext?.event);
     const offerId = offerBookingStore.offerId;
     const offerKind = offerBookingStore.offerKind;
-    const urlPath = localePath(offerKind === 'flights' ? `/${PagePath.FlightDetails}/${offerId}` : `/${PagePath.StayDetails}/${offerId}`);
+    const urlPath = localePath(offerKind === 'flights' ? `/${getHtmlPagePath(HtmlPage.FlightDetails)}/${offerId}` : `/${getHtmlPagePath(HtmlPage.StayDetails)}/${offerId}`);
 
     const parsedRoute = parseURL(route.fullPath);
     parsedRoute.pathname = urlPath;
@@ -60,7 +61,7 @@ async function getBookingPageSignOutUrl (): Promise<string> {
     return url;
   } catch (err: any) {
     logger.warn(`(NavUser) failed to obtain booking signout url: ctrlKey=${props.ctrlKey}`, err);
-    return localePath(`/${PagePath.Index}`);
+    return localePath(`/${getHtmlPagePath(HtmlPage.Index)}`);
   }
 }
 
@@ -68,7 +69,7 @@ async function onSignOutClick (): Promise<void> {
   const route = useRoute();
 
   let callbackUrl = route.fullPath;
-  if (callbackUrl.includes(PagePath.BookingDetails)) {
+  if (callbackUrl.includes(getHtmlPagePath(HtmlPage.BookingDetails))) {
     callbackUrl = await getBookingPageSignOutUrl();
   }
 
@@ -80,7 +81,7 @@ function onMenuItemClick () {
   setTimeout(hideDropdown, 0);
 }
 
-const isCurrentlyOnAccountPage = () => useRoute().path.includes(`/${PagePath.Account}`);
+const isCurrentlyOnAccountPage = () => useRoute().path.includes(`/${getHtmlPagePath(HtmlPage.Account)}`);
 
 async function onPaymentsMenuItemClick (): Promise<void> {
   const onAccountPage = isCurrentlyOnAccountPage();
@@ -93,7 +94,7 @@ async function onPaymentsMenuItemClick (): Promise<void> {
     // set payment tab to be automatically selected on mount
     const optionKey = getLastSelectedOptionStorageKey(UserAccountOptionButtonGroup);
     localStorage.setItem(optionKey, UserAccountOptionButtonPayments);
-    await navigateTo(localePath(`/${PagePath.Account}`));
+    await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.Account)}`));
   }
 }
 
@@ -108,7 +109,7 @@ async function onSettingsMenuItemClick (): Promise<void> {
     // set payment tab to be automatically selected on mount
     const optionKey = getLastSelectedOptionStorageKey(UserAccountOptionButtonGroup);
     localStorage.setItem(optionKey, UserAccountOptionButtonAccount);
-    await navigateTo(localePath(`/${PagePath.Account}`));
+    await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.Account)}`));
   }
 }
 
@@ -164,8 +165,8 @@ async function onSettingsMenuItemClick (): Promise<void> {
           </div>
           <div class="nav-user-menu-list">
             <div class="nav-user-menu-divisor mt-xs-1 mb-xs-1" role="separator"/>
-            <NavUserMenuItem ctrl-key="navUserMenuMyAccount" :text-res-name="getI18nResName3('nav', 'userBox', 'myAccount')" :to="localePath(`/${PagePath.Account}`)" icon="user" @click="onMenuItemClick" />
-            <NavUserMenuItem ctrl-key="navUserMenuFavourites" :text-res-name="getI18nResName3('nav', 'userBox', 'favourites')" :to="localePath(`/${PagePath.Favourites}`)" icon="heart" @click="onMenuItemClick" />
+            <NavUserMenuItem ctrl-key="navUserMenuMyAccount" :text-res-name="getI18nResName3('nav', 'userBox', 'myAccount')" :to="localePath(`/${getHtmlPagePath(HtmlPage.Account)}`)" icon="user" @click="onMenuItemClick" />
+            <NavUserMenuItem ctrl-key="navUserMenuFavourites" :text-res-name="getI18nResName3('nav', 'userBox', 'favourites')" :to="localePath(`/${getHtmlPagePath(HtmlPage.Favourites)}`)" icon="heart" @click="onMenuItemClick" />
             <NavUserMenuItem ctrl-key="navUserMenuPayments" :text-res-name="getI18nResName3('nav', 'userBox', 'payments')" icon="credit-card" @click="onPaymentsMenuItemClick" />
             <NavUserMenuItem ctrl-key="navUserMenuSettings" :text-res-name="getI18nResName3('nav', 'userBox', 'settings')" icon="gear" @click="onSettingsMenuItemClick" />
             <div class="nav-user-menu-divisor mt-xs-3 mb-xs-2" role="separator"/>

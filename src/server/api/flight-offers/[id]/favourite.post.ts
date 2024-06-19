@@ -1,10 +1,10 @@
 import type { H3Event } from 'h3';
-import isString from 'lodash-es/isString';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
 import { type IToggleFavouriteOfferResultDto } from '../../../dto';
 import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
 import type { EntityId } from '../../../../shared/interfaces';
 import { getServerSession } from '#auth';
+import { extractUserIdFromSession } from './../../../../server/utils/auth';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const logger = ServerServicesLocator.getLogger();
@@ -20,22 +20,16 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  let offerId: number | undefined;
-  try {
-    offerId = parseInt(offerParam);
-  } catch (err: any) {
-    logger.warn(`(api:flight-favourite) failed to parse flight offer id: param=${offerParam}`);
+  const offerId: EntityId | undefined = offerParam;
+  const authSession = await getServerSession(event);
+  const userId = extractUserIdFromSession(authSession);
+  if(!userId) {
+    logger.warn(`(api:flight-favourite) failed to parse user id: path=${event.path}`);
     throw new AppException(
-      AppExceptionCodeEnum.BAD_REQUEST,
-      'failed to parse offerId parameter',
+      AppExceptionCodeEnum.UNKNOWN,
+      'cannot obtain user id',
       'error-stub'
     );
-  }
-
-  const authSession = await getServerSession(event);
-  let userId : EntityId | undefined = (authSession as any)?.id as EntityId;
-  if (userId && isString(userId)) {
-    userId = parseInt(userId);
   }
 
   const isFavourite = await flightsLogic.toggleFavourite(offerId, userId);

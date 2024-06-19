@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
-import { PagePath } from './../../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
 
 interface IProps {
   ctrlKey: string,
@@ -28,7 +28,7 @@ const localePath = useLocalePath();
       <p class="mt-xs-2">
         {{ $t(getI18nResName3('indexPage', `${page}ImgLink`, 'sub')) }}
       </p>
-      <NuxtLink class="btn btn-primary btn-icon icon-paper-plane brdr-1 mt-xs-3" :to="localePath(`${page === 'flights' ? `/${PagePath.Flights}` : `/${PagePath.Stays}`}`)">
+      <NuxtLink class="btn btn-primary btn-icon icon-paper-plane brdr-1 mt-xs-3" :to="localePath(`${page === 'flights' ? `/${getHtmlPagePath(HtmlPage.Flights)}` : `/${getHtmlPagePath(HtmlPage.Stays)}`}`)">
         {{ $t(getI18nResName3('indexPage', `${page}ImgLink`, 'btn')) }}
       </NuxtLink>
     </section>

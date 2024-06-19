@@ -24,10 +24,10 @@ const props = withDefaults(defineProps<IProps>(), {
   reviewScore: undefined
 });
 
-const titleStr = computed(() => props.description?.find(d => d.paragraphKind === 'title')?.textStr);
-const mainStr = computed(() => props.description?.find(d => d.paragraphKind === 'main')?.textStr);
+const titleStr = computed(() => props.description?.find(d => d.paragraphKind === 'Title')?.textStr);
+const mainStr = computed(() => props.description?.find(d => d.paragraphKind === 'Main')?.textStr);
 const featureStrs = computed(() => {
-  const featureStrs = props.description?.filter(d => d.paragraphKind === 'feature-caption' || d.paragraphKind === 'feature-text');
+  const featureStrs = props.description?.filter(d => d.paragraphKind === 'FeatureCaption' || d.paragraphKind === 'FeatureText');
   if (!featureStrs) {
     return undefined;
   }

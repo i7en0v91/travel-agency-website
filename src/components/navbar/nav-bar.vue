@@ -10,8 +10,9 @@ import NavLogo from './nav-logo.vue';
 import NavSearchPageLinks from './nav-search-page-links.vue';
 import LocaleSwitcher from './locale-switcher.vue';
 import ThemeSwitcher from './theme-switcher.vue';
-import { PagePath, AllPagePaths, KeyCodeEsc } from './../../shared/constants';
-import { isLandingPageUrl } from './../../shared/common';
+import { KeyCodeEsc } from './../../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
+import { lookupPageByUrl } from './../../shared/common';
 
 const localePath = useLocalePath();
 const { status } = useAuth();
@@ -36,8 +37,8 @@ userAccountStore.getUserAccount(); // start auth session refreshing in backgroun
 
 async function getBookingOfferKind (bookingId: EntityId): Promise<OfferKind> {
   logger.verbose(`(NavUser) obtaining booking offer kind: ctrlKey=${props.ctrlKey}, bookingId=${bookingId}`);
-  const offerBookingStoreFactory = useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
-  const offerBookingStore = await offerBookingStoreFactory.getUserBooking(bookingId, !!nuxtApp.ssrContext?.event.context.ogImageRequest, nuxtApp.ssrContext?.event);
+  const offerBookingStoreFactory = await useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
+  const offerBookingStore = await offerBookingStoreFactory.getUserBooking(bookingId, !!nuxtApp.ssrContext?.event.context.ogImageContext, nuxtApp.ssrContext?.event);
   const offerId = offerBookingStore.offerId;
   const offerKind = offerBookingStore.offerKind;
   logger.verbose(`(NavUser) booking offer kind obtained: ctrlKey=${props.ctrlKey}, bookingId=${bookingId}, offerId=${offerId}, offerKind=${offerKind}`);
@@ -45,7 +46,7 @@ async function getBookingOfferKind (bookingId: EntityId): Promise<OfferKind> {
 }
 
 async function getActivePageLink () : Promise<ActivePageLink | undefined> {
-  const currentPage = isLandingPageUrl(route.path) ? PagePath.Index : AllPagePaths.find(pp => pp !== PagePath.Index && route.path.includes(`/${pp.valueOf()}`));
+  const currentPage = lookupPageByUrl(route.path);
   if (currentPage === undefined) {
     logger.warn(`(NavBar) failed to detected current page, ctrlKey=${props.ctrlKey}, page=${route.path}`);
     return undefined;
@@ -53,32 +54,32 @@ async function getActivePageLink () : Promise<ActivePageLink | undefined> {
 
   let result: ActivePageLink | undefined;
   switch (currentPage) {
-    case PagePath.BookFlight:
-    case PagePath.FindFlights:
-    case PagePath.FlightDetails:
-    case PagePath.Flights:
-      result = PagePath.Flights;
+    case HtmlPage.BookFlight:
+    case HtmlPage.FindFlights:
+    case HtmlPage.FlightDetails:
+    case HtmlPage.Flights:
+      result = HtmlPage.Flights;
       break;
-    case PagePath.BookStay:
-    case PagePath.FindStays:
-    case PagePath.StayDetails:
-    case PagePath.Stays:
-      result = PagePath.Stays;
+    case HtmlPage.BookStay:
+    case HtmlPage.FindStays:
+    case HtmlPage.StayDetails:
+    case HtmlPage.Stays:
+      result = HtmlPage.Stays;
       break;
-    case PagePath.Favourites:
-      result = PagePath.Favourites;
+    case HtmlPage.Favourites:
+      result = HtmlPage.Favourites;
       break;
     default:
       result = undefined;
       break;
   }
-  if (!result && currentPage === PagePath.BookingDetails) {
+  if (!result && currentPage === HtmlPage.BookingDetails) {
     logger.verbose(`(NavBar) current page link is booking page, detecting offer kind, ctrlKey=${props.ctrlKey}, path=${route.path}`);
     try {
       const bookingParam = route.params.id!.toString();
-      const bookingId = parseInt(bookingParam);
+      const bookingId = bookingParam;
       const offerKind = await getBookingOfferKind(bookingId);
-      result = offerKind === 'flights' ? PagePath.Flights : PagePath.Stays;
+      result = offerKind === 'flights' ? HtmlPage.Flights : HtmlPage.Stays;
     } catch (err: any) {
       logger.warn(`(NavUser) failed to obtain booking offer kind url: ctrlKey=${props.ctrlKey}, path=${route.path}`, err);
       result = undefined;
@@ -172,9 +173,9 @@ onBeforeUnmount(() => {
           <NavLink
             ctrl-key="navLinkFavourites"
             link-class="nav-user-favourites mr-l-3"
-            :to="localePath(`/${PagePath.Favourites}`)"
+            :to="localePath(`/${getHtmlPagePath(HtmlPage.Favourites)}`)"
             :text-res-name="getI18nResName3('nav', 'userBox', 'favourites')"
-            :is-active="activePageLink === PagePath.Favourites"
+            :is-active="activePageLink === HtmlPage.Favourites"
             icon="favourite"
           />
         </div>
@@ -187,13 +188,13 @@ onBeforeUnmount(() => {
               :id="`${ctrlKey}-login-link`"
               ctrl-key="navLogin"
               link-class="ml-l-2"
-              :to="withQuery(localePath(`/${PagePath.Login}`), { callbackUrl: withQuery(route.path, route.query) })"
+              :to="withQuery(localePath(`/${getHtmlPagePath(HtmlPage.Login)}`), { callbackUrl: withQuery(route.path, route.query) })"
               :text-res-name="getI18nResName2('nav', 'login')"
             />
             <NavLink
               link-class="btn nav-signup-btn"
               ctrl-key="navSignUp"
-              :to="localePath(`/${PagePath.Signup}`)"
+              :to="localePath(`/${getHtmlPagePath(HtmlPage.Signup)}`)"
               :text-res-name="getI18nResName2('nav', 'signUp')"
             />
           </div>

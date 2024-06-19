@@ -40,7 +40,7 @@ const { locale } = useI18n();
     >
       <div class="stay-details-card-general mb-xs-3">
         <h1 class="stay-details-card-general-title">
-          {{ $t(getI18nResName3('stayDetailsPage', 'availableRooms', serviceLevel === 'base' ? 'base' : 'city')) }}
+          {{ $t(getI18nResName3('stayDetailsPage', 'availableRooms', serviceLevel === 'Base' ? 'base' : 'city')) }}
         </h1>
         <div class="stay-details-card-general-price">
           <span v-if="price">{{ $n(Math.floor(price), 'currency') }}<wbr>&#47;<span class="stays-price-night">{{ $t(getI18nResName2('searchStays', 'night')) }}</span></span>

@@ -7,20 +7,11 @@ import AppConfig from './../../../appconfig';
 
 function readCityIdParameter (event : H3Event): EntityId {
   const query = getQuery(event);
-  const cityIdParam = query.cityId as string;
+  const cityIdParam = query.cityId as EntityId;
   if ((cityIdParam?.length ?? 0) === 0) {
     throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'city [id] parameter was not specified in query', 'error-stub');
   }
-  let cityId = 0;
-  try {
-    cityId = parseInt(cityIdParam);
-  } catch (err: any) {
-    throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'failed to parse city [id] parameter', 'error-stub');
-  }
-  if (!cityId) {
-    throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'city [id] parameter has invalid format', 'error-stub');
-  }
-  return cityId;
+  return cityIdParam;
 }
 
 export default defineWebApiEventHandler(async (event : H3Event) => {

@@ -38,37 +38,6 @@ export const CREDENTIALS_TESTUSER_PROFILE = {
   email: 'credentialstestuser@localhost.test'
 };
 
-export async function delay (milliseconds: number) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  await new Promise<void>((resolve, reject) => { setTimeout(() => resolve(), milliseconds); });
-}
-
-/**
- * Spin waits until specified condition is TRUE
- * @param condition predicate to check
- * @param timeoutSecs maximum number of seconds to wait for {@link condition} to become TRUE
- * @returns TRUE if condition has been met until timeout; FALSE otherwise
- */
-export async function spinWait (condition: () => Promise<boolean>, timeoutSecs: number): Promise<boolean> {
-  const startWait = process.uptime();
-  let conditionMet = await condition();
-  if (conditionMet) {
-    return true;
-  }
-
-  while (!conditionMet) {
-    const elapsedSecs = process.uptime() - startWait;
-    if (elapsedSecs > timeoutSecs) {
-      return false;
-    }
-
-    await delay(1000);
-    conditionMet = await condition();
-  }
-
-  return true;
-}
-
 let fileLogger: IAppLogger | undefined;
 function createFileLogger (prefix: string) : IAppLogger {
   if (!fileLogger) {
@@ -134,8 +103,9 @@ function createConsoleLogger (prefix: string) : IAppLogger {
   return consoleLogger;
 }
 
-export function createLogger (prefix: string) : IAppLogger {
-  if ((globalThis as any).window) {
+export function createLogger (prefix: string, preferFile?: boolean) : IAppLogger {
+  preferFile ??= true;
+  if ((globalThis as any).window && !preferFile) {
     return createConsoleLogger(prefix);
   } else {
     return createFileLogger(prefix);

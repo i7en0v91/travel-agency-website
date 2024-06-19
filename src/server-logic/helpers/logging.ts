@@ -22,7 +22,6 @@ export class ServerLogger implements IAppLogger {
   }
 
   lowerWarnsWithoutErrorLevel (useInfoLevel: boolean): void {
-    console.info(`lowering warns without error log level, useInfoLevel=${useInfoLevel}`);
     this.lowerWarnsLevel = useInfoLevel;
   }
 

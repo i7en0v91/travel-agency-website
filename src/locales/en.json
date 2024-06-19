@@ -9,7 +9,8 @@
     "captchaError": "Access verification error. Check your network connectivity, then reload page and try again",
     "emailingDisabled": "Operation cannot be performed as it requires Emailing feature enabled on the website",
     "forbidden": "Access is forbidden",
-    "documentGenerationFailed": "Failed to generate document"
+    "documentGenerationFailed": "Failed to generate document",
+    "acsysIntegrationError": "CMS integration error"
   },
   "httpCodes": {
     "401": "Unauthorized",

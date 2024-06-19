@@ -11,6 +11,10 @@ export enum LogLevelEnum {
 export type LogLevel = keyof typeof LogLevelEnum;
 export const LogAlwaysLevel = 'always';
 
+export enum CmsType {
+  acsys = 'acsys'
+}
+
 export enum UserNotificationLevel {
   INFO,
   WARN,
@@ -31,7 +35,7 @@ export enum LocaleEnum {
   FR = 'fr'
 }
 export const DefaultLocale = 'en';
-export const AvailableLocaleCodes = Object.keys(LocaleEnum).map(x => x.toLowerCase());
+export const AvailableLocaleCodes = Object.keys(LocaleEnum).map(x => x.toLowerCase() as Locale);
 export type Locale = Lowercase<keyof typeof LocaleEnum>;
 
 export const DataKeyImageSrcSizes = 'ImageSrcSizes';
@@ -39,7 +43,6 @@ export const DataKeyEntityCacheItems = 'EntityCacheItems';
 export const DataKeyWorldMapData = 'WorldMapData';
 export const DataKeySearchFlightOffers = 'SearchFlightOffers';
 export const DataKeySearchStayOffers = 'SearchStayOffers';
-export const DataKeyStayDetailsReviews = (stayId: EntityId) => `StayDetailsReviews_${stayId}`;
 
 export const SessionThemeKey = 'theme';
 export const SessionLocaleKey = 'locale';
@@ -47,12 +50,18 @@ export const SessionStaySearchHistory = 'stay-search-history';
 
 export const HeaderSetCookie = 'set-cookie';
 export const HeaderCookies = 'cookie';
+export const HeaderAuthorization = 'Authorization';
+export const HeaderContentType = 'Content-Type';
 export const HeaderUserAgent = 'user-agent';
 export const HeaderCacheControl = 'cache-control';
 export const HeaderEtag = 'etag';
+export const HeaderDate = 'date';
 export const HeaderLastModified = 'last-modified';
 export const HeaderLocation = 'location';
-export const HeaderVaryRenderCache = 'x-golobe-cache-vary';
+export const HeaderAppVersion = 'x-golobe-app-version';
+
+export const QueryInternalRequestParam = 'i'; // ...&i=1...
+export const QueryPageTimestampParam = 't'; // ...&t=1717585420729...
 
 export const CookieAuthSessionToken = 'next-auth.session-token';
 export const CookieAuthCallbackUrl = 'next-auth.callback-url';
@@ -63,10 +72,15 @@ export const CookiePolicyConsent = 'cookie_and_privacy_policies';
 
 export const ApiEndpointPrefix = '/api';
 export const ApiEndpointLogging = `${ApiEndpointPrefix}/log`;
+export const ApiEndpointTestingInvlidatePage = `${ApiEndpointPrefix}/testing/invalidate-page`;
+export const ApiEndpointTestingPageCacheAction = `${ApiEndpointPrefix}/testing/test-page-cache`;
+export const ApiEndpointTestingCacheCleanup = `${ApiEndpointPrefix}/testing/cache-cleanup`;
+export const ApiEndpointPurgeCache = `${ApiEndpointPrefix}/purge-cache`;
 export const ApiEndpointAuthentication = `${ApiEndpointPrefix}/auth`;
 export const ApiEndpointImage = `${ApiEndpointPrefix}/img`;
 export const ApiEndpointImageDetails = `${ApiEndpointPrefix}/img/details`;
 export const ApiEndpointImageList = `${ApiEndpointPrefix}/img/list`;
+export const ApiEndpointAuthFormPhotos = `${ApiEndpointPrefix}/img/auth-forms`;
 export const ApiEndpointSignUp = `${ApiEndpointPrefix}/account/signup`;
 export const ApiEndpointSignUpComplete = `${ApiEndpointPrefix}/account/signup-complete`;
 export const ApiEndpointPasswordRecovery = `${ApiEndpointPrefix}/account/recover-password`;
@@ -99,44 +113,55 @@ export const ApiEndpointBookingDownload = (id: EntityId) => `${ApiEndpointPrefix
 
 export const MaxStayReviewLength = 8000;
 
-export enum PagePath {
-  Account = 'account',
-  Favourites = 'favourites',
-  EmailVerifyComplete = 'email-verify-complete',
-  FindFlights = 'find-flights',
-  FindStays = 'find-stays',
-  FlightDetails = 'flight-details',
-  BookFlight = 'flight-book',
-  Flights = 'flights',
-  ForgotPasswordComplete = 'forgot-password-complete',
-  ForgotPasswordSet = 'forgot-password-set',
-  ForgotPasswordVerify = 'forgot-password-verify',
-  ForgotPassword = 'forgot-password',
-  Index = '',
-  Login = 'login',
-  Privacy = 'privacy',
-  SignupComplete = 'signup-complete',
-  SignupVerify = 'signup-verify',
-  Signup = 'signup',
-  Stays = 'stays',
-  StayDetails = 'stay-details',
-  BookStay = 'stay-book',
-  BookingDetails = 'booking'
-}
-export const AllPagePaths = Object.values(PagePath);
-export const EntityIdPages: PagePath[] = [PagePath.FlightDetails, PagePath.BookFlight, PagePath.StayDetails, PagePath.BookStay, PagePath.BookingDetails];
-
 export const OgImageExt = 'png';
 export const OgImagePathSegment = '__og-image__/image/';
 
+export const NuxtIslandPathSegment = '__nuxt_island/';
+export const NuxtImagePathSegment = '_ipx/';
+
 export const DbVersionDraft = -1;
 export const DbVersionInitial = 0;
+export const HtmlPageTimestampTable = 'HtmlPageTimestamp';
+export const QuickStartDbFile = 'dbase.db'; //'golobe-demo.db';
+export const QuickStartDir = '.acsys'; //'.tmp';
+export const AcsysExecDir = '.acsys';
+export const AcsysFilesDir = 'files';
+export const AcsysSQLiteDbName = 'dbase.db';
+export const AcsysDraftsEntityPrefix = 'AcsysDrafts';
+
+export enum SignUpResultEnum {
+  SUCCESS = 'SUCCESS',
+  ALREADY_EXISTS = 'ALREADY_EXISTS',
+  AUTOVERIFIED = 'AUTOVERIFIED'
+}
+
+export enum SignUpCompleteResultEnum {
+  SUCCESS = 'SUCCESS',
+  ALREADY_CONSUMED = 'ALREADY_CONSUMED',
+  LINK_INVALID = 'LINK_INVALID',
+  LINK_EXPIRED = 'LINK_EXPIRED'
+}
+
+export enum RecoverPasswordResultEnum {
+  SUCCESS = 'SUCCESS',
+  USER_NOT_FOUND = 'USER_NOT_FOUND',
+  EMAIL_NOT_VERIFIED = 'EMAIL_NOT_VERIFIED'
+}
+
+export enum RecoverPasswordCompleteResultEnum {
+  SUCCESS = 'SUCCESS',
+  ALREADY_CONSUMED = 'ALREADY_CONSUMED',
+  LINK_INVALID = 'LINK_INVALID',
+  LINK_EXPIRED = 'LINK_EXPIRED'
+}
 
 export const DEV_ENV_MODE = 'development';
 
+export const MimeTypeWebp = 'image/webp';
+
 export const TabIndicesUpdateDefaultTimeout = 100;
 export const CroppingImageDataKey = 'current-cropping-image-data';
-export const CroppingImageFormat = 'image/webp';
+export const CroppingImageFormat = MimeTypeWebp;
 export const TooltipHideTimeout = 2000;
 export const DefaultUserCoverSlug = 'default-user-cover';
 export const DefaultUserAvatarSlug = 'default-user-avatar';
@@ -269,7 +294,7 @@ export const getBreakpointForDevice = function (deviceSize: DeviceSizeEnum): num
 export const KeyCodeEsc = 'Escape';
 
 // Id value for objects which have been not saved to DB
-export const TemporaryEntityId = -1;
+export const TemporaryEntityId = "TempID";
 
 export function isTestEnv (): boolean {
   return import.meta.env.VITE_VITEST || process.env?.VITEST || process.env?.VITE_VITEST;
@@ -309,3 +334,5 @@ export const PdfPaperHeight: number = 841.89;
 
 export const PdfImgWidth = PdfPaperWidth;
 export const PdfBulletSize = 2;
+
+

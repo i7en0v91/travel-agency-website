@@ -1,10 +1,10 @@
 import type { H3Event } from 'h3';
-import isString from 'lodash-es/isString';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
 import { type EntityId } from '../../../../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
 import { type IModifyStayReviewResultDto } from '../../../dto';
 import { getServerSession } from '#auth';
+import { extractUserIdFromSession } from './../../../../server/utils/auth';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const logger = ServerServicesLocator.getLogger();
@@ -12,7 +12,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
 
   const stayParam = getRouterParams(event)?.id?.toString() ?? '';
   if (!stayParam) {
-    logger.warn(`(api:stay-reviews-delete) stay id paramer was not speicifed: path=${event.path}`);
+    logger.warn('(api:stay-reviews-delete) stay id paramer was not speicifed');
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
       'stay id parameter was not specified',
@@ -20,20 +20,18 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  let stayId: number | undefined;
-  try {
-    stayId = parseInt(stayParam);
-  } catch (err: any) {
-    logger.warn(`(api:stay-reviews-delete) failed to parse stay id: param=${stayParam}`);
+  const stayId: EntityId | undefined = stayParam;
+  if(!stayParam) {
+    logger.warn('(api:stay-reviews-delete) stay id parameter was not specified');
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
-      'failed to parse stay id parameter',
+      'stay id parameter was not specified',
       'error-stub'
     );
   }
 
   const authSession = await getServerSession(event);
-  let userId : EntityId | undefined = (authSession as any)?.id as EntityId;
+  const userId = extractUserIdFromSession(authSession);
   if (!userId) {
     logger.warn(`(api:stay-reviews-delete) unauthorized attempt: stayId=${stayId}`);
     throw new AppException(
@@ -43,9 +41,6 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  if (isString(userId)) {
-    userId = parseInt(userId);
-  }
 
   const reviewId = await staysLogic.deleteReview(stayId, userId);
 

@@ -7,8 +7,9 @@ import OfferDetailsSummary from './../../components/common-page-components/offer
 import FlightDetailsCard from './../../components/common-page-components/flight-details-card.vue';
 import { getLocalizeableValue } from './../../shared/common';
 import { useFetchEx } from './../../shared/fetch-ex';
-import { type Locale, PagePath, ApiEndpointFlightOfferDetails } from './../../shared/constants';
-import { AvailableFlightClasses, ImageCategory, type IFlightOffer, type ILocalizableValue } from './../../shared/interfaces';
+import { type Locale, ApiEndpointFlightOfferDetails } from './../../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
+import { AvailableFlightClasses, ImageCategory, type IFlightOffer, type ILocalizableValue, type EntityId } from './../../shared/interfaces';
 import { type IFlightOfferDetailsDto } from './../../server/dto';
 import { mapFlightOfferDetails } from './../../shared/mappers';
 
@@ -24,16 +25,9 @@ const logger = CommonServicesLocator.getLogger();
 
 const offerParam = useRoute().params?.id?.toString() ?? '';
 if (offerParam.length === 0) {
-  navigateTo(localePath('/'));
+  await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.Index)}`));
 }
-
-let offerId: number | undefined;
-try {
-  offerId = parseInt(offerParam);
-} catch (err: any) {
-  logger.warn(`(FlightDetails) failed to parse flight offer id: param=${offerParam}`, err);
-  isError.value = true;
-}
+const offerId: EntityId = offerParam;
 
 definePageMeta({
   title: { resName: getI18nResName2('flightDetailsPage', 'title'), resArgs: undefined }
@@ -52,11 +46,11 @@ const flightDetailsFetchRequest = await useFetchEx<IFlightOfferDetailsDto, IFlig
       isError.value = ctx.response.status >= 400;
     },
     onResponseError: (ctx) => {
-      logger.warn('(FlightDetails) got flight offer details fetch response error', ctx.error, { id: offerId });
+      logger.warn('(FlightDetails) got flight offer details fetch response exception', ctx.error, { id: offerId });
       isError.value = true;
     },
     onRequestError: (ctx) => {
-      logger.warn('(FlightDetails) got flight offer details fetch request error', ctx.error, { id: offerId });
+      logger.warn('(FlightDetails) got flight offer details fetch request exception', ctx.error, { id: offerId });
       isError.value = true;
     }
   });
@@ -143,7 +137,7 @@ onMounted(() => {
         :review-score="flightOffer?.departFlight?.airlineCompany.reviewScore"
         :num-reviews="flightOffer?.departFlight?.airlineCompany.numReviews"
         :btn-res-name="getI18nResName2('offerDetailsPage', 'bookBtn')"
-        :btn-link-url="flightOffer ? localePath(`/${PagePath.BookFlight}/${offerId}`) : route.fullPath"
+        :btn-link-url="flightOffer ? localePath(`/${getHtmlPagePath(HtmlPage.BookFlight)}/${offerId}`) : route.fullPath"
       />
       <StaticImage
         :ctrl-key="`${CtrlKey}-MainImage`"

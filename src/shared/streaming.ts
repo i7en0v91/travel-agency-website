@@ -4,7 +4,7 @@ import { type IAppLogger } from './applogger';
 export function readBlobStream (stream: IBlobStream, logger?: IAppLogger): Promise<Buffer> {
   return new Promise<Buffer>((resolve, reject) => {
     stream.on('error', (err?: any) => {
-      logger?.warn('error occured while reading stream', err);
+      logger?.warn('exception occured while reading stream', err);
       reject(err);
     });
 
@@ -24,8 +24,8 @@ export function readBlobStream (stream: IBlobStream, logger?: IAppLogger): Promi
         }
         resolve(Buffer.from(arrayBuffer));
       } catch (err: any) {
-        logger?.warn('unexpected error occured while reading blob stream', err);
-        reject(new Error('unexpected error occured while reading stream'));
+        logger?.warn('unexpected exception occured while reading blob stream', err);
+        reject(new Error('unexpected exception occured while reading stream'));
       }
     });
   });

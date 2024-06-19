@@ -1,5 +1,6 @@
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
-import { type ISignUpCompleteDto, SignUpCompleteDtoSchema, type ISignUpCompleteResultDto, SignUpCompleteResultCode } from '../../dto';
+import { type ISignUpCompleteDto, SignUpCompleteDtoSchema, type ISignUpCompleteResultDto } from '../../dto';
+import { SignUpCompleteResultEnum } from './../../../shared/constants';
 
 export default defineWebApiEventHandler(async (event) => {
   const signUpCompleteDto = await readBody(event) as ISignUpCompleteDto;
@@ -10,23 +11,23 @@ export default defineWebApiEventHandler(async (event) => {
   switch (registrationResult.code) {
     case 'success':
       responseDto = {
-        code: SignUpCompleteResultCode.SUCCESS
+        code: SignUpCompleteResultEnum.SUCCESS
       };
       break;
     case 'already-consumed':
       responseDto = {
-        code: SignUpCompleteResultCode.ALREADY_CONSUMED
+        code: SignUpCompleteResultEnum.ALREADY_CONSUMED
       };
       break;
     case 'token-expired':
       responseDto = {
-        code: SignUpCompleteResultCode.LINK_EXPIRED
+        code: SignUpCompleteResultEnum.LINK_EXPIRED
       };
       break;
     case 'not-found':
     case 'failed':
       responseDto = {
-        code: SignUpCompleteResultCode.LINK_INVALID
+        code: SignUpCompleteResultEnum.LINK_INVALID
       };
       break;
   }

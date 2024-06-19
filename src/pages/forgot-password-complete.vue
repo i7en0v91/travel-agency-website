@@ -2,8 +2,8 @@
 
 import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
 import AccountFormPhotos from './../components/account/form-photos.vue';
-import { RecoverPasswordCompleteResultCode } from './../server/dto';
-import { PagePath } from './../shared/constants';
+import { RecoverPasswordCompleteResultEnum } from './../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../shared/page-query-params';
 
 definePageMeta({
   middleware: 'auth',
@@ -18,11 +18,11 @@ useOgImage();
 const localePath = useLocalePath();
 
 const logger = CommonServicesLocator.getLogger();
-const completionResult = ref(RecoverPasswordCompleteResultCode.LINK_INVALID);
+const completionResult = ref(RecoverPasswordCompleteResultEnum.LINK_INVALID);
 const route = useRoute();
 const resultParam = route.query.result?.toString();
 if (resultParam) {
-  const resultCode = Object.keys(RecoverPasswordCompleteResultCode).find(e => e.toLowerCase() === resultParam.toLowerCase()) as RecoverPasswordCompleteResultCode;
+  const resultCode = Object.keys(RecoverPasswordCompleteResultEnum).find(e => e.toLowerCase() === resultParam.toLowerCase()) as RecoverPasswordCompleteResultEnum;
   if (resultCode) {
     completionResult.value = resultCode;
   } else {
@@ -40,27 +40,27 @@ if (resultParam) {
     <div class="complete-password-page-div">
       <NavLogo ctrl-key="completePasswordPageAppLogo" class="complete-password-page-logo" mode="inApp" />
       <div class="complete-password-page-content">
-        <div v-if="completionResult === RecoverPasswordCompleteResultCode.SUCCESS">
+        <div v-if="completionResult === RecoverPasswordCompleteResultEnum.SUCCESS">
           {{ $t(getI18nResName3('forgotPasswordCompletePage', 'text', 'success')) }}
-          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${PagePath.Login}`)">
+          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${getHtmlPagePath(HtmlPage.Login)}`)">
             {{ $t(getI18nResName2('accountPageCommon', 'login')) }}
           </NuxtLink>
         </div>
-        <div v-else-if="completionResult === RecoverPasswordCompleteResultCode.ALREADY_CONSUMED">
+        <div v-else-if="completionResult === RecoverPasswordCompleteResultEnum.ALREADY_CONSUMED">
           {{ $t(getI18nResName3('forgotPasswordCompletePage', 'text', 'alreadyConsumed')) }}
-          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${PagePath.Login}`)">
+          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${getHtmlPagePath(HtmlPage.Login)}`)">
             {{ $t(getI18nResName2('accountPageCommon', 'login')) }}
           </NuxtLink>
         </div>
-        <div v-else-if="completionResult === RecoverPasswordCompleteResultCode.LINK_EXPIRED">
+        <div v-else-if="completionResult === RecoverPasswordCompleteResultEnum.LINK_EXPIRED">
           {{ $t(getI18nResName3('forgotPasswordCompletePage', 'text', 'linkExpired')) }}
-          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${PagePath.ForgotPassword}`)">
+          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${getHtmlPagePath(HtmlPage.ForgotPassword)}`)">
             {{ $t(getI18nResName2('forgotPasswordCompletePage', 'resetPassword')) }}
           </NuxtLink>
         </div>
         <div v-else>
           {{ $t(getI18nResName3('forgotPasswordCompletePage', 'text', 'linkInvalid')) }}
-          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath('/')">
+          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${getHtmlPagePath(HtmlPage.Index)}`)">
             {{ $t(getI18nResName2('accountPageCommon', 'toHome')) }}
           </NuxtLink>
         </div>

@@ -23,7 +23,7 @@ const popularCitiesListFetch = await useFetchEx<IPopularCityDto[], IPopularCityD
   {
     server: true,
     lazy: true,
-    cache: 'default',
+    cache: AppConfig.caching.htmlPageCachingSeconds ? 'default' : 'no-cache',
     default: () => { return range(0, 20, 1).map(_ => null); },
     transform: (response: IPopularCityDto[]) => {
       logger.verbose(`(TravelCities) received popular cities list response: ctrlKey=${props.ctrlKey}`);

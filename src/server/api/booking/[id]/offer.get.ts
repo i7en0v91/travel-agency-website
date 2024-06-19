@@ -1,7 +1,7 @@
 import type { H3Event } from 'h3';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
 import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
-import AppConfig from './../../../../appconfig';
+import { type EntityId } from './../../../../shared/interfaces';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const logger = ServerServicesLocator.getLogger();
@@ -17,18 +17,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  let bookingId: number | undefined;
-  try {
-    bookingId = parseInt(bookingParam);
-  } catch (err: any) {
-    logger.warn(`(api:booking-offer) failed to parse booking id: param=${bookingParam}`);
-    throw new AppException(
-      AppExceptionCodeEnum.BAD_REQUEST,
-      'failed to parse booking id parameter',
-      'error-page'
-    );
-  }
-
+  const bookingId: EntityId | undefined = bookingParam;
   const offer = await bookingLogic.getBooking(bookingId);
 
   handleCacheHeaders(event, {

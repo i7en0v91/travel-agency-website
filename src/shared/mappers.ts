@@ -59,13 +59,13 @@ function mapAirplane (dto: IAirplaneDto): EntityDataAttrsOnly<IAirplane> {
 }
 
 export interface ISearchFlightOffersResultLookup {
-  lookupAirlineCompany: (id: number) => EntityDataAttrsOnly<IAirlineCompany>,
-  lookupAirplane: (id: number) => EntityDataAttrsOnly<IAirplane>,
-  lookupAirport: (id: number) => EntityDataAttrsOnly<IAirport>
+  lookupAirlineCompany: (id: string) => EntityDataAttrsOnly<IAirlineCompany>,
+  lookupAirplane: (id: string) => EntityDataAttrsOnly<IAirplane>,
+  lookupAirport: (id: string) => EntityDataAttrsOnly<IAirport>
 }
 
 export interface ISearchStayOffersResultLookup {
-  lookupCity: (id: number) => EntityDataAttrsOnly<ICity>,
+  lookupCity: (id: string) => EntityDataAttrsOnly<ICity>,
 }
 
 export function mapSearchedFlight (dto: ISearchedFlightDto, lookup: ISearchFlightOffersResultLookup): EntityDataAttrsOnly<IFlight> {
@@ -173,18 +173,18 @@ export function mapStayOfferDetails (dto: IStayOfferDetailsDto): Omit<IStayOffer
     isFavourite: dto.isFavourite,
     stay: mapStay(dto.stay),
     prices: {
-      base: new Decimal(dto.prices.base),
-      'cityView-1': new Decimal(dto.prices['cityView-1']),
-      'cityView-2': new Decimal(dto.prices['cityView-2']),
-      'cityView-3': new Decimal(dto.prices['cityView-3'])
+      Base: new Decimal(dto.prices.Base),
+      CityView1: new Decimal(dto.prices.CityView1),
+      CityView2: new Decimal(dto.prices.CityView2),
+      CityView3: new Decimal(dto.prices.CityView3)
     }
   };
 }
 
 export function createSearchFlightOfferResultLookup (resultDto: ISearchFlightOffersResultDto): ISearchFlightOffersResultLookup {
-  const airlineCompaniesMap = new Map<number, EntityDataAttrsOnly<IAirlineCompany>>();
-  const airplanesMap = new Map<number, EntityDataAttrsOnly<IAirplane>>();
-  const airportsMap = new Map<number, EntityDataAttrsOnly<IAirport>>();
+  const airlineCompaniesMap = new Map<string, EntityDataAttrsOnly<IAirlineCompany>>();
+  const airplanesMap = new Map<string, EntityDataAttrsOnly<IAirplane>>();
+  const airportsMap = new Map<string, EntityDataAttrsOnly<IAirport>>();
 
   const indexAirport = (airport: IAirportDto) => {
     if (!airportsMap.get(airport.id)) {
@@ -208,9 +208,9 @@ export function createSearchFlightOfferResultLookup (resultDto: ISearchFlightOff
   resultDto.entities.airplanes.forEach(indexAirplane);
   resultDto.entities.airports.forEach(indexAirport);
 
-  const wrapThrowExceptionOnLookupFailed = <TResult>(innerFunc: (id: number) => TResult | undefined): (id: number) => TResult => {
+  const wrapThrowExceptionOnLookupFailed = <TResult>(innerFunc: (id: string) => TResult | undefined): (id: string) => TResult => {
     const logger = CommonServicesLocator.getLogger();
-    const wrapper: (id: number) => TResult = (id: number): TResult => {
+    const wrapper: (id: string) => TResult = (id: string): TResult => {
       try {
         const result = innerFunc(id);
         if (!result) {
@@ -219,7 +219,7 @@ export function createSearchFlightOfferResultLookup (resultDto: ISearchFlightOff
         }
         return result;
       } catch (err: any) {
-        logger.error('(mappers) unexpected error occured while processing search flight offers result', err, resultDto);
+        logger.error('(mappers) unexpected exception occured while processing search flight offers result', err, resultDto);
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'error occured while processing search flight offers result', 'error-page');
       }
     };
@@ -227,14 +227,14 @@ export function createSearchFlightOfferResultLookup (resultDto: ISearchFlightOff
   };
 
   return {
-    lookupAirlineCompany (id: number): EntityDataAttrsOnly<IAirlineCompany> { return wrapThrowExceptionOnLookupFailed((id: number) => { return airlineCompaniesMap.get(id); })(id); },
-    lookupAirport (id: number): EntityDataAttrsOnly<IAirport> { return wrapThrowExceptionOnLookupFailed((id: number) => { return airportsMap.get(id); })(id); },
-    lookupAirplane (id: number): EntityDataAttrsOnly<IAirplane> { return wrapThrowExceptionOnLookupFailed((id: number) => { return airplanesMap.get(id); })(id); }
+    lookupAirlineCompany (id: string): EntityDataAttrsOnly<IAirlineCompany> { return wrapThrowExceptionOnLookupFailed((id: string) => { return airlineCompaniesMap.get(id); })(id); },
+    lookupAirport (id: string): EntityDataAttrsOnly<IAirport> { return wrapThrowExceptionOnLookupFailed((id: string) => { return airportsMap.get(id); })(id); },
+    lookupAirplane (id: string): EntityDataAttrsOnly<IAirplane> { return wrapThrowExceptionOnLookupFailed((id: string) => { return airplanesMap.get(id); })(id); }
   };
 }
 
 export function createSearchStayOfferResultLookup (resultDto: ISearchStayOffersResultDto): ISearchStayOffersResultLookup {
-  const citiesMap = new Map<number, EntityDataAttrsOnly<ICity>>();
+  const citiesMap = new Map<string, EntityDataAttrsOnly<ICity>>();
 
   resultDto.entities.cities.forEach((city) => {
     if (!citiesMap.get(city.id)) {
@@ -242,9 +242,9 @@ export function createSearchStayOfferResultLookup (resultDto: ISearchStayOffersR
     }
   });
 
-  const wrapThrowExceptionOnLookupFailed = <TResult>(innerFunc: (id: number) => TResult | undefined): (id: number) => TResult => {
+  const wrapThrowExceptionOnLookupFailed = <TResult>(innerFunc: (id: string) => TResult | undefined): (id: string) => TResult => {
     const logger = CommonServicesLocator.getLogger();
-    const wrapper: (id: number) => TResult = (id: number): TResult => {
+    const wrapper: (id: string) => TResult = (id: string): TResult => {
       try {
         const result = innerFunc(id);
         if (!result) {
@@ -253,7 +253,7 @@ export function createSearchStayOfferResultLookup (resultDto: ISearchStayOffersR
         }
         return result;
       } catch (err: any) {
-        logger.error('(mappers) unexpected error occured while processing search stay offers result', err, resultDto);
+        logger.error('(mappers) unexpected exception occured while processing search stay offers result', err, resultDto);
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'error occured while processing search stay offers result', 'error-page');
       }
     };
@@ -261,7 +261,7 @@ export function createSearchStayOfferResultLookup (resultDto: ISearchStayOffersR
   };
 
   return {
-    lookupCity (id: number): EntityDataAttrsOnly<ICity> { return wrapThrowExceptionOnLookupFailed((id: number) => { return citiesMap.get(id); })(id); }
+    lookupCity (id: string): EntityDataAttrsOnly<ICity> { return wrapThrowExceptionOnLookupFailed((id: string) => { return citiesMap.get(id); })(id); }
   };
 }
 

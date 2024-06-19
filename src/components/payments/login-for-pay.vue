@@ -3,7 +3,7 @@ import { withQuery } from 'ufo';
 import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
 import OAuthProviderList from './../../components/account/oauth-providers-list.vue';
 import { AuthProvider } from './../../shared/interfaces';
-import { PagePath } from './../../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
 
 interface IProps {
   ctrlKey: string
@@ -15,7 +15,7 @@ const localePath = useLocalePath();
 const route = useRoute();
 
 async function onEmailLoginClick (): Promise<void> {
-  await navigateTo(withQuery(localePath(`/${PagePath.Login}`), { callbackUrl: route.fullPath }));
+  await navigateTo(withQuery(localePath(`/${getHtmlPagePath(HtmlPage.Login)}`), { callbackUrl: route.fullPath }));
 }
 
 function onOAuthProviderClick (provider: AuthProvider) {

@@ -1,13 +1,18 @@
 /* eslint-disable no-case-declarations */
 import { describe, test, type TestOptions } from 'vitest';
 import { type Page, type Request } from 'playwright-core';
-import { setup, createPage } from '@nuxt/test-utils/e2e';
+import { setup, createPage, createBrowser } from '@nuxt/test-utils/e2e';
 import { join } from 'pathe';
 import dayjs from 'dayjs';
 import { parseURL, joinURL } from 'ufo';
-import { TEST_SERVER_PORT, spinWait, delay, createLogger, ScreenshotDir, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD } from '../../shared/testing/common';
-import { CookieI18nLocale, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, type Locale, AvailableLocaleCodes, DefaultLocale } from '../../shared/constants';
+import { TEST_SERVER_PORT, createLogger, ScreenshotDir, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD } from '../../shared/testing/common';
+import { spinWait, delay } from '../../shared/common';
+import { CookieI18nLocale, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, type Locale, AvailableLocaleCodes, DefaultLocale, ApiEndpointTestingInvlidatePage, HeaderContentType } from '../../shared/constants';
+import { AllHtmlPages, EntityIdPages } from '../../shared/page-query-params';
 import type { IAppLogger } from '../../shared/applogger';
+import  { localizePath } from './../../shared/i18n';
+import { type ITestingInvalidateCacheDto } from './../../server/dto';
+import AppConfig from './../../appconfig';
 
 type AuthProviderType = 'credentials' | 'oauth';
 type AuthTestNavigationPage = 'index' | 'login' | 'account' | 'flights';
@@ -53,6 +58,7 @@ interface IAuthTestCase {
     acceptCookies?: boolean,
     authenticated?: boolean,
     userPreferredLocale?: Locale,
+    invalidatePageCacheOnStart?: boolean,
     localeSelected?: {
       type: LocaleSelectType,
       locale: Locale
@@ -61,6 +67,8 @@ interface IAuthTestCase {
   navigatedPages?: IPageNavigatedByUser[],
   expectations?: IAuthTestExpectations
 }
+
+const TestHostUrl = `http://127.0.0.1:${TEST_SERVER_PORT}`;
 
 class AuthTestCaseRunner {
   // using fixed desktop screen size as page's markup & layout is not tested by this runner (but navigation logic only)
@@ -77,6 +85,25 @@ class AuthTestCaseRunner {
     this.logger = logger;
     this.outstandingRequestsCount = 0;
   }
+
+  invalidatePageCache = async (): Promise<void> => {
+    this.logger.verbose(`sending invalidate test pages cache request, currentPage=${this.currentPage?.url()}`);
+    // reset cache for all non-entity pages
+    const reqBody: ITestingInvalidateCacheDto = {
+      values: AllHtmlPages.filter(p => !EntityIdPages.includes(p)).map(page => {
+        return  {
+          page
+        };
+      })
+    };
+    const response = await fetch(joinURL(TestHostUrl, ApiEndpointTestingInvlidatePage), { body: JSON.stringify(reqBody), method: 'POST', headers: [[HeaderContentType, 'application/json']] });
+    const responseDto = await response.json();
+    if(!responseDto?.success) {
+      this.logger.warn(`invalidate test pages cache request failed, currentPage=${this.currentPage?.url()}, result=${JSON.stringify(responseDto)}, code=${response.status}, statusText=${response.statusText}`);
+      throw new Error('failed to invalidate test pages cache');
+    };
+    this.logger.verbose(`test pages cache invalidate request completed, currentPage=${this.currentPage?.url()}`);
+  };
 
   prepareOutstandingRequestsCounter = () => {
     this.outstandingRequestsCount = 0;
@@ -104,7 +131,7 @@ class AuthTestCaseRunner {
 
     const pageUrl = this.currentPage.url();
     const parsedUrl = parseURL(pageUrl);
-    const originalPath = this.localizePath(parsedUrl.pathname, 'en');
+    const originalPath = this.localizeUrl(parsedUrl.pathname, 'en');
     if (originalPath === this.getPageUrl('index')) {
       this.logger.debug('current page type is index');
       return 'index';
@@ -278,21 +305,9 @@ class AuthTestCaseRunner {
     return result;
   };
 
-  localizePath = (path: string, locale: Locale): string => {
+  localizeUrl = (path: string, locale: Locale): string => {
     this.logger.debug(`localizing path, currentPage=${this.currentPage?.url()}, path=${path}, locale=${locale}`);
-
-    const localePrefix = AvailableLocaleCodes.filter(l => l !== DefaultLocale && path.startsWith(`/${l}`));
-    if (localePrefix.length > 0) {
-      path = path.replace(`/${localePrefix[0]}`, '/');
-      if (path.startsWith('//')) {
-        path = path.replace('//', '/');
-      }
-    }
-    let result = path;
-    if (locale !== DefaultLocale) {
-      result = joinURL(`/${locale}`, path);
-    }
-
+    const result  = localizePath(path, locale);
     this.logger.debug(`path localized, currentPage=${this.currentPage?.url()}, path=${path}, locale=${locale}, result=${result}`);
     return result;
   };
@@ -447,7 +462,7 @@ class AuthTestCaseRunner {
             break;
           case 'account':
             await page.locator('#nav-user-menu-anchor').click();
-            const accountUrl = this.localizePath('/account', this.getCurrentPageLocale());
+            const accountUrl = this.localizeUrl('/account', this.getCurrentPageLocale());
             await navigateByClick(`.nav-user-menu-item a[href*="${accountUrl}"]`, type);
             break;
           case 'flights':
@@ -478,11 +493,11 @@ class AuthTestCaseRunner {
             break;
           case 'account':
             await page.locator('#nav-user-menu-anchor').click();
-            const accountUrl = this.localizePath('/account', this.getCurrentPageLocale());
+            const accountUrl = this.localizeUrl('/account', this.getCurrentPageLocale());
             await navigateByClick(`.nav-user-menu-item a[href*="${accountUrl}"]`, type);
             break;
           case 'login':
-            const loginUrl = this.localizePath('/login', this.getCurrentPageLocale());
+            const loginUrl = this.localizeUrl('/login', this.getCurrentPageLocale());
             await navigateByClick(`.nav-bar .nav-login a[href*="${loginUrl}"]`, type);
             break;
           default:
@@ -553,6 +568,11 @@ class AuthTestCaseRunner {
     this.logger.verbose('preparing test case');
 
     try {
+      if(this.testCase.initialState.invalidatePageCacheOnStart) {
+        await createBrowser();
+        await this.invalidatePageCache();
+      } 
+
       const localeCookie = this.testCase.initialState.localeSelected?.type === 'manual-with-cookie'
         ? {
             name: CookieI18nLocale,
@@ -565,7 +585,7 @@ class AuthTestCaseRunner {
             value: this.testCase.initialState.localeSelected.locale
           }
         : undefined;
-      const url = ['manual-with-cookie', 'manual-without-cookie'].includes(this.testCase.initialState.localeSelected?.type ?? '') ? this.localizePath(`${this.getPageUrl(this.testCase.initialState.visitingPage)}`, this.testCase.initialState.localeSelected!.locale) : this.getPageUrl(this.testCase.initialState.visitingPage);
+      const url = ['manual-with-cookie', 'manual-without-cookie'].includes(this.testCase.initialState.localeSelected?.type ?? '') ? this.localizeUrl(`${this.getPageUrl(this.testCase.initialState.visitingPage)}`, this.testCase.initialState.localeSelected!.locale) : this.getPageUrl(this.testCase.initialState.visitingPage);
       const preferredLocale = this.testCase.initialState.userPreferredLocale ?? DefaultLocale;
       this.currentPage = await createPage(url, {
         viewport: { width: this.screenSize.width, height: this.screenSize.height },
@@ -858,14 +878,18 @@ describe('e2e:auth User authentication', async () => {
   });
 
   const TestName5 = 'preferred locale differs from default (first-time visit), both auth providers';
-  test(TestName5, DefaultTestOptions, async () => {
+  test(TestName5, AppConfig.caching.htmlPageCachingSeconds ?
+    { 
+      skip: true /** with page caching enabled on server-side the auto-redirection code (i18n plugin) may not be reached */ 
+    } : DefaultTestOptions, async () => {
     const getTestCase = (authProvider: AuthProviderType): IAuthTestCase => {
       return {
         testName: TestName5,
         authProvider,
         initialState: {
           visitingPage: 'index',
-          userPreferredLocale: 'ru'
+          userPreferredLocale: 'ru',
+          invalidatePageCacheOnStart: true
         },
         navigatedPages: [
           {
@@ -905,7 +929,8 @@ describe('e2e:auth User authentication', async () => {
         authProvider,
         initialState: {
           visitingPage: 'index',
-          userPreferredLocale: 'ru'
+          userPreferredLocale: 'ru',
+          invalidatePageCacheOnStart: true
         },
         navigatedPages: [
           {

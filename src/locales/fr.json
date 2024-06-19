@@ -9,7 +9,8 @@
     "captchaError": "Erreur de vérification d'accès. Vérifiez votre connectivité réseau, puis rechargez la page et réessayez",
     "emailingDisabled": "L'opération ne peut pas être effectuée car elle nécessite l'activation de la fonction Emailing sur le site Web",
     "forbidden": "L'accès est interdit",
-    "documentGenerationFailed": "Échec de la génération du document"
+    "documentGenerationFailed": "Échec de la génération du document",
+    "acsysIntegrationError": "Erreur d'intégration du CMS"
   },
   "httpCodes": {
     "401": "Non autorisé",

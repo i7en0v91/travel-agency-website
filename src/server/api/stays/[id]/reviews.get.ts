@@ -1,11 +1,11 @@
 import type { H3Event } from 'h3';
-import isString from 'lodash-es/isString';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
 import { type IStayReviewsDto } from '../../../dto';
 import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
 import { mapStayReview } from './../../../utils/mappers';
 import { type EntityId } from './../../../../shared/interfaces';
 import { getServerSession } from '#auth';
+import { extractUserIdFromSession } from './../../../../server/utils/auth';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const logger = ServerServicesLocator.getLogger();
@@ -21,11 +21,9 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  let stayId: number | undefined;
-  try {
-    stayId = parseInt(stayParam);
-  } catch (err: any) {
-    logger.warn(`(api:stay-reviews-post) failed to parse stay id: param=${stayParam}`);
+  const stayId: EntityId | undefined = stayParam;
+  if(!stayId) {
+    logger.warn(`(api:stay-reviews-post) stay id parameter was not specified: param=${stayParam}`);
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
       'failed to parse stay id parameter',
@@ -36,10 +34,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   let reviews = await staysLogic.getStayReviews(stayId);
 
   const authSession = await getServerSession(event);
-  let userId : EntityId | undefined = (authSession as any)?.id as EntityId;
-  if (userId && isString(userId)) {
-    userId = parseInt(userId);
-  }
+  const userId = extractUserIdFromSession(authSession);
   if (userId) {
     logger.debug(`(api:stay-reviews-post) checking user review: stayId=${stayId}, userId=${userId}`);
     const userReview = reviews.find(r => r.user.id === userId);

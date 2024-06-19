@@ -13,6 +13,9 @@ import type { LogLevel } from './../shared/constants';
 /** Log message will be suppressed only if all specified filters combined by AND mathches their input strings */
 export interface ILogSuppressionRule {
   messageFitler?: RegExp, // event-related text (message & error text) filter
+}
+
+export interface ILogVueSuppressionRule extends ILogSuppressionRule  {
   componentNameFilter?: RegExp // event-related vue component name filter
 }
 
@@ -126,4 +129,60 @@ export function parseLevelFromNuxtLog (logItem: LogObject): LogLevel {
     default:
       return 'verbose';
   }
+}
+
+function testLogSuppressionRule(rule: ILogSuppressionRule, msg?: string, err?: any): boolean {
+  if (rule.messageFitler) {
+    let matchesMsg = false;
+    if (msg) {
+      matchesMsg = (msg.match(rule.messageFitler)?.length ?? 0) > 0;
+    }
+    if (!matchesMsg && err) {
+      matchesMsg = (JSON.stringify(err).match(rule.messageFitler)?.length ?? 0) > 0;
+    }
+    if (!matchesMsg) {
+      return false;
+    }
+  } else {
+    return false;
+  }
+  return true;
+}
+
+export function checkNeedSuppressServerMsg (msg?: string, err?: any): boolean {
+  const serverSuppressRules = AppConfig.logging.suppress.server;
+  for (let i = 0; i < serverSuppressRules.length; i++) {
+    const rule = serverSuppressRules[i];
+    if(testLogSuppressionRule(rule, msg, err)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function checkNeedSuppressVueMsg (msg?: string, trace?: string, err?: any): boolean {
+  const vueSuppressRules = AppConfig.logging.suppress.vue;
+
+  for (let i = 0; i < vueSuppressRules.length; i++) {
+    const rule = vueSuppressRules[i];
+    if(!testLogSuppressionRule(rule, msg, err)) {
+      continue;
+    }
+
+    if (rule.componentNameFilter) {
+      let matchesComponent = false;
+      if (trace) {
+        matchesComponent = (trace.match(rule.componentNameFilter)?.length ?? 0) > 0;
+      }
+      if (!matchesComponent && err) {
+        matchesComponent = (JSON.stringify(err).match(rule.componentNameFilter)?.length ?? 0) > 0;
+      }
+      if (matchesComponent) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }

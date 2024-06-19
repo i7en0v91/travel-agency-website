@@ -33,15 +33,6 @@ export const useControlSettingsStore = defineStore('controlSettingsStore', () =>
     const itemRaw = localStorage.getItem(ctrlKey);
     let result: ControlValueSettingType | ControlValueSettingType[] | undefined;
     if (itemRaw) {
-      try {
-        result = parseInt(itemRaw);
-        if (result) {
-          logger.debug(`(controlSettingsStore) control value setting read (number): ctrlKey=${ctrlKey}'}, value=${result}`);
-          return result;
-        }
-      } catch (err: any) {
-        // should try another format
-      }
       if (!result) {
         try {
           result = JSON.parse(itemRaw);

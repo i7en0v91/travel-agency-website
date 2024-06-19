@@ -6,10 +6,11 @@ import isString from 'lodash-es/isString';
 import { type ImageCategory, ImageAuthRequiredCategories, type IImageEntitySrc } from './../../shared/interfaces';
 import { type I18nResName } from './../../shared/i18n';
 import { type IAppLogger } from './../../shared/applogger';
-import { ApiEndpointImageDetails, ApiEndpointImage } from './../../shared/constants';
+import { ApiEndpointImageDetails, ApiEndpointImage , HeaderAppVersion } from './../../shared/constants';
 import { type IImageDetailsDto } from './../../server/dto';
 import ErrorHelm from './../error-helm.vue';
 import type { NuxtImg } from '#build/components';
+import AppConfig from './../../appconfig';
 
 interface IPublicAssetSrc {
   filename: string,
@@ -87,6 +88,7 @@ const detailsFetch = await useFetch<IFetchedImageDetails>(detailsFetchUrl,
   {
     server: true,
     lazy: true,
+    headers: [[HeaderAppVersion, AppConfig.versioning.appVersion.toString()]],
     watch: [detailsFetchUrl],
     immediate: import.meta.server,
     key: `${props.ctrlKey}-Details`,

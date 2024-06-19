@@ -9,6 +9,7 @@ import { mapUserTicketsResult } from './../../../shared/mappers';
 import { type IUserTicketsResultDto } from './../../../server/dto';
 import { eraseTimeOfDay, getValueForFlightDayFormatting } from './../../../shared/common';
 import dayjs from 'dayjs';
+import AppConfig from './../../../appconfig';
 
 export type UserTicketItem = (EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>) & { bookingId: EntityId, bookingDateUtc: Date };
 declare type TimeRangeFilter = 'upcoming' | 'passed';
@@ -41,7 +42,7 @@ const userTicketsFetch = await useFetchEx<IUserTicketsResultDto, UserTicketItem[
   server: false,
   lazy: true,
   immediate: false,
-  cache: 'default',
+  cache: AppConfig.caching.htmlPageCachingSeconds ? 'default' : 'no-cache',
   transform: (response: IUserTicketsResultDto) => {
     logger.verbose(`(TabHistory) received user tickets response, ctrlKey=${props.ctrlKey}`);
     if (!response) {
@@ -66,7 +67,7 @@ const displayedItems = computed<{ [P in OfferKind]:(UserTicketItem[] | undefined
 watch(userTicketsFetch.status, () => { 
   logger.debug(`(TabHistory) tickets fetch status changed: ctrlKey=${props.ctrlKey}, status=${userTicketsFetch.status.value}`);
   if(userTicketsFetch.status.value === 'error') {
-    logger.warn(`(TabHistory) got error tickets fetch status: ctrlKey=${props.ctrlKey}`);
+    logger.warn(`(TabHistory) got failed tickets fetch status: ctrlKey=${props.ctrlKey}`);
     isError.value = true;
   } else if(userTicketsFetch.status.value === 'success') {
     isError.value = false;

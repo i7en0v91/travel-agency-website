@@ -1,5 +1,6 @@
-import type {  IClientServicesLocator, ICommonServicesLocator, IServerServicesLocator, StayServiceLevel } from './shared/serviceLocator';
-import type { Locale, Theme } from './shared/constants';
+import type {  IClientServicesLocator, ICommonServicesLocator, IServerServicesLocator } from './shared/serviceLocator';
+import type { CacheablePageParamsBase, IOgImageContext } from './shared/interfaces';
+import type { ParseQueryCacheRequiredParamMissed, ParseQueryCacheValueNotAllowed } from './server/backend/common-services/html-page-model-metadata';
 
 declare global {
   let ClientServicesLocator: IClientServicesLocator;
@@ -9,12 +10,9 @@ declare global {
 
 declare module 'h3' {
   interface H3EventContext {
-    ogImageRequest?: {
-      locale?: Locale,
-      isSecondPage?: boolean,
-      theme?: Theme,
-      serviceLevel?: StayServiceLevel
-    },
+    ogImageContext?: IOgImageContext,
+    cacheablePageParamsError?: ParseQueryCacheRequiredParamMissed['result'] | ParseQueryCacheValueNotAllowed['result'] | undefined,
+    cacheablePageParams?: CacheablePageParamsBase,
     authCookies?: string[],
     authenticated?: boolean
   }

@@ -3,7 +3,7 @@ import deepmerge from 'lodash-es/merge';
 import AppConfig from '../appconfig';
 import { type IAppLogger, wrapLogDataArg, getAppExceptionCustomLogLevel, getErrorAppExceptionCode } from '../shared/applogger';
 
-import { LogAlwaysLevel, LogLevelEnum, type LogLevel, isDevOrTestEnv } from '../shared/constants';
+import { LogAlwaysLevel, LogLevelEnum, type LogLevel, isDevOrTestEnv, HeaderAppVersion } from '../shared/constants';
 import { flattenError, wrapExceptionIfNeeded } from '../shared/exceptions';
 
 export class ClientLogger implements IAppLogger {
@@ -19,7 +19,6 @@ export class ClientLogger implements IAppLogger {
   }
 
   lowerWarnsWithoutErrorLevel (useInfoLevel: boolean): void {
-    console.info(`lowering warns without error log level, useInfoLevel=${useInfoLevel}`);
     this.lowerWarnsLevel = useInfoLevel;
   }
 
@@ -126,12 +125,16 @@ export class ClientLogger implements IAppLogger {
   }
 
   async sendLogData (logData: object) {
-    await $fetch(AppConfig.logging.client.path,
-      {
-        method: 'POST',
-        body: logData,
-        cache: 'no-store'
-      })
-      .catch(error => console.error(error));
+    try {
+      await $fetch(AppConfig.logging.client.path,
+        {
+          method: 'POST',
+          body: logData,
+          cache: 'no-store',
+          headers: [[HeaderAppVersion, AppConfig.versioning.appVersion.toString()]]
+        });
+    } catch(error: any) {
+      console.error('error occured while sending logs to server', error);
+    }
   }
 }

@@ -2,13 +2,13 @@
 
 import fromPairs from 'lodash-es/fromPairs';
 import { type Locale, AvailableLocaleCodes, DefaultTheme, ApiEndpointBookingOffer } from './../../shared/constants';
-import { ImageCategory, type ICity, type IBookingTicketProps, type EntityDataAttrsOnly, type ILocalizableValue, type IFlightOffer, type IStayOfferDetails, type IBookingTicketFlightGfxProps, type IBookingTicketStayTitleProps } from './../../shared/interfaces';
+import { HtmlPage, getHtmlPagePath, type BookingCacheParams } from './../../shared/page-query-params';
+import { ImageCategory, type ICity, type IBookingTicketProps, type EntityDataAttrsOnly, type ILocalizableValue, type IFlightOffer, type IStayOfferDetails, type IBookingTicketFlightGfxProps, type IBookingTicketStayTitleProps, type EntityId } from './../../shared/interfaces';
 import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
 import { clampTextLine, getLocalizeableValue, getValueForFlightDurationFormatting, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, extractAirportCode } from './../../shared/common';
 import { AppException, AppExceptionCodeEnum } from './../../shared/exceptions';
 import BookingTicket from './../../components/booking-ticket/booking-ticket.vue';
 import ComponentWaiterIndicator from './../../components/component-waiting-indicator.vue';
-import AppConfig from './../../appconfig';
 import TermsOfUse from './../../components/booking-page/terms-of-use.vue';
 import { getObject } from './../../shared/rest-utils';
 import { type IOfferBookingStore } from './../../stores/offer-booking-store';
@@ -25,27 +25,20 @@ const { status } = useAuth();
 const logger = CommonServicesLocator.getLogger();
 
 const reqEvent = import.meta.server ? useRequestEvent() : undefined;
-const isOgImageRequestMode = import.meta.server && !!reqEvent?.context.ogImageRequest;
+const isOgImageRequestMode = import.meta.server && !!reqEvent?.context.ogImageContext;
 
 let authUserForbidden = false;
 
 const isAuthenticated = status.value === 'authenticated' || (import.meta.server && reqEvent?.context.authenticated);
-let isUnAuthOgImageRequestMode = isOgImageRequestMode && AppConfig.ogImage.enforceAuthChecks && !isAuthenticated;
+let isUnAuthOgImageRequestMode = isOgImageRequestMode && !isAuthenticated;
 
 logger.verbose(`(BookingDetails) route=${route.fullPath}`);
 
 const bookingParam = route.params?.id?.toString() ?? '';
 if (bookingParam.length === 0) {
-  navigateTo(localePath('/'));
+  await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.Index)}`));
 }
-
-let bookingId: number | undefined;
-try {
-  bookingId = parseInt(bookingParam);
-} catch (err: any) {
-  logger.warn(`(BookingDetails) failed to parse booking id: param=${bookingParam}`, err);
-  throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'invalid booking id', 'error-page');
-}
+const bookingId: EntityId = bookingParam;
 
 definePageMeta({
   title: { resName: getI18nResName2('bookingPage', 'pageTitle'), resArgs: undefined }
@@ -65,9 +58,9 @@ let offerBookingStore: IOfferBookingStore<IFlightOffer | IStayOfferDetails> | un
 async function initializeVariables(): Promise<void> {
   if (!isUnAuthOgImageRequestMode) {
     logger.debug(`(BookingDetails) using full booking store mode, route=${route.fullPath}`);
-    const offerBookingStoreFactory = useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
+    const offerBookingStoreFactory = await useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
     try {
-      offerBookingStore = await offerBookingStoreFactory.getUserBooking(bookingId!, !!reqEvent?.context.ogImageRequest, reqEvent);
+      offerBookingStore = await offerBookingStoreFactory.getUserBooking(bookingId!, !!reqEvent?.context.ogImageContext, reqEvent);
     } catch (err: any) {
       if (AppException.isAppException(err) && (err as AppException).code === AppExceptionCodeEnum.FORBIDDEN) {
         authUserForbidden = true;
@@ -95,7 +88,7 @@ async function initializeVariables(): Promise<void> {
     // no need to payload, as it's ogImage request
     const resultDto = await getObject<EntityDataAttrsOnly<IFlightOffer | IStayOfferDetails>>(url, undefined, 'default', true, reqEvent, 'default');
     if (!resultDto) {
-      logger.warn(`(BookingDetails) error occured while fetching booking offer data, bookingId=${bookingId}`);
+      logger.warn(`(BookingDetails) exception occured while fetching booking offer data, bookingId=${bookingId}`);
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
     }
     const offerData = resultDto.kind === 'flights'
@@ -124,7 +117,7 @@ const ticketProps = computed<IBookingTicketProps>(() => (offerDataAvailable?.val
           name: userName.value!,
           sub: offer.value.kind === 'flights' ? getI18nResName2('ticket', 'boardingPass') : null
         },
-        classResName: getI18nResName3('ticket', 'class', (offer.value.kind === 'flights' ? (offer.value as EntityDataAttrsOnly<IFlightOffer>).class : (offerBookingStore.booking!.serviceLevel! === 'base' ? 'base' : 'city')))
+        classResName: getI18nResName3('ticket', 'class', (offer.value.kind === 'flights' ? (offer.value as EntityDataAttrsOnly<IFlightOffer>).class : (offerBookingStore.booking!.serviceLevel! === 'Base' ? 'base' : 'city')))
       },
       dates: {
         ctrlKey: `${CtrlKey}-Ticket-Dates`,
@@ -214,19 +207,20 @@ const displayedPrice = computed(() => offer?.value?.kind === 'flights' ? offer.v
 
 if (import.meta.server) {
   const offerKind = offer!.value!.kind;
+  const bookingOgImageQueryInfo = reqEvent!.context.cacheablePageParams as BookingCacheParams;
+  const isInternalRequest = bookingOgImageQueryInfo?.i === '1';
+  if (isAuthenticated && !authUserForbidden && isInternalRequest) {
+    const theme = bookingOgImageQueryInfo?.theme ?? DefaultTheme;
+    const isSecondPage = bookingOgImageQueryInfo?.isSecondPage === '1';
 
-  if (!AppConfig.ogImage.enforceAuthChecks || (import.meta.server && isAuthenticated && !authUserForbidden)) {
-    const theme = reqEvent!.context.ogImageRequest?.theme ?? DefaultTheme;
-    const isSecondPage = reqEvent!.context.ogImageRequest?.isSecondPage ?? false;
-
-    logger.debug(`(BookingDetails) using theme=${theme}, isSecondPage=${isSecondPage}, bookingId=${bookingId}`);
+    logger.debug(`(BookingDetails) internal booking ticket og image request using theme=${theme}, isSecondPage=${isSecondPage}, bookingId=${bookingId}`);
     useOgImage({
       name: 'OgBookingTicket',
       props: {
         ...(isSecondPage ? ticketReturnFlightProps.value : ticketProps.value),
         theme
       }
-    });
+    }, true);
   } else if (offerKind === 'flights') {
     const flightOffer = offer!.value as EntityDataAttrsOnly<IFlightOffer>;
     useOgImage({

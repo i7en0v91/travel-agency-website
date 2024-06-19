@@ -1,12 +1,12 @@
 import type { H3Event } from 'h3';
 import toPairs from 'lodash-es/toPairs';
-import isString from 'lodash-es/isString';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
-import { type EntityId, ImageCategory } from '../../../shared/interfaces';
+import { ImageCategory } from '../../../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';
 import { type IImageDetailsDto } from '../../dto';
 import { getServerSession } from '#auth';
 import AppConfig from './../../../appconfig';
+import { extractUserIdFromSession } from './../../../server/utils/auth';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const imageLogic = ServerServicesLocator.getImageLogic();
@@ -33,12 +33,9 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   }
 
   const authSession = await getServerSession(event);
-  let userId : EntityId | undefined = (authSession as any)?.id as EntityId;
-  if (userId && isString(userId)) {
-    userId = parseInt(userId);
-  }
+  const userId = extractUserIdFromSession(authSession);
 
-  const accessCheck = await imageLogic.checkAccess(slug, category, userId);
+  const accessCheck = await imageLogic.checkAccess(undefined, slug, category, userId);
   if (accessCheck === undefined) {
     throw new AppException(
       AppExceptionCodeEnum.OBJECT_NOT_FOUND,
@@ -53,7 +50,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  const imageInfo = await imageLogic.findImage(slug, category);
+  const imageInfo = await imageLogic.findImage(undefined, slug, category, event);
   if (!imageInfo) {
     throw new AppException(
       AppExceptionCodeEnum.OBJECT_NOT_FOUND,

@@ -7,6 +7,8 @@ import type { KeysOf, PickFrom, AsyncDataExecuteOptions } from '#app/composables
 import type { UseFetchOptions } from '#app/composables';
 import { type IApiErrorDto } from '../server/dto';
 import { AppException, AppExceptionCodeEnum, type AppExceptionAppearance, defaultErrorHandler } from './exceptions';
+import { HeaderAppVersion } from './../shared/constants';
+import AppConfig from './../appconfig';
 
 type AvailableRouterMethod<R extends NitroFetchRequest> = _AvailableRouterMethod<R> | Uppercase<_AvailableRouterMethod<R>>;
 
@@ -76,19 +78,16 @@ async function useFetchExInner<TDto, DataT, DefaultT = null, Method extends Avai
   const logger = CommonServicesLocator.getLogger();
   ignoreAbortedRequestErrors ??= false;
 
-  const headers = useRequestHeaders(['cookie']) as HeadersInit;
+  const headers: HeadersInit = import.meta.server ? useRequestHeaders(['cookie']) : {};
+  headers[HeaderAppVersion] = AppConfig.versioning.appVersion.toString();
   const caughtAppException = ref<AppException | undefined>();
   const innerFetchQuery = ref<any>(undefined);
   const innerFetchBody = ref<any>(undefined);
   const innerFetch = await useFetch<TDto, FetchError, NitroFetchRequest, Method, TDto, DataT, PickKeys, DefaultT>(request, {
     query: innerFetchQuery,
     body: innerFetchBody,
+    headers,
     ...opts,
-    ...(import.meta.server
-      ? {
-          headers
-        }
-      : {}),
     onRequestError (ctx) {
       console.error(ctx.error);
       const isRequestAborted = ctx.error?.name === 'AbortError';

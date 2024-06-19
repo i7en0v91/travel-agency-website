@@ -37,7 +37,7 @@ const reviewListComponent = shallowRef<InstanceType<typeof ReviewList>>();
 const editorSection = shallowRef<InstanceType<typeof CollapsableSection>>();
 const editor = shallowRef<InstanceType<typeof ReviewEditor>>();
 
-const reviewScore = computed(() => ((reviewStore.items !== undefined && reviewStore.status === 'success') ? (reviewStore.items.length > 0 ? reviewStore.items.map(r => r.score).reduce((sum, v) => sum + v, 0) / reviewStore.items.length : DefaultStayReviewScore) : (props.preloadedSummaryInfo?.reviewScore)));
+const reviewScore = computed(() => ((reviewStore.items !== undefined && reviewStore.status === 'success') ? (reviewStore.items.length > 0 ? reviewStore.items.map(r => r.score).reduce((sum, v) => sum + v, 0) / reviewStore.items.length : DefaultStayReviewScore) : undefined));
 const scoreClassResName = computed(() => reviewScore.value ? getScoreClassResName(reviewScore.value) : undefined);
 const reviewsCount = computed(() => (reviewStore.items?.length !== undefined && reviewStore.status === 'success') ? reviewStore.items.length : props.preloadedSummaryInfo!.numReviews);
 const reviewsCountText = computed(() => reviewsCount.value !== undefined ? `${reviewsCount.value} ${t(getI18nResName3('stayDetailsPage', 'reviews', 'count'), reviewsCount.value)}` : '');
@@ -109,23 +109,23 @@ function scheduleTooltipAutoHide () {
           </template>
         </VTooltip>
       </div>
-      <div class="stay-reviews-summary mt-xs-3">
-        <div v-if="reviewScore" class="stay-reviews-score">
-          {{ reviewScore.toFixed(1) }}
-        </div>
-        <div v-else class="stay-reviews-score data-loading-stub text-data-loading" />
-        <div class="stay-reviews-rating">
-          <div v-if="scoreClassResName" class="stay-reviews-score-class">
-            {{ $t(scoreClassResName) }}
-          </div>
-          <div v-else class="stay-reviews-score-class data-loading-stub text-data-loading" />
-          <div v-if="scoreClassResName" class="stay-reviews-count">
-            {{ reviewsCountText }}
-          </div>
-          <div v-else class="stay-reviews-count data-loading-stub text-data-loading" />
-        </div>
-      </div>
       <ClientOnly>
+        <div class="stay-reviews-summary mt-xs-3">
+          <div v-if="reviewScore" class="stay-reviews-score">
+            {{ reviewScore.toFixed(1) }}
+          </div>
+          <div v-else class="stay-reviews-score data-loading-stub text-data-loading" />
+          <div class="stay-reviews-rating">
+            <div v-if="scoreClassResName" class="stay-reviews-score-class">
+              {{ $t(scoreClassResName) }}
+            </div>
+            <div v-else class="stay-reviews-score-class data-loading-stub text-data-loading" />
+            <div v-if="scoreClassResName" class="stay-reviews-count">
+              {{ reviewsCountText }}
+            </div>
+            <div v-else class="stay-reviews-count data-loading-stub text-data-loading" />
+          </div>
+        </div>
         <CollapsableSection
           v-if="status === 'authenticated'"
           ref="editorSection"

@@ -1,11 +1,11 @@
 import type { H3Event } from 'h3';
-import isString from 'lodash-es/isString';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
 import { type EntityId } from '../../../../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
 import { mapFlightOffer } from '../../../utils/mappers';
 import { getServerSession } from '#auth';
 import AppConfig from './../../../../appconfig';
+import { extractUserIdFromSession } from './../../../../server/utils/auth';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const logger = ServerServicesLocator.getLogger();
@@ -21,24 +21,11 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  let offerId: number | undefined;
-  try {
-    offerId = parseInt(offerParam);
-  } catch (err: any) {
-    logger.warn(`(api:flight-details) failed to parse flight offer id: param=${offerParam}`);
-    throw new AppException(
-      AppExceptionCodeEnum.BAD_REQUEST,
-      'failed to parse offerId parameter',
-      'error-page'
-    );
-  }
+  const offerId: EntityId | undefined = offerParam;
 
   const authSession = await getServerSession(event);
-  let userId : EntityId | undefined = (authSession as any)?.id as EntityId;
-  if (userId && isString(userId)) {
-    userId = parseInt(userId);
-  }
-
+  const userId = extractUserIdFromSession(authSession);
+  
   const flight = await flightsLogic.getFlightOffer(offerId, userId ?? 'guest');
 
   handleCacheHeaders(event, AppConfig.caching.htmlPageCachingSeconds ? {

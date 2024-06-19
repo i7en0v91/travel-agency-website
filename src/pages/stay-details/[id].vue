@@ -7,8 +7,9 @@ import { getI18nResName2 } from './../../shared/i18n';
 import OfferDetailsSummary from './../../components/common-page-components/offer-details-summary.vue';
 import { getLocalizeableValue } from './../../shared/common';
 import { useFetchEx } from './../../shared/fetch-ex';
-import { ApiEndpointStayOfferDetails, type Locale, DefaultStayReviewScore, PagePath } from './../../shared/constants';
-import { type IStayOfferDetails, type ILocalizableValue, ImageCategory } from './../../shared/interfaces';
+import { ApiEndpointStayOfferDetails, type Locale, DefaultStayReviewScore } from './../../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
+import { type IStayOfferDetails, type ILocalizableValue, ImageCategory, type EntityId } from './../../shared/interfaces';
 import { type IStayOfferDetailsDto } from './../../server/dto';
 import { mapStayOfferDetails } from './../../shared/mappers';
 import OverviewSection from './../../components/stay-details/overview-section.vue';
@@ -31,16 +32,9 @@ const logger = CommonServicesLocator.getLogger();
 
 const offerParam = useRoute().params?.id?.toString() ?? '';
 if (offerParam.length === 0) {
-  navigateTo(localePath('/'));
+  await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.Index)}`));
 }
-
-let offerId: number | undefined;
-try {
-  offerId = parseInt(offerParam);
-} catch (err: any) {
-  logger.warn(`(StayDetails) failed to parse stay offer id: param=${offerParam}`, err);
-  isError.value = true;
-}
+const offerId: EntityId = offerParam;
 
 definePageMeta({
   title: { resName: getI18nResName2('stayDetailsPage', 'title'), resArgs: undefined }
@@ -64,11 +58,11 @@ const stayDetailsFetchRequest = await useFetchEx<IStayOfferDetailsDto, IStayOffe
       isError.value = ctx.response.status >= 400;
     },
     onResponseError: (ctx) => {
-      logger.warn('(StayDetails) got stay offer details fetch response error', ctx.error, { id: offerId });
+      logger.warn('(StayDetails) got stay offer details fetch response exception', ctx.error, { id: offerId });
       isError.value = true;
     },
     onRequestError: (ctx) => {
-      logger.warn('(StayDetails) got stay offer details fetch request error', ctx.error, { id: offerId });
+      logger.warn('(StayDetails) got stay offer details fetch request exception', ctx.error, { id: offerId });
       isError.value = true;
     }
   });
@@ -186,7 +180,7 @@ onMounted(() => {
         :review-score="stayOffer?.stay?.reviewScore"
         :num-reviews="stayOffer?.stay?.numReviews"
         :btn-res-name="getI18nResName2('offerDetailsPage', 'bookBtn')"
-        :btn-link-url="stayOffer ? withQuery(localePath(`/${PagePath.BookStay}/${offerId}`), { serviceLevel: 'base' }) : route.fullPath"
+        :btn-link-url="stayOffer ? withQuery(localePath(`/${getHtmlPagePath(HtmlPage.BookStay)}/${offerId}`), { serviceLevel: 'Base' }) : route.fullPath"
       />
       <section class="stay-images mt-xs-5">
         <StaticImage

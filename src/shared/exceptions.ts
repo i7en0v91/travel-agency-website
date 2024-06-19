@@ -11,7 +11,8 @@ export enum AppExceptionCodeEnum {
   CAPTCHA_VERIFICATION_FAILED = 12005,
   EMAILING_DISABLED = 12006,
   FORBIDDEN = 12007,
-  DOCUMENT_GENERATION_FAILED = 12008
+  DOCUMENT_GENERATION_FAILED = 12008,
+  ACSYS_INTEGRATION_ERROR = 12009
 }
 export type AppExceptionCode = keyof typeof AppExceptionCodeEnum;
 
@@ -116,6 +117,8 @@ export function getUsrMsgResName (code: AppExceptionCodeEnum): I18nResName {
       return getI18nResName2('appErrors', 'forbidden');
     case AppExceptionCodeEnum.DOCUMENT_GENERATION_FAILED:
       return getI18nResName2('appErrors', 'documentGenerationFailed');
+    case AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR:
+      return getI18nResName2('appErrors', 'acsysIntegrationError');
   }
   return getI18nResName2('appErrors', 'unknown');
 }

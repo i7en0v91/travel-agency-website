@@ -7,12 +7,13 @@ import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
 import { AuthProvider } from './../shared/interfaces';
 import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
-import { PagePath, ApiEndpointPasswordRecovery } from './../shared/constants';
+import { ApiEndpointPasswordRecovery, RecoverPasswordResultEnum } from './../shared/constants';
+import { HtmlPage, getHtmlPagePath } from './../shared/page-query-params';
 import SimpleButton from './../components/forms/simple-button.vue';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
 import CaptchaProtection from './../components/forms/captcha-protection.vue';
-import { type IRecoverPasswordDto, type IRecoverPasswordResultDto, RecoverPasswordResultCode } from './../server/dto';
+import { type IRecoverPasswordDto, type IRecoverPasswordResultDto } from './../server/dto';
 import { post } from './../shared/rest-utils';
 
 const { t, locale } = useI18n();
@@ -57,14 +58,14 @@ async function callServerPasswordRecovery (email: string, captchaToken?: string)
   const resultDto = await post(ApiEndpointPasswordRecovery, undefined, postBody, undefined, true, 'default') as IRecoverPasswordResultDto;
   if (resultDto) {
     switch (resultDto.code) {
-      case RecoverPasswordResultCode.SUCCESS:
-        await navigateTo(localePath(`/${PagePath.ForgotPasswordVerify}`));
+      case RecoverPasswordResultEnum.SUCCESS:
+        await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.ForgotPasswordVerify)}`));
         break;
-      case RecoverPasswordResultCode.USER_NOT_FOUND:
+      case RecoverPasswordResultEnum.USER_NOT_FOUND:
         useremailServerError.value = getI18nResName2('forgotPasswordPage', 'userNotFound');
         await v$.value.useremail.$validate();
         break;
-      case RecoverPasswordResultCode.EMAIL_NOT_VERIFIED:
+      case RecoverPasswordResultEnum.EMAIL_NOT_VERIFIED:
         useremailServerError.value = getI18nResName2('forgotPasswordPage', 'emailNotVerified');
         await v$.value.useremail.$validate();
         break;
@@ -86,7 +87,7 @@ function submitClick () {
 }
 
 function onOAuthProviderClick (provider: AuthProvider) {
-  const oauthOptions = { callbackUrl: localePath('/'), external: true, redirect: true };
+  const oauthOptions = { callbackUrl: localePath(`/${getHtmlPagePath(HtmlPage.Index)}`), external: true, redirect: true };
   switch (provider) {
     case AuthProvider.Google:
       signIn('google', oauthOptions);
@@ -106,7 +107,7 @@ function onOAuthProviderClick (provider: AuthProvider) {
   <div class="forgot-password-page account-page no-hidden-parent-tabulation-check">
     <div class="forgot-password-page-content">
       <NavLogo ctrl-key="forgotPasswordPageAppLogo" mode="inApp" />
-      <NuxtLink class="back-to-login-link brdr-1" :to="localePath(`/${PagePath.Login}`)">
+      <NuxtLink class="back-to-login-link brdr-1" :to="localePath(`/${getHtmlPagePath(HtmlPage.Login)}`)">
         {{ t(getI18nResName2('accountPageCommon', 'backToLogin')) }}
       </NuxtLink>
       <h1 class="forgot-password-title mt-xs-3 font-h2">

@@ -2,13 +2,16 @@ import { type H3Event } from 'h3';
 import { type CSSProperties } from 'vue';
 import type { Decimal } from 'decimal.js';
 import { type ICitiesSearchQuery } from '../server/dto';
-import { type PagePath, type Locale, DefaultUserCoverSlug, DefaultUserAvatarSlug, type Theme } from './constants';
 import { type I18nResName } from './i18n';
+import { type Locale, DefaultUserCoverSlug, DefaultUserAvatarSlug, type Theme, type QueryInternalRequestParam, type QueryPageTimestampParam } from './constants';
+import { type HtmlPage } from './page-query-params';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { type IAppConfig } from './../appconfig';
 
 export type Price = Decimal;
 export type DistanceUnitKm = number;
 
-export type EntityId = number;
+export type EntityId = string;
 export interface IEntity {
   id: EntityId
 }
@@ -73,6 +76,183 @@ export interface IAppAssetsProvider {
   getPdfFont(filename: string): Promise<Buffer>;
 }
 
+/** Og Image */
+export interface IOgImageContext {
+  locale: Locale
+};
+
+/**
+ * Url & query variants for cacheable pages
+ */
+export type UrlArgValue = string | number | boolean;
+
+export declare enum PageCacheVaryOptionsEnum {
+  /**
+   * Url's pathname and it's query will be used for computing cache keys related to page. A full
+   * list of possible query values must be specified. If request contains any other non-specified 
+   * parameter, it will be ignored. In addition to configured variants list, enumeration is 
+   * performed over locale, {@link QueryInternalRequestParam} and other system parameters.
+   * This mode is suitable for pages with static og images and simple caching logic as system will
+   * remove only cache keys with predefined base and pattern names. E.g. if the page generates 
+   * OgImage dynamically (which involves caching on multiple stages) than another
+   * {@link QueryPageTimestampParam} mode must be used instead
+   */
+  PathAndPredefinedVariants = 'PathAndPredefinedVariants',
+
+  /**
+   * Ignores entity's id and query arguments, only path and locale (and other system parameters like 
+   * {@link QueryInternalRequestParam} query flag). Query hashes are not involved in cache key searching. 
+   * Thus, in this mode system clears all rendered page variants at once. Also it won't touch 
+   * OgImage's cache - only static images are allowed.
+   * This mode should be used when page query may contain arbitrary query values.
+   */
+  VaryByIdAndSystemParamsOnly = 'VaryByIdAndSystemParamsOnly',
+
+  /**
+   * Caching policy is defined by entity's last-modified time. System tracks page change
+   * timestamp and redirects user agent to url with "...&t={timestamp}..." added to query (if not present).
+   * In this mode there are no manual key calculations and stale page versions 
+   * with old timestamps MAY remain in cache (though, some html-related cache invalidation still exists). 
+   * Should be used when page requires complex caching-related activities to render itself, so that it's 
+   * easier to vary page version via query parameter than meanully find and remove it from cache. 
+   * It's probably not desirable to add & redirect to "...&t={timestamp}..." for main index page, but
+   * is acceptable for offers/flights e.t.c identity pages
+   */
+  UseEntityChangeTimestamp = 'UseEntityChangeTimestamp'
+}
+export declare type PageCacheVaryOptions = keyof typeof PageCacheVaryOptionsEnum;
+
+enum EmptyParams {};
+export type EmptyParamListOptions = Record<keyof typeof EmptyParams, CachePageParamOptions>;
+
+export declare type BoolTrue = true;
+export type BoolFalse = false;
+export type VariantsRangeValue = string[];
+export type AnyParamValue = 'anyValue';
+
+export declare type CachePageParamOptions = {
+  isRequired: BoolTrue | BoolFalse,
+  isSystem: BoolTrue | BoolFalse,
+  acceptableValues: VariantsRangeValue | AnyParamValue,
+  defaultValue?: string | undefined
+};
+
+declare type UnwrapParamValueType<TParamDesc> = TParamDesc extends Array<infer TArrItem> ? TArrItem : (TParamDesc extends 'anyValue' ? string : never);
+export declare type GetCachePageParamListObj<
+  TParamListOptions extends Record<any, CachePageParamOptions> = any
+> = { [P in keyof TParamListOptions]: (TParamListOptions[P]['isRequired'] extends BoolTrue ? UnwrapParamValueType<TParamListOptions[P]['acceptableValues']> : (UnwrapParamValueType<TParamListOptions[P]['acceptableValues']> | null)) };
+
+export type InternalSystemParamOptions = { [P in typeof QueryInternalRequestParam]: { isRequired: BoolFalse, isSystem: BoolTrue, acceptableValues: ('0' | '1')[] } };
+export type TimestampSystemParamOptions = { [P in typeof QueryPageTimestampParam]: { isRequired: BoolTrue, isSystem: BoolTrue, acceptableValues: AnyParamValue } };
+export type GetParamsOptionsKind = 'cache' | 'allowed' | 'system' | 'all';
+
+export declare type SystemQueryParamsListOptions<TVaryMode extends PageCacheVaryOptions> = TVaryMode extends 'UseEntityChangeTimestamp' ? (InternalSystemParamOptions & TimestampSystemParamOptions) : InternalSystemParamOptions;
+declare type GetSystemQueryParamsListObj<TVaryMode extends PageCacheVaryOptions> = GetCachePageParamListObj<SystemQueryParamsListOptions<TVaryMode>>;
+
+export declare type NormalizedQueryResult<
+  TVaryMode extends PageCacheVaryOptions, 
+  TAddAllowedParamsOptions extends Record<any, CachePageParamOptions>,
+  TCacheParamsOptions extends Record<any, CachePageParamOptions>
+> = GetSystemQueryParamsListObj<TVaryMode> &
+    GetCachePageParamListObj<TAddAllowedParamsOptions> &
+    GetCachePageParamListObj<TCacheParamsOptions>;
+declare type CacheKeyObjCommon<TVaryMode extends PageCacheVaryOptions> = GetSystemQueryParamsListObj<TVaryMode>;
+declare type CacheKeyObj<TVaryMode extends PageCacheVaryOptions, TCacheParamsOptions extends Record<any, CachePageParamOptions>> = GetCachePageParamListObj<TCacheParamsOptions> & CacheKeyObjCommon<TVaryMode>;
+
+export type GetParamsOptionsResult<
+  TKind extends GetParamsOptionsKind,
+  TVaryMode extends PageCacheVaryOptions, 
+  TAddAllowedParamsOptions extends Record<any, CachePageParamOptions>,
+  TCacheParamsOptions extends Record<any, CachePageParamOptions>> = 
+    TKind extends 'allowed' ? TAddAllowedParamsOptions :
+    TKind extends 'cache' ? TCacheParamsOptions : 
+    TKind extends 'system' ? SystemQueryParamsListOptions<TVaryMode> : 
+    (TAddAllowedParamsOptions & TCacheParamsOptions & SystemQueryParamsListOptions<TVaryMode>);
+export interface CacheablePageParamsBase<
+    TVaryMode extends PageCacheVaryOptions = PageCacheVaryOptions, 
+    TAddAllowedParamsOptions extends Record<any, CachePageParamOptions> = Record<any, CachePageParamOptions>,
+    TCacheParamsOptions extends Record<any, CachePageParamOptions> = Record<any, CachePageParamOptions>,
+    TPageTimestampRequired extends number | never = TVaryMode extends 'UseEntityChangeTimestamp' ? number : never
+> {
+  /** Cache vary mode used by this page */
+  getCacheVaryOptions(): TVaryMode;
+  /** Options for query parameters by category. If {@param kind} = "all" passed, then function returns all parameters configured for page query*/
+  getParamsOptions<TKind extends GetParamsOptionsKind>(kind: TKind): GetParamsOptionsResult<TKind, TVaryMode, TAddAllowedParamsOptions, TCacheParamsOptions>;
+  /** 
+   * Returns normalized and filtered according to {@link getAllowedQueryParams} url query object 
+   * @param pageTimestamp actual page timestamp, if specified, will be added to result, overriding existing if present
+   * */
+  getNormalizedUrlQuery(pageTimestamp: TPageTimestampRequired): NormalizedQueryResult<TVaryMode, TAddAllowedParamsOptions, TCacheParamsOptions>;
+  /** Returns object which fields-values are used to compute page cache key (excluding locale, which is taken from url and handled separately) */
+  getCacheKeyObject(): TVaryMode extends 'UseEntityChangeTimestamp' ? never : CacheKeyObj<TVaryMode, TCacheParamsOptions>
+};
+
+export type GetCachePageParamsVaryMode<TCachePpageParams> = TCachePpageParams extends CacheablePageParamsBase<infer TVaryMode> ? TVaryMode : never;
+
+declare type CacheablePageParamsInlinedAsProps<
+  TVaryMode extends PageCacheVaryOptions, 
+  TAddAllowedParamsOptions extends Record<any, CachePageParamOptions>,
+  TCacheParamsOptions extends Record<any, CachePageParamOptions>,
+> = CacheablePageParamsBase<TVaryMode, TAddAllowedParamsOptions, TCacheParamsOptions> & 
+    GetSystemQueryParamsListObj<TVaryMode> &
+    GetCachePageParamListObj<TAddAllowedParamsOptions> & 
+    GetCachePageParamListObj<TCacheParamsOptions>;
+
+export declare type CacheParamsVariedByValueRanges<
+  TAllowedAndCacheParamsOptions extends Record<any, CachePageParamOptions>
+> = CacheablePageParamsInlinedAsProps<'PathAndPredefinedVariants', EmptyParamListOptions, TAllowedAndCacheParamsOptions>;
+export declare type CacheParamsVariedBySystemParamsOnly<
+  TQueryParamsOptions extends Record<any, CachePageParamOptions>
+> = CacheablePageParamsInlinedAsProps<'VaryByIdAndSystemParamsOnly', TQueryParamsOptions, EmptyParamListOptions>;
+export declare type CacheByPageTimestamp<
+  TQueryParamsOptions extends Record<any, CachePageParamOptions>
+> = CacheablePageParamsInlinedAsProps<'UseEntityChangeTimestamp', TQueryParamsOptions, EmptyParamListOptions>;
+
+/**
+ * Nitro rendered page's html & og-image cache cleaner
+ */
+export interface IHtmlPageCacheCleaner {
+
+  invalidatePage(mode: 'schedule' | 'immediate', page: HtmlPage, id: EntityId | undefined): Promise<void>;
+  /**
+   * Perform's additional instant "out-of-schedule" ({@link IAppConfig.caching.invalidation.intervalSeconds}) cache reset for pages modified since last cleanup.
+   * Joins currently executing cleanup task if any
+   */
+  performCleanup(): Promise<void>;
+  /**
+   * Removes every page's html from cache
+   */
+  purge(): Promise<void>;
+  /**
+   * Initializes instance and starts periodic cache cleaning task in background
+   */
+  initialize(): void;
+/**
+   * Returns actual page timestamp.
+   * If page haven't been cached & updated and doens't have stored timestamp - returns 0.
+   * If page doesn't use {@link QueryPageTimestampParam} timestamp param for caching than function returns configured cache vary mode
+   */
+  getPageTimestamp(page: HtmlPage, id: EntityId | undefined): Promise<Date | 0 | (Exclude<PageCacheVaryOptions, 'UseEntityChangeTimestamp'>) | 0>;
+}
+
+export declare enum ParseQueryCacheResultEnum {
+  SUCCESS,
+  REQUIRED_PARAM_MISSED,
+  VALUE_NOT_ALLOWED,
+  REDUNDANT_PARAM
+};
+
+export declare type ParseQueryCacheSuccess<
+  TCacheQuery extends CacheablePageParamsBase = CacheablePageParamsBase
+> = { result: 'SUCCESS', parsedQuery: TCacheQuery };
+export declare type ParseQueryCacheRequiredParamMissed = { result: 'REQUIRED_PARAM_MISSED', missedParamNames: string[], providedDefaults: ReadonlyMap<string, string> };
+export declare type ParseQueryCacheValueNotAllowed = { result: 'VALUE_NOT_ALLOWED', paramName: string, invalidValue: string };
+export declare type ParseQueryCacheRedundantParam = { result: 'REDUNDANT_PARAM', redundantParamNames: string[] };
+export declare type ParseQueryCacheError = ParseQueryCacheRequiredParamMissed | ParseQueryCacheValueNotAllowed | ParseQueryCacheRedundantParam;
+export declare type ParseQueryCacheResult<
+  TCacheQuery extends CacheablePageParamsBase = CacheablePageParamsBase
+> = ParseQueryCacheSuccess<TCacheQuery> | ParseQueryCacheError;
+
 /**
  * User Session
  */
@@ -135,35 +315,35 @@ export interface IEntityCacheCityItem extends IEntityCacheSlugItem {
 }
 
 export interface IEntityCacheLogic {
-  get: <TEntityType extends CacheEntityType, TCacheItem extends ({ type: TEntityType } & IEntityCacheItem)>(idsOrSlugs: EntityId[] | string[], type: TEntityType) => Promise<TCacheItem[]>
+  get: <TEntityType extends CacheEntityType, TCacheItem extends ({ type: TEntityType } & IEntityCacheItem)>(searchIds: EntityId[], searchSlugs: string[], type: TEntityType) => Promise<TCacheItem[]>
 }
 
 /**
  * Files
  */
-export interface IFileInfo extends IEditableEntity, ISoftDeleteEntity {
+export type IFileInfo = Omit<IEditableEntity & ISoftDeleteEntity & {
   originalName?: string,
-  mime?: string
-}
+  mime: string
+}, 'createdUtc'>;
 
 export interface IFileData {
   bytes: Buffer,
-  ownerId?: EntityId,
   originalName?: string
-  mimeType?: string
+  mimeType: string
 }
 
 export interface IFileLogic {
-  findFile(id: EntityId): Promise<IFileInfo>;
-  createFile(data: IFileData): Promise<{ id: EntityId, timestamp: Timestamp }>;
-  updateFile(id: EntityId, data: Partial<IFileData>, recoverDeleted?: boolean): Promise<{ timestamp: Timestamp }>;
-  getFileBytes(id: EntityId): Promise<Buffer>;
+  findFile(id: EntityId, event?: H3Event): Promise<IFileInfo>;
+  createFile(data: IFileData, userId: EntityId | undefined, event: H3Event): Promise<{ id: EntityId, timestamp: Timestamp }>;
+  updateFile(id: EntityId, data: IFileData, userId: EntityId | undefined, recoverDeleted: boolean | undefined, event: H3Event): Promise<{ id: EntityId, timestamp: Timestamp }>;
+  getFileData(id: EntityId, event: H3Event): Promise<IFileInfo & { bytes: Buffer }>;
 }
 
 /**
  * Images
  */
 export enum ImageCategory {
+  SampleData = 'SampleData',
   UserAvatar = 'UserAvatar',
   UserCover = 'UserCover',
   MainTitle = 'MainTitle',
@@ -185,9 +365,12 @@ export interface IImageInfo extends IEntity {
   slug: string,
   category: ImageCategory,
   file: IFileInfo,
+  ownerId?: EntityId,
   stubCssStyle: CSSProperties | undefined,
   invertForDarkTheme: boolean
 }
+
+export type IImageFileInfoUnresolved = Omit<IImageInfo, 'file'> & { fileId: EntityId };
 
 export interface IImageCategoryInfo {
   id: EntityId,
@@ -199,7 +382,7 @@ export type ImageCheckAccessResult = 'granted' | 'denied' | 'unprotected';
 export type ImageBytesOptions = number | 'leave-as-is';
 export interface IImageBytes {
   bytes: Buffer,
-  mimeType?: string,
+  mimeType: string,
   modifiedUtc: Date
 }
 
@@ -207,20 +390,22 @@ export type IImageData = IFileData & {
   slug: string,
   category: ImageCategory,
   invertForDarkTheme: boolean | undefined,
-  stubCssStyle: CSSProperties | undefined
+  stubCssStyle: CSSProperties | undefined,
+  ownerId?: EntityId
 };
 
 export interface IImageBytesProvider {
-  getImageBytes(idOrSlug: EntityId | string, category: ImageCategory, bytesOptions: ImageBytesOptions): Promise<IImageBytes | undefined>;
+  getImageBytes(id: EntityId | undefined, slug: string | undefined, category: ImageCategory, bytesOptions: ImageBytesOptions, event: H3Event): Promise<IImageBytes | undefined>;
   clearImageCache(idOrSlug: EntityId | string, category: ImageCategory): Promise<void>;
 }
 export interface IImageLogic {
-  checkAccess(idOrSlug: EntityId | string, category: ImageCategory, userId?: EntityId): Promise<ImageCheckAccessResult | undefined>;
-  findImage(idOrSlug: EntityId | string, category: ImageCategory): Promise<IImageInfo | undefined>;
-  getImageBytes(idOrSlug: EntityId | string, category: ImageCategory): Promise<IImageBytes | undefined>;
-  createImage(data: IImageData): Promise<{ id: EntityId, timestamp: Timestamp }>;
-  updateImage(imageId: EntityId, data: Partial<IImageData>, imageFileId?: EntityId): Promise<{ timestamp: Timestamp }>;
-  getAllImagesByCategory(category: ImageCategory): Promise<IImageInfo[]>;
+  checkAccess(id: EntityId | undefined, slug: string | undefined, category: ImageCategory, userId?: EntityId): Promise<ImageCheckAccessResult | undefined>;
+  findImage(id: EntityId | undefined, slug: string | undefined, category: ImageCategory, event: H3Event): Promise<IImageInfo | undefined>;
+  getImageBytes(id: EntityId | undefined, slug: string | undefined, category: ImageCategory, event: H3Event): Promise<IImageBytes | undefined>;
+  createImage(data: IImageData, userId: EntityId | undefined, event: H3Event): Promise<{ id: EntityId, timestamp: Timestamp }>;
+  updateImage(imageId: EntityId, data: IImageData, imageFileId: EntityId | undefined, userId: EntityId | undefined, event: H3Event): Promise<{ timestamp: Timestamp }>;
+  getAllImagesByCategory(category: ImageCategory, event: H3Event): Promise<IImageInfo[]>;
+  deleteImage(id: EntityId): Promise<void>;
 }
 
 export interface IImageCategoryLogic {
@@ -228,6 +413,25 @@ export interface IImageCategoryLogic {
   findCategory(type: ImageCategory): Promise<IImageCategoryInfo | undefined>;
   createCategory(type: ImageCategory, width: number, height: number): Promise<EntityId>;
 }
+
+/**
+ * AuthForm Images
+ */
+export interface IAuthFormImageInfo extends IEditableEntity, ISoftDeleteEntity {
+  order: number,
+  image: {
+    slug: string,
+    timestamp: Timestamp
+  }
+};
+export type AuthFormImageData = IFileData & { slug: string };
+
+export interface IAuthFormImageLogic {
+  createImage(imageData: AuthFormImageData | EntityId, order: number, event: H3Event): Promise<EntityId>;
+  getAllImages(event: H3Event): Promise<IAuthFormImageInfo[]>;
+  deleteImage(id: EntityId): Promise<void>;
+}
+
 
 /**
  * User Profile
@@ -238,6 +442,11 @@ export interface IUserProfileInfo extends IUserMinimalInfo {
   avatar?: IImageInfo
 }
 
+export interface IUserProfileFileInfoUnresolved extends IUserMinimalInfo {
+  cover?: IImageFileInfoUnresolved,
+  avatar?: IImageFileInfoUnresolved
+}
+
 export interface UserResponseDataSet {
   minimal: IUserMinimalInfo,
   profile: IUserProfileInfo
@@ -246,16 +455,17 @@ export type RegisterUserByEmailResponse = EntityId | 'already-exists' | 'insecur
 export type PasswordRecoveryResult = 'success' | 'user-not-found' | 'email-not-verified';
 export type UpdateUserAccountResult = 'success' | 'email-already-exists' | 'deleting-last-email' | 'email-autoverified';
 export interface IUserLogic {
-  getUser<TDataSet extends keyof UserResponseDataSet>(userId: EntityId, dataSet: TDataSet): Promise<UserResponseDataSet[TDataSet] | undefined>;
-  findUser<TDataSet extends keyof UserResponseDataSet>(authProvider: AuthProvider, providerIdentity: string, dataSet: TDataSet): Promise<UserResponseDataSet[TDataSet] | undefined>;
-  findUserByEmail<TDataSet extends keyof UserResponseDataSet>(email: string, mustBeVerified: boolean, dataSet: TDataSet): Promise<UserResponseDataSet[TDataSet] | undefined>
-  registerUserByEmail(email: string, password: string, verification: RegisterVerificationFlow, firstName?: string, lastName?: string, theme?: Theme, locale?: Locale) : Promise<RegisterUserByEmailResponse>;
-  updateUserAccount(userId: EntityId, firstName?: string, lastName?: string, password?: string, emails?: string[], theme?: Theme, locale?: Locale) : Promise<UpdateUserAccountResult>;
+  getUser<TDataSet extends keyof UserResponseDataSet>(userId: EntityId, dataSet: TDataSet, event: H3Event): Promise<UserResponseDataSet[TDataSet] | undefined>;
+  findUser<TDataSet extends keyof UserResponseDataSet>(authProvider: AuthProvider, providerIdentity: string, dataSet: TDataSet, event: H3Event | undefined): Promise<UserResponseDataSet[TDataSet] | undefined>;
+  findUserByEmail<TDataSet extends keyof UserResponseDataSet>(email: string, mustBeVerified: boolean, dataSet: TDataSet, event: H3Event): Promise<UserResponseDataSet[TDataSet] | undefined>
+  registerUserByEmail(email: string, password: string, verification: RegisterVerificationFlow, firstName: string | undefined, lastName: string | undefined, theme: Theme | undefined, locale: Locale | undefined, event: H3Event) : Promise<RegisterUserByEmailResponse>;
+  updateUserAccount(userId: EntityId, firstName: string | undefined, lastName: string | undefined, password: string | undefined, emails: string[] | undefined, theme: Theme | undefined, locale: Locale | undefined, event: H3Event) : Promise<UpdateUserAccountResult>;
   ensureOAuthUser(authProvider: AuthProvider, providerIdentity: string, firstName?: string, lastName?: string, email?: string, emailVerified?: boolean): Promise<IUserProfileInfo>;
   verifyUserPassword(email: string, password: string): Promise<IUserMinimalInfo | undefined>;
-  recoverUserPassword(email: string, theme?: Theme, locale?: Locale): Promise<PasswordRecoveryResult>;
+  recoverUserPassword(email: string, theme: Theme | undefined, locale: Locale | undefined, event: H3Event): Promise<PasswordRecoveryResult>;
   setUserPassword(userId: EntityId, password: string): Promise<void>;
-  uploadUserImage(userId: EntityId, category: ImageCategory, bytes: Buffer, mimeType: string, fileName?: string): Promise<{ id: EntityId, slug: string, timestamp: Timestamp }>;
+  uploadUserImage(userId: EntityId, category: ImageCategory, bytes: Buffer, mimeType: string, fileName: string | undefined, event: H3Event): Promise<{ id: EntityId, slug: string, timestamp: Timestamp }>;
+  deleteUser(userId: EntityId): Promise<void>;
 };
 
 /**
@@ -283,6 +493,7 @@ export interface IGeoLogic {
   createCountry(data: ICountryData): Promise<EntityId>;
   createCity(data: ICityData): Promise<EntityId>;
   getAverageDistance(cityId: EntityId): Promise<DistanceUnitKm>;
+  deleteCountry(countryId: EntityId): Promise<void>;
 };
 
 /**
@@ -334,6 +545,7 @@ export interface ICitiesLogic {
   getCity(slug: string): Promise<ICity>;
   makeCityPopular(data: IPopularCityData): Promise<void>;
   getTravelDetails(cityId: EntityId): Promise<Omit<ITravelDetails, 'price'>>;
+  deleteCity(cityId: EntityId): Promise<void>;
 };
 
 /** Airline company logic */
@@ -353,10 +565,18 @@ export interface IAirlineCompanyLogic {
   getNearestCompany() : Promise<IAirlineCompany>;
   createAirlineCompany(data: IAirlineCompanyData): Promise<EntityId>;
   getAllAirlineCompanies() : Promise<IAirlineCompany[]>;
+  deleteCompany(id: EntityId): Promise<void>;
 }
 
 /** Airplane logic */
-export type AirplaneImageKind = 'main' | 'window' | 'cabin' | 'common' | FlightClass;
+export enum AirplaneImageEnum {
+  Main = 'main',
+  Window = 'window',
+  Cabin = 'cabin',
+  Common = 'common'
+};
+export const AvailableAirplaneImageKind = [...Object.values(AirplaneImageEnum).map(x => x.toLowerCase()), ...AvailableFlightClasses];
+export type AirplaneImageKind = (Lowercase<keyof typeof AirplaneImageEnum>) | FlightClass;
 
 export interface IAirplaneImage extends IEditableEntity, ISoftDeleteEntity {
   kind: AirplaneImageKind,
@@ -383,6 +603,7 @@ export interface IAirplaneData {
 export interface IAirplaneLogic {
   getAllAirplanes(): Promise<IAirplane[]>;
   createAirplane(data: IAirplaneData): Promise<EntityId>;
+  deleteAirplane(id: EntityId): Promise<void>;
 };
 
 /** Airport logic */
@@ -399,6 +620,7 @@ export interface IAirportLogic {
   getAllAirportsShort(): Promise<IAirportShort[]>;
   createAirport(data: IAirportData): Promise<EntityId>;
   getAirportsForSearch(citySlugs: string[], addPopular: boolean): Promise<EntityDataAttrsOnly<IAirport>[]>;
+  deleteAirport(id: EntityId): Promise<void>;
 };
 
 /** Flights logic */
@@ -481,6 +703,8 @@ export interface IFlightsLogic {
   getUserFavouriteOffers(userId: EntityId): Promise<ISearchFlightOffersResult<IFlightOffer & { addDateUtc: Date }>>;
   getUserTickets(userId: EntityId): Promise<ISearchFlightOffersResult<IFlightOffer & { bookingId: EntityId, bookDateUtc: Date; }>>;
   toggleFavourite(offerId: EntityId, userId: EntityId): Promise<boolean>;
+  deleteFlightOffer(id: EntityId): Promise<void>;
+  deleteFlight(Id: EntityId): Promise<void>;
 };
 
 /** Stays logic */
@@ -490,8 +714,24 @@ export enum StayOffersSortFactorEnum {
   Rating = 'rating'
 };
 
-export type StayServiceLevel = 'base' | 'cityView-1' | 'cityView-2' | 'cityView-3';
-export type StayDescriptionParagraphType = 'title' | 'main' | 'footer' | 'feature-caption' | 'feature-text';
+export enum StayServiceLevelEnum {
+  Base = 'Base',
+  CityView1 = 'CityView1',
+  CityView2 = 'CityView2',
+  CityView3 = 'CityView3'
+};
+export const AvailableStayServiceLevel = Object.values(StayServiceLevelEnum).map(x => x.valueOf());
+export type StayServiceLevel = keyof typeof StayServiceLevelEnum;
+
+export enum StayDescriptionParagraphEnum {
+  Title = 'Title',
+  Main = 'Main',
+  Footer = 'Footer',
+  FeatureCaption = 'FeatureCaption',
+  FeatureText = 'FeatureText'
+};
+export const AvailableStayDescriptionParagraphTypes = Object.values(StayDescriptionParagraphEnum).map(x => x.valueOf());
+export type StayDescriptionParagraphType = keyof typeof StayDescriptionParagraphEnum;
 
 export const AvailableStayOffersSortFactor = Object.keys(StayOffersSortFactorEnum).map(x => x.toLowerCase());
 export type StayOffersSortFactor = Lowercase<keyof typeof StayOffersSortFactorEnum>;
@@ -611,6 +851,8 @@ export interface IStaysLogic {
   createOrUpdateReview(stayId: EntityId, textOrHtml: string, score: number, userId: EntityId): Promise<EntityId>;
   deleteReview(stayId: EntityId, userId: EntityId): Promise<EntityId | undefined>;
   getStayReviews(stayId: EntityId): Promise<EntityDataAttrsOnly<IStayReview>[]>;
+  deleteStayOffer(id: EntityId): Promise<void>;
+  deleteStay(stayId: EntityId): Promise<void>;
 };
 
 /**
@@ -640,6 +882,7 @@ export type IOfferBookingData = {
 export interface IBookingLogic {
   getBooking(id: EntityId): Promise<IOfferBooking<IFlightOffer | IStayOfferDetails>>;
   createBooking(data: IOfferBookingData): Promise<EntityId>;
+  deleteBooking(id: EntityId): Promise<void>;
 };
 
 /**
@@ -658,6 +901,7 @@ export type CompanyReviewData = Omit<ICompanyReview, 'id' | 'timestamp' | 'imgSl
 export interface ICompanyReviewsLogic {
   getReviews(): Promise<ICompanyReview[]>;
   createReview(data: CompanyReviewData): Promise<EntityId>;
+  deleteReview(entityId: EntityId): Promise<void>;
 };
 
 /** Verification tokens */
@@ -666,6 +910,7 @@ export enum TokenKind {
   PasswordRecovery = 'PasswordRecovery',
   RegisterAccount = 'RegisterAccount'
 };
+export const AvailableTokenKinds = Object.values(TokenKind).map(v => v.valueOf());
 
 export interface ITokenIssueResult {
   id: EntityId,
@@ -679,6 +924,7 @@ export interface ITokenLogic {
   issueToken(kind: TokenKind, userId?: EntityId, expirePrevious?: boolean): Promise<ITokenIssueResult>;
   isTokenActive(isDeleted: boolean, attemptsMade: number, createdUtc: Date): 'token-expired' | 'already-consumed' | 'active';
   consumeToken(id: EntityId, value: string): Promise<TokenConsumeResult>;
+  deleteToken(id: EntityId): Promise<void>;
 };
 
 /** Document generation */
@@ -706,20 +952,22 @@ export interface IEmailParams {
   theme: Theme
 }
 
-export enum EmailTemplate {
+export enum EmailTemplateEnum {
   EmailVerify = 'EmailVerify',
   PasswordRecovery = 'PasswordRecovery',
   RegisterAccount = 'RegisterAccount'
 };
+export const AvailableEmailTemplates = Object.values(EmailTemplateEnum).map(v => v.valueOf());
 
 export interface IEmailSender {
-  sendEmail(kind: EmailTemplate, params: IEmailParams): Promise<void>;
+  sendEmail(kind: EmailTemplateEnum, params: IEmailParams): Promise<void>;
   verifySetup(): Promise<void>;
 };
 
 export interface IMailTemplateLogic {
-  getTemplateMarkup(kind: EmailTemplate, locale: Locale): Promise<string | undefined>,
-  createTemplate(kind: EmailTemplate, markup: ILocalizableValue): Promise<EntityId>
+  getTemplateMarkup(kind: EmailTemplateEnum, locale: Locale): Promise<string | undefined>;
+  createTemplate(kind: EmailTemplateEnum, markup: ILocalizableValue): Promise<EntityId>;
+  deleteTemplate(id: EntityId): Promise<void>;
 }
 
 /** Client */
@@ -728,15 +976,15 @@ export type PropertyGridControlButtonType = 'change' | 'apply' | 'cancel' | 'del
 
 export type ConfirmBoxButton = 'yes' | 'no' | 'cancel';
 
-export type ActivePageLink = PagePath.Flights | PagePath.Stays | PagePath.Favourites;
+export type ActivePageLink = HtmlPage.Flights | HtmlPage.Stays | HtmlPage.Favourites;
 export type NavBarMode = 'landing' | 'inApp';
 export type ButtonKind = 'default' | 'accent' | 'support' | 'icon';
 
 /** Client - entity cache */
 export interface IEntityCache {
   set: <TEntityType extends CacheEntityType, TCacheItem extends ({ type: TEntityType } & IEntityCacheItem)>(item: TCacheItem, expireInSeconds: number | undefined) => Promise<void>,
-  remove: <TEntityType extends CacheEntityType>(idOrSlug: EntityId | string, type: TEntityType) => Promise<void>,
-  get: <TEntityType extends CacheEntityType, TCacheItem extends ({ type: TEntityType } & IEntityCacheItem)>(idsOrSlugs: EntityId[] | string[], type: TEntityType, fetchOnCacheMiss: false | { expireInSeconds: number | undefined }) => Promise<TCacheItem[] | undefined>
+  remove: <TEntityType extends CacheEntityType>(id: EntityId | undefined, slug: string | undefined, type: TEntityType) => Promise<void>,
+  get: <TEntityType extends CacheEntityType, TCacheItem extends ({ type: TEntityType } & IEntityCacheItem)>(ids: EntityId[], slugs: string[], type: TEntityType, fetchOnCacheMiss: false | { expireInSeconds: number | undefined }) => Promise<TCacheItem[] | undefined>
 }
 
 /** Components - option buttons */
