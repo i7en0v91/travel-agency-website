@@ -9,6 +9,7 @@
 dist
 
 # acsys backend dist
+externals
 .acsys
 
 # Node dependencies
