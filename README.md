@@ -7,7 +7,7 @@ A sample SPA/SSR application built with reactive framework [Vue 3](https://githu
 - Support different databases
 - Localization to multiple languages
 - OpenGraph images for SEO - prerendered or generated on-the-fly for dynamic entities
-- [Acsys CMS](https://github.com/acsysio/acsys) - out-of-the-box CMS integration
+- [Acsys CMS](https://github.com/acsysio/acsys) - out-of-the-box CMS integration with drafts/preview mode support
 - HTML pages & images caching, configurable cache refresh policies on changes (e.g. via CMS)
 - UI: adaptive layout, light/dark theme support, input/selected values validation & prompting
 - Personal account with email confirmation registration flow, reviews, photos uploading, favourites & booking history
