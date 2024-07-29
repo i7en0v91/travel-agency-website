@@ -1,11 +1,11 @@
 import { isbot } from 'isbot';
 import type { IAppLogger } from './../shared/applogger';
-import { HeaderUserAgent } from './../shared/constants';
+import { HeaderUserAgent, isPublishEnv } from './../shared/constants';
 
 export function isRobot () {
   const logger = (globalThis as any)?.CommonServicesLocator?.getLogger() as IAppLogger | undefined;
 
-  if (!process.env.PUBLISH) {
+  if (!isPublishEnv()) {
     logger?.debug('(is-robot) non-publish env');
     return false;
   }

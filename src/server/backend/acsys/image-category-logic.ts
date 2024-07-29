@@ -1,15 +1,20 @@
 import { type IImageCategoryLogic, type IImageCategoryInfo, type EntityId, type IAppLogger } from '../app-facade/interfaces';
 import type { ImageCategory } from '../app-facade/implementation';
-import type { ImageCategoryLogic as ImageCategoryLogicPrisma } from '../services/image-category-logic';
 
 export class ImageCategoryLogic implements IImageCategoryLogic {
   private readonly logger: IAppLogger;
-  private readonly prismaImplementation: ImageCategoryLogicPrisma;
+  private readonly prismaImplementation: IImageCategoryLogic;
 
   public static inject = ['imageCategoryLogicPrisma', 'logger'] as const;
-  constructor (prismaImplementation: ImageCategoryLogicPrisma, logger: IAppLogger) {
+  constructor (prismaImplementation: IImageCategoryLogic, logger: IAppLogger) {
     this.logger = logger;
     this.prismaImplementation = prismaImplementation;
+  }
+
+  async initialize(): Promise<void> {
+    this.logger.debug('(ImageCategoryLogic-Acsys) initializing');
+    await this.prismaImplementation.initialize();
+    this.logger.debug('(ImageCategoryLogic-Acsys) initialized');
   }
 
   async findCategory (type: ImageCategory): Promise<IImageCategoryInfo | undefined> {
@@ -26,10 +31,10 @@ export class ImageCategoryLogic implements IImageCategoryLogic {
     return result;
   }
 
-  async getImageCategoryInfos (): Promise<ReadonlyMap<ImageCategory, IImageCategoryInfo>> {
-    this.logger.debug('(ImageCategoryLogic-Acsys) accessing image category infos');
-    const result = await this.prismaImplementation.getImageCategoryInfos();
-    this.logger.debug(`(ImageCategoryLogic-Acsys) image category infos count=${result.size}`);
+  async getImageCategoryInfos (allowCachedValue: boolean): Promise<ReadonlyMap<ImageCategory, IImageCategoryInfo>> {
+    this.logger.debug(`(ImageCategoryLogic-Acsys) accessing image category infos, allowCachedValue=${allowCachedValue}`);
+    const result = await this.prismaImplementation.getImageCategoryInfos(allowCachedValue);
+    this.logger.debug(`(ImageCategoryLogic-Acsys) image category infos count=${result.size}, allowCachedValue=${allowCachedValue}`);
     return result;
   }
 }

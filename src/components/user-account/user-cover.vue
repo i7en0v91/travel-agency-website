@@ -4,13 +4,14 @@ import { DefaultUserCoverSlug } from './../../shared/constants';
 import { ImageCategory } from './../../shared/interfaces';
 import { getI18nResName2 } from './../../shared/i18n';
 import EditableImage from './../images/editable-image.vue';
+import { type ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string
 }
 const props = defineProps<IProps>();
 
-const userCoverImage = shallowRef<InstanceType<typeof EditableImage>>();
+const userCoverImage = shallowRef<ComponentInstance<typeof EditableImage>>();
 
 const userAccountStore = useUserAccountStore();
 const userAccount = await userAccountStore.getUserAccount();

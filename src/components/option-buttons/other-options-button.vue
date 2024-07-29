@@ -67,6 +67,9 @@ const htmlId = useId();
     <div class="option-button-separator" role="separator" />
     <VDropdown
       ref="dropdown"
+      v-floating-vue-hydration="{ tabIndex: 0 }"
+      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
+      :aria-id="`${ctrlKey}-DropDownWrapper`"
       :distance="6"
       :hide-triggers="(triggers: any) => [...triggers, 'click']"
       :show-triggers="(triggers: any) => [...triggers, 'click']"

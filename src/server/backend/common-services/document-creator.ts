@@ -1,11 +1,10 @@
 import { type H3Event } from 'h3';
 import PDFDocument from 'pdfkit';
 import { type ParsedURL, parseURL, stringifyQuery, stringifyParsedURL } from 'ufo';
-import blobStream from 'blob-stream';
+import { Minipass } from 'minipass';
 import range from 'lodash-es/range';
-import { type Theme, type Locale, type IServerI18n, type EntityId, type IAppAssetsProvider, type EntityDataAttrsOnly, type DocumentCommonParams, type IDocumentCreator, type IFlightOffer, type IOfferBooking, type IStayOfferDetails, type IAppLogger, getHtmlPagePath, type Timestamp, type IHtmlPageCacheCleaner } from '../app-facade/interfaces';
-import { QueryPageTimestampParam, readBlobStream, eraseTimeOfDay, getLocalizeableValue, getI18nResName2, getI18nResName3, PdfBulletSize, PdfFontRegularFile, PdfFontParagraphTitleSize, PdfFontMediumFile, PdfFontMainTitleSize, PdfFontSemiboldFile, PdfDocMargins, PdfImgWidth, OgImagePathSegment, DefaultLocale, PdfPaperWidth, PdfPaperHeight, PdfFontPrimarySize, AppConfig, getBytes, AppException, AppExceptionCodeEnum, QueryInternalRequestParam, OgImageExt } from '../app-facade/implementation';
-import { HtmlPage } from '../app-facade/interfaces';
+import { AppPage, type Theme, type Locale, type IServerI18n, type EntityId, type IAppAssetsProvider, type EntityDataAttrsOnly, type DocumentCommonParams, type IDocumentCreator, type IFlightOffer, type IOfferBooking, type IStayOfferDetails, type IAppLogger, getPagePath, type Timestamp, type IHtmlPageCacheCleaner } from '../app-facade/interfaces';
+import { QueryPageTimestampParam, eraseTimeOfDay, getLocalizeableValue, getI18nResName2, getI18nResName3, PdfBulletSize, PdfFontRegularFile, PdfFontParagraphTitleSize, PdfFontMediumFile, PdfFontMainTitleSize, PdfFontSemiboldFile, PdfDocMargins, PdfImgWidth, OgImagePathSegment, DefaultLocale, PdfPaperWidth, PdfPaperHeight, PdfFontPrimarySize, AppConfig, getBytes, AppException, AppExceptionCodeEnum, QueryInternalRequestParam, OgImageExt } from '../app-facade/implementation';
 import set from 'lodash-es/set';
 import isDate from 'lodash-es/isDate';
 import { isString } from 'lodash';
@@ -28,25 +27,29 @@ export class DocumentCreator implements IDocumentCreator {
     return `${locale}-${locale.toUpperCase()}`;
   };
 
-  getTicketImageUrl = (bookingId: EntityId, isSecondPage: boolean, locale: Locale, theme: Theme, htmlPageTimestamp: Timestamp): ParsedURL => {
+  getTicketImageUrl = (bookingId: EntityId, isSecondPage: boolean, locale: Locale, theme: Theme, htmlPageTimestamp: Timestamp | undefined): ParsedURL => {
+    let query = set({
+      theme,
+      isSecondPage: isSecondPage ? '1' : '0'
+    }, QueryInternalRequestParam, 1);
+    if(htmlPageTimestamp !== undefined) {
+      query = set(query, QueryPageTimestampParam, htmlPageTimestamp);
+    }
+
     const urlParams: ParsedURL = {
       ...parseURL(AppConfig.siteUrl),
-      pathname: `/${OgImagePathSegment}${locale === DefaultLocale ? '' : `${locale}/`}${getHtmlPagePath(HtmlPage.BookingDetails)}/${bookingId}/og.${OgImageExt}`,
-      search: stringifyQuery(
-        set(
-        set({
-          theme,
-          isSecondPage: isSecondPage ? '1' : '0'
-        }, QueryInternalRequestParam, 1), 
-        QueryPageTimestampParam, htmlPageTimestamp)
-      )
+      pathname: `/${OgImagePathSegment}${locale === DefaultLocale ? '' : `${locale}/`}${getPagePath(AppPage.BookingDetails)}/${bookingId}/og.${OgImageExt}`,
+      search: stringifyQuery(query)
     };
     return urlParams;
   };
 
-  downloadImgData = async (imgUrl: ParsedURL, theme: Theme, isSecondPage: boolean, htmlPageTimestamp: Timestamp, event: H3Event | undefined): Promise<Buffer> => {
+  downloadImgData = async (imgUrl: ParsedURL, theme: Theme, isSecondPage: boolean, htmlPageTimestamp: Timestamp | undefined, event: H3Event | undefined): Promise<Buffer> => {
     this.logger.debug(`(DocumentCreator) downloading image, url=${stringifyParsedURL(imgUrl)}, theme=${theme}, isSecondPage=${isSecondPage}, event=${!!event}`);
-    const query = set(set({ theme, isSecondPage: isSecondPage ? '1' : '0' }, QueryInternalRequestParam, 1), QueryPageTimestampParam, htmlPageTimestamp);
+    let query = set({ theme, isSecondPage: isSecondPage ? '1' : '0' }, QueryInternalRequestParam, 1);
+    if(htmlPageTimestamp !== undefined) {
+      query = set(query, QueryPageTimestampParam, htmlPageTimestamp);
+    }
     const imgBytes = await getBytes(imgUrl.pathname, query, undefined, 'no-store',  true, event, 'throw');
     if (!imgBytes?.length) {
       this.logger.warn(`(DocumentCreator) failed to download image, url=${stringifyParsedURL(imgUrl)}, theme=${theme}, isSecondPage=${isSecondPage}`);
@@ -56,7 +59,7 @@ export class DocumentCreator implements IDocumentCreator {
     return imgBytes;
   };
 
-  fillPdfPage = async (imgUrl: ParsedURL, isSecondPage: boolean, theme: Theme, locale: Locale, htmlPageTimestamp: Timestamp, $pdf: PDFKit.PDFDocument, event: H3Event | undefined): Promise<void> => {
+  fillPdfPage = async (imgUrl: ParsedURL, isSecondPage: boolean, theme: Theme, locale: Locale, htmlPageTimestamp: Timestamp | undefined, $pdf: PDFKit.PDFDocument, event: H3Event | undefined): Promise<void> => {
     this.logger.debug(`(DocumentCreator) adding pdf page, url=${stringifyParsedURL(imgUrl)}, theme=${theme}, locale=${locale}, event=${!!event}`);
 
     const MoveDownStep = 0.5;
@@ -110,7 +113,7 @@ export class DocumentCreator implements IDocumentCreator {
   };
 
   async getBookingPageTimestamp(bookingId: EntityId): Promise<Timestamp> {
-    const timestampRaw = await this.htmlPageCacheCleaner.getPageTimestamp(HtmlPage.BookingDetails, bookingId);
+    const timestampRaw = await this.htmlPageCacheCleaner.getPageTimestamp(AppPage.BookingDetails, bookingId, true);
     if(isString(timestampRaw)) {
       this.logger.error(`(DocumentCreator) unexpected booking page timestamp, bookingId=${bookingId}, timestamp=${JSON.stringify(timestampRaw)}`);
       throw new AppException(AppExceptionCodeEnum.DOCUMENT_GENERATION_FAILED, 'document generation failed', 'error-stub');
@@ -156,24 +159,32 @@ export class DocumentCreator implements IDocumentCreator {
     }
 
     const bookingId = booking.id;
+
+    const isPreviewMode = event?.context.preview.mode;
     
-    await this.htmlPageCacheCleaner.invalidatePage('immediate', HtmlPage.BookingDetails, bookingId);
-    let timestamp = await this.getBookingPageTimestamp(bookingId);
+    let timestamp: Timestamp | undefined;
+    if(!isPreviewMode) {
+      await this.htmlPageCacheCleaner.invalidatePage('immediate', AppPage.BookingDetails, bookingId);
+      timestamp = await this.getBookingPageTimestamp(bookingId);
+    }
     await this.fillPdfPage(this.getTicketImageUrl(bookingId, false, params.locale, params.theme, timestamp), false, params.theme, params.locale, timestamp, $pdf, event);
     if (hasTwoPages) {
       await $pdf.addPage(docOptions);
-      await this.htmlPageCacheCleaner.invalidatePage('immediate', HtmlPage.BookingDetails, bookingId);
-      timestamp = await this.getBookingPageTimestamp(bookingId);
+      if(!isPreviewMode) {
+        await this.htmlPageCacheCleaner.invalidatePage('immediate', AppPage.BookingDetails, bookingId);
+        timestamp = await this.getBookingPageTimestamp(bookingId);
+      }
       await this.fillPdfPage(this.getTicketImageUrl(bookingId, true, params.locale, params.theme, timestamp), true, params.theme, params.locale, timestamp, $pdf, event);
     }
 
     this.logger.debug(`(DocumentCreator) serializing document to byte array, bookingId=${booking.id}, theme=${params.theme}, locale=${params.locale}`);
-    const stream = $pdf.pipe(blobStream());
+    const collector = new Minipass({ encoding: 'buffer' });
+    $pdf.pipe(collector);
     $pdf.end();
-
-    const bytes = await readBlobStream(stream, this.logger);
-
+    const bytes = await collector.concat();
+    await collector.destroy();
     this.logger.verbose(`(DocumentCreator) document generated, bookingId=${booking.id}, theme=${params.theme}, locale=${params.locale}, size=${bytes.length}`);
+
     this.logger.always(`(DocumentCreator) document generation completed, bookingId=${booking.id}, theme=${params.theme}, locale=${params.locale}`);
     return bytes;
   }

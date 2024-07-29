@@ -1,4 +1,5 @@
 import { type IAppLogger } from './../../app-facade/interfaces';
+import { isPublishEnv } from './../../app-facade/implementation';
 import { UserRoleEnum, type IAcsysClientProvider, type IAcsysClientBase, type IAcsysClientAdministrator, type IAcsysClientStandard, type IAcsysClientViewer } from './interfaces';
 import { type IAcsysModuleOptions } from './../../../../appconfig';
 import type { H3Event } from 'h3';
@@ -15,7 +16,7 @@ export class AcsysClientProvider implements IAcsysClientProvider {
   public static inject = ['acsysModuleOptions', 'logger'] as const;
   constructor (moduleOptions: IAcsysModuleOptions, logger: IAppLogger) {
     this.logger = logger;
-    const baseUrl = process.env.PUBLISH ? `${(useSiteConfig()).url}:${moduleOptions.port}` : `http://localhost:${moduleOptions.port}`;
+    const baseUrl = isPublishEnv() ? `${(useSiteConfig()).url}:${moduleOptions.port}` : `http://localhost:${moduleOptions.port}`;
     this.clientViewer = new AcsysClientViewer(baseUrl, moduleOptions.users.viewer, logger, UserRoleEnum.Viewer);
     this.clientStandard = new AcsysClientStandard(baseUrl, moduleOptions.users.standard, logger, UserRoleEnum.Standard);
     this.clientAdministrator = new AcsysClientAdministrator(baseUrl, moduleOptions.users.admin, logger);

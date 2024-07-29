@@ -1,9 +1,13 @@
 <script setup lang="ts">
 
 import { ImageCategory, type TravelDetailsImageStatus, type Timestamp } from './../../../shared/interfaces';
-import { ApiEndpointImage } from './../../../shared/constants';
 import { getI18nResName2 } from './../../../shared/i18n';
 import type { NuxtImg } from '#build/components';
+import { type ComponentInstance } from 'vue';
+import { usePreviewState } from './../../../composables/preview-state';
+import { ApiEndpointImage, QueryPagePreviewModeParam, PreviewModeParamEnabledValue } from './../../../shared/constants';
+import { withQuery } from 'ufo';
+import set from 'lodash-es/set';
 
 interface IProps {
   ctrlKey: string,
@@ -20,8 +24,9 @@ const props = withDefaults(defineProps<IProps>(), {
 const logger = CommonServicesLocator.getLogger();
 
 const systemConfigurationStore = useSystemConfigurationStore();
+const { enabled } = usePreviewState();
 
-const imgEl = shallowRef<InstanceType<typeof NuxtImg>>();
+const imgEl = shallowRef<ComponentInstance<typeof NuxtImg>>();
 const $emit = defineEmits<{(event: 'update:status', status?: TravelDetailsImageStatus): void}>();
 
 function fireStatusChange (status: TravelDetailsImageStatus) {
@@ -34,7 +39,16 @@ function fireStatusChange (status: TravelDetailsImageStatus) {
 }
 
 function getImgUrl (slug?: string, timestamp?: Timestamp): string | undefined {
-  return slug ? `${ApiEndpointImage}?slug=${slug}&category=${ImageCategory.TravelBlock}${timestamp ? `&t=${timestamp}` : ''}` : undefined;
+  if(!slug) {
+    return undefined;
+  }
+  const query = {
+    ...(timestamp ? { t: timestamp } : {}),
+    ...(enabled ? set({}, QueryPagePreviewModeParam, PreviewModeParamEnabledValue) : {}),
+    slug, 
+    category: ImageCategory.TravelBlock.valueOf(),
+  };
+  return withQuery(`/${ApiEndpointImage}`, query);
 };
 const imgUrl = computed(() => { return getImgUrl(props.slug, props.timestamp); });
 

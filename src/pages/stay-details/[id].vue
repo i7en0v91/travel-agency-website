@@ -1,38 +1,37 @@
 <script setup lang="ts">
 
-import { withQuery } from 'ufo';
 import range from 'lodash-es/range';
 import CaptchaProtection from './../../components/forms/captcha-protection.vue';
 import { getI18nResName2 } from './../../shared/i18n';
 import OfferDetailsSummary from './../../components/common-page-components/offer-details-summary.vue';
 import { getLocalizeableValue } from './../../shared/common';
-import { useFetchEx } from './../../shared/fetch-ex';
-import { ApiEndpointStayOfferDetails, type Locale, DefaultStayReviewScore } from './../../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
-import { type IStayOfferDetails, type ILocalizableValue, ImageCategory, type EntityId } from './../../shared/interfaces';
-import { type IStayOfferDetailsDto } from './../../server/dto';
-import { mapStayOfferDetails } from './../../shared/mappers';
+import { ApiEndpointStayOfferDetails, type Locale, ApiEndpointStayOfferReviewSummary } from './../../shared/constants';
+import { AppPage, getPagePath } from './../../shared/page-query-params';
+import { type ReviewSummary, type IStayOfferDetails, type ILocalizableValue, ImageCategory, type EntityId } from './../../shared/interfaces';
+import { type IStayOfferDetailsDto, type IReviewSummaryDto } from './../../server/dto';
+import { mapStayOfferDetails, mapReviewSummary } from './../../shared/mappers';
 import OverviewSection from './../../components/stay-details/overview-section.vue';
 import AvailableRoomSection from './../../components/stay-details/available-rooms-section.vue';
 import AmenitiesSection from './../../components/stay-details/amenities-section.vue';
 import LocationMap from './../../components/stay-details/location-map.vue';
 import ReviewSection from './../../components/stay-details/reviews/review-section.vue';
-import ComponentWaiterIndicator from './../../components/component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../../components/component-waiting-indicator.vue';
 import { useCaptchaToken, type ICaptchaTokenComposable } from './../../composables/captcha-token';
 import AppConfig from './../../appconfig';
 import { isRobot } from './../../composables/is-robot';
-
-const isError = ref(false);
+import { type ComponentInstance } from 'vue';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
+import { usePreviewState } from './../../composables/preview-state';
 
 const { d, locale } = useI18n();
-const localePath = useLocalePath();
+const navLinkBuilder = useNavLinkBuilder();
 
 const route = useRoute();
 const logger = CommonServicesLocator.getLogger();
 
 const offerParam = useRoute().params?.id?.toString() ?? '';
 if (offerParam.length === 0) {
-  await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.Index)}`));
+  await navigateTo(navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale));
 }
 const offerId: EntityId = offerParam;
 
@@ -42,36 +41,48 @@ definePageMeta({
 
 const CtrlKey = 'StayOfferDetailsSummary';
 
+const nuxtApp = useNuxtApp();
+const { enabled } = usePreviewState();
 const isRobotRequest = isRobot();
 
-const captcha = (import.meta.client && AppConfig.maps && !isRobotRequest) ? shallowRef<InstanceType<typeof CaptchaProtection>>() as Ref<InstanceType<typeof CaptchaProtection>> : undefined;
+const captcha = (import.meta.client && !!AppConfig.maps && !isRobotRequest) ? shallowRef<ComponentInstance<typeof CaptchaProtection>>() as Ref<ComponentInstance<typeof CaptchaProtection>> : undefined;
 const captchaToken = ref<ICaptchaTokenComposable>();
 
-const stayDetailsFetchRequest = await useFetchEx<IStayOfferDetailsDto, IStayOfferDetailsDto>(ApiEndpointStayOfferDetails(offerId ?? -1), 'error-page',
+const isSsr = import.meta.server && !!nuxtApp.ssrContext;
+const isOgImageRequest = isSsr && !!nuxtApp.ssrContext!.event?.context.ogImageContext;
+const reviewSummaryFetch = await useFetch(`/${ApiEndpointStayOfferReviewSummary(offerId ?? -1)}`,
+{
+  server: isOgImageRequest,
+  lazy: !isOgImageRequest,
+  immediate: !!offerId,
+  cache: 'no-cache',
+  query: { drafts: enabled },
+  transform: (response: IReviewSummaryDto): ReviewSummary | undefined => {
+    const dto = response as IReviewSummaryDto;
+    if (!dto) {
+      logger.warn('(StayDetails) fetch request for stay review summary returned data');
+      return undefined;
+    }
+    return mapReviewSummary(dto);
+  },
+  $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-page' })
+});
+const reviewSummaryAvailable = computed(() => reviewSummaryFetch.status.value === 'success' && reviewSummaryFetch.data?.value);
+const reviewSummary = ref<ReviewSummary | undefined>(reviewSummaryFetch.data?.value ?? undefined);
+
+const stayDetailsFetch = await useFetch<IStayOfferDetailsDto, IStayOfferDetailsDto>(`/${ApiEndpointStayOfferDetails(offerId ?? -1)}`,
   {
     server: true,
     lazy: true,
     immediate: !!offerId,
     cache: 'no-cache',
-    onResponse: (ctx) => {
-      logger.verbose(`(StayDetails) received stay offer details response: id=${(ctx.response._data as IStayOfferDetailsDto)?.id}`);
-      isError.value = ctx.response.status >= 400;
-    },
-    onResponseError: (ctx) => {
-      logger.warn('(StayDetails) got stay offer details fetch response exception', ctx.error, { id: offerId });
-      isError.value = true;
-    },
-    onRequestError: (ctx) => {
-      logger.warn('(StayDetails) got stay offer details fetch request exception', ctx.error, { id: offerId });
-      isError.value = true;
-    }
+    query: { drafts: enabled },
+    $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-page' })
   });
-const stayDetailsFetch = await stayDetailsFetchRequest;
-const offerDataAvailable = computed(() => stayDetailsFetch.status.value === 'success' && stayDetailsFetch.data?.value?.stay && !isError.value);
-const stayOffer = ref<Omit<IStayOfferDetails, 'dataHash'> | undefined>(stayDetailsFetch.data?.value ? mapStayOfferDetails(stayDetailsFetch.data.value!) : undefined);
+const offerDataAvailable = computed(() => stayDetailsFetch.status.value === 'success' && stayDetailsFetch.data?.value?.stay);
+const stayOffer = ref<Omit<IStayOfferDetails, 'dataHash'> | undefined>((stayDetailsFetch.data?.value /*&& reviewSummaryFetch.data?.value*/) ? mapStayOfferDetails(stayDetailsFetch.data.value!, reviewSummaryFetch.data?.value ?? undefined) : undefined);
 
-const nuxtApp = useNuxtApp();
-if (nuxtApp.isHydrating || import.meta.server) {
+if (isSsr) {
   useOgImage({
     name: 'OgOfferSummary',
     props: {
@@ -79,8 +90,6 @@ if (nuxtApp.isHydrating || import.meta.server) {
       title: stayOffer.value!.stay.name,
       city: stayOffer.value!.stay.city,
       price: stayOffer.value!.totalPrice.toNumber(),
-      reviewScore: stayOffer.value!.stay.reviewScore,
-      numReviews: stayOffer.value!.stay.numReviews,
       dateUnixUtc: stayOffer.value!.checkIn.getTime(),
       image: {
         ...(stayOffer!.value!.stay.images.find(i => i.order === 0)),
@@ -88,6 +97,11 @@ if (nuxtApp.isHydrating || import.meta.server) {
       }
     }
   });
+}
+
+function onReviewSummaryChanged (summary: ReviewSummary) {
+  logger.debug(`(StayDetails) review summary changed handler, ctrlKey=${CtrlKey}, score=${summary.score}, numReviews=${summary.numReviews}`);
+  reviewSummary.value = summary;
 }
 
 function updatePageTitle () {
@@ -106,13 +120,14 @@ function extendPageTitle (stayName: ILocalizableValue, checkIn: Date, checkOut: 
   (route.meta.title as any).resArgs = titleArgs;
 }
 
-watch(stayDetailsFetch.status, () => {
-  if (stayDetailsFetch.status.value === 'error') {
-    isError.value = true;
-  }
-  if (offerDataAvailable.value && !stayOffer.value) {
-    stayOffer.value = mapStayOfferDetails(stayDetailsFetch.data.value!);
+watch([stayDetailsFetch.status, reviewSummaryFetch.status], () => {
+  if (offerDataAvailable.value) {
+    stayOffer.value = mapStayOfferDetails(stayDetailsFetch.data.value!, reviewSummaryFetch.data?.value ?? undefined);
     updatePageTitle();
+  }
+
+  if(reviewSummaryAvailable.value) {
+    reviewSummary.value = reviewSummaryFetch.data.value!;
   }
 });
 
@@ -123,7 +138,7 @@ if (import.meta.server) {
   updatePageTitle();
 }
 
-const mapComponentVisibility = ref<'visible' | 'wait'>((AppConfig.maps || isRobotRequest) ? 'wait' : 'visible');
+const mapComponentVisibility = ref<'visible' | 'wait'>((!AppConfig.maps && !isRobotRequest) ? 'visible' : 'wait');
 
 function onCaptchaVerified (token: string) {
   logger.info(`(StayDetails) captcha verified, ctrlKey=${CtrlKey}`);
@@ -162,7 +177,7 @@ onMounted(() => {
 
 <template>
   <article class="stay-details-page no-hidden-parent-tabulation-check">
-    <ErrorHelm :is-error="isError" class="stay-details-page-error-helm">
+    <ErrorHelm :is-error="stayDetailsFetch.status.value === 'error'" class="stay-details-page-error-helm">
       <OfferDetailsBreadcrumbs
         :ctrl-key="`${CtrlKey}-Breadcrumbs`"
         offer-kind="stays"
@@ -177,10 +192,10 @@ onMounted(() => {
         :city="stayOffer?.stay?.city"
         :title="stayOffer?.stay?.name"
         :price="stayOffer?.totalPrice"
-        :review-score="stayOffer?.stay?.reviewScore"
-        :num-reviews="stayOffer?.stay?.numReviews"
+        :review-score="reviewSummary?.score"
+        :num-reviews="reviewSummary?.numReviews"
         :btn-res-name="getI18nResName2('offerDetailsPage', 'bookBtn')"
-        :btn-link-url="stayOffer ? withQuery(localePath(`/${getHtmlPagePath(HtmlPage.BookStay)}/${offerId}`), { serviceLevel: 'Base' }) : route.fullPath"
+        :btn-link-url="stayOffer ? navLinkBuilder.buildLink(`/${getPagePath(AppPage.BookStay)}/${offerId}`, locale as Locale, { serviceLevel: 'Base' }) : navLinkBuilder.buildLink(route.fullPath, locale as Locale)"
       />
       <section class="stay-images mt-xs-5">
         <StaticImage
@@ -199,8 +214,8 @@ onMounted(() => {
       <OverviewSection
         ctrl-key="StayDetailsOverviewSection"
         :description="stayOffer?.stay?.description"
-        :num-reviews="stayOffer?.stay?.numReviews ?? 0"
-        :review-score="stayOffer?.stay?.reviewScore ?? DefaultStayReviewScore"
+        :num-reviews="reviewSummary?.numReviews ?? undefined"
+        :review-score="reviewSummary?.score ?? undefined"
       />
       <hr class="stay-details-section-separator">
       <AvailableRoomSection
@@ -222,9 +237,9 @@ onMounted(() => {
       <hr class="stay-details-section-separator">
       <AmenitiesSection :ctrl-key="`${CtrlKey}-Amenities`" />
       <hr class="stay-details-section-separator">
-      <ReviewSection v-if="stayOffer" :ctrl-key="`${CtrlKey}-Reviews`" :stay-id="stayOffer?.stay.id" :preloaded-summary-info="stayOffer ? { reviewScore: stayOffer.stay.reviewScore, numReviews: stayOffer.stay.numReviews } : undefined" />
-      <ComponentWaiterIndicator v-else :ctrl-key="`${CtrlKey}-ReviewsWaiterFallback`" class="stay-reviews-waiting-indicator my-xs-5" />
-      <CaptchaProtection v-if="AppConfig.maps && !isRobotRequest" ref="captcha" ctrl-key="StayDetailsCaptchaProtection" @verified="onCaptchaVerified" @failed="onCaptchaFailed" />
+      <ReviewSection v-if="stayOffer" :ctrl-key="`${CtrlKey}-Reviews`" :stay-id="stayOffer?.stay.id" :preloaded-summary-info="reviewSummary" @review-summary-changed="onReviewSummaryChanged" />
+      <ComponentWaitingIndicator v-else :ctrl-key="`${CtrlKey}-ReviewsWaiterFallback`" class="stay-reviews-waiting-indicator my-xs-5" />
+      <CaptchaProtection v-if="!!AppConfig.maps && !isRobotRequest" ref="captcha" ctrl-key="StayDetailsCaptchaProtection" @verified="onCaptchaVerified" @failed="onCaptchaFailed" />
     </ErrorHelm>
   </article>
 </template>

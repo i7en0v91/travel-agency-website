@@ -14,13 +14,13 @@ import set from 'lodash-es/set';
 import template from 'lodash-es/template';
 import { murmurHash } from 'ohash';
 import { type IAppLogger } from '../shared/applogger';
-import { DefaultUserAvatarSlug, DefaultUserCoverSlug, MainTitleSlug, FlightsTitleSlug, StaysTitleSlug, AvailableLocaleCodes, DefaultLocale, DEV_ENV_MODE, type Theme, MimeTypeWebp } from '../shared/constants';
-import { type FlightClass, type AirplaneImageKind, type EntityId, type IStayImageData, type IStayData, type IStayDescriptionData, type IStayReviewData, type ILocalizableValue, AuthProvider, ImageCategory, type IImageData, EmailTemplateEnum, type IAirplaneData } from '../shared/interfaces';
+import { isQuickStartEnv, AdminUserEmail, DefaultUserAvatarSlug, DefaultUserCoverSlug, MainTitleSlug, FlightsTitleSlug, StaysTitleSlug, AvailableLocaleCodes, DefaultLocale, DEV_ENV_MODE, type Theme, MimeTypeWebp } from '../shared/constants';
+import { type PreviewMode, type FlightClass, type AirplaneImageKind, type EntityId, type IStayImageData, type IStayData, type IStayDescriptionData, type IStayReviewData, type ILocalizableValue, AuthProvider, ImageCategory, type IImageData, EmailTemplateEnum, type IAirplaneData } from '../shared/interfaces';
 import { CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD } from '../shared/testing/common';
 import type { IWorldMapDataDto } from '../server/dto';
-import { isQuickStartEnv } from '../shared/constants';
-import { resolveParentDirectory } from '../shared/fs';
+import { resolveParentDirectory } from '../server/utils/fs';
 import { type H3Event } from 'h3';
+import { consola } from 'consola';
 
 interface ContextParams {
   // dbRepository: PrismaClient,
@@ -37,9 +37,11 @@ interface ContextParams {
 const ContentDirName = 'content';
 const PublicResDirName = 'public';
 const AppDataDirName = 'appdata';
-const AdminUserEmail = 'admin@golobe.demo';
 
 const StayNameTemplateParam = 'hotelName';
+
+const SeedPreviewMode: PreviewMode = false;
+const SeedDraftHotelSlug = isQuickStartEnv() ? 'stay-prague-02' : undefined;
 
 const WorldMapDimDefs = {
   source: {
@@ -216,12 +218,12 @@ async function extractImageRegion (ctx: ContextParams, bytes: Buffer, width: num
   }
 }
 
-async function ensureImage (ctx: ContextParams, contentFile: string, imageData: Partial<IImageData> & Pick<IImageData, 'mimeType' | 'slug' | 'category'>, regionOfImage?: { width: number, height: number }, invertForDarkTheme?: boolean): Promise<EntityId> {
-  ctx.logger.info(`>>> ensuring image, fileName=${contentFile}, slug=${imageData.slug}`);
+async function ensureImage (ctx: ContextParams, contentFile: string, imageData: Partial<IImageData> & Pick<IImageData, 'mimeType' | 'slug' | 'category'>, previewMode: PreviewMode, regionOfImage?: { width: number, height: number }, invertForDarkTheme?: boolean): Promise<EntityId> {
+  ctx.logger.info(`>>> ensuring image, fileName=${contentFile}, slug=${imageData.slug}, previewMode=${previewMode}`);
   imageData.originalName ??= basename(contentFile);
 
   const imageLogic = ServerServicesLocator.getImageLogic();
-  const imageEntity = await imageLogic.findImage(undefined, imageData.slug!, imageData.category!, ctx.event);
+  const imageEntity = await imageLogic.findImage(undefined, imageData.slug!, imageData.category!, ctx.event, previewMode);
   if (imageEntity) {
     ctx.logger.info(`>>> ensuring image, contentFile=${contentFile} - completed - already exists`);
     return imageEntity.id;
@@ -237,14 +239,14 @@ async function ensureImage (ctx: ContextParams, contentFile: string, imageData: 
 
   imageData.bytes = bytes;
   imageData.invertForDarkTheme = invertForDarkTheme;
-  const imageId = (await imageLogic.createImage(imageData as IImageData, undefined, ctx.event)).id;
-
-  ctx.logger.info(`>>> ensuring image, contentFile=${contentFile} - completed - created new, id=${imageId}`);
+  const imageId = (await imageLogic.createImage(imageData as IImageData, undefined, ctx.event, previewMode)).id;
+  
+  ctx.logger.info(`>>> ensuring image, contentFile=${contentFile}, previewMode=${previewMode} - completed - created new, id=${imageId}`);
   return imageId;
 }
 
-async function addMainTitleImage (ctx: ContextParams) : Promise<void> {
-  ctx.logger.info('>>> creating main title image');
+async function addMainTitleImage (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
+  ctx.logger.info(`>>> creating main title image, previewMode=${previewMode}`);
   await ensureImageCategory(ctx, ImageCategory.MainTitle, 1770, 1180);
 
   const stubCssStyle = fromPairs([
@@ -258,45 +260,15 @@ async function addMainTitleImage (ctx: ContextParams) : Promise<void> {
     slug: MainTitleSlug,
     stubCssStyle,
     mimeType: MimeTypeWebp
-  });
+  }, previewMode);
 
-  ctx.logger.info('>>> creating main title image - completed');
+  ctx.logger.info(`>>> creating main title image, previewMode=${previewMode} - completed`);
 }
 
-/*
-async function addAdminProfileImages (ctx: ContextParams) : Promise<void> {
-  ctx.logger.info('>>> adding avatar & cover to admin user');
-
-  const userLogic = ServerServicesLocator.getUserLogic();
-  const adminUserEntity = await userLogic.findUserByEmail(AdminUserEmail, false, 'minimal', ctx.event);
-  if (!adminUserEntity) {
-    throw new Error('Admin user was not found');
-  }
-
-  ctx.logger.info('adding admin cover');
-  await ensureImageCategory(ctx, ImageCategory.UserCover, 1230, 350);
-  let fileName = 'admin-cover.webp';
-  let filePath = join(ctx.contentDir, fileName);
-  let mime = detectMimeType(fileName);
-  let bytes = readFileSync(filePath);
-  await userLogic.uploadUserImage(adminUserEntity.id, ImageCategory.UserCover, bytes, mime, fileName, ctx.event);
-
-  ctx.logger.info('adding admin avatar');
-  await ensureImageCategory(ctx, ImageCategory.UserAvatar, 512, 512);
-  fileName = 'admin-avatar.webp';
-  filePath = join(ctx.contentDir, fileName);
-  mime = detectMimeType(fileName);
-  bytes = readFileSync(filePath);
-  await userLogic.uploadUserImage(adminUserEntity.id, ImageCategory.UserAvatar, bytes, mime, fileName, ctx.event);
-
-  ctx.logger.info('>>> adding avatar & cover to admin user - completed');
-}
-*/
-
-async function addAuthFormsPhotos (ctx: ContextParams) : Promise<void> {
-  ctx.logger.info('>>> adding auth forms photos');
+async function addAuthFormsPhotos (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
+  ctx.logger.info(`>>> adding auth forms photos, previewMode=${previewMode}`);
   const authFormImageLogic = ServerServicesLocator.getAuthFormImageLogic();
-  const allAuthFormImages = await authFormImageLogic.getAllImages(ctx.event);
+  const allAuthFormImages = await authFormImageLogic.getAllImages(ctx.event, previewMode);
 
   await ensureImageCategory(ctx, ImageCategory.AuthFormsImage, 597, 794);
 
@@ -306,18 +278,17 @@ async function addAuthFormsPhotos (ctx: ContextParams) : Promise<void> {
       category: ImageCategory.AuthFormsImage,
       slug: photo1Slug,
       mimeType: MimeTypeWebp
-    });
-    await authFormImageLogic.createImage(imageId, 1, ctx.event);
+    }, previewMode);
+    await authFormImageLogic.createImage(imageId, 1, ctx.event, previewMode); 
   }
-
   const photo2Slug = 'account-forms-02';
   if(!allAuthFormImages.some(i => i.image.slug === photo2Slug)) {
     const imageId = await ensureImage(ctx, 'account-forms/account-forms-02.webp', {
       category: ImageCategory.AuthFormsImage,
       slug: photo2Slug,
       mimeType: MimeTypeWebp
-    });
-    await authFormImageLogic.createImage(imageId, 2, ctx.event);
+    }, previewMode);
+    await authFormImageLogic.createImage(imageId, 2, ctx.event, previewMode);
   }
 
   const photo3Slug = 'account-forms-03';
@@ -326,18 +297,18 @@ async function addAuthFormsPhotos (ctx: ContextParams) : Promise<void> {
       category: ImageCategory.AuthFormsImage,
       slug: photo3Slug,
       mimeType: MimeTypeWebp
-    });
-    await authFormImageLogic.createImage(imageId, 3, ctx.event);
+    }, previewMode);
+    await authFormImageLogic.createImage(imageId, 3, ctx.event, previewMode);
   }
   
-  ctx.logger.info('>>> adding auth forms photos - completed');
+  ctx.logger.info(`>>> adding auth forms photos - completed, previewMode=${previewMode}`);
 }
 
-async function ensureMailTemplate (ctx: ContextParams, kind: EmailTemplateEnum, templateFileEn: string, templateFileFr: string, templateFileRu: string): Promise<void> {
+async function ensureMailTemplate (ctx: ContextParams, kind: EmailTemplateEnum, templateFileEn: string, templateFileFr: string, templateFileRu: string, previewMode: PreviewMode): Promise<void> {
   ctx.logger.info(`>>> ensuring mail template, kind=${kind}, en=${templateFileEn}, fr=${templateFileFr}, ru=${templateFileRu}`);
 
   const mailTemplateLogic = ServerServicesLocator.getMailTemplateLogic();
-  const markup = await mailTemplateLogic.getTemplateMarkup(kind, DefaultLocale);
+  const markup = await mailTemplateLogic.getTemplateMarkup(kind, DefaultLocale, previewMode);
   if (markup) {
     ctx.logger.info(`>>> ensuring mail template, kind=${kind} - already exists`);
     return;
@@ -346,13 +317,13 @@ async function ensureMailTemplate (ctx: ContextParams, kind: EmailTemplateEnum, 
   const en = readFileSync(templateFileEn).toString('utf8');
   const fr = readFileSync(templateFileFr).toString('utf8');
   const ru = readFileSync(templateFileRu).toString('utf8');
-  const templateId = await mailTemplateLogic.createTemplate(kind, { en, fr, ru });
-
+  const templateId = await mailTemplateLogic.createTemplate(kind, { en, fr, ru }, previewMode);
+  
   ctx.logger.info(`>>> ensuring mail template - created, id = ${templateId}`);
 }
 
-async function ensureMailTemplates (ctx: ContextParams) : Promise<void> {
-  ctx.logger.info('>>> ensuring mail templates');
+async function ensureMailTemplates (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
+  ctx.logger.info(`>>> ensuring mail templates, previewMode=${previewMode}`);
 
   const getTemplateFilePath = (basename: string, locale: string): string => {
     return join(ctx.contentDir, 'mail-templates', `${basename}-${locale}.html`);
@@ -374,14 +345,14 @@ async function ensureMailTemplates (ctx: ContextParams) : Promise<void> {
   ];
   for (let i = 0; i < templateProps.length; i++) {
     const { kind, basename } = templateProps[i];
-    await ensureMailTemplate(ctx, kind, getTemplateFilePath(basename, DefaultLocale), getTemplateFilePath(basename, 'fr'), getTemplateFilePath(basename, 'ru'));
+    await ensureMailTemplate(ctx, kind, getTemplateFilePath(basename, DefaultLocale), getTemplateFilePath(basename, 'fr'), getTemplateFilePath(basename, 'ru'), previewMode);
   }
 
-  ctx.logger.info('>>> ensuring mail templates - completed');
+  ctx.logger.info(`>>> ensuring mail templates, previewMode=${previewMode} - completed`);
 }
 
-async function addDefaultUserProfileImages (ctx: ContextParams) : Promise<void> {
-  ctx.logger.info('>>> adding default user profile images');
+async function addDefaultUserProfileImages (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
+  ctx.logger.info(`>>> adding default user profile images, previewMode=${previewMode}`);
 
   ctx.logger.verbose('adding default user avatar');
   await ensureImageCategory(ctx, ImageCategory.UserAvatar, 512, 512);
@@ -389,7 +360,7 @@ async function addDefaultUserProfileImages (ctx: ContextParams) : Promise<void> 
     category: ImageCategory.UserAvatar,
     slug: DefaultUserAvatarSlug,
     mimeType: MimeTypeWebp
-  });
+  }, previewMode);
 
   ctx.logger.verbose('adding default user cover');
   await ensureImageCategory(ctx, ImageCategory.UserCover, 1230, 350);
@@ -397,9 +368,9 @@ async function addDefaultUserProfileImages (ctx: ContextParams) : Promise<void> 
     category: ImageCategory.UserCover,
     slug: DefaultUserCoverSlug,
     mimeType: MimeTypeWebp
-  });
+  }, previewMode);
 
-  ctx.logger.info('>>> adding default user cover image - completed');
+  ctx.logger.info(`>>> adding default user cover image, previewMode=${previewMode} - completed`);
 }
 
 async function ensureCountry (ctx: ContextParams, countryInfo: ICountryInfo): Promise<EntityId> {
@@ -444,13 +415,13 @@ function getCitySlug (ctx: ContextParams, cityInfo: ICityInfo): string {
   return citySlug;
 }
 
-async function ensureCity (ctx: ContextParams, cityInfo: ICityInfo, countryId: EntityId): Promise<EntityId> {
-  ctx.logger.info(`>>> adding city, code=${cityInfo.code}, name=${cityInfo.name.en}, countryId=${countryId}`);
+async function ensureCity (ctx: ContextParams, cityInfo: ICityInfo, countryId: EntityId, previewMode: PreviewMode): Promise<EntityId> {
+  ctx.logger.info(`>>> adding city, code=${cityInfo.code}, name=${cityInfo.name.en}, countryId=${countryId}, previewMode=${previewMode}`);
 
   const geoLogic = ServerServicesLocator.getGeoLogic();
   if (!ctx.dbCityMap) {
     ctx.logger.info('>>> initializing city data context');
-    const cities = await geoLogic.getAllCities();
+    const cities = await geoLogic.getAllCities(previewMode);
     ctx.dbCityMap = new Map<string, EntityId>();
     for (let i = 0; i < cities.length; i++) {
       const city = cities[i];
@@ -474,20 +445,21 @@ async function ensureCity (ctx: ContextParams, cityInfo: ICityInfo, countryId: E
     population: cityInfo.population,
     name: cityInfo.name as ILocalizableValue,
     countryId
-  });
+  }, previewMode);
+
   ctx.dbCityMap.set(cityInfo.name.en!, cityId);
 
-  ctx.logger.info(`>>> adding city, code=${cityInfo.code}, name=${cityInfo.name.en}, countryId=${countryId} - created new, id=${cityId}`);
+  ctx.logger.info(`>>> adding city, code=${cityInfo.code}, name=${cityInfo.name.en}, countryId=${countryId}, previewMode=${previewMode} - created new, id=${cityId}`);
   return cityId;
 }
 
-async function ensureAirport (ctx: ContextParams, airportInfo: IAirportInfo, cityId: EntityId): Promise<EntityId> {
-  ctx.logger.info(`adding airport, code=${airportInfo.code}, name=${airportInfo.name.en}, cityId=${cityId}`);
+async function ensureAirport (ctx: ContextParams, airportInfo: IAirportInfo, cityId: EntityId, previewMode: PreviewMode): Promise<EntityId> {
+  ctx.logger.info(`adding airport, code=${airportInfo.code}, name=${airportInfo.name.en}, cityId=${cityId}, previewMode=${previewMode}`);
 
   const airportLogic = ServerServicesLocator.getAirportLogic();
   if (!ctx.dbAirportMap) {
     ctx.logger.info('>>> initializing airport data context');
-    const airports = await airportLogic.getAllAirportsShort();
+    const airports = await airportLogic.getAllAirportsShort(previewMode);
     ctx.dbAirportMap = new Map<string, EntityId>();
     for (let i = 0; i < airports.length; i++) {
       const airport = airports[i];
@@ -508,15 +480,16 @@ async function ensureAirport (ctx: ContextParams, airportInfo: IAirportInfo, cit
       lon: airportInfo.lon.toNumber()
     },
     name: airportInfo.name as ILocalizableValue
-  });
+  }, previewMode);
+
   ctx.dbAirportMap.set(airportInfo.name.en!, airportId);
 
-  ctx.logger.info(`adding airport, code=${airportInfo.code}, name=${airportInfo.name.en}, cityId=${cityId} - created new, id=${airportId}`);
+  ctx.logger.info(`adding airport, code=${airportInfo.code}, name=${airportInfo.name.en}, cityId=${cityId}, previewMode=${previewMode} - created new, id=${airportId}`);
   return airportId;
 }
 
-async function addGeoData (ctx: ContextParams) : Promise<void> {
-  ctx.logger.info('>>> adding geo data');
+async function addGeoData (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
+  ctx.logger.info(`>>> adding geo data, previewMode=${previewMode}`);
 
   type CityUtcOffsetJsonRaw = {
     city: string,
@@ -770,7 +743,7 @@ async function addGeoData (ctx: ContextParams) : Promise<void> {
   for (let i = 0; i < allCities.length; i++) {
     const cityInfo = allCities[i];
     const countryId = ctx.dbCountryMap!.get(cityInfo.countryInfo.name.en!)!;
-    await ensureCity(ctx, allCities[i], countryId);
+    await ensureCity(ctx, allCities[i], countryId, previewMode);
   }
 
   ctx.logger.info('>>> adding geo data - adding AIRPORT entities');
@@ -781,14 +754,14 @@ async function addGeoData (ctx: ContextParams) : Promise<void> {
       continue;
     }
     const cityId = ctx.dbCityMap!.get(airportInfo.cityInfo.name.en!)!;
-    await ensureAirport(ctx, allAirports[i], cityId);
+    await ensureAirport(ctx, allAirports[i], cityId, previewMode);
   }
 
-  ctx.logger.info(`>>> adding geo data - completed: totalAirport=${airportMap.size}, totalCities=${cityMap.size}, totalCountries=${countryMap.size}`);
+  ctx.logger.info(`>>> adding geo data, previewMode=${previewMode} - completed: totalAirport=${airportMap.size}, totalCities=${cityMap.size}, totalCountries=${countryMap.size}`);
 }
 
-async function addPopularCities (ctx: ContextParams) : Promise<void> {
-  ctx.logger.info('>>> adding popular cities');
+async function addPopularCities (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
+  ctx.logger.info(`>>> adding popular cities, previewMode=${previewMode}`);
 
   type PopularCityJson = { name: string, rating: number, geo: { lon: number, lat: number }, promoLine: { en: string, ru: string, fr: string }, visibleOnWorldMap?: boolean };
   type TravelDetailsJson = {
@@ -806,7 +779,7 @@ async function addPopularCities (ctx: ContextParams) : Promise<void> {
   const cityDetails = (destr<TravelDetailsJson[]>(fallIntoTravelFileContent));
 
   const citiesLogic = ServerServicesLocator.getCitiesLogic();
-  const existingPopularCities = await citiesLogic.getPopularCities();
+  const existingPopularCities = await citiesLogic.getPopularCities(previewMode);
 
   for (let i = 0; i < enJson.length; i++) {
     const popularCityJson = enJson[i];
@@ -816,7 +789,7 @@ async function addPopularCities (ctx: ContextParams) : Promise<void> {
     }
 
     const citySlug = popularCityJson.name.replace(/\s/g, '-').toLowerCase();
-    const cityEntity = await citiesLogic.getCity(citySlug);
+    const cityEntity = await citiesLogic.getCity(citySlug, previewMode);
     if (!cityEntity) {
       throw new Error(`cannot find original city for popular city entity: name=${popularCityJson.name}`);
     }
@@ -836,11 +809,11 @@ async function addPopularCities (ctx: ContextParams) : Promise<void> {
       visibleOnWorldMap: popularCityJson.visibleOnWorldMap ?? false,
       rating: popularCityJson.rating,
       geo: popularCityJson.geo
-    });
+    }, previewMode);
 
-    ctx.logger.info(`adding popular cities - ${popularCityJson.name} created`);
+    ctx.logger.info(`adding popular cities, previewMode=${previewMode} - ${popularCityJson.name} created`);
   }
-  ctx.logger.info('>>> adding popular cities - completed');
+  ctx.logger.info(`>>> adding popular cities, previewMode=${previewMode} - completed`);
 }
 
 async function getImageSize (filePath: string): Promise<{ width: number, height: number }> {
@@ -864,11 +837,11 @@ async function computeImageCategorySize (files: string[]): Promise<{ width: numb
   };
 }
 
-async function addCityImages (ctx: ContextParams) : Promise<void> {
-  ctx.logger.info('>>> adding city images');
+async function addCityImages (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
+  ctx.logger.info(`>>> adding city images, previewMode=${previewMode}`);
 
   const citiesLogic = ServerServicesLocator.getCitiesLogic();
-  const popularCityInfos = await citiesLogic.getPopularCities();
+  const popularCityInfos = await citiesLogic.getPopularCities(previewMode);
 
   const imageFiles = await readdir(join(ctx.contentDir, 'cities'));
 
@@ -890,7 +863,7 @@ async function addCityImages (ctx: ContextParams) : Promise<void> {
     const citySlugBase = popularCityInfo.cityDisplayName.en.replace(/\s/g, '').toLowerCase();
     const testPath = join(ctx.contentDir, `cities/${citySlugBase}.webp`);
     if (!existsSync(testPath)) {
-      console.log('File not found: ' + testPath);
+      consola.log('File not found: ' + testPath);
       throw new Error(`cannot find city images: ${citySlugBase}.webp`);
     }
 
@@ -899,7 +872,7 @@ async function addCityImages (ctx: ContextParams) : Promise<void> {
       category: ImageCategory.CityCard,
       slug: citySlugBase + 1,
       mimeType: MimeTypeWebp
-    }, cityCardCategorySize));
+    }, previewMode, cityCardCategorySize));
 
     const popularCityTravelFiles = imageFiles.filter(f => f.includes(`${citySlugBase}-`));
     if (popularCityTravelFiles.length !== 4) { // additional check for initial DB initialization data to be sure all seeding images have been picked up
@@ -910,18 +883,18 @@ async function addCityImages (ctx: ContextParams) : Promise<void> {
         category: ImageCategory.TravelBlock,
         slug: `${citySlugBase}-${j + 2}`,
         mimeType: MimeTypeWebp
-      }, travelBlockCategorySize));
+      }, previewMode, travelBlockCategorySize));
     }
 
-    await citiesLogic.setPopularCityImages(popularCityInfo.id, imageIds.map((id, order) => { return { id, order: order + 1 }; }));
+    await citiesLogic.setPopularCityImages(popularCityInfo.id, imageIds.map((id, order) => { return { id, order: order + 1 }; }), previewMode);
 
-    ctx.logger.verbose(`popular city images processed - cityId=${popularCityInfo.id}`);
+    ctx.logger.verbose(`popular city images processed, previewMode=${previewMode} - cityId=${popularCityInfo.id}`);
   }
-  ctx.logger.info('ensuring popular city image - completed');
+  ctx.logger.info(`ensuring popular city image - completed, previewMode=${previewMode}`);
 }
 
-async function addCompanyReviews (ctx: ContextParams) : Promise<void> {
-  ctx.logger.info('>>> adding company reviews');
+async function addCompanyReviews (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
+  ctx.logger.info(`>>> adding company reviews, previewMode=${previewMode}`);
 
   type Review = {
     header: ILocalizableValue,
@@ -939,7 +912,7 @@ async function addCompanyReviews (ctx: ContextParams) : Promise<void> {
   await ensureImageCategory(ctx, ImageCategory.CompanyReview, reviewImageCategorySize.width, reviewImageCategorySize.height);
 
   const companyReviewsLogic = ServerServicesLocator.getCompanyReviewsLogic();
-  const existingReviews = await companyReviewsLogic.getReviews();
+  const existingReviews = await companyReviewsLogic.getReviews(previewMode);
   for (let i = 0; i < reviews.length; i++) {
     const review = reviews[i];
 
@@ -956,20 +929,21 @@ async function addCompanyReviews (ctx: ContextParams) : Promise<void> {
       category: ImageCategory.CompanyReview,
       slug: imageSlug,
       mimeType: MimeTypeWebp
-    }, reviewImageCategorySize);
+    }, previewMode, reviewImageCategorySize);
     const reviewId = await companyReviewsLogic.createReview({
       body: review.body,
       header: review.header,
       userName: review.user,
       imageId
-    });
-    ctx.logger.info(`added company review image - baseName=${imageFileBaseName}, companyReviewId=${reviewId}`);
+    }, previewMode);
+    
+    ctx.logger.info(`added company review image, previewMode=${previewMode} - baseName=${imageFileBaseName}, companyReviewId=${reviewId}`);
   }
-  ctx.logger.info('>>> adding company reviews - completed');
+  ctx.logger.info(`>>> adding company reviews, previewMode=${previewMode} - completed`);
 }
 
-async function addFlightsPageTitleImages (ctx: ContextParams) : Promise<void> {
-  ctx.logger.info('>>> creating flights page title images');
+async function addFlightsPageTitleImages (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
+  ctx.logger.info(`>>> creating flights page title images, previewMode=${previewMode}`);
   await ensureImageCategory(ctx, ImageCategory.PageTitle, 1770, 1180);
   const stubCssStyle = fromPairs([
     ['backgroundImage', 'radial-gradient(circle at 68% 25%, hsla(60, 100%, 68%, 0.5) -25%, hsla(38, 100%, 61%, 0.29) 38%), linear-gradient(47deg, hsl(240, 97%, 31%) -20%, hsl(0, 0%, 36%) 49%)'],
@@ -982,8 +956,8 @@ async function addFlightsPageTitleImages (ctx: ContextParams) : Promise<void> {
     slug: FlightsTitleSlug,
     stubCssStyle,
     mimeType: MimeTypeWebp
-  });
-  ctx.logger.info('>>> creating flights page title images - completed');
+  }, previewMode);
+  ctx.logger.info(`>>> creating flights page title images, previewMode=${previewMode} - completed`);
 }
 
 function compileWorldMapData (ctx: ContextParams) {
@@ -1076,8 +1050,8 @@ function compileWorldMapData (ctx: ContextParams) {
   ctx.logger.info(`>>> compiling world map data - completed: count=${mapPoints.length}, left=${Math.min(...mapPoints.map(p => p.x))}, right=${Math.max(...mapPoints.map(p => p.x))}, top=${Math.min(...mapPoints.map(p => p.y))}, bottom=${Math.max(...mapPoints.map(p => p.y))}, d=${mean(mapPoints.map(p => p.d))}`);
 }
 
-async function addAirlineCompanies (ctx: ContextParams) {
-  ctx.logger.info('>>> adding airline companies');
+async function addAirlineCompanies (ctx: ContextParams, previewMode: PreviewMode) {
+  ctx.logger.info(`>>> adding airline companies, previewMode=${previewMode}`);
 
   type AirlineCompanyJsonRaw = {
     citySlug: string,
@@ -1107,7 +1081,7 @@ async function addAirlineCompanies (ctx: ContextParams) {
     ctx.logger.verbose(`adding airline companies - city=${companyJson.citySlug}`);
     const logoImageSlug = `airline-company-logo-${i}`;
 
-    const cityInfo = (await citiesLogic.getCity(companyJson.citySlug));
+    const cityInfo = (await citiesLogic.getCity(companyJson.citySlug, previewMode));
 
     let logoImageId: EntityId;
     const citySlug = companyJson.citySlug;
@@ -1117,7 +1091,7 @@ async function addAirlineCompanies (ctx: ContextParams) {
         category: ImageCategory.AirlineLogo,
         slug: logoImageSlug,
         mimeType: MimeTypeWebp
-      }, undefined, companyJson.invertLogoForDarkTheme);
+      }, previewMode, undefined, companyJson.invertLogoForDarkTheme);
     } else {
       ctx.logger.error(`Airline company logo image does not exists: ${getLogoFilePath(citySlug, undefined)}`);
       throw new Error('Airline company logo image does not exists');
@@ -1130,16 +1104,19 @@ async function addAirlineCompanies (ctx: ContextParams) {
         geo: cityInfo.geo
       },
       name: companyJson.name,
-      numReviews: companyJson.numReviews,
-      reviewScore: companyJson.reviewScore
-    });
+      reviewSummary: {
+        numReviews: companyJson.numReviews,
+        score: companyJson.reviewScore
+      }
+    }, previewMode);
+
     ctx.logger.verbose(`adding airline companies - added for city=${companyJson.citySlug}, id=${companyId}`);
   }
 
-  ctx.logger.info(`>>> adding airline companies - completed: count=${json.length}`);
+  ctx.logger.info(`>>> adding airline companies, previewMode=${previewMode} - completed: count=${json.length}`);
 }
 
-async function createAirplaneImageData (ctx: ContextParams, airplaneIndex: number, featureCategorySize: { width: number, height: number }): Promise<{ imageId: EntityId, kind: AirplaneImageKind, order: number }[]> {
+async function createAirplaneImageData (ctx: ContextParams, airplaneIndex: number, featureCategorySize: { width: number, height: number }, previewMode: PreviewMode): Promise<{ imageId: EntityId, kind: AirplaneImageKind, order: number }[]> {
   const getAirplaneFeatureImageFilePath = (kind: AirplaneImageKind, idx: number) => join('airplanes', `${kind}-0${idx}.webp`);
 
   const imageData: {
@@ -1152,7 +1129,7 @@ async function createAirplaneImageData (ctx: ContextParams, airplaneIndex: numbe
     category: ImageCategory.Airplane,
     slug: `airplane${airplaneIndex}`,
     mimeType: MimeTypeWebp
-  });
+  }, previewMode);
   imageData.push({
     imageId,
     kind: 'main',
@@ -1163,7 +1140,7 @@ async function createAirplaneImageData (ctx: ContextParams, airplaneIndex: numbe
     category: ImageCategory.AirplaneFeature,
     slug: `airplane${airplaneIndex}-${<AirplaneImageKind>'window'}1`,
     mimeType: MimeTypeWebp
-  }, featureCategorySize);
+  }, previewMode, featureCategorySize);
   imageData.push({
     imageId,
     kind: 'window',
@@ -1174,7 +1151,7 @@ async function createAirplaneImageData (ctx: ContextParams, airplaneIndex: numbe
     category: ImageCategory.AirplaneFeature,
     slug: `airplane${airplaneIndex}-${<AirplaneImageKind>'cabin'}1`,
     mimeType: MimeTypeWebp
-  }, featureCategorySize);
+  }, previewMode, featureCategorySize);
   imageData.push({
     imageId,
     kind: 'cabin',
@@ -1185,7 +1162,7 @@ async function createAirplaneImageData (ctx: ContextParams, airplaneIndex: numbe
     category: ImageCategory.AirplaneFeature,
     slug: `airplane${airplaneIndex}-${<AirplaneImageKind>'window'}2`,
     mimeType: MimeTypeWebp
-  }, featureCategorySize);
+  }, previewMode, featureCategorySize);
   imageData.push({
     imageId,
     kind: 'window',
@@ -1197,7 +1174,7 @@ async function createAirplaneImageData (ctx: ContextParams, airplaneIndex: numbe
       category: ImageCategory.AirplaneFeature,
       slug: `airplane${airplaneIndex}-${<AirplaneImageKind>'common'}${i + 1}`,
       mimeType: MimeTypeWebp
-    }, featureCategorySize);
+    }, previewMode, featureCategorySize);
     imageData.push({
       imageId,
       kind: 'common',
@@ -1211,7 +1188,7 @@ async function createAirplaneImageData (ctx: ContextParams, airplaneIndex: numbe
         category: ImageCategory.AirplaneFeature,
         slug: `airplane${airplaneIndex}-${flightClass}${i}`,
         mimeType: MimeTypeWebp
-      }, featureCategorySize);
+      }, previewMode, featureCategorySize);
       imageData.push({
         imageId,
         kind: flightClass,
@@ -1226,8 +1203,8 @@ async function createAirplaneImageData (ctx: ContextParams, airplaneIndex: numbe
   return imageData;
 }
 
-async function addAirplanes (ctx: ContextParams) {
-  ctx.logger.info('>>> adding airplanes');
+async function addAirplanes (ctx: ContextParams, previewMode: PreviewMode) {
+  ctx.logger.info(`>>> adding airplanes, previewMode=${previewMode}`);
 
   const isFeatureFileName = (fileName: string): boolean => {
     return fileName.includes(<AirplaneImageKind>'business') ||
@@ -1252,9 +1229,9 @@ async function addAirplanes (ctx: ContextParams) {
   const airplaneLogic = ServerServicesLocator.getAirplaneLogic();
   let addMore = await checkFileExists(getAirplaneImageFilePath(i));
   while (addMore) {
-    ctx.logger.debug(`>>> adding airplane #${i} images`);
+    ctx.logger.debug(`>>> adding airplane #${i} images, previewMode=${previewMode}`);
 
-    const imageData = await createAirplaneImageData(ctx, i, featureCategorySize);
+    const imageData = await createAirplaneImageData(ctx, i, featureCategorySize, previewMode);
     const airplaneData: IAirplaneData = {
       name: {
         en: `Demo Airplane #${i + 1}`,
@@ -1263,12 +1240,12 @@ async function addAirplanes (ctx: ContextParams) {
       },
       images: imageData
     };
-    await airplaneLogic.createAirplane(airplaneData);
+    await airplaneLogic.createAirplane(airplaneData, previewMode);
 
     addMore = await checkFileExists(getAirplaneImageFilePath(++i));
   }
 
-  ctx.logger.info(`>>> adding airplanes - compelted: count=${i}`);
+  ctx.logger.info(`>>> adding airplanes, previewMode=${previewMode} - compelted: count=${i}`);
 }
 
 function buildStayDescription (templates: DescriptionTemplatesJson, hotelName: ILocalizableValue): IStayDescriptionData[] {
@@ -1374,8 +1351,8 @@ function buildStayReviews (nameEn: string, userIds: EntityId[], reviews: ILocali
   return result;
 }
 
-async function buildStayImages (ctx: ContextParams, staySlug: string, hotelRoomCategorySize: { width: number, height: number }): Promise<IStayImageData[]> {
-  ctx.logger.debug(`adding hotels - building stay images, slug=${staySlug}`);
+async function buildStayImages (ctx: ContextParams, staySlug: string, hotelRoomCategorySize: { width: number, height: number }, previewMode: PreviewMode): Promise<IStayImageData[]> {
+  ctx.logger.debug(`adding hotels - building stay images, slug=${staySlug}, previewMode=${previewMode}`);
   const randomizer = hashString(staySlug) % 16;
 
   const result: IStayImageData[] = [];
@@ -1385,7 +1362,7 @@ async function buildStayImages (ctx: ContextParams, staySlug: string, hotelRoomC
     category: ImageCategory.Hotel,
     slug: `${staySlug}-photo`,
     mimeType: MimeTypeWebp
-  });
+  }, previewMode);
   result.push({
     imageId: mainImgId,
     order: 0,
@@ -1397,7 +1374,7 @@ async function buildStayImages (ctx: ContextParams, staySlug: string, hotelRoomC
     category: ImageCategory.HotelRoom,
     slug: `${staySlug}-base`,
     mimeType: MimeTypeWebp
-  }, hotelRoomCategorySize);
+  }, previewMode, hotelRoomCategorySize);
   result.push({
     imageId: baseImgId,
     order: 1,
@@ -1409,7 +1386,7 @@ async function buildStayImages (ctx: ContextParams, staySlug: string, hotelRoomC
     category: ImageCategory.HotelRoom,
     slug: `${staySlug}-city1`,
     mimeType: MimeTypeWebp
-  }, hotelRoomCategorySize);
+  }, previewMode, hotelRoomCategorySize);
   result.push({
     imageId: cityView1ImgId,
     order: 2,
@@ -1421,7 +1398,7 @@ async function buildStayImages (ctx: ContextParams, staySlug: string, hotelRoomC
     category: ImageCategory.HotelRoom,
     slug: `${staySlug}-city2`,
     mimeType: MimeTypeWebp
-  }, hotelRoomCategorySize);
+  }, previewMode, hotelRoomCategorySize);
   result.push({
     imageId: cityView2ImgId,
     order: 3,
@@ -1433,19 +1410,19 @@ async function buildStayImages (ctx: ContextParams, staySlug: string, hotelRoomC
     category: ImageCategory.HotelRoom,
     slug: `${staySlug}-city3`,
     mimeType: MimeTypeWebp
-  }, hotelRoomCategorySize);
+  }, previewMode, hotelRoomCategorySize);
   result.push({
     imageId: cityView3ImgId,
     order: 4,
     serviceLevel: 'CityView3'
   });
 
-  ctx.logger.debug(`adding hotels - building stay images completed, slug=${staySlug}`);
+  ctx.logger.debug(`adding hotels, previewMode=${previewMode} - building stay images completed, slug=${staySlug}`);
   return result;
 }
 
-async function addHotels (ctx: ContextParams) {
-  ctx.logger.info('>>> adding hotels');
+async function addHotels (ctx: ContextParams, previewMode: PreviewMode) {
+  ctx.logger.info(`>>> adding hotels, previewMode=${previewMode}`);
 
   const citiesLogic = ServerServicesLocator.getCitiesLogic();
   const stayLogic = ServerServicesLocator.getStaysLogic();
@@ -1473,15 +1450,16 @@ async function addHotels (ctx: ContextParams) {
   const hotelIdentities = orderBy(hotelsJson.identities, ['slug'], ['asc']);
   for (let i = 0; i < hotelIdentities.length; i++) {
     const identityJson = hotelIdentities[i];
-    const stayEntity = await stayLogic.findStay(identityJson.slug);
+    const stayEntity = await stayLogic.findStay(identityJson.slug, previewMode);
     if (stayEntity) {
       ctx.logger.debug(`adding hotels - already exists: slug=${stayEntity.slug}`);
       continue;
     }
 
-    ctx.logger.debug(`adding hotels - creating new: slug=${identityJson.slug}`);
-    const cityInfo = await citiesLogic.getCity(identityJson.citySlug);
+    ctx.logger.debug(`adding hotels, previewMode=${previewMode} - creating new: slug=${identityJson.slug}`);
+    const cityInfo = await citiesLogic.getCity(identityJson.citySlug, previewMode);
 
+    const seedHotelInPreviewMode = SeedDraftHotelSlug ? identityJson.slug.includes(SeedDraftHotelSlug) : SeedPreviewMode;
     const stayData: IStayData = {
       cityId: cityInfo.id,
       slug: identityJson.slug,
@@ -1489,16 +1467,16 @@ async function addHotels (ctx: ContextParams) {
       name: identityJson.name,
       descriptionData: buildStayDescription(hotelsJson.descriptionTemplates, identityJson.name),
       reviewsData: buildStayReviews(identityJson.name.en, reviewUserIds, hotelsJson.reviews),
-      imagesData: await buildStayImages(ctx, identityJson.slug, hotelRoomCategorySize)
+      imagesData: await buildStayImages(ctx, identityJson.slug, hotelRoomCategorySize, seedHotelInPreviewMode)
     };
-    await stayLogic.createStay(stayData);
+    await stayLogic.createStay(stayData, seedHotelInPreviewMode);
   }
 
-  ctx.logger.info(`adding hotels - completed, count=${hotelIdentities.length}`);
+  ctx.logger.info(`adding hotels, previewMode=${previewMode} - completed, count=${hotelIdentities.length}`);
 }
 
-async function addStaysPageTitleImages (ctx: ContextParams) : Promise<void> {
-  ctx.logger.info('>>> creating stays page title images');
+async function addStaysPageTitleImages (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
+  ctx.logger.info(`>>> creating stays page title images, previewMode=${previewMode}`);
   await ensureImageCategory(ctx, ImageCategory.PageTitle, 1770, 1180);
   const stubCssStyle = fromPairs([
     ['backgroundImage', 'linear-gradient(75deg, hsla(197, 79%, 50%, 0.42) 7%, hsla(20, 100%, 37%, 0.68) 117%), linear-gradient(29deg, hsla(240, 100%, 93%, 0.57) -16%, hsla(36, 39%, 47%, 0.73) 153%), linear-gradient(0deg, hsla(63, 100%, 71%, 0.23) 21%, hsl(60, 100%, 70%) 57%, hsla(63, 100%, 84%, 0.67) 86%)'],
@@ -1511,8 +1489,8 @@ async function addStaysPageTitleImages (ctx: ContextParams) : Promise<void> {
     slug: StaysTitleSlug,
     stubCssStyle,
     mimeType: MimeTypeWebp
-  });
-  ctx.logger.info('>>> creating stays page title images - completed');
+  }, previewMode);
+  ctx.logger.info(`>>> creating stays page title images, previewMode=${previewMode} - completed`);
 }
 
 async function seedDb (event: H3Event) : Promise<void> {
@@ -1559,23 +1537,23 @@ async function seedDb (event: H3Event) : Promise<void> {
     };
 
     await ensureAppAdminUser(ctx);
-    await addMainTitleImage(ctx);
+    await addMainTitleImage(ctx, SeedPreviewMode);
     // await addAdminProfileImages(ctx); // KB: need to place image's in content folder
 
-    await addAuthFormsPhotos(ctx);
-    await ensureMailTemplates(ctx);
-    await addDefaultUserProfileImages(ctx);
+    await addAuthFormsPhotos(ctx, SeedPreviewMode);
+    await ensureMailTemplates(ctx, SeedPreviewMode);
+    await addDefaultUserProfileImages(ctx, SeedPreviewMode);
 
-    await addGeoData(ctx);
-    await addPopularCities(ctx);
-    await addCityImages(ctx);
-    await addCompanyReviews(ctx);
-    await addFlightsPageTitleImages(ctx);
+    await addGeoData(ctx, SeedPreviewMode);
+    await addPopularCities(ctx, SeedPreviewMode);
+    await addCityImages(ctx, SeedPreviewMode);
+    await addCompanyReviews(ctx, SeedPreviewMode);
+    await addFlightsPageTitleImages(ctx, SeedPreviewMode);
     compileWorldMapData(ctx);
-    await addAirlineCompanies(ctx);
-    await addAirplanes(ctx);
-    await addHotels(ctx);
-    await addStaysPageTitleImages(ctx);
+    await addAirlineCompanies(ctx, SeedPreviewMode);
+    await addAirplanes(ctx, SeedPreviewMode);
+    await addHotels(ctx, SeedPreviewMode);
+    await addStaysPageTitleImages(ctx, SeedPreviewMode);
 
     if (process.env.NODE_ENV === DEV_ENV_MODE) {
       await ensureCredentialsTestUser(ctx);
@@ -1589,19 +1567,23 @@ async function seedDb (event: H3Event) : Promise<void> {
   logger.info('(data-seed) data seeding completed');
 }
 
-async function checkNeedInitialSeeding (event: H3Event) : Promise<boolean> {
+export async function getInitialDbSeedingStatus (event: H3Event) : Promise<'required' | 'running' | 'completed'> {
   const logger = CommonServicesLocator.getLogger();
-  logger.verbose('checking inital DB seeding is needed');
+  logger.debug('checking inital DB seeding status');
+  let result: 'required' | 'running' | 'completed' = 'required';
 
   const userLogic = ServerServicesLocator.getUserLogic();
   const adminUser = await userLogic.findUser(AuthProvider.Email, AdminUserEmail, 'minimal', event);
-  if (adminUser) {
-    logger.verbose('initial DB seeding is not needed');
-    return false;
+  if(adminUser) {
+    const userLogic = ServerServicesLocator.getImageLogic();
+    const isCompleted = (await userLogic.getAllImagesByCategory(ImageCategory.PageTitle, true, SeedPreviewMode)).length >= 2;
+    result = isCompleted ? 'completed' : 'running';
   } else {
-    logger.verbose('initial DB seeding is needed');
-    return true;
+    result = 'required';
   }
+
+  logger.debug(`inital DB seeding status check result = ${result}`);
+  return result;
 }
 
 let seedMethodExecuted = false;
@@ -1618,8 +1600,8 @@ export default defineNuxtPlugin({
 
     const nuxtApp = useNuxtApp();
     if (process.env.NODE_ENV === DEV_ENV_MODE || isQuickStartEnv()) {
-      const seedingIsNeeded = await checkNeedInitialSeeding(nuxtApp.ssrContext!.event);
-      if (!seedingIsNeeded) {
+      const seedingIsNeeded = await getInitialDbSeedingStatus(nuxtApp.ssrContext!.event);
+      if (seedingIsNeeded !== 'required') {
         return;
       }
   

@@ -2,7 +2,9 @@
 
 import { type ILocalizableValue, ImageCategory, type IImageEntitySrc } from './../../shared/interfaces';
 import { getI18nResName3, getI18nResName2 } from './../../shared/i18n';
-import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
+import { type Locale } from './../../shared/constants';
+import { AppPage } from './../../shared/page-query-params';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 interface IProps {
   ctrlKey: string,
@@ -15,7 +17,7 @@ interface IProps {
 const props = defineProps<IProps>();
 
 const { locale } = useI18n();
-const localePath = useLocalePath();
+const navLinkBuilder = useNavLinkBuilder();
 
 </script>
 
@@ -37,15 +39,15 @@ const localePath = useLocalePath();
             {{ props.text ? ((props.text as any)[locale]) : '&nbsp;' }}
           </div>
           <div v-if="searchKind === 'flight'" class="popular-city-links mt-xs-2 p-xs-2">
-            <NuxtLink class="popular-city-link brdr-1 hidden-overflow-nontabbable" :to="citySlug ? localePath(`/${getHtmlPagePath(HtmlPage.FindFlights)}?fromCitySlug=${citySlug}`) : localePath(`/${getHtmlPagePath(HtmlPage.Index)}`)">
+            <NuxtLink class="popular-city-link brdr-1 hidden-overflow-nontabbable" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindFlights, locale as Locale, { fromCitySlug: citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
               {{ $t(getI18nResName3('indexPage', 'popularCity', 'flights')) }}
             </NuxtLink>
-            <NuxtLink class="popular-city-link brdr-1 hidden-overflow-nontabbable" :to="citySlug ? localePath(`/${getHtmlPagePath(HtmlPage.FindStays)}?citySlug=${citySlug}`) : localePath(`/${getHtmlPagePath(HtmlPage.Index)}`)">
+            <NuxtLink class="popular-city-link brdr-1 hidden-overflow-nontabbable" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
               {{ $t(getI18nResName3('indexPage', 'popularCity', 'stays')) }}
             </NuxtLink>
           </div>
           <div v-else class="popular-city-links mt-xs-2 p-xs-2">
-            <NuxtLink v-if="numStays" class="popular-city-link brdr-1 hidden-overflow-nontabbable" :to="citySlug ? localePath(`/${getHtmlPagePath(HtmlPage.FindStays)}?citySlug=${citySlug}`) : localePath(`/${getHtmlPagePath(HtmlPage.Index)}`)">
+            <NuxtLink v-if="numStays !== undefined" class="popular-city-link brdr-1 hidden-overflow-nontabbable" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
               {{ $t(getI18nResName2('staysPage', 'cityPlacesCount'), numStays) }}
             </NuxtLink>
             <div v-else class="data-loading-stub text-data-loading" />

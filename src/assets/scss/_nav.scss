@@ -30,6 +30,14 @@ $nav-logo-inapp-l-padding: map.get($spacings, '1');
 $nav-logo-inapp-l-offset: -1.3rem;
 
 .nav-bar {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+
+  overflow-y: hidden;
+
+  align-items: center;
+
   width: 100%;
   &:not(.nav-bar-landing) {
     min-width: map.get($breakpoints, 'xs');
@@ -41,13 +49,6 @@ $nav-logo-inapp-l-offset: -1.3rem;
     }
   }
 
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-
-  overflow-y: hidden;
-
-  align-items: center;
   @include for-large-and-extra-large() {
     flex-direction: row-reverse;
     flex-wrap: nowrap;
@@ -65,17 +66,17 @@ $nav-logo-inapp-l-offset: -1.3rem;
     z-index: 5;
     top: 0;
 
+    @include with-theme-color('shadow') using($css-var) {
+      box-shadow: 0px 4px 16px var($css-var);
+    }
     @include with-theme-color('body-bg') using ($css-var) {
       background-color: var($css-var);
     }
+
     padding: $nav-logo-inapp-padding calc(var(--#{$prefix}-page-padding-x) - $navbar-outline-offset) $nav-logo-inapp-padding calc(var(--#{$prefix}-page-padding-x) - $navbar-outline-offset);
     @include for-large-and-extra-large() {
       padding-top: $nav-logo-inapp-l-padding;
       padding-bottom: 0;
-    }
-  
-    @include with-theme-color('shadow') using($css-var) {
-      box-shadow: 0px 4px 16px var($css-var);
     }
 
     .nav-item {
@@ -150,16 +151,6 @@ $nav-logo-inapp-l-offset: -1.3rem;
   
     display: inline-block;
 
-    position: static;
-    margin-right: map.get($spacings, '2');
-    margin-left: map.get($spacings, '1');
-    @include for-large-and-extra-large() {
-      position: absolute;
-      margin-top: -0.5 * $nav-link-icon-size;  
-      margin-right: 0;
-      transform: translate(-$nav-link-icon-size - markup-to-rem(map.get($spacings, '2')), 0.65rem);
-    }
-
     -webkit-mask-size: contain;
     mask-size: contain;
     -webkit-mask-repeat: no-repeat;
@@ -169,13 +160,19 @@ $nav-logo-inapp-l-offset: -1.3rem;
     vertical-align: middle;
 
     content: '';
+
+    position: static;
+    margin-right: map.get($spacings, '2');
+    margin-left: map.get($spacings, '1');
+    @include for-large-and-extra-large() {
+      position: absolute;
+      margin-top: -0.5 * $nav-link-icon-size;  
+      margin-right: 0;
+      transform: translate(-$nav-link-icon-size - markup-to-rem(map.get($spacings, '2')), 0.65rem);
+    }
   }
 
   .nav-search-page-links {
-    order: 5;
-    @include for-large-and-extra-large() {
-      order: 1
-    }
     z-index: 2;
 
     width: 100%;
@@ -185,7 +182,18 @@ $nav-logo-inapp-l-offset: -1.3rem;
 
     overflow-y: hidden;
 
+    order: 5;
     @include for-large-and-extra-large() {
+      order: 1
+    }
+
+    @include for-large-and-extra-large() {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      gap: map.get($spacings, '3');
+      
       flex: 1 1 auto;
 
       overflow-y: visible;
@@ -194,24 +202,18 @@ $nav-logo-inapp-l-offset: -1.3rem;
         max-height: $navbar-toggle-max-height;
         visibility: visible;
       }
-
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      justify-content: flex-start;
-      gap: map.get($spacings, '3');
     }
   }
 
   .nav-logo-list-item {
+    flex: 0 1 auto;
+    
     order: 2;
     padding-left: $navbar-outline-offset;
     @include for-large-and-extra-large() {
       order: 1;
       padding-left: 0;
-    }
-    flex: 0 1 auto;
-    
+    }    
   }
 
   .nav-toggler-div {
@@ -224,18 +226,18 @@ $nav-logo-inapp-l-offset: -1.3rem;
     }
 
     .nav-toggler {
+      display: block;
       width: markup-to-rem(26px);
       height: markup-to-rem(26px);
-      margin-top: 4px;
-      @include for-small-and-above() {
-        margin-top: 2px;
-      }
-
-      display: block;
 
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center center;
+
+      margin-top: 4px;
+      @include for-small-and-above() {
+        margin-top: 2px;
+      }
 
       &:focus-visible {
         @include with-outline();
@@ -257,19 +259,19 @@ $nav-logo-inapp-l-offset: -1.3rem;
     justify-content: flex-start;
     flex-direction: row;
     flex-wrap: wrap;
-
-    @include for-large-and-extra-large() {
-      order: 4;
-      display: contents;
-    }
+    
+    padding-right: $navbar-outline-offset;
     
     gap: map.get($spacings, '2');
     @include for-large-and-extra-large() {
       gap: map.get($spacings, '3');
     }
 
-    padding-right: $navbar-outline-offset;
-
+    @include for-large-and-extra-large() {
+      order: 4;
+      display: contents;
+    }
+    
     .nav-login {
       display: contents;
 
@@ -283,10 +285,6 @@ $nav-logo-inapp-l-offset: -1.3rem;
       .nav-signup-btn {
         padding-top: map.get($spacings, '2');
         padding-bottom: map.get($spacings, '2');
-        @include for-small-and-above() {
-          padding-top: map.get($spacings, '3');
-          padding-bottom: map.get($spacings, '3');
-        }
 
         border-radius: map.get($borders-radius, '2');
         @include with-theme-color('nav-signup-bg') using($css-var) {
@@ -295,10 +293,17 @@ $nav-logo-inapp-l-offset: -1.3rem;
         @include with-theme-color('nav-signup') using($css-var) {
           color: var($css-var);
         }
+
+        @include for-small-and-above() {
+          padding-top: map.get($spacings, '3');
+          padding-bottom: map.get($spacings, '3');
+        }
       }
     }
 
     .nav-user-favourites-div {
+      margin-top: 0.05rem;
+
       flex: 0 1 auto;
       display: none;
       @include for-extra-large-only() {
@@ -307,9 +312,14 @@ $nav-logo-inapp-l-offset: -1.3rem;
         height: auto;            
       }
 
-      margin-top: 0.05rem;
-
       .nav-page-link {
+        // to make height of divisor smaller
+        margin-top: 0;
+        margin-bottom: 0;
+        margin-right: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+
         @at-root {
           .nav-bar.nav-bar-landing .nav-controlbox .nav-user-favourites-div .nav-page-link {
             border-right: 2px solid $landing-color;
@@ -321,12 +331,6 @@ $nav-logo-inapp-l-offset: -1.3rem;
             }
           }
         }
-        // to make height of divisor smaller
-        margin-top: 0;
-        margin-bottom: 0;
-        margin-right: 0;
-        padding-top: 0;
-        padding-bottom: 0;
       }
     }
 
@@ -581,6 +585,8 @@ $nav-logo-inapp-l-offset: -1.3rem;
     margin: 0;
     padding: 0;
 
+    border-radius: calc($theme-switcher-button-size * 0.5);
+
     @include with-theme-color('input-ctrl-primary') using($css-var) {
       border: 2px var($css-var) solid;
       &::after {
@@ -593,13 +599,13 @@ $nav-logo-inapp-l-offset: -1.3rem;
     }
 
     &:focus-visible {
-      @include with-outline(2px);
-    }
-    border-radius: calc($theme-switcher-button-size * 0.5);
-    &:focus-visible {
       border-radius: calc($theme-switcher-button-size * 0.5);
     }
 
+    &:focus-visible {
+      @include with-outline(2px);
+    }
+    
     &::after {
       position: absolute;
       content: "";
@@ -834,7 +840,12 @@ $nav-logo-inapp-l-offset: -1.3rem;
   display: block;
   width: $nav-logo-width;
   height: $nav-logo-height;
+
   z-index: 2;
+
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: contain;
 
   @include for-large-and-extra-large() {
     position: absolute;
@@ -843,10 +854,6 @@ $nav-logo-inapp-l-offset: -1.3rem;
     translate: -50%;
     top: 24px;
   }
-
-  background-position: center center;
-  background-repeat: no-repeat;
-  background-size: contain;
 
   &:focus-visible {
     @include with-outline();

@@ -1,5 +1,5 @@
 import { type InferType, string, number, object, array, boolean, date, lazy } from 'yup';
-import type { AppExceptionCodeEnum, AppExceptionAppearance } from '../shared/exceptions';
+import type { AppExceptionAppearance } from '../shared/exceptions';
 import { type StayDescriptionParagraphType, type AirplaneImageKind, type FlightOffersSortFactor, type CacheEntityType, type TripType, type FlightClass, AvailableFlightOffersSortFactor, AvailableStayOffersSortFactor, type StayServiceLevel, type OfferKind, type EntityId } from '../shared/interfaces';
 import { NumMinutesInDay, SearchOffersPriceRange, AvailableLocaleCodes, AvailableThemeCodes, FlightMinPassengers, FlightMaxPassengers, StaysMaxRoomsCount, StaysMaxGuestsCount, MaxStayReviewLength, type SignUpResultEnum, type SignUpCompleteResultEnum, type RecoverPasswordResultEnum, type RecoverPasswordCompleteResultEnum } from '../shared/constants';
 import { AllHtmlPages } from '../shared/page-query-params';
@@ -182,7 +182,7 @@ export interface IAuthUserDto {
 }
 
 export interface IApiErrorDto {
-  code: AppExceptionCodeEnum,
+  code: number, //AppExceptionCodeEnum
   internalMsg: string,
   appearance: AppExceptionAppearance,
   params?: any
@@ -425,8 +425,7 @@ export interface ISearchedStayDto {
   cityId: string,
   geo: IGeoPointDto,
   name: ILocalizableValueDto,
-  numReviews: number,
-  reviewScore: number,
+  reviewSummary?: IReviewSummaryDto,
   photo: {
     slug: string,
     timestamp: number,
@@ -541,8 +540,6 @@ export interface IStayDto {
     order: number
   }[],
   description: IStayDescriptionDto[],
-  reviewScore: number,
-  numReviews: number
 }
 
 export interface IStayOfferDetailsDto extends IOfferDetailsDto {
@@ -562,6 +559,11 @@ export interface IStayReviewsDto {
   reviews: IStayReviewDto[]
 }
 
+export interface IReviewSummaryDto {
+  numReviews: number,
+  score: number
+}
+
 export interface IBookingDetailsDto {
   id: string,
   kind: OfferKind,
@@ -575,7 +577,7 @@ export interface IBookingDetailsDto {
     }
   },
   flightOffer?: IFlightOfferDetailsDto,
-  stayOffer?: IStayOfferDetailsDto,
+  stayOffer?: IStayOfferDetailsDto & { reviewSummary?: IReviewSummaryDto },
   serviceLevel?: StayServiceLevel
 }
 

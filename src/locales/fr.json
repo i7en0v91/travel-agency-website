@@ -5,7 +5,7 @@
     "objectNotFound": "Objet non trouvé",
     "helm": "Erreur",
     "pageNotFound": "Ce n'est pas la page que vous recherchez",
-    "unauthorized": "La connexion est requise pour continuer",
+    "unauthenticated": "La connexion est requise pour continuer",
     "captchaError": "Erreur de vérification d'accès. Vérifiez votre connectivité réseau, puis rechargez la page et réessayez",
     "emailingDisabled": "L'opération ne peut pas être effectuée car elle nécessite l'activation de la fonction Emailing sur le site Web",
     "forbidden": "L'accès est interdit",
@@ -13,7 +13,7 @@
     "acsysIntegrationError": "Erreur d'intégration du CMS"
   },
   "httpCodes": {
-    "401": "Non autorisé",
+    "401": "Non authentifié",
     "404": "Pas trouvé",
     "500": "Erreur inattendue"
   },
@@ -21,6 +21,7 @@
     "homeLink": "Rentrer à la maison"
   },
   "notAvailableInDemo": "Non disponible en démo",
+  "notAllowedInPreviewMode": "L'opération n'est pas autorisée en mode aperçu",
   "nav": {
     "findFlights": "Vols",
     "findStays": "Séjours",
@@ -795,6 +796,9 @@
       "paragraph2": "12.2. Ce document reflétera toute modification apportée à la politique de traitement des données personnelles de l'Opérateur. La politique est valable indéfiniment jusqu'à ce qu'elle soit remplacée par une nouvelle version.",
       "paragraph3": "12.3. La version actuelle de la Politique est disponible gratuitement sur Internet à l'adresse {privacyUrl}"
     }
+  },
+  "draftsPage": {
+    "title": "Entrer en mode brouillons"
   },
   "cookieBanner": {
     "title": "Utiliser des cookies",

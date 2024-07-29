@@ -8,11 +8,11 @@ import PopularCityCard from './../components/index/popular-city-card.vue';
 import { type IPopularCityDto, type ICompanyReviewDto } from './../server/dto';
 import { getI18nResName3, getI18nResName2 } from './../shared/i18n';
 import { ApiEndpointPopularCitiesList, ApiEndpointCompanyReviewsList, TabIndicesUpdateDefaultTimeout } from './../shared/constants';
-import { useFetchEx } from './../shared/fetch-ex';
 import CompanyReviewCard from './../components/index/company-review-card.vue';
 import { updateTabIndices } from './../shared/dom';
 import AppConfig from './../appconfig';
 import { mapLocalizeableValues } from './../shared/common';
+import { usePreviewState } from './../composables/preview-state';
 
 definePageMeta({
   title: { resName: getI18nResName2('indexPage', 'title'), resArgs: undefined }
@@ -21,36 +21,41 @@ useOgImage();
 
 const logger = CommonServicesLocator.getLogger();
 
-const citiesListFetch = await useFetchEx<IPopularCityDto[], IPopularCityDto[], null[]>(ApiEndpointPopularCitiesList, 'error-page',
-  {
+const nuxtApp = useNuxtApp();
+const { enabled } = usePreviewState();
+const citiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`, {
     server: true,
     lazy: true,
-    cache: AppConfig.caching.htmlPageCachingSeconds ? 'default' : 'no-cache',
-    default: () => { return range(0, 20, 1).map(_ => null); },
+    cache: (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
+    query: { drafts: enabled },
     transform: (response: IPopularCityDto[]) => {
       logger.verbose('(indexPage) received popular cities list response');
       if (!response) {
         logger.warn('(indexPage) popular cities list response is empty');
-        return []; // error should be logged by fetchEx
+        return range(0, 20, 1).map(_ => null); // error should be logged by fetchEx
       }
       return response;
-    }
+    },
+    default: () => { return range(0, 20, 1).map(_ => null); },
+    $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-page' })
   });
 
-const reviewsListFetch = await useFetchEx(ApiEndpointCompanyReviewsList, 'error-page',
+const reviewsListFetch = await useFetch(`/${ApiEndpointCompanyReviewsList}`, 
   {
     server: true,
     lazy: true,
     cache: 'no-cache',
+    query: { drafts: enabled },
     default: () => { return range(0, 10, 1).map(_ => null); },
     transform: (response: ICompanyReviewDto[]) => {
-      logger.verbose(`(indexPage) received company reviews list response: ${JSON.stringify(response)}`);
+      logger.verbose(`(indexPage) received company reviews list response: [${JSON.stringify(response)}]`);
       if (!response) {
         logger.warn('(indexPage) company review list response is empty');
-        return []; // error should be logged by fetchEx
+        return range(0, 10, 1).map(_ => null); // error should be logged by fetchEx
       }
       return response;
-    }
+    },
+    $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-stub' })
   });
 
 function onActiveSlideChanged () {
@@ -68,7 +73,7 @@ function onActiveSlideChanged () {
       :btn-text-res-name="getI18nResName3('indexPage', 'perfectTripSection', 'btn')"
       :content-padded="true"
       link-url="flights"
-      :is-error="citiesListFetch.error.value !== undefined"
+      :is-error="!!citiesListFetch.error.value"
     >
       <ul class="popular-city-grid p-xs-2 p-s-3  hidden-overflow-nontabbable">
         <PopularCityCard
@@ -99,7 +104,7 @@ function onActiveSlideChanged () {
       :subtext-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'subtext')"
       :btn-text-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'btn')"
       :content-padded="true"
-      :is-error="reviewsListFetch.error.value !== undefined"
+      :is-error="!!reviewsListFetch.error.value"
     >
       <Swiper
         class="company-reviews-swiper pb-xs-4"

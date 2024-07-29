@@ -155,7 +155,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
           :initially-selected-value="takeInitialValuesFromUrlQuery ? (displayedSearchParams?.city ?? null) : undefined"
           :ctrl-key="`${props.ctrlKey}-DestinationCity`"
           class="search-stays-destination"
-          :item-search-url="`${ApiEndpointCitiesSearch}`"
+          :item-search-url="`/${ApiEndpointCitiesSearch}`"
           :additional-query-params="{ includeCountry: true }"
           list-container-class="search-offers-dropdown-list-container"
           type="destination"
@@ -190,6 +190,9 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
     </div>
     <VDropdown
       ref="dropdown"
+      v-floating-vue-hydration="{ tabIndex: 0 }"
+      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
+      :aria-id="`${ctrlKey}-DropDownWrapper`"
       :distance="-6"
       :hide-triggers="[(triggers: any) => [...triggers, 'click']]"
       placement="bottom"
@@ -235,6 +238,6 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
           </div>
         </ClientOnly>
       </template>
-    </vdropdown>
+    </VDropdown>
   </div>
 </template>

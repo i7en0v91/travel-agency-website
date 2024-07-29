@@ -1,7 +1,7 @@
 import isArray from 'lodash-es/isArray';
 import isObject from 'lodash-es/isObject';
 import { parseURL } from 'ufo';
-import { OgImagePathSegment } from './../../shared/constants';
+import { OgImagePathSegment, isDevEnv } from './../../shared/constants';
 import { type IAppLogger } from './../../shared/applogger';
 
 function removeTwConfigRecusive (vnode: any) {
@@ -46,4 +46,17 @@ export default defineNitroPlugin((nitroApp) => {
       logger?.always(`(og-image) og image request completed, url=${fullUrl}`);
     };
   });
+
+  // KB: temporary workaround for og-image in prod env
+  // TODO: check with latest nuxt-og-image
+  if(!isDevEnv()) {
+    nitroApp.hooks.hook('render:island', (islandResponse, { islandContext }) => {
+      const isOgImgComponent = ['ogbookingticket', 'ogoffersummary'].some(t => islandContext.name.replaceAll('-', '').toLowerCase().includes(t));
+      if(!isOgImgComponent) {
+        return;
+      }
+      islandResponse.head.link.push({ rel: 'stylesheet', href: `/_nuxt/components/${islandContext.name}`});
+    });
+  }
+  
 });

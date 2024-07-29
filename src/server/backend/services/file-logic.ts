@@ -13,12 +13,14 @@ export class FileLogic implements IFileLogic {
     this.dbRepository = dbRepository;
   }
 
-  findFile = async (id: EntityId): Promise<IFileInfo> => {
-    this.logger.verbose(`(FileLogic) finding file info, id=${id}`);
+  findFiles = async (ids: EntityId[]): Promise<IFileInfo[]> => {
+    this.logger.debug(`(FileLogic) finding file infos, ids=[${ids.join('; ')}]`);
 
-    const queryResult = await this.dbRepository.file.findUnique({
+    const queryResult = await this.dbRepository.file.findMany({
       where: {
-        id,
+        id: { 
+          in: ids
+        },
         isDeleted: false
       },
       select: {
@@ -28,23 +30,27 @@ export class FileLogic implements IFileLogic {
         originalName: true
       }
     });
-    if (!queryResult) {
-      this.logger.warn(`(FileLogic) file info not found found: id=${id}`);
+    if (ids.length !== queryResult.length) {
+      const idsLookup = new Set<EntityId>(queryResult.map(f => f.id));
+      const notFoundIds = ids.filter(id => !idsLookup.has(id));
+      this.logger.warn(`(FileLogic) file infos not found: ids=[${notFoundIds.join(', ')}]`);
       throw new AppException(
         AppExceptionCodeEnum.OBJECT_NOT_FOUND,
         'File not found',
         'error-stub');
     }
 
-    const result: IFileInfo = {
-      id: queryResult.id,
-      modifiedUtc: queryResult.modifiedUtc,
-      mime: queryResult.mime,
-      originalName: queryResult.originalName ?? undefined,
-      isDeleted: false
-    };
+    const result: IFileInfo[] = queryResult.map(queryItem => {
+      return {
+        id: queryItem.id,
+        modifiedUtc: queryItem.modifiedUtc,
+        mime: queryItem.mime,
+        originalName: queryItem.originalName ?? undefined,
+        isDeleted: false
+      };
+    });
 
-    this.logger.verbose(`(FileLogic) file info found, id=${id}`, result);
+    this.logger.debug(`(FileLogic) file infos found, ids=[${ids.join('; ')}]`, result);
     return result;
   };
 

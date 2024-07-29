@@ -2,7 +2,7 @@ import type { PrismaClient } from '@prisma/client';
 import { type ICitiesSearchQuery, type IAppLogger, type EntityId, type ICitiesLogic, type ICitySearchItem, type ICity, type IPopularCityData, type IPopularCityItem, type ITravelDetails } from './../../backend/app-facade/interfaces';
 import { mapLocalizeableValues, AppException, AppExceptionCodeEnum, DbVersionInitial, newUniqueId } from './../../backend/app-facade/implementation';
 import { CityInfoQuery, MapCity } from './queries';
-import { mapDbGeoCoord, mapGeoCoord } from './db';
+import { mapDbGeoCoord, mapGeoCoord } from '../helpers/db';
 
 export class CitiesLogic implements ICitiesLogic {
   private logger: IAppLogger;
@@ -199,21 +199,19 @@ export class CitiesLogic implements ICitiesLogic {
       });
 
       this.logger.debug(`(CitiesLogic) creating popular city image links, cityId=${id}`);
-      await this.dbRepository.$transaction(async () => {
-        for (let i = 0; i < images.length; i++) {
-          const image = images[i];
-          await this.dbRepository.popularCityImage.create({
-            data: {
-              id: newUniqueId(),
-              orderNum: image.order,
-              version: DbVersionInitial,
-              isDeleted: false,
-              imageId: image.id,
-              popularCityId
-            }
-          });
-        }
-      });
+      for (let i = 0; i < images.length; i++) {
+        const image = images[i];
+        await this.dbRepository.popularCityImage.create({
+          data: {
+            id: newUniqueId(),
+            orderNum: image.order,
+            version: DbVersionInitial,
+            isDeleted: false,
+            imageId: image.id,
+            popularCityId
+          }
+        });
+      }
     });
 
     this.logger.verbose(`(CitiesLogic) popular city images have been set, id=${id}, images=${JSON.stringify(images)}`);
@@ -281,7 +279,7 @@ export class CitiesLogic implements ICitiesLogic {
         cityDisplayName: e.city.nameStr,
         countryDisplayName: e.city.country.nameStr,
         promoLine: e.promoLineStr,
-        imgSlug: cardImage?.image.slug ?? '', // cardImage may be undefined only if DB has not been initially seeded
+        imgSlug: cardImage?.image.slug ?? '', // cardImage may be undefined only during DB initial seeding
         slug: e.city.slug,
         geo: {
           lon: mapDbGeoCoord(e.city.lon),

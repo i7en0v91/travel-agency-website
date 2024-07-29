@@ -50,7 +50,7 @@ export class AuthFormImageLogic implements IAuthFormImageLogic {
           originalName: imageData.originalName,
           ownerId: undefined
         };
-        const image = (await this.imageLogic.createImage(imgParams, undefined, event));
+        const image = (await this.imageLogic.createImage(imgParams, undefined, event, false));
         imgId = image.id;
     
         this.logger.debug(`(AuthFormImageLogic) saving auth form image entity, i${resultId}`, imageData);
@@ -100,7 +100,8 @@ export class AuthFormImageLogic implements IAuthFormImageLogic {
       modifiedUtc: x.modifiedUtc
     }]));
 
-    const allAuthFormImages = await this.imageLogic.getAllImagesByCategory(ImageCategory.AuthFormsImage, event);
+    const allAuthFormImageInfos = await this.imageLogic.getAllImagesByCategory(ImageCategory.AuthFormsImage, false, false);
+    const allAuthFormImages = await this.imageLogic.resolveImageFiles(allAuthFormImageInfos, event, false);
 
     this.logger.debug(`(AuthFormImageLogic) mapping images info, count=${allAuthFormImages.length}`);
     const result: IAuthFormImageInfo[] = orderBy(allAuthFormImages.filter(i => authFormImageInfoMap.has(i.id)).map(e => {

@@ -2,12 +2,12 @@
  * Generates Prisma migration to create content views for Acsys CMS to be used as source collections
  */
 
-import 'dotenv/config';
+import { loadConfig } from 'c12';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'pathe';
 import { type  SourceCollection, type ViewConfig, ViewsConfig } from './../server/backend/acsys/client/views';
 import { template } from 'lodash';
-import { AcsysDraftsEntityPrefix } from './../shared/constants';
+import { AcsysDraftsEntityPrefix, isQuickStartEnv } from './../shared/constants';
 import { consola } from 'consola';
 
 // Directory containing prisma-related files for different databases
@@ -108,20 +108,22 @@ function buildMySqlViewStatements(sourceCollection: SourceCollection, viewConfig
 }
 
 async function run () {
+  await loadConfig({ dotenv: true });
+
   if((process.env.CMS?.toLowerCase() ?? '') !== 'acsys') {
     return;
   }
 
-  const isSqlite = !!process.env.VITE_QUICKSTART;
-  consola.log(`generating Prisma migration to create content views for Acsys (for ${isSqlite ? 'SQLite' : 'MySql'})...`);
+  const isSqliteDb = isQuickStartEnv();
+  consola.log(`generating Prisma migration to create content views for Acsys (for ${isSqliteDb ? 'SQLite' : 'MySql'})...`);
 
   const viewConfigs = [...ViewsConfig.entries()];
   let sql = '';
   for(let i = 0; i < viewConfigs.length; i++) {
-    sql += isSqlite ? buildSqliteViewStatements(viewConfigs[i][0], viewConfigs[i][1]) : buildMySqlViewStatements(viewConfigs[i][0], viewConfigs[i][1]);
+    sql += isSqliteDb ? buildSqliteViewStatements(viewConfigs[i][0], viewConfigs[i][1]) : buildMySqlViewStatements(viewConfigs[i][0], viewConfigs[i][1]);
   }
   
-  const outputFile = join(PrismaDir, isSqlite ? 'sqlite' : 'mysql', 'migrations', '2_acsys-views', 'migration.sql');
+  const outputFile = join(PrismaDir, isSqliteDb ? 'sqlite' : 'mysql', 'migrations', '2_acsys-views', 'migration.sql');
   if(existsSync(outputFile)) {
     const currentSql = readFileSync(outputFile, 'utf-8');
     if(sql === currentSql) {

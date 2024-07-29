@@ -4,12 +4,12 @@ import { ApiEndpointUserTickets, TabHistoryOptionButtonGroup, TabHistoryOptionBu
 import FlightTicketCard from './../../../components/user-account/ticket-card/ticket-flight-card.vue';
 import StayTicketCard from './../../../components/user-account/ticket-card/ticket-stay-card.vue';
 import { type EntityId, type OfferKind, type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer } from './../../../shared/interfaces';
-import { useFetchEx } from './../../../shared/fetch-ex';
 import { mapUserTicketsResult } from './../../../shared/mappers';
 import { type IUserTicketsResultDto } from './../../../server/dto';
 import { eraseTimeOfDay, getValueForFlightDayFormatting } from './../../../shared/common';
 import dayjs from 'dayjs';
 import AppConfig from './../../../appconfig';
+import { usePreviewState } from './../../../composables/preview-state';
 
 export type UserTicketItem = (EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>) & { bookingId: EntityId, bookingDateUtc: Date };
 declare type TimeRangeFilter = 'upcoming' | 'passed';
@@ -37,12 +37,17 @@ const $emit = defineEmits(['update:ready']);
 const flightsTabHtmlId = useId();
 const staysTabHtmlId = useId();
 
-const userTicketsFetch = await useFetchEx<IUserTicketsResultDto, UserTicketItem[]>(ApiEndpointUserTickets, 'error-page',
+const nuxtApp = useNuxtApp();
+const { enabled } = usePreviewState();
+const userTicketsFetch = await useFetch(`/${ApiEndpointUserTickets}`,
 {
   server: false,
   lazy: true,
   immediate: false,
-  cache: AppConfig.caching.htmlPageCachingSeconds ? 'default' : 'no-cache',
+  query: { 
+    drafts: enabled 
+  },
+  cache: (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
   transform: (response: IUserTicketsResultDto) => {
     logger.verbose(`(TabHistory) received user tickets response, ctrlKey=${props.ctrlKey}`);
     if (!response) {
@@ -50,7 +55,8 @@ const userTicketsFetch = await useFetchEx<IUserTicketsResultDto, UserTicketItem[
       return []; // error should be logged by fetchEx
     }
     return mapUserTicketsResult(response);
-  }
+  },
+  $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-page' })
 });
 
 const filterCheckpointDate = dayjs(eraseTimeOfDay(dayjs().local().toDate()));

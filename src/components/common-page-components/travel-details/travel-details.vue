@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import type { WatchStopHandle } from 'vue';
+import type { WatchStopHandle, ComponentInstance } from 'vue';
 import range from 'lodash-es/range';
 import PageSection from './../page-section.vue';
 import TravelDetailsTexting from './travel-details-texting.vue';
@@ -21,8 +21,8 @@ const logger = CommonServicesLocator.getLogger();
 const travelDetailsStore = useTravelDetailsStore();
 const isError = ref(false);
 
-const textingComponent = shallowRef<InstanceType<typeof TravelDetailsTexting>>();
-const imageComponents = shallowRef<InstanceType<typeof TravelDetailsImage>[]>();
+const textingComponent = shallowRef<ComponentInstance<typeof TravelDetailsTexting>>();
+const imageComponents = shallowRef<ComponentInstance<typeof TravelDetailsImage>[]>();
 const imagesCurrentStatuses = range(0, 4).map((_: any) => ref<TravelDetailsImageStatus | undefined>());
 const imagesUpcomingStatuses = range(0, 4).map((_: any) => ref<TravelDetailsImageStatus | undefined>());
 

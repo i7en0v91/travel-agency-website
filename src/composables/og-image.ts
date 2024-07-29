@@ -1,8 +1,9 @@
 import { joinURL } from 'ufo';
 import { type Locale } from './../shared/constants';
-import { HtmlPage, EntityIdPages } from '../shared/page-query-params';
+import { AppPage, EntityIdPages, SystemPage } from '../shared/page-query-params';
 import { getOgImageFileName, lookupPageByUrl } from './../shared/common';
 import AppConfig from './../appconfig';
+import { defineOgImage, defineOgImageComponent } from '#imports';
 
 export function useOgImage (component?: { name: string, props: any}, skipCache: boolean = false) {
   const route = useRoute();
@@ -14,7 +15,7 @@ export function useOgImage (component?: { name: string, props: any}, skipCache: 
     return;
   }
 
-  const defaultImgUrl = joinURL('/img', 'og', getOgImageFileName(HtmlPage.Index, locale.value as Locale));
+  const defaultImgUrl = joinURL('/img', 'og', getOgImageFileName(AppPage.Index, locale.value as Locale));
 
   const currentPage = lookupPageByUrl(route.path);
   if (currentPage === undefined) {
@@ -22,6 +23,11 @@ export function useOgImage (component?: { name: string, props: any}, skipCache: 
     defineOgImage({
       url: defaultImgUrl
     });
+    return;
+  }
+
+  if(currentPage === SystemPage.Drafts) {
+    logger.debug(`(og-image) skipping OG image metadata for system page, path=${route.path}`);
     return;
   }
 

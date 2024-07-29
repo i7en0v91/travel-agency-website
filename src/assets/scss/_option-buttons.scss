@@ -62,13 +62,14 @@ $options-button-dropdown-icon-size: 20px;
       flex-direction: row;
       flex-wrap: nowrap;
       align-items: center;
+
+      border-bottom: 4px solid transparent;
+      border-top: 4px solid transparent;
       
       margin: 0px map.get($spacings, '3') 0px map.get($spacings, '3');
       @include for-medium-and-large() {
         margin: 0px map.get($spacings, '4') 0px map.get($spacings, '4');
       }
-      border-bottom: 4px solid transparent;
-      border-top: 4px solid transparent;
 
       .option-button-text {
         flex: 1 1 auto;

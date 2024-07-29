@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
-import { type IAppLogger, type IEntityCacheItem, type IEntityCacheLogic, type CacheEntityType, type IEntityCacheCityItem, type EntityId } from './../../backend/app-facade/interfaces';
+import { type IAppLogger, type GetEntityCacheItem, type IEntityCacheLogic, type CacheEntityType, type IEntityCacheCityItem, type EntityId } from './../../backend/app-facade/interfaces';
 import { AppException, AppExceptionCodeEnum, mapLocalizeableValues } from './../app-facade/implementation';
 
 export class EntityCacheLogic implements IEntityCacheLogic {
@@ -12,7 +12,7 @@ export class EntityCacheLogic implements IEntityCacheLogic {
     this.dbRepository = dbRepository;
   }
 
-  get = async <TEntityType extends CacheEntityType, TCacheItem extends { type: TEntityType } & IEntityCacheItem>(searchIds: EntityId[], searchSlugs: string[], type: TEntityType): Promise<TCacheItem[]> => {
+  get = async <TEntityType extends CacheEntityType>(searchIds: EntityId[], searchSlugs: string[], type: TEntityType): Promise<GetEntityCacheItem<TEntityType>[]> => {
     this.logger.verbose(`(EntityCacheLogic) find, searchIds=${JSON.stringify(searchIds)}, searchSlugs=${JSON.stringify(searchSlugs)}, type=${type}`);
     if (searchIds.length === 0 && searchSlugs.length === 0) {
       this.logger.verbose(`(EntityCacheLogic) find, searchIds=${JSON.stringify(searchIds)}, searchSlugs=${JSON.stringify(searchSlugs)}, type=${type}, result=[]`);

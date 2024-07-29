@@ -42,7 +42,7 @@ export interface IAcsysClientBase {
 }
 
 export interface IAcsysClientViewerMethods {
-  getFileInfo: (fileId: EntityId) => Promise<{ mimeType: string, lastModifiedUtc: Date }>
+  getFileInfos: (fileIds: EntityId[]) => Promise<{ id: EntityId, mimeType: string, lastModifiedUtc: Date }[]>
   readFile: (fileId: EntityId) => Promise<{ mimeType: string, bytes: Buffer, lastModifiedUtc: Date }>
 }
 export interface IAcsysClientStandardMethods {

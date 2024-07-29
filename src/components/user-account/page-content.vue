@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import ComponentWaiterIndicator from './../component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../component-waiting-indicator.vue';
 import { UserAccountOptionButtonAccount, UserAccountOptionButtonHistory, UserAccountOptionButtonPayments, TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
 import TabAccount from './tabs/tab-account.vue';
 import TabHistory from './tabs/tab-history.vue';
@@ -41,7 +41,7 @@ watch(tabReady, () => {
 
 <template>
   <section class="account-page-content">
-    <ComponentWaiterIndicator v-if="!tabReady" ctrl-key="accountPageContentWaiter" class="account-page-waiting-indicator" />
+    <ComponentWaitingIndicator v-if="!tabReady" ctrl-key="accountPageContentWaiter" class="account-page-waiting-indicator" />
     <ClientOnly>
       <div class="account-page-tab" :style="{ display: tabReady ? 'block' : 'none' }">
         <KeepAlive>

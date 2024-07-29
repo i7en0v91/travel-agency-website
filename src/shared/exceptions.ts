@@ -2,12 +2,13 @@ import { type NuxtError } from 'nuxt/app';
 import isObject from 'lodash-es/isObject';
 import { type I18nResName, getI18nResName2 } from './i18n';
 import { UserNotificationLevel } from './constants';
+import { consola } from 'consola';
 
 export enum AppExceptionCodeEnum {
   UNKNOWN = 12000,
   BAD_REQUEST = 12001,
   OBJECT_NOT_FOUND = 12003,
-  UNAUTHORIZED = 12004,
+  UNAUTHENTICATED = 12004,
   CAPTCHA_VERIFICATION_FAILED = 12005,
   EMAILING_DISABLED = 12006,
   FORBIDDEN = 12007,
@@ -75,7 +76,7 @@ export function wrapExceptionIfNeeded (err: any | undefined) : Error {
     return err;
   }
 
-  return new UntypedJsException('untyped JavaScript exception occured', err);
+  return new UntypedJsException('exception occured', err);
 }
 
 export function flattenError (err: Error) : any {
@@ -92,7 +93,7 @@ export function mapAppExceptionToHttpStatus (code: AppExceptionCodeEnum) {
   switch (code) {
     case AppExceptionCodeEnum.BAD_REQUEST:
       return 400;
-    case AppExceptionCodeEnum.UNAUTHORIZED:
+    case AppExceptionCodeEnum.UNAUTHENTICATED:
       return 401;
     case AppExceptionCodeEnum.CAPTCHA_VERIFICATION_FAILED:
     case AppExceptionCodeEnum.FORBIDDEN:
@@ -123,7 +124,7 @@ export function getUsrMsgResName (code: AppExceptionCodeEnum): I18nResName {
   return getI18nResName2('appErrors', 'unknown');
 }
 
-export function defaultErrorHandler (err: any) {
+export function defaultErrorHandler (err: any, nuxtApp?: ReturnType<typeof useNuxtApp>) {
   if (isNuxtError(err)) {
     // this means that createError has been called recently
     // and it can only happen from main error handling flow
@@ -140,31 +141,60 @@ export function defaultErrorHandler (err: any) {
       'unhandled exception occured',
       'error-stub');
   }
-  defaultAppExceptionHandler(appException);
+  defaultAppExceptionHandler(appException, nuxtApp);
 }
 
-function defaultAppExceptionHandler (appException: AppException) {
-  if (appException.code === AppExceptionCodeEnum.UNAUTHORIZED) {
-    try {
-      const { signIn } = useAuth();
-      signIn('credentials');
-      return;
-    } catch (err: any) {
-      console.log('error occured while redirecting user to login page', err);
+export function createNuxtError(appException: AppException): Partial<NuxtError> {
+  return createError({
+    message: appException.internalMsg,
+    fatal: false,
+    statusCode: mapAppExceptionToHttpStatus(appException.code),
+    data: {
+      code: appException.code,
+      params: appException.params
     }
+  });
+};
+
+function addExceptionToErrorPageHandler(appException: AppException, nuxtApp?: ReturnType<typeof useNuxtApp>) {
+  if(!import.meta.server) {
+    return;
   }
 
-  const createNuxtError = (appException: AppException): Partial<NuxtError> => {
-    return createError({
-      message: appException.internalMsg,
-      fatal: false,
-      statusCode: mapAppExceptionToHttpStatus(appException.code),
-      data: {
-        code: appException.code,
-        params: appException.params
+  if(!nuxtApp) {
+    try {
+      nuxtApp = useNuxtApp();
+    } catch(err: any) {
+      consola.error('failed to access nuxt app (in addExceptionToErrorPageHandler)', appException);
+      return;
+    }
+  }
+  if(!nuxtApp.ssrContext?.event?.context) {
+    return;
+  }
+
+  nuxtApp.ssrContext.event.context.appException = appException;
+}
+
+function defaultAppExceptionHandler (appException: AppException, nuxtApp?: ReturnType<typeof useNuxtApp>) {
+  if (appException.code === AppExceptionCodeEnum.UNAUTHENTICATED) {
+    if(import.meta.server) {
+      appException.code = AppExceptionCodeEnum.FORBIDDEN;
+      appException.appearance = 'error-page';
+      // KB: auth protection for pages must be set via auth middleware config
+      consola.error('unexpected unauthenticated exception handling on server side');
+    } else {
+      try {
+        const { signIn } = useAuth();
+        signIn('credentials');
+        return;
+      } catch (err: any) {
+        consola.warn('error occured while redirecting user to login page', err);
+        appException.code = AppExceptionCodeEnum.FORBIDDEN;
+        appException.appearance = 'error-page';
       }
-    });
-  };
+    }
+  }
 
   if (import.meta.client) {
     // normally client code should't reach that point as AppException must be handled via ErrorHelm component,
@@ -181,8 +211,8 @@ function defaultAppExceptionHandler (appException: AppException) {
       userNotificationStore.show(notification);
     }
   } else {
-    // during SSR only redirection to error-page is possible
-    // (and api endpoints wont reach this method, so it's SSR)
-    showError(createNuxtError(appException));
+    addExceptionToErrorPageHandler(appException, nuxtApp);
+    // KB: to prevent caching pages rendered with errors only redirection to error-page is used during SSR
+    throw createNuxtError(appException);
   }
 }

@@ -7,11 +7,12 @@ import { getI18nResName3, getI18nResName2 } from './../../../shared/i18n';
 import { getLocalizeableValue, getScoreClassResName } from './../../../shared/common';
 import { type Locale } from './../../../shared/constants';
 import { type EntityId, ImageCategory } from './../../../shared/interfaces';
-import ComponentWaiterIndicator from './../../../components/component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../../../components/component-waiting-indicator.vue';
 import { type IStayReviewItem } from './../../../stores/stay-reviews-store';
 import { useConfirmBox } from './../../../composables/confirm-box';
 import { TabIndicesUpdateDefaultTimeout } from './../../../shared/constants';
 import { updateTabIndices, isPrefersReducedMotionEnabled } from './../../../shared/dom';
+import { usePreviewState } from './../../../composables/preview-state';
 
 const { locale } = useI18n();
 
@@ -23,6 +24,7 @@ interface IProps {
 const ReviewsPerSlidePage = 5;
 
 const { status } = useAuth();
+const { requestUserAction } = usePreviewState();
 
 const props = defineProps<IProps>();
 const logger = CommonServicesLocator.getLogger();
@@ -57,7 +59,10 @@ function rewindToTop () {
   }
 }
 
-const $emit = defineEmits(['editBtnClick']);
+const $emit = defineEmits<{
+  (event: 'editBtnClick'): void,
+  (event: 'userReviewDeleted', value: IStayReviewItem): void,
+}>();
 
 defineExpose({
   rewindToTop
@@ -107,10 +112,17 @@ function onEditUserReviewBtnClick () {
 async function onDeleteUserReviewBtnClick (): Promise<void> {
   logger.verbose(`(ReviewList) delete review btn click handler, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
 
+  if(!await requestUserAction()) {
+    logger.verbose(`(ReviewList) delete review btn click handler hasn't been run - not allowed in preview mode, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+    return;
+  }
+
   const result = await confirmBox.confirm(`${props.ctrlKey}-UserReview-DeleteConfirm`, ['yes', 'no'], getI18nResName3('stayDetailsPage', 'reviews', 'confirmDelete'));
   if (result === 'yes') {
+    const deletingReview = await reviewStore.getUserReview()!;
     await reviewStore.deleteReview();
     nextTick(refreshPagingState);
+    $emit('userReviewDeleted', deletingReview);
   }
 }
 
@@ -268,7 +280,7 @@ function onNavPrevBtnClick () {
       <div v-if="showNoReviewStub" class="reviews-list-noitems-stub my-xs-3 my-s-5 px-xs-3">
         {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'noReviews')) }}
       </div>
-      <ComponentWaiterIndicator v-if="reviewStore.status === 'pending' || !(reviewStore.status !== 'error' && reviewStore.items !== undefined) || !isSwiperReady" :ctrl-key="`${ctrlKey}-ReviewListWaiterFallback`" class="stay-reviews-waiting-indicator my-xs-5" />
+      <ComponentWaitingIndicator v-if="reviewStore.status === 'pending' || !(reviewStore.status !== 'error' && reviewStore.items !== undefined) || !isSwiperReady" :ctrl-key="`${ctrlKey}-ReviewListWaiterFallback`" class="stay-reviews-waiting-indicator my-xs-5" />
     </ErrorHelm>
   </div>
 </template>

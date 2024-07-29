@@ -617,7 +617,7 @@ export const ViewsConfig = new Map<SourceCollection, ViewConfig>([
       sortColumn: 'departmentUtcPosix',
       sortOrder: SortOrderEnum.Desc
     },
-    draftsAllowed: false,
+    draftsAllowed: true,
     columnSettings: [
       {
         name: DefaultTableIdColumn,
@@ -733,7 +733,7 @@ export const ViewsConfig = new Map<SourceCollection, ViewConfig>([
       sortColumn: 'id',
       sortOrder: SortOrderEnum.Asc
     },
-    draftsAllowed: false,
+    draftsAllowed: true,
     columnSettings: [
       {
         name: DefaultTableIdColumn,
@@ -839,7 +839,7 @@ export const ViewsConfig = new Map<SourceCollection, ViewConfig>([
       sortColumn: 'id',
       sortOrder: SortOrderEnum.Asc
     },
-    draftsAllowed: false,
+    draftsAllowed: true,
     columnSettings: [
       {
         name: DefaultTableIdColumn,

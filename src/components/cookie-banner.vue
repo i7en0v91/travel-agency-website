@@ -2,9 +2,10 @@
 
 import { getI18nResName2 } from './../shared/i18n';
 import SimpleButton from './forms/simple-button.vue';
-import { CookiePolicyConsent, TabIndicesUpdateDefaultTimeout } from './../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../shared/page-query-params';
+import { type Locale, CookiePolicyConsent, TabIndicesUpdateDefaultTimeout } from './../shared/constants';
+import { AppPage } from './../shared/page-query-params';
 import { updateTabIndices } from './../shared/dom';
+import { useNavLinkBuilder } from './../composables/nav-link-builder';
 
 interface IProps {
   ctrlKey: string
@@ -15,7 +16,8 @@ defineProps<IProps>();
 const ConsentCookieValue = 'consent-given';
 
 const consentCookie = useCookie(CookiePolicyConsent, { path: '/', maxAge: 2147483640 /** "never" expire */ });
-const localePath = useLocalePath();
+const { locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
 const logger = CommonServicesLocator.getLogger();
 
 function onAcceptBtnClick () {
@@ -36,7 +38,10 @@ function onAcceptBtnClick () {
       </h3>
       <i18n-t :keypath="getI18nResName2('cookieBanner', 'text')" tag="div" scope="global" class="cookie-banner-text mt-xs-2 mt-s-3">
         <template #privacyLink>
-          <NuxtLink class="cookie-banner-privacy-link brdr-1 tabbable-group-cookie-banner" target="_blank" :to="localePath(`/${getHtmlPagePath(HtmlPage.Privacy)}`)">
+          <NuxtLink 
+            class="cookie-banner-privacy-link brdr-1 tabbable-group-cookie-banner" 
+            target="_blank" 
+            :to="navLinkBuilder.buildPageLink(AppPage.Privacy, locale as Locale)">
             {{ $t(getI18nResName2('signUpPage', 'privacyLinkText')) }}
           </NuxtLink>
         </template>

@@ -1,7 +1,7 @@
 <!-- eslint-disable @typescript-eslint/unified-signatures -->
 <script setup lang="ts">
 
-import type { WatchStopHandle } from 'vue';
+import type { WatchStopHandle, ComponentInstance } from 'vue';
 import TravelDetailsImageFrame from './travel-details-image-frame.vue';
 import { getI18nResName2 } from './../../../shared/i18n';
 import { type TravelDetailsImageStatus, type Timestamp, type ITravelDetailsData, type EntityId } from './../../../shared/interfaces';
@@ -19,8 +19,8 @@ const logger = CommonServicesLocator.getLogger();
 const activeFrame = ref<'initial' | 'A' | 'B'>('initial');
 const frameStatusA = ref<TravelDetailsImageStatus | undefined>();
 const frameStatusB = ref<TravelDetailsImageStatus | undefined>();
-const elFrameA = shallowRef<InstanceType<typeof TravelDetailsImageFrame>>();
-const elFrameB = shallowRef<InstanceType<typeof TravelDetailsImageFrame>>();
+const elFrameA = shallowRef<ComponentInstance<typeof TravelDetailsImageFrame>>();
+const elFrameB = shallowRef<ComponentInstance<typeof TravelDetailsImageFrame>>();
 const isError = ref(false);
 const staticImageHidden = ref(false);
 const framesActivated = ref(false);
@@ -255,7 +255,7 @@ onBeforeUnmount(() => {
             :ctrl-key="`${ctrlKey}-TravelDetailsImage-FrameA`"
             :slug="dataBuf2?.slug"
             :timestamp="dataBuf2?.timestamp"
-            :style="{ visibility: framesActivated ? 'visible' : 'hidden' }"
+            :class="framesActivated ? 'frames-activated' : 'frames-not-activated'"
           />
         </Transition>
         <Transition name="travel-details-fade">

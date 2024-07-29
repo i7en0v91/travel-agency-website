@@ -129,6 +129,9 @@ watch(() => props.selectedDate, () => {
   <div class="date-picker" @keyup.escape="onEscape">
     <VDropdown
       ref="dropdown"
+      v-floating-vue-hydration="{ tabIndex: 0 }"
+      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
+      :aria-id="`${ctrlKey}-DropDownWrapper`"
       :distance="-6"
       :hide-triggers="(triggers: any) => [...triggers, 'click']"
       placement="bottom"

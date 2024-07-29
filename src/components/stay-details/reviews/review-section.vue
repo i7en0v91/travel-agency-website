@@ -3,27 +3,28 @@
 import type { Tooltip } from 'floating-vue';
 import { DefaultStayReviewScore, TooltipHideTimeout } from './../../../shared/constants';
 import { getScoreClassResName } from './../../../shared/common';
-import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
-import type { EntityId } from './../../../shared/interfaces';
+import { getI18nResName2, getI18nResName3, type I18nResName } from './../../../shared/i18n';
+import type { EntityId, ReviewSummary } from './../../../shared/interfaces';
+import { type IStayReviewItem } from './../../../stores/stay-reviews-store';
 import ReviewEditor from './review-editor.client.vue';
 import ReviewList from './review-list.vue';
 import CollapsableSection from './../../collapsable-section.vue';
-import ComponentWaiterIndicator from './../../../components/component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../../../components/component-waiting-indicator.vue';
+import { type ComponentInstance } from 'vue';
+import { usePreviewState } from './../../../composables/preview-state';
 
 const { t } = useI18n();
 
 interface IProps {
   ctrlKey: string,
   stayId: EntityId,
-  preloadedSummaryInfo?: {
-    reviewScore: number,
-    numReviews: number
-  }
+  preloadedSummaryInfo?: ReviewSummary
 }
 
 const props = defineProps<IProps>();
 
 const { status } = useAuth();
+const { enabled, requestUserAction } = usePreviewState();
 
 const logger = CommonServicesLocator.getLogger();
 
@@ -33,14 +34,72 @@ const reviewStore = await reviewStoreFactory.getInstance(props.stayId);
 const editorHidden = ref(true);
 
 const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
-const reviewListComponent = shallowRef<InstanceType<typeof ReviewList>>();
-const editorSection = shallowRef<InstanceType<typeof CollapsableSection>>();
-const editor = shallowRef<InstanceType<typeof ReviewEditor>>();
+const reviewListComponent = shallowRef<ComponentInstance<typeof ReviewList>>();
+const editorSection = shallowRef<ComponentInstance<typeof CollapsableSection>>();
+const editor = shallowRef<ComponentInstance<typeof ReviewEditor>>();
 
-const reviewScore = computed(() => ((reviewStore.items !== undefined && reviewStore.status === 'success') ? (reviewStore.items.length > 0 ? reviewStore.items.map(r => r.score).reduce((sum, v) => sum + v, 0) / reviewStore.items.length : DefaultStayReviewScore) : undefined));
-const scoreClassResName = computed(() => reviewScore.value ? getScoreClassResName(reviewScore.value) : undefined);
-const reviewsCount = computed(() => (reviewStore.items?.length !== undefined && reviewStore.status === 'success') ? reviewStore.items.length : props.preloadedSummaryInfo!.numReviews);
-const reviewsCountText = computed(() => reviewsCount.value !== undefined ? `${reviewsCount.value} ${t(getI18nResName3('stayDetailsPage', 'reviews', 'count'), reviewsCount.value)}` : '');
+const reviewScore = ref<number | undefined>();
+const scoreClassResName = ref<I18nResName | undefined>();
+const reviewsCountText = ref<string>('');
+// for computing average
+let cumulativeScore: number | undefined;
+let reviewsCount: number | undefined;
+
+const $emit = defineEmits<{(event: 'reviewSummaryChanged', value: ReviewSummary): void}>();
+
+function refreshReviewSummaryValues(refreshFromStore: boolean = true) {
+  logger.debug(`(StayReviews) refreshing review summary values: ctrlKey=${props.ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, refreshFromStore=${refreshFromStore}`);
+  if(enabled) {
+    cumulativeScore = DefaultStayReviewScore;
+    reviewsCount = 0;
+  } else if(refreshFromStore) {
+    if(reviewStore.items === undefined || reviewStore.status !== 'success') {
+      cumulativeScore = undefined;
+      reviewsCount = props.preloadedSummaryInfo?.numReviews;
+    } else {
+      cumulativeScore = reviewStore.items.length > 0 ? reviewStore.items.map(r => r.score).reduce((sum, v) => sum + v, 0) : undefined;
+      reviewsCount = reviewStore.items.length;
+    }
+  }
+  reviewScore.value = cumulativeScore !== undefined  ? (reviewsCount! > 0 ? cumulativeScore / reviewsCount! : DefaultStayReviewScore) : undefined; 
+  reviewsCountText.value = reviewsCount !== undefined ? `${reviewsCount} ${t(getI18nResName3('stayDetailsPage', 'reviews', 'count'), reviewsCount)}` : '';
+  scoreClassResName.value = reviewScore.value ? getScoreClassResName(reviewScore.value) : undefined;
+  logger.debug(`(StayReviews) review summary values refreshed: ctrlKey=${props.ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, refreshFromStore=${refreshFromStore}`);
+}
+
+function adjustReviewSummaryValues(currentReviewScore: number | undefined, newReviewScore: number | undefined) {
+  logger.debug(`(StayReviews) adjusting review summary values: ctrlKey=${props.ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, currentReviewScore=${currentReviewScore ?? ''}, newReviewScore=${newReviewScore ?? ''}`);
+  if(cumulativeScore === undefined || reviewsCount === undefined) {
+    logger.warn(`(StayReviews) cannot adjust uninitialized review summary values: ctrlKey=${props.ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, cumulativeScore=${cumulativeScore}, reviewsCount=${reviewsCount},  currentReviewScore=${currentReviewScore ?? ''}, newReviewScore=${newReviewScore ?? ''}`);
+    return;
+  }
+
+  if(currentReviewScore !== undefined && reviewsCount === 0) {
+    logger.warn(`(StayReviews) failed to adjust empty review summary values: ctrlKey=${props.ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, cumulativeScore=${cumulativeScore}, reviewsCount=${reviewsCount},  currentReviewScore=${currentReviewScore ?? ''}, newReviewScore=${newReviewScore ?? ''}`);
+    return;
+  }
+
+  if(currentReviewScore !== undefined) {
+    reviewsCount -= 1;
+    cumulativeScore -= currentReviewScore;
+  }
+
+  if(newReviewScore !== undefined) {
+    reviewsCount += 1;
+    cumulativeScore += newReviewScore;
+  }
+  
+  if(currentReviewScore !== undefined || newReviewScore !== undefined) {
+    refreshReviewSummaryValues(false);
+    $emit('reviewSummaryChanged', { numReviews: reviewsCount, score: reviewsCount > 0 ? (cumulativeScore / reviewsCount) : DefaultStayReviewScore });
+  }
+  logger.debug(`(StayReviews) review summary values adjusted: ctrlKey=${props.ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, currentReviewScore=${currentReviewScore ?? ''}, newReviewScore=${newReviewScore ?? ''}`);
+}
+
+function onUserReviewDeleted (deletedReview: IStayReviewItem) {
+  logger.verbose(`(StayReviews) user review deleted handler: ctrlKey=${props.ctrlKey}`);
+  adjustReviewSummaryValues(deletedReview.score, undefined);
+}
 
 function onAddReviewBtnClick () {
   logger.verbose(`(StayReviews) add btn click handler: ctrlKey=${props.ctrlKey}`);
@@ -50,10 +109,25 @@ function onAddReviewBtnClick () {
 }
 
 async function onSubmitReview (reviewHtml: string, score: number): Promise<void> {
-  logger.verbose(`(StayReviews) send review handler, ctrlKey=${props.ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`);
-  await reviewStore.createOrUpdateReview(reviewHtml, score);
-  editorSection.value?.collapse();
-  reviewListComponent.value?.rewindToTop();
+  logger.debug(`(StayReviews) send review handler, ctrlKey=${props.ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`);
+
+  if(!await requestUserAction()) {
+    logger.verbose(`(StayReviews) send review handler hasn't been run - not allowed in preview mode, ctrlKey=${props.ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`);
+    return;
+  }
+
+  const prevUserReviewScore: number | undefined =  (await reviewStore.getUserReview())?.score;
+  try {
+    adjustReviewSummaryValues(prevUserReviewScore, score);
+    await reviewStore.createOrUpdateReview(reviewHtml, score);
+    editorSection.value?.collapse();
+    reviewListComponent.value?.rewindToTop();  
+  } catch(err: any) {
+    logger.warn(`(StayReviews) failed to submit review, ctrlKey=${props.ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`, err);
+    adjustReviewSummaryValues(score, prevUserReviewScore);
+  }
+
+  logger.debug(`(StayReviews) send review handler completed, ctrlKey=${props.ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`);
 }
 
 function onCancelEdit () {
@@ -64,6 +138,15 @@ function onCancelEdit () {
 function scheduleTooltipAutoHide () {
   setTimeout(() => { tooltip.value?.hide(); }, TooltipHideTimeout);
 }
+
+refreshReviewSummaryValues();
+watch([() => reviewStore.items, () => reviewStore.status], () => {
+  if(cumulativeScore === undefined) {
+    refreshReviewSummaryValues();
+  }
+});
+
+const tooltipId = useId();
 
 </script>
 
@@ -86,6 +169,7 @@ function scheduleTooltipAutoHide () {
         <VTooltip
           v-else
           ref="tooltip"
+          :aria-id="tooltipId"
           :distance="6"
           :triggers="['click']"
           placement="bottom-end"
@@ -150,10 +234,10 @@ function scheduleTooltipAutoHide () {
           </template>
         </CollapsableSection>
       </ClientOnly>
-      <ReviewList ref="reviewListComponent" :ctrl-key="`${ctrlKey}-ReviewList`" :stay-id="stayId" @edit-btn-click="onAddReviewBtnClick" />
+      <ReviewList ref="reviewListComponent" :ctrl-key="`${ctrlKey}-ReviewList`" :stay-id="stayId" @edit-btn-click="onAddReviewBtnClick" @user-review-deleted="onUserReviewDeleted"/>
     </section>
     <template #fallback>
-      <ComponentWaiterIndicator :ctrl-key="`${ctrlKey}-ClientFallback`" class="my-xs-5"/>
+      <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-ClientFallback`" class="my-xs-5"/>
     </template>
   </ClientOnly>
 </template>

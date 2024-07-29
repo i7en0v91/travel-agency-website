@@ -4,6 +4,7 @@ import { ApiEndpointUserAccount } from '../shared/constants';
 import { getObject }  from './../shared/rest-utils';
 import { type IImageEntitySrc, type EntityId } from '../shared/interfaces';
 import { type IUserAccountDto } from './../server/dto';
+import { spinWait } from './../shared/common';
 
 export interface IUserAccount {
   userId?: EntityId,
@@ -19,7 +20,7 @@ export const useUserAccountStore = defineStore('userAccountStore', () => {
   const { status, data, getSession } = useAuth();
 
   const userAccountValue = reactive<IUserAccount>({});
-  let userAccountInitialized = false;
+  let accountInitStatus: 'not-initialized' | 'initialized' | 'initializing' = 'not-initialized';
 
   const nuxtApp = useNuxtApp();
   
@@ -39,7 +40,7 @@ export const useUserAccountStore = defineStore('userAccountStore', () => {
   };
 
   const fetchUserAccountData = async(): Promise<IUserAccount> => {
-    const dto = await getObject<IUserAccountDto>(ApiEndpointUserAccount, undefined, 'no-store', true, nuxtApp?.ssrContext?.event, 'throw');
+    const dto = await getObject<IUserAccountDto>(`/${ApiEndpointUserAccount}`, undefined, 'no-store', true, nuxtApp?.ssrContext?.event, 'throw');
     if (!dto) {
       logger.warn('(user-account-store) server didnt return user account dto');
       return {}; // error should have been logged inside fetch
@@ -48,7 +49,14 @@ export const useUserAccountStore = defineStore('userAccountStore', () => {
   };
 
   const getUserAccount = async (): Promise<IUserAccount> => {
-    if (!userAccountInitialized) {
+    if(accountInitStatus === 'initializing') {
+      await spinWait(() => {
+        return Promise.resolve(accountInitStatus !== 'initializing');
+      }, 30000, 50);
+    }
+
+    if (accountInitStatus !== 'initialized') {
+      accountInitStatus = 'initializing';
       try {
         await nuxtApp.runWithContext(async () => {
           await getSession({ force: true });
@@ -58,22 +66,26 @@ export const useUserAccountStore = defineStore('userAccountStore', () => {
               logger.info(`(user-account-store) initializing user account data, fetching, userId=${userId}`);
               const userData = await fetchUserAccountData();
               assign(userAccountValue, userData);
-              userAccountInitialized = true;
+              accountInitStatus = 'initialized';
               logger.verbose(`(user-account-store) user account data fetched, userId=${userId}`);
             } catch(err: any) {
               logger.warn(`(user-account-store) exception during initialization of user account data, setting empty, userId=${userId}`, err);
+              accountInitStatus = 'not-initialized';
               setUserAccountEmptyValues();
             }
           } else {
             logger.info('(user-account-store) initializing user account data - user is unauthenticated');
+            accountInitStatus = 'not-initialized';
             setUserAccountEmptyValues();
           }
         });
       } catch(err: any) {
-        if(userAccountInitialized) { 
+        if(accountInitStatus) { 
           // workaround for async & concurrent component setup methods during SSR which requires access to Nuxt instance
+          accountInitStatus = 'initialized';
           return userAccountValue;
         } 
+        accountInitStatus = 'not-initialized';
         throw err;
       }
     }
@@ -83,7 +95,7 @@ export const useUserAccountStore = defineStore('userAccountStore', () => {
 
   watch(status, async () => {
     logger.info(`(user-account-store) auth status changed, current=${status.value}`);
-    if (!userAccountInitialized) {
+    if (accountInitStatus !== 'initialized') {
       return;
     }
 

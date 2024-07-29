@@ -7,22 +7,23 @@ import { getI18nResName2 } from './../shared/i18n';
 import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
 import SimpleButton from './../components/forms/simple-button.vue';
-import { ApiEndpointPasswordRecoveryComplete, SecretValueMask, RecoverPasswordCompleteResultEnum } from './../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../shared/page-query-params';
+import { type Locale, ApiEndpointPasswordRecoveryComplete, SecretValueMask, RecoverPasswordCompleteResultEnum } from './../shared/constants';
+import { AppPage, getPagePath } from './../shared/page-query-params';
 import { type IRecoverPasswordCompleteDto, type IRecoverPasswordCompleteResultDto } from './../server/dto';
 import { post } from './../shared/rest-utils';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import { isPasswordSecure } from './../shared/common';
 import { type EntityId } from './../shared/interfaces';
+import { useNavLinkBuilder } from './../composables/nav-link-builder';
 
-const { t } = useI18n();
-const localePath = useLocalePath();
+const { t, locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
 
 definePageMeta({
   middleware: 'auth',
   auth: {
     unauthenticatedOnly: true,
-    navigateAuthenticatedTo: '/'
+    navigateAuthenticatedTo: `/${getPagePath(AppPage.Index)}`
   },
   title: { resName: getI18nResName2('forgotPasswordSetPage', 'title'), resArgs: undefined }
 });
@@ -65,13 +66,13 @@ const callServerPasswordSet = async (password: string) => {
       password
     };
 
-    const resultDto = await post(ApiEndpointPasswordRecoveryComplete, undefined, postBody, undefined, true, 'default') as IRecoverPasswordCompleteResultDto;
+    const resultDto = await post(`/${ApiEndpointPasswordRecoveryComplete}`, undefined, postBody, undefined, true, undefined, 'default') as IRecoverPasswordCompleteResultDto;
     if (resultDto) {
       const resultCode = resultDto.code;
-      await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.ForgotPasswordComplete)}?result=${resultCode}`));
+      await navigateTo(navLinkBuilder.buildPageLink(AppPage.ForgotPasswordComplete, locale.value as Locale, { result: resultCode }));
     }
   } else {
-    await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.ForgotPasswordComplete)}?result=${RecoverPasswordCompleteResultEnum.LINK_INVALID}`));
+    await navigateTo(navLinkBuilder.buildPageLink(AppPage.ForgotPasswordComplete, locale.value as Locale, { result: RecoverPasswordCompleteResultEnum.LINK_INVALID }));
   }
 };
 

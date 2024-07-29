@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="TItem extends EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>">
 
-import ComponentWaiterIndicator from './../../component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
 import FlightsListItemCard from './search-flights-result-card.vue';
 import StaysListItemCard from './search-stays-result-card.vue';
 import { type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, type OfferKind } from './../../../shared/interfaces';
@@ -43,7 +43,7 @@ watch(() => searchOffersStore.resultState.status, () => {
 
 <template>
   <section class="result-items-list">
-    <ComponentWaiterIndicator v-if="waitingStubMode === 'shown' && !isError" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="result-items-list-waiter mt-xs-5" />
+    <ComponentWaitingIndicator v-if="waitingStubMode === 'shown' && !isError" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="result-items-list-waiter mt-xs-5" />
     <ErrorHelm v-model:is-error="isError">
       <ol v-if="waitingStubMode === 'not-needed' && items.length > 0">
         <li

@@ -5,7 +5,7 @@ import values from 'lodash-es/values';
 import { type IAppLogger, type IAirportLogic, type IAirportShort, type IAirportData, type EntityId, type IAirport, type EntityDataAttrsOnly, type ICitiesLogic } from './../../backend/app-facade/interfaces';
 import { AppException, AppExceptionCodeEnum, DbVersionInitial, newUniqueId } from './../../backend/app-facade/implementation';
 import { AirportInfoQuery, MapAirport } from './queries';
-import { mapGeoCoord } from './db';
+import { mapGeoCoord } from '../helpers/db';
 
 export class AirportLogic implements IAirportLogic {
   private logger: IAppLogger;
@@ -38,7 +38,7 @@ export class AirportLogic implements IAirportLogic {
     this.logger.debug(`(AirportLogic) get airports for search, city slugs=[${citySlugs.join(', ')}], addPopular=${addPopular}`);
 
     if (addPopular) {
-      const popularCities = await this.citiesLogic.getPopularCities();
+      const popularCities = await this.citiesLogic.getPopularCities(false);
       citySlugs.push(...popularCities.map(c => c.slug));
       citySlugs = uniq(citySlugs);
     }

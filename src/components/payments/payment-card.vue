@@ -23,6 +23,8 @@ function onRemoveBtnClick () {
   logger.debug(`(PaymentCard) remove btn clicked, ctrlKey=${props.ctrlKey}`);
 }
 
+const tooltipId = useId();
+
 </script>
 
 <template>
@@ -33,6 +35,7 @@ function onRemoveBtnClick () {
       </div>
       <VTooltip
         ref="tooltip"
+        :aria-id="tooltipId"
         :distance="6"
         :triggers="['click']"
         placement="bottom"

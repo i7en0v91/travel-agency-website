@@ -1,14 +1,14 @@
 import isObject from 'lodash-es/isObject';
 import type { UnwrapRef, WatchStopHandle } from 'vue';
 import type { H3Event } from 'h3';
-import { type StayServiceLevel, type EntityDataAttrsOnly, type EntityId, type OfferKind, type IOfferBooking, type IFlightOffer, type IStayOfferDetails } from '../shared/interfaces';
+import { type ReviewSummary, type StayServiceLevel, type EntityDataAttrsOnly, type EntityId, type OfferKind, type IOfferBooking, type IFlightOffer, type IStayOfferDetails } from '../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
-import { ApiEndpointBookingDetails, ApiEndpointFlightOfferBook, ApiEndpointFlightOfferDetails, ApiEndpointStayOfferBook, ApiEndpointStayOfferDetails, TemporaryEntityId } from './../shared/constants';
+import { ApiEndpointBookingDetails, ApiEndpointFlightOfferBook, ApiEndpointFlightOfferDetails, ApiEndpointStayOfferBook, ApiEndpointStayOfferDetails, ApiEndpointStayOfferReviewSummary, TemporaryEntityId } from './../shared/constants';
 import type { IUserAccount } from './user-account-store';
 import { getObject, post } from './../shared/rest-utils';
-import { mapFlightOfferDetails, mapStayOfferDetails, mapBookingDetails } from './../shared/mappers';
+import { mapFlightOfferDetails, mapStayOfferDetails, mapBookingDetails, mapReviewSummary } from './../shared/mappers';
 import { type IAppLogger } from './../shared/applogger';
-import type { IBookingDetailsDto, IBookingResultDto, IFlightOfferDetailsDto, IStayOfferDetailsDto } from './../server/dto';
+import type { IBookingDetailsDto, IBookingResultDto, IFlightOfferDetailsDto, IReviewSummaryDto, IStayOfferDetailsDto } from './../server/dto';
 
 declare type NewBookingId = typeof TemporaryEntityId;
 export type BookingStoreItem<TOffer extends IFlightOffer | IStayOfferDetails> = Omit<EntityDataAttrsOnly<IOfferBooking<TOffer>>, 'id' | 'bookedUser'> & { id: EntityId | NewBookingId } & Partial<Pick<IOfferBooking<TOffer>, 'bookedUser'>>;
@@ -35,9 +35,9 @@ export interface IOfferBookingStoreFactory {
 }
 
 async function sendFetchBookingRequest (bookingId: EntityId, skipAuthChecks: boolean, logger: IAppLogger, event?: H3Event): Promise<BookingStoreItem<IFlightOffer | IStayOfferDetails>> {
-  logger.debug(`(offer-booking-store) sending fetch booking HTTP request, bookingId=${bookingId}, skipAuthChecks=${skipAuthChecks}, event=${!!event}`);
+  logger.debug(`(offer-booking-store) sending fetch booking HTTP request, bookingId=${bookingId}, skipAuthChecks=${skipAuthChecks}`);
 
-  const resultDto = await getObject<IBookingDetailsDto>(ApiEndpointBookingDetails(bookingId), undefined, 'no-store', true, event, 'throw');
+  const resultDto = await getObject<IBookingDetailsDto>(`/${ApiEndpointBookingDetails(bookingId)}`, undefined, 'no-store', true, event, 'throw');
   if (!resultDto) {
     logger.warn(`(offer-booking-store) exception occured while sending fetch booking HTTP request, bookingId=${bookingId}`);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
@@ -48,29 +48,48 @@ async function sendFetchBookingRequest (bookingId: EntityId, skipAuthChecks: boo
   return result;
 }
 
-async function sendFetchOfferRequest<TOffer extends IFlightOffer | IStayOfferDetails> (offerId: EntityId, kind: OfferKind, logger: IAppLogger): Promise<EntityDataAttrsOnly<TOffer>> {
+async function sendFetchStayOfferReviewSummaryRequest(offerId: EntityId, logger: IAppLogger, event?: H3Event): Promise<ReviewSummary> {
+  logger.debug(`(offer-booking-store) sending fetch stay review summary HTTP request, offerId=${offerId}`);
+
+  const resultDto = await getObject<IReviewSummaryDto>(`/${ApiEndpointStayOfferReviewSummary(offerId)}`, undefined, 'no-store', false, event, 'throw');
+  if (!resultDto) {
+    logger.warn(`(offer-booking-store) exception occured while sending fetch stay review summary HTTP request, offerId=${offerId}`);
+    throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
+  }
+  const result = mapReviewSummary(resultDto);
+
+  logger.debug(`(offer-booking-store) fetch stay review summary HTTP request completed, offerId=${offerId}`);
+  return result;
+}
+
+async function sendFetchOfferRequest<TOffer extends IFlightOffer | IStayOfferDetails> (offerId: EntityId, kind: OfferKind, logger: IAppLogger, event?: H3Event): Promise<EntityDataAttrsOnly<TOffer>> {
   logger.debug(`(offer-booking-store) sending fetch offer HTTP request, offerId=${offerId}, kind=${kind}`);
 
-  const url = kind === 'flights' ? ApiEndpointFlightOfferDetails(offerId) : ApiEndpointStayOfferDetails(offerId);
+  const url = kind === 'flights' ? `/${ApiEndpointFlightOfferDetails(offerId)}` : `/${ApiEndpointStayOfferDetails(offerId)}`;
   const resultDto = await getObject(url, undefined, 'default', false, undefined, 'default');
   if (!resultDto) {
     logger.warn(`(offer-booking-store) exception occured while sending get HTTP request, offerId=${offerId}, kind=${kind}`);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
   }
+  
+  let reviewSummary: ReviewSummary | undefined;
+  if(kind === 'stays') {
+    reviewSummary = await sendFetchStayOfferReviewSummaryRequest(offerId, logger, event);
+  }
 
   const result = kind === 'flights'
     ? mapFlightOfferDetails(resultDto as IFlightOfferDetailsDto) as EntityDataAttrsOnly<IFlightOffer>
-    : mapStayOfferDetails(resultDto as IStayOfferDetailsDto) as EntityDataAttrsOnly<IStayOfferDetails>;
+    : mapStayOfferDetails(resultDto as IStayOfferDetailsDto, reviewSummary!) as EntityDataAttrsOnly<IStayOfferDetails>;
 
   logger.debug(`(offer-booking-store) fetch offer HTTP request completed, offerId=${offerId}, kind=${kind}`);
   return (result as any) as EntityDataAttrsOnly<TOffer>;
 }
 
-async function sendBookOfferRequest (offerId: EntityId, kind: OfferKind, userId: EntityId, serviceLevel: StayServiceLevel | undefined, logger: IAppLogger): Promise<EntityId> {
+async function sendBookOfferRequest (offerId: EntityId, kind: OfferKind, userId: EntityId, serviceLevel: StayServiceLevel | undefined, logger: IAppLogger, event?: H3Event): Promise<EntityId> {
   logger.verbose(`(offer-booking-store) sending create booking HTTP request, offerId=${offerId}, kind=${kind}, userId=${userId}, serviceLevel=${serviceLevel}`);
 
-  const url = kind === 'flights' ? ApiEndpointFlightOfferBook(offerId) : ApiEndpointStayOfferBook(offerId);
-  const resultDto = await post(url, serviceLevel ? { serviceLevel } : undefined, undefined, undefined, true, 'default');
+  const url = kind === 'flights' ? `/${ApiEndpointFlightOfferBook(offerId)}` : `/${ApiEndpointStayOfferBook(offerId)}`;
+  const resultDto = await post(url, serviceLevel ? { serviceLevel } : undefined, undefined, undefined, true, event, 'default');
   if (!resultDto) {
     logger.warn(`(offer-booking-store) exception occured while sending create booking HTTP request, offerId=${offerId}, kind=${kind}, userId=${userId}`);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
@@ -85,6 +104,7 @@ async function sendBookOfferRequest (offerId: EntityId, kind: OfferKind, userId:
 export async function useOfferBookingStoreFactory() {
   const userAccountStore = useUserAccountStore();
   const { status } = useAuth();
+  const nuxtApp = useNuxtApp();
   
   if(import.meta.server) {
     await userAccountStore.getUserAccount();
@@ -156,7 +176,7 @@ export async function useOfferBookingStoreFactory() {
           result.status = 'pending';
           let fetchedOffer: EntityDataAttrsOnly<TOffer> | undefined;
           try {
-            fetchedOffer = await sendFetchOfferRequest<TOffer>(offerId, kind, logger);
+            fetchedOffer = await sendFetchOfferRequest<TOffer>(offerId, kind, logger, nuxtApp?.ssrContext?.event);
             if (!fetchedOffer) {
               logger.warn(`(offer-booking-store) fetch offer - failed, offerId=${result.offerId}, kind=${kind}, serviceLevel=${serviceLevel}, initialBookingId=${initialBookingId}`);
               result.status = 'error';
@@ -213,7 +233,7 @@ export async function useOfferBookingStoreFactory() {
           let bookingId: EntityId | undefined;
           try {
             const userId = userAccount!.userId!;
-            bookingId = await sendBookOfferRequest(result.offerId!, kind, userId, result.serviceLevel, logger);
+            bookingId = await sendBookOfferRequest(result.offerId!, kind, userId, result.serviceLevel, logger, nuxtApp?.ssrContext?.event);
   
             result.bookingId = bookingId;
             result.booking.bookedUser = {

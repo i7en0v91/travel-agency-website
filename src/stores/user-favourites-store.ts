@@ -40,7 +40,7 @@ export const useUserFavouritesStore = defineStore('userFavouritesStore', () => {
     const isAuthenticated = status.value === 'authenticated';
     if (!isAuthenticated) {
       logger.warn('(user-favourites-store) user is unauthenticated');
-      throw new AppException(AppExceptionCodeEnum.UNAUTHORIZED, 'user is unauthneticated', 'error-stub');
+      throw new AppException(AppExceptionCodeEnum.UNAUTHENTICATED, 'user is unauthneticated', 'error-stub');
     }
 
     if (!userAccount) {
@@ -63,7 +63,7 @@ export const useUserFavouritesStore = defineStore('userFavouritesStore', () => {
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'operation not available', 'error-page');
     }
 
-    const resultDto = await getObject(ApiEndpointUserFavourites, undefined, 'no-store', true, undefined, 'default') as IUserFavouritesResultDto;
+    const resultDto = await getObject(`/${ApiEndpointUserFavourites}`, undefined, 'no-store', true, undefined, 'default') as IUserFavouritesResultDto;
     if (!resultDto) {
       logger.warn(`(user-favourites-store) exception occured while sending get HTTP request, userId=${userAccount?.userId}`);
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
@@ -126,7 +126,7 @@ export const useUserFavouritesStore = defineStore('userFavouritesStore', () => {
 
         result.status = 'pending';
         try {
-          const resultDto = await post(kind === 'flights' ? ApiEndpointFlightOfferFavourite(offerId) : ApiEndpointStayOfferFavourite(offerId), undefined, undefined, undefined, true, 'default') as IToggleFavouriteOfferResultDto;
+          const resultDto = await post(kind === 'flights' ? `/${ApiEndpointFlightOfferFavourite(offerId)}` : `/${ApiEndpointStayOfferFavourite(offerId)}`, undefined, undefined, undefined, true, undefined, 'default') as IToggleFavouriteOfferResultDto;
           if (!resultDto) {
             logger.warn(`(user-favourites-store) exception occured while toggling favourite offer on server, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
             throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown error occured', 'error-stub');

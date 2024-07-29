@@ -5,15 +5,17 @@ import AppFooterItem from './app-footer-item.vue';
 import AppFooterSocialLink from './app-footer-social-link.vue';
 import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
 import AppConfig from './../../appconfig';
-import { getHtmlPagePath, HtmlPage } from './../../shared/page-query-params';
+import { AppPage } from './../../shared/page-query-params';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
+import { type Locale } from './../../shared/constants';
 
 interface IProps {
   ctrlKey: string
 }
 defineProps<IProps>();
 
-const { t } = useI18n();
-const localePath = useLocalePath();
+const { t, locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
 
 </script>
 <template>
@@ -22,7 +24,7 @@ const localePath = useLocalePath();
       <SubscribeBox ctrl-key="subscribeBox" />
       <section class="app-footer-content">
         <section class="footer-section footer-section-main mb-xs-4">
-          <NuxtLink class="footer-app-logo tabbable tabbable-group-footer-main-section brdr-1" :to="localePath(`/${getHtmlPagePath(HtmlPage.Index)}`)" :aria-label="$t(getI18nResName2('ariaLabels', 'imgLinkMainPage'))" />
+          <NuxtLink class="footer-app-logo tabbable tabbable-group-footer-main-section brdr-1" :to="navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)" :aria-label="$t(getI18nResName2('ariaLabels', 'imgLinkMainPage'))" />
           <ol class="footer-social-links-list mt-xs-3 mt-m-4">
             <AppFooterSocialLink ctrl-key="footerSocialLinkTwitter" icon="twitter" url="https://x.com" :aria-label-res-name="getI18nResName2('ariaLabels', 'footerSocialLinkTwitter')" />
             <AppFooterSocialLink ctrl-key="footerSocialLinkYoutube" icon="youtube" url="https://www.youtube.com" :aria-label-res-name="getI18nResName2('ariaLabels', 'footerSocialLinkYoutube')" />

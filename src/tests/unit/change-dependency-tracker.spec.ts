@@ -11,9 +11,11 @@ import { AcsysDraftsEntityPrefix, AvailableLocaleCodes, DbVersionInitial, HtmlPa
 import { TokenKind, type EntityId, AuthProvider, ImageCategory, type FlightClass, type StayDescriptionParagraphType, type StayServiceLevel, EmailTemplateEnum } from './../../shared/interfaces';
 import { createPrismaClient } from './../../server/backend/prisma/client';
 import { newUniqueId } from './../../shared/common';
-import { generateNewTokenValue, getSomeSalt, calculatePasswordHash } from './../../server-logic/helpers/crypto';
+import { generateNewTokenValue, getSomeSalt, calculatePasswordHash } from './../../server/backend/helpers/crypto';
 import range from 'lodash-es/range';
 import fromPairs from 'lodash-es/fromPairs';
+import zip from 'lodash-es/zip';
+import flatten from 'lodash-es/flatten';
 
 const DomainModelDefinition = Prisma.dmmf;
 export const AllEntityModels: EntityModel[] = DomainModelDefinition.datamodel.models.filter(m => m.name !== HtmlPageTimestampTable && !m.name.startsWith(AcsysDraftsEntityPrefix)).map(m => m.name as EntityModel);
@@ -1294,7 +1296,7 @@ describe('unit:change-dependency-tracker tracking changes in related entities wh
               user1Email, user1, userAvatarImg, userFlightOffer1, userFlightOffer2, booking1, booking2,
               ...(testWithDeleted ? [ bookingDeleted, userFlightOfferDeleted ] : [])]
           },
-          /** Airplane changes */
+          /** Airplane changes */ //
           { 
             assertParams: { changedEntity: 'LocalizeableValue', id: airplane1NameStrId, includeDeleted: testWithDeleted },
             expectedList: [ 
@@ -2548,9 +2550,9 @@ describe('unit:change-dependency-tracker tracking changes in related entities wh
   };
 
   async function verifyDependencyAssert(assert: TestingDependenciesAssert, changeDependencyTracker: IChangeDependencyTracker, testEntity: EntityModel, logger: IAppLogger): Promise<void> {
-    const actualList = await changeDependencyTracker.getChangedEntityChain(assert.assertParams.changedEntity, assert.assertParams.id, assert.assertParams.includeDeleted);
+    const actualList = await changeDependencyTracker.getChangedEntityChain([{ entity: assert.assertParams.changedEntity, id: assert.assertParams.id }], assert.assertParams.includeDeleted);
     if(assert.expectedList.length !== actualList.length) {
-      const msg = `dependency assert FAILED, test name=${testEntity}, assert change trigger=${assert.assertParams.changedEntity}:${assert.assertParams.id}, expected changes count=${assert.expectedList.length}, actual changes count=${actualList.length}`;
+      const msg = `dependency assert FAILED, test name=${testEntity}, assert change trigger=${assert.assertParams.changedEntity}:${assert.assertParams.id}, expected changes count=${assert.expectedList.length}, actual changes count=${actualList.length}, expectedList=[${assert.expectedList.map(l => `[${l.entity},${l.id}]`).join(', ')}], actualList=[${actualList.map(l => `[${l.changedEntity},${l.id}]`).join(', ')}]`;
       logger.error(msg);
       throw new Error(msg);
     }
@@ -2567,7 +2569,7 @@ describe('unit:change-dependency-tracker tracking changes in related entities wh
   }
 
   logger.verbose('>>> initializing services <<<');
-  const dbRepository = createPrismaClient(logger, undefined);
+  const dbRepository = await createPrismaClient(logger);
   const changeDependencyTracker = new ChangeDependencyTracker(dbRepository, logger);
   logger.verbose('>>> services initialized <<<');
 
@@ -2595,26 +2597,53 @@ describe('unit:change-dependency-tracker tracking changes in related entities wh
 
   test(`change-dependency-tracker - all at once with deleted`, TestRunOptions, async () => {
     logger.info('==== STARTING test case all at once with deleted ====');
-
+    const TestName = 'AllAtOnce';
     logger.verbose('>>> preparing test data <<<');
+    const TestWithDeleted = true;
     const tests: { testCase: ITestCase, testData: SeededTestData }[] = [];
     for(let i = 0; i < AllEntityModels.length; i++) {
       const entityModel = AllEntityModels[i];
-      const testCase = await (TestsDesc[entityModel](true));
+      const testCase = await (TestsDesc[entityModel](TestWithDeleted));
       const data = await testCase.seedTestData(dbRepository);
       tests.push({ testCase, testData: data });
     }
     logger.verbose(`>>> test data prepared:  ${tests.map(t => JSON.stringify(t.testData)).join('; ')}<<<`);
 
     logger.verbose('>>> verifying expectations <<<');
-    for(let i = 0; i < tests.length; i++) {
-      const testCase = tests[i].testCase;
-      logger.verbose(`assert ${testCase.entity} test case`);
-      const asserts = await testCase.getTestingDependenciesAsserts();
-      for(let j = 0; j < asserts.length; j++) {
-        await verifyDependencyAssert(asserts[j], changeDependencyTracker, testCase.entity, logger);
+    
+    const testAsserts: TestingDependenciesAssert[][] = [];
+    for(let  i = 0; i < tests.length; i++) {
+      testAsserts.push(await tests[i].testCase.getTestingDependenciesAsserts());
+    }
+    const testAssertsGrouped = zip(...testAsserts);
+
+    for(let i = 0; i < testAssertsGrouped.length; i++) {
+      const testAssertsGroup = testAssertsGrouped[i];
+      const assertParams = testAssertsGroup.filter(x => !!x).map(x => x!.assertParams);
+      if(!assertParams.length) {
+        continue;
       }
-      logger.verbose(`${testCase.entity} test case asserts done`);
+      const expectedList = flatten(testAssertsGroup.filter(x => !!x).map(x => x!.expectedList));
+      logger.verbose(`verifying group: ${assertParams.map(p => `[${p.changedEntity},${p.id}]`)}`);
+      const triggeredEntities = assertParams.map(e => { return { entity: e.changedEntity, id: e.id }; });
+      const actualList = await changeDependencyTracker.getChangedEntityChain(triggeredEntities, TestWithDeleted);
+      if(expectedList.length !== actualList.length) {
+        const msg = `dependency assert FAILED, test name=${TestName}, assert triggered entities=${triggeredEntities.map(p => `[${p.entity}:${p.id}]`)}, expected changes count=${expectedList.length}, actual changes count=${actualList.length}, expectedList=[${expectedList.map(l => `[${l.entity},${l.id}]`).join(', ')}], actualList=[${actualList.map(l => `[${l.changedEntity},${l.id}]`).join(', ')}]`;
+        logger.error(msg);
+        throw new Error(msg);
+      }
+
+      for(let i = 0; i < expectedList.length; i++) {
+        const expectedChange = expectedList[i];
+        const verified = actualList.some(e => e.changedEntity === expectedChange.entity && e.id === expectedChange.id);
+        if(!verified) {
+          const msg = `dependency assert FAILED, test name=${TestName}, assert triggered entities=${triggeredEntities.map(p => `[${p.entity}:${p.id}]`)}, expected change entity=${expectedChange.entity}:${expectedChange.id} not present in actual changes list`;
+          logger.error(msg);
+          throw new Error(msg);
+        }
+      }
+
+      logger.verbose(`group ${JSON.stringify(assertParams)} verified`);
     }
     logger.verbose('>>> expectations verified, cleaning up <<<');
     for(let i = 0; i < tests.length; i++) {

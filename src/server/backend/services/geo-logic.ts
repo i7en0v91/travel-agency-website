@@ -2,7 +2,7 @@ import { type Storage, type StorageValue } from 'unstorage';
 import type { PrismaClient } from '@prisma/client';
 import { type IAppLogger, type ICityShort, type ICityData, type ICountry, type ICountryData, type IGeoLogic, type EntityId, type GeoPoint, type DistanceUnitKm } from './../app-facade/interfaces';
 import { calculateDistanceKm, AppException, AppExceptionCodeEnum, DbVersionInitial, CurrentUserGeoLocation, newUniqueId } from './../app-facade/implementation';
-import { mapDbGeoCoord, mapGeoCoord } from './db';
+import { mapDbGeoCoord, mapGeoCoord } from '../helpers/db';
 
 export class GeoLogic implements IGeoLogic {
   private logger: IAppLogger;

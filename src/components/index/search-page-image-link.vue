@@ -1,7 +1,9 @@
 <script setup lang="ts">
 
 import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
-import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
+import { type Locale } from './../../shared/constants';
+import { AppPage } from './../../shared/page-query-params';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 interface IProps {
   ctrlKey: string,
@@ -9,7 +11,8 @@ interface IProps {
 }
 defineProps<IProps>();
 
-const localePath = useLocalePath();
+const { locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
 
 </script>
 
@@ -28,7 +31,7 @@ const localePath = useLocalePath();
       <p class="mt-xs-2">
         {{ $t(getI18nResName3('indexPage', `${page}ImgLink`, 'sub')) }}
       </p>
-      <NuxtLink class="btn btn-primary btn-icon icon-paper-plane brdr-1 mt-xs-3" :to="localePath(`${page === 'flights' ? `/${getHtmlPagePath(HtmlPage.Flights)}` : `/${getHtmlPagePath(HtmlPage.Stays)}`}`)">
+      <NuxtLink class="btn btn-primary btn-icon icon-paper-plane brdr-1 mt-xs-3" :to="page === 'flights' ? navLinkBuilder.buildPageLink(AppPage.Flights, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Stays, locale as Locale)">
         {{ $t(getI18nResName3('indexPage', `${page}ImgLink`, 'btn')) }}
       </NuxtLink>
     </section>

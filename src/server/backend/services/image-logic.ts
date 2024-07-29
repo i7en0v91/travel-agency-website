@@ -1,8 +1,8 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
-import type { IAppLogger, ImageCategory, IImageBytes, EntityId, IImageInfo, IImageLogic, IImageData, IFileLogic, Timestamp, IImageCategoryLogic , ImageCheckAccessResult } from '../app-facade/interfaces';
-import { AppException, AppExceptionCodeEnum, ImageAuthRequiredCategories, ImagePublicSlugs, newUniqueId, DbVersionInitial } from '../app-facade/implementation';
+import type { IImageFileInfoUnresolved, IAppLogger, ImageCategory, IImageBytes, EntityId, IImageInfo, IImageLogic, IImageData, IFileLogic, Timestamp, IImageCategoryLogic , ImageCheckAccessResult, PreviewMode } from '../app-facade/interfaces';
+import { CachedResultsInAppServicesEnabled, AppException, AppExceptionCodeEnum, ImageAuthRequiredCategories, ImagePublicSlugs, newUniqueId, DbVersionInitial } from '../app-facade/implementation';
 import { ImageInfoQuery, MapImageInfo } from './queries';
-import { mapEnumValue } from './db';
+import { mapEnumValue } from '../helpers/db';
 import { type H3Event } from 'h3';
 
 export class ImageLogic implements IImageLogic {
@@ -45,7 +45,7 @@ export class ImageLogic implements IImageLogic {
   async createImage (data: IImageData, userId: EntityId | undefined, event: H3Event): Promise<{ id: EntityId, timestamp: Timestamp }> {
     this.logger.verbose(`(ImageLogic) creating image, slug=${data.slug}, category=${data.category}, ownerId=${data.ownerId}, userId=${userId}, fileName=${data.originalName}, length=${data.bytes.length}`);
 
-    const categoryId = (await this.imageCategoryLogic.getImageCategoryInfos()).get(data.category)!.id;
+    const categoryId = (await this.imageCategoryLogic.getImageCategoryInfos(CachedResultsInAppServicesEnabled)).get(data.category)!.id;
     const result = await this.dbRepository.$transaction(async () => {
       const fileCreationResult = await this.fileLogic.createFile(data, userId, event);
       const imageEntity = await this.dbRepository.image.create({
@@ -99,7 +99,7 @@ export class ImageLogic implements IImageLogic {
       imageFileId = fileInfo.fileId;
     }
 
-    const categoryId = data.category ? (await this.imageCategoryLogic.getImageCategoryInfos()).get(data.category)!.id : undefined;
+    const categoryId = data.category ? (await this.imageCategoryLogic.getImageCategoryInfos(CachedResultsInAppServicesEnabled)).get(data.category)!.id : undefined;
     let timestamp: Timestamp = 0;
     await this.dbRepository.$transaction(async () => {
       const updateResult = (await this.fileLogic.updateFile(imageFileId!, data, userId, true, event));
@@ -125,7 +125,7 @@ export class ImageLogic implements IImageLogic {
     return { timestamp };
   }
 
-  async checkAccess (id: EntityId | undefined, slug: string | undefined, category: ImageCategory, userId?: EntityId | undefined): Promise<ImageCheckAccessResult | undefined> {
+  async checkAccess (id: EntityId | undefined, slug: string | undefined, category: ImageCategory, _: PreviewMode, userId?: EntityId | undefined): Promise<ImageCheckAccessResult | undefined> {
     this.logger.debug(`(ImageLogic) checking access, id=${id}, slug=${slug}, category=${category}, userId=${userId}`);
     if (!ImageAuthRequiredCategories.includes(category)) {
       this.logger.debug(`(ImageLogic) access granted, category is unprotected, id=${id}, slug=${slug}, category=${category}, userId=${userId}`);
@@ -171,17 +171,35 @@ export class ImageLogic implements IImageLogic {
 
     const resultFileUnresolved = MapImageInfo(queryResult);
     this.logger.debug(`(ImageLogic) find image - resoving file, id=${id}, slug=${slug}, fileId=${resultFileUnresolved.fileId}`);
-    const fileInfo = await this.fileLogic.findFile(resultFileUnresolved.fileId, event);
-    if (!fileInfo) {
+    const fileInfos = await this.fileLogic.findFiles([resultFileUnresolved.fileId], event);
+    if (!fileInfos?.length) {
       this.logger.warn(`(ImageLogic) cannot found file, id=${id}, slug=${slug}, fileId=${resultFileUnresolved.fileId}`);
       return undefined;
     }
 
     const result: IImageInfo = {
       ...resultFileUnresolved,
-      file: fileInfo
+      file: fileInfos[0]
     };
     this.logger.verbose(`(ImageLogic) image bytes loaded, id=${id}, slug=${slug}`);
+    return result;
+  }
+
+  async getImagesByIds(ids: EntityId[]): Promise<IImageFileInfoUnresolved[]> {
+    this.logger.debug(`(ImageLogic) loading image infos by ids, count=${ids.length}`);
+
+    const queryResult = await this.dbRepository.image.findMany({
+      where: {
+        id: {
+          in: ids
+        },
+        isDeleted: false
+      },
+      select: ImageInfoQuery.select
+    });
+    
+    const result = queryResult.map(q => { return MapImageInfo(q); });
+    this.logger.debug(`(ImageLogic) image infos by ids loaded, req count=${ids.length}, result count=${result.length}`);
     return result;
   }
 
@@ -212,10 +230,10 @@ export class ImageLogic implements IImageLogic {
     return result;
   }
 
-  async getAllImagesByCategory (category: ImageCategory, event: H3Event): Promise<IImageInfo[]> {
-    this.logger.debug(`(ImageLogic) accessing all images by category=${category}`);
+  async getAllImagesByCategory (category: ImageCategory, skipAuthChecks: boolean): Promise<IImageFileInfoUnresolved[]> {
+    this.logger.debug(`(ImageLogic) accessing all images by category=${category}, skipAuthChecks=${skipAuthChecks}`);
 
-    if (ImageAuthRequiredCategories.includes(category)) {
+    if (!skipAuthChecks && ImageAuthRequiredCategories.includes(category)) {
       throw new AppException(
         AppExceptionCodeEnum.BAD_REQUEST,
         `Access all images by [${category}] category failed, category requires authorization checks`,
@@ -229,22 +247,29 @@ export class ImageLogic implements IImageLogic {
     });
     const resultFileUnresolved = queryResult.map(MapImageInfo);
 
+    this.logger.debug(`(ImageLogic) images by category: category=${category}, skipAuthChecks=${skipAuthChecks}, count=${resultFileUnresolved.length}`);
+    return resultFileUnresolved;
+  }
+
+  async resolveImageFiles(imageInfos: IImageFileInfoUnresolved[], event: H3Event): Promise<IImageInfo[]> {
+    this.logger.debug(`(ImageLogic) resolving image files, count=${imageInfos.length}`);
+
     const result = [] as IImageInfo[];
-    for(let i = 0; i < resultFileUnresolved.length; i++) {
-      const unresolvedInfo = resultFileUnresolved[i];
+    for(let i = 0; i < imageInfos.length; i++) {
+      const unresolvedInfo = imageInfos[i];
       this.logger.debug(`(ImageLogic) find image - resoving file, id=${unresolvedInfo.id}, slug=${unresolvedInfo.slug}, fileId=${unresolvedInfo.fileId}`);    
-      const fileInfo = await this.fileLogic.findFile(unresolvedInfo.fileId, event);
-      if (!fileInfo) {
+      const fileInfos = await this.fileLogic.findFiles([unresolvedInfo.fileId], event);
+      if (!fileInfos?.length) {
         this.logger.warn(`(ImageLogic) cannot found file, id=${unresolvedInfo.id}, slug=${unresolvedInfo.slug}, fileId=${unresolvedInfo.fileId}`);
         continue;
       }
       result.push({
         ...unresolvedInfo,
-        file: fileInfo
+        file: fileInfos[0]
       });
     }
 
-    this.logger.debug(`(ImageLogic) images by category: category=${category}, count=${resultFileUnresolved.length}`);
+    this.logger.debug(`(ImageLogic) image files resolved, result count=${result.length} (of requested count=${imageInfos.length})`);
     return result;
   }
 }

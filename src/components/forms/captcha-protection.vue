@@ -6,8 +6,9 @@ import { UserNotificationLevel } from './../../shared/constants';
 import { getI18nResName2 } from './../../shared/i18n';
 import { maskLog, buildParamsLogData } from './../../shared/applogger';
 import type { VueRecaptcha } from '#build/components';
+import { type ComponentInstance } from 'vue';
 
-const recaptcha = shallowRef<InstanceType<typeof VueRecaptcha>>();
+const recaptcha = shallowRef<ComponentInstance<typeof VueRecaptcha>>();
 const themeSettings = useThemeSettings();
 const { locale } = useI18n();
 const userNotificationStore = useUserNotificationStore();

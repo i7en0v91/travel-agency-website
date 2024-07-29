@@ -8,6 +8,7 @@ import { type Price, type EntityDataAttrsOnly, type EntityId, type ICity, type I
 import { getLocalizeableValue, getScoreClassResName } from './../../shared/common';
 import { type Locale } from './../../shared/constants';
 import { useUserFavouritesStore } from './../../stores/user-favourites-store';
+import { usePreviewState } from './../../composables/preview-state';
 import { getI18nResName1, getI18nResName2, type I18nResName } from './../../shared/i18n';
 
 interface IProps {
@@ -42,6 +43,7 @@ const isError = ref(false);
 
 const { status } = useAuth();
 const { t, locale } = useI18n();
+const { requestUserAction } = usePreviewState();
 
 const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
 const userFavouritesStoreFactory = useUserFavouritesStore();
@@ -55,6 +57,10 @@ async function toggleFavourite (): Promise<void> {
   const offerId = props.offerId!;
   const offerKind = props.offerKind!;
   logger.verbose(`(OfferDetailsSummary) toggling favourite, offerId=${offerId}, kind=${offerKind}, current=${isFavourite.value}`);
+  if(!await requestUserAction()) {
+    logger.verbose(`(OfferDetailsSummary) favourite hasn't been toggled - not allowed in preview mode, offerId=${offerId}, kind=${offerKind}, current=${isFavourite.value}`);
+    return;
+  }
   const store = await userFavouritesStoreFactory.getInstance();
   const result = await store.toggleFavourite(offerId, offerKind);
   logger.verbose(`(OfferDetailsSummary) favourite toggled, offerId=${offerId}, isFavourite=${result}`);
@@ -96,6 +102,8 @@ onMounted(() => {
   watch(() => [props.offerId, props.offerKind], initializeFavouriteStatusWatcherIfNeeded);
   initializeFavouriteStatusWatcherIfNeeded();
 });
+
+const tooltipId = useId();
 
 </script>
 
@@ -143,18 +151,23 @@ onMounted(() => {
                 <div v-else class="data-loading-stub text-data-loading" />
               </div>
             </div>
-            <div v-if="scoreClassResName && showReviewDetails" class="offer-details-summary-stats mb-xs-3 mb-s-0 mt-xs-3">
-              <div class="offer-details-summary-score p-xs-2 brdr-1">
-                {{ reviewScore!.toFixed(1) }}
+            <ClientOnly>    
+              <div v-if="scoreClassResName && showReviewDetails" class="offer-details-summary-stats mb-xs-3 mb-s-0 mt-xs-3">
+                <div class="offer-details-summary-score p-xs-2 brdr-1">
+                  {{ reviewScore!.toFixed(1) }}
+                </div>
+                <div class="offer-details-summary-score-class">
+                  {{ $t(scoreClassResName) }}
+                </div>
+                <div class="offer-details-summary-reviews">
+                  {{ reviewsCountText }}
+                </div>
               </div>
-              <div class="offer-details-summary-score-class">
-                {{ $t(scoreClassResName) }}
-              </div>
-              <div class="offer-details-summary-reviews">
-                {{ reviewsCountText }}
-              </div>
-            </div>
-            <div v-else-if="showReviewDetails" class="data-loading-stub text-data-loading" />
+              <div v-else-if="showReviewDetails" class="data-loading-stub text-data-loading" />
+              <template #fallback>
+                <div class="data-loading-stub text-data-loading" />
+              </template>
+            </ClientOnly>
           </div>
           <div class="offer-details-summary-buttons mt-xs-3">
             <NuxtLink v-if="btnLinkUrl" class="btn btn-primary brdr-1 offer-details-summary-btn-book" :to="btnLinkUrl">
@@ -170,6 +183,7 @@ onMounted(() => {
             />
             <VTooltip
               ref="tooltip"
+              :aria-id="tooltipId"
               :distance="6"
               :triggers="['click']"
               placement="bottom"

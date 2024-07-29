@@ -7,8 +7,12 @@ import { AppException, AppExceptionCodeEnum, defaultErrorHandler } from './excep
 import { type IApiErrorDto } from './../server/dto';
 import type { IAppLogger } from './../shared/applogger';
 import AppConfig, { HostUrl } from './../appconfig' ;
-import { HeaderAppVersion, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, HeaderCookies } from './../shared/constants';
+import { PreviewModeParamEnabledValue, QueryPagePreviewModeParam, HeaderAppVersion, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, HeaderCookies } from './../shared/constants';
 import fromPairs from 'lodash-es/fromPairs';
+import set from 'lodash-es/set';
+import { parseQuery } from 'ufo';
+import { type PreviewMode } from './../shared/interfaces';
+import { usePreviewState } from './../composables/preview-state';
 
 /**
  * all exceptions from fetch responses are converted into {@link AppException} retaining all
@@ -84,6 +88,43 @@ function getCurrentAuthCookies (event: H3Event | undefined, logger: IAppLogger):
   return inputAuthCookies!;
 }
 
+function getCurrentPreviewMode(event: H3Event | undefined, logger: IAppLogger): PreviewMode {
+  logger.debug(`(api-client) get current auth preview mode, event=${!!event}`);
+
+  let result: PreviewMode | undefined = undefined;
+  if(event) {
+    result = event.context.preview.mode;
+  } 
+  
+  if(result === undefined) {
+    try {
+      const { enabled } = usePreviewState();
+      result = enabled;
+    } catch(err: any) {
+      // probably nuxt instance access required
+    }
+  }
+
+  if(result === undefined && window) {
+    if(window?.location?.search) {
+      try {
+        const urlQuery = parseQuery(window!.location.search);
+        result = urlQuery && urlQuery[QueryPagePreviewModeParam] === PreviewModeParamEnabledValue;
+      } catch(err: any) {
+        logger.warn(`(api-client) failed to detect current preview mode state - url parse exception, event=${!!event}`, err);  
+      }
+    } else {
+      result = false;
+    }
+  }
+
+  if(result === undefined) {
+    logger.warn(`(api-client) failed to detect current preview mode state, event=${!!event}`);  
+  }
+  logger.debug(`(api-client) get current auth preview mode, previewMode=${result}, event=${!!event}`);
+  return result ?? false;
+}
+
 async function doFetch<TReq, TResp> (method: HTTPMethod, route: string, query: any,  body: TReq | undefined, headers: HeadersInit | undefined, cache: RequestCache, addAuthCookies: boolean, event: H3Event | undefined, errorHandling: FetchErrorHandlingMode, isByteResponse: boolean): Promise<TResp | undefined> {
   const logger = CommonServicesLocator.getLogger();
   errorHandling ??= 'default';
@@ -109,6 +150,10 @@ async function doFetch<TReq, TResp> (method: HTTPMethod, route: string, query: a
         cookie: authCookies!.join('; ')
       };
     }
+  }
+
+  if(getCurrentPreviewMode(event, logger)) {
+    query = set(query ?? {}, QueryPagePreviewModeParam, PreviewModeParamEnabledValue);
   }
 
   try {
@@ -174,8 +219,8 @@ function handleFetchError (err: any, errorHandling: FetchErrorHandlingMode, logF
   }
 }
 
-export async function post<TReq, TResp> (route: string, query: any, body: TReq | undefined, headers: HeadersInit | undefined, addAuthCookies: boolean, errorHandling: FetchErrorHandlingMode) : Promise<TResp | undefined> {
-  return await doFetch<TReq, TResp>('POST', route, query, body, headers, 'no-cache', addAuthCookies, undefined, errorHandling, false);
+export async function post<TReq, TResp> (route: string, query: any, body: TReq | undefined, headers: HeadersInit | undefined, addAuthCookies: boolean, event: H3Event | undefined, errorHandling: FetchErrorHandlingMode) : Promise<TResp | undefined> {
+  return await doFetch<TReq, TResp>('POST', route, query, body, headers, 'no-cache', addAuthCookies, event, errorHandling, false);
 }
 
 export async function del (route: string, query: any, addAuthCookies: boolean, errorHandling: FetchErrorHandlingMode) {

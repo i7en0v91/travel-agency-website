@@ -177,32 +177,27 @@ $user-avatar-box-margin-top: 60px;
   grid-template-columns: 1fr;
   grid-template-rows: auto;
 
-  transform: translateY($user-avatar-box-xsmargin-top);
-  @include for-small-and-above() {
-    transform: translateY($user-avatar-box-margin-top);
+  @include with-theme-color('account-avatar-frame') using($css-var) {
+    border: 4px solid var($css-var);
+    background-color: var($css-var);
   }
-  
 
   width: $user-avatar-xsmall-size;
   height: $user-avatar-xsmall-size;
+  
+  border-radius: calc($user-avatar-small-size / 2);
+  transform: translateY($user-avatar-box-xsmargin-top);
   @include for-small-and-above() {
     width: $user-avatar-small-size;
     height: $user-avatar-small-size;  
+    border-radius: calc($user-avatar-normal-size / 2);
+    transform: translateY($user-avatar-box-margin-top);    
   }
+
   @include for-medium-and-large() {
     width: $user-avatar-normal-size;
     height: $user-avatar-normal-size;  
     justify-self: center;
-  }
-
-  @include with-theme-color('account-avatar-frame') using($css-var) {
-    border: 4px solid var($css-var);
-    background-color: var($css-var);
-  }    
-
-  border-radius: calc($user-avatar-small-size / 2);
-  @include for-small-and-above() {
-    border-radius: calc($user-avatar-normal-size / 2);
   }
 
   .user-avatar-image-container {
@@ -262,15 +257,10 @@ $user-avatar-box-margin-top: 60px;
     grid-column-end: 2;
 
     align-self: flex-end;
-    justify-self: flex-end;
+    justify-self: flex-end;    
     
     z-index: 3;
-
     margin: 0;
-
-    &:hover {
-      cursor: pointer;
-    }
 
     @include with-theme-color('account-avatar-frame') using($css-var) {
       background-color: var($css-var);
@@ -283,6 +273,10 @@ $user-avatar-box-margin-top: 60px;
       max-width: $user-avatar-btn-size;
       max-height: $user-avatar-btn-size;
       border-radius: calc($user-avatar-normal-size / 2);
+    }
+
+    &:hover {
+      cursor: pointer;
     }
   }
 }
@@ -373,6 +367,11 @@ $user-avatar-box-margin-top: 60px;
   }
 
   .ticket-card-container {
+    border-radius: 12px;
+    @include with-theme-color('shadow') using($css-var) {
+      box-shadow: 0px 4px 16px var($css-var);
+    }
+
     width: 100%;
     height: auto;
     display: grid;
@@ -384,11 +383,6 @@ $user-avatar-box-margin-top: 60px;
       grid-template-rows: auto;
       grid-template-columns: 1fr auto;
       gap: map.get($spacings, '5');
-    }
-
-    border-radius: 12px;
-    @include with-theme-color('shadow') using($css-var) {
-      box-shadow: 0px 4px 16px var($css-var);
     }
 
     .ticket-card-slot {
@@ -479,6 +473,10 @@ $user-avatar-box-margin-top: 60px;
     }
     
     .ticket-card-timings {
+      display: block;
+      width: 100%;
+      height: auto;
+
       &.from {
         grid-column-start: 2;
         grid-column-end: 3;
@@ -498,11 +496,7 @@ $user-avatar-box-margin-top: 60px;
           }
         }
       }
-  
-      display: block;
-      width: 100%;
-      height: auto;
-  
+    
       .ticket-card-caption {
         display: block;
         white-space: nowrap;
@@ -584,15 +578,15 @@ $user-avatar-box-margin-top: 60px;
     }
 
     .ticket-card-details {
+      width: 100%;
+      height: auto;
+
       grid-column-start: 1;
       grid-column-end: 5;
       @include for-extra-large-only() {
         grid-column-start: 5;
         grid-column-end: 6;
       }
-
-      width: 100%;
-      height: auto;
 
       .booking-ticket-details {
         margin-left: 0;

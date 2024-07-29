@@ -4,7 +4,7 @@ import { type Logger as MailLogger } from 'nodemailer/lib/shared';
 import template from 'lodash-es/template';
 import { withQuery, joinURL } from 'ufo';
 import juice from 'juice';
-import { HtmlPage, getHtmlPagePath, type IAppLogger, type IEmailParams, type IEmailSender, type IMailTemplateLogic } from './../app-facade/interfaces';
+import { type EmailTemplateEnum, AppPage, getPagePath, type IAppLogger, type IEmailParams, type IEmailSender } from './../app-facade/interfaces';
 import { maskLog, buildParamsLogData, DefaultLocale, SecretValueMask, AppConfig, AppException, AppExceptionCodeEnum, EmailTemplate } from './../app-facade/implementation';
 
 interface IMailSettings {
@@ -31,13 +31,11 @@ export class EmailSender implements IEmailSender {
   private logger: IAppLogger;
   private smtpTransporter?: ReturnType<typeof createTransport>;
   private dbRepository: PrismaClient;
-  private mailTemplateLogic: IMailTemplateLogic;
 
-  public static inject = ['logger', 'dbRepository', 'mailTemplateLogic'] as const;
-  constructor (logger: IAppLogger, dbRepository: PrismaClient, mailTemplateLogic: IMailTemplateLogic) {
+  public static inject = ['logger', 'dbRepository'] as const;
+  constructor (logger: IAppLogger, dbRepository: PrismaClient) {
     this.logger = logger;
     this.dbRepository = dbRepository;
-    this.mailTemplateLogic = mailTemplateLogic;
   }
 
   throwEmailNotConfigured = () => {
@@ -45,24 +43,31 @@ export class EmailSender implements IEmailSender {
     throw new AppException(AppExceptionCodeEnum.EMAILING_DISABLED, 'emailing disabled', 'error-page');
   };
 
-  verifySetup = async (): Promise<void> => {
-    this.logger.info('(EmailSender) verifying setup');
+  initialize = async (): Promise<void> => {
+    this.logger.info('(EmailSender) initialize - verifying setup');
 
-    this.smtpTransporter = this.createNodeMailer();
+    if (AppConfig.email) {
+      this.smtpTransporter = this.createNodeMailer();
 
-    const mailSettings = this.getMailSettingsOrThrow();
-    if (mailSettings.siteUrl.endsWith('/')) {
-      throw new Error(`site URL must be configured without trailing slash: ${AppConfig.siteUrl}`);
+      const mailSettings = this.getMailSettingsOrThrow();
+      if (mailSettings.siteUrl.endsWith('/')) {
+        throw new Error(`site URL must be configured without trailing slash: ${AppConfig.siteUrl}`);
+      }
+
+      const result = await this.smtpTransporter?.verify();
+      if (!result) {
+        const msg = 'setup verification failed';
+        this.logger.warn('(EmailSender) ' + msg);
+        throw new Error(msg);
+      }
+    } else if (process.env.PUBLISH) {
+      this.logger.error('Emailing is not configured!');
+      throw new Error('Emailing is not configured!');
+    } else {
+      this.logger.info('skipping email infrastructure check as it is disabled');
     }
 
-    const result = await this.smtpTransporter?.verify();
-    if (!result) {
-      const msg = 'setup verification failed';
-      this.logger.warn('(EmailSender) ' + msg);
-      throw new Error(msg);
-    }
-
-    this.logger.verbose('(EmailSender) setup verification completed');
+    this.logger.info('(EmailSender) setup verification completed');
   };
 
   getMailSettingsOrThrow = (): IMailSettings => {
@@ -116,21 +121,21 @@ export class EmailSender implements IEmailSender {
 
     let pageLinkQuery: string | undefined;
     if (params.token) {
-      let pageUrlSegment: HtmlPage;
+      let pageUrlSegment: AppPage;
       switch (kind) {
         case EmailTemplate.EmailVerify:
-          pageUrlSegment = HtmlPage.EmailVerifyComplete;
+          pageUrlSegment = AppPage.EmailVerifyComplete;
           break;
         case EmailTemplate.PasswordRecovery:
-          pageUrlSegment = HtmlPage.ForgotPasswordSet;
+          pageUrlSegment = AppPage.ForgotPasswordSet;
           break;
         case EmailTemplate.RegisterAccount:
-          pageUrlSegment = HtmlPage.SignupComplete;
+          pageUrlSegment = AppPage.SignupComplete;
           break;
       }
 
       const localeSegment = (params.locale !== DefaultLocale ? params.locale : '').toLowerCase();
-      pageLinkQuery = withQuery(joinURL(localeSegment, getHtmlPagePath(pageUrlSegment)), { token_id: params.token.id, token_value: params.token.value });
+      pageLinkQuery = withQuery(joinURL(localeSegment, getPagePath(pageUrlSegment)), { token_id: params.token.id, token_value: params.token.value });
     }
 
     let userName = '';
@@ -156,17 +161,8 @@ export class EmailSender implements IEmailSender {
     return result;
   };
 
-  buildMailHtml = async (kind: EmailTemplate, params: IEmailParams): Promise<string> => {
+  buildMailHtml = async (kind: EmailTemplateEnum, mailTemplateMarkup: string, params: IEmailParams): Promise<string> => {
     this.logger.verbose(`(EmailSender) building mail html, kind=${kind}, subject=${params.subject}, to=${params.to}, userId=${params.userId}, locale=${params.locale}`);
-
-    const mailTemplateMarkup = await this.mailTemplateLogic.getTemplateMarkup(kind, params.locale);
-    if (!mailTemplateMarkup) {
-      const msg = `(EmailSender) mail template markup not found: kind=${kind}, subject=${params.subject}, to=${params.to}, userId=${params.userId}, locale=${params.locale}`;
-      this.logger.warn(msg);
-      throw new AppException(AppExceptionCodeEnum.UNKNOWN, msg, 'error-page');
-    }
-
-    this.logger.debug(`(EmailSender) compiling template, kind=${kind}, subject=${params.subject}, to=${params.to}`);
     const compiled = template(mailTemplateMarkup);
     this.logger.debug(`(EmailSender) preparing template params, kind=${kind}, subject=${params.subject}, to=${params.to}`);
     const templateParams = await this.createMailTemplateParams(kind, params);
@@ -179,12 +175,12 @@ export class EmailSender implements IEmailSender {
     return mailHtml;
   };
 
-  sendEmail = async (kind: EmailTemplate, params: IEmailParams): Promise<void> => {
+  sendEmail = async (kind: EmailTemplate, template: string, params: IEmailParams): Promise<void> => {
     this.logger.info(`(EmailSender) sending mail, kind=${kind}, subject=${params.subject}, to=${params.to}, token=${params.token ? SecretValueMask : '[empty]'}, userId=${params.userId}, locale=${params.locale}`);
 
     const mailSettings = this.getMailSettingsOrThrow();
     try {
-      const mailHtml = await this.buildMailHtml(kind, params);
+      const mailHtml = await this.buildMailHtml(kind, template, params);
       await this.smtpTransporter!.sendMail({
         from: mailSettings.from,
         to: params.to,

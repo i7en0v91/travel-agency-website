@@ -3,10 +3,10 @@
  */
 
 import { describe, test, assert, type TestOptions } from 'vitest';
-import { $fetch } from 'ohmyfetch';
+import { $fetch } from 'ofetch';
 import { type Page, type Cookie } from 'playwright-core';
 import { serialize as serializeCookie } from 'cookie-es';
-import { setup, createPage, createBrowser } from '@nuxt/test-utils/e2e';
+import { setup, createPage, createBrowser, getBrowser } from '@nuxt/test-utils/e2e';
 import dayjs from 'dayjs';
 import { murmurHash } from 'ohash';
 import { type EntityId, type StayServiceLevel } from './../../shared/interfaces';
@@ -14,7 +14,7 @@ import { type ParsedURL, joinURL, parseQuery, parseURL, stringifyParsedURL, stri
 import { TEST_SERVER_PORT, createLogger, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD } from '../../shared/testing/common';
 import { spinWait, delay } from '../../shared/common';
 import { type Locale, type RecoverPasswordCompleteResultEnum, ApiEndpointBookingDownload, HeaderAppVersion, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, ApiEndpointPurgeCache, ApiEndpointTestingPageCacheAction, DefaultLocale, CookieI18nLocale, HeaderDate, HeaderLastModified, HeaderCacheControl, HeaderEtag, HeaderContentType, ApiEndpointTestingCacheCleanup, OgImagePathSegment, OgImageExt, HeaderCookies, DefaultTheme } from '../../shared/constants';
-import { HtmlPage, emailVerifyCompleteAllowedParamsOptions, flightsAllowedParamsOptions, forgotPasswordCompleteCacheParamsOptions, forgotPasswordSetAllowedParamsOptions, getHtmlPagePath, loginPageAllowedParamsOptions, signUpCompleteAllowedParamsOptions, stayBookAllowedParamsOptions, staysAllowedParamsOptions } from '../../shared/page-query-params';
+import { AppPage, emailVerifyCompleteAllowedParamsOptions, flightsAllowedParamsOptions, forgotPasswordCompleteCacheParamsOptions, forgotPasswordSetAllowedParamsOptions, getPagePath, loginPageAllowedParamsOptions, signUpCompleteAllowedParamsOptions, stayBookAllowedParamsOptions, staysAllowedParamsOptions } from '../../shared/page-query-params';
 import type { IAppLogger } from '../../shared/applogger';
 import { type ITestingPageCacheActionDto, type ITestingPageCacheActionResultDto, TestingPageCacheActionEnum } from './../../server/dto';
 import pick from 'lodash-es/pick';
@@ -76,7 +76,7 @@ const UiIinteractionDelayMs = 100; // user interaction delay
 
 const TestLocales: Locale[] = [DefaultLocale, 'ru'];
 
-async function performPageAction (page: HtmlPage, action: TestingPageCacheActionEnum, testId: EntityId | undefined, testToken: PageTestToken | undefined, authCookies: Cookie[] | undefined, logger: IAppLogger): Promise<ITestingPageCacheActionResultDto> {
+async function performPageAction (page: AppPage, action: TestingPageCacheActionEnum, testId: EntityId | undefined, testToken: PageTestToken | undefined, authCookies: Cookie[] | undefined, logger: IAppLogger): Promise<ITestingPageCacheActionResultDto> {
   logger.verbose(`performing page action, page=${page.valueOf()}, action=${action}, testId=${testId}, testToken=${testToken}, numAuthCookies=${authCookies?.length ?? 0}`);
 
   const serializedAuthCookies = authCookies?.map(c => serializeCookie(c.name, c.value))?.join('; ');
@@ -129,7 +129,7 @@ async function pingServer(logger: IAppLogger): Promise<boolean> {
 async function ensureServerStarted(logger: IAppLogger): Promise<void> {
   if(!await pingServer(logger)) {
     logger.info(`starting server`);
-    const serverStarter = new PageTestHelper('starting server', `/${getHtmlPagePath(HtmlPage.Index)}`, DefaultLocale, false, logger);
+    const serverStarter = new PageTestHelper('starting server', `/${getPagePath(AppPage.Index)}`, DefaultLocale, false, logger);
     await serverStarter.start();
     await serverStarter.ensurePageHtmlLoaded();
     await serverStarter.stop();  
@@ -164,7 +164,7 @@ class PageTestHelper {
     this.htmlPageMetadata = new HtmlPageModelMetadata(logger);
   }
 
-  getMetadata(page: keyof typeof HtmlPage): HtmlPageModel<typeof page> {
+  getMetadata(page: keyof typeof AppPage): HtmlPageModel<typeof page> {
     return this.htmlPageMetadata.getMetadata(page);
   }
 
@@ -360,6 +360,7 @@ class PageTestHelper {
     this.loadingPageResponseState = {  };
     this.outstandingRequestUrls.clear();
     this.url = this.normalizeUrl(url, query);
+    await (await getBrowser()).close({ reason: 'reset e2e test context' });
     await createBrowser();   
 
     const userLocale = this.locale;
@@ -375,7 +376,7 @@ class PageTestHelper {
         };
     const allCookies: Cookie[] = [localeCookie, ...(this.authCookies ?? [])];
 
-    this.currentPage = await createPage(needLogin ? localizePath(`/${getHtmlPagePath(HtmlPage.Login)}`, this.locale) : undefined, {
+    this.currentPage = await createPage(needLogin ? localizePath(`/${getPagePath(AppPage.Login)}`, this.locale) : undefined, {
       viewport: { width: this.screenSize.width, height: this.screenSize.height },
       storageState: {
         cookies: allCookies,
@@ -620,7 +621,7 @@ class PageTestHelper {
     return result;
   };
 
-  performPageAction = async (page: HtmlPage, action: TestingPageCacheActionEnum, testId: EntityId | undefined, testToken: PageTestToken | undefined): Promise<ITestingPageCacheActionResultDto> => {
+  performPageAction = async (page: AppPage, action: TestingPageCacheActionEnum, testId: EntityId | undefined, testToken: PageTestToken | undefined): Promise<ITestingPageCacheActionResultDto> => {
     return await performPageAction(page, action, testId, testToken, this.authCookies, this.logger);
   };
 
@@ -629,7 +630,7 @@ class PageTestHelper {
 
     const bookingSrc = joinURL(TestHostUrlWithProtocol, ApiEndpointBookingDownload(bookingId));
 
-    const authCookies = await this.getAuthCookies(joinURL(TestHostUrlWithProtocol, getHtmlPagePath(HtmlPage.BookingDetails), bookingId));
+    const authCookies = await this.getAuthCookies(joinURL(TestHostUrlWithProtocol, getPagePath(AppPage.BookingDetails), bookingId));
     if(!authCookies) {
       this.logger.warn(`authentication is required to download booking, bookingId=${bookingId}, url=${this.url}, current url=${await this.currentPage!.url()}`);
       throw new Error('authentication is required to download booking');
@@ -731,9 +732,9 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
 
   for(let l = 0; l < TestLocales.length; l++) {
     const locale = TestLocales[l];
-    const TestName1 = `[/${getHtmlPagePath(HtmlPage.Index)}] (${locale}) - company review changes`;
+    const TestName1 = `[/${getPagePath(AppPage.Index)}] (${locale}) - company review changes`;
     test(TestName1, DefaultTestOptions, async () => {
-      const pageUrl =  localizePath(`/${getHtmlPagePath(HtmlPage.Index)}`, locale);
+      const pageUrl =  localizePath(`/${getPagePath(AppPage.Index)}`, locale);
       const testHelper = new PageTestHelper(TestName1, pageUrl, locale, false, logger);
       try {
         await testHelper.start();
@@ -741,7 +742,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
 
         logger.verbose(`${TestName1} - prepare page`);
         let testId: string | undefined;
-        const prepareResult = await testHelper.performPageAction(HtmlPage.Index, TestingPageCacheActionEnum.Prepare, testId, undefined);
+        const prepareResult = await testHelper.performPageAction(AppPage.Index, TestingPageCacheActionEnum.Prepare, testId, undefined);
         testId = prepareResult.testId;
         let testToken = testHelper.generateNewToken();
         let pageTestResult = await testHelper.testPageResponse(testToken, undefined, true);
@@ -750,7 +751,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
 
         logger.verbose(`${TestName1} - change page`);
         testToken = testHelper.generateNewToken();
-        const changeResult = await testHelper.performPageAction(HtmlPage.Index, TestingPageCacheActionEnum.Change, testId, testToken);
+        const changeResult = await testHelper.performPageAction(AppPage.Index, TestingPageCacheActionEnum.Change, testId, testToken);
         testId = changeResult.testId;
         await delay(LastModifiedTimeHeaderPrecision);
         pageTestResult = await testHelper.testPageResponse(testToken, undefined, false);
@@ -781,28 +782,27 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
   for(let l = 0; l < TestLocales.length; l++) {
     const locale = TestLocales[l];
     const Test2Pages = [
-      HtmlPage.Login, 
-      HtmlPage.ForgotPassword,
-      HtmlPage.ForgotPasswordComplete,
-      HtmlPage.ForgotPasswordSet,
-      HtmlPage.ForgotPasswordVerify,
-      HtmlPage.Signup,
-      HtmlPage.SignupComplete, 
-      HtmlPage.SignupVerify,
-      HtmlPage.EmailVerifyComplete
+      AppPage.ForgotPassword,
+      AppPage.ForgotPasswordComplete,
+      AppPage.ForgotPasswordSet,
+      AppPage.ForgotPasswordVerify,
+      AppPage.Signup,
+      AppPage.SignupComplete, 
+      AppPage.SignupVerify,
+      AppPage.EmailVerifyComplete
     ];
     for(let i = 0; i < Test2Pages.length; i++) {
       const testPage = Test2Pages[i];
-      let pageUrl = localizePath(`/${getHtmlPagePath(testPage)}`, locale);
-      if(testPage === HtmlPage.Login) {
+      let pageUrl = localizePath(`/${getPagePath(testPage)}`, locale);
+      if(testPage === AppPage.Login) {
         const callbackParamName = keys(loginPageAllowedParamsOptions).filter(x => x === 'callbackUrl');
         if(!callbackParamName) {
           throw new Error('expected callbackUrl param to be allowed for Login page');
         };
-        pageUrl = withQuery(pageUrl, set({}, callbackParamName, localizePath(`/${getHtmlPagePath(HtmlPage.Index)}`, locale)));
-      } else if(testPage === HtmlPage.ForgotPasswordSet || testPage === HtmlPage.SignupComplete || testPage === HtmlPage.EmailVerifyComplete) {
-        const paramOptions = testPage === HtmlPage.ForgotPasswordSet ? forgotPasswordSetAllowedParamsOptions : 
-        (testPage === HtmlPage.SignupComplete ? signUpCompleteAllowedParamsOptions : emailVerifyCompleteAllowedParamsOptions);
+        pageUrl = withQuery(pageUrl, set({}, callbackParamName, localizePath(`/${getPagePath(AppPage.Index)}`, locale)));
+      } else if(testPage === AppPage.ForgotPasswordSet || testPage === AppPage.SignupComplete || testPage === AppPage.EmailVerifyComplete) {
+        const paramOptions = testPage === AppPage.ForgotPasswordSet ? forgotPasswordSetAllowedParamsOptions : 
+        (testPage === AppPage.SignupComplete ? signUpCompleteAllowedParamsOptions : emailVerifyCompleteAllowedParamsOptions);
         const tokenIdParamName = keys(paramOptions).filter(x => x === 'token_id');
         if(!tokenIdParamName) {
           throw new Error(`expected token_id param to be allowed for ${testPage} page`);
@@ -814,7 +814,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
         let pageQuery = set({}, tokenIdParamName, random(1000000).toString());
         pageQuery = set(pageQuery, tokenValueParamName, random(1000000).toString());
         pageUrl = withQuery(pageUrl, pageQuery);
-      } else if(testPage === HtmlPage.ForgotPasswordComplete) {
+      } else if(testPage === AppPage.ForgotPasswordComplete) {
         const resultParamName = keys(forgotPasswordCompleteCacheParamsOptions).filter(x => x === 'result');
         if(!resultParamName) {
           throw new Error(`expected result param to be allowed for ${testPage} page`);
@@ -824,12 +824,12 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
 
       // caching for this pages must be disabled in config
       const pageCachingMustBeDisabled = [
-        HtmlPage.ForgotPasswordSet, 
-        HtmlPage.SignupComplete, 
-        HtmlPage.EmailVerifyComplete
+        AppPage.ForgotPasswordSet, 
+        AppPage.SignupComplete, 
+        AppPage.EmailVerifyComplete
       ].includes(testPage);
 
-      const testPageName = `[/${getHtmlPagePath(testPage)}] (${locale}) - auth form image changes ${pageCachingMustBeDisabled ? '(caching must be disabled)' : ''}`;
+      const testPageName = `[/${getPagePath(testPage)}] (${locale}) - auth form image changes ${pageCachingMustBeDisabled ? '(caching must be disabled)' : ''}`;
       test(testPageName, DefaultTestOptions, async () => {
         const testHelper = new PageTestHelper(testPageName, pageUrl, locale, false, logger);
         try {
@@ -883,11 +883,11 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
 
   for(let l = 0; l < TestLocales.length; l++) {
     const locale = TestLocales[l];
-    const Test3Pages = [HtmlPage.FindFlights, HtmlPage.FindStays];
+    const Test3Pages = [AppPage.FindFlights, AppPage.FindStays, AppPage.Login];
     for(let i = 0; i < Test3Pages.length; i++) {
       const testPage = Test3Pages[i];
-      const pageUrl = localizePath(`/${getHtmlPagePath(testPage)}`, locale);
-      const testPageName = `[/${getHtmlPagePath(testPage)}] (${locale}) - caching must be disabled`;
+      const pageUrl = localizePath(`/${getPagePath(testPage)}`, locale);
+      const testPageName = `[/${getPagePath(testPage)}] (${locale}) - caching must be disabled`;
       test(testPageName, DefaultTestOptions, async () => {
         const testHelper = new PageTestHelper(testPageName, pageUrl, locale, false, logger);
         try {
@@ -911,11 +911,11 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
   
   for(let l = 0; l < TestLocales.length; l++) {
     const locale = TestLocales[l];
-    const Test4Pages = [HtmlPage.Account, HtmlPage.Favourites];
+    const Test4Pages = [AppPage.Account, AppPage.Favourites];
     for(let i = 0; i < Test4Pages.length; i++) {
       const testPage = Test4Pages[i];
-      const pageUrl = localizePath(`/${getHtmlPagePath(testPage)}`, locale);
-      const testPageName = `[/${getHtmlPagePath(testPage)}] (${locale}) - personal data must not be cached`;
+      const pageUrl = localizePath(`/${getPagePath(testPage)}`, locale);
+      const testPageName = `[/${getPagePath(testPage)}] (${locale}) - personal data must not be cached`;
       test(testPageName, DefaultTestOptions, async () => {
         const testHelper = new PageTestHelper(testPageName, pageUrl, locale, true, logger);
           
@@ -940,10 +940,10 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
   
   for(let l = 0; l < TestLocales.length; l++) {
     const locale = TestLocales[l];
-    const Test5Pages = [HtmlPage.FlightDetails, HtmlPage.BookFlight];
+    const Test5Pages = [AppPage.FlightDetails, AppPage.BookFlight];
     for(let i = 0; i < Test5Pages.length; i++) {
       const testPage = Test5Pages[i];
-      const testPageName = `[/${getHtmlPagePath(testPage)}] (${locale}) - flight offer changes`;
+      const testPageName = `[/${getPagePath(testPage)}] (${locale}) - flight offer changes`;
       let serviceLevelParamName: string | undefined = 'serviceLevel';
       test(testPageName, DefaultTestOptions, async () => {
         let testHelper: PageTestHelper | undefined;
@@ -955,13 +955,13 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           const prepareResult = await performPageAction(testPage, TestingPageCacheActionEnum.Prepare, flightOfferId, undefined, undefined, logger);
           flightOfferId = prepareResult.testId;
 
-          const pageUrl = localizePath(`/${getHtmlPagePath(testPage)}/${flightOfferId}`, locale);
+          const pageUrl = localizePath(`/${getPagePath(testPage)}/${flightOfferId}`, locale);
           testHelper = new PageTestHelper(testPageName, pageUrl, locale, false, logger);
 
           let defaultQuery: any = undefined;
-          if(testPage === HtmlPage.BookStay) {
+          if(testPage === AppPage.BookStay) {
             serviceLevelParamName = keys(stayBookAllowedParamsOptions).find(x => x === serviceLevelParamName);
-            assert(!!serviceLevelParamName, `expected serviceLevel param to be allowed for ${HtmlPage.BookStay} page`);
+            assert(!!serviceLevelParamName, `expected serviceLevel param to be allowed for ${AppPage.BookStay} page`);
             defaultQuery = set({}, serviceLevelParamName, <StayServiceLevel>'CityView2');
           }
 
@@ -974,7 +974,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           const initialChangeTimestamp = pageTestResult.lastChanged;
           await delay(LastModifiedTimeHeaderPrecision);
 
-          if(testPage === HtmlPage.BookStay) {
+          if(testPage === AppPage.BookStay) {
             logger.verbose(`${testPageName} - try open page with incorrect parameter`);
             const incorrectServiceLevelQuery = set({}, serviceLevelParamName!, random(10000).toString());
             const incorrectServiceLevelPageTestResult = await testHelper.testPageResponse(testToken, incorrectServiceLevelQuery, false, 400);
@@ -1043,10 +1043,10 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
   
   for(let l = 0; l < TestLocales.length; l++) {
     const locale = TestLocales[l];
-    const Test6Pages = [HtmlPage.StayDetails, HtmlPage.BookStay];
+    const Test6Pages = [AppPage.StayDetails, AppPage.BookStay];
     for(let i = 0; i < Test6Pages.length; i++) {
       const testPage = Test6Pages[i];
-      const testPageName = `[/${getHtmlPagePath(testPage)}] (${locale}) - stay offer changes`;
+      const testPageName = `[/${getPagePath(testPage)}] (${locale}) - stay offer changes`;
       test(testPageName, DefaultTestOptions, async () => {
         let testHelper: PageTestHelper | undefined;
         try {
@@ -1057,7 +1057,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           const prepareResult = await performPageAction(testPage, TestingPageCacheActionEnum.Prepare, stayOfferId, undefined, undefined, logger);
           stayOfferId = prepareResult.testId;
 
-          const pageUrl = localizePath(`/${getHtmlPagePath(testPage)}/${stayOfferId}`, locale);
+          const pageUrl = localizePath(`/${getPagePath(testPage)}/${stayOfferId}`, locale);
           testHelper = new PageTestHelper(testPageName, pageUrl, locale, false, logger);
 
           await testHelper.start();
@@ -1129,11 +1129,11 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
 
   for(let l = 0; l < TestLocales.length; l++) {
     const locale = TestLocales[l];
-    const Test7Pages = [HtmlPage.Flights, HtmlPage.Stays];
+    const Test7Pages = [AppPage.Flights, AppPage.Stays];
     for(let i = 0; i < Test7Pages.length; i++) {
       const testPage = Test7Pages[i];
-      const pageUrl = localizePath(`/${getHtmlPagePath(testPage)}`, locale);
-      const testPageName = `[/${getHtmlPagePath(testPage)}] (${locale}) - popular city changes, url varied by anyValue parameter (citySlug)`;
+      const pageUrl = localizePath(`/${getPagePath(testPage)}`, locale);
+      const testPageName = `[/${getPagePath(testPage)}] (${locale}) - popular city changes, url varied by anyValue parameter (citySlug)`;
       test(testPageName, DefaultTestOptions, async () => {
         const testHelper = new PageTestHelper(testPageName, pageUrl, locale, false, logger);
         try {
@@ -1141,7 +1141,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           await testHelper.purgeCache();
 
           const existingCitySlug = 'paris';
-          const pageParamsOptions = testPage === HtmlPage.Flights ? flightsAllowedParamsOptions : staysAllowedParamsOptions;
+          const pageParamsOptions = testPage === AppPage.Flights ? flightsAllowedParamsOptions : staysAllowedParamsOptions;
           const citySlugParamName = keys(pageParamsOptions).filter(x => x === 'citySlug');
           assert(!!citySlugParamName, `expected citySlug param to be allowed for ${testPage} page`);
 
@@ -1219,96 +1219,63 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
 
   for(let l = 0; l < TestLocales.length; l++) {
     const locale = TestLocales[l];
-    const TestName8 = `[/${getHtmlPagePath(HtmlPage.BookingDetails)}] (${locale}) - booking's offer changes`;
+    const TestName8 = `[/${getPagePath(AppPage.BookingDetails)}] (${locale}) - booking's offer changes`;
     test(TestName8, DefaultTestOptions, async () => {
       let testHelper: PageTestHelper | undefined;
       try {
         await ensureServerStarted(logger);
 
         logger.verbose(`${TestName8} - authenticating`); // auth required to book offer
-        testHelper = new PageTestHelper(HtmlPage.Index, localizePath(`${getHtmlPagePath(HtmlPage.Index)}`, locale), locale,  true, logger);
+        testHelper = new PageTestHelper(AppPage.Index, localizePath(`${getPagePath(AppPage.Index)}`, locale), locale,  true, logger);
         await testHelper.start();
         await testHelper.purgeCache();
-        const authCookies = await testHelper.getAuthCookies(joinURL(TestHostUrlWithProtocol, getHtmlPagePath(HtmlPage.Index)));
+        let authCookies = await testHelper.getAuthCookies(joinURL(TestHostUrlWithProtocol, getPagePath(AppPage.Index)));
         
         logger.verbose(`${TestName8} - prepare page`);
         let bookingId: EntityId | undefined;
-        const prepareResult = await performPageAction(HtmlPage.BookingDetails, TestingPageCacheActionEnum.Prepare, bookingId, undefined, authCookies, logger);
+        const prepareResult = await performPageAction(AppPage.BookingDetails, TestingPageCacheActionEnum.Prepare, bookingId, undefined, authCookies, logger);
         bookingId = prepareResult.testId!;
 
-        const pageUrl = localizePath(`/${getHtmlPagePath(HtmlPage.BookingDetails)}/${bookingId}`, locale);
-        testHelper = new PageTestHelper(HtmlPage.BookingDetails, pageUrl, locale, true, logger);
+        const pageUrl = localizePath(`/${getPagePath(AppPage.BookingDetails)}/${bookingId}`, locale);
+        testHelper = new PageTestHelper(AppPage.BookingDetails, pageUrl, locale, true, logger);
         await testHelper.start();
+        authCookies = await testHelper.getAuthCookies(joinURL(TestHostUrlWithProtocol, getPagePath(AppPage.Index)));
         
         let bookingDocument = await testHelper.downloadBookingDocument(bookingId);
         assert(bookingDocument.statusCode < 400 && bookingDocument.imageBytesHash, 'expected booking document successfull download');
 
-        let testToken = testHelper.generateNewToken();
-        let pageTestResult = await testHelper.testPageResponse(testToken, undefined, true);
-        assert(!pageTestResult.tokenPresent, 'expected token to be absent');
+        const dummyToken = testHelper.generateNewToken(); // KB: user's booking data is client-only, so tokens won't be present in markup
+        let pageTestResult = await testHelper.testPageResponse(dummyToken, undefined, true);
         const initialChangeTimestamp = pageTestResult.lastChanged;
         await delay(LastModifiedTimeHeaderPrecision);
 
-        bookingDocument = await testHelper.downloadBookingDocument(bookingId);
-        assert(bookingDocument.statusCode < 400 && bookingDocument.imageBytesHash, 'expected booking document successfull download');
-
         let ogImageTestResult = await testHelper.testOgImageResponse();
         assert(ogImageTestResult.statusCode < 400);
-        // KB: og image caching enabled in production mode, so only data hash is tested
-        //const initialOgImageChangeTimestamp = ogImageTestResult.lastChanged!;
         assert(ogImageTestResult.imageBytesHash, 'expected non-empty og image');
         const initialOgImageBytesHash = ogImageTestResult.imageBytesHash!;
 
-        logger.verbose(`${HtmlPage.BookingDetails} - change page`);
-        testToken = testHelper.generateNewToken();
-        const changeResult = await testHelper.performPageAction(HtmlPage.BookingDetails, TestingPageCacheActionEnum.Change, bookingId, testToken);
+        logger.verbose(`${AppPage.BookingDetails} - change page`);
+        const changeResult = await performPageAction(AppPage.BookingDetails, TestingPageCacheActionEnum.Change, bookingId, dummyToken, authCookies, logger);
         bookingId = changeResult.testId!;
-        // KB: booking document download resets booking's page cache
-        /*
+
         await delay(LastModifiedTimeHeaderPrecision);
-        pageTestResult = await testHelper.testPageResponse(testToken, undefined, false);
-        assert(!pageTestResult.tokenPresent, 'expected token to be absent'); // cache cleanup hasn't run yet
-        assert(pageTestResult.lastChanged === initialChangeTimestamp, 'expected page last changed time to be the same as on prepare stage');
-        */
+
         bookingDocument = await testHelper.downloadBookingDocument(bookingId);
         assert(bookingDocument.statusCode < 400 && bookingDocument.imageBytesHash, 'expected booking document successfull download');
 
         ogImageTestResult = await testHelper.testOgImageResponse();
         assert(ogImageTestResult.statusCode < 400);
-        // KB: og image caching enabled in production mode, so only data hash is tested
-        //assert(ogImageTestResult.lastChanged === initialOgImageChangeTimestamp, 'expected og image last changed time to be the same as on prepare stage');
         assert(ogImageTestResult.imageBytesHash, 'expected non-empty og image');
-        //assert(ogImageTestResult.imageBytesHash === initialOgImageBytesHash, 'expected og image content to be the same as on prepare stage');
-        
-        await delay(LastModifiedTimeHeaderPrecision);
-        logger.verbose(`${HtmlPage.BookingDetails} - running cache cleanup`);
-        await testHelper.runCacheCleanup();
 
-        pageTestResult = await testHelper.testPageResponse(testToken, undefined, false);
+        // booking page caching must be disabled - changes will be immediately available
+        pageTestResult = await testHelper.testPageResponse(dummyToken, undefined, false);
         const changedTimestamp = pageTestResult.lastChanged;
-        assert(pageTestResult.tokenPresent, 'expected token to present');
         assert(changedTimestamp > initialChangeTimestamp, 'expected page change timestamp to increase');
 
         ogImageTestResult = await testHelper.testOgImageResponse();
         assert(ogImageTestResult.statusCode < 400);
-        // KB: og image caching enabled in production mode, so only data hash is tested
-        //assert(ogImageTestResult.lastChanged! > initialOgImageChangeTimestamp, 'expected og image timestamp to increase');
         assert(ogImageTestResult.imageBytesHash, 'expected non-empty og image');
         assert(ogImageTestResult.imageBytesHash !== initialOgImageBytesHash, 'expected og image content to change');
-        
-
-        await delay(LastModifiedTimeHeaderPrecision);
-        logger.verbose(`${HtmlPage.BookingDetails} - running cache cleanup again`);
-        await testHelper.runCacheCleanup();
-        pageTestResult = await testHelper.testPageResponse(testToken, undefined, true);
-        assert(pageTestResult.tokenPresent, 'expected token to present');
-        assert(pageTestResult.lastChanged === changedTimestamp, 'expected page change timestamp to remain unchanged since last cache cleanup');
-
-        const anotherOgImageTestResult = await testHelper.testOgImageResponse();
-        assert(ogImageTestResult.statusCode < 400);
-        //assert(anotherOgImageTestResult.lastChanged === ogImageTestResult.lastChanged, 'expected og image timestamp to remain the same');
-        assert(anotherOgImageTestResult.imageBytesHash, 'expected non-empty og image');
-        assert(anotherOgImageTestResult.imageBytesHash === ogImageTestResult.imageBytesHash, 'expected og image content to remain the same');
       } finally {
         await testHelper?.stop();
       }  

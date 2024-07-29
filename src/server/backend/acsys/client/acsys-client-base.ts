@@ -1,13 +1,12 @@
 import { verify, type JwtPayload } from 'jsonwebtoken';
 import { type IAppLogger } from '../../app-facade/interfaces';
-import { HeaderAuthorization, HeaderContentType, HeaderCookies } from '../../app-facade/implementation';
+import { AppException, AppExceptionCodeEnum, spinWait, validateObject, HeaderAuthorization, HeaderContentType, HeaderCookies, lookupValueOrThrow } from '../../app-facade/implementation';
 import { type UserData, type AuthStatus, type IAcsysAuthState, type IAcsysClientBase, UserRoleEnum } from './interfaces';
 import { type IUserOptions } from './../../../../appconfig';
 import { ApiResponseTypes } from './interfaces';
 import type { RegisterUserDto, AuthenticateDto, AuthenticateResponseDto, RefreshTokenResponseDto, SetInitialLocalDatabaseConfigDto } from './dto';
 import type { HTTPMethod } from 'h3';
 import { CookieAcsysEmail, CookieAcsysMode, CookieAcsysRefreshToken, CookieAcsysRole, CookieAcsysSession, CookieAcsysUser, CookieAcsysUserId, RouteInitialLocalDatabaseConfig, RouteAuthenticate, AuthKeeperTimerIntervalSec, RefreshAuthTokenWindowSec, RouteRefreshToken, DefaultOperationTimeoutSec, RouteIsConnected, RouteHasAdmin, RouteRegister, HeaderFileLastModifiedUtc } from './constants';
-import { AppException, AppExceptionCodeEnum, parseEnumOrThrow, spinWait, validateObject } from './../../app-facade/implementation';
 import { parseURL, stringifyQuery } from 'ufo';
 import { destr } from 'destr';
 import isObject from 'lodash-es/isObject';
@@ -183,7 +182,7 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
     return  {
       ...result,
       acsys_id: response.acsys_id,
-      role: parseEnumOrThrow(UserRoleEnum, response.role) as UserRoleEnum
+      role: lookupValueOrThrow(UserRoleEnum, response.role)
     };
   };
 
@@ -200,7 +199,7 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
   waitForNonPendingState = async (): Promise<void> => {
     if(this.authStatus === 'pending') {
       this.logger.verbose(`(AcsysClientBase) [${this.roleKind}] auth is in pending state, waiting`);
-      await spinWait(() => Promise.resolve(this.authStatus !== 'pending'), DefaultOperationTimeoutSec);
+      await spinWait(() => Promise.resolve(this.authStatus !== 'pending'), DefaultOperationTimeoutSec * 1000);
       if(this.authStatus === 'pending') {
         this.logger.warn(`(AcsysClientBase) [${this.roleKind}] timeout while waiting for auth non-pending state`);
         throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'authentication timeout', 'error-stub');

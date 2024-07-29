@@ -3,7 +3,7 @@
 import type { YMap } from '@yandex/ymaps3-types';
 import { YandexMapHint, YandexMapControlButton, VueYandexMaps, YandexMapControls, YandexMapZoomControl, YandexMap, YandexMapDefaultMarker, YandexMapDefaultSchemeLayer, YandexMapDefaultFeaturesLayer } from 'vue-yandex-maps';
 import isString from 'lodash-es/isString';
-import ComponentWaiterIndicator from './../../component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
 import { type IMapControlProps } from './../../../shared/interfaces';
 import { AppException, AppExceptionCodeEnum } from './../../../shared/exceptions';
 import { getI18nResName3 } from './../../../shared/i18n';
@@ -88,7 +88,7 @@ onMounted(() => {
 <template>
   <div class="yandex-maps" :style="{width: '100%', height: 'auto'}">
     <div v-if="!map">
-      <ComponentWaiterIndicator ctrl-key="YandexMap-InitializationWaiter" class="interactive-map-waiting-indicator" />
+      <ComponentWaitingIndicator ctrl-key="YandexMap-InitializationWaiter" class="interactive-map-waiting-indicator" />
     </div>
     <div :style="map ? {width: '100%', height: 'auto'} : {width: '100%', height: 0, maxHeight: 0, overflowY: 'hidden'}">
       <YandexMap v-model="map" :settings="{ location: { center: [props.origin.lon, props.origin.lat], zoom: DefaultZoomLevel }, showScaleInCopyrights: true, theme: theme.currentTheme.value, className: cssClass }">

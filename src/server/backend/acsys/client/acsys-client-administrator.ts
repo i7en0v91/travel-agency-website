@@ -1,18 +1,19 @@
 import { type EntityId, type IAppLogger } from '../../app-facade/interfaces';
 import type { IAcsysClientAdministrator, UserData } from './interfaces';
-import { type GetDropdownValuesDto, type EditDropdownValuesDto, type CreateViewDto, type DeleteDataDto, type CreateUserDto, CreateUserDtoSchema, type ViewColumnDetailsDto, type AddViewColumnDetailsDto, type ViewInfoResponseDto, type ViewDisplayPropsDto, type SetViewDisplayPropsDto, SetViewDisplayPropsDtoSchema, FieldEditControl, FieldType, AddViewColumnDetailsDtoSchema, DeleteDataDtoSchema, CreateViewDtoSchema, EditDropdownValuesDtoSchema } from './dto';
+import type { GetDropdownValuesDto, EditDropdownValuesDto, CreateViewDto, DeleteDataDto, CreateUserDto, ViewColumnDetailsDto, AddViewColumnDetailsDto, ViewInfoResponseDto, ViewDisplayPropsDto, SetViewDisplayPropsDto } from './dto';
+import { SetViewDisplayPropsDtoSchema, FieldEditControl, FieldType, AddViewColumnDetailsDtoSchema, DeleteDataDtoSchema, CreateViewDtoSchema, CreateUserDtoSchema, EditDropdownValuesDtoSchema } from './dto';
 import { AcsysTableDetailsDropdown, RouteCreateView, RouteDeleteData, RouteInsertWithUid, RouteCreateUser, AcsysTableViews, AcsysTableLogicalContent, AcsysTableSourceCollectionColumn, RouteReadData, RouteUpdateData, AcsysTableIdColumn, AcsysTableFieldNameColumn, AcsysTableDocumentDetails, AcsysTableContentIdColumn, RouteInsertData } from './constants';
 import { ApiResponseTypes, UserRoleEnum } from './interfaces';
 import { AcsysClientStandard } from './acsys-client-standard';
-import { AppException, AppExceptionCodeEnum, parseEnumOrThrow } from './../../app-facade/implementation';
+import { AppException, AppExceptionCodeEnum, lookupValueOrThrow } from './../../app-facade/implementation';
 import { type IUserOptions } from './../../../../appconfig';
 import omit from 'lodash-es/omit';
 import uniqBy from 'lodash-es/uniqBy';
-import { type SourceCollection, type IViewInfo, type IViewDisplayProps, type IViewColumnSettings, SortOrderEnum } from './views';
+import { type SourceCollection, type IViewInfo, type IViewDisplayProps, type IViewColumnSettings, SortOrderEnum, FieldEditControlEnum, FieldEnum } from './views';
 
 
 export class AcsysClientAdministrator extends AcsysClientStandard implements IAcsysClientAdministrator {
-  public static inject = ['logger'] as const;
+  public static override inject = ['logger'] as const;
   constructor (baseUrl: string, userOptions: IUserOptions, logger: IAppLogger) {
     super(baseUrl, userOptions, logger, UserRoleEnum.Administrator);
   }
@@ -31,7 +32,7 @@ export class AcsysClientAdministrator extends AcsysClientStandard implements IAc
   mapViewDisplayPropsDto = (dto: ViewDisplayPropsDto): IViewDisplayProps => {
     return {
       addRemoveOperationsAllowed: !!dto.is_removable,
-      sortOrder: dto.view_order ? parseEnumOrThrow(SortOrderEnum, dto.view_order) : SortOrderEnum.Asc,
+      sortOrder: dto.view_order ? lookupValueOrThrow(SortOrderEnum, dto.view_order) : SortOrderEnum.Asc,
       sortColumn: dto.order_by,
       pageSize: dto.row_num
     };
@@ -53,14 +54,14 @@ export class AcsysClientAdministrator extends AcsysClientStandard implements IAc
   mapViewColumnDetailsDto = (dto: ViewColumnDetailsDto, dropdownValues: string[] | undefined): IViewColumnSettings => {
     return {
       id: dto.acsys_id,
-      control: parseEnumOrThrow(FieldEditControl, dto.control),
+      control: lookupValueOrThrow(FieldEditControlEnum, lookupValueOrThrow(FieldEditControl, dto.control)),
       dropdownValues,
       displayOrder: dto.view_order,
       isKey: dto.is_key > 0,
       isVisibleOnPage: dto.is_visible_on_page > 0,
       isVisibleOnTable: dto.is_visible_on_table > 0,
       name: dto.field_name,
-      type: parseEnumOrThrow(FieldType, dto.type),
+      type: lookupValueOrThrow(FieldEnum, lookupValueOrThrow(FieldType, dto.type)),
       width: dto.width
     };
   };

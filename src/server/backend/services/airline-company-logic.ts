@@ -1,25 +1,58 @@
 import type { PrismaClient } from '@prisma/client';
 import { type Storage, type StorageValue } from 'unstorage';
 import orderBy from 'lodash-es/orderBy';
-import { destr } from 'destr';
-import { type IAppLogger, type IAirlineCompanyLogic, type IAirlineCompany, type IAirlineCompanyData, type EntityId } from './../../backend/app-facade/interfaces';
-import { CurrentUserGeoLocation, DbVersionInitial, calculateDistanceKm, newUniqueId } from './../../backend/app-facade/implementation';
+import { type EntityChangeNotificationCallbackArgs, type EntityChangeNotificationCallback, type EntityChangeNotificationSubscriberId, type IEntityChangeNotificationTask, type IAppLogger, type IAirlineCompanyLogic, type IAirlineCompany, type IAirlineCompanyData, type EntityId } from './../../backend/app-facade/interfaces';
+import { NearestAirlineCompanyCacheKey, AllAirlineCompaniesCacheKey, EntityChangeSubscribersOrder, CurrentUserGeoLocation, DbVersionInitial, calculateDistanceKm, newUniqueId } from './../../backend/app-facade/implementation';
 import { AirlineCompanyInfoQuery, MapAirlineCompany } from './queries';
-import { mapDbGeoCoord } from './db';
+import { mapDbGeoCoord } from '../helpers/db';
 
 export class AirlineCompanyLogic implements IAirlineCompanyLogic {
-  private logger: IAppLogger;
-  private dbRepository: PrismaClient;
-  private cache: Storage<StorageValue>;
+  private readonly logger: IAppLogger;
+  private readonly dbRepository: PrismaClient;
+  private readonly cache: Storage<StorageValue>;
+  private readonly entityChangeNotifications: IEntityChangeNotificationTask;
 
-  public static inject = ['cache', 'dbRepository', 'logger'] as const;
-  constructor (cache: Storage<StorageValue>, dbRepository: PrismaClient, logger: IAppLogger) {
+  public static inject = ['entityChangeNotifications', 'cache', 'dbRepository', 'logger'] as const;
+  constructor (entityChangeNotifications: IEntityChangeNotificationTask, cache: Storage<StorageValue>, dbRepository: PrismaClient, logger: IAppLogger) {
     this.cache = cache;
     this.logger = logger;
     this.dbRepository = dbRepository;
+    this.entityChangeNotifications = entityChangeNotifications;
   }
 
-  deleteCompany =  async (id: EntityId): Promise<void> => {
+  async initialize(): Promise<void> {
+    this.subscribeForEntityChanges();
+  }
+
+  subscribeForEntityChanges = () => {
+    this.logger.verbose('(AirlineCompanyLogic) subscribing for airline company entities changes');
+
+    const subscriberId = this.entityChangeNotifications.subscribeForChanges({
+      target: [{
+        entity: 'AirlineCompany',
+        ids: 'all'
+      }],
+      order: EntityChangeSubscribersOrder.AirlineCompanyLogic
+    }, this.entityChangeCallback);
+
+    this.logger.verbose(`(AirlineCompanyLogic) subscribed for airline company entities changes, subscriberId=${subscriberId}`);
+  };
+
+  entityChangeCallback: EntityChangeNotificationCallback = async (_: EntityChangeNotificationSubscriberId, args: EntityChangeNotificationCallbackArgs): Promise<void> => {
+    this.logger.debug('(AirlineCompanyLogic) entities change callback');
+    if(args.target === 'too-much' || (args.target.find(x => x.entity === 'AirlineCompany')?.ids.length ?? 0) > 0) {
+      await this.clearResultsCache();
+    }
+    this.logger.debug('(AirlineCompanyLogic) entities change callback completed');
+  };
+
+  private async clearResultsCache(): Promise<void> {
+    this.logger.verbose('(AirlineCompanyLogic) clearing results cache');
+    await this.cache.removeItem(AllAirlineCompaniesCacheKey);
+    await this.cache.removeItem(NearestAirlineCompanyCacheKey);
+  }
+
+  async deleteCompany(id: EntityId): Promise<void> {
     this.logger.verbose(`(AirlineCompanyLogic) deleting company: id=${id}`);
     await this.dbRepository.airlineCompany.update({
       where: {
@@ -31,20 +64,25 @@ export class AirlineCompanyLogic implements IAirlineCompanyLogic {
         version: { increment: 1 }
       }
     });
+    await this.clearResultsCache();
     this.logger.verbose(`(AirlineCompanyLogic) company deleted: id=${id}`);
   };
 
-  async getAllAirlineCompanies (): Promise<IAirlineCompany[]> {
-    this.logger.debug('(AirlineCompanyLogic) get all airline companies');
+  async getAllAirlineCompanies (allowCachedValue: boolean): Promise<IAirlineCompany[]> {
+    this.logger.debug(`(AirlineCompanyLogic) get all airline companies, allowCachedValue=${allowCachedValue}`);
 
-    const result = (await this.dbRepository.airlineCompany.findMany({
-      where: {
-        isDeleted: false
-      },
-      select: AirlineCompanyInfoQuery.select
-    })).map(MapAirlineCompany);
+    let result = allowCachedValue ? (await this.cache.getItem(AllAirlineCompaniesCacheKey) as IAirlineCompany[]) : undefined;
+    if(!result) {
+      result = (await this.dbRepository.airlineCompany.findMany({
+        where: {
+          isDeleted: false
+        },
+        select: AirlineCompanyInfoQuery.select
+      })).map(MapAirlineCompany);
+      await this.cache.setItem(AllAirlineCompaniesCacheKey, result);
+    }
 
-    this.logger.debug(`(AirlineCompanyLogic) get all airline companies, count=${result.length}`);
+    this.logger.debug(`(AirlineCompanyLogic) get all airline companies, count=${result.length}, allowCachedValue=${allowCachedValue}`);
     return result;
   }
 
@@ -71,27 +109,25 @@ export class AirlineCompanyLogic implements IAirlineCompanyLogic {
             id: companyData.logoImageId
           }
         },
-        numReviews: companyData.numReviews,
-        reviewScore: companyData.reviewScore.toFixed(1),
+        numReviews: companyData.reviewSummary.numReviews,
+        reviewScore: companyData.reviewSummary.score.toFixed(1),
         version: DbVersionInitial
       },
       select: {
         id: true
       }
     })).id;
+    await this.clearResultsCache();
 
     this.logger.verbose(`(AirlineCompanyLogic) creating airline company - completed, id=${companyId}`);
     return companyId;
   }
 
-  async getNearestCompany () : Promise<IAirlineCompany> {
-    this.logger.debug('(AirlineCompanyLogic) get nearest company');
+  async getNearestCompany (allowCachedValue: boolean) : Promise<IAirlineCompany> {
+    this.logger.debug(`(AirlineCompanyLogic) get nearest company, allowCachedValue=${allowCachedValue}`);
 
-    const cacheKey = 'UserNearestAirlineCompany';
-    const cached = await this.cache.getItem(cacheKey);
-    if (!cached) {
-      this.logger.verbose('(AirlineCompanyLogic) get nearest company, cache miss');
-
+    let result = allowCachedValue ? (await this.cache.getItem(NearestAirlineCompanyCacheKey) as IAirlineCompany)  : undefined;
+    if (!result) {
       const companiesGeo = await this.dbRepository.airlineCompany.findMany({
         where: {
           isDeleted: false
@@ -121,15 +157,13 @@ export class AirlineCompanyLogic implements IAirlineCompanyLogic {
         },
         ...AirlineCompanyInfoQuery
       });
-      const result = MapAirlineCompany(entity!);
+      result = MapAirlineCompany(entity!);
 
-      await this.cache.setItem(cacheKey, JSON.stringify(result));
-      this.logger.verbose(`(AirlineCompanyLogic) nearest company calculated, id=${result.id}, name=${result.name.en}`);
-      return result;
+      this.logger.verbose(`(AirlineCompanyLogic) nearest company calculated - updating cache, id=${result.id}, name=${result.name.en}`);
+      await this.cache.setItem(NearestAirlineCompanyCacheKey, result);
     }
 
-    const result = destr<IAirlineCompany>(cached);
-    this.logger.debug(`(AirlineCompanyLogic) nearest company, id=${result.id}, name=${result.name.en}`);
+    this.logger.debug(`(AirlineCompanyLogic) nearest company, id=${result.id}, name=${result.name.en}, allowCachedValue=${allowCachedValue}`);
     return result;
   }
 }

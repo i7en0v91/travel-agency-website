@@ -1,8 +1,11 @@
 <script setup lang="ts">
 
 import { type I18nResName } from './../../shared/i18n';
+import { type Locale } from './../../shared/constants';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
-const localePath = useLocalePath();
+const { locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
 
 interface IProps {
   ctrlKey: string,
@@ -26,7 +29,7 @@ const $emit = defineEmits(['click']);
     <NuxtLink
       v-if="to"
       class="nav-link nav-user-menu-chevron brdr-1"
-      :to="localePath(to)"
+      :to="navLinkBuilder.buildLink(to, locale as Locale)"
       @click="$emit('click')"
     >
       {{ $t(textResName) }}

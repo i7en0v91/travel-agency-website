@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import type { WatchStopHandle } from 'vue';
+import type { WatchStopHandle, ComponentInstance } from 'vue';
 import TravelDetailsTextingFrame from './travel-details-texting-frame.vue';
 import { type ITravelDetailsData, type ITravelDetailsTextingData } from './../../../shared/interfaces';
 
@@ -12,8 +12,8 @@ const props = defineProps<IProps>();
 
 const logger = CommonServicesLocator.getLogger();
 const activeFrame = ref<'initial' | 'A' | 'B'>('initial');
-const elFrameA = shallowRef<InstanceType<typeof TravelDetailsTextingFrame>>();
-const elFrameB = shallowRef<InstanceType<typeof TravelDetailsTextingFrame>>();
+const elFrameA = shallowRef<ComponentInstance<typeof TravelDetailsTextingFrame>>();
+const elFrameB = shallowRef<ComponentInstance<typeof TravelDetailsTextingFrame>>();
 const isError = ref(false);
 const initialFrameHidden = ref(false);
 const clientFramesActivated = ref(false);
@@ -129,7 +129,7 @@ onBeforeUnmount(() => {
             :book-kind="bookKind"
             :ctrl-key="`${ctrlKey}-TravelDetailsTexting-FrameA`"
             :texting="dataBuf2"
-            :style="{ visibility: clientFramesActivated ? 'visible' : 'hidden' }"
+            :class="clientFramesActivated ? 'frames-activated' : 'frames-not-activated'"
           />
         </Transition>
         <Transition name="travel-details-fade">
@@ -139,7 +139,7 @@ onBeforeUnmount(() => {
             :book-kind="bookKind"
             :ctrl-key="`${ctrlKey}-TravelDetailsTexting-FrameB`"
             :texting="dataBuf1"
-            :style="{ visibility: (clientFramesActivated && initialFrameHidden) ? 'visible' : 'hidden' }"
+            :class="(clientFramesActivated && initialFrameHidden) ? 'frames-activated' : 'frames-not-activated'"
           />
         </Transition>
       </div>

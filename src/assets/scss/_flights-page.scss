@@ -55,6 +55,10 @@ $world-city-font-size: 16px;
 }
 
 .world-map {
+  @include with-theme-color('world-map-bg') using ($css-var) {
+    background-color: var(#{$css-var});
+  }
+  
   width: 100%;
 
   max-height: 75vw;
@@ -63,27 +67,24 @@ $world-city-font-size: 16px;
     aspect-ratio: #{$world-map-width '/' $world-map-height};
   }
 
-  @include with-theme-color('world-map-bg') using ($css-var) {
-    background-color: var(#{$css-var});
-  }
-
   .world-map-container {
     width: 100%;
     height: -webkit-fit-content; 
     overflow: auto;
 
     .world-map-content {
+      aspect-ratio: #{$world-map-width '/' $world-map-height};
+
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr;
+
       width: $world-map-canvas-min-width;
       max-width: $world-map-canvas-min-width;
       @include for-medium-and-large() {
         width: 100%;
         max-width: unset;
       }
-      aspect-ratio: #{$world-map-width '/' $world-map-height};
-
-      display: grid;
-      grid-template-columns: 1fr;
-      grid-template-rows: 1fr;
 
       #worldMapCanvas {
         width: 100%;
@@ -116,15 +117,6 @@ $world-city-font-size: 16px;
         width: fit-content;
         max-width: 190px;
 
-        font-size: markup-to-rem($world-city-font-xs-size);
-        @include for-small-and-above() {
-          font-size: markup-to-rem($world-city-font-s-size);
-        }
-        @include for-medium-and-large() {
-          font-size: markup-to-rem($world-city-font-size);
-          max-width: 240px;
-        }
-    
         height: min-content;
         @include with-theme-color('shadow') using($css-var) {
           box-shadow: 0px 4px 16px var($css-var);
@@ -132,6 +124,15 @@ $world-city-font-size: 16px;
 
         @include with-theme-color('body-bg') using($css-var) {
           background-color: var($css-var);
+        }
+
+        font-size: markup-to-rem($world-city-font-xs-size);
+        @include for-small-and-above() {
+          font-size: markup-to-rem($world-city-font-s-size);
+        }
+        @include for-medium-and-large() {
+          font-size: markup-to-rem($world-city-font-size);
+          max-width: 240px;
         }
 
         &.visible {

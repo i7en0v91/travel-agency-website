@@ -183,6 +183,30 @@ CREATE TABLE `Flight` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `AcsysDraftsFlight` (
+    `id` VARCHAR(191) NOT NULL,
+    `airlineCompanyId` VARCHAR(191) NOT NULL,
+    `airplaneId` VARCHAR(191) NOT NULL,
+    `departmentAirportId` VARCHAR(191) NOT NULL,
+    `arrivalAirportId` VARCHAR(191) NOT NULL,
+    `departmentUtcPosix` INTEGER NOT NULL,
+    `arrivalUtcPosix` INTEGER NOT NULL,
+    `dataHash` VARCHAR(256) NOT NULL,
+    `createdUtc` DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    `modifiedUtc` DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    `isDeleted` BOOLEAN NOT NULL DEFAULT false,
+    `version` INTEGER NOT NULL,
+
+    INDEX `AcsysDraftsFlight_airlineCompanyId_idx`(`airlineCompanyId`),
+    INDEX `AcsysDraftsFlight_airplaneId_idx`(`airplaneId`),
+    INDEX `AcsysDraftsFlight_departmentAirportId_idx`(`departmentAirportId`),
+    INDEX `AcsysDraftsFlight_arrivalAirportId_idx`(`arrivalAirportId`),
+    INDEX `AcsysDraftsFlight_dataHash_idx`(`dataHash`),
+    INDEX `AcsysDraftsFlight_modifiedUtc_idx`(`modifiedUtc`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `FlightOffer` (
     `id` VARCHAR(191) NOT NULL,
     `departFlightId` VARCHAR(191) NOT NULL,
@@ -204,6 +228,27 @@ CREATE TABLE `FlightOffer` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `AcsysDraftsFlightOffer` (
+    `id` VARCHAR(191) NOT NULL,
+    `departFlightId` VARCHAR(191) NOT NULL,
+    `returnFlightId` VARCHAR(191) NULL,
+    `numPassengers` INTEGER NOT NULL,
+    `totalPrice` INTEGER NOT NULL,
+    `class` VARCHAR(191) NOT NULL,
+    `dataHash` VARCHAR(256) NOT NULL,
+    `createdUtc` DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    `modifiedUtc` DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    `isDeleted` BOOLEAN NOT NULL DEFAULT false,
+    `version` INTEGER NOT NULL,
+
+    INDEX `AcsysDraftsFlightOffer_dataHash_idx`(`dataHash`),
+    INDEX `AcsysDraftsFlightOffer_departFlightId_idx`(`departFlightId`),
+    INDEX `AcsysDraftsFlightOffer_returnFlightId_idx`(`returnFlightId`),
+    INDEX `AcsysDraftsFlightOffer_modifiedUtc_idx`(`modifiedUtc`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `StayOffer` (
     `id` VARCHAR(191) NOT NULL,
     `hotelId` VARCHAR(191) NOT NULL,
@@ -221,6 +266,27 @@ CREATE TABLE `StayOffer` (
     INDEX `StayOffer_hotelId_idx`(`hotelId`),
     INDEX `StayOffer_dataHash_idx`(`dataHash`),
     INDEX `StayOffer_modifiedUtc_idx`(`modifiedUtc`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `AcsysDraftsStayOffer` (
+    `id` VARCHAR(191) NOT NULL,
+    `hotelId` VARCHAR(191) NOT NULL,
+    `checkInPosix` INTEGER NOT NULL,
+    `checkOutPosix` INTEGER NOT NULL,
+    `numRooms` INTEGER NOT NULL,
+    `numGuests` INTEGER NOT NULL,
+    `totalPrice` INTEGER NOT NULL,
+    `dataHash` VARCHAR(256) NOT NULL,
+    `createdUtc` DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    `modifiedUtc` DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
+    `isDeleted` BOOLEAN NOT NULL DEFAULT false,
+    `version` INTEGER NOT NULL,
+
+    INDEX `AcsysDraftsStayOffer_hotelId_idx`(`hotelId`),
+    INDEX `AcsysDraftsStayOffer_dataHash_idx`(`dataHash`),
+    INDEX `AcsysDraftsStayOffer_modifiedUtc_idx`(`modifiedUtc`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -765,7 +831,7 @@ CREATE TABLE `MailTemplate` (
 CREATE TABLE `AcsysDraftsMailTemplate` (
     `id` VARCHAR(191) NOT NULL,
     `kind` VARCHAR(191) NOT NULL,
-    `templateStrId` INTEGER NOT NULL,
+    `templateStrId` VARCHAR(191) NOT NULL,
     `createdUtc` DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
     `modifiedUtc` DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
     `isDeleted` BOOLEAN NOT NULL DEFAULT false,

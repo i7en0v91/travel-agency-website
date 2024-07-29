@@ -44,6 +44,8 @@ function scheduleTooltipAutoHide () {
   setTimeout(() => { tooltip.value?.hide(); }, TooltipHideTimeout);
 }
 
+const tooltipId = useId();
+
 </script>
 
 <template>
@@ -63,6 +65,7 @@ function scheduleTooltipAutoHide () {
     </ul>
     <VTooltip
       ref="tooltip"
+      :aria-id="tooltipId"
       :distance="6"
       :triggers="['click']"
       placement="bottom-start"

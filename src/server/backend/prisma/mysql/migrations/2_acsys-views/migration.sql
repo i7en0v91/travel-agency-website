@@ -21,13 +21,15 @@ CREATE TABLE `acsys_V_ImageCategory_Cms` ( `dummy` INT NOT NULL ) DEFAULT CHARAC
 CREATE OR REPLACE VIEW V_AuthFormImage_Cms AS SELECT `id`, `version`, `isDeleted`, `imageId`, `orderNum` FROM AuthFormImage;
 CREATE OR REPLACE VIEW acsys_V_AuthFormImage_Cms AS SELECT `id`, `version`, `isDeleted`, `imageId`, `orderNum` FROM AcsysDraftsAuthFormImage;
 CREATE OR REPLACE VIEW V_Flight_Cms AS SELECT `id`, `version`, `isDeleted`, `airlineCompanyId`, `airplaneId`, `departmentAirportId`, `arrivalAirportId`, `departmentUtcPosix`, `arrivalUtcPosix` FROM Flight;
-CREATE TABLE `acsys_V_Flight_Cms` ( `dummy` INT NOT NULL ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE OR REPLACE VIEW acsys_V_Flight_Cms AS SELECT `id`, `version`, `isDeleted`, `airlineCompanyId`, `airplaneId`, `departmentAirportId`, `arrivalAirportId`, `departmentUtcPosix`, `arrivalUtcPosix` FROM AcsysDraftsFlight;
 CREATE OR REPLACE VIEW V_FlightOffer_Cms AS SELECT `id`, `version`, `isDeleted`, `departFlightId`, `returnFlightId`, `totalPrice`, `numPassengers`, `class` FROM FlightOffer;
 CREATE TRIGGER IF NOT EXISTS FlightOffer_TU_SetreturnFlightIdNullWhenEmpty BEFORE UPDATE ON FlightOffer FOR EACH ROW SET NEW.`returnFlightId` = NULLIF(NEW.`returnFlightId`, '');
 CREATE TRIGGER IF NOT EXISTS FlightOffer_TI_SetreturnFlightIdNullWhenEmpty BEFORE INSERT ON FlightOffer FOR EACH ROW SET NEW.`returnFlightId` = NULLIF(NEW.`returnFlightId`, '');
-CREATE TABLE `acsys_V_FlightOffer_Cms` ( `dummy` INT NOT NULL ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE OR REPLACE VIEW acsys_V_FlightOffer_Cms AS SELECT `id`, `version`, `isDeleted`, `departFlightId`, `returnFlightId`, `totalPrice`, `numPassengers`, `class` FROM AcsysDraftsFlightOffer;
+CREATE TRIGGER IF NOT EXISTS AcsysDraftsFlightOffer_TU_SetreturnFlightIdNullWhenEmpty BEFORE UPDATE ON AcsysDraftsFlightOffer FOR EACH ROW SET NEW.`returnFlightId` = NULLIF(NEW.`returnFlightId`, '');
+CREATE TRIGGER IF NOT EXISTS AcsysDraftsFlightOffer_TI_SetreturnFlightIdNullWhenEmpty BEFORE INSERT ON AcsysDraftsFlightOffer FOR EACH ROW SET NEW.`returnFlightId` = NULLIF(NEW.`returnFlightId`, '');
 CREATE OR REPLACE VIEW V_StayOffer_Cms AS SELECT `id`, `version`, `isDeleted`, `hotelId`, `totalPrice`, `checkInPosix`, `checkOutPosix`, `numRooms`, `numGuests` FROM StayOffer;
-CREATE TABLE `acsys_V_StayOffer_Cms` ( `dummy` INT NOT NULL ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE OR REPLACE VIEW acsys_V_StayOffer_Cms AS SELECT `id`, `version`, `isDeleted`, `hotelId`, `totalPrice`, `checkInPosix`, `checkOutPosix`, `numRooms`, `numGuests` FROM AcsysDraftsStayOffer;
 CREATE OR REPLACE VIEW V_UserFlightOffer_Cms AS SELECT `id`, `version`, `isDeleted`, `offerId`, `userId`, `isFavourite` FROM UserFlightOffer;
 CREATE TABLE `acsys_V_UserFlightOffer_Cms` ( `dummy` INT NOT NULL ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE OR REPLACE VIEW V_Hotel_Cms AS SELECT `id`, `version`, `isDeleted`, `cityId`, `nameStrId`, `slug`, `lon`, `lat` FROM Hotel;

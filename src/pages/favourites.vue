@@ -8,7 +8,7 @@ import StaysListItemCard from './../components/common-page-components/offers-lis
 import { FavouritesOptionButtonStays, FavouritesOptionButtonGroup, FavouritesOptionButtonFlights } from './../shared/constants';
 import { defaultErrorHandler, AppException, AppExceptionCodeEnum } from './../shared/exceptions';
 import { useUserFavouritesStore } from './../stores/user-favourites-store';
-import ComponentWaiterIndicator from './../components/component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../components/component-waiting-indicator.vue';
 
 definePageMeta({
   middleware: 'auth',
@@ -104,7 +104,7 @@ onMounted(() => {
       </ErrorHelm>
     </section>
     <template #fallback>
-      <ComponentWaiterIndicator ctrl-key="FavouritesPageClientFallback" class="my-xs-5"/>
+      <ComponentWaitingIndicator ctrl-key="FavouritesPageClientFallback" class="my-xs-5"/>
     </template>
   </ClientOnly>
 </template>

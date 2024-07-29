@@ -72,20 +72,20 @@ $account-page-default-font-size: markup-to-rem(14px);
 
 .btn-oauth {
   height: auto;
-
   width: 100px;
-  @include for-small-and-above() {
-    width: 120px;
-  }
-  @include for-medium-and-large() {
-    width: 160px;
-  }
 
   @include with-theme-color('body-bg') using($css-var) {
     background-color: var($css-var);
   }
   @include with-theme-color('control-bg') using($css-var) {
     border: 1px solid var($css-var);
+  }
+
+  @include for-small-and-above() {
+    width: 120px;
+  }
+  @include for-medium-and-large() {
+    width: 160px;
   }
 
   &:hover {
@@ -162,16 +162,16 @@ $account-page-default-font-size: markup-to-rem(14px);
   }
 
   .oauth-providers-list {
-    margin-top: 28px;
-    @include for-medium-and-large() {
-      margin-top: 40px;
-    }
-    
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     gap: map.get($spacings, '3');
     justify-content: center;
+
+    margin-top: 28px;
+    @include for-medium-and-large() {
+      margin-top: 40px;
+    }
   }
 }
 
@@ -179,8 +179,11 @@ $account-page-default-font-size: markup-to-rem(14px);
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-
   gap: 60px; 
+
+  @include with-theme-color('primary') using($css-var) {
+    color: var($css-var);
+  }
 
   padding-left: var(--#{$prefix}-page-padding-x);
   padding-right: var(--#{$prefix}-page-padding-x);
@@ -193,10 +196,6 @@ $account-page-default-font-size: markup-to-rem(14px);
 
   @include for-extra-large-only() {
     gap: 104px;
-  }
-
-  @include with-theme-color('primary') using($css-var) {
-    color: var($css-var);
   }
 }
 
@@ -214,12 +213,13 @@ $account-page-default-font-size: markup-to-rem(14px);
     }
 
     .login-title {
+      @include with-theme-color('input-ctrl-primary') using ($css-var) {
+        color: var(#{$css-var});
+      }
+
       margin-top: 36px;
       @include for-medium-and-large() {
         margin-top: 64px;
-      }
-      @include with-theme-color('input-ctrl-primary') using ($css-var) {
-        color: var(#{$css-var});
       }
     }
   
@@ -659,12 +659,13 @@ $account-page-default-font-size: markup-to-rem(14px);
     }
 
     .set-password-title {
+      @include with-theme-color('input-ctrl-primary') using ($css-var) {
+        color: var(#{$css-var});
+      }
+      
       margin-top: 36px;
       @include for-medium-and-large() {
         margin-top: 64px;
-      }
-      @include with-theme-color('input-ctrl-primary') using ($css-var) {
-        color: var(#{$css-var});
       }
     }
   

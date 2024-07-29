@@ -7,30 +7,36 @@ import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
 import { AuthProvider } from './../shared/interfaces';
 import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
-import { ApiEndpointPasswordRecovery, RecoverPasswordResultEnum } from './../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../shared/page-query-params';
+import { type Locale, ApiEndpointPasswordRecovery, RecoverPasswordResultEnum } from './../shared/constants';
+import { AppPage, getPagePath } from './../shared/page-query-params';
 import SimpleButton from './../components/forms/simple-button.vue';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
 import CaptchaProtection from './../components/forms/captcha-protection.vue';
 import { type IRecoverPasswordDto, type IRecoverPasswordResultDto } from './../server/dto';
 import { post } from './../shared/rest-utils';
+import { type ComponentInstance } from 'vue';
+import { formatAuthCallbackUrl } from './../client/helpers';
+import { useNavLinkBuilder } from './../composables/nav-link-builder';
+import { usePreviewState } from './../composables/preview-state';
 
 const { t, locale } = useI18n();
-const localePath = useLocalePath();
-const captcha = shallowRef<InstanceType<typeof CaptchaProtection>>();
+const navLinkBuilder = useNavLinkBuilder();
+const captcha = shallowRef<ComponentInstance<typeof CaptchaProtection>>();
 
 definePageMeta({
   middleware: 'auth',
   auth: {
     unauthenticatedOnly: true,
-    navigateAuthenticatedTo: '/'
+    navigateAuthenticatedTo: `/${getPagePath(AppPage.Index)}`
   },
   title: { resName: getI18nResName2('forgotPasswordPage', 'title'), resArgs: undefined }
 });
 useOgImage();
 
 const { signIn } = useAuth();
+const localePath = useLocalePath();
+const { enabled } = usePreviewState();
 const themeSettings = useThemeSettings();
 
 const useremail = ref('');
@@ -55,11 +61,11 @@ async function callServerPasswordRecovery (email: string, captchaToken?: string)
     theme: themeSettings.currentTheme.value
   };
 
-  const resultDto = await post(ApiEndpointPasswordRecovery, undefined, postBody, undefined, true, 'default') as IRecoverPasswordResultDto;
+  const resultDto = await post(`/${ApiEndpointPasswordRecovery}`, undefined, postBody, undefined, true, undefined, 'default') as IRecoverPasswordResultDto;
   if (resultDto) {
     switch (resultDto.code) {
       case RecoverPasswordResultEnum.SUCCESS:
-        await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.ForgotPasswordVerify)}`));
+        await navigateTo(navLinkBuilder.buildPageLink(AppPage.ForgotPasswordVerify, locale.value as Locale));
         break;
       case RecoverPasswordResultEnum.USER_NOT_FOUND:
         useremailServerError.value = getI18nResName2('forgotPasswordPage', 'userNotFound');
@@ -86,17 +92,18 @@ function submitClick () {
   }
 }
 
-function onOAuthProviderClick (provider: AuthProvider) {
-  const oauthOptions = { callbackUrl: localePath(`/${getHtmlPagePath(HtmlPage.Index)}`), external: true, redirect: true };
+async function onOAuthProviderClick (provider: AuthProvider): Promise<void> { 
+  const callbackUrl = formatAuthCallbackUrl(localePath(`/${getPagePath(AppPage.Index)}`), enabled);
+  const oauthOptions = { callbackUrl, redirect: true };
   switch (provider) {
     case AuthProvider.Google:
-      signIn('google', oauthOptions);
+      await signIn('google', oauthOptions);
       break;
     case AuthProvider.GitHub:
-      signIn('github', oauthOptions);
+      await signIn('github', oauthOptions);
       break;
     default:
-      signIn('testlocal', oauthOptions);
+      await signIn('testlocal', oauthOptions);
       break;
   }
 }
@@ -107,7 +114,7 @@ function onOAuthProviderClick (provider: AuthProvider) {
   <div class="forgot-password-page account-page no-hidden-parent-tabulation-check">
     <div class="forgot-password-page-content">
       <NavLogo ctrl-key="forgotPasswordPageAppLogo" mode="inApp" />
-      <NuxtLink class="back-to-login-link brdr-1" :to="localePath(`/${getHtmlPagePath(HtmlPage.Login)}`)">
+      <NuxtLink class="back-to-login-link brdr-1" :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
         {{ t(getI18nResName2('accountPageCommon', 'backToLogin')) }}
       </NuxtLink>
       <h1 class="forgot-password-title mt-xs-3 font-h2">

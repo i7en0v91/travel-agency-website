@@ -1,14 +1,14 @@
 import { CheckInOutDateUrlFormat } from '../shared/constants'; 
-import { HtmlPage, getHtmlPagePath } from '../shared/page-query-params';
+import { AppPage, getPagePath } from '../shared/page-query-params';
 import dayjs from 'dayjs';
 import AppConfig from '../appconfig';
 
 /**
- * Ensures that checkIn & checkOut date parameters are present in {@link HtmlPage.FindStays} url query.
+ * Ensures that checkIn & checkOut date parameters are present in {@link AppPage.FindStays} url query.
  * Redirects to appropriate URL with default date range filled if parameters missed
  */
 export default defineNuxtRouteMiddleware(async (to) => {
-  if(!to.path.includes(getHtmlPagePath(HtmlPage.FindStays))) {
+  if(!to.path.includes(getPagePath(AppPage.FindStays))) {
     return;
   }
 

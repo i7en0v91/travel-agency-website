@@ -5,8 +5,8 @@ import orderBy from 'lodash-es/orderBy';
 import omit from 'lodash-es/omit';
 import { Decimal } from 'decimal.js';
 import { AuthProvider, type IUserProfileFileInfoUnresolved, type IImageFileInfoUnresolved, type EntityDataAttrsOnly, type IStayImageShort, type AirplaneImageKind, type IStayDescription, type IStay, type IStayOffer, type IFlightOffer, type IAirport, type IAirplane, type IUserMinimalInfo, type IUserEmailInfo, type IFileInfo, type IAirlineCompany, type ICity, type IFlight, type FlightClass, type EntityId, type IStayShort, type IStayReview, type IStayOfferDetails, type StayServiceLevel, type StayDescriptionParagraphType, type IOfferBooking } from './../app-facade/interfaces';
-import { ImageCategory, DefaultStayReviewScore, parseEnumOrThrow } from './../app-facade/implementation';
-import { mapDbDate, mapDbGeoCoord } from './db';
+import { ImageCategory, DefaultStayReviewScore, lookupValueOrThrow } from './../app-facade/implementation';
+import { mapDbDate, mapDbGeoCoord } from '../helpers/db';
 
 export const FileInfoQuery = {
   select: {
@@ -370,7 +370,7 @@ export const MapUserEmail = function (userEmail: TUserEmailInfo): IUserEmailInfo
 export const MapUserEntityMinimal = function<T extends TUserMinimal> (user: T): IUserMinimalInfo {
   return {
     id: user.id,
-    authProvider: parseEnumOrThrow(AuthProvider, user.authProvider),
+    authProvider: lookupValueOrThrow(AuthProvider, user.authProvider),
     providerIdentity: user.providerIdentity,
     isDeleted: false,
     passwordHash: user.passwordHash ?? undefined,
@@ -409,7 +409,7 @@ export const mapCssJson = (cssJson: string): CSSProperties => {
 export const MapImageInfo = function (imageInfo: TImageInfo): IImageFileInfoUnresolved {
   return {
     id: imageInfo.id,
-    category: parseEnumOrThrow(ImageCategory, imageInfo.category.kind),
+    category: lookupValueOrThrow(ImageCategory, imageInfo.category.kind),
     fileId: imageInfo.fileId,
     slug: imageInfo.slug,
     stubCssStyle: imageInfo.stubCssStyle ? mapCssJson(imageInfo.stubCssStyle.toString()) : undefined,
@@ -434,8 +434,10 @@ export const MapAirlineCompany = function (airlineCompany: TAirlineCompanyInfo):
     },
     modifiedUtc: airlineCompany.modifiedUtc,
     name: airlineCompany.nameStr,
-    numReviews: airlineCompany.numReviews,
-    reviewScore: parseInt(airlineCompany.reviewScore)
+    reviewSummary: {
+      numReviews: airlineCompany.numReviews,
+      score: parseInt(airlineCompany.reviewScore)
+    }
   };
   return result;
 };
@@ -549,8 +551,6 @@ export const MapStayShort = function (stay: TStayInfo): IStayShort {
       lon: mapDbGeoCoord(stay.lon),
       lat: mapDbGeoCoord(stay.lat)
     },
-    numReviews: stay.reviews.length,
-    reviewScore: stay.reviews.length > 0 ? stay.reviews.map(r => r.score).reduce((sum, v) => sum + v, 0) / stay.reviews.length : DefaultStayReviewScore,
     photo: {
       slug: photoImg.image.slug,
       timestamp: photoImg.image.modifiedUtc.getTime()
@@ -668,7 +668,13 @@ export const MapStayOfferCommon = function (stayOffer: TStayOfferInfo): Omit<ISt
 export const MapStayOffer = function (stayOffer: TStayOfferInfo): IStayOffer {
   return {
     ...(MapStayOfferCommon(stayOffer)),
-    stay: MapStayShort(stayOffer.hotel)
+    stay: { 
+      ...MapStayShort(stayOffer.hotel), 
+      reviewSummary: {
+        numReviews: stayOffer.hotel.reviews.length,
+        score: stayOffer.hotel.reviews.length > 0 ? stayOffer.hotel.reviews.map(r => r.score).reduce((sum, v) => sum + v, 0) / stayOffer.hotel.reviews.length : DefaultStayReviewScore,  
+      }
+    }
   };
 };
 
@@ -678,8 +684,10 @@ export const MapStayOfferDetails = function (stayOffer: TStayOfferInfo): Omit<IS
     ...(MapStayOfferCommon(stayOffer)),
     stay: {
       ...omit(stayDetails, ['reviews']),
-      reviewScore: stayDetails.reviews.length > 0 ? stayDetails.reviews.map(r => r.score).reduce((sum, v) => sum + v, 0) / stayDetails.reviews.length : DefaultStayReviewScore,
-      numReviews: stayDetails.reviews.length,
+      reviewSummary: {
+        numReviews: stayDetails.reviews.length,  
+        score: stayDetails.reviews.length > 0 ? stayDetails.reviews.map(r => r.score).reduce((sum, v) => sum + v, 0) / stayDetails.reviews.length : DefaultStayReviewScore
+      },
       photo: stayDetails.images.filter(i => i.order === 0).map((i) => {
         return {
           slug: i.slug,

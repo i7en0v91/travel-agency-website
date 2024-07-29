@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import ComponentWaiterIndicator from './../../component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
 import { getI18nResName2 } from './../../../shared/i18n';
 import { type OfferKind } from './../../../shared/interfaces';
 
@@ -59,7 +59,7 @@ onMounted(() => {
   <div
     class="list-paging"
   >
-    <ComponentWaiterIndicator v-if="viewState === 'waiting-stub'" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="list-paging-waiter" />
+    <ComponentWaitingIndicator v-if="viewState === 'waiting-stub'" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="list-paging-waiter" />
     <SimpleButton
       v-if="viewState === 'visible'"
       kind="accent"

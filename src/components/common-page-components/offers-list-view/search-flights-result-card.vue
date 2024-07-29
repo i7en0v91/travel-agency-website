@@ -5,9 +5,11 @@ import { type EntityDataAttrsOnly, type IFlightOffer, type OfferKind, ImageCateg
 import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
 import { getLocalizeableValue, getScoreClassResName, extractAirportCode, getValueForFlightDurationFormatting, getValueForTimeOfDayFormatting } from './../../../shared/common';
 import { type Locale } from './../../../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../../../shared/page-query-params';
+import { AppPage, getPagePath } from './../../../shared/page-query-params';
 import { useUserFavouritesStore } from './../../../stores/user-favourites-store';
 import { useOfferFavouriteStatus } from './../../../composables/offer-favourite-status';
+import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
+import { usePreviewState } from './../../../composables/preview-state';
 
 interface IProps {
   ctrlKey: string,
@@ -18,7 +20,8 @@ const props = withDefaults(defineProps<IProps>(), {
 
 const { status } = useAuth();
 const { locale, t } = useI18n();
-const localePath = useLocalePath();
+const navLinkBuilder = useNavLinkBuilder();
+const { requestUserAction } = usePreviewState();
 
 const logger = CommonServicesLocator.getLogger();
 const userFavouritesStore = useUserFavouritesStore();
@@ -27,8 +30,8 @@ const isError = ref(false);
 
 const airlineCompany = props.offer.departFlight.airlineCompany;
 const airlineCompanyLogoTooltip = computed(() => getLocalizeableValue(airlineCompany.name, locale.value as Locale));
-const scoreClassResName = getScoreClassResName(airlineCompany.reviewScore);
-const reviewsCountText = `${airlineCompany.numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), airlineCompany.numReviews)}`;
+const scoreClassResName = getScoreClassResName(airlineCompany.reviewSummary.score);
+const reviewsCountText = `${airlineCompany.reviewSummary.numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), airlineCompany.reviewSummary.numReviews)}`;
 
 const offerFlights = props.offer.arriveFlight ? [props.offer.departFlight, props.offer.arriveFlight] : [props.offer.departFlight];
 const favouriteStatusWatcher = useOfferFavouriteStatus(props.offer.id, props.offer.kind);
@@ -36,6 +39,10 @@ const favouriteStatusWatcher = useOfferFavouriteStatus(props.offer.id, props.off
 async function toggleFavourite (): Promise<void> {
   const offerId = props.offer.id;
   logger.verbose(`(SearchFlightsResultCard) toggling favourite, offerId=${offerId}, current=${favouriteStatusWatcher.isFavourite}`);
+  if(!await requestUserAction()) {
+    logger.verbose(`(SearchFlightsResultCard) favourite hasn't been toggled - not allowed in preview mode, offerId=${offerId}`);
+    return;  
+  }
   const store = await userFavouritesStore.getInstance();
   const result = await store.toggleFavourite(offerId, 'flights' as OfferKind, props.offer);
   logger.verbose(`(SearchFlightsResultCard) favourite toggled, offerId=${offerId}, isFavourite=${result}`);
@@ -69,7 +76,7 @@ async function favouriteBtnClick (): Promise<void> {
         <div class="search-flights-card-summary">
           <div class="search-flights-card-stats mb-xs-3 mb-s-0">
             <div class="search-flights-card-score p-xs-2 brdr-1">
-              {{ offer.departFlight.airlineCompany.reviewScore.toFixed(1) }}
+              {{ offer.departFlight.airlineCompany.reviewSummary.score.toFixed(1) }}
             </div>
             <div class="search-flights-card-score-class">
               {{ $t(scoreClassResName) }}
@@ -135,7 +142,7 @@ async function favouriteBtnClick (): Promise<void> {
               kind="support"
               @click="favouriteBtnClick"
             />
-            <NuxtLink class="btn btn-primary brdr-1 search-flights-card-btn-details" :to="localePath(`/${getHtmlPagePath(HtmlPage.FlightDetails)}/${offer.id}`)">
+            <NuxtLink class="btn btn-primary brdr-1 search-flights-card-btn-details" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.FlightDetails)}/${offer.id}`, locale as Locale)">
               {{ $t(getI18nResName2('searchFlights', 'viewDetails')) }}
             </NuxtLink>
           </div>

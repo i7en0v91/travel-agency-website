@@ -2,7 +2,9 @@
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { type ITravelDetailsTextingData } from './../../../shared/interfaces';
 import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
-import { HtmlPage, getHtmlPagePath } from './../../../shared/page-query-params';
+import { AppPage } from './../../../shared/page-query-params';
+import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
+import { type Locale } from './../../../shared/constants';
 
 interface IProps {
   ctrlKey: string,
@@ -17,7 +19,7 @@ const props = withDefaults(defineProps<IProps>(), {
 });
 
 const { locale } = useI18n();
-const localePath = useLocalePath();
+const navLinkBuilder = useNavLinkBuilder();
 
 const fadeIn = ref<boolean | undefined>(undefined);
 const cssClass = computed(() => {
@@ -30,9 +32,13 @@ const cssClass = computed(() => {
 const bookLinkUrl = computed(() => {
   const citySlug = props.texting?.slug;
   if (!citySlug) {
-    return localePath(props.bookKind === 'flight' ? `/${getHtmlPagePath(HtmlPage.Flights)}` : `/${getHtmlPagePath(HtmlPage.Stays)}`);
+    return navLinkBuilder.buildPageLink(props.bookKind === 'flight' ? AppPage.Flights : AppPage.Stays, locale.value as Locale);
   }
-  return localePath(props.bookKind === 'flight' ? `/${getHtmlPagePath(HtmlPage.FindFlights)}?fromCitySlug=${citySlug}` : `/${getHtmlPagePath(HtmlPage.FindStays)}?citySlug=${citySlug}`);
+  return navLinkBuilder.buildPageLink(
+    props.bookKind === 'flight' ? AppPage.FindFlights : AppPage.FindStays,
+    locale.value as Locale,
+    props.bookKind === 'flight' ? { fromCitySlug: citySlug } : { citySlug }
+  );
 });
 
 </script>

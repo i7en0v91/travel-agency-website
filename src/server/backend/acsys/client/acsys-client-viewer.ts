@@ -15,32 +15,25 @@ export class AcsysClientViewer extends AcsysClientBase implements IAcsysClientVi
     super(baseUrl, userOptions, roleKind ?? UserRoleEnum.Viewer, logger);
   }
 
-  getFileInfo = async (fileId: EntityId): Promise<{ mimeType: string; lastModifiedUtc: Date; }> => {
-    this.logger.verbose(`(AcsysClientViewer) obtaining file info, fileId=${fileId}`); 
+  getFileInfos = async (fileIds: EntityId[]): Promise<{ id: EntityId, mimeType: string; lastModifiedUtc: Date; }[]> => {
+    this.logger.verbose(`(AcsysClientViewer) obtaining file info, fileIds=[${fileIds.join('; ')}]`); 
 
     const queryParams = {
       table: AcsysTableStorageItems,
-      options: `{"where":[["${AcsysTableIdColumn}","=","${fileId}"]]}`
+      options: `{"where":[["${AcsysTableIdColumn}","IN (${fileIds.map(id => `'${id}'`).join(',')})",[]]]}`
     };
 
     const fetchResult = await this.fetch<ApiResponseTypes.json, StorageItemResponseDto[]>(RouteReadData, queryParams, undefined, 'GET', UserRoleEnum.Viewer, true, ApiResponseTypes.json, undefined);
-    if(fetchResult.length === 0) {
-      this.logger.warn(`(AcsysClientViewer) file info not found, fileId=${fileId}`);
-      throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'Acsys file info not found', 'error-stub');
-    }
     const uniqueItems = uniqBy(fetchResult, (i) => i.acsys_id);
-    if(uniqueItems.length > 1) {
-      this.logger.warn(`(AcsysClientViewer) too much files found, fileId=${fileId}, all ids=[${(uniqueItems.map(f => f.acsys_id)).join('; ')}]`);
-      throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'Too much files found', 'error-stub');
-    }
+    const result = uniqueItems.map(fetchedItem => {
+        return {
+          id: fetchedItem.acsys_id,
+          lastModifiedUtc: dayjs(fetchedItem.updated).toDate(),
+          mimeType: fetchedItem.content_type
+        };
+    });
 
-    const fetchedInfo = fetchResult[0];
-    const result: { mimeType: string; lastModifiedUtc: Date; } = {
-      lastModifiedUtc: dayjs(fetchedInfo.updated).toDate(),
-      mimeType: fetchedInfo.content_type
-    };
-
-    this.logger.verbose(`(AcsysClientViewer) file info obtained, fileId=${fileId}, mime=${result.mimeType}, lastModifiedDay=${result.lastModifiedUtc.toISOString()}`); 
+    this.logger.verbose(`(AcsysClientViewer) file infos obtained, fileIds=[${fileIds.join('; ')}], result=[${JSON.stringify(result)}]`); 
     return result;
   };
 

@@ -1,16 +1,19 @@
 <script setup lang="ts">
 
-import { type CSSProperties } from 'vue';
+import { type CSSProperties, type ComponentInstance } from 'vue';
 import fromPairs from 'lodash-es/fromPairs';
 import isString from 'lodash-es/isString';
 import { type ImageCategory, ImageAuthRequiredCategories, type IImageEntitySrc } from './../../shared/interfaces';
 import { type I18nResName } from './../../shared/i18n';
 import { type IAppLogger } from './../../shared/applogger';
-import { ApiEndpointImageDetails, ApiEndpointImage , HeaderAppVersion } from './../../shared/constants';
-import { type IImageDetailsDto } from './../../server/dto';
+import { addPayload, getPayload } from './../../shared/payload';
+import { DataKeyImageDetails, PreviewModeParamEnabledValue, QueryPagePreviewModeParam, ApiEndpointImageDetails, ApiEndpointImage } from './../../shared/constants';
 import ErrorHelm from './../error-helm.vue';
 import type { NuxtImg } from '#build/components';
-import AppConfig from './../../appconfig';
+import { getObject } from './../../shared/rest-utils';
+import { stringifyParsedURL, stringifyQuery } from 'ufo';
+import set from 'lodash-es/set';
+import { usePreviewState } from './../../composables/preview-state';
 
 interface IPublicAssetSrc {
   filename: string,
@@ -56,6 +59,8 @@ const props = withDefaults(defineProps<IProps>(), {
 });
 
 const { status, signIn, getSession } = useAuth();
+const { enabled } = usePreviewState();
+const nuxtApp = useNuxtApp();
 const systemConfigurationStore = useSystemConfigurationStore();
 
 const isError = ref(false);
@@ -64,12 +69,22 @@ const loaded = ref(false);
 // making it non-reactive assuming source image sizes won't change during properties update
 const imageSize = props.assetSrc ? { width: props.assetSrc.width, height: props.assetSrc.height } : (await systemConfigurationStore.getImageSrcSize(props.category!));
 const imgUrl = computed(() => {
-  if (props.assetSrc) {
-    return `/img/${props.assetSrc.filename}`;
+  if(props.assetSrc) {
+    return stringifyParsedURL({
+      pathname: `/img/${props.assetSrc.filename}`,
+    });
   }
-  if (props.entitySrc) {
-    if (!props.requestExtraDisplayOptions || detailsFetch.data.value) {
-      return `${ApiEndpointImage}?slug=${props.entitySrc!.slug}&category=${props.category}${props.entitySrc!.timestamp ? `&t=${props.entitySrc!.timestamp}` : ''}`;
+  if(props.entitySrc) {
+    if (!props.requestExtraDisplayOptions || imageDetails.value) {
+      return stringifyParsedURL({
+        pathname: `/${ApiEndpointImage}`,
+        search: stringifyQuery({
+          ...(props.entitySrc!.timestamp ? { t: props.entitySrc!.timestamp } : {}),
+          ...(enabled ? set({}, QueryPagePreviewModeParam, PreviewModeParamEnabledValue) : {}),
+          slug: props.entitySrc!.slug,
+          category: props.category!.valueOf()
+        })
+      });
     }
   }
   return undefined;
@@ -78,55 +93,30 @@ const imgUrl = computed(() => {
 // custom stub css styling
 const logger = CommonServicesLocator.getLogger();
 
-const imgComponent = shallowRef<InstanceType<typeof NuxtImg>>();
+const imgComponent = shallowRef<ComponentInstance<typeof NuxtImg>>();
 
 const invertForDarkTheme = ref<boolean>(false);
 const finalStubStyle = shallowRef<CSSProperties | undefined>(!isString(props.stubStyle) ? (props.stubStyle as CSSProperties) : undefined);
 
-const detailsFetchUrl = ref<string>('');
-const detailsFetch = await useFetch<IFetchedImageDetails>(detailsFetchUrl,
-  {
-    server: true,
-    lazy: true,
-    headers: [[HeaderAppVersion, AppConfig.versioning.appVersion.toString()]],
-    watch: [detailsFetchUrl],
-    immediate: import.meta.server,
-    key: `${props.ctrlKey}-Details`,
-    method: 'GET',
-    transform: (response: any): IFetchedImageDetails => {
-      logger.verbose(`(StaticImage) received image details, ctrlKey=${props.ctrlKey}, url=${detailsFetchUrl.value}]`);
-      const dto = response as IImageDetailsDto;
-      if (!dto) {
-        logger.warn(`(StaticImage) fetch request for image details returned empty data, ctrlKey=${props.ctrlKey}, url=${detailsFetchUrl.value}`);
-        return { stubCssStyle: undefined, invertForDarkTheme: false };
-      }
-
-      let resultCssStyle: CSSProperties | undefined;
-      if (dto.stubCssStyle) {
-        resultCssStyle = fromPairs(dto.stubCssStyle) as CSSProperties;
-        logger.verbose(`(StaticImage) stub custom css style fetched, style=[${JSON.stringify(resultCssStyle)}] ctrlKey=${props.ctrlKey}, url=${detailsFetchUrl.value}`);
-      }
-
-      return { stubCssStyle: resultCssStyle, invertForDarkTheme: dto.invertForDarkTheme } as IFetchedImageDetails;
-    }
-  });
-const fetchedImageDetails = detailsFetch.data;
-watch(detailsFetch.error, () => {
-  if (detailsFetch.error.value) {
-    logger.warn(`(StaticImage) fetch request for image details failed, ctrlKey=${props.ctrlKey}, url=${detailsFetchUrl.value}`, detailsFetch.error.value);
-  }
-});
-
+const imageDetails = ref<IFetchedImageDetails | undefined>();
 function updateImageStylingDetails () {
-  finalStubStyle.value = (!isString(props.stubStyle) ? (props.stubStyle as CSSProperties) : undefined) ?? fetchedImageDetails.value?.stubCssStyle ?? undefined;
-  invertForDarkTheme.value = (props.requestExtraDisplayOptions ? (fetchedImageDetails.value?.invertForDarkTheme) : undefined) ?? false;
-  logger.verbose(`(StaticImage) applying stub custom css style, ctrlKey=${props.ctrlKey}, url=${detailsFetchUrl.value}, style=[${finalStubStyle.value ? JSON.stringify(finalStubStyle.value) : 'empty'}], invertForDarkTheme=${invertForDarkTheme.value}`);
+  finalStubStyle.value = (!isString(props.stubStyle) ? (props.stubStyle as CSSProperties) : undefined) ?? imageDetails.value?.stubCssStyle ?? undefined;
+  invertForDarkTheme.value = (props.requestExtraDisplayOptions ? (imageDetails.value?.invertForDarkTheme) : undefined) ?? false;
+  logger.verbose(`(StaticImage) applying stub custom css style, ctrlKey=${props.ctrlKey}, style=[${finalStubStyle.value ? JSON.stringify(finalStubStyle.value) : 'empty'}], invertForDarkTheme=${invertForDarkTheme.value}`);
 }
-watch(fetchedImageDetails, updateImageStylingDetails);
-if (fetchedImageDetails.value) {
+watch(imageDetails, updateImageStylingDetails);
+if (imageDetails.value) {
   updateImageStylingDetails();
 }
-watch(() => props.entitySrc, fetchDisplayDetailsIfNeeded);
+if(props.entitySrc) {
+  if(import.meta.server) {
+    await fetchDisplayDetailsIfNeeded();
+  } else {
+    fetchDisplayDetailsIfNeeded();
+  }
+} else {
+  watch(() => props.entitySrc, fetchDisplayDetailsIfNeeded);
+}
 
 // no need to make it computed at the moment
 const stubCssClass = computed(() => {
@@ -135,19 +125,44 @@ const stubCssClass = computed(() => {
 });
 
 const imgCssClass = computed(() => {
-  return `static-image-img ${props.imgClass} ${(loaded.value && (!props.requestExtraDisplayOptions || detailsFetch.data.value)) ? 'img-loaded' : ''} ${invertForDarkTheme.value ? 'dark-theme-invert' : ''}`;
+  return `static-image-img ${props.imgClass} ${(loaded.value && (!props.requestExtraDisplayOptions || imageDetails.value)) ? 'img-loaded' : ''} ${invertForDarkTheme.value ? 'dark-theme-invert' : ''}`;
 });
 
 async function fetchDisplayDetailsIfNeeded (): Promise<void> {
-  if (props.entitySrc && (props.stubStyle === 'custom-if-configured' || props.requestExtraDisplayOptions)) {
-    detailsFetchUrl.value = `${ApiEndpointImageDetails}?slug=${props.entitySrc!.slug}&category=${props.category}`;
-    logger.verbose(`(StaticImage) fetching image details, ctrlKey=${props.ctrlKey}, url=${detailsFetchUrl.value}`);
-    if (import.meta.server) {
-      await detailsFetch.refresh();
+  if (!!props.entitySrc && (props.stubStyle === 'custom-if-configured' || props.requestExtraDisplayOptions)) {
+    const payloadKey = DataKeyImageDetails(props.ctrlKey, props.entitySrc.slug);
+    let dto = (import.meta.client && nuxtApp.isHydrating) ? getPayload<IFetchedImageDetails>(nuxtApp, payloadKey) : undefined;
+    if(!dto) {
+      const query = { 
+        slug: props.entitySrc?.slug,
+        category: props.category,
+        drafts: enabled 
+      };
+      const cache = enabled ? 'no-cache' : 'default';
+      const reqEvent = import.meta.server ? nuxtApp.ssrContext?.event : undefined;
+      dto = await getObject<IFetchedImageDetails>(`/${ApiEndpointImageDetails}`, query, cache, true, reqEvent, 'default');
+      if(!!dto && !!nuxtApp.ssrContext) {
+        logger.debug(`(StaticImage) adding image details to payload, ctrlKey=${props.ctrlKey}, slug=${props.entitySrc.slug}`);
+        addPayload(nuxtApp, payloadKey, dto);
+      }
+    } else {
+      logger.debug(`(StaticImage) adding image details to payload, ctrlKey=${props.ctrlKey}, slug=${props.entitySrc.slug}`);
+    }
+    
+    logger.verbose(`(StaticImage) image details obtained, ctrlKey=${props.ctrlKey}, slug=${props.entitySrc.slug}`);
+    if (dto) {
+      let resultCssStyle: CSSProperties | undefined;
+      if (dto.stubCssStyle) {
+        resultCssStyle = fromPairs(dto.stubCssStyle as any) as CSSProperties;
+        logger.verbose(`(StaticImage) stub custom css style fetched, style=[${JSON.stringify(resultCssStyle)}], ctrlKey=${props.ctrlKey}, slug=${props.entitySrc.slug}`);
+      }
+      imageDetails.value = { stubCssStyle: resultCssStyle, invertForDarkTheme: dto.invertForDarkTheme } as IFetchedImageDetails;
+    } else {
+      logger.warn(`(StaticImage) fetch request for image details returned empty data, ctrlKey=${props.ctrlKey}, slug=${props.entitySrc.slug}`);
+      imageDetails.value = { stubCssStyle: undefined, invertForDarkTheme: false };
     }
   }
 }
-await fetchDisplayDetailsIfNeeded();
 
 function onLoad () {
   getLogger().verbose(`(StaticImage) image loaded, current url=${imgUrl.value}`);

@@ -1,14 +1,13 @@
 import type { AuthProvider, IAppLogger, IUserProfileInfo, UserResponseDataSet, RegisterVerificationFlow, RegisterUserByEmailResponse, IUserLogic, IUserMinimalInfo, PasswordRecoveryResult, EntityId, Timestamp, UpdateUserAccountResult } from './../../backend/app-facade/interfaces';
 import { type ImageCategory, maskLog, type Locale, type Theme, SecretValueMask } from './../app-facade/implementation';
-import type { UserLogic as UserLogicPrisma } from '../services/user-logic';
 import { type H3Event } from 'h3';
 
 export class UserLogic implements IUserLogic {
   private readonly logger: IAppLogger;
-  private readonly prismaImplementation: UserLogicPrisma;
+  private readonly prismaImplementation: IUserLogic;
 
   public static inject = ['userLogicPrisma', 'logger'] as const;
-  constructor (prismaImplementation: UserLogicPrisma, logger: IAppLogger) {
+  constructor (prismaImplementation: IUserLogic, logger: IAppLogger) {
     this.logger = logger;
     this.prismaImplementation = prismaImplementation;
   }

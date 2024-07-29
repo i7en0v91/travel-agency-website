@@ -12,6 +12,7 @@ import { type IListItemDto } from './../../server/dto';
 import { UserNotificationLevel, type Locale, TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
 import { AppException, AppExceptionCodeEnum } from './../../shared/exceptions';
 import { HeaderAppVersion } from './../../shared/constants';
+import { usePreviewState } from './../../composables/preview-state';
 
 interface IProps {
   ctrlKey: string,
@@ -39,6 +40,7 @@ const props = withDefaults(defineProps<IProps>(), {
 });
 
 const { locale } = useI18n();
+const { enabled } = usePreviewState();
 
 let showOnDataChanged = false;
 const searchTerm = ref<string | undefined>('');
@@ -213,7 +215,7 @@ async function updateClientEntityCacheIfNeeded (items: ISearchListItem[]): Promi
         slug: dto.slug,
         displayName: dto.displayName
       } as IEntityCacheCityItem;
-      await entityCache.set(item, AppConfig.caching.clientRuntime.expirationsSeconds.default);
+      await entityCache.set<'City'>(item as IEntityCacheCityItem, AppConfig.caching.clientRuntime.expirationsSeconds.default);
     } else if (import.meta.env.MODE === 'development') {
       logger.warn(`(SearchListInput) unexpected item type: ctrlKey=${props.ctrlKey}, type=${props.type}`);
     }
@@ -231,7 +233,7 @@ async function tryLookupLocalizeableDisplayNameOnClient (id: EntityId): Promise<
 async function getCityFromCache (cityId: EntityId, fetchFromServer: boolean): Promise<IEntityCacheCityItem | undefined> {
   const entityCache = ClientServicesLocator.getEntityCache();
   const entityCacheType = getCacheEntityType();
-  const lookupResult = await entityCache.get<'City', IEntityCacheCityItem>([cityId], [], entityCacheType, fetchFromServer ? { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default } : false);
+  const lookupResult = await entityCache.get<'City'>([cityId], [], entityCacheType, fetchFromServer ? { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default } : false);
   return (lookupResult?.length ?? 0) > 0 ? lookupResult![0] : undefined;
 }
 
@@ -242,11 +244,13 @@ const { data, error, status, refresh } = await useFetch(props.itemSearchUrl,
     server: false,
     lazy: true,
     headers: [[HeaderAppVersion, AppConfig.versioning.appVersion.toString()]],
+    cache: enabled ? 'no-cache' : 'default',
     query: {
       locale,
       size: props.maxSuggestionItemsCount,
       onlyPopular: false,
       searchTerm: searchTermQueryParam,
+      drafts: enabled,
       ...(props.additionalQueryParams ? props.additionalQueryParams : {})
     },
     immediate: false,
@@ -432,6 +436,9 @@ onMounted(async () => {
     >
     <VDropdown
       ref="dropdown"
+      v-floating-vue-hydration="{ tabIndex: 0 }"
+      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
+      :aria-id="`${ctrlKey}-DropDownWrapper`"
       :distance="14"
       :hide-triggers="(triggers: any) => [...triggers, 'click']"
       :show-triggers="(triggers: any) => [...triggers, 'click']"

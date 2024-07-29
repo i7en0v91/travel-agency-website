@@ -2,9 +2,12 @@
 
 import { type NavBarMode } from './../../shared/interfaces';
 import { getI18nResName2 } from './../../shared/i18n';
-import { getHtmlPagePath, HtmlPage } from './../../shared/page-query-params';
+import { type Locale } from './../../shared/constants';
+import { AppPage } from './../../shared/page-query-params';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
-const localePath = useLocalePath();
+const { locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
 
 interface IProps {
   ctrlKey: string,
@@ -20,6 +23,6 @@ const logoCssClass = computed(() => {
 
 <template>
   <div class="nav-item nav-logo-list-item mt-xs-2">
-    <NuxtLink :class="logoCssClass" :to="localePath(`/${getHtmlPagePath(HtmlPage.Index)}`)" :aria-label="$t(getI18nResName2('ariaLabels', 'imgLinkMainPage'))" />
+    <NuxtLink :class="logoCssClass" :to="navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)" :aria-label="$t(getI18nResName2('ariaLabels', 'imgLinkMainPage'))" />
   </div>
 </template>

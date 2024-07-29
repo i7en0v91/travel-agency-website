@@ -6,9 +6,9 @@ import { type ILocalizableValue, type EntityId, type GeoPoint } from '../shared/
 import type { IAppLogger } from '../shared/applogger';
 import AppConfig from './../appconfig';
 import { isPrefersReducedMotionEnabled } from './../shared/dom';
-import { useFetchEx } from './../shared/fetch-ex';
 import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
 import { HeaderAppVersion } from './../shared/constants';
+import { usePreviewState } from './../composables/preview-state';
 
 export interface IWorldMapPoint {
   coord: {
@@ -248,16 +248,20 @@ function onPrepareNewFrame (map: IWorldMapInternal): 'continue-animation' | 'sto
 
 export const useWorldMapStore = defineStore('world-map-store', () => {
   const logger = CommonServicesLocator.getLogger();
-  const citiesListFetchRequest = useFetchEx<IPopularCityDto[] | null[], IPopularCityDto[], null[]>(ApiEndpointPopularCitiesList, 'error-stub',
+  const nuxtApp = useNuxtApp();
+  const { enabled } = usePreviewState();
+  const citiesListFetch = useFetch<IPopularCityDto[] | null[]>(`/${ApiEndpointPopularCitiesList}`,
     {
       server: true,
       lazy: true,
       immediate: true,
-      cache: AppConfig.caching.htmlPageCachingSeconds ? 'default' : 'no-cache',
+      query: { drafts: enabled },
+      cache: (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
       default: (): null[] => { return range(0, 20, 1).map(_ => null); },
       onResponse: () => { logger.verbose('(world-map-store) received popular cities response'); },
       onResponseError: (ctx: { error: any; }) => { logger.warn('(world-map-store) got popular cities response exception', ctx.error); },
-      onRequestError: (ctx: { error: any; }) => { logger.warn('(world-map-store) got popular cities request exception', ctx.error); }
+      onRequestError: (ctx: { error: any; }) => { logger.warn('(world-map-store) got popular cities request exception', ctx.error); },
+      $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-stub' })
     });
 
   const getWorldMapDataOnServer = async (): Promise<IWorldMapDataDto> => {
@@ -347,7 +351,7 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
       }
     };
 
-    const citiesListFetch = await citiesListFetchRequest;
+    await citiesListFetch;
     watch([citiesListFetch.status, worldMapDataFetch.status], () => {
       updateWorldMapFetchStatus();
     });
@@ -381,7 +385,6 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
       };
 
       logger.verbose('(world-map-store) starting to load world map data');
-      const citiesListFetch = await citiesListFetchRequest;
       await citiesListFetch;
       await worldMapDataFetch;
       await updateWorldMapWhenFetchFinishes();

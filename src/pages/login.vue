@@ -11,22 +11,38 @@ import SimpleButton from './../components/forms/simple-button.vue';
 import { AppException, getUsrMsgResName } from './../shared/exceptions';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
-import { HtmlPage, getHtmlPagePath } from './../shared/page-query-params';
+import { AppPage, getPagePath } from './../shared/page-query-params';
+import { formatAuthCallbackUrl } from './../client/helpers';
+import { type Locale, CookieLoginOrigin } from './../shared/constants';
+import { useNavLinkBuilder } from './../composables/nav-link-builder';
+import { usePreviewState } from './../composables/preview-state';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const localePath = useLocalePath();
+const navLinkBuilder = useNavLinkBuilder();
+
+const originPageCookie = useCookie(CookieLoginOrigin, { 
+  path: '/', 
+  secure: false, 
+  httpOnly: false, 
+  sameSite: 'lax',
+  // Session-expired
+  maxAge: undefined, 
+  expires: undefined 
+});
 
 definePageMeta({
   middleware: 'auth',
   auth: {
     unauthenticatedOnly: true,
-    navigateAuthenticatedTo: '/'
+    navigateAuthenticatedTo: `/${getPagePath(AppPage.Index)}`
   },
   title: { resName: getI18nResName2('loginPage', 'title'), resArgs: undefined }
 });
 useOgImage();
 
 const { signIn } = useAuth();
+const { enabled } = usePreviewState();
 
 const username = ref('');
 const password = ref('');
@@ -45,16 +61,31 @@ const rules = computed(() => ({
 }));
 const v$ = useVuelidate(rules, { username, password, $lazy: true });
 
+function prepareCallbackUrl(originPathFromUrl: string | undefined): string {
+  const logger = CommonServicesLocator.getLogger();
+  let callbackUrl: string;
+  if(originPathFromUrl?.trim()) {
+    callbackUrl = formatAuthCallbackUrl(originPathFromUrl, enabled);
+    originPageCookie.value = callbackUrl;
+    logger.debug(`(Login) origin page obtained from route: ${callbackUrl}`);
+  } else if(originPageCookie.value?.trim()) {
+    callbackUrl = formatAuthCallbackUrl(originPageCookie.value!, enabled);
+    logger.debug(`(Login) origin page obtained from cookie: ${callbackUrl}`);
+  } else {
+    callbackUrl = formatAuthCallbackUrl(localePath(`/${getPagePath(AppPage.Index)}`), enabled);
+    logger.debug(`(Login) using default origin page: ${callbackUrl}`);
+  }
+  return callbackUrl;
+}
+
 const mySignInHandler = async (username: string, password: string) => {
   const route = useRoute();
-  const callbackUrl = route.query.callbackUrl?.toString() ?? '/';
+  const callbackUrl = prepareCallbackUrl(route.query.originPath?.toString());
   try {
-    const signInResult = (await signIn('credentials', { username, password, callbackUrl, redirect: false }));
+    const signInResult = (await signIn('credentials', { username, password, callbackUrl, redirect: true }));
     if (signInResult) {
       if (signInResult.error) {
         loginErrorMsgResName.value = getI18nResName2('loginPage', 'invalidCredentials');
-      } else {
-        return await navigateTo(signInResult.url, { external: true });
       }
     } else {
       loginErrorMsgResName.value = getI18nResName2('loginPage', 'invalidCredentials');
@@ -78,18 +109,19 @@ function loginClick () {
   }
 }
 
-function onOAuthProviderClick (provider: AuthProvider) {
+async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
   const route = useRoute();
-  const oauthOptions = { callbackUrl: route.query.callbackUrl?.toString() ?? '/', external: true, redirect: true };
+  const callbackUrl = prepareCallbackUrl(route.query.originPath?.toString());
+  const oauthOptions = { callbackUrl, redirect: true };
   switch (provider) {
     case AuthProvider.Google:
-      signIn('google', oauthOptions);
+      await signIn('google', oauthOptions);
       break;
     case AuthProvider.GitHub:
-      signIn('github', oauthOptions);
+      await signIn('github', oauthOptions);
       break;
     default:
-      signIn('testlocal', oauthOptions);
+      await signIn('testlocal', oauthOptions);
       break;
   }
 }
@@ -134,7 +166,7 @@ function onOAuthProviderClick (provider: AuthProvider) {
           </div>
         </div>
       </form>
-      <NuxtLink class="forgot-password-link mt-xs-4 brdr-1" :to="localePath(`/${getHtmlPagePath(HtmlPage.ForgotPassword)}`)">
+      <NuxtLink class="forgot-password-link mt-xs-4 brdr-1" :to="navLinkBuilder.buildPageLink(AppPage.ForgotPassword, locale as Locale)">
         {{ $t(getI18nResName3('loginPage', 'forms', 'forgotPassword')) }}
       </NuxtLink>
       <div v-if="loginErrorMsgResName?.length" class="form-error-msg mt-xs-3 mt-xs-5">
@@ -144,7 +176,7 @@ function onOAuthProviderClick (provider: AuthProvider) {
       <div class="having-account mt-xs-4">
         {{ $t(getI18nResName2('loginPage', 'havingAccount')) }}
         <span class="login-signup">
-          <NuxtLink class="brdr-1" :to="localePath(`/${getHtmlPagePath(HtmlPage.Signup)}`)">{{ $t(getI18nResName2('accountPageCommon', 'signUp')) }}</NuxtLink>
+          <NuxtLink class="brdr-1" :to="navLinkBuilder.buildPageLink(AppPage.Signup, locale as Locale)">{{ $t(getI18nResName2('accountPageCommon', 'signUp')) }}</NuxtLink>
         </span>
       </div>
       <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" @click="onOAuthProviderClick" />

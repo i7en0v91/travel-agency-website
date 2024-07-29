@@ -6,9 +6,11 @@ import { type EntityDataAttrsOnly, type IStayOffer, type OfferKind, ImageCategor
 import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
 import { getLocalizeableValue, getScoreClassResName } from './../../../shared/common';
 import { type Locale } from './../../../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../../../shared/page-query-params';
+import { AppPage, getPagePath } from './../../../shared/page-query-params';
 import { useUserFavouritesStore } from './../../../stores/user-favourites-store';
 import { useOfferFavouriteStatus } from './../../../composables/offer-favourite-status';
+import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
+import { usePreviewState } from './../../../composables/preview-state';
 
 interface IProps {
   ctrlKey: string,
@@ -19,15 +21,16 @@ const props = withDefaults(defineProps<IProps>(), {
 
 const { status } = useAuth();
 const { locale, t } = useI18n();
-const localePath = useLocalePath();
+const navLinkBuilder = useNavLinkBuilder();
+const { requestUserAction } = usePreviewState();
 
 const logger = CommonServicesLocator.getLogger();
 
 const isError = ref(false);
 
 const stay = props.offer.stay;
-const scoreClassResName = getScoreClassResName(stay.reviewScore);
-const reviewsCountText = `${stay.numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), stay.numReviews)}`;
+const scoreClassResName = getScoreClassResName(stay.reviewSummary!.score);
+const reviewsCountText = `${stay.reviewSummary!.numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), stay.reviewSummary!.numReviews)}`;
 
 const userFavouritesStore = useUserFavouritesStore();
 const favouriteStatusWatcher = useOfferFavouriteStatus(props.offer.id, props.offer.kind);
@@ -35,6 +38,10 @@ const favouriteStatusWatcher = useOfferFavouriteStatus(props.offer.id, props.off
 async function toggleFavourite (): Promise<void> {
   const offerId = props.offer.id;
   logger.verbose(`(SearchStayResultCard) toggling favourite, offerId=${offerId}, current=${favouriteStatusWatcher.isFavourite}`);
+  if(!await requestUserAction()) {
+    logger.verbose(`(SearchStayResultCard) favourite hasn't been toggled - not available in preview mode, offerId=${offerId}, current=${favouriteStatusWatcher.isFavourite}`);
+    return;
+  }
   const store = await userFavouritesStore.getInstance();
   const result = await store.toggleFavourite(offerId, 'stays' as OfferKind, props.offer);
   logger.verbose(`(SearchStayResultCard) favourite toggled, offerId=${offerId}, isFavourite=${result}`);
@@ -115,7 +122,7 @@ async function favouriteBtnClick (): Promise<void> {
                   </div>
                   <div class="search-stays-card-stats mb-xs-3 mb-s-0 mt-xs-3">
                     <div class="search-stays-card-score p-xs-2 brdr-1">
-                      {{ offer.stay.reviewScore.toFixed(1) }}
+                      {{ offer.stay.reviewSummary!.score.toFixed(1) }}
                     </div>
                     <div class="search-stays-card-score-class">
                       {{ $t(scoreClassResName) }}
@@ -135,7 +142,7 @@ async function favouriteBtnClick (): Promise<void> {
                   kind="support"
                   @click="favouriteBtnClick"
                 />
-                <NuxtLink class="btn btn-primary brdr-1 search-stays-card-btn-details" :to="localePath(`/${getHtmlPagePath(HtmlPage.StayDetails)}/${props.offer.id}`)">
+                <NuxtLink class="btn btn-primary brdr-1 search-stays-card-btn-details" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.StayDetails)}/${props.offer.id}`, locale as Locale)">
                   {{ $t(getI18nResName2('searchStays', 'viewPlace')) }}
                 </NuxtLink>
               </div>

@@ -1,14 +1,14 @@
-import { type LogLevel, type Locale, isTestEnv, isDevEnv, isQuickStartEnv, FlexibleDatesRangeDays, AcsysExecDir } from './shared/constants';
+import { type LogLevel, type Locale, isTestEnv, isDevEnv, isPublishEnv, isQuickStartEnv, FlexibleDatesRangeDays, AcsysExecDir, ApiAppEndpointPrefix } from './shared/constants';
 import { type ILogSuppressionRule, type ILogVueSuppressionRule } from './shared/applogger';
 import { type AppExceptionCode } from './shared/exceptions';
 import type { I18nResName } from './shared/i18n';
 
-export const HostUrl = process.env.PUBLISH ? 'golobe.demo' : 'localhost:3000';
+export const HostUrl = isPublishEnv() ? 'golobe.demo' : 'localhost:3000';
 // url used for showing users browser-navigateable links to the website
-export const SiteUrl = process.env.PUBLISH ? `https://${HostUrl}` : `http://${HostUrl}`;
+export const SiteUrl = isPublishEnv() ? `https://${HostUrl}` : `http://${HostUrl}`;
 
-const HtmlPageCachingSeconds = 24 * 60 * 60;
-const htmlPageCachingEnabled = isTestEnv() || isQuickStartEnv() || process.env.PUBLISH;
+const HtmlPageCachingEnabled = isTestEnv() || isQuickStartEnv() || isPublishEnv();
+const CachingIntervalSeconds = HtmlPageCachingEnabled ? 24 * 60 * 60 : 0;
 
 export interface IAppConfig {
   logging: {
@@ -49,6 +49,7 @@ export interface IAppConfig {
     cacheFsDir: string
   },
   maxDbConcurrentUpdateAttemps: number,
+  authCookiesResponseFilter: boolean,
   userPasswordPolicy: {
     minLength: number,
     uppercase: boolean,
@@ -92,19 +93,23 @@ export interface IAppConfig {
     siteUrl: string
   },
   caching: {
+    intervalSeconds: number | false,
     clientRuntime: {
       expirationsSeconds: {
         default: number
       }
     },
-    htmlPageCachingSeconds: number | false,
-    imagesCachingSeconds: number | false,
     invalidation: {
       intervalSeconds: number,
       maxChangedPagesForPurge: number,
       retries: {
         attemptsCount: number,
         intervalMs: number
+      },
+      batching: {
+        modifiedEntitiesQueryBatch: number,
+        relatedEntitiesQueryBatch: number,
+        pageTimestampsUpdateBatch: number
       },
       ogImageCachePrefix: string
     }
@@ -128,7 +133,8 @@ export interface IAppConfig {
   versioning: {
     nuxt: string,
     appVersion: number
-  }
+  },
+  customLoadingStub: boolean
 }
 
 /** Acsys */
@@ -157,9 +163,8 @@ const Config : IAppConfig = {
   logging: {
     common: {
       name: 'golobe',
-      /** error, warn, info, verbose, debug or never 
-       * KB: it is possible to temporary enable logging in tests, but some tests may hang because of some auth cookies-related testing logic */
-      level: isTestEnv() ? 'never' : (isDevEnv() ? 'debug' : 'warn'),
+      /** error, warn, info, verbose, debug or never */
+      level: (isTestEnv() || isDevEnv()) ? 'debug' : 'warn',
       /** fields in JSON data logged which are masked for security or large payload footprint reasons */
       redact: [
         'req.headers.cookie',
@@ -177,7 +182,7 @@ const Config : IAppConfig = {
       ],
       maskedNumCharsVisible: 1, // number of first and last characters visible in masked string
       appExceptionLogLevels: [ // custom remapping of AppException's default WARN logging level
-        { appExceptionCode: 'UNAUTHORIZED', logLevel: 'info' },
+        { appExceptionCode: 'UNAUTHENTICATED', logLevel: 'info' },
         { appExceptionCode: 'CAPTCHA_VERIFICATION_FAILED', logLevel: 'info' },
         { appExceptionCode: 'FORBIDDEN', logLevel: 'info' },
         { appExceptionCode: 'EMAILING_DISABLED', logLevel: 'info' }
@@ -193,18 +198,12 @@ const Config : IAppConfig = {
     },
     client: {
       /** server endpoint for accepting log records sent from browser */
-      path: '/api/log'
+      path: `/${ApiAppEndpointPrefix}/log`
     },
     suppress: {
       vue: [
         /** suppressing passing inherited properties values */
         { messageFitler: /Extraneous non-props attributes .* were passed to component but could not be automatically inherited/gi, componentNameFilter: /.*/ },
-        /** suppressing VPopper hydration mistmatches - non critical, everything works */
-        { messageFitler: /.*hydration.*/gi, componentNameFilter: /.*[p|P]opper.*/gi },
-        /** suppressing NuxtImg hydration mistmatches - non critical, everything works */
-        { messageFitler: /.*hydration.*/gi, componentNameFilter: /.*NuxtImg.*/gi },
-        /** suppressing strange travel details visibility style hydration mistmatches - non critical, everything works */
-        { messageFitler: /.*hydration.*/gi, componentNameFilter: /.*(TravelDetailsImage|TravelDetailsTexting).*/gi },
         /** suppressing floating-vue^5.2.2 dispose exception (in webkit)
          * ({"error":"[CLIENT LOG]","level":"error","message":"Reflect.get requires the first argument be an object","msg":"(nuxtApp.vueApp.config.exceptionHandler) beforeUnmount hook","name":"TypeError",
          * "stack":"get@[native code]\nget@[native code]\nhide@http://localhost:3000/_nuxt/node_modules/.cache/vite/client/deps/floating-vue.js:1785:31
@@ -223,7 +222,7 @@ const Config : IAppConfig = {
     filterDuplicates: true // don't show notification if there is already another notification with the same text displayed
   },
   userSession: {
-    secure: !!process.env.PUBLISH, // set session cookie only when secure connection
+    secure: isPublishEnv(), // set session cookie only when secure connection
     expirationDays: 7, // expiration time for user session cookie
     encryptionKey: process.env.H3_SESSION_ENCRYPTION_KEY! // key with which to encrypt session data
   },
@@ -240,6 +239,12 @@ const Config : IAppConfig = {
   },
   /** number of retries of db operations against entities in case concurrent update collisionis occur */
   maxDbConcurrentUpdateAttemps: 3,
+  /** 
+   * filters out auth-cookies from "set-cookie":"next.auth...." response headers for some non-auth endpoints 
+   * to prevent restoring auth session on signing out while some of fetch requests still pending.
+   * At the moment used in tests only as session refresh is not critical in test env
+   * */
+  authCookiesResponseFilter: isTestEnv(),
   /** security requirements for user password */
   userPasswordPolicy: {
     minLength: 8, // minimum password length
@@ -248,7 +253,7 @@ const Config : IAppConfig = {
     number: true, // must contain one number
     specialChar: true // must contain one special character
   },
-  email: process.env.PUBLISH
+  email: isPublishEnv()
     ? {
         host: 'localhost', // SMTP server host
         port: 587, // SMTP server port
@@ -294,13 +299,12 @@ const Config : IAppConfig = {
     siteUrl: SiteUrl // website with detailed information
   },
   caching: {
+    intervalSeconds: HtmlPageCachingEnabled ? CachingIntervalSeconds : false, // maximum amount of time in seconds that rendered html page's data can be cached and re-served to client while re-redering in background. False - caching disabled
     clientRuntime: { // client-side entity cache-related settings
       expirationsSeconds: { // cache item expiration in seconds, must not exceed "maxage" cache HTTP-header across involved entity types
         default: 1800 // default expiration for any entity type
       }
-    },
-    htmlPageCachingSeconds: htmlPageCachingEnabled ? HtmlPageCachingSeconds : false, // maximum amount of time in seconds that rendered html page's data can be cached and re-served to client while re-redering in background. False - caching disabled
-    imagesCachingSeconds: htmlPageCachingEnabled ? HtmlPageCachingSeconds : false, // maximum amount of time in seconds that image entity data can be reused (cached) on client. False - caching disabled
+    },    
     invalidation:  // rendered page cache invalidation options when html content has been changed e.g. from CMS
     {
       intervalSeconds: isTestEnv() ? 21 * 24 * 60 * 60 : 10 * 60, // invalidation timer task interval in seconds (almost disabled in tests as triggered via test endpoint)
@@ -309,7 +313,12 @@ const Config : IAppConfig = {
         attemptsCount: 3, // number of attempts
         intervalMs: 1000 // interval between successive attempts in milliseconds
       },
-      ogImageCachePrefix: 'cache:nuxt-og-image@3.0.0-rc.53' // prefix for og-image cache keys
+      batching: { // parameters which affect memory consumption & DB query perfomance when constructing list of related entities to update page timestamps (for pages with timestamp-based caching options)
+        modifiedEntitiesQueryBatch: isTestEnv() ? 50 : 1000, // maximum size of IDs list used in single request to DB for entity's last modification time
+        relatedEntitiesQueryBatch: isTestEnv() ? 50 : 1000, // maximum size of IDs list used in single request to DB for related entities
+        pageTimestampsUpdateBatch: isTestEnv() ? 10 : 500 // // maximum size of records used in single request to DB for creating/updating page timestamps
+      },
+      ogImageCachePrefix: 'cache:nuxt-og-image@3.0.0-rc.64' // prefix for og-image cache keys
     }
   },
   searchOffers: { // settings related to flight & stay offers search pages with filter & pagination
@@ -332,8 +341,9 @@ const Config : IAppConfig = {
     : false,
   versioning: {
     appVersion: 1_00_00, // application version passed from user's browser in HTTP request header when calling server API enpoints
-    nuxt: '3.11.2'
-  } 
+    nuxt: '3.12.4'
+  } ,
+  customLoadingStub: isQuickStartEnv() // whether to display loading page (from Nuxt templates) while seeding DB with data on first-time server app start
 };
 
 export const AcsysModuleOptions : IAcsysModuleOptions = {
@@ -344,9 +354,9 @@ export const AcsysModuleOptions : IAcsysModuleOptions = {
   startupTimeoutMs: 15000,
   projectName: 'golobe',
   users: {
-    admin: { name: 'cms_admin', email: 'cms_admin@golobe.demo', password: process.env.ACSYS_ADMIN_USER_PASSWORD as string, autoFillCredsOnLoginPage: !process.env.PUBLISH },
+    admin: { name: 'cms_admin', email: 'cms_admin@golobe.demo', password: process.env.ACSYS_ADMIN_USER_PASSWORD as string, autoFillCredsOnLoginPage: !isPublishEnv() },
     standard: { name: 'cms_standard', email: 'cms_standard@golobe.demo', password: process.env.ACSYS_STANDARD_USER_PASSWORD as string, autoFillCredsOnLoginPage: false },
-    viewer: { name: 'cms_viewer', email: 'cms_viewer@golobe.demo', password: process.env.ACSYS_VIEWER_USER_PASSWORD as string, autoFillCredsOnLoginPage: !!process.env.PUBLISH }
+    viewer: { name: 'cms_viewer', email: 'cms_viewer@golobe.demo', password: process.env.ACSYS_VIEWER_USER_PASSWORD as string, autoFillCredsOnLoginPage: isPublishEnv() }
   }
 };
 

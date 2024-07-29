@@ -2,12 +2,13 @@
 
 import Cropper from 'cropperjs';
 import { VueFinalModal } from 'vue-final-modal';
-import { fromUint8Array } from 'js-base64';
 import { type ImageCategory } from './../../shared/interfaces';
 import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
 import { UserNotificationLevel, CroppingImageDataKey, CroppingImageFormat } from './../../shared/constants';
 import { useThemeSettings } from './../../composables/theme-settings';
 import SimpleButton from './../forms/simple-button.vue';
+
+globalThis.Buffer = globalThis.Buffer || Buffer;
 
 const ImageCaptureMinSizeBase = 10;
 
@@ -144,7 +145,7 @@ async function onUploadClick (): Promise<void> {
   } else {
     try {
       const imageData = await readCropperCanvasAsByteArray();
-      const imageDataBase64 = fromUint8Array(imageData);
+      const imageDataBase64 = Buffer.from(imageData).toString('base64');
       setCurrentImageData(imageDataBase64);
     } catch (err: any) {
       logger.warn(`(cropping-box) failed to crop image, category=${props.category}`, err);

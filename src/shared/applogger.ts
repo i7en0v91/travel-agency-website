@@ -4,7 +4,7 @@ import range from 'lodash-es/range';
 import fromPairs from 'lodash-es/fromPairs';
 import isString from 'lodash-es/isString';
 import isNumber from 'lodash-es/isNumber';
-import cloneDeep from 'lodash-es/cloneDeep';
+import { stringifyClone } from './../shared/common';
 import type { LogObject } from 'consola';
 import AppConfig from '../appconfig';
 import { type AppExceptionCode, AppException, lookupAppExceptionCode } from './../shared/exceptions';
@@ -66,7 +66,7 @@ export function wrapLogDataArg (data?: any): object {
   if (isString(data) || isNumber(data)) {
     return { val: data };
   }
-  return cloneDeep(data || {});
+  return stringifyClone(data || {});
 }
 
 export function getErrorAppExceptionCode (err?: any): AppExceptionCode | undefined {

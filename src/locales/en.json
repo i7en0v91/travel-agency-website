@@ -5,7 +5,7 @@
     "objectNotFound": "Object not found",
     "helm": "Error",
     "pageNotFound": "This is not the page you're looking for",
-    "unauthorized": "Login is required to proceed",
+    "unauthenticated": "Login is required to proceed",
     "captchaError": "Access verification error. Check your network connectivity, then reload page and try again",
     "emailingDisabled": "Operation cannot be performed as it requires Emailing feature enabled on the website",
     "forbidden": "Access is forbidden",
@@ -13,7 +13,7 @@
     "acsysIntegrationError": "CMS integration error"
   },
   "httpCodes": {
-    "401": "Unauthorized",
+    "401": "Unauthenticated",
     "404": "Not Found",
     "500": "Unexpected error"
   },
@@ -21,6 +21,7 @@
     "homeLink": "Go back home"
   },
   "notAvailableInDemo": "Not available in demo",
+  "notAllowedInPreviewMode": "Operation is not allowed in preview mode",
   "nav": {
     "findFlights": "Find Flights",
     "findStays": "Find Stays",
@@ -795,6 +796,9 @@
       "paragraph2": "12.2. This document will reflect any changes to the Operator's personal data processing policy. The policy is valid indefinitely until replaced by a new version.",
       "paragraph3": "12.3. The current version of the Policy is freely available on the Internet at {privacyUrl}"
     }
+  },
+  "draftsPage": {
+    "title": "Entering drafts mode"
   },
   "cookieBanner": {
     "title": "Using cookies",

@@ -2,11 +2,13 @@
 
 import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
 import AccountFormPhotos from './../components/account/form-photos.vue';
-import { ApiEndpointEmailVerifyComplete, SecretValueMask, HeaderAppVersion } from './../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../shared/page-query-params';
+import { type Locale, ApiEndpointEmailVerifyComplete, SecretValueMask, HeaderAppVersion } from './../shared/constants';
+import { AppPage } from './../shared/page-query-params';
 import { type EntityId } from './../shared/interfaces';
 import { EmailVerifyCompleteResultCode, type IEmailVerifyCompleteResultDto } from './../server/dto';
 import AppConfig from './../appconfig';
+import { useNavLinkBuilder } from './../composables/nav-link-builder';
+import { usePreviewState } from './../composables/preview-state';
 
 definePageMeta({
   title: { resName: getI18nResName2('emailVerifyCompletePage', 'title'), resArgs: undefined }
@@ -14,7 +16,9 @@ definePageMeta({
 useOgImage();
 
 const { status } = useAuth();
-const localePath = useLocalePath();
+const { locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
+const { enabled } = usePreviewState();
 const completionResult = ref<EmailVerifyCompleteResultCode | undefined>(undefined);
 
 const logger = CommonServicesLocator.getLogger();
@@ -33,10 +37,12 @@ if (!tokenId || !tokenValue) {
   logger.info(`(EmailVerifyComplete) link doesnt contain token data: id=${tokenId}, value=${tokenValue ? SecretValueMask : '[empty]'}`);
   completionResult.value = EmailVerifyCompleteResultCode.LINK_INVALID;
 } else {
-  const { data, error } = await useFetch(ApiEndpointEmailVerifyComplete,
+  const { data, error } = await useFetch(`/${ApiEndpointEmailVerifyComplete}`,
     {
       method: 'post',
       server: true,
+      query: { drafts: enabled },
+      cache: enabled ? 'no-cache' : 'default',
       headers: [[HeaderAppVersion, AppConfig.versioning.appVersion.toString()]],
       lazy: false,
       body: {
@@ -78,25 +84,25 @@ if (!tokenId || !tokenValue) {
       <div class="email-verify-complete-page-content">
         <div v-if="completionResult === EmailVerifyCompleteResultCode.SUCCESS">
           {{ $t(getI18nResName3('emailVerifyCompletePage', 'text', 'success')) }}
-          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="status === 'authenticated' ? localePath(`/${getHtmlPagePath(HtmlPage.Index)}`) : localePath(`/${getHtmlPagePath(HtmlPage.Login)}`)">
+          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="status === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
             {{ $t(getI18nResName2('accountPageCommon', status === 'authenticated' ? 'toHome' : 'login')) }}
           </NuxtLink>
         </div>
         <div v-else-if="completionResult === EmailVerifyCompleteResultCode.ALREADY_CONSUMED">
           {{ $t(getI18nResName3('emailVerifyCompletePage', 'text', 'alreadyConsumed')) }}
-          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="status === 'authenticated' ? localePath(`/${getHtmlPagePath(HtmlPage.Index)}`) : localePath(`/${getHtmlPagePath(HtmlPage.Login)}`)">
+          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="status === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
             {{ $t(getI18nResName2('accountPageCommon', status === 'authenticated' ? 'toHome' : 'login')) }}
           </NuxtLink>
         </div>
         <div v-else-if="completionResult === EmailVerifyCompleteResultCode.LINK_EXPIRED">
           {{ $t(getI18nResName3('emailVerifyCompletePage', 'text', 'linkExpired')) }}
-          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="status === 'authenticated' ? localePath(`/${getHtmlPagePath(HtmlPage.Account)}`) : localePath(`/${getHtmlPagePath(HtmlPage.Login)}`)">
+          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="status === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Account, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
             {{ $t(getI18nResName2('accountPageCommon', status === 'authenticated' ? 'toAccount' : 'login')) }}
           </NuxtLink>
         </div>
         <div v-else>
           {{ $t(getI18nResName3('emailVerifyCompletePage', 'text', 'linkInvalid')) }}
-          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="status === 'authenticated' ? localePath(`/${getHtmlPagePath(HtmlPage.Account)}`) : localePath(`/${getHtmlPagePath(HtmlPage.Login)}`)">
+          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="status === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Account, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
             {{ $t(getI18nResName2('accountPageCommon', status === 'authenticated' ? 'toAccount' : 'login')) }}
           </NuxtLink>
         </div>

@@ -3,17 +3,20 @@ import { type CSSProperties } from 'vue';
 import type { Decimal } from 'decimal.js';
 import { type ICitiesSearchQuery } from '../server/dto';
 import { type I18nResName } from './i18n';
-import { type Locale, DefaultUserCoverSlug, DefaultUserAvatarSlug, type Theme, type QueryInternalRequestParam, type QueryPageTimestampParam } from './constants';
-import { type HtmlPage } from './page-query-params';
+import { type PreviewModeParamEnabledValue, type EntityChangeSubscribersOrder, type Locale, DefaultUserCoverSlug, DefaultUserAvatarSlug, type Theme, type QueryInternalRequestParam, type QueryPageTimestampParam, type UninitializedPageTimestamp, type QueryPagePreviewModeParam } from './constants';
+import { type AppPage } from './page-query-params';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { type IAppConfig } from './../appconfig';
+import { type EntityModel } from './../server/backend/common-services/change-dependency-tracker';
 
 export type Price = Decimal;
 export type DistanceUnitKm = number;
+export type PreviewMode = boolean;
 
 export type EntityId = string;
 export interface IEntity {
-  id: EntityId
+  id: EntityId,
+  previewMode?: PreviewMode
 }
 export interface ISoftDeleteEntity extends IEntity {
   isDeleted: boolean
@@ -68,6 +71,15 @@ export interface IOffer extends IEditableEntity, ISoftDeleteEntity {
 }
 export type EntityDataAttrsOnly<TEntity extends IEditableEntity & ISoftDeleteEntity> = Omit<TEntity, keyof IEditableEntity | keyof ISoftDeleteEntity | 'dataHash'> & { id: EntityId };
 
+export type ReviewSummary = {
+  numReviews: number,
+  score: number
+};
+
+export interface IInitializableOnStartup {
+  initialize(): Promise<void>;
+}
+
 /**
  * Assets provider
  */
@@ -79,6 +91,31 @@ export interface IAppAssetsProvider {
 /** Og Image */
 export interface IOgImageContext {
   locale: Locale
+};
+
+/** Preview mode */
+export interface IPreviewModeContext {
+  mode: PreviewMode
+};
+
+/**
+ * Callback notifications on entity changes
+ */
+export type EntityChangeNotificationSubscriberId = string;
+export type EntityChangeNotificationSubscriptionOptions = {
+  target: { entity: EntityModel, ids: EntityId[] | 'all' }[] | 'all',
+  order: EntityChangeSubscribersOrder
+};
+export type EntityChangeNotificationCallbackArgs = {
+  target: {
+    entity: EntityModel,
+    ids: EntityId[]
+  }[] | 'too-much'
+};
+export type EntityChangeNotificationCallback = (subscriberId: EntityChangeNotificationSubscriberId, args: EntityChangeNotificationCallbackArgs) => Promise<void>;
+export interface IEntityChangeNotificationTask extends IInitializableOnStartup {
+  subscribeForChanges(options: EntityChangeNotificationSubscriptionOptions, callback: EntityChangeNotificationCallback): EntityChangeNotificationSubscriberId;
+  unsubscribeFromChanges(subscriberId: EntityChangeNotificationSubscriberId): void;
 };
 
 /**
@@ -144,9 +181,10 @@ export declare type GetCachePageParamListObj<
 
 export type InternalSystemParamOptions = { [P in typeof QueryInternalRequestParam]: { isRequired: BoolFalse, isSystem: BoolTrue, acceptableValues: ('0' | '1')[] } };
 export type TimestampSystemParamOptions = { [P in typeof QueryPageTimestampParam]: { isRequired: BoolTrue, isSystem: BoolTrue, acceptableValues: AnyParamValue } };
+export type PreviewSystemParamOptions = { [P in typeof QueryPagePreviewModeParam]: { isRequired: BoolFalse, isSystem: BoolTrue, acceptableValues: (typeof PreviewModeParamEnabledValue | 'false')[] } };
 export type GetParamsOptionsKind = 'cache' | 'allowed' | 'system' | 'all';
 
-export declare type SystemQueryParamsListOptions<TVaryMode extends PageCacheVaryOptions> = TVaryMode extends 'UseEntityChangeTimestamp' ? (InternalSystemParamOptions & TimestampSystemParamOptions) : InternalSystemParamOptions;
+export declare type SystemQueryParamsListOptions<TVaryMode extends PageCacheVaryOptions> = (TVaryMode extends 'UseEntityChangeTimestamp' ? TimestampSystemParamOptions : unknown) & InternalSystemParamOptions & PreviewSystemParamOptions;
 declare type GetSystemQueryParamsListObj<TVaryMode extends PageCacheVaryOptions> = GetCachePageParamListObj<SystemQueryParamsListOptions<TVaryMode>>;
 
 export declare type NormalizedQueryResult<
@@ -211,9 +249,9 @@ export declare type CacheByPageTimestamp<
 /**
  * Nitro rendered page's html & og-image cache cleaner
  */
-export interface IHtmlPageCacheCleaner {
+export interface IHtmlPageCacheCleaner extends IInitializableOnStartup {
 
-  invalidatePage(mode: 'schedule' | 'immediate', page: HtmlPage, id: EntityId | undefined): Promise<void>;
+  invalidatePage(mode: 'schedule' | 'immediate', page: AppPage, id: EntityId | undefined): Promise<void>;
   /**
    * Perform's additional instant "out-of-schedule" ({@link IAppConfig.caching.invalidation.intervalSeconds}) cache reset for pages modified since last cleanup.
    * Joins currently executing cleanup task if any
@@ -224,15 +262,11 @@ export interface IHtmlPageCacheCleaner {
    */
   purge(): Promise<void>;
   /**
-   * Initializes instance and starts periodic cache cleaning task in background
-   */
-  initialize(): void;
-/**
    * Returns actual page timestamp.
    * If page haven't been cached & updated and doens't have stored timestamp - returns 0.
    * If page doesn't use {@link QueryPageTimestampParam} timestamp param for caching than function returns configured cache vary mode
    */
-  getPageTimestamp(page: HtmlPage, id: EntityId | undefined): Promise<Date | 0 | (Exclude<PageCacheVaryOptions, 'UseEntityChangeTimestamp'>) | 0>;
+  getPageTimestamp(page: AppPage, id: EntityId | undefined, initializeIfNotExists: boolean): Promise<Date | UninitializedPageTimestamp | (Exclude<PageCacheVaryOptions, 'UseEntityChangeTimestamp'>) | 0>;
 }
 
 export declare enum ParseQueryCacheResultEnum {
@@ -314,8 +348,9 @@ export interface IEntityCacheCityItem extends IEntityCacheSlugItem {
   displayName: ILocalizableValue
 }
 
+export type GetEntityCacheItem<TEntity extends CacheEntityType> = TEntity extends 'City' ? (IEntityCacheCityItem & { type: TEntity }) : never;
 export interface IEntityCacheLogic {
-  get: <TEntityType extends CacheEntityType, TCacheItem extends ({ type: TEntityType } & IEntityCacheItem)>(searchIds: EntityId[], searchSlugs: string[], type: TEntityType) => Promise<TCacheItem[]>
+  get: <TEntityType extends CacheEntityType>(searchIds: EntityId[], searchSlugs: string[], type: TEntityType, previewMode: PreviewMode) => Promise<GetEntityCacheItem<TEntityType>[]>
 }
 
 /**
@@ -333,7 +368,7 @@ export interface IFileData {
 }
 
 export interface IFileLogic {
-  findFile(id: EntityId, event?: H3Event): Promise<IFileInfo>;
+  findFiles(ids: EntityId[], event?: H3Event): Promise<IFileInfo[]>;
   createFile(data: IFileData, userId: EntityId | undefined, event: H3Event): Promise<{ id: EntityId, timestamp: Timestamp }>;
   updateFile(id: EntityId, data: IFileData, userId: EntityId | undefined, recoverDeleted: boolean | undefined, event: H3Event): Promise<{ id: EntityId, timestamp: Timestamp }>;
   getFileData(id: EntityId, event: H3Event): Promise<IFileInfo & { bytes: Buffer }>;
@@ -375,7 +410,8 @@ export type IImageFileInfoUnresolved = Omit<IImageInfo, 'file'> & { fileId: Enti
 export interface IImageCategoryInfo {
   id: EntityId,
   width: number,
-  height: number
+  height: number,
+  kind: ImageCategory
 }
 
 export type ImageCheckAccessResult = 'granted' | 'denied' | 'unprotected';
@@ -394,23 +430,25 @@ export type IImageData = IFileData & {
   ownerId?: EntityId
 };
 
-export interface IImageBytesProvider {
-  getImageBytes(id: EntityId | undefined, slug: string | undefined, category: ImageCategory, bytesOptions: ImageBytesOptions, event: H3Event): Promise<IImageBytes | undefined>;
+export interface IImageBytesProvider extends IInitializableOnStartup {
+  getImageBytes(id: EntityId | undefined, slug: string | undefined, category: ImageCategory, bytesOptions: ImageBytesOptions, event: H3Event, previewMode: PreviewMode): Promise<IImageBytes | undefined>;
   clearImageCache(idOrSlug: EntityId | string, category: ImageCategory): Promise<void>;
 }
 export interface IImageLogic {
-  checkAccess(id: EntityId | undefined, slug: string | undefined, category: ImageCategory, userId?: EntityId): Promise<ImageCheckAccessResult | undefined>;
-  findImage(id: EntityId | undefined, slug: string | undefined, category: ImageCategory, event: H3Event): Promise<IImageInfo | undefined>;
-  getImageBytes(id: EntityId | undefined, slug: string | undefined, category: ImageCategory, event: H3Event): Promise<IImageBytes | undefined>;
-  createImage(data: IImageData, userId: EntityId | undefined, event: H3Event): Promise<{ id: EntityId, timestamp: Timestamp }>;
-  updateImage(imageId: EntityId, data: IImageData, imageFileId: EntityId | undefined, userId: EntityId | undefined, event: H3Event): Promise<{ timestamp: Timestamp }>;
-  getAllImagesByCategory(category: ImageCategory, event: H3Event): Promise<IImageInfo[]>;
+  checkAccess(id: EntityId | undefined, slug: string | undefined, category: ImageCategory, previewMode: PreviewMode, userId?: EntityId): Promise<ImageCheckAccessResult | undefined>;
+  findImage(id: EntityId | undefined, slug: string | undefined, category: ImageCategory, event: H3Event, previewMode: PreviewMode): Promise<IImageInfo | undefined>;
+  getImagesByIds(ids: EntityId[], previewMode: PreviewMode): Promise<IImageFileInfoUnresolved[]>;
+  getImageBytes(id: EntityId | undefined, slug: string | undefined, category: ImageCategory, event: H3Event, previewMode: PreviewMode): Promise<IImageBytes | undefined>;
+  createImage(data: IImageData, userId: EntityId | undefined, event: H3Event, previewMode: PreviewMode): Promise<{ id: EntityId, timestamp: Timestamp }>;
+  updateImage(imageId: EntityId, data: IImageData, imageFileId: EntityId | undefined, userId: EntityId | undefined, event: H3Event, previewMode: PreviewMode): Promise<{ timestamp: Timestamp }>;
+  getAllImagesByCategory(category: ImageCategory, skipAuthChecks: boolean, previewMode: PreviewMode): Promise<IImageFileInfoUnresolved[]>;
   deleteImage(id: EntityId): Promise<void>;
+  resolveImageFiles(imageInfos: IImageFileInfoUnresolved[], event: H3Event, previewMode: PreviewMode): Promise<IImageInfo[]>;
 }
 
-export interface IImageCategoryLogic {
-  getImageCategoryInfos(): Promise<ReadonlyMap<ImageCategory, IImageCategoryInfo>>;
-  findCategory(type: ImageCategory): Promise<IImageCategoryInfo | undefined>;
+export interface IImageCategoryLogic extends IInitializableOnStartup {
+  getImageCategoryInfos(allowCachedValue: boolean): Promise<ReadonlyMap<ImageCategory, IImageCategoryInfo>>;
+  findCategory(category: ImageCategory | EntityId): Promise<IImageCategoryInfo | undefined>;
   createCategory(type: ImageCategory, width: number, height: number): Promise<EntityId>;
 }
 
@@ -427,8 +465,8 @@ export interface IAuthFormImageInfo extends IEditableEntity, ISoftDeleteEntity {
 export type AuthFormImageData = IFileData & { slug: string };
 
 export interface IAuthFormImageLogic {
-  createImage(imageData: AuthFormImageData | EntityId, order: number, event: H3Event): Promise<EntityId>;
-  getAllImages(event: H3Event): Promise<IAuthFormImageInfo[]>;
+  createImage(imageData: AuthFormImageData | EntityId, order: number, event: H3Event, previewMode: PreviewMode): Promise<EntityId>;
+  getAllImages(event: H3Event, previewMode: PreviewMode): Promise<IAuthFormImageInfo[]>;
   deleteImage(id: EntityId): Promise<void>;
 }
 
@@ -489,10 +527,10 @@ export type ICountryData = Omit<ICountry, keyof (IEditableEntity & ISoftDeleteEn
 
 export interface IGeoLogic {
   getAllCountries(): Promise<ICountry[]>;
-  getAllCities(): Promise<ICityShort[]>;
+  getAllCities(previewMode: PreviewMode): Promise<ICityShort[]>;
   createCountry(data: ICountryData): Promise<EntityId>;
-  createCity(data: ICityData): Promise<EntityId>;
-  getAverageDistance(cityId: EntityId): Promise<DistanceUnitKm>;
+  createCity(data: ICityData, previewMode: PreviewMode): Promise<EntityId>;
+  getAverageDistance(cityId: EntityId, allowCachedValue: boolean, previewMode: PreviewMode): Promise<DistanceUnitKm>;
   deleteCountry(countryId: EntityId): Promise<void>;
 };
 
@@ -540,11 +578,11 @@ export interface IPopularCityData {
 
 export interface ICitiesLogic {
   search(query: ICitiesSearchQuery): Promise<ICitySearchItem[]>;
-  getPopularCities(): Promise<IPopularCityItem[]>;
-  setPopularCityImages(cityId: EntityId, images: { id: EntityId, order: number }[]): Promise<void>;
-  getCity(slug: string): Promise<ICity>;
-  makeCityPopular(data: IPopularCityData): Promise<void>;
-  getTravelDetails(cityId: EntityId): Promise<Omit<ITravelDetails, 'price'>>;
+  getPopularCities(previewMode: PreviewMode): Promise<IPopularCityItem[]>;
+  setPopularCityImages(cityId: EntityId, images: { id: EntityId, order: number }[], previewMode: PreviewMode): Promise<void>;
+  getCity(slug: string, previewMode: PreviewMode): Promise<ICity>;
+  makeCityPopular(data: IPopularCityData, previewMode: PreviewMode): Promise<void>;
+  getTravelDetails(cityId: EntityId, previewMode: PreviewMode): Promise<Omit<ITravelDetails, 'price'>>;
   deleteCity(cityId: EntityId): Promise<void>;
 };
 
@@ -556,15 +594,14 @@ export interface IAirlineCompany extends IEditableEntity, ISoftDeleteEntity {
     timestamp?: Timestamp
   },
   city: Pick<ICity, 'geo'>,
-  numReviews: number,
-  reviewScore: number
+  reviewSummary: ReviewSummary
 }
 
 export type IAirlineCompanyData = Omit<IAirlineCompany, 'logoImage' | keyof (IEditableEntity & ISoftDeleteEntity)> & { cityId: EntityId, logoImageId: EntityId };
-export interface IAirlineCompanyLogic {
-  getNearestCompany() : Promise<IAirlineCompany>;
-  createAirlineCompany(data: IAirlineCompanyData): Promise<EntityId>;
-  getAllAirlineCompanies() : Promise<IAirlineCompany[]>;
+export interface IAirlineCompanyLogic extends IInitializableOnStartup {
+  getNearestCompany(allowCachedValue: boolean) : Promise<IAirlineCompany>;
+  createAirlineCompany(data: IAirlineCompanyData, previewMode: PreviewMode): Promise<EntityId>;
+  getAllAirlineCompanies(allowCachedValue: boolean, previewMode: PreviewMode) : Promise<IAirlineCompany[]>;
   deleteCompany(id: EntityId): Promise<void>;
 }
 
@@ -600,9 +637,9 @@ export interface IAirplaneData {
     order: number
   }[]
 };
-export interface IAirplaneLogic {
-  getAllAirplanes(): Promise<IAirplane[]>;
-  createAirplane(data: IAirplaneData): Promise<EntityId>;
+export interface IAirplaneLogic extends IInitializableOnStartup {
+  getAllAirplanes(allowCachedValue: boolean, previewMode: PreviewMode): Promise<IAirplane[]>;
+  createAirplane(data: IAirplaneData, previewMode: PreviewMode): Promise<EntityId>;
   deleteAirplane(id: EntityId): Promise<void>;
 };
 
@@ -616,10 +653,10 @@ export interface IAirport extends IEditableEntity, ISoftDeleteEntity {
 export type IAirportShort = Omit<IAirport, 'city' | 'geo' | Exclude<keyof (IEditableEntity & ISoftDeleteEntity), 'id'>>;
 export type IAirportData = Omit<IAirport, 'city' | keyof (IEditableEntity & ISoftDeleteEntity)> & { cityId: EntityId };
 export interface IAirportLogic {
-  getAirport(id: EntityId): Promise<IAirport>;
-  getAllAirportsShort(): Promise<IAirportShort[]>;
-  createAirport(data: IAirportData): Promise<EntityId>;
-  getAirportsForSearch(citySlugs: string[], addPopular: boolean): Promise<EntityDataAttrsOnly<IAirport>[]>;
+  getAirport(id: EntityId, previewMode: PreviewMode): Promise<IAirport>;
+  getAllAirportsShort(previewMode: PreviewMode): Promise<IAirportShort[]>;
+  createAirport(data: IAirportData, previewMode: PreviewMode): Promise<EntityId>;
+  getAirportsForSearch(citySlugs: string[], addPopular: boolean, previewMode: PreviewMode): Promise<EntityDataAttrsOnly<IAirport>[]>;
   deleteAirport(id: EntityId): Promise<void>;
 };
 
@@ -697,9 +734,9 @@ export interface ISearchFlightOffersResult<TOffer extends IFlightOffer = IFlight
 }
 
 export interface IFlightsLogic {
-  getFlightPromoPrice(cityId: EntityId): Promise<Price>;
-  getFlightOffer(id: EntityId, userId: EntityId | 'guest'): Promise<IFlightOffer>;
-  searchOffers(filter: IFlightOffersFilterParams, userId: EntityId | 'guest', primarySorting: ISorting<FlightOffersSortFactor>, secondarySorting: ISorting<FlightOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean, topOffersStats: boolean): Promise<ISearchFlightOffersResult>;
+  getFlightPromoPrice(cityId: EntityId, previewMode: boolean): Promise<Price>;
+  getFlightOffer(id: EntityId, userId: EntityId | 'guest', previewMode: boolean): Promise<IFlightOffer>;
+  searchOffers(filter: IFlightOffersFilterParams, userId: EntityId | 'guest', primarySorting: ISorting<FlightOffersSortFactor>, secondarySorting: ISorting<FlightOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean, topOffersStats: boolean, previewMode: boolean): Promise<ISearchFlightOffersResult>;
   getUserFavouriteOffers(userId: EntityId): Promise<ISearchFlightOffersResult<IFlightOffer & { addDateUtc: Date }>>;
   getUserTickets(userId: EntityId): Promise<ISearchFlightOffersResult<IFlightOffer & { bookingId: EntityId, bookDateUtc: Date; }>>;
   toggleFavourite(offerId: EntityId, userId: EntityId): Promise<boolean>;
@@ -788,8 +825,6 @@ export type IStayData = Omit<IStay, keyof (IEditableEntity & ISoftDeleteEntity) 
 };
 
 export type IStayShort = Omit<IStay, 'description' | 'reviews' | 'images'> & {
-  numReviews: number,
-  reviewScore: number,
   photo: {
     slug: string,
     timestamp: Timestamp
@@ -797,7 +832,7 @@ export type IStayShort = Omit<IStay, 'description' | 'reviews' | 'images'> & {
 };
 
 export interface IStayOffer extends IOffer {
-  stay: EntityDataAttrsOnly<IStayShort>,
+  stay: EntityDataAttrsOnly<IStayShort> & { reviewSummary?: ReviewSummary },
   checkIn: Date,
   checkOut: Date,
   numGuests: number,
@@ -805,7 +840,7 @@ export interface IStayOffer extends IOffer {
 }
 
 export interface IStayOfferDetails extends Omit<IStayOffer, 'stay'> {
-  stay: EntityDataAttrsOnly<Omit<EntityDataAttrsOnly<IStay>, 'images' | 'reviews'> & { images: IStayImageShort[] } & IStayShort>,
+  stay: EntityDataAttrsOnly<Omit<EntityDataAttrsOnly<IStay>, 'images' | 'reviews'>  & IStayShort & { images: IStayImageShort[], reviewSummary?: ReviewSummary }>,
   prices: { [SL in StayServiceLevel]: Price }
 }
 
@@ -840,11 +875,12 @@ export interface IStaySearchHistory {
 }
 
 export interface IStaysLogic {
+  getAllStays(previewMode: PreviewMode): Promise<IStayShort[]>;
   calculatePrice(stay: EntityDataAttrsOnly<IStayShort>, serviceLevel: StayServiceLevel): Price;
-  createStay(data: IStayData): Promise<EntityId>;
-  getStayOffer(id: EntityId, userId: EntityId | 'guest'): Promise<IStayOfferDetails>;
-  findStay(idOrSlug: EntityId | string): Promise<IStay | undefined>;
-  searchOffers(filter: IStayOffersFilterParams, userId: EntityId | 'guest', sorting: ISorting<StayOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean): Promise<ISearchStayOffersResult>;
+  createStay(data: IStayData, previewMode: PreviewMode): Promise<EntityId>;
+  getStayOffer(id: EntityId, userId: EntityId | 'guest', previewMode: PreviewMode): Promise<IStayOfferDetails>;
+  findStay(idOrSlug: EntityId | string, previewMode: PreviewMode): Promise<IStay | undefined>;
+  searchOffers(filter: IStayOffersFilterParams, userId: EntityId | 'guest', sorting: ISorting<StayOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean, previewMode: PreviewMode, availableStays?: (IStayShort & { reviewSummary: ReviewSummary })[] | undefined): Promise<ISearchStayOffersResult>;
   getUserFavouriteOffers(userId: EntityId): Promise<ISearchStayOffersResult<IStayOffer & { addDateUtc: Date }>>;
   getUserTickets(userId: EntityId): Promise<ISearchStayOffersResult<IStayOffer & { bookingId: EntityId, bookDateUtc: Date; }>>;
   toggleFavourite(offerId: EntityId, userId: EntityId): Promise<boolean>;
@@ -899,8 +935,8 @@ export interface ICompanyReview {
 export type CompanyReviewData = Omit<ICompanyReview, 'id' | 'timestamp' | 'imgSlug'> & { imageId: EntityId };
 
 export interface ICompanyReviewsLogic {
-  getReviews(): Promise<ICompanyReview[]>;
-  createReview(data: CompanyReviewData): Promise<EntityId>;
+  getReviews(previewMode: PreviewMode): Promise<ICompanyReview[]>;
+  createReview(data: CompanyReviewData, previewMode: PreviewMode): Promise<EntityId>;
   deleteReview(entityId: EntityId): Promise<void>;
 };
 
@@ -959,14 +995,13 @@ export enum EmailTemplateEnum {
 };
 export const AvailableEmailTemplates = Object.values(EmailTemplateEnum).map(v => v.valueOf());
 
-export interface IEmailSender {
-  sendEmail(kind: EmailTemplateEnum, params: IEmailParams): Promise<void>;
-  verifySetup(): Promise<void>;
+export interface IEmailSender extends IInitializableOnStartup {
+  sendEmail(kind: EmailTemplateEnum, template: string, params: IEmailParams): Promise<void>;
 };
 
 export interface IMailTemplateLogic {
-  getTemplateMarkup(kind: EmailTemplateEnum, locale: Locale): Promise<string | undefined>;
-  createTemplate(kind: EmailTemplateEnum, markup: ILocalizableValue): Promise<EntityId>;
+  getTemplateMarkup(kind: EmailTemplateEnum, locale: Locale, previewMode: PreviewMode): Promise<string | undefined>;
+  createTemplate(kind: EmailTemplateEnum, markup: ILocalizableValue, previewMode: PreviewMode): Promise<EntityId>;
   deleteTemplate(id: EntityId): Promise<void>;
 }
 
@@ -976,15 +1011,19 @@ export type PropertyGridControlButtonType = 'change' | 'apply' | 'cancel' | 'del
 
 export type ConfirmBoxButton = 'yes' | 'no' | 'cancel';
 
-export type ActivePageLink = HtmlPage.Flights | HtmlPage.Stays | HtmlPage.Favourites;
+export type ActivePageLink = AppPage.Flights | AppPage.Stays | AppPage.Favourites;
 export type NavBarMode = 'landing' | 'inApp';
 export type ButtonKind = 'default' | 'accent' | 'support' | 'icon';
 
+export type FloatingVueHydrationHints = {
+  tabIndex: number | undefined
+};
+
 /** Client - entity cache */
 export interface IEntityCache {
-  set: <TEntityType extends CacheEntityType, TCacheItem extends ({ type: TEntityType } & IEntityCacheItem)>(item: TCacheItem, expireInSeconds: number | undefined) => Promise<void>,
+  set: <TEntityType extends CacheEntityType>(item: GetEntityCacheItem<TEntityType>, expireInSeconds: number | undefined) => Promise<void>,
   remove: <TEntityType extends CacheEntityType>(id: EntityId | undefined, slug: string | undefined, type: TEntityType) => Promise<void>,
-  get: <TEntityType extends CacheEntityType, TCacheItem extends ({ type: TEntityType } & IEntityCacheItem)>(ids: EntityId[], slugs: string[], type: TEntityType, fetchOnCacheMiss: false | { expireInSeconds: number | undefined }) => Promise<TCacheItem[] | undefined>
+  get: <TEntityType extends CacheEntityType>(ids: EntityId[], slugs: string[], type: TEntityType, fetchOnCacheMiss: false | { expireInSeconds: number | undefined }) => Promise<GetEntityCacheItem<TEntityType>[] | undefined>
 }
 
 /** Components - option buttons */

@@ -2,7 +2,8 @@ import { destr } from 'destr';
 import { ImageCategory, type IImageCategoryInfo } from '../shared/interfaces';
 import { DataKeyImageSrcSizes, TemporaryEntityId } from '../shared/constants';
 import { getPayload, addPayload } from './../shared/payload';
-import { parseEnumOrThrow } from '~/shared/common';
+import { lookupValueOrThrow } from './../shared/common';
+import { CachedResultsInAppServicesEnabled } from './../server/backend/helpers/utils';
 
 type CategoryInfoPayload = [string, IImageCategoryInfo];
 
@@ -23,10 +24,11 @@ export const useSystemConfigurationStore = defineStore('systemConfigurationStore
       const result: CategoryInfoPayload[] = [];
 
       const imageCategoryLogic = ServerServicesLocator.getImageCategoryLogic();
-      const allCategoryInfos = [...(await imageCategoryLogic.getImageCategoryInfos()).entries()];
+      const allCategoryInfos = [...(await imageCategoryLogic.getImageCategoryInfos(CachedResultsInAppServicesEnabled)).entries()];
       for (let i = 0; i < allCategoryInfos.length; i++) {
-        const category = allCategoryInfos[i];
-        result.push([category[0], { width: category[1].width, height: category[1].height, id: category[1].id }]);
+        const category = allCategoryInfos[i][0];
+        const categoryInfo = allCategoryInfos[i][1];
+        result.push([category, { width: categoryInfo.width, height: categoryInfo.height, id: categoryInfo.id, kind: categoryInfo.kind }]);
       }
       logger.verbose(`(systemConfigurationStore) image category infos payload built, size=${result.length}`);
       return result;
@@ -41,7 +43,7 @@ export const useSystemConfigurationStore = defineStore('systemConfigurationStore
       logger.verbose('(systemConfigurationStore) building image category infos map');
       const result = new Map<ImageCategory, IImageCategoryInfo>([]);// = new Map<ImageCategory, IImageCategoryInfo>(payload);
       for (let i = 0; i < payload.length; i++) {
-        const category = parseEnumOrThrow(ImageCategory, payload[i][0]) as ImageCategory;
+        const category = lookupValueOrThrow(ImageCategory, payload[i][0]) as ImageCategory;
         const size = destr<IImageCategoryInfo>(payload[i][1]);
         result.set(category, size);
       }
@@ -84,7 +86,7 @@ export const useSystemConfigurationStore = defineStore('systemConfigurationStore
     let info = imageCategoryInfosMap!.get(category);
     if (!info) {
       logger.warn(`(systemConfigurationStore) unexpected category: ${category}, fallback size will be used`);
-      info = { width: 1, height: 1, id: TemporaryEntityId };
+      info = { width: 1, height: 1, id: TemporaryEntityId, kind: category };
     }
 
     logger.verbose(`(systemConfigurationStore) image source size for category=${category} is {width: ${info.width}, height: ${info.height}}`);

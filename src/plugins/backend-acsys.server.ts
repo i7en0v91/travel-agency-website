@@ -1,10 +1,16 @@
 import once from 'lodash-es/once';
-import { access } from 'fs/promises';
-import { parseEnumOrThrow } from '../shared/common';
-import { CmsType, AcsysSQLiteDbName, AcsysExecDir, DefaultTheme, DefaultLocale } from '../shared/constants';
-import { type IAppLogger, type IImageCategoryInfo, type IImageData, type IServerServicesLocator, type RegisterUserByEmailResponse, type EntityId, TokenKind } from '../server/backend/app-facade/interfaces';
+import { lookupValueOrThrow } from '../shared/common';
+import { CmsType, DefaultTheme, DefaultLocale } from '../shared/constants';
+import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
+import { isSqlite } from './../server/backend/helpers/db';
+import { resolveParentDirectory } from './../server/utils/fs';
+import { ServerLogger } from './../server/backend/helpers/logging';
+import { type IImageCategoryInfo, type IImageData, type RegisterUserByEmailResponse, type EntityId, TokenKind, EmailTemplateEnum, ImageCategory, type PreviewMode } from '../shared/interfaces';
+import { type IAppLogger } from '../shared/applogger';
+import { type IServerServicesLocator } from '../shared/serviceLocator';
 import { AppAssetsProvider } from '../server/backend/common-services/app-assets-provider';
 import { ChangeDependencyTracker } from '../server/backend/common-services/change-dependency-tracker';
+import { EntityChangeNotificationTask } from '../server/backend/common-services/entity-change-notification-task';
 import { HtmlPageModelMetadata } from '../server/backend/common-services/html-page-model-metadata';
 import { FileLogic as FileLogicAcsys } from '../server/backend/acsys/file-logic';
 import { ImageCategoryLogic as ImageCategoryLogicWrapper } from '../server/backend/acsys/image-category-logic';
@@ -28,7 +34,6 @@ import { BookingLogic as BookingLogicWrapper } from '../server/backend/acsys/boo
 import { DocumentCreator } from '../server/backend/common-services/document-creator';
 import { CompanyReviewLogic as CompanyReviewLogicWrapper } from '../server/backend/acsys/company-review-logic';
 import { EntityCacheLogic as EntityCacheLogicWrapper } from '../server/backend/acsys/entity-cache-logic';
-import { EmailTemplate, ImageCategory, isQuickStartEnv, ServerLogger, AppException, AppExceptionCodeEnum, resolveParentDirectory } from '../server/backend/app-facade/implementation';
 import { Scope, createInjector } from 'typed-inject';
 import { createCache, getPdfFontsAssetsStorage, getAppAssetsStorage, getNitroCache } from '../server/backend/helpers/nitro';
 import { ensureImageCacheDir } from '../server/backend/helpers/fs';
@@ -59,13 +64,19 @@ import { GeoLogic } from '../server/backend/services/geo-logic';
 import { AirportLogic } from '../server/backend/services/airport-logic';
 import { AirlineCompanyLogic } from '../server/backend/services/airline-company-logic';
 import { AirplaneLogic } from '../server/backend/services/airplane-logic';
+import { AcsysDraftEntitiesResolver } from '../server/backend/acsys/acsys-draft-entities-resolver';
 import cloneDeep from 'lodash-es/cloneDeep';
 import random from 'lodash-es/random';
 import { murmurHash } from 'ohash';
 import { type H3Event } from 'h3';
 import sharp from 'sharp';
+import { PrismaFlightOfferMaterializer, PrismaStayOfferMaterializer } from '../server/backend/helpers/offer-materializers';
+import { AcsysFlightOfferMaterializer, AcsysStayOfferMaterializer } from '../server/backend/acsys/offer-materializers';
+import { orderBy } from 'lodash';
 
 const PluginName = 'backend-acsys';
+
+const ViewSampleDataPreviewMode: PreviewMode = false;
 
 interface IAcsysServerServicesLocator extends IServerServicesLocator {
   getAcsysClientProvider(): IAcsysClientProvider,
@@ -96,30 +107,6 @@ declare type SampleDataIds = {
 };
 
 export async function buildBackendServicesLocator(acsysModuleOptions: IAcsysModuleOptions, srcDir: string, logger: IAppLogger): Promise<IAcsysServerServicesLocator> {
-  let dbUrlOverwrite: string | undefined;
-  if(isQuickStartEnv()) {
-    logger.verbose('locating Acsys SQLite db...');
-    const acsysDir = join(srcDir, AcsysExecDir);
-    if (acsysDir) {
-      dbUrlOverwrite = `${join(acsysDir, AcsysSQLiteDbName)}`;
-    }
-
-    if (!dbUrlOverwrite) {
-      logger.error(`failed to locate Acsys SQLite db, path=${acsysDir}`);
-      throw new Error('failed to locate Acsys SQLite db');
-    }
-
-    try {
-      await access(dbUrlOverwrite);
-    } catch (err: any) {
-      logger.error(`cannot access Acsys SQLite db file, path=${dbUrlOverwrite}`);
-      throw new Error('cannot access Acsys SQLite db file');
-    }
-
-    logger.info(`the following Acsys SQLite db file will be used, path=${dbUrlOverwrite}`);
-    dbUrlOverwrite = `file:${dbUrlOverwrite}`;
-  }
-  
   const nitroCache = await getNitroCache(logger);
   const appAssetsStorage = await getAppAssetsStorage(logger);
   const pdfFontsAssetsStorage = await getPdfFontsAssetsStorage(logger);
@@ -127,7 +114,7 @@ export async function buildBackendServicesLocator(acsysModuleOptions: IAcsysModu
   const injector = createInjector();
   const provider = injector
     .provideClass('logger', ServerLogger, Scope.Singleton)
-    .provideValue('dbRepository', createPrismaClient(logger, dbUrlOverwrite))
+    .provideValue('dbRepository', await createPrismaClient(logger))
     .provideValue('cache', createCache())
     .provideValue('nitroCache', nitroCache)
     .provideValue('appAssetsStorage', appAssetsStorage)
@@ -136,11 +123,13 @@ export async function buildBackendServicesLocator(acsysModuleOptions: IAcsysModu
     .provideClass('appAssetsProvider', AppAssetsProvider, Scope.Singleton)
     .provideClass('htmlPageModelMetadata', HtmlPageModelMetadata, Scope.Singleton)
     .provideClass('changeDependencyTracker', ChangeDependencyTracker, Scope.Singleton)
+    .provideClass('entityChangeNotifications', EntityChangeNotificationTask, Scope.Singleton)
     .provideClass('htmlPageCacheCleaner', HtmlPageCacheCleaner, Scope.Singleton)
     .provideValue('acsysModuleOptions', acsysModuleOptions)
     .provideClass('acsysClientProvider', AcsysClientProvider, Scope.Singleton)
     .provideClass('fileLogicPrisma', FileLogic, Scope.Singleton)
     .provideClass('fileLogic', FileLogicAcsys, Scope.Singleton)
+    .provideClass('acsysDraftsEntitiesResolver', AcsysDraftEntitiesResolver, Scope.Singleton)
     .provideClass('imageCategoryLogicPrisma', ImageCategoryLogic, Scope.Singleton)
     .provideClass('imageCategoryLogic', ImageCategoryLogicWrapper, Scope.Singleton)
     .provideClass('imageLogicPrisma', ImageLogic, Scope.Singleton)
@@ -167,8 +156,12 @@ export async function buildBackendServicesLocator(acsysModuleOptions: IAcsysModu
     .provideClass('citiesLogic', CitiesLogicWrapper, Scope.Singleton)
     .provideClass('airportLogicPrisma', AirportLogic, Scope.Singleton)
     .provideClass('airportLogic', AirportLogicWrapper, Scope.Singleton)
+    .provideClass('flightOfferMaterializerPrisma', PrismaFlightOfferMaterializer, Scope.Singleton)
+    .provideClass('flightOfferMaterializer', AcsysFlightOfferMaterializer, Scope.Singleton)
     .provideClass('flightsLogicPrisma', FlightsLogic, Scope.Singleton)
     .provideClass('flightsLogic', FlightsLogicWrapper, Scope.Singleton)
+    .provideClass('stayOfferMaterializerPrisma', PrismaStayOfferMaterializer, Scope.Singleton)
+    .provideClass('stayOfferMaterializer', AcsysStayOfferMaterializer, Scope.Singleton)
     .provideClass('staysLogicPrisma', StaysLogic, Scope.Singleton)
     .provideClass('staysLogic', StaysLogicWrapper, Scope.Singleton)
     .provideClass('bookingLogicPrisma', BookingLogic, Scope.Singleton)
@@ -185,6 +178,7 @@ export async function buildBackendServicesLocator(acsysModuleOptions: IAcsysModu
     getHtmlPageCacheCleaner: () => provider.resolve('htmlPageCacheCleaner'),
     getPageModelMetadata: () => provider.resolve('htmlPageModelMetadata'),
     getChangeDependencyTracker: () => provider.resolve('changeDependencyTracker'),
+    getEntityChangeNotifications: () => provider.resolve('entityChangeNotifications'),
     getAcsysClientProvider: () => provider.resolve('acsysClientProvider'),
     getUserLogic: () => provider.resolve('userLogic'),
     getImageLogic: () => provider.resolve('imageLogic'),
@@ -232,7 +226,7 @@ async function deleteViewSampleData(sampleDataIds: SampleDataIds, serviceLocator
 
   if(sampleDataIds.userId) {
     const stayLogic = serviceLocator.getStaysLogic();
-    const stayOffers = (await stayLogic.searchOffers({ citySlug: SampleCitySlugs[0], }, sampleDataIds.userId, { direction: 'asc' }, { skip: 0, take: 1000 }, false)).pagedItems;
+    const stayOffers = (await stayLogic.searchOffers({ citySlug: SampleCitySlugs[0], }, sampleDataIds.userId, { direction: 'asc' }, { skip: 0, take: 1000 }, false, ViewSampleDataPreviewMode)).pagedItems;
     logger.debug(`[${PluginName}] deleting sample stay offers, count=${stayOffers.length}`);
     for(let i = 0; i < stayOffers.length; i++) {
       await stayLogic.deleteStayOffer(stayOffers[i].id);
@@ -247,7 +241,7 @@ async function deleteViewSampleData(sampleDataIds: SampleDataIds, serviceLocator
 
   if(sampleDataIds.userId) {
     const flightsLogic = serviceLocator.getFlightsLogic();
-    const flightOffers = (await flightsLogic.searchOffers({ }, sampleDataIds.userId, { direction: 'asc' }, { direction: 'asc' }, { skip: 0, take: 1000 }, false, false)).pagedItems;
+    const flightOffers = (await flightsLogic.searchOffers({ }, sampleDataIds.userId, { direction: 'asc' }, { direction: 'asc' }, { skip: 0, take: 1000 }, false, false, ViewSampleDataPreviewMode)).pagedItems;
     logger.debug(`[${PluginName}] deleting sample flight offers, count=${flightOffers.length}`);
     for(let i = 0; i < flightOffers.length; i++) {
       await flightsLogic.deleteFlightOffer(flightOffers[i].id);
@@ -382,11 +376,11 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
     originalName: 'acsys-sample-data-image',
     stubCssStyle: undefined
   };
-  sampleIds.imageId = (await imageLogic.createImage(sampleImageData, undefined, event)).id;
+  sampleIds.imageId = (await imageLogic.createImage(sampleImageData, undefined, event, ViewSampleDataPreviewMode)).id;
 
   logger.debug(`[${PluginName}] creating sample auth form image data`);
   const authFormImageLogic = serviceLocator.getAuthFormImageLogic();
-  sampleIds.authFormImageId = await authFormImageLogic.createImage(sampleIds.imageId, 999, event);
+  sampleIds.authFormImageId = await authFormImageLogic.createImage(sampleIds.imageId, 999, event, ViewSampleDataPreviewMode);
  
   logger.debug(`[${PluginName}] creating user sample data`);
   const userLogic = serviceLocator.getUserLogic();
@@ -414,7 +408,7 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
       population: 100000, 
       slug: SampleCitySlugs[0], 
       utcOffsetMin: 0 
-    }),
+    }, ViewSampleDataPreviewMode),
     await geoLogic.createCity({ 
       countryId: sampleIds.countryId, 
       geo: { 
@@ -425,7 +419,7 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
       population: 100000, 
       slug: SampleCitySlugs[1], 
       utcOffsetMin: 0 
-    })
+    }, ViewSampleDataPreviewMode)
   ];
 
   logger.debug(`[${PluginName}] creating sample popular city data`);
@@ -439,13 +433,13 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
     travelTextStr: SampleLocalizeableStr, 
     visibleOnWorldMap: false, 
     geo: { lat: 0.0, lon: 0.0 } 
-  });
+  }, ViewSampleDataPreviewMode);
   await cityLogic.setPopularCityImages(
     sampleIds.popularCityId, [
       { 
         id: sampleIds.imageId, 
         order: 0 
-      }]);
+      }], ViewSampleDataPreviewMode);
 
   logger.debug(`[${PluginName}] creating sample company review data`);
   const companyReviewLogic = serviceLocator.getCompanyReviewsLogic();
@@ -454,7 +448,7 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
     body: SampleLocalizeableStr,
     header: SampleLocalizeableStr,
     userName: SampleLocalizeableStr
-  });
+  }, ViewSampleDataPreviewMode);
   
   logger.debug(`[${PluginName}] creating sample airline company data`);
   const airlineCompanyLogic = serviceLocator.getAirlineCompanyLogic();
@@ -462,15 +456,17 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
     cityId: sampleIds.cityIds[0], 
     logoImageId: sampleIds.imageId, 
     name: SampleLocalizeableStr, 
-    numReviews: 0, 
-    reviewScore: 0, 
+    reviewSummary: {
+      numReviews: 0, 
+      score: 0
+    },
     city: {
       geo: { 
         lat: 0.0, 
         lon: 0.0 
       }
     } 
-  });
+  }, ViewSampleDataPreviewMode);
 
   logger.debug(`[${PluginName}] creating sample airports data`);
   const airportLogic = serviceLocator.getAirportLogic();
@@ -482,7 +478,7 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
         lon: 0.0 
       }, 
       name: SampleLocalizeableStr 
-    }),
+    }, ViewSampleDataPreviewMode),
     await airportLogic.createAirport({ 
       cityId: sampleIds.cityIds[1], 
       geo: { 
@@ -490,7 +486,7 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
         lon: 1.0 
       }, 
       name: SampleLocalizeableStr 
-    })
+    }, ViewSampleDataPreviewMode)
   ];
   
   logger.debug(`[${PluginName}] creating sample airplane data`);
@@ -502,11 +498,11 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
       kind: 'business',
       order: 0
     }]
-  });
+  }, ViewSampleDataPreviewMode);
 
   logger.debug(`[${PluginName}] creating sample flight offers data`);
   const flightsLogic = serviceLocator.getFlightsLogic();
-  const flightOffers = await flightsLogic.searchOffers({ }, sampleIds.userId, { direction: 'asc' }, { direction: 'asc' }, { skip: 0, take: 1 }, false, false);
+  const flightOffers = await flightsLogic.searchOffers({ }, sampleIds.userId, { direction: 'asc' }, { direction: 'asc' }, { skip: 0, take: 1 }, false, false, ViewSampleDataPreviewMode);
   if(flightOffers.pagedItems.length === 0) {
     logger.warn(`[${PluginName}] failed to create flight offers, rseult=${registerUserResult}`);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to create flight offers', 'error-page');
@@ -539,10 +535,10 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
         userId: sampleIds.userId 
       }], 
       slug: 'acsys-sample-stay-data-slug' 
-    });
+    }, ViewSampleDataPreviewMode);
   
   logger.debug(`[${PluginName}] creating sample stay offers data`);
-  const stayOffers = await stayLogic.searchOffers({ citySlug: SampleCitySlugs[0], }, sampleIds.userId, { direction: 'asc' }, { skip: 0, take: 1 }, false);
+  const stayOffers = await stayLogic.searchOffers({ citySlug: SampleCitySlugs[0], }, sampleIds.userId, { direction: 'asc' }, { skip: 0, take: 1 }, false, ViewSampleDataPreviewMode);
   if(stayOffers.pagedItems.length === 0) {
     logger.warn(`[${PluginName}] failed to create stay offers, rseult=${registerUserResult}`);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to create stay offers', 'error-page');
@@ -561,7 +557,7 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
 
   logger.debug(`[${PluginName}] creating sample mail template data`);
   const mailTemplateLogic = serviceLocator.getMailTemplateLogic();
-  sampleIds.mailTemplateId = await mailTemplateLogic.createTemplate(EmailTemplate.EmailVerify, SampleLocalizeableStr);
+  sampleIds.mailTemplateId = await mailTemplateLogic.createTemplate(EmailTemplateEnum.EmailVerify, SampleLocalizeableStr, ViewSampleDataPreviewMode);
 
   logger.debug(`[${PluginName}] creating sample verification token data`);
   const tokenLogic = serviceLocator.getTokenLogic();
@@ -580,7 +576,7 @@ async function ensureViews(acsysClient: IAcsysClientAdministrator, serviceLocato
     return;
   }
 
-  const viewsConfig = [...ViewsConfig.entries()];
+  const viewsConfig = orderBy([...ViewsConfig.entries()], v => v[0].valueOf(), 'asc');
   for(let i = 0; i < viewsConfig.length; i++) {
     const sourceCollection = viewsConfig[i][0];
     const viewConfig = viewsConfig[i][1];
@@ -683,7 +679,7 @@ async function ensureAdminUser(acsysClient: IAcsysClientBase, moduleOptions: IAc
   let connected = await isConnected(acsysClient);
   if(!connected) {
     logger.verbose(`[${PluginName}] not connected, performing inital configuration`);
-    if(isQuickStartEnv()) { // SQLite
+    if(isSqlite()) {
       const initialized = await sendInitialLocalDatabaseConfig(acsysClient, moduleOptions, logger);
       if(!initialized) {
         logger.error(`[${PluginName}] failed to send initial local database config request`);
@@ -828,7 +824,7 @@ export default defineNuxtPlugin(
       if(!process.env.CMS) {
         return;
       }
-      const cmsType = parseEnumOrThrow(CmsType, process.env.CMS) as CmsType;
+      const cmsType = lookupValueOrThrow(CmsType, process.env.CMS) as CmsType;
       if(cmsType !== CmsType.acsys) {
         return;
       }

@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { CheckInOutDateUrlFormat } from './../../shared/constants';
 import { type ISearchedStayDto, type ISearchedStayOfferDto, type ISearchedFlightDto, type ISearchedFlightOfferDto, type IFlightDto, type ICityDto, type IStayDto, type IFlightOfferDetailsDto, type IAirlineCompanyDto, type IAirplaneDto, type IAirportDto, type IStayOfferDetailsDto, type IStayReviewDto, type IBookingDetailsDto } from './../dto';
-import type { ISearchStayOffersResult, IStayShort, IStayOffer, ISearchFlightOffersResult, EntityId, IOfferBooking, IStay, IStayReview, IStayImageShort, IFlight, ICity, IAirlineCompany, IAirplane, IAirport, IFlightOffer, EntityDataAttrsOnly, IStayOfferDetails } from './../../shared/interfaces';
+import type { ReviewSummary, ISearchStayOffersResult, IStayShort, IStayOffer, ISearchFlightOffersResult, EntityId, IOfferBooking, IStay, IStayReview, IStayImageShort, IFlight, ICity, IAirlineCompany, IAirplane, IAirport, IFlightOffer, EntityDataAttrsOnly, IStayOfferDetails } from './../../shared/interfaces';
 
 export function mapAirlineCompany (value: EntityDataAttrsOnly<IAirlineCompany>): IAirlineCompanyDto {
   const mapped: IAirlineCompanyDto = {
@@ -14,8 +14,8 @@ export function mapAirlineCompany (value: EntityDataAttrsOnly<IAirlineCompany>):
       geo: value.city.geo
     },
     name: value.name,
-    numReviews: value.numReviews,
-    reviewScore: value.reviewScore
+    numReviews: value.reviewSummary.numReviews,
+    reviewScore: value.reviewSummary.score
   };
   return mapped;
 }
@@ -112,7 +112,7 @@ export function mapStayReview (stayReview: EntityDataAttrsOnly<IStayReview>, ord
   };
 }
 
-export function mapStay (stay: (Omit<EntityDataAttrsOnly<IStay>, 'images' | 'reviews'> & { images: IStayImageShort[], numReviews: number, reviewScore: number })): IStayDto {
+export function mapStay (stay: (Omit<EntityDataAttrsOnly<IStay>, 'images' | 'reviews'> & { images: IStayImageShort[] })): IStayDto {
   return {
     id: stay.id,
     city: mapCity(stay.city),
@@ -137,9 +137,7 @@ export function mapStay (stay: (Omit<EntityDataAttrsOnly<IStay>, 'images' | 'rev
         paragraphKind: d.paragraphKind,
         textStr: d.textStr
       };
-    }),
-    numReviews: stay.numReviews,
-    reviewScore: stay.reviewScore
+    })
   };
 }
 
@@ -171,7 +169,7 @@ export function mapBooking (booking: IOfferBooking<IFlightOffer | IStayOfferDeta
     id: booking.id,
     kind: booking.offer.kind,
     flightOffer: booking.offer.kind === 'flights' ? mapFlightOffer(booking.offer as IFlightOffer) : undefined,
-    stayOffer: booking.offer.kind === 'stays' ? mapStayOffer(booking.offer as IStayOfferDetails) : undefined,
+    stayOffer: booking.offer.kind === 'stays' ? { ...mapStayOffer(booking.offer as IStayOfferDetails), reviewSummary: (booking.offer as IStayOfferDetails).stay.reviewSummary  } : undefined,
     bookedUser: {
       id: booking.bookedUser.id,
       avatar: booking.bookedUser.avatar,
@@ -272,19 +270,21 @@ export function mapSearchStayOfferResultEntities (result: ISearchStayOffersResul
   };
 }
 
-export function mapSearchedStay (value: EntityDataAttrsOnly<IStayShort>): ISearchedStayDto {
+export function mapSearchedStay (value: EntityDataAttrsOnly<IStayShort> & { reviewSummary?: ReviewSummary }): ISearchedStayDto {
   return {
     cityId: value.city.id,
     geo: value.geo,
     id: value.id,
     slug: value.slug,
     name: value.name,
-    numReviews: value.numReviews,
-    reviewScore: value.reviewScore,
     photo: {
       slug: value.photo.slug,
       timestamp: value.photo.timestamp
-    }
+    },
+    reviewSummary: value.reviewSummary ? {
+      numReviews: value.reviewSummary.numReviews,
+      score: value.reviewSummary.score
+    } : undefined
   };
 }
 

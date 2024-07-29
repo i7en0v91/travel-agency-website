@@ -8,6 +8,7 @@ import type { FlightClass, ISearchFlightOffersMainParams, ISearchFlightOffersPar
 import DropdownList from './../../../components/forms/dropdown-list.vue';
 import SearchFlightDatePicker from './search-flights-date-picker.vue';
 import SearchFlightsParams from './search-flights-params.vue';
+import { type ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string,
@@ -25,9 +26,9 @@ const flightParams = ref<{ passengers: number, class: FlightClass } | undefined>
 const tripType = ref<TripType>('return');
 const tripDates = ref<Date[]>([]);
 
-const fromComponent = shallowRef<InstanceType<typeof SearchListInput>>();
-const toComponent = shallowRef<InstanceType<typeof SearchListInput>>();
-const tripTypeComponent = shallowRef<InstanceType<typeof DropdownList>>();
+const fromComponent = shallowRef<ComponentInstance<typeof SearchListInput>>();
+const toComponent = shallowRef<ComponentInstance<typeof SearchListInput>>();
+const tripTypeComponent = shallowRef<ComponentInstance<typeof DropdownList>>();
 
 const searchOffersStoreAccessor = useSearchOffersStore();
 
@@ -153,7 +154,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchFlightOffers
             v-model:selected-value="fromCity"
             :initially-selected-value="takeInitialValuesFromUrlQuery ? (displayedSearchParams?.fromCity ?? null) : undefined"
             :ctrl-key="`${props.ctrlKey}-From`"
-            :item-search-url="ApiEndpointCitiesSearch"
+            :item-search-url="`/${ApiEndpointCitiesSearch}`"
             :persistent="true"
             type="destination"
             list-container-class="search-offers-dropdown-list-container"
@@ -167,7 +168,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchFlightOffers
             v-model:selected-value="toCity"
             :initially-selected-value="takeInitialValuesFromUrlQuery ? (displayedSearchParams?.toCity ?? null) : undefined"
             :ctrl-key="`${props.ctrlKey}-To`"
-            :item-search-url="ApiEndpointCitiesSearch"
+            :item-search-url="`/${ApiEndpointCitiesSearch}`"
             :persistent="true"
             type="destination"
             list-container-class="search-offers-dropdown-list-container"

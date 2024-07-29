@@ -1,13 +1,13 @@
 import { defineNuxtModule, useLogger } from '@nuxt/kit';
 import { type ConsolaInstance } from 'consola';
 import { readdirSync, existsSync, rmSync, mkdirSync, cpSync, readFileSync, writeFileSync } from 'fs';
-import { parseEnumOrThrow } from '../shared/common';
-import { AcsysFilesDir, AcsysSQLiteDbName, CmsType, isQuickStartEnv } from '../shared/constants';
+import { lookupKeyByValueOrThrow } from '../shared/common';
+import { AcsysFilesDir, AcsysSQLiteDbName, CmsType, isQuickStartEnv, isPublishEnv } from '../shared/constants';
 import { join, resolve } from 'pathe';
 import { execSync } from 'node:child_process';
 import toPairs from 'lodash-es/toPairs';
 import { type StorageDriverType, type IAcsysModuleOptions } from './../appconfig';
-import { resolveParentDirectory } from './../shared/fs';
+import { resolveParentDirectory } from './../server/utils/fs';
 
 const DotEnvTemplate = "PORT=@PORT \r\n\
 DATABASE_HOST=@DATABASE_HOST \r\n\
@@ -54,7 +54,8 @@ async function build(options: IAcsysModuleOptions, srcDir: string, logger: Conso
 }
 
 function getCurrentDbType(): DbType { 
-  return isQuickStartEnv() ? 'sqlite' : 'mysql'; 
+  const isSqlite = isQuickStartEnv();
+  return isSqlite ? 'sqlite' : 'mysql'; 
 }
 
 function parseDbConnectionString(connString: string, logger: ConsolaInstance) : DbInfo {
@@ -236,7 +237,7 @@ export default defineNuxtModule<IAcsysModuleOptions>({
     name: ModuleName,
     configKey: 'acsys',
     compatibility: { 
-      nuxt: '3.11.2'
+      nuxt: '3.12.4'
     },
     version: '1.0.0'
   },
@@ -245,7 +246,7 @@ export default defineNuxtModule<IAcsysModuleOptions>({
       return;
     }
     
-    const cmsType = parseEnumOrThrow(CmsType, process.env.CMS) as CmsType;
+    const cmsType = lookupKeyByValueOrThrow(CmsType, process.env.CMS);
     if(cmsType !== CmsType.acsys) {
       return;
     }
@@ -263,7 +264,7 @@ export default defineNuxtModule<IAcsysModuleOptions>({
       try {
         logger.info(`[${ModuleName}] preparing dist`);
         await copyDistToExecDir(options, srcDir, logger);
-        if(!process.env.PUBLISH) {
+        if(!isPublishEnv()) {
           // for local development
           await rewriteStorages(options.storageDriver, options, srcDir, logger);
         }

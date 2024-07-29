@@ -2,15 +2,16 @@ import { access } from 'fs/promises';
 import once from 'lodash-es/once';
 import { join } from 'pathe';
 import { type IAppLogger } from '../shared/applogger';
-import { ServerLogger } from '../server-logic/helpers/logging';
+import { ServerLogger } from '../server/backend/helpers/logging';
 import AppConfig from '../appconfig';
 import installLoggingHooks from './logging-hooks';
 import toPairs from 'lodash-es/toPairs';
 import { getOgImageFileName } from '../shared/common';
 import { type Locale, AvailableLocaleCodes } from '../shared/constants';
-import { resolveParentDirectory } from '../shared/fs';
+import { resolveParentDirectory } from '../server/utils/fs';
 import type { NitroRouteConfig } from 'nitropack';
-import { type HtmlPage, AllHtmlPages, EntityIdPages } from '../shared/page-query-params';
+import { type AppPage, AllHtmlPages, EntityIdPages } from '../shared/page-query-params';
+import type { IInitializableOnStartup } from './../shared/interfaces';
 
 async function checkOgImageConfiguration (logger: IAppLogger): Promise<void> {
   if (!process.env.PUBLISH) {
@@ -31,7 +32,7 @@ async function checkOgImageConfiguration (logger: IAppLogger): Promise<void> {
   }
 
   const ogImageDir = join(publicAssetsDir, 'img', 'og');
-  const imgPages: HtmlPage[] = AllHtmlPages.filter(p => !EntityIdPages.includes(p as HtmlPage));
+  const imgPages: AppPage[] = AllHtmlPages.filter(p => !EntityIdPages.includes(p as AppPage));
   for (let i = 0; i < imgPages.length; i++) {
     for (let j = 0; j < AvailableLocaleCodes.length; j++) {
       const imgPath = join(ogImageDir, getOgImageFileName(imgPages[i], AvailableLocaleCodes[j] as Locale));
@@ -51,18 +52,21 @@ const initApp = once(async () => {
   const logger = new ServerLogger(); // container has not built yet
   try {
     logger.always(`APP STARTING... (${import.meta.env.MODE})`); // use error level to be sure it is logged no matter which logging level is in config
-    //(globalThis as any).CommonServicesLocator = (globalThis as any).ServerServicesLocator = await buildBackendServicesLocator();
-    if (AppConfig.email) {
-      await ServerServicesLocator.getEmailSender().verifySetup();
-    } else if (process.env.PUBLISH) {
-      logger.error('Emailing is not configured!');
-      throw new Error('Emailing is not configured!');
-    } else {
-      logger.info('skipping email infrastructure check as it is disabled');
+    const initializables: IInitializableOnStartup[] = [
+      ServerServicesLocator.getEmailSender(),  
+      ServerServicesLocator.getServerI18n(),
+      ServerServicesLocator.getEntityChangeNotifications(),
+      ServerServicesLocator.getHtmlPageCacheCleaner(),
+      ServerServicesLocator.getImageCategoryLogic(),
+      ServerServicesLocator.getImageBytesProvider(),
+      ServerServicesLocator.getAirlineCompanyLogic(),
+      ServerServicesLocator.getAirplaneLogic()
+    ];
+    for(let i = 0; i < initializables.length; i++) {
+      await initializables[i].initialize();
     }
-    ServerServicesLocator.getServerI18n().initialize();
+
     await checkOgImageConfiguration(logger);
-    ServerServicesLocator.getHtmlPageCacheCleaner().initialize();
   } catch (e) {
     logger.error('app initialization failed', e);
     throw e;

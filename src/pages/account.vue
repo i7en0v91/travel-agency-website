@@ -6,7 +6,7 @@ import UserCover from './../components/user-account/user-cover.vue';
 import OptionButtonGroup from './../components/option-buttons/option-button-group.vue';
 import PageContent from './../components/user-account/page-content.vue';
 import { UserAccountTabAccount, UserAccountTabPayments, UserAccountTabHistory, UserAccountOptionButtonGroup, UserAccountOptionButtonAccount, UserAccountOptionButtonHistory, UserAccountOptionButtonPayments } from './../shared/constants';
-import ComponentWaiterIndicator from './../components/component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../components/component-waiting-indicator.vue';
 
 definePageMeta({
   middleware: 'auth',
@@ -65,7 +65,7 @@ const activeOptionCtrl = ref<string | undefined>();
       <PageContent ctrl-key="accountPageContent" :active-option="activeOptionCtrl" :tab-panel-ids="{ payments: paymentTabHtmlId, account: accountTabHtmlId, history: historyTabHtmlId }" />
     </div>
     <template #fallback>
-      <ComponentWaiterIndicator ctrl-key="AccountPageClientFallback" class="my-xs-5"/>
+      <ComponentWaitingIndicator ctrl-key="AccountPageClientFallback" class="my-xs-5"/>
     </template>
   </ClientOnly>
 </template>

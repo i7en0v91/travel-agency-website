@@ -1,34 +1,39 @@
 <script setup lang="ts">
-import { withQuery } from 'ufo';
 import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
+import { type Locale } from './../../shared/constants';
 import OAuthProviderList from './../../components/account/oauth-providers-list.vue';
 import { AuthProvider } from './../../shared/interfaces';
-import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
+import { AppPage } from './../../shared/page-query-params';
+import { formatAuthCallbackUrl } from './../../client/helpers';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
+import { usePreviewState } from './../../composables/preview-state';
 
 interface IProps {
   ctrlKey: string
 };
 defineProps<IProps>();
 
+const { locale } = useI18n();
 const { signIn } = useAuth();
-const localePath = useLocalePath();
+const navLinkBuilder = useNavLinkBuilder();
 const route = useRoute();
+const { enabled } = usePreviewState();
 
 async function onEmailLoginClick (): Promise<void> {
-  await navigateTo(withQuery(localePath(`/${getHtmlPagePath(HtmlPage.Login)}`), { callbackUrl: route.fullPath }));
+  await navigateTo(navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale, { originPath: formatAuthCallbackUrl(route.fullPath, enabled) }));
 }
 
-function onOAuthProviderClick (provider: AuthProvider) {
-  const oauthOptions = { callbackUrl: route.fullPath, external: true, redirect: true };
+async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
+  const oauthOptions = { callbackUrl: formatAuthCallbackUrl(route.fullPath, enabled), redirect: true };
   switch (provider) {
     case AuthProvider.Google:
-      signIn('google', oauthOptions);
+      await signIn('google', oauthOptions);
       break;
     case AuthProvider.GitHub:
-      signIn('github', oauthOptions);
+      await signIn('github', oauthOptions);
       break;
     default:
-      signIn('testlocal', oauthOptions);
+      await signIn('testlocal', oauthOptions);
       break;
   }
 }

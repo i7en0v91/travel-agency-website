@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import { type Locale } from './../../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
+import { AppPage } from './../../shared/page-query-params';
 import { ImageCategory, type EntityDataAttrsOnly, type IFlightOffer, type ILocalizableValue, type EntityId } from './../../shared/interfaces';
 import { getI18nResName3, getI18nResName2, type I18nResName } from './../../shared/i18n';
 import { getLocalizeableValue } from './../../shared/common';
@@ -9,9 +9,10 @@ import OfferBooking from './../../components/booking-page/offer-booking.vue';
 import { type IOfferBookingStoreFactory } from './../../stores/offer-booking-store';
 import OfferDetailsBreadcrumbs from './../../components/common-page-components/offer-details-breadcrumbs.vue';
 import FlightDetailsCard from './../../components/common-page-components/flight-details-card.vue';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 const { locale } = useI18n();
-const localePath = useLocalePath();
+const navLinkBuilder = useNavLinkBuilder();
 
 const route = useRoute();
 
@@ -19,7 +20,7 @@ const isError = ref(false);
 
 const offerParam = route.params?.id?.toString() ?? '';
 if (offerParam.length === 0) {
-  await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.Index)}`));
+  await navigateTo(navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale));
 }
 const offerId: EntityId = offerParam;
 
@@ -52,8 +53,6 @@ if (import.meta.server) {
       title: flightOffer.value!.departFlight.airplane.name,
       city: flightOffer.value!.departFlight.departAirport.city,
       price: flightOffer.value!.totalPrice.toNumber(),
-      reviewScore: flightOffer.value!.departFlight.airlineCompany.reviewScore,
-      numReviews: flightOffer.value!.departFlight.airlineCompany.numReviews,
       dateUnixUtc: flightOffer.value!.departFlight.departTimeUtc.getTime(),
       utcOffsetMin: flightOffer.value!.departFlight.departAirport.city.utcOffsetMin,
       image: {

@@ -9,24 +9,30 @@ import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
 import CheckBox from './../components/forms/check-box.vue';
 import SimpleButton from './../components/forms/simple-button.vue';
-import { ApiEndpointSignUp, UserNotificationLevel, SignUpResultEnum } from './../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../shared/page-query-params';
+import { type Locale, ApiEndpointSignUp, UserNotificationLevel, SignUpResultEnum } from './../shared/constants';
+import { AppPage, getPagePath } from './../shared/page-query-params';
 import { type ISignUpDto, type ISignUpResultDto } from './../server/dto';
 import { isPasswordSecure } from './../shared/common';
 import { post } from './../shared/rest-utils';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
 import CaptchaProtection from './../components/forms/captcha-protection.vue';
+import { type ComponentInstance } from 'vue';
+import { formatAuthCallbackUrl } from './../client/helpers';
+import { useNavLinkBuilder } from './../composables/nav-link-builder';
+import { usePreviewState } from './../composables/preview-state';
 
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
+const navLinkBuilder = useNavLinkBuilder();
 const { signIn } = useAuth();
+const { enabled } = usePreviewState();
 
 definePageMeta({
   middleware: 'auth',
   auth: {
     unauthenticatedOnly: true,
-    navigateAuthenticatedTo: '/'
+    navigateAuthenticatedTo: `/${getPagePath(AppPage.Index)}`
   },
   title: { resName: getI18nResName2('signUpPage', 'title'), resArgs: undefined }
 });
@@ -44,7 +50,7 @@ const signUpErrorMsgResName = ref('');
 const agreeToPolicies = ref(false);
 
 const emailIsNotTakenByOtherUsers = ref(true);
-const captcha = shallowRef<InstanceType<typeof CaptchaProtection>>();
+const captcha = shallowRef<ComponentInstance<typeof CaptchaProtection>>();
 
 const { createI18nMessage } = validators;
 const withI18nMessage = createI18nMessage({ t });
@@ -105,18 +111,18 @@ async function callServerSignUp (captchaToken?: string) : Promise<void> {
     captchaToken
   };
 
-  const resultDto = await post(ApiEndpointSignUp, undefined, postBody, undefined, true, 'default') as ISignUpResultDto;
+  const resultDto = await post(`/${ApiEndpointSignUp}`, undefined, postBody, undefined, true, undefined, 'default') as ISignUpResultDto;
   if (resultDto) {
     switch (resultDto.code) {
       case SignUpResultEnum.SUCCESS:
-        await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.SignupVerify)}`));
+        await navigateTo(navLinkBuilder.buildPageLink(AppPage.SignupVerify, locale.value as Locale));
         break;
       case SignUpResultEnum.AUTOVERIFIED:
         userNotificationStore.show({
           level: UserNotificationLevel.WARN,
           resName: getI18nResName2('signUpPage', 'emailWasAutoverified')
         });
-        await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.Login)}`));
+        await navigateTo(navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale));
         break;
       case SignUpResultEnum.ALREADY_EXISTS:
         emailIsNotTakenByOtherUsers.value = false;
@@ -126,17 +132,18 @@ async function callServerSignUp (captchaToken?: string) : Promise<void> {
   }
 }
 
-function onOAuthProviderClick (provider: AuthProvider) {
-  const oauthOptions = { callbackUrl: localePath(`/${getHtmlPagePath(HtmlPage.Index)}`), external: true, redirect: true };
+async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
+  const callbackUrl = formatAuthCallbackUrl(localePath(`/${getPagePath(AppPage.Index)}`), enabled);
+  const oauthOptions = { callbackUrl, redirect: true };
   switch (provider) {
     case AuthProvider.Google:
-      signIn('google', oauthOptions);
+      await signIn('google', oauthOptions);
       break;
     case AuthProvider.GitHub:
-      signIn('github', oauthOptions);
+      await signIn('github', oauthOptions);
       break;
     default:
-      signIn('testlocal', oauthOptions);
+      await signIn('testlocal', oauthOptions);
       break;
   }
 }
@@ -238,7 +245,7 @@ function onOAuthProviderClick (provider: AuthProvider) {
       <CheckBox v-model:model-value="agreeToPolicies" ctrl-key="cbAgreeToPolicies" class="privacy-checkbox mt-xs-4" :value="true">
         <i18n-t :keypath="getI18nResName2('signUpPage', 'agreeWithPolicy')" tag="div" class="ml-xs-2" scope="global">
           <template #privacyLink>
-            <NuxtLink class="privacy-link brdr-1" target="_blank" :to="localePath(`/${getHtmlPagePath(HtmlPage.Privacy)}`)">
+            <NuxtLink class="privacy-link brdr-1" target="_blank" :to="navLinkBuilder.buildPageLink(AppPage.Privacy, locale as Locale)">
               {{ $t(getI18nResName2('signUpPage', 'privacyLinkText')) }}
             </NuxtLink>
           </template>
@@ -251,7 +258,7 @@ function onOAuthProviderClick (provider: AuthProvider) {
       <div class="already-have-account mt-xs-4">
         {{ $t(getI18nResName2('signUpPage', 'alreadyHaveAccount')) }}
         <span class="signup-login-link">
-          <NuxtLink class="brdr-1" :to="localePath(`/${getHtmlPagePath(HtmlPage.Login)}`)">{{ $t(getI18nResName2('accountPageCommon', 'login')) }}</NuxtLink>
+          <NuxtLink class="brdr-1" :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">{{ $t(getI18nResName2('accountPageCommon', 'login')) }}</NuxtLink>
         </span>
       </div>
       <OAuthProviderList ctrl-key="SignUpProviders" :divisor-label-res-name="getI18nResName2('signUpPage', 'signUpWith')" @click="onOAuthProviderClick" />

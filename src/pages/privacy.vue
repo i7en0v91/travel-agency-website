@@ -2,7 +2,9 @@
 
 import { joinURL } from 'ufo';
 import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
+import { type Locale } from './../shared/constants';
 import AppConfig from './../appconfig';
+import { useNavLinkBuilder } from './../composables/nav-link-builder';
 
 definePageMeta({
   title: { resName: getI18nResName2('privacyPage', 'title'), resArgs: undefined }
@@ -11,7 +13,8 @@ useOgImage();
 
 const route = useRoute();
 const siteConfig = useSiteConfig();
-const localePath = useLocalePath();
+const { locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
 
 </script>
 
@@ -186,7 +189,7 @@ const localePath = useLocalePath();
       <ol class="privacy-paragraph">
         <li v-html="$t(getI18nResName3('privacyPage', 'section12', 'paragraph1'), { contactEmail : AppConfig.contactEmail })" />
         <li v-html="$t(getI18nResName3('privacyPage', 'section12', 'paragraph2'))" />
-        <li v-html="$t(getI18nResName3('privacyPage', 'section12', 'paragraph3'), { privacyUrl : joinURL(siteConfig.url, localePath(route.path)) })" />
+        <li v-html="$t(getI18nResName3('privacyPage', 'section12', 'paragraph3'), { privacyUrl : joinURL(siteConfig.url, navLinkBuilder.buildLink(route.path, locale as Locale)) })" />
       </ol>
     </div>
   </article>

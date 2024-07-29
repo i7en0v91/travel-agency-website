@@ -12,6 +12,7 @@ import { useCaptchaToken } from './../../../composables/captcha-token';
 import { post } from './../../../shared/rest-utils';
 import { ApiEndpointUserAccount, TabIndicesUpdateDefaultTimeout, UserNotificationLevel } from './../../../shared/constants';
 import { type IUpdateAccountDto, type IUpdateAccountResultDto, UpdateAccountResultCode } from './../../../server/dto';
+import { type ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string,
@@ -36,11 +37,11 @@ const logger = CommonServicesLocator.getLogger();
 
 const isError = ref(false);
 
-const captcha = shallowRef<InstanceType<typeof CaptchaProtection>>();
-const propFirstName = shallowRef<InstanceType<typeof SimplePropertyEdit>>();
-const propLastName = shallowRef<InstanceType<typeof SimplePropertyEdit>>();
-const propPassword = shallowRef<InstanceType<typeof SimplePropertyEdit>>();
-const propEmails = shallowRef<InstanceType<typeof ListPropertyEdit>>();
+const captcha = shallowRef<ComponentInstance<typeof CaptchaProtection>>();
+const propFirstName = shallowRef<ComponentInstance<typeof SimplePropertyEdit>>();
+const propLastName = shallowRef<ComponentInstance<typeof SimplePropertyEdit>>();
+const propPassword = shallowRef<ComponentInstance<typeof SimplePropertyEdit>>();
+const propEmails = shallowRef<ComponentInstance<typeof ListPropertyEdit>>();
 
 const captchaToken = useCaptchaToken(captcha as any);
 let isCaptchaTokenRequestPending = false;
@@ -88,7 +89,7 @@ async function validateAndSaveChanges (dto: IUpdateAccountDto, emailForVerificat
   }
 
   logger.info(`(TabAccount) sending user account update dto: userId=${userAccount.userId}`);
-  const resultDto = await post(ApiEndpointUserAccount, undefined, dto, undefined, true, 'default') as IUpdateAccountResultDto;
+  const resultDto = await post(`/${ApiEndpointUserAccount}`, undefined, dto, undefined, true, undefined, 'default') as IUpdateAccountResultDto;
   if (resultDto) {
     switch (resultDto.code) {
       case UpdateAccountResultCode.SUCCESS:

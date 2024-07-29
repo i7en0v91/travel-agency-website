@@ -1,8 +1,8 @@
 import { EOL } from 'os';
 import { appendFileSync } from 'fs';
-import chalk from 'chalk';
 import { type IAuthUserDto } from '../../server/dto';
 import { type IAppLogger } from '../applogger';
+import { consola } from 'consola';
 
 export const LogFilePath = '.nuxt/testrun.log';
 export const ScreenshotDir = '.nuxt/screenshots';
@@ -74,29 +74,32 @@ let consoleLogger: IAppLogger | undefined;
 function createConsoleLogger (prefix: string) : IAppLogger {
   if (!consoleLogger) {
     let lowerWarnsToInfo = false;
-    const log = console.log;
+    const log = consola.log;
     consoleLogger = {
       lowerWarnsWithoutErrorLevel: (useInfoLevel: boolean) => {
         lowerWarnsToInfo = useInfoLevel;
       },
       debug: function (msg: string, data?: any): void {
-        log(chalk.white(`[${prefix}] DEBUG ${msg}`), data);
+        log(consola.debug(`[${prefix}] DEBUG ${msg}`), data);
       },
       verbose: function (msg: string, data?: object | undefined): void {
-        log(chalk.white(`[${prefix}] VERBOSE ${msg}`), data);
+        log(consola.verbose(`[${prefix}] VERBOSE ${msg}`), data);
       },
       info: function (msg: string, data?: object | undefined): void {
-        log(chalk.green(`[${prefix}] INFO ${msg}`), data);
+        log(consola.info(`[${prefix}] INFO ${msg}`), data);
       },
       warn: function (msg: string, err?: any, data?: object | undefined): void {
-        const level = (lowerWarnsToInfo && !err) ? 'INFO' : 'WARN';
-        log(chalk.yellow(`[${prefix}] ${level} ${msg}, err=${JSON.stringify(err)}`), data);
+        if(lowerWarnsToInfo && !err) {
+          consola.info(`[${prefix}] INFO ${msg}, err=${JSON.stringify(err)}`, data);
+        } else {
+          consola.warn(`[${prefix}] WARN ${msg}, err=${JSON.stringify(err)}`, data);
+        }        
       },
       error: function (msg: string, err?: any, data?: object | undefined): void {
-        log(chalk.red(`[${prefix}] ERROR ${msg}, err=${JSON.stringify(err)}`), data);
+        log(consola.error(`[${prefix}] ERROR ${msg}, err=${JSON.stringify(err)}`), data);
       },
       always: function (msg: string, data?: object | undefined): void {
-        log(chalk.green(`[${prefix}] INFO ${msg}`), data);
+        log(consola.info(`[${prefix}] ALWAYS ${msg}`), data);
       }
     };
   }

@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { getI18nResName2 } from './../../shared/i18n';
+import { type Locale } from './../../shared/constants';
 import { type ActivePageLink, type NavBarMode } from './../../shared/interfaces';
 import ThemeSwitcher from './../../components/navbar/theme-switcher.vue';
 import LocaleSwitcher from './../../components/navbar/locale-switcher.vue';
-import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
+import { AppPage } from './../../shared/page-query-params';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 interface IProps {
   ctrlKey: string,
@@ -15,7 +17,8 @@ interface IProps {
 
 const logger = CommonServicesLocator.getLogger();
 
-const localePath = useLocalePath();
+const { locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
 const props = withDefaults(defineProps<IProps>(), {
   collapsed: false,
   toggling: false,
@@ -66,18 +69,18 @@ const isErrorPage = useError().value;
       </div>
       <NavLink
         ctrl-key="navLinkFlights"
-        :to="localePath(`/${getHtmlPagePath(HtmlPage.Flights)}`)"
+        :to="navLinkBuilder.buildPageLink(AppPage.Flights, locale as Locale)"
         :text-res-name="getI18nResName2('nav', 'findFlights')"
         icon="airplane"
-        :is-active="activePageLink === HtmlPage.Flights"
+        :is-active="activePageLink === AppPage.Flights"
         @click="onLinkClicked"
       />
       <NavLink
         ctrl-key="navLinkStays"
-        :to="localePath(`/${getHtmlPagePath(HtmlPage.Stays)}`)"
+        :to="navLinkBuilder.buildPageLink(AppPage.Stays, locale as Locale)"
         :text-res-name="getI18nResName2('nav', 'findStays')"
         icon="bed"
-        :is-active="activePageLink === HtmlPage.Stays"
+        :is-active="activePageLink === AppPage.Stays"
         @click="onLinkClicked"
       />
     </div>

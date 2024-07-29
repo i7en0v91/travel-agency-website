@@ -1,8 +1,10 @@
 <script setup lang="ts">
 
+import { type Locale } from './../../../shared/constants';
 import { type ILocalizableValue, ImageCategory, type IImageEntitySrc } from './../../../shared/interfaces';
 import { getI18nResName3 } from './../../../shared/i18n';
-import { HtmlPage, getHtmlPagePath } from './../../../shared/page-query-params';
+import { AppPage } from './../../../shared/page-query-params';
+import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 
 interface IProps {
   ctrlKey: string,
@@ -15,7 +17,7 @@ interface IProps {
 };
 const props = defineProps<IProps>();
 
-const localePath = useLocalePath();
+const navLinkBuilder = useNavLinkBuilder();
 const { locale } = useI18n();
 
 </script>
@@ -37,7 +39,7 @@ const { locale } = useI18n();
           {{ props.promoPrice ? `$ ${props.promoPrice}` : '&nbsp;' }}
         </div>
       </div>
-      <NuxtLink class="btn btn-primary brdr-1 mt-xs-3 no-hidden-parent-tabulation-check" :to="citySlug ? (bookKind === 'flight' ? localePath(`/${getHtmlPagePath(HtmlPage.FindFlights)}?fromCitySlug=${citySlug}`) : localePath(`/${getHtmlPagePath(HtmlPage.FindStays)}?citySlug=${citySlug}`)) : localePath(`/${getHtmlPagePath(HtmlPage.Index)}`)">
+      <NuxtLink class="btn btn-primary brdr-1 mt-xs-3 no-hidden-parent-tabulation-check" :to="citySlug ? (bookKind === 'flight' ? navLinkBuilder.buildPageLink(AppPage.FindFlights, locale as Locale, { fromCitySlug: citySlug }) : navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug })) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
         {{ $t(getI18nResName3('travelCities', 'bookBtn', bookKind)) }}
       </NuxtLink>
     </div>

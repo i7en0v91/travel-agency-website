@@ -3,6 +3,7 @@ import { updateTabIndices } from './../../../shared/dom';
 import { type I18nResName } from './../../../shared/i18n';
 import SimpleButton from './../../forms/simple-button.vue';
 import { TabIndicesUpdateDefaultTimeout } from './../../../shared/constants';
+import { type ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string,
@@ -19,8 +20,8 @@ const props = withDefaults(defineProps<IProps>(), {
   initiallySelectedValue: undefined
 });
 
-const btnDecrement = shallowRef<InstanceType<typeof SimpleButton>>();
-const btnIncrement = shallowRef<InstanceType<typeof SimpleButton>>();
+const btnDecrement = shallowRef<ComponentInstance<typeof SimpleButton>>();
+const btnIncrement = shallowRef<ComponentInstance<typeof SimpleButton>>();
 const hasMounted = ref(false);
 
 const logger = CommonServicesLocator.getLogger();

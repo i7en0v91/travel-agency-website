@@ -24,9 +24,9 @@ export default defineNitroPlugin((nitroApp) => {
         const adjustedCookieValues = allCookies.filter(c => !c.startsWith(`${CookieSession}`));
         adjustedCookieValues.push(golobeSessionCookies[golobeSessionCookies.length - 1]);
         setHeader(event, HeaderSetCookie, adjustedCookieValues);
-        logger?.warn(`(nitro:merge-session-cookies) got more that 1 session cookie value, adjusted: before=${JSON.stringify(setCookieValues)}, after=${JSON.stringify(adjustedCookieValues)}, path=${event.path}`);
+        logger?.warn(`(nitro:merge-session-cookies) got more that 1 session cookie value, count=${adjustedCookieValues.length}/${allCookies.length}, path=${event.path}`);
       } catch (err: any) {
-        logger?.warn(`(nitro:merge-session-cookies) failed to merge session cookie values, set-cookie=${JSON.stringify(setCookieValues)}, path=${event.path}`);
+        logger?.warn(`(nitro:merge-session-cookies) failed to merge session cookie values, count=$${allCookies.length}, path=${event.path}`, err);
       }
     }
   });

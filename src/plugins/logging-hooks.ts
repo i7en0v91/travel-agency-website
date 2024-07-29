@@ -26,7 +26,6 @@ export default defineNuxtPlugin((nuxtApp) => {
 
     const logger = CommonServicesLocator.getLogger();
     logger?.warn(`(nuxtApp.vueApp.config.warnHandler): ${msg}; trace: ${trace}`);
-    console.warn(`Vue warn: ${msg}; trace: ${trace}`);
   };
 
   nuxtApp.hook('vue:error', (err : any, _, info : string) => {

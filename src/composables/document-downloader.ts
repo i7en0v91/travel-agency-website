@@ -1,12 +1,14 @@
 import { AppException, AppExceptionCodeEnum, defaultErrorHandler } from '../shared/exceptions';
 import { type EntityId, type EntityDataAttrsOnly, type IFlightOffer, type IStayOfferDetails, type IStayOffer } from '../shared/interfaces';
-import { ApiEndpointBookingDownload, type Theme, type Locale } from '../shared/constants';
+import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue, ApiEndpointBookingDownload, type Theme, type Locale } from '../shared/constants';
 import { getI18nResName2 } from './../shared/i18n';
 import { useModal } from 'vue-final-modal';
 import { saveAs } from 'file-saver';
 import { getBytes } from './../shared/rest-utils';
 import { getValueForFlightDayFormatting } from './../shared/common';
 import ModalWaitingIndicator from './../components/modal-waiting-indicator.vue';
+import { usePreviewState } from './../composables/preview-state';
+import set from 'lodash-es/set';
 
 globalThis.Blob = globalThis.Blob || Blob;
 globalThis.Buffer = globalThis.Buffer || Buffer;
@@ -19,6 +21,7 @@ export function useDocumentDownloader (): IDocumentDownloader {
   const logger = CommonServicesLocator.getLogger();
 
   const { d, t } = useI18n();
+  const { enabled } = usePreviewState();
 
   const modalWaitingIndicator = useModal({
     component: ModalWaitingIndicator,
@@ -61,11 +64,13 @@ export function useDocumentDownloader (): IDocumentDownloader {
     try {
       await modalWaitingIndicator.open();
   
+      
       const fileName = getFileName(offer, firstName, lastName);
-      const path = ApiEndpointBookingDownload(bookingId);
+      const path = `/${ApiEndpointBookingDownload(bookingId)}`;
       const searchQuery = {
         theme,
-        locale
+        locale,
+        ...(enabled ? set({}, QueryPagePreviewModeParam, PreviewModeParamEnabledValue) : {})
       };
       const imgBytes = await getBytes(path, searchQuery, undefined, 'no-store', true, undefined, 'throw');
       if (!imgBytes?.byteLength) {

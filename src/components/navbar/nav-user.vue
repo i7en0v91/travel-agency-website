@@ -8,10 +8,12 @@ import { getI18nResName3 } from './../../shared/i18n';
 import { clampTextLine, getLastSelectedOptionStorageKey } from './../../shared/common';
 import { updateTabIndices } from './../../shared/dom';
 import NavUserMenuItem from './nav-user-menu-item.vue';
-import { UserAccountTabAccount, UserAccountTabPayments, UserAccountOptionButtonGroup, TabIndicesUpdateDefaultTimeout, UserAccountOptionButtonPayments, UserAccountOptionButtonAccount } from './../../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
+import { type Locale, UserAccountTabAccount, UserAccountTabPayments, UserAccountOptionButtonGroup, TabIndicesUpdateDefaultTimeout, UserAccountOptionButtonPayments, UserAccountOptionButtonAccount } from './../../shared/constants';
+import { AppPage, getPagePath } from './../../shared/page-query-params';
 import AppConfig from './../../appconfig';
-
+import { formatAuthCallbackUrl } from './../../client/helpers';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
+import { usePreviewState } from './../../composables/preview-state';
 
 interface IProps {
   ctrlKey: string
@@ -19,8 +21,10 @@ interface IProps {
 const props = defineProps<IProps>();
 
 const { signOut } = useAuth();
-const localePath = useLocalePath();
+const { locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
 const nuxtApp = useNuxtApp();
+const { enabled } = usePreviewState();
 
 const logger = CommonServicesLocator.getLogger();
 
@@ -52,7 +56,7 @@ async function getBookingPageSignOutUrl (): Promise<string> {
     const offerBookingStore = await offerBookingStoreFactory.getUserBooking(bookingId, !!nuxtApp.ssrContext?.event.context.ogImageContext, nuxtApp.ssrContext?.event);
     const offerId = offerBookingStore.offerId;
     const offerKind = offerBookingStore.offerKind;
-    const urlPath = localePath(offerKind === 'flights' ? `/${getHtmlPagePath(HtmlPage.FlightDetails)}/${offerId}` : `/${getHtmlPagePath(HtmlPage.StayDetails)}/${offerId}`);
+    const urlPath = offerKind === 'flights' ? navLinkBuilder.buildLink(`/${getPagePath(AppPage.FlightDetails)}/${offerId}`, locale.value as Locale) : navLinkBuilder.buildLink(`/${getPagePath(AppPage.StayDetails)}/${offerId}`, locale.value as Locale);
 
     const parsedRoute = parseURL(route.fullPath);
     parsedRoute.pathname = urlPath;
@@ -61,7 +65,7 @@ async function getBookingPageSignOutUrl (): Promise<string> {
     return url;
   } catch (err: any) {
     logger.warn(`(NavUser) failed to obtain booking signout url: ctrlKey=${props.ctrlKey}`, err);
-    return localePath(`/${getHtmlPagePath(HtmlPage.Index)}`);
+    return navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale);
   }
 }
 
@@ -69,9 +73,10 @@ async function onSignOutClick (): Promise<void> {
   const route = useRoute();
 
   let callbackUrl = route.fullPath;
-  if (callbackUrl.includes(getHtmlPagePath(HtmlPage.BookingDetails))) {
+  if (callbackUrl.includes(getPagePath(AppPage.BookingDetails))) {
     callbackUrl = await getBookingPageSignOutUrl();
   }
+  callbackUrl = formatAuthCallbackUrl(callbackUrl, enabled);
 
   signOut({ callbackUrl, redirect: true });
   hideDropdown();
@@ -81,7 +86,7 @@ function onMenuItemClick () {
   setTimeout(hideDropdown, 0);
 }
 
-const isCurrentlyOnAccountPage = () => useRoute().path.includes(`/${getHtmlPagePath(HtmlPage.Account)}`);
+const isCurrentlyOnAccountPage = () => useRoute().path.includes(`/${getPagePath(AppPage.Account)}`);
 
 async function onPaymentsMenuItemClick (): Promise<void> {
   const onAccountPage = isCurrentlyOnAccountPage();
@@ -94,7 +99,7 @@ async function onPaymentsMenuItemClick (): Promise<void> {
     // set payment tab to be automatically selected on mount
     const optionKey = getLastSelectedOptionStorageKey(UserAccountOptionButtonGroup);
     localStorage.setItem(optionKey, UserAccountOptionButtonPayments);
-    await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.Account)}`));
+    await navigateTo(navLinkBuilder.buildPageLink(AppPage.Account, locale.value as Locale));
   }
 }
 
@@ -109,7 +114,7 @@ async function onSettingsMenuItemClick (): Promise<void> {
     // set payment tab to be automatically selected on mount
     const optionKey = getLastSelectedOptionStorageKey(UserAccountOptionButtonGroup);
     localStorage.setItem(optionKey, UserAccountOptionButtonAccount);
-    await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.Account)}`));
+    await navigateTo(navLinkBuilder.buildPageLink(AppPage.Account, locale.value as Locale));
   }
 }
 
@@ -119,6 +124,9 @@ async function onSettingsMenuItemClick (): Promise<void> {
   <div class="nav-item nav-user" @keyup.escape="hideDropdown">
     <VDropdown
       ref="dropdown"
+      v-floating-vue-hydration="{ tabIndex: 0 }"
+      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
+      :aria-id="`${ctrlKey}-DropDownWrapper`"
       :distance="6"
       :hide-triggers="(triggers: any) => [...triggers, 'click']"
       placement="bottom"
@@ -165,8 +173,8 @@ async function onSettingsMenuItemClick (): Promise<void> {
           </div>
           <div class="nav-user-menu-list">
             <div class="nav-user-menu-divisor mt-xs-1 mb-xs-1" role="separator"/>
-            <NavUserMenuItem ctrl-key="navUserMenuMyAccount" :text-res-name="getI18nResName3('nav', 'userBox', 'myAccount')" :to="localePath(`/${getHtmlPagePath(HtmlPage.Account)}`)" icon="user" @click="onMenuItemClick" />
-            <NavUserMenuItem ctrl-key="navUserMenuFavourites" :text-res-name="getI18nResName3('nav', 'userBox', 'favourites')" :to="localePath(`/${getHtmlPagePath(HtmlPage.Favourites)}`)" icon="heart" @click="onMenuItemClick" />
+            <NavUserMenuItem ctrl-key="navUserMenuMyAccount" :text-res-name="getI18nResName3('nav', 'userBox', 'myAccount')" :to="navLinkBuilder.buildPageLink(AppPage.Account, locale as Locale)" icon="user" @click="onMenuItemClick" />
+            <NavUserMenuItem ctrl-key="navUserMenuFavourites" :text-res-name="getI18nResName3('nav', 'userBox', 'favourites')" :to="navLinkBuilder.buildPageLink(AppPage.Favourites, locale as Locale)" icon="heart" @click="onMenuItemClick" />
             <NavUserMenuItem ctrl-key="navUserMenuPayments" :text-res-name="getI18nResName3('nav', 'userBox', 'payments')" icon="credit-card" @click="onPaymentsMenuItemClick" />
             <NavUserMenuItem ctrl-key="navUserMenuSettings" :text-res-name="getI18nResName3('nav', 'userBox', 'settings')" icon="gear" @click="onSettingsMenuItemClick" />
             <div class="nav-user-menu-divisor mt-xs-3 mb-xs-2" role="separator"/>

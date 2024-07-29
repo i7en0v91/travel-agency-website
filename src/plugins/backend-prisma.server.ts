@@ -1,15 +1,15 @@
-import { access } from 'fs/promises';
 import once from 'lodash-es/once';
-import { parseEnumOrThrow } from '../shared/common';
-import { AcsysExecDir, AcsysSQLiteDbName, CmsType, isTestEnv } from '../shared/constants';
-import { type IAppLogger, type IServerServicesLocator } from '../server/backend/app-facade/interfaces';
-import { QuickStartDir, QuickStartDbFile, resolveParentDirectory, ServerLogger, isQuickStartEnv } from '../server/backend/app-facade/implementation';
-import { resolve, join } from 'pathe';
+import { lookupValueOrThrow } from '../shared/common';
+import { CmsType } from '../shared/constants';
+import { type IAppLogger } from '../shared/applogger';
+import { type IServerServicesLocator } from '../shared/serviceLocator';
+import { ServerLogger } from './../server/backend/helpers/logging';
 import { Scope, createInjector } from 'typed-inject';
 import { UserLogic } from '../server/backend/services/user-logic';
 import { ImageBytesProvider } from '../server/backend/common-services/image-bytes-provider';
 import { HtmlPageCacheCleaner } from '../server/backend/common-services/html-page-cache-cleaner';
 import { ChangeDependencyTracker } from '../server/backend/common-services/change-dependency-tracker';
+import { EntityChangeNotificationTask } from '../server/backend/common-services/entity-change-notification-task';
 import { HtmlPageModelMetadata } from '../server/backend/common-services/html-page-model-metadata';
 import { ImageLogic } from '../server/backend/services/image-logic';
 import { AuthFormImageLogic } from '../server/backend/services/auth-form-image-logic';
@@ -34,57 +34,16 @@ import { DocumentCreator } from '../server/backend/common-services/document-crea
 import { createPrismaClient } from '../server/backend/prisma/client';
 import { createCache, getPdfFontsAssetsStorage, getAppAssetsStorage, getNitroCache } from '../server/backend/helpers/nitro';
 import { ensureImageCacheDir } from '../server/backend/helpers/fs';
+import { PrismaFlightOfferMaterializer, PrismaStayOfferMaterializer } from '../server/backend/helpers/offer-materializers';
 
 const PluginName = 'backend-prisma';
 
 export async function buildBackendServicesLocator(logger: IAppLogger): Promise<IServerServicesLocator> {
-  let dbUrlOverwrite: string | undefined;
-  if (isQuickStartEnv()) {
-    logger.verbose('locating SQLite db directory... ');
-    const cwd = resolve('./');
-    if(process.env.CMS) {
-      const cmsType = parseEnumOrThrow(CmsType, process.env.CMS) as CmsType;
-      if(cmsType === CmsType.acsys) {
-        dbUrlOverwrite = await resolveParentDirectory(cwd, 'src');
-        if (dbUrlOverwrite) {
-          dbUrlOverwrite = `${join(dbUrlOverwrite, AcsysExecDir, AcsysSQLiteDbName)}`;
-        }
-      } else {
-        logger.error(`unexpected CMS type, cms=${process.env.CMS}`);
-        throw new Error('unexpected CMS type');
-      }
-    } else {
-      dbUrlOverwrite = await resolveParentDirectory(cwd, 'src');
-      if (dbUrlOverwrite) {
-        dbUrlOverwrite = `${join(dbUrlOverwrite, QuickStartDir, QuickStartDbFile)}`;
-      }
-    }
-    
-    if (!dbUrlOverwrite) {
-      logger.error(`failed to locate SQLite db directory, cwd=${cwd}`);
-      throw new Error('failed to locate SQLite db directory');
-    }
-
-    try {
-      await access(dbUrlOverwrite);
-    } catch (err: any) {
-      logger.error(`cannot access SQLite db file, path=${dbUrlOverwrite}`);
-      throw new Error('cannot access SQLite db file');
-    }
-
-    logger.info(`the following SQLite db file will be used, path=${dbUrlOverwrite}`);
-    dbUrlOverwrite = `file:${dbUrlOverwrite}`;
-  }
-
   const nitroCache = await getNitroCache(logger);
   const appAssetsStorage = await getAppAssetsStorage(logger);
   const pdfFontsAssetsStorage = await getPdfFontsAssetsStorage(logger);
 
-  const prismaClient = createPrismaClient(logger, dbUrlOverwrite);
-  if(isTestEnv()) {
-    (globalThis as any).TestPrismaClient = prismaClient;
-  }
-
+  const prismaClient = await createPrismaClient(logger);
   const injector = createInjector();
   const provider = injector
     .provideClass('logger', ServerLogger, Scope.Singleton)
@@ -97,6 +56,7 @@ export async function buildBackendServicesLocator(logger: IAppLogger): Promise<I
     .provideClass('appAssetsProvider', AppAssetsProvider, Scope.Singleton)
     .provideClass('htmlPageModelMetadata', HtmlPageModelMetadata, Scope.Singleton)
     .provideClass('changeDependencyTracker', ChangeDependencyTracker, Scope.Singleton)
+    .provideClass('entityChangeNotifications', EntityChangeNotificationTask, Scope.Singleton)
     .provideClass('htmlPageCacheCleaner', HtmlPageCacheCleaner, Scope.Singleton)
     .provideClass('fileLogic', FileLogic, Scope.Singleton)
     .provideClass('imageCategoryLogic', ImageCategoryLogic, Scope.Singleton)
@@ -113,7 +73,9 @@ export async function buildBackendServicesLocator(logger: IAppLogger): Promise<I
     .provideClass('airplaneLogic', AirplaneLogic, Scope.Singleton)
     .provideClass('citiesLogic', CitiesLogic, Scope.Singleton)
     .provideClass('airportLogic', AirportLogic, Scope.Singleton)
+    .provideClass('flightOfferMaterializer', PrismaFlightOfferMaterializer, Scope.Singleton)
     .provideClass('flightsLogic', FlightsLogic, Scope.Singleton)
+    .provideClass('stayOfferMaterializer', PrismaStayOfferMaterializer, Scope.Singleton)
     .provideClass('staysLogic', StaysLogic, Scope.Singleton)
     .provideClass('bookingLogic', BookingLogic, Scope.Singleton)
     .provideClass('documentCreator', DocumentCreator, Scope.Singleton)
@@ -126,6 +88,7 @@ export async function buildBackendServicesLocator(logger: IAppLogger): Promise<I
     getHtmlPageCacheCleaner: () => provider.resolve('htmlPageCacheCleaner'),
     getPageModelMetadata: () => provider.resolve('htmlPageModelMetadata'),
     getChangeDependencyTracker: () => provider.resolve('changeDependencyTracker'),
+    getEntityChangeNotifications: () => provider.resolve('entityChangeNotifications'),
     getUserLogic: () => provider.resolve('userLogic'),
     getImageLogic: () => provider.resolve('imageLogic'),
     getAuthFormImageLogic: () => provider.resolve('authFormImageLogic'),
@@ -153,7 +116,7 @@ const initApp = once(async () => {
   const logger = new ServerLogger(); // container has not built yet
   try {
     if(process.env.CMS) {
-      const cmsType = parseEnumOrThrow(CmsType, process.env.CMS) as CmsType;
+      const cmsType = lookupValueOrThrow(CmsType, process.env.CMS) as CmsType;
       if(cmsType === CmsType.acsys) {
         return; // container has been registered by CMS plugin
       }

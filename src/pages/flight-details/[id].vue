@@ -6,26 +6,24 @@ import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
 import OfferDetailsSummary from './../../components/common-page-components/offer-details-summary.vue';
 import FlightDetailsCard from './../../components/common-page-components/flight-details-card.vue';
 import { getLocalizeableValue } from './../../shared/common';
-import { useFetchEx } from './../../shared/fetch-ex';
 import { type Locale, ApiEndpointFlightOfferDetails } from './../../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
+import { AppPage, getPagePath } from './../../shared/page-query-params';
 import { AvailableFlightClasses, ImageCategory, type IFlightOffer, type ILocalizableValue, type EntityId } from './../../shared/interfaces';
 import { type IFlightOfferDetailsDto } from './../../server/dto';
 import { mapFlightOfferDetails } from './../../shared/mappers';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
+import { usePreviewState } from './../../composables/preview-state';
 
 const NumAirplaneFeatureImages = 8;
 
-const isError = ref(false);
-
 const { t, locale } = useI18n();
-const localePath = useLocalePath();
+const navLinkBuilder = useNavLinkBuilder();
 
 const route = useRoute();
-const logger = CommonServicesLocator.getLogger();
 
 const offerParam = useRoute().params?.id?.toString() ?? '';
 if (offerParam.length === 0) {
-  await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.Index)}`));
+  await navigateTo(navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale));
 }
 const offerId: EntityId = offerParam;
 
@@ -35,32 +33,22 @@ definePageMeta({
 
 const CtrlKey = 'FlightOfferDetailsSummary';
 
-const flightDetailsFetchRequest = await useFetchEx<IFlightOfferDetailsDto, IFlightOfferDetailsDto>(ApiEndpointFlightOfferDetails(offerId ?? -1), 'error-page',
+const nuxtApp = useNuxtApp();
+const { enabled } = usePreviewState();
+const flightDetailsFetch = await useFetch<IFlightOfferDetailsDto, IFlightOfferDetailsDto>(`/${ApiEndpointFlightOfferDetails(offerId ?? -1)}`,
   {
     server: true,
     lazy: true,
     cache: 'no-cache',
+    query: { drafts: enabled },
     immediate: !!offerId,
-    onResponse: (ctx) => {
-      logger.verbose(`(FlightDetails) received flight offer details response: id=${(ctx.response._data as IFlightOfferDetailsDto)?.id}`);
-      isError.value = ctx.response.status >= 400;
-    },
-    onResponseError: (ctx) => {
-      logger.warn('(FlightDetails) got flight offer details fetch response exception', ctx.error, { id: offerId });
-      isError.value = true;
-    },
-    onRequestError: (ctx) => {
-      logger.warn('(FlightDetails) got flight offer details fetch request exception', ctx.error, { id: offerId });
-      isError.value = true;
-    }
+    $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-page' })
   });
-const flightDetailsFetch = await flightDetailsFetchRequest;
-const offerDataAvailable = computed(() => flightDetailsFetch.status.value === 'success' && flightDetailsFetch.data?.value?.departFlight && !isError.value);
+const offerDataAvailable = computed(() => flightDetailsFetch.status.value === 'success' && flightDetailsFetch.data?.value?.departFlight);
 const flightOffer = ref<Omit<IFlightOffer, 'dataHash'> | undefined>(flightDetailsFetch.data?.value ? mapFlightOfferDetails(flightDetailsFetch.data.value!) : undefined);
 const airplaneImages = computed(() => (offerDataAvailable.value && flightOffer.value?.departFlight) ? orderBy(flightOffer.value!.departFlight.airplane.images.filter(x => x.kind === 'window' || x.kind === 'common' || x.kind === flightOffer.value!.class), ['order'], ['asc']).map(x => x.image) : undefined);
 
-const nuxtApp = useNuxtApp();
-if (nuxtApp.isHydrating || import.meta.server) {
+if (import.meta.server && offerDataAvailable.value) {
   useOgImage({
     name: 'OgOfferSummary',
     props: {
@@ -68,8 +56,6 @@ if (nuxtApp.isHydrating || import.meta.server) {
       title: flightOffer.value!.departFlight.airplane.name,
       city: flightOffer.value!.departFlight.departAirport.city,
       price: flightOffer.value!.totalPrice.toNumber(),
-      reviewScore: flightOffer.value!.departFlight.airlineCompany.reviewScore,
-      numReviews: flightOffer.value!.departFlight.airlineCompany.numReviews,
       dateUnixUtc: flightOffer.value!.departFlight.departTimeUtc.getTime(),
       utcOffsetMin: flightOffer.value!.departFlight.departAirport.city.utcOffsetMin,
       image: {
@@ -95,9 +81,6 @@ function extendPageTitle (fromCityName: ILocalizableValue, toCityName: ILocaliza
 }
 
 watch(flightDetailsFetch.status, () => {
-  if (flightDetailsFetch.status.value === 'error') {
-    isError.value = true;
-  }
   if (offerDataAvailable.value && !flightOffer.value) {
     flightOffer.value = mapFlightOfferDetails(flightDetailsFetch.data.value!);
     updatePageTitle();
@@ -119,7 +102,7 @@ onMounted(() => {
 
 <template>
   <article class="flight-details-page no-hidden-parent-tabulation-check">
-    <ErrorHelm :is-error="isError" class="flight-details-page-error-helm">
+    <ErrorHelm :is-error="flightDetailsFetch.status.value === 'error'" class="flight-details-page-error-helm">
       <OfferDetailsBreadcrumbs
         :ctrl-key="`${CtrlKey}-Breadcrumbs`"
         offer-kind="flights"
@@ -134,10 +117,10 @@ onMounted(() => {
         :city="flightOffer?.departFlight?.departAirport.city"
         :title="flightOffer?.departFlight?.airplane.name"
         :price="flightOffer?.totalPrice"
-        :review-score="flightOffer?.departFlight?.airlineCompany.reviewScore"
-        :num-reviews="flightOffer?.departFlight?.airlineCompany.numReviews"
+        :review-score="flightOffer?.departFlight?.airlineCompany.reviewSummary.score"
+        :num-reviews="flightOffer?.departFlight?.airlineCompany.reviewSummary.numReviews"
         :btn-res-name="getI18nResName2('offerDetailsPage', 'bookBtn')"
-        :btn-link-url="flightOffer ? localePath(`/${getHtmlPagePath(HtmlPage.BookFlight)}/${offerId}`) : route.fullPath"
+        :btn-link-url="navLinkBuilder.buildLink(flightOffer ? `/${getPagePath(AppPage.BookFlight)}/${offerId}` : route.fullPath, locale as Locale)"
       />
       <StaticImage
         :ctrl-key="`${CtrlKey}-MainImage`"

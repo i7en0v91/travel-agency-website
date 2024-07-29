@@ -78,20 +78,31 @@ const reviewsCountText = computed(() => props.numReviews ? `${props.numReviews} 
       >
         <ul class="stay-details-overview-highlights pb-xs-3">
           <li class="stay-details-highlight-item p-xs-3 brdr-3">
-            <div v-if="props.reviewScore" class="stay-details-highlight-score">
-              {{ props.reviewScore.toFixed(1) }}
-            </div>
-            <div v-else class="stay-details-highlight-score data-loading-stub text-data-loading" />
-            <div class="stay-details-highlight-summary">
-              <div v-if="scoreClassResName" class="stay-highlight-review-class">
-                {{ $t(scoreClassResName) }}
+            <ClientOnly>
+              <div v-if="props.reviewScore" class="stay-details-highlight-score">
+                {{ props.reviewScore.toFixed(1) }}
               </div>
-              <div v-else class="stay-highlight-review-class data-loading-stub text-data-loading" />
-              <div v-if="numReviews" class="stay-highlight-reviews-count mt-xs-1">
-                {{ reviewsCountText }}
+              <div v-else class="stay-details-highlight-score data-loading-stub text-data-loading" />
+              <div class="stay-details-highlight-summary">
+                <div v-if="scoreClassResName" class="stay-highlight-review-class">
+                  {{ $t(scoreClassResName) }}
+                </div>
+                <div v-else class="stay-highlight-review-class data-loading-stub text-data-loading" />
+                <div v-if="numReviews !== undefined" class="stay-highlight-reviews-count mt-xs-1">
+                  {{ reviewsCountText }}
+                </div>
+                <div v-else class="stay-highlight-reviews-count data-loading-stub text-data-loading mt-xs-1" />
               </div>
-              <div v-else class="stay-highlight-reviews-count data-loading-stub text-data-loading mt-xs-1" />
-            </div>
+              <!-- KB: fallback freezes in production...
+              <template #fallback>
+                <div class="stay-details-highlight-score data-loading-stub text-data-loading" />
+                <div class="stay-details-highlight-summary">
+                  <div class="stay-highlight-review-class data-loading-stub text-data-loading" />
+                  <div class="stay-highlight-reviews-count data-loading-stub text-data-loading mt-xs-1" />
+                </div>
+              </template>
+              -->
+            </ClientOnly>
           </li>
           <li v-for="(resName, idx) in highlightResNames" :key="`${ctrlKey}-Highlight-${idx}`" class="stay-details-highlight-item p-xs-3 brdr-3">
             <div class="stay-details-highlight-icon" />

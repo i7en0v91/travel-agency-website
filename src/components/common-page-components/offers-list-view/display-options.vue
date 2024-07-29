@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import throttle from 'lodash-es/throttle';
-import ComponentWaiterIndicator from './../../component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
 import { getI18nResName3 } from './../../../shared/i18n';
 import { SearchStayOffersDisplayOptions, SearchFlightOffersDisplayOptions, DefaultStayOffersSorting, DefaultFlightOffersSorting, DeviceSizeEnum } from './../../../shared/constants';
 import { callForCurrentDeviceSize } from './../../../shared/dom';
@@ -391,7 +391,7 @@ onUnmounted(() => {
   <section
     class="display-options"
   >
-    <ComponentWaiterIndicator v-if="showWaitingStub && !isError" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="display-options-waiter" />
+    <ComponentWaitingIndicator v-if="showWaitingStub && !isError" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="display-options-waiter" />
     <ErrorHelm v-model:is-error="isError">
       <OptionButtonGroup
         v-if="!showWaitingStub"

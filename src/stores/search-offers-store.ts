@@ -12,16 +12,17 @@ import orderBy from 'lodash-es/orderBy';
 import fromPairs from 'lodash-es/fromPairs';
 import { type ISearchListItem, type ISearchOffersFilterVariant, type ISearchFlightOffersParams, type ISearchStayOffersParams, type OfferKind, type ISearchStayOffersMainParams, type ISearchFlightOffersMainParams, type IEntityCacheCityItem, type ISearchFlightOffersDisplayOptions, type ISearchStayOffersDisplayOptions, type IStayOffer, type IFlightOffer, type FlightOffersSortFactor, type StayOffersSortFactor, type ISearchFlightOffersResult, type ISearchStayOffersResult, type ISearchOffersChecklistFilterProps, type ISearchOffersRangeFilterProps, type ISearchFlightOffersDisplayOption, type EntityDataAttrsOnly, type ILocalizableValue } from '../shared/interfaces';
 import { eraseTimeOfDay } from '../shared/common';
-import { StaysAmenitiesFilterItemId, StaysAmenitiesFilterId, StaysFreebiesFilterItemId, StaysFreebiesFilterId, NumMinutesInDay, StaysPriceFilterId, DefaultStayOffersSorting, StaysRatingFilterId, FlightsTripTypeFilterFlexibleDatesItemId, SearchOffersPriceRange, FlightsTripTypeFilterId, FlightsPriceFilterId, FlightsDepartureTimeFilterId, FlightsRatingFilterId, FlightsAirlineCompanyFilterId, DefaultFlightOffersSorting, DataKeyEntityCacheItems, FlightMinPassengers, UserNotificationLevel, AvailableLocaleCodes, ApiEndpointFlightOffersSearch, DataKeySearchFlightOffers, DataKeySearchStayOffers, ApiEndpointStayOffersSearch } from '../shared/constants';
+import { QueryPagePreviewModeParam, StaysAmenitiesFilterItemId, StaysAmenitiesFilterId, StaysFreebiesFilterItemId, StaysFreebiesFilterId, NumMinutesInDay, StaysPriceFilterId, DefaultStayOffersSorting, StaysRatingFilterId, FlightsTripTypeFilterFlexibleDatesItemId, SearchOffersPriceRange, FlightsTripTypeFilterId, FlightsPriceFilterId, FlightsDepartureTimeFilterId, FlightsRatingFilterId, FlightsAirlineCompanyFilterId, DefaultFlightOffersSorting, DataKeyEntityCacheItems, FlightMinPassengers, UserNotificationLevel, AvailableLocaleCodes, ApiEndpointFlightOffersSearch, DataKeySearchFlightOffers, DataKeySearchStayOffers, ApiEndpointStayOffersSearch } from '../shared/constants';
 import { validateObject } from '../shared/validation';
 import { mapSearchFlightOffersResult, mapSearchStayOffersResult, mapSearchedFlightOffer, createSearchFlightOfferResultLookup } from '../shared/mappers';
 import { post } from '../shared/rest-utils';
-import { useFetchEx, type SSRAwareFetchResult } from './../shared/fetch-ex';
 import AppConfig from './../appconfig';
 import { type ISearchFlightOffersMainParamsDto, type ISearchStayOffersMainParamsDto, SearchFlightOffersMainParamsDtoSchema, SearchStayOffersMainParamsDtoSchema, type ISearchFlightOffersParamsDto, type ISearchStayOffersParamsDto, type ISearchFlightOffersResultDto, type ISearchStayOffersResultDto } from './../server/dto';
 import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
 import { getI18nResName2, getI18nResName3, type I18nResName } from './../shared/i18n';
 import { addPayload, getPayload } from './../shared/payload';
+import omit from 'lodash-es/omit';
+import { usePreviewState } from './../composables/preview-state';
 
 export type OffersStoreInstanceFetchStatus = 'full-refetch' | 'filter-refetch' | 'sort-refetch' | 'page-fetch' | 'fetched' | 'error';
 export interface ISearchOffersStoreInstance<TParams extends ISearchFlightOffersParams | ISearchStayOffersParams, TMainParams = TParams extends ISearchFlightOffersParams ? ISearchFlightOffersMainParams : ISearchStayOffersMainParams, TDisplayOptions = TParams extends ISearchFlightOffersParams ? ISearchFlightOffersDisplayOptions : ISearchStayOffersDisplayOptions, TItem = TParams extends ISearchFlightOffersParams ? EntityDataAttrsOnly<IFlightOffer> : EntityDataAttrsOnly<IStayOffer>, TSortFactor = TParams extends ISearchFlightOffersParams ? FlightOffersSortFactor : StayOffersSortFactor> {
@@ -63,6 +64,9 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
   const logger = CommonServicesLocator.getLogger();
   logger.info('(search-offers-store) start store construction');
 
+  const nuxtApp = useNuxtApp();
+  const { enabled } = usePreviewState();
+
   const commonOffersFetchOptions = {
     server: false,
     lazy: true,
@@ -71,13 +75,20 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     cache: 'no-cache' as const,
     method: 'POST' as const
   };
-  const searchFlightOffersFetchRequest = useFetchEx<ISearchFlightOffersResultDto, ISearchFlightOffersResult, null>(ApiEndpointFlightOffersSearch, 'error-page',
+
+  let searchStayOffersInstance: ISearchOffersStoreInstance<ISearchStayOffersParams> | undefined;
+  let searchFlightOffersInstance: ISearchOffersStoreInstance<ISearchFlightOffersParams> | undefined;
+  
+  const searchFlightOffersRequestBody = ref<ISearchFlightOffersParamsDto>();
+  const searchFlightOffersFetch = useFetch(`/${ApiEndpointFlightOffersSearch}`,
     {
       ...commonOffersFetchOptions,
-      transform: (resultDto: ISearchFlightOffersResultDto) => {
-        logger.verbose('(search-offers-store) transforming search flight offers result dto');
+      query: { drafts: enabled },
+      body: searchFlightOffersRequestBody,
+      transform: (resultDto: ISearchFlightOffersResultDto): ISearchFlightOffersResult => {
+        logger.debug('(search-offers-store) transforming search flight offers result dto');
         const lookup = createSearchFlightOfferResultLookup(resultDto);
-        return {
+        const transformedResult = {
           pagedItems: resultDto.pagedItems.map((dto) => { return mapSearchedFlightOffer(dto, lookup); }),
           totalCount: resultDto.totalCount,
           paramsNarrowing: resultDto.paramsNarrowing,
@@ -89,31 +100,36 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
             };
           })
         };
+        logger.debug('(search-offers-store) search flight offers result dto transformed');
+        return transformedResult;
       },
-      key: DataKeySearchFlightOffers
+      key: DataKeySearchFlightOffers,
+      $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-page' })
     });
 
-  const searchStayOffersFetchRequest = useFetchEx<ISearchStayOffersResultDto, ISearchStayOffersResult, null>(ApiEndpointStayOffersSearch, 'error-page',
+  const searchStayOffersRequestBody = ref<ISearchStayOffersParamsDto>();
+  const searchStayOffersFetch = useFetch(`/${ApiEndpointStayOffersSearch}`,
     {
       ...commonOffersFetchOptions,
-      transform: (resultDto: ISearchStayOffersResultDto) => {
-        logger.verbose('(search-offers-store) transforming search stay offers result dto');
-        return mapSearchStayOffersResult(resultDto);
+      body: searchStayOffersRequestBody,
+      query: { drafts: enabled },
+      transform: (resultDto: ISearchStayOffersResultDto): ISearchStayOffersResult => {
+        logger.debug('(search-offers-store) transforming search stay offers result dto');
+        const transformedResult = mapSearchStayOffersResult(resultDto);
+        logger.debug('(search-offers-store) search stay offers result dto trasnformed');
+        return transformedResult;
       },
-      key: DataKeySearchStayOffers
+      key: DataKeySearchStayOffers,
+      $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-page' })
     });
 
   const userNotificationStore = useUserNotificationStore();
 
-  const nuxtApp = useNuxtApp();
   const router = useRouter();
   const { t } = useI18n();
 
   const clientEntityCache = import.meta.client ? ClientServicesLocator.getEntityCache() : undefined;
   const serverEntityCacheLogic = import.meta.server ? ServerServicesLocator.getEntityCacheLogic() : undefined;
-
-  let searchStayOffersInstance: ISearchOffersStoreInstance<ISearchStayOffersParams> | undefined;
-  let searchFlightOffersInstance: ISearchOffersStoreInstance<ISearchFlightOffersParams> | undefined;
 
   const getFilterVariantLocalizableText = (resName: I18nResName): ILocalizableValue => {
     return fromPairs(AvailableLocaleCodes.map(l => [l.toLowerCase(), t(resName, '', { locale: l })])) as any;
@@ -166,12 +182,12 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
   const resolveCitySlugs = async (slugs: string[]) : Promise<IEntityCacheCityItem[]> => {
     if (import.meta.client) {
       logger.verbose(`(search-offers-store) resolving city slugs (client), ids=${JSON.stringify(slugs)}`);
-      const items = (await clientEntityCache!.get<'City', IEntityCacheCityItem>([], slugs, 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
+      const items = (await clientEntityCache!.get<'City'>([], slugs, 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
       logger.verbose(`(search-offers-store) city slugs resolved (client), result=${JSON.stringify(items)}`);
       return items;
     } else {
       logger.verbose(`(search-offers-store) resolving city slugs (server), ids=${JSON.stringify(slugs)}`);
-      const items = await serverEntityCacheLogic!.get<'City', IEntityCacheCityItem>([], slugs, 'City');
+      const items = await serverEntityCacheLogic!.get<'City'>([], slugs, 'City', enabled);
       addPayload(nuxtApp, DataKeyEntityCacheItems, uniqueBy([...((nuxtApp.payload[DataKeyEntityCacheItems] ?? []) as EntityCacheItemsPayload), ...items], 'id'));
       logger.verbose(`(search-offers-store) city slugs resolved (server), result=${JSON.stringify(items)}`);
       return items;
@@ -180,8 +196,8 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
 
   const parseMainParamsFromUrlQuery = async <TParams extends ISearchFlightOffersMainParams | ISearchStayOffersMainParams>(kind: OfferKind): Promise<Partial<TParams> | undefined> => {
     logger.verbose(`(search-offers-store) parsing url query for main params, kind=${kind}, query=${JSON.stringify(router.currentRoute.value.query)}, path=${router.currentRoute.value.path}`);
-    const query = router.currentRoute.value.query;
-    if (!query) {
+    const query = router.currentRoute.value.query ? omit(router.currentRoute.value.query, QueryPagePreviewModeParam) : {};
+    if (!keys(query).length) {
       logger.verbose(`(search-offers-store) url query is empty, kind=${kind}, path=${router.currentRoute.value.path}`);
       return undefined;
     }
@@ -245,7 +261,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     }
 
     const entityCache = ClientServicesLocator.getEntityCache();
-    const cached = (await entityCache.get<'City', IEntityCacheCityItem>([cityItem.id], [], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }));
+    const cached = (await entityCache.get<'City'>([cityItem.id], [], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }));
     if ((cached?.length ?? 0) === 0) {
       logger.warn(`(search-offers-store) failed to ensure city item slug: cityId=${cityItem.id}`);
       userNotificationStore.show({
@@ -404,7 +420,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     }
   };
 
-  const startWatchingForFetchResults = <TResultDto extends ISearchFlightOffersResultDto | ISearchStayOffersResultDto>(offerKind: OfferKind, fetch: SSRAwareFetchResult<TResultDto | null>) => {
+  const startWatchingForFetchResults = <TResultDto extends ISearchFlightOffersResultDto | ISearchStayOffersResultDto>(offerKind: OfferKind, fetch: ReturnType<typeof useFetch<TResultDto | undefined>>) => {
     watch(fetch.status, async () => {
       logger.verbose(`(search-offers-store) handling offers fetch status change, kind=${offerKind}, status=${fetch.status.value}`);
       if (fetch.status.value === 'idle' || fetch.status.value === 'pending') {
@@ -484,12 +500,12 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
           logger.verbose(`(search-offers-store) creating initial search offers payload, kind=${instance.offersKind}`);
 
           if (isFlightOffersInstance(instance)) {
-            responseDto = await post<ISearchFlightOffersParamsDto, ISearchFlightOffersResultDto>(ApiEndpointFlightOffersSearch, undefined, searchParamsDto as ISearchFlightOffersParamsDto, undefined, false, 'throw');
+            responseDto = await post<ISearchFlightOffersParamsDto, ISearchFlightOffersResultDto>(`/${ApiEndpointFlightOffersSearch}`, undefined, searchParamsDto as ISearchFlightOffersParamsDto, undefined, false, nuxtApp?.ssrContext?.event, 'throw');
             if (responseDto) {
               fetchResult = mapSearchFlightOffersResult(responseDto);
             }
           } else {
-            responseDto = await post<ISearchStayOffersParamsDto, ISearchStayOffersResultDto>(ApiEndpointStayOffersSearch, undefined, searchParamsDto as ISearchStayOffersParamsDto, undefined, false, 'throw');
+            responseDto = await post<ISearchStayOffersParamsDto, ISearchStayOffersResultDto>(`/${ApiEndpointStayOffersSearch}`, undefined, searchParamsDto as ISearchStayOffersParamsDto, undefined, false, nuxtApp?.ssrContext?.event, 'throw');
             if (responseDto) {
               fetchResult = mapSearchStayOffersResult(responseDto);
             }
@@ -518,12 +534,17 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
 
         // fetch via REST from server
         if (needFullRefetch) {
-          const searchOffersFetch = isFlightOffersInstance(instance) ? (await await searchFlightOffersFetchRequest) : (await await searchStayOffersFetchRequest);
+          const searchOffersFetch = isFlightOffersInstance(instance) ? searchFlightOffersFetch : searchStayOffersFetch;
+          await searchOffersFetch;
           if (searchOffersFetch.status.value !== 'pending') {
             logger.verbose(`(search-offers-store) sending fetch offers request, kind=${instance.offersKind}`);
             searchParamsDto = await getFetchRequestParams(instance, offersFetchMode);
-            searchOffersFetch.body.value = searchParamsDto;
-            searchOffersFetch.refresh();
+            if(isFlightOffersInstance(instance)) {
+              searchFlightOffersRequestBody.value = searchParamsDto as ISearchFlightOffersParamsDto;
+            } else {
+              searchStayOffersRequestBody.value = searchParamsDto as ISearchStayOffersParamsDto;
+            }
+            await searchOffersFetch.refresh();
           } else {
             logger.debug(`(search-offers-store) skipping fetch offers request, as it is currently in pending state, kind=${instance.offersKind}`);
           }
@@ -880,7 +901,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
         if (!searchFlightOffersInstance) {
           if (import.meta.client) {
             await fillCityCacheFromPayload();
-            await startWatchingForFetchResults('flights', <SSRAwareFetchResult<ISearchFlightOffersResultDto| null>>(await searchFlightOffersFetchRequest));
+            startWatchingForFetchResults('flights', searchFlightOffersFetch);
           }
           const initialMainParams = takeInitialValuesFromUrlQuery ? (await parseMainParamsFromUrlQuery<ISearchFlightOffersMainParams>('flights')) : undefined;
           searchFlightOffersInstance = await createSearchFlightOffersInstance(initialMainParams);
@@ -902,7 +923,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
         if (!searchStayOffersInstance) {
           if (import.meta.client) {
             await fillCityCacheFromPayload();
-            await startWatchingForFetchResults('stays', <SSRAwareFetchResult<ISearchStayOffersResultDto| null>>(await searchStayOffersFetchRequest));
+            startWatchingForFetchResults('stays', searchStayOffersFetch);
           }
           const initialMainParams: Partial<ISearchStayOffersMainParams> | undefined = takeInitialValuesFromUrlQuery ? (await parseMainParamsFromUrlQuery<ISearchStayOffersMainParams>('stays')) : undefined;
           searchStayOffersInstance = await createSearchStayOffersInstance(initialMainParams);

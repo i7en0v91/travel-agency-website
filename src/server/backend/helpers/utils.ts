@@ -1,6 +1,13 @@
 import { Decimal } from 'decimal.js';
 import { sha256 } from 'ohash';
 import type { Price, EntityDataAttrsOnly, IFlight, IFlightOffer, IStayOffer } from './../app-facade/interfaces';
+import { AppConfig, isTestEnv } from './../app-facade/implementation';
+
+export const CachedResultsInAppServicesEnabled = !isTestEnv() && !!AppConfig.caching.intervalSeconds;
+export const ImageCategoryInfosCacheKey = 'ImageCategoryInfos';
+export const AllAirlineCompaniesCacheKey = 'AllAirlineCompanies';
+export const AllAirplanesCacheKey = 'AllAirplanes';
+export const NearestAirlineCompanyCacheKey = 'NearestAirlineCompany';
 
 export function normalizePrice (value: Price | number, numZeros: number): Price {
   const raw = Math.floor(value instanceof Decimal ? value.toNumber() : value);

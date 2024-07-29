@@ -12,6 +12,7 @@ import { isPasswordSecure } from './../../../shared/common';
 import { SecretValueMask, TabIndicesUpdateDefaultTimeout } from './../../../shared/constants';
 import { maskLog } from './../../../shared/applogger';
 import { defaultErrorHandler } from './../../../shared/exceptions';
+import { type ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string,
@@ -46,7 +47,7 @@ const EmptyValuePlaceholder = '-';
 
 const logger = CommonServicesLocator.getLogger();
 
-const rootComponent = shallowRef<InstanceType<typeof PropertyGridRow>>();
+const rootComponent = shallowRef<ComponentInstance<typeof PropertyGridRow>>();
 const isEditMode = ref(false);
 const customValidationErrMsgResName = ref<string | undefined>();
 const editValue = ref(props.value);

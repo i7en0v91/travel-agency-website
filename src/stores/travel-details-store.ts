@@ -1,15 +1,15 @@
 import once from 'lodash-es/once';
 import { withQuery, encodeHash, stringifyParsedURL, type ParsedURL } from 'ufo';
 import { type IPopularCityDto, type ITravelDetailsDto } from '../server/dto';
-import { ApiEndpointPopularCityTravelDetails, ApiEndpointPopularCitiesList, TravelDetailsHtmlAnchor, UserNotificationLevel } from '../shared/constants';
-import { HtmlPage } from '../shared/page-query-params';
+import { type Locale, ApiEndpointPopularCityTravelDetails, ApiEndpointPopularCitiesList, TravelDetailsHtmlAnchor, UserNotificationLevel } from '../shared/constants';
+import { AppPage } from '../shared/page-query-params';
 import { type EntityId, type IEntityCacheCityItem, type ITravelDetailsData } from '../shared/interfaces';
-import { useFetchEx, type SSRAwareFetchResult } from '../shared/fetch-ex';
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
 import { getObject } from '../shared/rest-utils';
 import AppConfig from './../appconfig';
 import { getI18nResName2 } from './../shared/i18n';
 import type { AsyncDataRequestStatus } from '#app/composables/asyncData';
+import { usePreviewState } from './../composables/preview-state';
 
 interface ITravelDetailsStoreState {
   current?: ITravelDetailsData | undefined,
@@ -44,8 +44,11 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
   logger.info('(travel-details-store) start store construction');
 
   const userNotificationStore = useUserNotificationStore();
-  const localePath = useLocalePath();
+  const navLinkBuilder = useNavLinkBuilder();
   const router = useRouter();
+  const { locale } = useI18n();
+
+  const { enabled } = usePreviewState();
 
   async function getCityFromUrl (): Promise<IEntityCacheCityItem | undefined> {
     const route = router.currentRoute.value;
@@ -60,9 +63,9 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
     let cacheResult: IEntityCacheCityItem[] | undefined;
     try {
       if (import.meta.client) {
-        cacheResult = await ClientServicesLocator.getEntityCache().get<'City', IEntityCacheCityItem>([], [citySlug], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default });
+        cacheResult = await ClientServicesLocator.getEntityCache().get<'City'>([], [citySlug], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default });
       } else {
-        cacheResult = await ServerServicesLocator.getEntityCacheLogic().get<'City', IEntityCacheCityItem>([], [citySlug], 'City');
+        cacheResult = await ServerServicesLocator.getEntityCacheLogic().get<'City'>([], [citySlug], 'City', enabled);
       }
     } catch(err: any) {
       logger.warn(`(travel-details-store) exception occured looking up city by slug, slug=${citySlug}`, err);
@@ -98,7 +101,7 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
     logger.debug(`(travel-details-store) build city url, slug=${citySlug}`);
 
     const url: Partial<ParsedURL> = {
-      pathname: localePath(`/${HtmlPage.Flights}`),
+      pathname: navLinkBuilder.buildPageLink(AppPage.Flights, locale.value as Locale),
       hash: encodeHash(`#${TravelDetailsHtmlAnchor}`)
     };
     const result = withQuery(stringifyParsedURL(url), { citySlug });
@@ -108,11 +111,14 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
   }
 
   const fetchCityId = ref<EntityId>();
-  const popularCitiesFetchRequest = useFetchEx<IPopularCityDto[] | null[], IPopularCityDto[] | null[], null[]>(ApiEndpointPopularCitiesList, 'error-page',
+  const nuxtApp = useNuxtApp();
+  const popularCitiesFetch = useFetch(`/${ApiEndpointPopularCitiesList}`,
     {
       server: true,
       lazy: true,
       immediate: true,
+      cache: enabled ? 'no-cache' : 'default',
+      query: { drafts: enabled },
       transform: (response: IPopularCityDto[] | null[]) => {
         logger.verbose('(travel-details-store) received popular cities list response');
         if (!response) {
@@ -120,7 +126,8 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
           return []; // error should be logged by fetchEx
         }
         return response[0] ? (response as IPopularCityDto[]) : response as null[];
-      }
+      },
+      $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-page' })
     });
 
   const instance = reactive<ITravelDetailsStoreState & ITravelDetailsStoreMethods>({
@@ -216,9 +223,9 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
     };
   };
 
-  const ensurePopularCities = (popularCitiesFetch: SSRAwareFetchResult<IPopularCityDto[] | null[]>): Promise<IPopularCityDto[] | null[]> => {
+  const ensurePopularCities = (popularCitiesFetch: Awaited<ReturnType<typeof useFetch<IPopularCityDto[] | null[] | null>>>): Promise<IPopularCityDto[] | null[] | null> => {
     logger.debug('(travel-details-store) ensuring popular cities initialization data fetched');
-    return new Promise<IPopularCityDto[] | null[]>((resolve, _) => {
+    return new Promise<IPopularCityDto[] | null[] | null>((resolve, _) => {
       if (['pending', 'idle'].includes(popularCitiesFetch.status.value)) {
         watch(popularCitiesFetch.status, () => {
           if (!['pending', 'idle'].includes(popularCitiesFetch.status.value)) {
@@ -251,7 +258,7 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
 
     try {
       travelDetails.value.status = 'pending';
-      const fetchResult = await getObject<ITravelDetailsDto>(ApiEndpointPopularCityTravelDetails, { cityId }, 'default', false, undefined, 'throw');
+      const fetchResult = await getObject<ITravelDetailsDto>(`/${ApiEndpointPopularCityTravelDetails}`, { cityId }, 'default', false, nuxtApp?.ssrContext?.event, 'throw');
       if (!fetchResult) {
         logger.warn(`(travel-details-store) failed to fetch travel details, empty response, cityId=${cityId}`);
         travelDetails.value.status = 'error';
@@ -276,7 +283,6 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
     timePlayer = createTimePlayer();
     timePlayer.start();
 
-    const popularCitiesFetch = await popularCitiesFetchRequest;
     await popularCitiesFetch;
 
     const onPopularCitiesLoaded = async (popularCities: IPopularCityDto[]) => {
@@ -344,12 +350,12 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
 
   const initializeStateOnServer = async (): Promise<void> => {
     logger.info('(travel-details-store) initializing server state');
-    const popularCities = await ensurePopularCities(await popularCitiesFetchRequest);
-    if (!(popularCities?.length ?? 0) || !popularCities[0]) {
+    const popularCities = await ensurePopularCities(await popularCitiesFetch);
+    if (!(popularCities?.length ?? 0) || !(popularCities![0])) {
       logger.warn('(travel-details-store) server state initialization failed - popular cities load failed');
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'popular cities load failed', 'error-stub');
     }
-    instance.idPlaylist = popularCities.map(c => (c as IPopularCityDto).id);
+    instance.idPlaylist = popularCities!.map(c => (c as IPopularCityDto).id);
 
     const cityFromUrl = await getCityFromUrl();
     if (cityFromUrl) {

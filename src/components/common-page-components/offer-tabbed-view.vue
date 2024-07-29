@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import { type OfferKind, type EntityDataAttrsOnly, type IStayOffer, type IFlightOffer, type EntityId } from '../../shared/interfaces';
-import ComponentWaiterIndicator from './../component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../component-waiting-indicator.vue';
 import { type I18nResName } from './../../shared/i18n';
 import { TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
 import { updateTabIndices } from './../../shared/dom';
@@ -31,7 +31,7 @@ watch(() => props.selectedKind, () => {
       <KeepAlive>
         <div v-for="(kind) in ['flights' as OfferKind, 'stays' as OfferKind]" :key="`${props.ctrlKey}-${kind}TabContainer`" class="offer-tabs-div">
           <div v-if="selectedKind === kind" :id="tabPanelIds[kind]" class="offer-tab">
-            <ComponentWaiterIndicator v-if="displayedItems[kind] === undefined && !isError" :ctrl-key="`${ctrlKey}-${kind}ListWaiterIndicator`" class="offer-tab-list-waiter mt-xs-5" />
+            <ComponentWaitingIndicator v-if="displayedItems[kind] === undefined && !isError" :ctrl-key="`${ctrlKey}-${kind}ListWaiterIndicator`" class="offer-tab-list-waiter mt-xs-5" />
             <ol v-else-if="!isError && (displayedItems[kind]?.length ?? 0) > 0" class="offer-tab-list">
               <li
                 v-for="(item, idx) in displayedItems[kind]"

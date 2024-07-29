@@ -14,12 +14,15 @@ function scheduleTooltipAutoHide () {
   setTimeout(() => { tooltip.value?.hide(); }, TooltipHideTimeout);
 }
 
+const tooltipId = useId();
+
 </script>
 
 <template>
   <div class="payment-card-add-new">
     <VTooltip
       ref="tooltip"
+      :aria-id="tooltipId"
       :distance="6"
       :triggers="['click']"
       placement="bottom"

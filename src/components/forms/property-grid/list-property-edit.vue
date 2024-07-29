@@ -10,6 +10,7 @@ import { MaxListPropertyElementsCount, UserNotificationLevel, TabIndicesUpdateDe
 import { maskLog } from './../../../shared/applogger';
 import { AppException, AppExceptionCodeEnum } from './../../../shared/exceptions';
 import { useConfirmBox } from './../../../composables/confirm-box';
+import { type ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string,
@@ -41,18 +42,18 @@ if (props.maxElementsCount > MaxListPropertyElementsCount) {
   logger.error(`(ListPropertyEdit) list property size exceeded maximum allowed, ctrlKey=${props.ctrlKey}, size=${props.maxElementsCount}`);
   throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'list property size exceeded maximum allowed', 'error-page');
 }
-const propList: Ref<InstanceType<typeof SimplePropertyEdit> | undefined>[] = range(0, props.maxElementsCount).map(() => { return shallowRef<InstanceType<typeof SimplePropertyEdit> | undefined>(); });
-const propAdd = shallowRef<InstanceType<typeof SimplePropertyEdit>>();
+const propList: Ref<ComponentInstance<typeof SimplePropertyEdit> | undefined>[] = range(0, props.maxElementsCount).map(() => { return shallowRef<ComponentInstance<typeof SimplePropertyEdit> | undefined>(); });
+const propAdd = shallowRef<ComponentInstance<typeof SimplePropertyEdit>>();
 const editValues = range(0, props.maxElementsCount).map((idx: number) => ref<string | undefined>(props.values[idx]));
 const addingNewValue = ref<string | undefined>('');
 
-function getPropertyComponent (propIdx: number): InstanceType<typeof SimplePropertyEdit> | undefined {
+function getPropertyComponent (propIdx: number): ComponentInstance<typeof SimplePropertyEdit> | undefined {
   if (propIdx >= props.maxElementsCount) {
     return undefined;
   }
   // KB: using this "special" way of accessing component instance as a workaround.
   // KB: was not able to to do this in a standard way, probably because of dynamic ref array (propList) for property components
-  return propList[propIdx].value ? (((propList[propIdx].value as any)[0] as any) as InstanceType<typeof SimplePropertyEdit>) : undefined;
+  return propList[propIdx].value ? (((propList[propIdx].value as any)[0] as any) as ComponentInstance<typeof SimplePropertyEdit>) : undefined;
 }
 
 function applyValuesOperation (currentValues: (string | undefined)[], op: 'add' | 'change' | 'delete', propIdx: number | 'add', value?: string): (string | undefined)[] {

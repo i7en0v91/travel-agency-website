@@ -1,12 +1,11 @@
 import type { TokenKind, IAppLogger, ITokenLogic, ITokenIssueResult, EntityId, TokenConsumeResult } from './../../backend/app-facade/interfaces';
-import type { TokenLogic as TokenLogicPrisma } from '../services/token-logic';
 
 export class TokenLogic implements ITokenLogic {
   private readonly logger: IAppLogger;
-  private readonly prismaImplementation: TokenLogicPrisma;
+  private readonly prismaImplementation: ITokenLogic;
 
   public static inject = ['tokenLogicPrisma', 'logger'] as const;
-  constructor (prismaImplementation: TokenLogicPrisma, logger: IAppLogger) {
+  constructor (prismaImplementation: ITokenLogic, logger: IAppLogger) {
     this.logger = logger;
     this.prismaImplementation = prismaImplementation;
   }

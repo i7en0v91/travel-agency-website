@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="TOffer extends EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>">
 import sum from 'lodash-es/sum';
-import { type ImageCategory, type IImageEntitySrc, type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, type ILocalizableValue } from './../../shared/interfaces';
+import { type ReviewSummary, type ImageCategory, type IImageEntitySrc, type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, type ILocalizableValue } from './../../shared/interfaces';
 import { type I18nResName, getI18nResName2, getI18nResName3 } from './../../shared/i18n';
 import StaticImage from './../../components/images/static-image.vue';
 import { getScoreClassResName, getLocalizeableValue } from './../../shared/common';
@@ -16,8 +16,7 @@ interface IProps {
   heading?: {
     sub: ILocalizableValue,
     main: ILocalizableValue,
-    reviewScore: number,
-    reviewsCount: number
+    reviewSummary?: ReviewSummary
   }
 };
 const props = withDefaults(defineProps<IProps>(), {
@@ -28,8 +27,8 @@ const props = withDefaults(defineProps<IProps>(), {
 
 const { t, locale } = useI18n();
 
-const scoreClassResName = computed(() => props.heading?.reviewScore ? getScoreClassResName(props.heading?.reviewScore) : undefined);
-const reviewsCountText = computed(() => props.heading?.reviewsCount !== undefined ? `${props.heading?.reviewsCount} ${t(getI18nResName3('stayDetailsPage', 'reviews', 'count'), props.heading?.reviewsCount)}` : '');
+const scoreClassResName = computed(() => props.heading?.reviewSummary?.score ? getScoreClassResName(props.heading?.reviewSummary.score) : undefined);
+const reviewsCountText = computed(() => props.heading?.reviewSummary?.numReviews !== undefined ? `${props.heading?.reviewSummary.numReviews} ${t(getI18nResName3('stayDetailsPage', 'reviews', 'count'), props.heading?.reviewSummary.numReviews)}` : '');
 
 </script>
 
@@ -57,18 +56,25 @@ const reviewsCountText = computed(() => props.heading?.reviewsCount !== undefine
         </div>
         <div v-else class="pricing-subject-heading-main data-loading-stub text-data-loading mt-xs-1" />
         <div class="pricing-subject-info-stats mb-xs-3 mb-s-0 mt-xs-3">
-          <div v-if="heading?.reviewScore" class="pricing-subject-info-score p-xs-2 brdr-1">
-            {{ heading?.reviewScore?.toFixed(1) }}
-          </div>
-          <div v-else class="pricing-subject-info-score" :style="{ visibility: 'hidden' }" />
-          <div v-if="scoreClassResName" class="pricing-subject-info-score-class">
-            {{ $t(scoreClassResName) }}
-          </div>
-          <div v-else class="pricing-subject-info-score-class data-loading-stub text-data-loading" />
-          <div v-if="reviewsCountText" class="pricing-subject-info-score-reviews">
-            {{ reviewsCountText }}
-          </div>
-          <div v-else class="pricing-subject-info-score-reviews data-loading-stub text-data-loading" />
+          <ClientOnly>
+            <div v-if="heading?.reviewSummary?.score" class="pricing-subject-info-score p-xs-2 brdr-1">
+              {{ heading?.reviewSummary.score.toFixed(1) }}
+            </div>
+            <div v-else class="pricing-subject-info-score" :style="{ visibility: 'hidden' }" />
+            <div v-if="scoreClassResName" class="pricing-subject-info-score-class">
+              {{ $t(scoreClassResName) }}
+            </div>
+            <div v-else class="pricing-subject-info-score-class data-loading-stub text-data-loading" />
+            <div v-if="reviewsCountText" class="pricing-subject-info-score-reviews">
+              {{ reviewsCountText }}
+            </div>
+            <div v-else class="pricing-subject-info-score-reviews data-loading-stub text-data-loading" />
+            <template #fallback>
+              <div class="pricing-subject-info-score" :style="{ visibility: 'hidden' }" />
+              <div class="pricing-subject-info-score-class data-loading-stub text-data-loading" />
+              <div class="pricing-subject-info-score-reviews data-loading-stub text-data-loading" />
+            </template>
+          </ClientOnly>
         </div>
       </div>
     </div>

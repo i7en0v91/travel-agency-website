@@ -41,11 +41,11 @@ $stay-interval-image-height: 48;
 }
 
 @mixin with-city-card-width() {
+  width: min-content;
   min-width: $travel-city-card-xs-width;
   @include for-small-and-above() {
     min-width: $travel-city-card-s-width;
   }
-  width: min-content;
 }
 
 .popular-city-grid {
@@ -54,13 +54,14 @@ $stay-interval-image-height: 48;
   grid-template-columns: repeat(auto-fill, minmax($popular-city-card-xs-width, 1fr));
   grid-template-rows: auto auto auto auto auto;
   grid-auto-rows: 0px;
-  overflow: hidden;
   justify-content: center;
+  transform: translateY(-40px);
+  overflow: hidden;
+  
   @include for-medium-and-large() {
     grid-template-rows: auto auto auto;
     grid-template-columns: repeat(auto-fill, minmax($popular-city-card-width, 1fr));
   }
-  transform: translateY(-40px);
 
   .popular-city-grid-item {
     width: 100%;
@@ -126,6 +127,7 @@ $stay-interval-image-height: 48;
           display: -webkit-box;
           -webkit-box-orient: vertical;
           -webkit-line-clamp: 2;
+          line-clamp: 2;
           white-space: pre-wrap;
   
           @include with-theme-color('secondary') using ($css-var) {
@@ -187,6 +189,8 @@ $stay-interval-image-height: 48;
     @at-root {
       .search-page-head-landing {
         .search-page-head-image {
+          border-radius: $search-page-control-radius;
+
           height: $main-title-image-xs-height;
           max-height: $main-title-image-xs-height;
           @include for-medium-and-large() {
@@ -194,16 +198,15 @@ $stay-interval-image-height: 48;
             max-height: $main-title-image-m-height;
           }
       
-          border-radius: $search-page-control-radius;
           img {
+            border-radius: $search-page-control-radius;
+            
             height: $main-title-image-xs-height;
             max-height: $main-title-image-xs-height;
             @include for-medium-and-large() {
               height: $main-title-image-m-height;
               max-height: $main-title-image-m-height;
             }
-      
-            border-radius: $search-page-control-radius;
           }
           .static-image-stub {
             border-radius: $search-page-control-radius;
@@ -214,19 +217,19 @@ $stay-interval-image-height: 48;
       .flights-page-head, .stays-page-head {
         
         .search-page-head-content {
-          height: $search-page-title-image-xs-height;
-          max-height: $search-page-title-image-xs-height;
-          @include for-medium-and-large() {
-            height: $search-page-title-image-m-height;
-            max-height: $search-page-title-image-m-height;
-          }
-
           overflow: hidden;
       
           grid-row-start: 1;
           grid-row-end: 2;
           grid-column-start: 1;
           grid-column-end: 2;
+
+          height: $search-page-title-image-xs-height;
+          max-height: $search-page-title-image-xs-height;
+          @include for-medium-and-large() {
+            height: $search-page-title-image-m-height;
+            max-height: $search-page-title-image-m-height;
+          }
         }
 
         .search-page-head-image {
@@ -544,13 +547,13 @@ $stay-interval-image-height: 48;
     width: 100%;
     display: flex;
     flex-wrap: nowrap;
-    
     gap: 16px;
+    flex-direction: column;
+
     @include for-small-and-above() {
       gap: 24px;
     }
 
-    flex-direction: column;
     @include for-small-and-above() {
       flex-direction: row;
     }
@@ -799,12 +802,13 @@ $stay-interval-image-height: 48;
   grid-template-columns: 1fr;
   grid-template-rows: 1fr;
 
-  @include with-city-card-width();
+  border-radius: 20px;
+
   min-height: $travel-cities-swiper-xs-height;
+  @include with-city-card-width();
   @include for-small-and-above() {
     min-height: $travel-cities-swiper-s-height;
   }
-  border-radius: 20px;
 
   .travel-city-card-dim {
     grid-column-start: 1;
@@ -824,12 +828,11 @@ $stay-interval-image-height: 48;
     grid-row-start: 1;
     grid-row-end: 2;
 
-    @include with-city-card-width();
     height: auto;
-
     z-index: 3;
-
     align-self: flex-end;
+
+    @include with-city-card-width();
     
     .travel-city-card-texts {
       color: white;
@@ -883,13 +886,16 @@ $stay-interval-image-height: 48;
     z-index: 1;
 
     @include with-city-card-width();
-    width: auto;
-    height: 100%;
-    .static-image-stub {
-      border-radius: map.get($borders-radius, '3');
-    }
-    img {
-      border-radius: map.get($borders-radius, '3');
+
+    & {
+      width: auto;
+      height: 100%;
+      .static-image-stub {
+        border-radius: map.get($borders-radius, '3');
+      }
+      img {
+        border-radius: map.get($borders-radius, '3');
+      }  
     }
   }
 }
@@ -958,6 +964,14 @@ $stay-interval-image-height: 48;
         width: 100%;
         height: 100%;
       }
+
+      &.frames-not-activated {
+        visibility: hidden;
+      }
+
+      &.frames-activated {
+        visibility: visible;
+      }
     }
   }
 
@@ -969,6 +983,10 @@ $stay-interval-image-height: 48;
     grid-row-end: 2;
     grid-column-start: 1;
     grid-column-end: 2;
+
+    @include with-theme-color('control-bg') using ($css-var) {
+      background-color: var($css-var);
+    }
 
     @include with-theme-color('travel-details-texting') using ($css-var) {
       color: var(#{$css-var});
@@ -991,10 +1009,6 @@ $stay-interval-image-height: 48;
       grid-row-end: 3;
       grid-column-start: 1;
       grid-column-end: 2;
-    }
-
-    @include with-theme-color('control-bg') using ($css-var) {
-      background-color: var($css-var);
     }
 
     /* custom scrollbar theme */
@@ -1069,6 +1083,15 @@ $stay-interval-image-height: 48;
           grid-row-end: 2;
           grid-column-start: 2;
           grid-column-end: 3;
+
+          text-align: center;
+          @include with-theme-color('travel-details-ctrl-bg') using($css-var) {
+            background-color: var($css-var);
+          }
+          @include with-theme-color('travel-details-ctrl') using($css-var) {
+            color: var($css-var);
+          }
+          
           @include for-medium-and-large() {
             grid-row-start: 1;
             grid-row-end: 4;
@@ -1076,14 +1099,6 @@ $stay-interval-image-height: 48;
           @include for-extra-large-only() {
             grid-column-start: 2;
             grid-column-end: 3;
-          }
-  
-          text-align: center;
-          @include with-theme-color('travel-details-ctrl-bg') using($css-var) {
-            background-color: var($css-var);
-          }
-          @include with-theme-color('travel-details-ctrl') using($css-var) {
-            color: var($css-var);
           }
   
           .travel-details-price-value {
@@ -1107,6 +1122,9 @@ $stay-interval-image-height: 48;
         grid-row-end: 3;
         grid-column-start: 1;
         grid-column-end: 3;
+
+        @include with-body-font('body-secondary');
+
         @include for-travel-details-medium() {
           grid-column-start: 1;
           grid-column-end: 3;
@@ -1119,8 +1137,6 @@ $stay-interval-image-height: 48;
           grid-column-start: 1;
           grid-column-end: 3;
         }
-
-        @include with-body-font('body-secondary');
 
         p {
           display: block;
@@ -1135,7 +1151,7 @@ $stay-interval-image-height: 48;
         text-align: center;
         margin-top: auto;
 
-        flex: 1 0 auto;
+        flex: 0 0 min-content;
 
         grid-row-start: 3;
         grid-row-end: 4;
@@ -1291,14 +1307,14 @@ $stay-interval-image-height: 48;
       grid-column-start: 1;
       grid-column-end: 3;
 
+      display: contents;
+      white-space: normal;
+      width: fit-content;
+
       @include for-small-and-above() {
         grid-column-start: 1;
         grid-column-end: 2;
       }
-
-      display: contents;
-      white-space: normal;
-      width: fit-content;
 
       .offer-details-summary-title {
         display: inline;
@@ -1354,6 +1370,9 @@ $stay-interval-image-height: 48;
     }
 
     .offer-details-summary-main {
+      width: 100%;
+      display: block;
+
       grid-row-start: 2;
       grid-row-end: 3;
       grid-column-start: 1;
@@ -1365,9 +1384,6 @@ $stay-interval-image-height: 48;
         grid-column-end: 2;
       }
       
-      width: 100%;
-      display: block;
-
       .offer-details-summary-info {
         .offer-details-summary-location {
           .offer-details-location-icon {
@@ -1431,20 +1447,8 @@ $stay-interval-image-height: 48;
     }
 
     .offer-details-summary-buttons {
-      grid-row-start: 3;
-      grid-row-end: 4;
-      grid-column-start: 1;
-      grid-column-end: 3;
-
       width: 100%;
       height: min-content;
-
-      @include for-small-and-above() {
-        grid-row-start: 2;
-        grid-row-end: 3;
-        grid-column-start: 2;
-        grid-column-end: 3;
-      }
 
       display: flex;
       flex-direction: row-reverse;
@@ -1452,6 +1456,18 @@ $stay-interval-image-height: 48;
       align-items: stretch;
       gap: 16px;
       justify-self: flex-end;
+
+      grid-row-start: 3;
+      grid-row-end: 4;
+      grid-column-start: 1;
+      grid-column-end: 3;
+
+      @include for-small-and-above() {
+        grid-row-start: 2;
+        grid-row-end: 3;
+        grid-column-start: 2;
+        grid-column-end: 3;
+      }
 
       .btn-icon::before {
         vertical-align: middle;
@@ -1896,19 +1912,6 @@ $stay-interval-image-height: 48;
         .flight-details-transition-image {
           flex: 1 0 auto;
 
-          margin-left: 20px;
-          margin-right: 20px;
-          @at-root {
-            .flight-details-card:not(.compact-layout) {
-              .flight-details-timing-div .flight-details-timing .flight-details-transition-image {
-                @include for-medium-and-large() {
-                  margin-left: 80px;
-                  margin-right: 80px;
-                }
-              }
-            }
-            
-          }        
           width: #{$flight-transition-image-width}px;
           height: #{$flight-transition-image-height}px;
     
@@ -1924,6 +1927,20 @@ $stay-interval-image-height: 48;
           @include with-theme-color('input-ctrl-primary') using($css-var) {
             background-color: var($css-var);
           }
+
+          margin-left: 20px;
+          margin-right: 20px;
+          @at-root {
+            .flight-details-card:not(.compact-layout) {
+              .flight-details-timing-div .flight-details-timing .flight-details-transition-image {
+                @include for-medium-and-large() {
+                  margin-left: 80px;
+                  margin-right: 80px;
+                }
+              }
+            }
+          }        
+          
         }
       }
     }
@@ -2207,16 +2224,17 @@ $stay-interval-image-height: 48;
     }
 
     .search-flights-card-company-logo {
+      width: 100%;
+      height: 100%;
+
       grid-column-start: 1;
       grid-column-end: 2;
       grid-row-start: 1;
       grid-row-end: 2;
+
       @include for-small-and-above() {
         grid-row-end: 3;
       } 
-
-      width: 100%;
-      height: 100%;
 
       .airline-company-logo {
         width: 160px;
@@ -2314,6 +2332,10 @@ $stay-interval-image-height: 48;
     }
 
     .search-flights-card-main {
+      width: 100%;
+      display: block;
+      height: min-content;
+
       grid-column-start: 1;
       grid-column-end: 3;
       grid-row-start: 2;
@@ -2322,10 +2344,6 @@ $stay-interval-image-height: 48;
         grid-column-start: 2;
         grid-column-end: 3;
       }
-
-      width: 100%;
-      display: block;
-      height: min-content;
 
       .search-flights-card-main-div {
         width: 100%;
@@ -2587,15 +2605,7 @@ $stay-interval-image-height: 48;
           grid-column-end: 3;
           grid-row-start: 1;
           grid-row-end: 3;
-          /*
-          @include for-large-and-extra-large() {
-            grid-column-start: 2;
-            grid-column-end: 3;
-            grid-row-start: 1;
-            grid-row-end: 3;
-          } 
-          */
-  
+          
           display: flex;
           flex-direction: column;
           flex-wrap: nowrap;
@@ -3035,15 +3045,16 @@ $stay-interval-image-height: 48;
     }
 
     .pricing-details-decomposition {
-      @include with-body-font('body-primary');
       @include with-theme-color('input-ctrl-primary') using($css-var) {
         color: var($css-var);
       }
+
+      @include with-body-font('body-primary');
+      overflow-x: hidden;
       white-space: normal;
       @include for-small-and-above() {
         white-space: nowrap;
-      }
-      overflow-x: hidden;
+      }      
 
       .pricing-details-decomposition-caption {
         @include with-body-font('body-primary');

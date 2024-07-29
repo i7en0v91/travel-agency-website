@@ -8,7 +8,7 @@ import BookingTicketCodes from './booking-ticket-codes.vue';
 import BookingTicketFlightGfx from './booking-ticket-flight-gfx.vue';
 import BookingTicketStayTitle from './booking-ticket-stay-title.vue';
 import { type IBookingTicketFlightGfxProps, type IBookingTicketStayTitleProps, type IBookingTicketProps } from './../../shared/interfaces';
-import ComponentWaiterIndicator from './../../components/component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../../components/component-waiting-indicator.vue';
 
 withDefaults(defineProps<IBookingTicketProps>(), {
   generalInfo: undefined,
@@ -53,9 +53,9 @@ withDefaults(defineProps<IBookingTicketProps>(), {
           <ClientOnly>
             <BookingTicketFlightGfx v-if="offerKind === 'flights'" :ctrl-key="titleOrGfx!.ctrlKey" :user-name="(titleOrGfx as IBookingTicketFlightGfxProps).userName" />
             <BookingTicketStayTitle v-else-if="offerKind === 'stays'" :ctrl-key="titleOrGfx!.ctrlKey" :city-name="(titleOrGfx as IBookingTicketStayTitleProps).cityName" :stay-name="(titleOrGfx as IBookingTicketStayTitleProps).stayName" />
-            <ComponentWaiterIndicator v-else :ctrl-key="`${ctrlKey}-ImageWaiter`" class="booking-title-image-waiting-indicator" />
+            <ComponentWaitingIndicator v-else :ctrl-key="`${ctrlKey}-ImageWaiter`" class="booking-title-image-waiting-indicator" />
             <template #fallback>
-              <ComponentWaiterIndicator :ctrl-key="`${ctrlKey}-ImageWaiterClientFallback`" class="booking-title-image-waiting-indicator" />
+              <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-ImageWaiterClientFallback`" class="booking-title-image-waiting-indicator" />
             </template>
           </ClientOnly>
         </div>

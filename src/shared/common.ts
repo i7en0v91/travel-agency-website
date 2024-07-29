@@ -4,40 +4,46 @@ import { normalizeURL, parseURL } from 'ufo';
 import fromPairs from 'lodash-es/fromPairs';
 import dayjs from 'dayjs';
 import AppConfig from '../appconfig';
-import { type Locale, AvailableLocaleCodes, OgImageExt, NumMinutesInDay } from './constants';
-import { HtmlPage, AllHtmlPages, getHtmlPagePath, EntityIdPages } from './page-query-params';
+import { type Locale, AvailableLocaleCodes, OgImageExt, NumMinutesInDay, EntityIdRadix } from './constants';
+import { SystemPage, AppPage, AllHtmlPages, getPagePath, EntityIdPages } from './page-query-params';
 import type { ILocalizableValue, GeoPoint, DistanceUnitKm, EntityId } from './interfaces';
 import { LocaleEnum } from './constants';
 import { type I18nResName, getI18nResName3 } from './../shared/i18n';
 import random from 'lodash-es/random';
+import destr from 'destr';
+import isNumber from 'lodash-es/isNumber';
 
 export function newUniqueId(): EntityId {
-  const getPart = () => (random(10000000000000) + new Date().getTime()).toString(20);
+  const getPart = () => (random(10000000000000) + new Date().getTime()).toString(EntityIdRadix);
   const high = getPart();
   const low = getPart();
   return `${high}${low}`;
 }
 
-export function lookupPageByUrl(urlOrPathname: string): HtmlPage | undefined {
+export function lookupPageByUrl(urlOrPathname: string): AppPage | SystemPage | undefined {
   if (!urlOrPathname?.trim()) {
-    return HtmlPage.Index;
+    return AppPage.Index;
   }
 
   const urlObj = parseURL(normalizeURL(urlOrPathname));
   if (!urlObj.pathname) {
-    return HtmlPage.Index;
+    return AppPage.Index;
   }
   
   if (urlObj.pathname.includes('/index')) {
-    return HtmlPage.Index;
+    return AppPage.Index;
+  }
+
+  if(urlObj.pathname.includes(`/${SystemPage.Drafts.valueOf().toLowerCase()}`)) {
+    return SystemPage.Drafts;
   }
 
   const slashedPathName = urlObj.pathname.startsWith('/') ? urlObj.pathname : `/${urlObj.pathname}`;
   if(AvailableLocaleCodes.some(c => ['/', `/${c}`, `/${c}/`].includes(slashedPathName.toLowerCase()))) {
-    return HtmlPage.Index;
+    return AppPage.Index;
   }
 
-  return AllHtmlPages.find(pp => pp !== HtmlPage.Index && slashedPathName.includes(`/${getHtmlPagePath(pp)}`));
+  return AllHtmlPages.find(pp => pp !== AppPage.Index && slashedPathName.includes(`/${getPagePath(pp)}`));
 };
 
 export function extractIdFromUrl(urlOrPathname: string): EntityId | undefined {
@@ -45,12 +51,16 @@ export function extractIdFromUrl(urlOrPathname: string): EntityId | undefined {
   if(!page) {
     return undefined;
   }
+  if(page === SystemPage.Drafts) {
+    return undefined;
+  }
+
   if(!EntityIdPages.includes(page)) {
     return undefined;
   }
 
   const urlParts = urlOrPathname.split('/');
-  const pagePathIdx = urlParts.indexOf(getHtmlPagePath(page));
+  const pagePathIdx = urlParts.indexOf(getPagePath(page));
   if(pagePathIdx < 0 || (pagePathIdx >= urlParts.length - 1)) {
     return undefined;
   }
@@ -98,6 +108,14 @@ export function clampTextLine (text: string, maxLength: number): string {
   const startStr = `${text.substring(0, partLength)}`;
   const endStr = `${text.substring(text.length - partLength, text.length)}`;
   return `${startStr}...${endStr}`;
+}
+
+export function stringifyClone(obj: any): any {
+  if(!obj) {
+    return undefined;
+  }
+
+  return destr(JSON.stringify(obj));
 }
 
 export function strToBool (value: string): boolean {
@@ -165,38 +183,67 @@ export function formatValidThruDate(dueDate: Date): string {
   return `${dueDate.getMonth().toString().padStart(2, '0')}/${ (dueDate.getFullYear() % 100).toString().padStart(2, '0')}`;
 }
 
-export function tryParseEnum (enumType: any, value?: string | number): any {
-  if (!value) {
+function compareLookupValues(entryValue: any, lookupValue: string, ignoreCase: boolean): boolean {
+  if (!entryValue) {
+    return false;
+  }
+  if(ignoreCase) {
+    return entryValue.valueOf().toString().toLowerCase() === lookupValue;
+  } else {
+    return entryValue.valueOf().toString() === lookupValue;
+  }
+};
+
+export function tryLookupKeyByValue<TKey extends string, TVal extends string | number, TObj extends Record<TKey, TVal>>(object: TObj, value: string | number | undefined | null, ignoreCase: boolean = true): TKey | undefined {
+  if(value === undefined) {
     return undefined;
   }
 
-  const testValue = value.toString().toLowerCase();
-  const compareValues = (entryValue: any): boolean => {
-    if (!entryValue) {
-      return false;
-    }
-    return (entryValue as any).valueOf().toLowerCase() === testValue;
-  };
+  if(value === null) {
+    return undefined;
+  }
 
-  const matchedMembers = Object.entries(enumType).filter(e => compareValues(e[1]));
+  if(!object) {
+    return undefined;
+  }
+
+  if(isNumber(value)) {
+    const matchedMembers = Object.entries(object).filter(e => isNumber(e[1]) && e[1] === value);
+    return (matchedMembers.length > 0 ? matchedMembers[0][0] as TKey : undefined);
+  } 
+
+  const lookupValue = ignoreCase ? value.toString().toLowerCase() : value.toString();
+  const matchedMembers = Object.entries(object).filter(e => compareLookupValues(e[1], lookupValue, ignoreCase));
   if (matchedMembers.length === 0) {
     return undefined;
   }
 
-  return enumType[matchedMembers[0][0]];
+  return matchedMembers[0][0] as TKey;
 }
 
-export function parseEnumOrThrow (enumType: any, value?: string | number): any {
+export function lookupKeyByValueOrThrow<TKey extends string, TVal extends string | number, TObj extends Record<TKey, TVal>>(object: TObj, value: TVal | undefined | null, ignoreCase: boolean = true): TKey {
   if (!value) {
-    throw new Error('enum value empty');
+    throw new Error('lookup object is empty');
   }
 
-  const result = tryParseEnum(enumType, value);
+  const result = tryLookupKeyByValue<TKey, TVal, TObj>(object, value, ignoreCase);
   if (!result) {
-    throw new Error(`unexpected enum value: ${JSON.stringify(value)}`);
+    throw new Error(`lookup key by value failed: object=[${JSON.stringify(object)}], value=[${value?.toString() ?? ''}]`);
   }
 
   return result;
+}
+
+export function tryLookupValue<TVal extends string | number, TObj extends Record<any, TVal>>(object: TObj, value: string | number | undefined | null, ignoreCase: boolean = true): TVal | undefined {
+  const key = tryLookupKeyByValue(object, value, ignoreCase);
+  if(!key) {
+    return undefined;
+  }
+  return object[key];
+}
+
+export function lookupValueOrThrow<TVal extends string | number, TObj extends Record<any, TVal>>(object: TObj, value: string | number | undefined | null, ignoreCase: boolean = true): TVal {
+  return object[lookupKeyByValueOrThrow(object, value, ignoreCase)];
 }
 
 export function mapLocalizeableValues (f: (...lv: string[]) => string, ...localizeableValues: ILocalizableValue[]): ILocalizableValue {
@@ -235,8 +282,8 @@ export function getScoreClassResName (score: number): I18nResName {
   }
 }
 
-export function getOgImageFileName (page: HtmlPage, locale: Locale): string {
-  return `${page === HtmlPage.Index ? 'index' : getHtmlPagePath(page)}_${locale.toLowerCase()}.${OgImageExt}`;
+export function getOgImageFileName (page: AppPage, locale: Locale): string {
+  return `${page === AppPage.Index ? 'index' : getPagePath(page)}_${locale.toLowerCase()}.${OgImageExt}`;
 }
 
 export async function delay (milliseconds: number) {
@@ -247,23 +294,24 @@ export async function delay (milliseconds: number) {
 /**
  * Spin waits until specified condition is TRUE
  * @param condition predicate to check
- * @param timeoutSecs maximum number of seconds to wait for {@link condition} to become TRUE
+ * @param timeoutMs maximum number of milliseconds to wait for {@link condition} to become TRUE
+ * @param iterationMs wait interval in milliseconds between successive checks for condition
  * @returns TRUE if condition has been met until timeout; FALSE otherwise
  */
-export async function spinWait (condition: () => Promise<boolean>, timeoutSecs: number): Promise<boolean> {
-  const startWait = process.uptime();
+export async function spinWait (condition: () => Promise<boolean>, timeoutMs: number, iterationMs: number = 1000): Promise<boolean> {
+  const startWait = new Date().getTime();
   let conditionMet = await condition();
   if (conditionMet) {
     return true;
   }
 
   while (!conditionMet) {
-    const elapsedSecs = process.uptime() - startWait;
-    if (elapsedSecs > timeoutSecs) {
+    const elapsedMs = new Date().getTime() - startWait;
+    if (elapsedMs > timeoutMs) {
       return false;
     }
 
-    await delay(1000);
+    await delay(iterationMs);
     conditionMet = await condition();
   }
 

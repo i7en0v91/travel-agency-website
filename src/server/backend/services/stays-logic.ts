@@ -5,22 +5,26 @@ import orderBy from 'lodash-es/orderBy';
 import isString from 'lodash-es/isString';
 import { murmurHash } from 'ohash';
 import sanitize from 'sanitize-html';
-import { type IAppLogger, type IStayOfferDetails, type IStayReview, type StayServiceLevel, type ISearchStayOffersResultFilterParams, type ICity, type ISearchStayOffersResult, type StayOffersSortFactor, type IStayOffersFilterParams, type IStaysLogic, type IPagination, type ISorting, type Price, type EntityId, type IStayShort, type EntityDataAttrsOnly, type IStayOffer, type IStay, type IStayData } from './../../backend/app-facade/interfaces';
-import { AppException, AppExceptionCodeEnum, AppConfig, MaxOfferGenerationMemoryBufferItems, DefaultStayOffersSorting, DbVersionInitial, TemporaryEntityId, DefaultStayReviewScore, newUniqueId } from './../app-facade/implementation';
+import { type IAppLogger, type IStayOfferDetails, type IStayReview, type StayServiceLevel, type ISearchStayOffersResultFilterParams, type ICity, type ISearchStayOffersResult, type StayOffersSortFactor, type IStayOffersFilterParams, type IStaysLogic, type IPagination, type ISorting, type Price, type EntityId, type IStayShort, type EntityDataAttrsOnly, type IStayOffer, type IStay, type IStayData, type ReviewSummary, type PreviewMode } from './../../backend/app-facade/interfaces';
+import { AppException, AppExceptionCodeEnum, AppConfig, MaxOfferGenerationMemoryBufferItems, DefaultStayOffersSorting, DbVersionInitial, TemporaryEntityId, newUniqueId } from './../app-facade/implementation';
 import { normalizePrice, buildStayOfferUniqueDataKey } from './../helpers/utils';
+import { DefaultStayReviewScore } from './../../../shared/constants';
 import { MapStayReview, StayReviewsQuery, MapStayOffer, MapStayShort, StayInfoQuery, MapStay, StayOfferInfoQuery, MapStayOfferDetails } from './queries';
-import { mapDate, mapGeoCoord } from './db';
+import { mapGeoCoord } from '../helpers/db';
+import { type IStayOfferMaterializer } from './../helpers/offer-materializers';
 
 declare type OfferWithSortFactor<TOffer extends IStayOffer> = EntityDataAttrsOnly<TOffer> & { sortFactor: number };
 
 export class StaysLogic implements IStaysLogic {
   private logger: IAppLogger;
   private dbRepository: PrismaClient;
+  private offerMaterializer: IStayOfferMaterializer;
 
-  public static inject = ['dbRepository', 'logger'] as const;
-  constructor (dbRepository: PrismaClient, logger: IAppLogger) {
+  public static inject = ['dbRepository', 'stayOfferMaterializer', 'logger'] as const;
+  constructor (dbRepository: PrismaClient, offerMaterializer: IStayOfferMaterializer, logger: IAppLogger) {
     this.logger = logger;
     this.dbRepository = dbRepository;
+    this.offerMaterializer = offerMaterializer;
   }
 
   async deleteStayOffer(id: EntityId): Promise<void> {
@@ -236,7 +240,7 @@ export class StaysLogic implements IStaysLogic {
     };
   }
 
-  async getAllStays (): Promise<IStayShort[]> {
+  async getAllStays (): Promise<(IStayShort & { reviewSummary: ReviewSummary })[]> {
     this.logger.debug('(StaysLogic) obtaining list of stays');
 
     const stayEntities = await this.dbRepository.hotel.findMany({
@@ -251,7 +255,15 @@ export class StaysLogic implements IStaysLogic {
       }
     });
 
-    const result = stayEntities.map(MapStayShort);
+    const result = stayEntities.map(stay => { 
+      return {
+        ...MapStayShort(stay),
+        reviewSummary: {
+          numReviews: stay.reviews.length,
+          score: stay.reviews.length > 0 ? stay.reviews.map(r => r.score).reduce((sum, v) => sum + v, 0) / stay.reviews.length : DefaultStayReviewScore,  
+        }
+      };
+    });
 
     this.logger.debug(`(StaysLogic) list of stays obtained, count=${result.length}`);
     return result;
@@ -286,7 +298,7 @@ export class StaysLogic implements IStaysLogic {
         }
       });
     } else {
-      this.logger.debug(`(StaysLogic) creating existing favourite record, id=${offerId}, userId=${userId}`);
+      this.logger.debug(`(StaysLogic) creating favourite record, id=${offerId}, userId=${userId}`);
       result = true;
       await this.dbRepository.userStayOffer.create({
         data: {
@@ -303,13 +315,13 @@ export class StaysLogic implements IStaysLogic {
     return result;
   }
 
-  async searchOffers (filter: IStayOffersFilterParams, userId: EntityId | 'guest', sorting: ISorting<StayOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean): Promise<ISearchStayOffersResult> {
-    this.logger.verbose(`(StaysLogic) search offers, filter=${JSON.stringify(filter)}, userId=${userId}, sorting=${JSON.stringify(sorting)}, pagination=${JSON.stringify(pagination)}, narrowFilterParams=${narrowFilterParams}`);
+  async searchOffers (filter: IStayOffersFilterParams, userId: EntityId | 'guest', sorting: ISorting<StayOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean, previewMode: PreviewMode, availableStays: (IStayShort & { reviewSummary: ReviewSummary })[] | undefined = undefined): Promise<ISearchStayOffersResult> {
+    this.logger.verbose(`(StaysLogic) search offers, filter=${JSON.stringify(filter)}, userId=${userId}, sorting=${JSON.stringify(sorting)}, pagination=${JSON.stringify(pagination)}, narrowFilterParams=${narrowFilterParams}, previewMode=${previewMode}, availableStays=${availableStays ? (availableStays.length) : ''}`);
 
     try {
       const sortFactor = sorting.factor ?? DefaultStayOffersSorting;
-      let variants = await this.generateStayOffersFull(filter, userId, sortFactor);
-      this.logger.debug(`(StaysLogic) sorting stay offer variants, userId=${userId}`);
+      let variants = await this.generateStayOffersFull(filter, userId, sortFactor, availableStays);
+      this.logger.debug(`(StaysLogic) sorting stay offer variants, userId=${userId}, previewMode=${previewMode}, availableStays=${availableStays ? (availableStays.length) : ''}`);
       variants = orderBy(variants, ['sortFactor'], [sorting.direction]);
       let filterParams : ISearchStayOffersResultFilterParams | undefined;
       if (narrowFilterParams) {
@@ -320,23 +332,23 @@ export class StaysLogic implements IStaysLogic {
 
       const take = pagination.skip >= variants.length ? 0 : (Math.min(variants.length - pagination.skip, pagination.take));
       const skip = pagination.skip;
-      this.logger.debug(`(StaysLogic) applying pagination to stay offers, userId=${userId}, skip=${skip}, take=${take}`);
+      this.logger.debug(`(StaysLogic) applying pagination to stay offers, userId=${userId}, skip=${skip}, take=${take}, previewMode=${previewMode}, availableStays=${availableStays ? (availableStays.length) : ''}`);
       if (pagination.skip >= variants.length) {
         variants = [];
       } else {
         variants = variants.slice(skip, skip + take);
       }
-      await this.ensureOffersInDatabase(variants, userId);
+      await this.offerMaterializer.ensureOffersMaterialized(variants, userId, previewMode);
 
       const result: ISearchStayOffersResult = {
         pagedItems: variants,
         paramsNarrowing: filterParams,
         totalCount
       };
-      this.logger.verbose(`(StaysLogic) search offers - completed, filter=${JSON.stringify(filter)}, userId=${userId}, count=${variants.length}`);
+      this.logger.verbose(`(StaysLogic) search offers - completed, filter=${JSON.stringify(filter)}, userId=${userId}, previewMode=${previewMode}, availableStays=${availableStays ? (availableStays.length) : ''}, count=${variants.length}`);
       return result;
     } catch (err: any) {
-      this.logger.warn('(StaysLogic) exception occured while searching offers', err, { filter, pagination, userId });
+      this.logger.warn('(StaysLogic) exception occured while searching offers', err, { filter, pagination, userId, previewMode, availableStays });
       throw err;
     }
   }
@@ -402,84 +414,6 @@ export class StaysLogic implements IStaysLogic {
 
     this.logger.verbose(`(StaysLogic) get user tickets completed, userId=${userId}, count=${result.totalCount}`);
     return result;
-  }
-
-  async createOffersAndFillIds (offers: OfferWithSortFactor<IStayOffer>[]): Promise<void> {
-    this.logger.verbose(`(StaysLogic) creating memory offers and filling IDs, count=${offers.length}`);
-    if (offers.length === 0) {
-      return;
-    }
-
-    this.logger.debug('(StaysLogic) running offer\'s create transaction');
-    await this.dbRepository.$transaction(async () => {
-      for (let i = 0; i < offers.length; i++) {
-        const offer = offers[i];
-        const dataHash = buildStayOfferUniqueDataKey(offer);
-
-        const queryResult = await this.dbRepository.stayOffer.create({
-          data: {
-            id: newUniqueId(),
-            checkInPosix: mapDate(offer.checkIn),
-            checkOutPosix: mapDate(offer.checkOut),
-            numGuests: offer.numGuests,
-            numRooms: offer.numRooms,
-            totalPrice: offer.totalPrice.toNumber(),
-            dataHash,
-            hotelId: offer.stay.id,
-            version: DbVersionInitial,
-            isDeleted: false
-          },
-          select: {
-            id: true
-          }
-        });
-
-        offer.id = queryResult.id;
-      }
-    });
-
-    this.logger.verbose(`(StaysLogic) creating memory offers and filling IDs - completed, count=${offers.length}`);
-  }
-
-  async ensureOffersInDatabase (offers: OfferWithSortFactor<IStayOffer>[], userId: EntityId | 'guest'): Promise<void> {
-    this.logger.debug(`(StaysLogic) ensuring offers in DB, userId=${userId}, count=${offers.length}`);
-
-    const memoryOffersMap = new Map<string, OfferWithSortFactor<IStayOffer>>(
-      offers.map(o => [buildStayOfferUniqueDataKey(o), o]));
-
-    const dbOffers = (await this.dbRepository.stayOffer.findMany({
-      where: {
-        isDeleted: false,
-        dataHash: {
-          in: [...memoryOffersMap.keys()]
-        }
-      },
-      select: StayOfferInfoQuery(userId).select
-    })).map(MapStayOffer);
-
-    const dbOffersMap = new Map<string, IStayOffer>(dbOffers.map(o => [o.dataHash, o]));
-
-    const offersToCreate = [] as OfferWithSortFactor<IStayOffer>[];
-    let identifiedCount = 0;
-    for (let i = 0; i < offers.length; i++) {
-      const offer = offers[i];
-      const dataKey = buildStayOfferUniqueDataKey(offer);
-      const matchedDbOffer = dbOffersMap.get(dataKey);
-      if (matchedDbOffer) {
-        offer.id = matchedDbOffer.id;
-        offer.isFavourite = matchedDbOffer.isFavourite;
-        identifiedCount++;
-      } else {
-        offer.isFavourite = false;
-        offersToCreate.push(offer);
-      }
-    }
-
-    if (offersToCreate.length) {
-      await this.createOffersAndFillIds(offersToCreate);
-    }
-
-    this.logger.debug(`(StaysLogic) ensuring offers in DB - completed, userId=${userId}, count=${offers.length}, num identified=${identifiedCount}`);
   }
 
   async createOrUpdateReview (stayId: EntityId, textOrHtml: string, score: number, userId: EntityId): Promise<EntityId> {
@@ -664,7 +598,7 @@ export class StaysLogic implements IStaysLogic {
 
       if ((filter.ratings?.length ?? 0) > 0) {
         const ratingValues = filter.ratings!.includes(4) ? [...filter.ratings!, 5] : filter.ratings!;
-        const ratingMatches = ratingValues.some(r => Math.abs(r - Math.floor(offer.stay.reviewScore)) < 0.01);
+        const ratingMatches = ratingValues.some(r => Math.abs(r - Math.floor(offer.stay.reviewSummary!.score)) < 0.01);
         if (!ratingMatches) {
           return false;
         }
@@ -733,16 +667,16 @@ export class StaysLogic implements IStaysLogic {
       case 'price':
         return offer.totalPrice.toNumber();
       case 'rating':
-        return offer.stay.reviewScore ?? DefaultStayReviewScore;
+        return offer.stay.reviewSummary!.score;
       case 'score':
-        return offer.stay.numReviews + (offer.stay.reviewScore ?? DefaultStayReviewScore) * 8 + offer.totalPrice.toNumber() / 10;
+        return offer.stay.reviewSummary!.numReviews + offer.stay.reviewSummary!.score * 8 + offer.totalPrice.toNumber() / 10;
       default:
         this.logger.warn(`(StaysLogic) unexpected stay offer sort factor: ${factor}`);
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected sorting', 'error-stub');
     }
   };
 
-  async generateStayOffersFull (filter: IStayOffersFilterParams, userId: EntityId | 'guest', sortFactor: StayOffersSortFactor): Promise<OfferWithSortFactor<IStayOffer>[]> {
+  async generateStayOffersFull (filter: IStayOffersFilterParams, userId: EntityId | 'guest', sortFactor: StayOffersSortFactor, availableStays: (IStayShort & { reviewSummary: ReviewSummary })[] | undefined): Promise<OfferWithSortFactor<IStayOffer>[]> {
     this.logger.debug(`(StaysLogic) generating full stay offer variants, userId=${userId}`);
 
     const varyDate = (date: Date): Date[] => {
@@ -767,12 +701,12 @@ export class StaysLogic implements IStaysLogic {
     }
     this.logger.debug(`(StaysLogic) generating full stay offer variants, userId=${userId}, using date variants: from=[${checkInDateVariants.map(d => d.toISOString()).join(', ')}], to=[${checkOutDateVariants?.map(d => d.toISOString()).join(', ') ?? '(none)'}]`);
 
-    let stayVariants = [] as IStayShort[];
+    let stayVariants = [] as (IStayShort & { reviewSummary: ReviewSummary })[];
     if (filter.citySlug) {
-      stayVariants = (await this.getAllStays()).filter(x => x.city.slug === filter.citySlug!);
+      stayVariants = (availableStays ?? (await this.getAllStays())).filter(x => x.city.slug === filter.citySlug!);
     }
     if (stayVariants.length === 0 && !filter.citySlug) {
-      stayVariants = await this.getAllStays();
+      stayVariants = availableStays ?? (await this.getAllStays());
     }
 
     this.logger.debug(`(StaysLogic) generating full stay offer variants, userId=${userId}, stay variants count=${stayVariants.length}`);
@@ -796,7 +730,13 @@ export class StaysLogic implements IStaysLogic {
             kind: 'stays',
             numGuests,
             numRooms,
-            stay,
+            stay: {
+              ...stay,
+              reviewSummary: {
+                numReviews: stay.reviewSummary.numReviews,
+                score: stay.reviewSummary.score
+              }
+            },
             sortFactor: 0,
             totalPrice: new Decimal(0)
           };

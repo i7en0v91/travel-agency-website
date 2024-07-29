@@ -4,7 +4,7 @@ import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { useModal } from 'vue-final-modal';
 import { TiptapUnderline, TiptapPlaceholder } from './../../../client/tiptapExt';
 import ReviewEditorButton from './review-editor-button.vue';
-import ComponentWaiterIndicator from './../../component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
 import { updateTabIndices } from './../../../shared/dom';
 import { AppException, AppExceptionCodeEnum } from './../../../shared/exceptions';
 import { type ReviewEditorButtonType, type EntityId } from './../../../shared/interfaces';
@@ -301,7 +301,7 @@ onMounted(() => {
         :label-res-name="getI18nResName3('reviewEditor', 'controlButtons', 'send')"
         @click="onSendReviewBtnClick"
       />
-      <ComponentWaiterIndicator v-else :ctrl-key="`${ctrlKey}-SendReviewWaiter`" class="send-review-waiting-indicator" />
+      <ComponentWaitingIndicator v-else :ctrl-key="`${ctrlKey}-SendReviewWaiter`" class="send-review-waiting-indicator" />
     </div>
   </div>
 </template>

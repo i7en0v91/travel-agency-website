@@ -141,6 +141,22 @@ CREATE TABLE "Flight" (
 );
 
 -- CreateTable
+CREATE TABLE "AcsysDraftsFlight" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "airlineCompanyId" TEXT NOT NULL,
+    "airplaneId" TEXT NOT NULL,
+    "departmentAirportId" TEXT NOT NULL,
+    "arrivalAirportId" TEXT NOT NULL,
+    "departmentUtcPosix" INTEGER NOT NULL,
+    "arrivalUtcPosix" INTEGER NOT NULL,
+    "dataHash" TEXT NOT NULL,
+    "createdUtc" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "modifiedUtc" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "version" INTEGER NOT NULL
+);
+
+-- CreateTable
 CREATE TABLE "FlightOffer" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "departFlightId" TEXT NOT NULL,
@@ -158,6 +174,21 @@ CREATE TABLE "FlightOffer" (
 );
 
 -- CreateTable
+CREATE TABLE "AcsysDraftsFlightOffer" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "departFlightId" TEXT NOT NULL,
+    "returnFlightId" TEXT,
+    "numPassengers" INTEGER NOT NULL,
+    "totalPrice" INTEGER NOT NULL,
+    "class" TEXT NOT NULL,
+    "dataHash" TEXT NOT NULL,
+    "createdUtc" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "modifiedUtc" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "version" INTEGER NOT NULL
+);
+
+-- CreateTable
 CREATE TABLE "StayOffer" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "hotelId" TEXT NOT NULL,
@@ -172,6 +203,22 @@ CREATE TABLE "StayOffer" (
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "version" INTEGER NOT NULL,
     CONSTRAINT "StayOffer_hotelId_fkey" FOREIGN KEY ("hotelId") REFERENCES "Hotel" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "AcsysDraftsStayOffer" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "hotelId" TEXT NOT NULL,
+    "checkInPosix" INTEGER NOT NULL,
+    "checkOutPosix" INTEGER NOT NULL,
+    "numRooms" INTEGER NOT NULL,
+    "numGuests" INTEGER NOT NULL,
+    "totalPrice" INTEGER NOT NULL,
+    "dataHash" TEXT NOT NULL,
+    "createdUtc" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "modifiedUtc" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "version" INTEGER NOT NULL
 );
 
 -- CreateTable
@@ -592,7 +639,7 @@ CREATE TABLE "MailTemplate" (
 CREATE TABLE "AcsysDraftsMailTemplate" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "kind" TEXT NOT NULL,
-    "templateStrId" INTEGER NOT NULL,
+    "templateStrId" TEXT NOT NULL,
     "createdUtc" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "modifiedUtc" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
@@ -740,6 +787,24 @@ CREATE INDEX "Flight_dataHash_idx" ON "Flight"("dataHash");
 CREATE INDEX "Flight_modifiedUtc_idx" ON "Flight"("modifiedUtc");
 
 -- CreateIndex
+CREATE INDEX "AcsysDraftsFlight_airlineCompanyId_idx" ON "AcsysDraftsFlight"("airlineCompanyId");
+
+-- CreateIndex
+CREATE INDEX "AcsysDraftsFlight_airplaneId_idx" ON "AcsysDraftsFlight"("airplaneId");
+
+-- CreateIndex
+CREATE INDEX "AcsysDraftsFlight_departmentAirportId_idx" ON "AcsysDraftsFlight"("departmentAirportId");
+
+-- CreateIndex
+CREATE INDEX "AcsysDraftsFlight_arrivalAirportId_idx" ON "AcsysDraftsFlight"("arrivalAirportId");
+
+-- CreateIndex
+CREATE INDEX "AcsysDraftsFlight_dataHash_idx" ON "AcsysDraftsFlight"("dataHash");
+
+-- CreateIndex
+CREATE INDEX "AcsysDraftsFlight_modifiedUtc_idx" ON "AcsysDraftsFlight"("modifiedUtc");
+
+-- CreateIndex
 CREATE INDEX "FlightOffer_dataHash_idx" ON "FlightOffer"("dataHash");
 
 -- CreateIndex
@@ -752,6 +817,18 @@ CREATE INDEX "FlightOffer_returnFlightId_idx" ON "FlightOffer"("returnFlightId")
 CREATE INDEX "FlightOffer_modifiedUtc_idx" ON "FlightOffer"("modifiedUtc");
 
 -- CreateIndex
+CREATE INDEX "AcsysDraftsFlightOffer_dataHash_idx" ON "AcsysDraftsFlightOffer"("dataHash");
+
+-- CreateIndex
+CREATE INDEX "AcsysDraftsFlightOffer_departFlightId_idx" ON "AcsysDraftsFlightOffer"("departFlightId");
+
+-- CreateIndex
+CREATE INDEX "AcsysDraftsFlightOffer_returnFlightId_idx" ON "AcsysDraftsFlightOffer"("returnFlightId");
+
+-- CreateIndex
+CREATE INDEX "AcsysDraftsFlightOffer_modifiedUtc_idx" ON "AcsysDraftsFlightOffer"("modifiedUtc");
+
+-- CreateIndex
 CREATE INDEX "StayOffer_hotelId_idx" ON "StayOffer"("hotelId");
 
 -- CreateIndex
@@ -759,6 +836,15 @@ CREATE INDEX "StayOffer_dataHash_idx" ON "StayOffer"("dataHash");
 
 -- CreateIndex
 CREATE INDEX "StayOffer_modifiedUtc_idx" ON "StayOffer"("modifiedUtc");
+
+-- CreateIndex
+CREATE INDEX "AcsysDraftsStayOffer_hotelId_idx" ON "AcsysDraftsStayOffer"("hotelId");
+
+-- CreateIndex
+CREATE INDEX "AcsysDraftsStayOffer_dataHash_idx" ON "AcsysDraftsStayOffer"("dataHash");
+
+-- CreateIndex
+CREATE INDEX "AcsysDraftsStayOffer_modifiedUtc_idx" ON "AcsysDraftsStayOffer"("modifiedUtc");
 
 -- CreateIndex
 CREATE INDEX "UserFlightOffer_userId_offerId_idx" ON "UserFlightOffer"("userId", "offerId");

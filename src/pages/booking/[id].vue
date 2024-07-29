@@ -1,24 +1,26 @@
 <script setup lang="ts">
 
 import fromPairs from 'lodash-es/fromPairs';
-import { type Locale, AvailableLocaleCodes, DefaultTheme, ApiEndpointBookingOffer } from './../../shared/constants';
-import { HtmlPage, getHtmlPagePath, type BookingCacheParams } from './../../shared/page-query-params';
-import { ImageCategory, type ICity, type IBookingTicketProps, type EntityDataAttrsOnly, type ILocalizableValue, type IFlightOffer, type IStayOfferDetails, type IBookingTicketFlightGfxProps, type IBookingTicketStayTitleProps, type EntityId } from './../../shared/interfaces';
+import { type Locale, AvailableLocaleCodes, DefaultTheme, ApiEndpointBookingOffer, ApiEndpointStayOfferReviewSummary } from './../../shared/constants';
+import { AppPage, type BookingCacheParams } from './../../shared/page-query-params';
+import { ImageCategory, type ICity, type IBookingTicketProps, type EntityDataAttrsOnly, type ILocalizableValue, type IFlightOffer, type IStayOfferDetails, type IBookingTicketFlightGfxProps, type IBookingTicketStayTitleProps, type EntityId, type ReviewSummary } from './../../shared/interfaces';
 import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
 import { clampTextLine, getLocalizeableValue, getValueForFlightDurationFormatting, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, extractAirportCode } from './../../shared/common';
 import { AppException, AppExceptionCodeEnum } from './../../shared/exceptions';
 import BookingTicket from './../../components/booking-ticket/booking-ticket.vue';
-import ComponentWaiterIndicator from './../../components/component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../../components/component-waiting-indicator.vue';
 import TermsOfUse from './../../components/booking-page/terms-of-use.vue';
 import { getObject } from './../../shared/rest-utils';
 import { type IOfferBookingStore } from './../../stores/offer-booking-store';
-import { mapFlightOfferDetails, mapStayOfferDetails } from './../../shared/mappers';
+import { mapFlightOfferDetails, mapStayOfferDetails, mapReviewSummary } from './../../shared/mappers';
+import { type IReviewSummaryDto } from './../../server/dto';
 import { useDocumentDownloader } from './../../composables/document-downloader';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 const DisplayedUserNameMaxLength = 25;
 
 const { t, d, locale } = useI18n();
-const localePath = useLocalePath();
+const navLinkBuilder = useNavLinkBuilder();
 
 const route = useRoute();
 const { status } = useAuth();
@@ -36,7 +38,7 @@ logger.verbose(`(BookingDetails) route=${route.fullPath}`);
 
 const bookingParam = route.params?.id?.toString() ?? '';
 if (bookingParam.length === 0) {
-  await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.Index)}`));
+  await navigateTo(navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale));
 }
 const bookingId: EntityId = bookingParam;
 
@@ -84,16 +86,28 @@ async function initializeVariables(): Promise<void> {
   if (isUnAuthOgImageRequestMode) {
     logger.debug(`(BookingDetails) using unauthenticated og image request mode, route=${route.fullPath}`);
 
-    const url = ApiEndpointBookingOffer(bookingId!);
+    const url = `/${ApiEndpointBookingOffer(bookingId!)}`;
     // no need to payload, as it's ogImage request
     const resultDto = await getObject<EntityDataAttrsOnly<IFlightOffer | IStayOfferDetails>>(url, undefined, 'default', true, reqEvent, 'default');
     if (!resultDto) {
       logger.warn(`(BookingDetails) exception occured while fetching booking offer data, bookingId=${bookingId}`);
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
     }
+
+    let stayReviewSummary: ReviewSummary | undefined;
+    if(resultDto.kind === 'stays') {
+      const reviewSummaryUrl = `/${ApiEndpointStayOfferReviewSummary(resultDto.id)}`;
+      const reviewSummaryDto = await getObject<IReviewSummaryDto>(reviewSummaryUrl, undefined, 'default', false, reqEvent, 'default');
+      if (!reviewSummaryDto) {
+        logger.warn(`(BookingDetails) exception occured while fetching stay offer review summary, bookingId=${bookingId}, offerId=${resultDto.id}`);
+        throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
+      }
+      stayReviewSummary = mapReviewSummary(reviewSummaryDto);
+    }
+
     const offerData = resultDto.kind === 'flights'
       ? mapFlightOfferDetails(resultDto as any) as EntityDataAttrsOnly<IFlightOffer>
-      : mapStayOfferDetails(resultDto as any) as EntityDataAttrsOnly<IStayOfferDetails>;
+      : mapStayOfferDetails(resultDto as any, stayReviewSummary!) as EntityDataAttrsOnly<IStayOfferDetails>;
 
     logger.verbose(`(BookingDetails) booking offer fetched, bookingId=${bookingId}, offerId=${offerData.id}, kind=${offerData.kind}`);
     offer = ref(offerData);
@@ -230,8 +244,6 @@ if (import.meta.server) {
         title: flightOffer.departFlight.airplane.name,
         city: flightOffer.departFlight.departAirport.city,
         price: displayedPrice.value!.toNumber(),
-        reviewScore: flightOffer.departFlight.airlineCompany.reviewScore,
-        numReviews: flightOffer.departFlight.airlineCompany.numReviews,
         dateUnixUtc: flightOffer.departFlight.departTimeUtc.getTime(),
         utcOffsetMin: flightOffer.departFlight.departAirport.city.utcOffsetMin,
         image: {
@@ -239,7 +251,7 @@ if (import.meta.server) {
           category: ImageCategory.Airplane
         }
       }
-    });
+    }, true);
   } else {
     const stayOffer = offer!.value as EntityDataAttrsOnly<IStayOfferDetails>;
     useOgImage({
@@ -249,8 +261,6 @@ if (import.meta.server) {
         title: stayOffer.stay.name,
         city: stayOffer.stay.city,
         price: displayedPrice.value!.toNumber(),
-        reviewScore: stayOffer.stay.reviewScore,
-        numReviews: stayOffer.stay.numReviews,
         dateUnixUtc: stayOffer.checkIn.getTime(),
         image: {
           ...(stayOffer.stay.images.find(i => i.order === 0)),
@@ -350,8 +360,8 @@ async function onDownloadBtnClick (): Promise<void> {
           :city="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.departAirport.city : (offer as IStayOfferDetails).stay.city) : undefined"
           :title="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.airplane.name : (offer as IStayOfferDetails).stay.name) : undefined"
           :price="displayedPrice"
-          :review-score="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.airlineCompany.reviewScore : (offer as IStayOfferDetails).stay.reviewScore) : undefined"
-          :num-reviews="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.airlineCompany.numReviews : (offer as IStayOfferDetails).stay.numReviews) : undefined"
+          :review-score="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.airlineCompany.reviewSummary.score : (offer as IStayOfferDetails).stay.reviewSummary?.score) : undefined"
+          :num-reviews="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.airlineCompany.reviewSummary.numReviews : (offer as IStayOfferDetails).stay.reviewSummary?.numReviews) : undefined"
           :show-favourite-btn="false"
           :show-review-details="false"
           :btn-res-name="getI18nResName2('bookingPage', 'downloadBtn')"
@@ -381,7 +391,7 @@ async function onDownloadBtnClick (): Promise<void> {
       </ErrorHelm>
     </div>
     <template #fallback>
-      <ComponentWaiterIndicator ctrl-key="BookingPageClientFallback" class="my-xs-5"/>
+      <ComponentWaitingIndicator ctrl-key="BookingPageClientFallback" class="my-xs-5"/>
     </template>
   </ClientOnly>
 </template>

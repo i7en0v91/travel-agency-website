@@ -6,6 +6,7 @@ import { ApiEndpointAuthFormPhotos, HeaderAppVersion } from './../../shared/cons
 import AuthFormsPhoto from './../../components/account/photo-slide.vue';
 import { type IImageDetailsDto } from './../../server/dto';
 import AppConfig from './../../appconfig';
+import { usePreviewState } from './../../composables/preview-state';
 
 interface IProps {
   ctrlKey: string
@@ -15,11 +16,14 @@ defineProps<IProps>();
 const isError = ref(false);
 const logger = CommonServicesLocator.getLogger();
 
-const authFormsImagesUrl = ApiEndpointAuthFormPhotos;
+const { enabled } = usePreviewState();
+
+const authFormsImagesUrl = `/${ApiEndpointAuthFormPhotos}`;
 const { error, data } = await useFetch(authFormsImagesUrl,
   {
     server: true,
     lazy: true,
+    query: { drafts: enabled },
     headers: [[HeaderAppVersion, AppConfig.versioning.appVersion.toString()]],
     transform: (response: any) => {
       const dto = response as IImageDetailsDto[];

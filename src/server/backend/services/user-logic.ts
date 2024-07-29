@@ -1,11 +1,11 @@
 import type { PrismaClient } from '@prisma/client';
 import groupBy from 'lodash-es/groupBy';
 import values from 'lodash-es/values';
-import { type IAppLogger, type IUserProfileInfo, type UserResponseDataSet, type RegisterVerificationFlow, type RegisterUserByEmailResponse, type IUserLogic, AuthProvider, type IUserMinimalInfo, type IImageLogic, type ITokenLogic, type IEmailSender, TokenKind, type IEmailParams, type PasswordRecoveryResult, type EntityId, type IImageBytesProvider, type Timestamp, type UpdateUserAccountResult, type IFileLogic, type IImageInfo, type IUserProfileFileInfoUnresolved } from './../../backend/app-facade/interfaces';
+import { type IAppLogger, type IUserProfileInfo, type UserResponseDataSet, type RegisterVerificationFlow, type RegisterUserByEmailResponse, type IUserLogic, AuthProvider, type IUserMinimalInfo, type IImageLogic, type ITokenLogic, type IEmailSender, TokenKind, type IEmailParams, type PasswordRecoveryResult, type EntityId, type IImageBytesProvider, type Timestamp, type UpdateUserAccountResult, type IFileLogic, type IImageInfo, type IUserProfileFileInfoUnresolved, type EmailTemplateEnum, type IMailTemplateLogic } from './../../backend/app-facade/interfaces';
 import { getI18nResName3, ImageCategory, EmailTemplate, AppConfig, AppException, AppExceptionCodeEnum, maskLog, isPasswordSecure, DbVersionInitial, type Locale, type Theme, SecretValueMask, DefaultEmailTheme, DefaultLocale, newUniqueId } from './../app-facade/implementation';
 import { MapUserEntityMinimal, UserProfileQuery, MapUserEntityProfile, UserMinimalQuery } from './queries';
 import { type IServerI18n } from './../helpers/i18n';
-import { mapEnumValue, obtainFreeSlug } from './db';
+import { mapEnumValue, obtainFreeSlug } from '../helpers/db';
 import { calculatePasswordHash, getSomeSalt, verifyPassword } from './../helpers/crypto';
 import { type H3Event } from 'h3';
 
@@ -13,23 +13,35 @@ export class UserLogic implements IUserLogic {
   private logger: IAppLogger;
   private dbRepository: PrismaClient;
   private tokenLogic: ITokenLogic;
+  private mailTemplateLogic: IMailTemplateLogic;
   private emailSender: IEmailSender;
   private serverI18n: IServerI18n;
   private imageLogic: IImageLogic;
   private fileLogic: IFileLogic;
   private imageBytesProvider: IImageBytesProvider;
 
-  public static inject = ['logger', 'imageLogic', 'fileLogic', 'imageBytesProvider', 'tokenLogic', 'emailSender', 'serverI18n', 'dbRepository'] as const;
-  constructor (logger: IAppLogger, imageLogic: IImageLogic, fileLogic: IFileLogic, imageBytesProvider: IImageBytesProvider, tokenLogic: ITokenLogic, emailSender: IEmailSender, serverI18n: IServerI18n, dbRepository: PrismaClient) {
+  public static inject = ['logger', 'imageLogic', 'fileLogic', 'imageBytesProvider', 'tokenLogic', 'mailTemplateLogic', 'emailSender', 'serverI18n', 'dbRepository'] as const;
+  constructor (logger: IAppLogger, imageLogic: IImageLogic, fileLogic: IFileLogic, imageBytesProvider: IImageBytesProvider, tokenLogic: ITokenLogic, mailTemplateLogic: IMailTemplateLogic, emailSender: IEmailSender, serverI18n: IServerI18n, dbRepository: PrismaClient) {
     this.logger = logger;
     this.dbRepository = dbRepository;
     this.tokenLogic = tokenLogic;
     this.emailSender = emailSender;
+    this.mailTemplateLogic = mailTemplateLogic;
     this.serverI18n = serverI18n;
     this.imageLogic = imageLogic;
     this.fileLogic = fileLogic;
     this.imageBytesProvider = imageBytesProvider;
   }
+
+  getMailTemplate = async(kind: EmailTemplateEnum, params: IEmailParams): Promise<string> => {
+    const mailTemplateMarkup = await this.mailTemplateLogic.getTemplateMarkup(kind, params.locale, false);
+    if (!mailTemplateMarkup) {
+      const msg = `(EmailSender) mail template markup not found: kind=${kind}, subject=${params.subject}, to=${params.to}, userId=${params.userId}, locale=${params.locale}`;
+      this.logger.warn(msg);
+      throw new AppException(AppExceptionCodeEnum.UNKNOWN, msg, 'error-page');
+    }
+    return mailTemplateMarkup;
+  };
 
   deleteUser = async (id: EntityId): Promise<void> => {
     this.logger.verbose(`(UserLogic) deleting user: userId=${id}`);
@@ -342,7 +354,7 @@ export class UserLogic implements IUserLogic {
         ownerId: userId,
         stubCssStyle: undefined,
         invertForDarkTheme: false
-      }, imageFileId, userId, event);
+      }, imageFileId, userId, event, false);
       timestamp = queryResult.timestamp;
 
       await this.imageBytesProvider.clearImageCache(targetCategoryImageInfo!.imageId, category);
@@ -361,7 +373,7 @@ export class UserLogic implements IUserLogic {
           mimeType,
           stubCssStyle: undefined,
           invertForDarkTheme: false
-        }, userId, event);
+        }, userId, event, false);
         timestamp = queryResult.timestamp;
         imageId = queryResult.id;
 
@@ -537,7 +549,9 @@ export class UserLogic implements IUserLogic {
       userId,
       theme: theme ?? DefaultEmailTheme
     };
-    await this.emailSender.sendEmail(kind === TokenKind.RegisterAccount ? EmailTemplate.RegisterAccount : EmailTemplate.EmailVerify, emailParams);
+    const emailKind = kind === TokenKind.RegisterAccount ? EmailTemplate.RegisterAccount : EmailTemplate.EmailVerify;
+    const mailTemplateMarkup = await this.getMailTemplate(emailKind, emailParams);
+    await this.emailSender.sendEmail(emailKind, mailTemplateMarkup, emailParams);
     await this.dbRepository.userEmail.update({
       where: { id: userEmailId },
       data: {
@@ -558,25 +572,25 @@ export class UserLogic implements IUserLogic {
     let coverFileInfo: IImageInfo | undefined;
     if(userProfileUnresolved.avatar) {
       this.logger.debug(`(UserLogic) get user - resoving avatar file: id=${userId}, fileId=${userProfileUnresolved.avatar.fileId}`);
-      const fileInfo = await this.fileLogic.findFile(userProfileUnresolved.avatar.fileId, event);
-      if (!fileInfo) {
+      const fileInfos = await this.fileLogic.findFiles([userProfileUnresolved.avatar.fileId], event);
+      if (!fileInfos?.length) {
         this.logger.warn(`(UserLogic) cannot found avatar file, id=${userProfileUnresolved.avatar.id}, slug=${userProfileUnresolved.avatar.slug}, fileId=${userProfileUnresolved.avatar.fileId}`);
       }
       avatarFileInfo = {
         ...userProfileUnresolved.avatar,
-        file: fileInfo
+        file: fileInfos[0]
       };
     }
 
     if(userProfileUnresolved.cover) {
       this.logger.debug(`(UserLogic) get user - resoving cover file: id=${userId}, fileId=${userProfileUnresolved.cover.fileId}`);
-      const fileInfo = await this.fileLogic.findFile(userProfileUnresolved.cover.fileId, event);
-      if (!fileInfo) {
+      const fileInfos = await this.fileLogic.findFiles([userProfileUnresolved.cover.fileId], event);
+      if (!fileInfos?.length) {
         this.logger.warn(`(UserLogic) cannot found cover file, id=${userProfileUnresolved.cover.id}, slug=${userProfileUnresolved.cover.slug}, fileId=${userProfileUnresolved.cover.fileId}`);
       }
       coverFileInfo = {
         ...userProfileUnresolved.cover,
-        file: fileInfo
+        file: fileInfos[0]
       };
     }
 
@@ -819,7 +833,8 @@ export class UserLogic implements IUserLogic {
         userId: userEntity.id,
         theme: theme ?? DefaultEmailTheme
       };
-      await this.emailSender.sendEmail(EmailTemplate.PasswordRecovery, emailParams);
+      const mailTemplateMarkup = await this.getMailTemplate(EmailTemplate.PasswordRecovery, emailParams);
+      await this.emailSender.sendEmail(EmailTemplate.PasswordRecovery, mailTemplateMarkup, emailParams);
 
       this.logger.info(`(UserLogic) user password recovery started successfully (email sent): email=${maskLog(email)}`);
       return 'success';

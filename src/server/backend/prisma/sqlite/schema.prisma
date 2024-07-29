@@ -212,6 +212,29 @@ model Flight {
   @@index([modifiedUtc])
 }
 
+model AcsysDraftsFlight {
+  id                  String                @id
+  airlineCompanyId    String
+  airplaneId          String
+  departmentAirportId String
+  arrivalAirportId    String
+  departmentUtcPosix  Int                   // POSIX seconds timestamp                   
+  arrivalUtcPosix     Int                   // POSIX seconds timestamp
+  dataHash            String                
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  @@index([airlineCompanyId])
+  @@index([airplaneId])
+  @@index([departmentAirportId])
+  @@index([arrivalAirportId])
+  @@index([dataHash])
+  @@index([modifiedUtc])
+}
+
 model FlightOffer {
   id                  String                @id
   departFlightId      String    
@@ -236,6 +259,26 @@ model FlightOffer {
   @@index([modifiedUtc])
 }
 
+model AcsysDraftsFlightOffer {
+  id                  String                @id
+  departFlightId      String    
+  returnFlightId      String?    
+  numPassengers       Int
+  totalPrice          Int
+  class               String
+  dataHash            String                
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
+
+  @@index([dataHash])
+  @@index([departFlightId])
+  @@index([returnFlightId])
+  @@index([modifiedUtc])
+}
+
 model StayOffer {
   id                  String                @id
   hotelId             String                   
@@ -253,6 +296,26 @@ model StayOffer {
 
   hotel               Hotel                 @relation(name: "OffersOnHotel", fields: [hotelId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   offerUsers          UserStayOffer[]       @relation(name: "OfferOnUserStayOffer")
+
+  @@index([hotelId])
+  @@index([dataHash])
+  @@index([modifiedUtc])
+}
+
+model AcsysDraftsStayOffer {
+  id                  String                @id
+  hotelId             String                   
+  checkInPosix        Int                   // POSIX seconds timestamp
+  checkOutPosix       Int                   // POSIX seconds timestamp
+  numRooms            Int
+  numGuests           Int
+  totalPrice          Int
+  dataHash            String                
+
+  createdUtc          DateTime              @default(now())
+  modifiedUtc         DateTime              @default(now())
+  isDeleted           Boolean               @default(false)
+  version             Int                   
 
   @@index([hotelId])
   @@index([dataHash])
@@ -798,7 +861,7 @@ model MailTemplate {
 model AcsysDraftsMailTemplate {
   id                  String                @id
   kind                String              
-  templateStrId       Int                   @unique
+  templateStrId       String                @unique
 
   createdUtc          DateTime              @default(now())
   modifiedUtc         DateTime              @default(now())

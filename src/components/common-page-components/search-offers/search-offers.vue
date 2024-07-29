@@ -4,15 +4,18 @@ import type { Tooltip } from 'floating-vue';
 import dayjs from 'dayjs';
 import isEqual from 'lodash-es/isEqual';
 import pick from 'lodash-es/pick';
-import { CheckInOutDateUrlFormat, TooltipHideTimeout } from './../../../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../../../shared/page-query-params';
+import { type Locale, PreviewModeParamEnabledValue, QueryPagePreviewModeParam, CheckInOutDateUrlFormat, TooltipHideTimeout } from './../../../shared/constants';
+import { AppPage, getPagePath } from './../../../shared/page-query-params';
 import OptionButtonGroup from './../../../components/option-buttons/option-button-group.vue';
 import { getI18nResName1, getI18nResName2 } from './../../../shared/i18n';
 import SearchFlightOffers from './search-flight-offers.vue';
 import SearchStayOffers from './search-stay-offers.vue';
-import { type ISearchStayOffersMainParams, type ISearchFlightOffersMainParams, type ISearchFlightOffersParams, type OfferKind, type ISearchListItem, type IEntityCacheCityItem, type ISearchStayOffersParams } from './../../../shared/interfaces';
+import { type ISearchStayOffersMainParams, type ISearchFlightOffersMainParams, type ISearchFlightOffersParams, type OfferKind, type ISearchListItem, type ISearchStayOffersParams } from './../../../shared/interfaces';
 import AppConfig from './../../../appconfig';
-import { type RouteLocationRaw } from '#vue-router';
+import { type RouteLocationRaw } from 'vue-router';
+import set from 'lodash-es/set';
+import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
+import { usePreviewState } from './../../../composables/preview-state';
 
 interface IProps {
   ctrlKey: string,
@@ -44,7 +47,9 @@ const searchStays = shallowRef<InstanceType<typeof SearchStayOffers> | undefined
 
 const logger = CommonServicesLocator.getLogger();
 const router = useRouter();
-const localePath = useLocalePath();
+const navLinkBuilder = useNavLinkBuilder();
+const { enabled } = usePreviewState();
+const { locale } = useI18n();
 
 async function resolveFlightCitiesSlugs (searchParams: Partial<ISearchFlightOffersParams>): Promise<{ fromCitySlug?: string | undefined, toCitySlug?: string | undefined }> {
   let fromCitySlug = searchParams.fromCity?.slug;
@@ -64,7 +69,7 @@ async function resolveFlightCitiesSlugs (searchParams: Partial<ISearchFlightOffe
 
   try {
     logger.verbose(`(SearchOffers) resolving cities slugs, items=${JSON.stringify(citiesToResolve)}`);
-    const resolvedCities = (await clientEntityCache!.get<'City', IEntityCacheCityItem>(citiesToResolve.map(i => i.id), [], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
+    const resolvedCities = (await clientEntityCache!.get<'City'>(citiesToResolve.map(i => i.id), [], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
     if (resolvedCities.length === 2) {
       fromCitySlug = resolvedCities[0].slug;
       toCitySlug = resolvedCities[1].slug;
@@ -97,7 +102,7 @@ async function resolveDestinationCitySlug (searchParams: Partial<ISearchStayOffe
   try {
     const cityId = searchParams.city.id;
     logger.verbose(`(SearchOffers) resolving stay's city slug', cityId=${cityId}`);
-    const resolvedCities = (await clientEntityCache!.get<'City', IEntityCacheCityItem>([cityId], [], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
+    const resolvedCities = (await clientEntityCache!.get<'City'>([cityId], [], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
     const result = resolvedCities[0].slug;
     logger.verbose(`(SearchOffers) slugs resolved with fetch request, result=${result}`);
     return result;
@@ -114,34 +119,44 @@ async function validateAndGetRouteParams (): Promise<RouteLocationRaw | undefine
     const userParams = searchFlightStore.viewState.currentSearchParams;
     const resolvedCitySlugs = await resolveFlightCitiesSlugs(userParams);
 
+    const query = {
+      class: userParams.class,
+      dateFrom: userParams.dateFrom ? dayjs(userParams.dateFrom!).format(CheckInOutDateUrlFormat) : undefined,
+      dateTo: userParams.dateTo ? dayjs(userParams.dateTo!).format(CheckInOutDateUrlFormat) : undefined,
+      fromCitySlug: resolvedCitySlugs.fromCitySlug,
+      toCitySlug: resolvedCitySlugs.toCitySlug,
+      numPassengers: userParams.numPassengers,
+      tripType: userParams.tripType,
+    };
+    if(enabled) {
+      set(query, QueryPagePreviewModeParam, PreviewModeParamEnabledValue);
+    }
+
     return {
-      path: localePath(getHtmlPagePath(HtmlPage.FindFlights)),
+      path: navLinkBuilder.buildPageLink(AppPage.FindFlights, locale.value as Locale),
       force: false,
-      query: {
-        class: userParams.class,
-        dateFrom: userParams.dateFrom ? dayjs(userParams.dateFrom!).format(CheckInOutDateUrlFormat) : undefined,
-        dateTo: userParams.dateTo ? dayjs(userParams.dateTo!).format(CheckInOutDateUrlFormat) : undefined,
-        fromCitySlug: resolvedCitySlugs.fromCitySlug,
-        toCitySlug: resolvedCitySlugs.toCitySlug,
-        numPassengers: userParams.numPassengers,
-        tripType: userParams.tripType
-      }
+      query
     };
   } else {
     const searchStayStore = await searchOffersStoreAccessor.getInstance<ISearchStayOffersParams>('stays', false, false);
     const userParams = searchStayStore.viewState.currentSearchParams;
     const resolvedCitySlug = await resolveDestinationCitySlug(userParams);
 
+    const query = {
+      citySlug: resolvedCitySlug,
+      checkIn: userParams.checkIn ? dayjs(userParams.checkIn!).format(CheckInOutDateUrlFormat) : undefined,
+      checkOut: userParams.checkOut ? dayjs(userParams.checkOut!).format(CheckInOutDateUrlFormat) : undefined,
+      numGuests: userParams.numGuests,
+      numRooms: userParams.numRooms
+    };
+    if(enabled) {
+      set(query, QueryPagePreviewModeParam, PreviewModeParamEnabledValue);
+    }
+    
     return {
-      path: localePath(`${getHtmlPagePath(HtmlPage.FindStays)}`),
+      path: navLinkBuilder.buildPageLink(AppPage.FindStays, locale.value as Locale),
       force: false,
-      query: {
-        citySlug: resolvedCitySlug,
-        checkIn: userParams.checkIn ? dayjs(userParams.checkIn!).format(CheckInOutDateUrlFormat) : undefined,
-        checkOut: userParams.checkOut ? dayjs(userParams.checkOut!).format(CheckInOutDateUrlFormat) : undefined,
-        numGuests: userParams.numGuests,
-        numRooms: userParams.numRooms
-      }
+      query
     };
   }
 }
@@ -166,7 +181,7 @@ async function applyParamsAndFetchData (): Promise<void> {
   if (searchRoute) {
     store.resetFetchState();
 
-    const isOnSearchPage = router.currentRoute.value.path.includes(getHtmlPagePath(HtmlPage.FindFlights)) || router.currentRoute.value.path.includes(getHtmlPagePath(HtmlPage.FindStays));
+    const isOnSearchPage = router.currentRoute.value.path.includes(getPagePath(AppPage.FindFlights)) || router.currentRoute.value.path.includes(getPagePath(AppPage.FindStays));
     if (isOnSearchPage) {
       logger.info(`(SearchOffers) replacing search page query params, ctrlKey=${props.ctrlKey}`, searchRoute);
       router.replace(searchRoute);
@@ -242,6 +257,7 @@ onMounted(async () => {
 
 const flightsTabHtmlId = useId();
 const staysTabHtmlId = useId();
+const tooltipId = useId();
 
 </script>
 
@@ -279,6 +295,7 @@ const staysTabHtmlId = useId();
     <div v-if="!minimumButtons" class="search-offers-buttons mt-xs-2 mt-s-5">
       <VTooltip
         ref="tooltip"
+        :aria-id="tooltipId"
         :distance="6"
         :triggers="['click']"
         placement="bottom"

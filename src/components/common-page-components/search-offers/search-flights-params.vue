@@ -142,6 +142,9 @@ function onEscape () {
   <div class="search-flights-params">
     <VDropdown
       ref="dropdown"
+      v-floating-vue-hydration="{ tabIndex: -1 }"
+      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
+      :aria-id="`${ctrlKey}-DropDownWrapper`"
       :distance="-6"
       :hide-triggers="[(triggers: any) => [...triggers, 'click']]"
       :auto-hide="false"

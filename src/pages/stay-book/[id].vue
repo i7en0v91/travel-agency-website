@@ -2,7 +2,7 @@
 
 import dayjs from 'dayjs';
 import { type Locale } from './../../shared/constants';
-import { type BookStayCacheParams, HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
+import { type BookStayCacheParams, AppPage } from './../../shared/page-query-params';
 import { type StayServiceLevel, ImageCategory, type EntityDataAttrsOnly, type IStayOfferDetails, type ILocalizableValue, type EntityId, AvailableStayServiceLevel } from './../../shared/interfaces';
 import { getI18nResName3, getI18nResName2, type I18nResName } from './../../shared/i18n';
 import { getLocalizeableValue } from './../../shared/common';
@@ -10,9 +10,10 @@ import OfferBooking from './../../components/booking-page/offer-booking.vue';
 import { type IOfferBookingStoreFactory } from './../../stores/offer-booking-store';
 import OfferDetailsBreadcrumbs from './../../components/common-page-components/offer-details-breadcrumbs.vue';
 import { AppException, AppExceptionCodeEnum } from './../../shared/exceptions';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 const { d, locale } = useI18n();
-const localePath = useLocalePath();
+const navLinkBuilder = useNavLinkBuilder();
 
 const route = useRoute();
 const logger = CommonServicesLocator.getLogger();
@@ -21,7 +22,7 @@ const isError = ref(false);
 
 const offerParam = route.params?.id?.toString() ?? '';
 if (offerParam.length === 0) {
-  await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.Index)}`));
+  await navigateTo(navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale));
 }
 const offerId: EntityId = offerParam;
 
@@ -65,8 +66,6 @@ if (import.meta.server) {
       title: stayOffer.value!.stay.name,
       city: stayOffer.value!.stay.city,
       price: pricePerNight.value,
-      reviewScore: stayOffer.value!.stay.reviewScore,
-      numReviews: stayOffer.value!.stay.numReviews,
       dateUnixUtc: stayOffer.value!.checkIn.getTime(),
       image: {
         ...(stayOffer!.value!.stay.images.find(i => i.order === 0)),

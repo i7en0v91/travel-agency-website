@@ -7,10 +7,10 @@ import isString from 'lodash-es/isString';
 import { TEST_SERVER_PORT, createLogger } from '../../shared/testing/common';
 import { delay, getOgImageFileName } from '../../shared/common';
 import { type Locale, CookieI18nLocale, AvailableLocaleCodes, DefaultLocale, OgImageExt } from '../../shared/constants';
-import { HtmlPage, AllHtmlPages, EntityIdPages, getHtmlPagePath } from '../../shared/page-query-params';
+import { AppPage, AllHtmlPages, EntityIdPages, getPagePath } from '../../shared/page-query-params';
 import type { IAppLogger } from '../../shared/applogger';
 import AppConfig from './../../appconfig';
-import { resolveParentDirectory } from './../../shared/fs';
+import { resolveParentDirectory } from './../../server/utils/fs';
 
 const TestTimeout = 300000;
 const TestRunOptions: TestOptions = {
@@ -20,29 +20,29 @@ const TestRunOptions: TestOptions = {
   sequential: true
 };
 
-const pageUrls: ReadonlyMap<HtmlPage, string | false> = new Map<HtmlPage, string | false>([
-  [HtmlPage.Account, getHtmlPagePath(HtmlPage.Index)],
-  [HtmlPage.Favourites, getHtmlPagePath(HtmlPage.Index)],
-  [HtmlPage.EmailVerifyComplete, getHtmlPagePath(HtmlPage.Index)],
-  [HtmlPage.FindFlights, getHtmlPagePath(HtmlPage.FindFlights)],
-  [HtmlPage.FindStays, getHtmlPagePath(HtmlPage.FindStays)],
-  [HtmlPage.FlightDetails, false], // rendered on-request
-  [HtmlPage.BookFlight, false], // rendered on-request
-  [HtmlPage.Flights, getHtmlPagePath(HtmlPage.Flights)],
-  [HtmlPage.ForgotPassword, getHtmlPagePath(HtmlPage.ForgotPassword)],
-  [HtmlPage.ForgotPasswordComplete, getHtmlPagePath(HtmlPage.ForgotPassword)],
-  [HtmlPage.ForgotPasswordSet, getHtmlPagePath(HtmlPage.ForgotPassword)],
-  [HtmlPage.ForgotPasswordVerify, getHtmlPagePath(HtmlPage.ForgotPassword)],
-  [HtmlPage.Index, getHtmlPagePath(HtmlPage.Index)],
-  [HtmlPage.Login, getHtmlPagePath(HtmlPage.Login)],
-  [HtmlPage.Privacy, getHtmlPagePath(HtmlPage.Privacy)],
-  [HtmlPage.Signup, getHtmlPagePath(HtmlPage.Signup)],
-  [HtmlPage.SignupComplete, getHtmlPagePath(HtmlPage.Signup)],
-  [HtmlPage.SignupVerify, getHtmlPagePath(HtmlPage.Signup)],
-  [HtmlPage.Stays, getHtmlPagePath(HtmlPage.Stays)],
-  [HtmlPage.StayDetails, false], // rendered on-request
-  [HtmlPage.BookStay, false], // rendered on-request
-  [HtmlPage.BookingDetails, false] // rendered on-request
+const pageUrls: ReadonlyMap<AppPage, string | false> = new Map<AppPage, string | false>([
+  [AppPage.Account, getPagePath(AppPage.Index)],
+  [AppPage.Favourites, getPagePath(AppPage.Index)],
+  [AppPage.EmailVerifyComplete, getPagePath(AppPage.Index)],
+  [AppPage.FindFlights, getPagePath(AppPage.FindFlights)],
+  [AppPage.FindStays, getPagePath(AppPage.FindStays)],
+  [AppPage.FlightDetails, false], // rendered on-request
+  [AppPage.BookFlight, false], // rendered on-request
+  [AppPage.Flights, getPagePath(AppPage.Flights)],
+  [AppPage.ForgotPassword, getPagePath(AppPage.ForgotPassword)],
+  [AppPage.ForgotPasswordComplete, getPagePath(AppPage.ForgotPassword)],
+  [AppPage.ForgotPasswordSet, getPagePath(AppPage.ForgotPassword)],
+  [AppPage.ForgotPasswordVerify, getPagePath(AppPage.ForgotPassword)],
+  [AppPage.Index, getPagePath(AppPage.Index)],
+  [AppPage.Login, getPagePath(AppPage.Login)],
+  [AppPage.Privacy, getPagePath(AppPage.Privacy)],
+  [AppPage.Signup, getPagePath(AppPage.Signup)],
+  [AppPage.SignupComplete, getPagePath(AppPage.Signup)],
+  [AppPage.SignupVerify, getPagePath(AppPage.Signup)],
+  [AppPage.Stays, getPagePath(AppPage.Stays)],
+  [AppPage.StayDetails, false], // rendered on-request
+  [AppPage.BookStay, false], // rendered on-request
+  [AppPage.BookingDetails, false] // rendered on-request
 ]);
 
 class PageScreenshoter {
@@ -159,6 +159,7 @@ class PageScreenshoter {
   };
 }
 
+// KB: screenshots were built with Chromium 116.0.5845.82
 describe('og:image screenshots generation', async () => {
   const logger = createLogger('(og-screenshots)');
   logger.info('>>>>>>>>>>>>> NEW TEST RUN <<<<<<<<<<<<<<<<<<');
@@ -173,7 +174,7 @@ describe('og:image screenshots generation', async () => {
   });
 
   test('og images generation (screenshots for pages with static og image)', TestRunOptions, async () => {
-    const imgPages: HtmlPage[] = AllHtmlPages.filter(p => !EntityIdPages.includes(p as HtmlPage));
+    const imgPages: AppPage[] = AllHtmlPages.filter(p => !EntityIdPages.includes(p as AppPage));
     const publicAssetsDir = await resolveParentDirectory('.', 'public');
     if (!publicAssetsDir) {
       logger.error('screenshot generation FAILED - cannot locate public directory!');

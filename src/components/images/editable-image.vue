@@ -2,7 +2,6 @@
 
 import isString from 'lodash-es/isString';
 import { useModal } from 'vue-final-modal';
-import { toUint8Array } from 'js-base64';
 import { basename, extname } from 'pathe';
 import { type ImageCategory, type IImageEntitySrc } from './../../shared/interfaces';
 import { type I18nResName, getI18nResName2, getI18nResName3 } from './../../shared/i18n';
@@ -13,6 +12,9 @@ import CroppingBox from './cropping-box.vue';
 import ModalWaitingIndicator from './../modal-waiting-indicator.vue';
 import { post } from './../../shared/rest-utils';
 import { type IImageUploadResultDto } from './../../server/dto';
+import { type ComponentInstance } from 'vue';
+
+globalThis.Buffer = globalThis.Buffer || Buffer;
 
 interface IProps {
   ctrlKey: string,
@@ -68,7 +70,7 @@ const modalWaitingIndicator = useModal({
   }
 });
 const fileInputEl = shallowRef<HTMLInputElement>();
-const staticImageComponent = shallowRef<InstanceType<typeof StaticImage>>();
+const staticImageComponent = shallowRef<ComponentInstance<typeof StaticImage>>();
 
 const userNotificationStore = useUserNotificationStore();
 const logger = CommonServicesLocator.getLogger();
@@ -88,12 +90,12 @@ async function uploadCroppedImage () : Promise<void> {
   const imageDataBase64 = readCurrentImageData();
   if (imageDataBase64 && imageDataBase64.length > 0) {
     try {
-      const imageBytes = toUint8Array(imageDataBase64);
+      const imageBytes = Buffer.from(imageDataBase64, 'base64');
       logger.info(`(editable-image) starting to upload image data, size=${imageBytes.length}, fileName=${uploadingFileName}`);
       await modalWaitingIndicator.open();
 
       const query = uploadingFileName.length > 0 ? { fileName: uploadingFileName, category: props.category } : undefined;
-      const uploadedImageInfo = await post<any, IImageUploadResultDto>(ApiEndpointUserImageUpload, query, imageBytes, undefined, true, 'default');
+      const uploadedImageInfo = await post<any, IImageUploadResultDto>(`/${ApiEndpointUserImageUpload}`, query, imageBytes, undefined, true, undefined, 'default');
       if (uploadedImageInfo) {
         logger.info(`(editable-image) image uploaded, size=${imageBytes.length}, fileName=${uploadingFileName}`);
         $emit('update:entitySrc', uploadedImageInfo);

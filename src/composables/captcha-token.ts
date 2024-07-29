@@ -1,5 +1,6 @@
 import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
 import type { CaptchaProtection } from '#build/components';
+import { type ComponentInstance } from 'vue';
 
 export interface ICaptchaTokenComposable {
   requestToken: () => Promise<string>,
@@ -7,7 +8,7 @@ export interface ICaptchaTokenComposable {
   onCaptchaFailed: (reason?: any) => void
 }
 
-export function useCaptchaToken (captcha: Ref<InstanceType<typeof CaptchaProtection>>): ICaptchaTokenComposable {
+export function useCaptchaToken (captcha: Ref<ComponentInstance<typeof CaptchaProtection>>): ICaptchaTokenComposable {
   const logger = CommonServicesLocator.getLogger();
 
   let captchaVerificationResolveCallback: ((value: string | PromiseLike<string>) => void) | undefined;

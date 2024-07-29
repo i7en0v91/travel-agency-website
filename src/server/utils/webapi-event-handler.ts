@@ -185,7 +185,7 @@ async function verifyCaptcha (captchaDto: ICaptchaVerificationDto, event: H3Even
 async function ensureAuthorization (event: H3Event) : Promise<void> {
   const session = await getServerSession(event);
   if (!session) {
-    throw new AppException(AppExceptionCodeEnum.UNAUTHORIZED, `unauthorized access attempt at route: url=${event.node.req.url}`, 'error-stub');
+    throw new AppException(AppExceptionCodeEnum.UNAUTHENTICATED, `Unauthenticated access attempt at route: url=${event.node.req.url}`, 'error-stub');
   }
 }
 

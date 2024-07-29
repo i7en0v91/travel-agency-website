@@ -45,8 +45,8 @@ export function patchUrlWithLocale (url: string, locale: string): string | undef
 }
 
 export function getLocaleFromUrl (url: string) : Locale | undefined {
-  if (url.startsWith(`${ApiEndpointLogging}`) ||
-    url.startsWith(`${ApiEndpointAuthentication}`)) {
+  if (url.startsWith(`/${ApiEndpointLogging}`) ||
+    url.startsWith(`/${ApiEndpointAuthentication}`)) {
     return undefined;
   }
 

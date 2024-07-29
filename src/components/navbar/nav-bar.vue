@@ -10,12 +10,15 @@ import NavLogo from './nav-logo.vue';
 import NavSearchPageLinks from './nav-search-page-links.vue';
 import LocaleSwitcher from './locale-switcher.vue';
 import ThemeSwitcher from './theme-switcher.vue';
-import { KeyCodeEsc } from './../../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
+import { KeyCodeEsc, type Locale } from './../../shared/constants';
+import { AppPage, SystemPage } from './../../shared/page-query-params';
 import { lookupPageByUrl } from './../../shared/common';
+import { formatAuthCallbackUrl } from './../../client/helpers';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
+import { usePreviewState } from './../../composables/preview-state';
 
-const localePath = useLocalePath();
 const { status } = useAuth();
+const { enabled } = usePreviewState();
 
 interface IProps {
   ctrlKey: string,
@@ -26,6 +29,8 @@ const props = defineProps<IProps>();
 const logger = CommonServicesLocator.getLogger();
 const nuxtApp = useNuxtApp();
 const route = useRoute();
+const { locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
 
 const collapsed = ref(true);
 const toggling = ref(false);
@@ -52,34 +57,39 @@ async function getActivePageLink () : Promise<ActivePageLink | undefined> {
     return undefined;
   }
 
+  if(currentPage === SystemPage.Drafts) {
+    logger.debug(`(NavBar) current page is system, ctrlKey=${props.ctrlKey}, path=${route.path}`);
+    return undefined;
+  }
+
   let result: ActivePageLink | undefined;
   switch (currentPage) {
-    case HtmlPage.BookFlight:
-    case HtmlPage.FindFlights:
-    case HtmlPage.FlightDetails:
-    case HtmlPage.Flights:
-      result = HtmlPage.Flights;
+    case AppPage.BookFlight:
+    case AppPage.FindFlights:
+    case AppPage.FlightDetails:
+    case AppPage.Flights:
+      result = AppPage.Flights;
       break;
-    case HtmlPage.BookStay:
-    case HtmlPage.FindStays:
-    case HtmlPage.StayDetails:
-    case HtmlPage.Stays:
-      result = HtmlPage.Stays;
+    case AppPage.BookStay:
+    case AppPage.FindStays:
+    case AppPage.StayDetails:
+    case AppPage.Stays:
+      result = AppPage.Stays;
       break;
-    case HtmlPage.Favourites:
-      result = HtmlPage.Favourites;
+    case AppPage.Favourites:
+      result = AppPage.Favourites;
       break;
     default:
       result = undefined;
       break;
   }
-  if (!result && currentPage === HtmlPage.BookingDetails) {
+  if (!result && currentPage === AppPage.BookingDetails) {
     logger.verbose(`(NavBar) current page link is booking page, detecting offer kind, ctrlKey=${props.ctrlKey}, path=${route.path}`);
     try {
       const bookingParam = route.params.id!.toString();
       const bookingId = bookingParam;
       const offerKind = await getBookingOfferKind(bookingId);
-      result = offerKind === 'flights' ? HtmlPage.Flights : HtmlPage.Stays;
+      result = offerKind === 'flights' ? AppPage.Flights : AppPage.Stays;
     } catch (err: any) {
       logger.warn(`(NavUser) failed to obtain booking offer kind url: ctrlKey=${props.ctrlKey}, path=${route.path}`, err);
       result = undefined;
@@ -173,9 +183,9 @@ onBeforeUnmount(() => {
           <NavLink
             ctrl-key="navLinkFavourites"
             link-class="nav-user-favourites mr-l-3"
-            :to="localePath(`/${getHtmlPagePath(HtmlPage.Favourites)}`)"
+            :to="navLinkBuilder.buildPageLink(AppPage.Favourites, locale as Locale)"
             :text-res-name="getI18nResName3('nav', 'userBox', 'favourites')"
-            :is-active="activePageLink === HtmlPage.Favourites"
+            :is-active="activePageLink === AppPage.Favourites"
             icon="favourite"
           />
         </div>
@@ -188,13 +198,13 @@ onBeforeUnmount(() => {
               :id="`${ctrlKey}-login-link`"
               ctrl-key="navLogin"
               link-class="ml-l-2"
-              :to="withQuery(localePath(`/${getHtmlPagePath(HtmlPage.Login)}`), { callbackUrl: withQuery(route.path, route.query) })"
+              :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale, { originPath: formatAuthCallbackUrl(withQuery(route.path, route.query), enabled)})"
               :text-res-name="getI18nResName2('nav', 'login')"
             />
             <NavLink
               link-class="btn nav-signup-btn"
               ctrl-key="navSignUp"
-              :to="localePath(`/${getHtmlPagePath(HtmlPage.Signup)}`)"
+              :to="navLinkBuilder.buildPageLink(AppPage.Signup, locale as Locale)"
               :text-res-name="getI18nResName2('nav', 'signUp')"
             />
           </div>

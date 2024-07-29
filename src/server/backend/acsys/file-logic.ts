@@ -1,5 +1,5 @@
 import { type EntityId, type Timestamp, type IFileData, type IFileInfo, type IFileLogic, type IAppLogger } from './../../backend/app-facade/interfaces';
-import { getCurrentTimeUtc } from './../../backend/app-facade/implementation';
+import { getCurrentTimeUtc, AppException, AppExceptionCodeEnum } from './../../backend/app-facade/implementation';
 import { UserRoleEnum, type IAcsysClientProvider, type IAcsysClientStandard, type IAcsysClientViewer } from './client/interfaces';
 import { FileUniqParamsSepToken, FileUniqParamsSepChar } from './client/constants';
 import { murmurHash } from 'ohash';
@@ -46,7 +46,7 @@ export class FileLogic implements IFileLogic {
   };
 
   extractMetadataFromPatchedName = (fileNameFromAcsys: string | undefined): { originalName: string, lastModifiedUtc: Date | undefined } => {
-    this.logger.debug(`(FileLogic-Acsys) extracting metadata from patched filen name, patchedOriginalName=${fileNameFromAcsys}`);
+    this.logger.debug(`(FileLogic-Acsys) extracting metadata from patched file name, patchedOriginalName=${fileNameFromAcsys}`);
 
     let originalName = '';
     let timestamp: number | undefined;
@@ -88,21 +88,39 @@ export class FileLogic implements IFileLogic {
     return this.acsysClientProvider.getClient(UserRoleEnum.Viewer, event);
   };
 
-  findFile = async (id: EntityId, event: H3Event): Promise<IFileInfo> => {
-    this.logger.debug(`(FileLogic-Acsys) finding file info, id=${id}`);
+  findFiles = async (ids: EntityId[], event: H3Event): Promise<IFileInfo[]> => {
+    this.logger.debug(`(FileLogic-Acsys) finding file info, ids=[${ids.join('; ')}]`);
+    if(!ids.length) {
+      this.logger.debug(`(FileLogic-Acsys) file info - empty response, ids=[${ids.join('; ')}]`);
+      return [];
+    }
 
     const acsysClient = this.getReadClient(event);
-    const fileData = await acsysClient.getFileInfo(id);
-    const metadata = this.extractMetadataFromPatchedName(id);
-    const result: IFileInfo = {
-      id,
-      isDeleted: false,
-      modifiedUtc: metadata.lastModifiedUtc ?? fileData.lastModifiedUtc, // Acsys (v1.0.1) - getFileInfo does not give hh:mm:ss resolution
-      mime: fileData.mimeType,
-      originalName: metadata.originalName
-    };
+    const filesResponse = await acsysClient.getFileInfos(ids);
+    if (ids.length !== filesResponse.length) {
+      const idsLookup = new Set<EntityId>(filesResponse.map(f => f.id));
+      const notFoundIds = ids.filter(id => !idsLookup.has(id));
+      this.logger.warn(`(FileLogic-Acsys) file infos not found: ids=[${notFoundIds.join(', ')}]`);
+      throw new AppException(
+        AppExceptionCodeEnum.OBJECT_NOT_FOUND,
+        'File not found',
+        'error-stub');
+    }
+
+    const result: IFileInfo[] = [];
+    for(let i = 0; i < filesResponse.length; i++) {
+      const fileData = filesResponse[i];
+      const metadata = this.extractMetadataFromPatchedName(fileData.id);
+      result.push({
+        id: fileData.id,
+        isDeleted: false,
+        modifiedUtc: metadata.lastModifiedUtc ?? fileData.lastModifiedUtc, // Acsys (v1.0.1) - getFileInfos does not give hh:mm:ss resolution
+        mime: fileData.mimeType,
+        originalName: metadata.originalName
+      });
+    }
     
-    this.logger.debug(`(FileLogic-Acsys) file info found, id=${id}, fileName=${result.originalName}, mime=${result.mime}`);
+    this.logger.debug(`(FileLogic-Acsys) file info found, ids=[${ids.join('; ')}]`, result);
     return result;
   };
 

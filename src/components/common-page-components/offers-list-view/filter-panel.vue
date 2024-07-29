@@ -8,7 +8,7 @@ import CollapsableSection from './../../collapsable-section.vue';
 import RangeFilter from './filters/range-filter.vue';
 import ChecklistFilter from './filters/checklist-filter.vue';
 import { getI18nResName3 } from './../../../shared/i18n';
-import ComponentWaiterIndicator from './../../component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
 import { updateTabIndices } from './../../../shared/dom';
 import { TabIndicesUpdateDefaultTimeout, SearchOffersFilterTabGroupId } from './../../../shared/constants';
 
@@ -215,7 +215,7 @@ function onResetBtnClick () {
           </template>
         </CollapsableSection>
         <template #fallback>
-          <ComponentWaiterIndicator :ctrl-key="`${ctrlKey}-FilterPanelClientFallback`" class="mb-xs-2 mb-m-5" />
+          <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-FilterPanelClientFallback`" class="mb-xs-2 mb-m-5" />
         </template>
       </ClientOnly>
     </ErrorHelm>

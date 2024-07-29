@@ -5,6 +5,7 @@ import { type IAppLogger, wrapLogDataArg, getAppExceptionCustomLogLevel, getErro
 
 import { LogAlwaysLevel, LogLevelEnum, type LogLevel, isDevOrTestEnv, HeaderAppVersion } from '../shared/constants';
 import { flattenError, wrapExceptionIfNeeded } from '../shared/exceptions';
+import { consola } from 'consola';
 
 export class ClientLogger implements IAppLogger {
   logLevel: LogLevelEnum;
@@ -14,7 +15,7 @@ export class ClientLogger implements IAppLogger {
     this.logLevel = LogLevelEnum[AppConfig.logging.common.level as LogLevel];
     if (!this.logLevel) {
       this.logLevel = LogLevelEnum.warn;
-      console.error(`invalid level specified for logging subsystem: ${AppConfig.logging.common.level}`);
+      consola.error(`invalid level specified for logging subsystem: ${AppConfig.logging.common.level}`);
     }
   }
 
@@ -27,7 +28,7 @@ export class ClientLogger implements IAppLogger {
       return;
     }
 
-    console.log(`[${new Date().toISOString()}] ${msg} ${data ? ('data=[' + JSON.stringify(data) + ']') : ''}`);
+    consola.log(`[${new Date().toISOString()}] ${msg} ${data ? ('data=[' + JSON.stringify(data) + ']') : ''}`);
   }
 
   verbose (msg: string, data?: any): void {
@@ -35,7 +36,7 @@ export class ClientLogger implements IAppLogger {
       return;
     }
 
-    console.log(`[${new Date().toISOString()}] ${msg} ${data ? ('data=[' + JSON.stringify(data) + ']') : ''}`);
+    consola.log(`[${new Date().toISOString()}] ${msg} ${data ? ('data=[' + JSON.stringify(data) + ']') : ''}`);
   }
 
   info (msg: string, data?: any): void {
@@ -50,7 +51,7 @@ export class ClientLogger implements IAppLogger {
 
     this.sendLogData(logData);
 
-    console.log(`[${new Date().toISOString()}] ${msg} ${data ? ('data=[' + JSON.stringify(data) + ']') : ''}`);
+    consola.log(`[${new Date().toISOString()}] ${msg} ${data ? ('data=[' + JSON.stringify(data) + ']') : ''}`);
   }
 
   warn (msg: string, err?: any, data?: object): void {
@@ -101,17 +102,17 @@ export class ClientLogger implements IAppLogger {
 
     this.sendLogData(logData);
 
-    console.log(`[${new Date().toISOString()}] ${msg} ${data ? ('data=[' + JSON.stringify(data) + ']') : ''}`);
+    consola.log(`[${new Date().toISOString()}] ${msg} ${data ? ('data=[' + JSON.stringify(data) + ']') : ''}`);
   }
 
   logProblemsToConsoleIfNeeded (logData: { level: LogLevel, msg: string }, err: any) {
     if (isDevOrTestEnv()) {
       if (logData.level === 'warn') {
-        console.warn(logData.msg, err);
+        consola.warn(logData.msg, err);
       } else if (logData.level === 'error') {
-        console.error(logData.msg, err);
+        consola.error(logData.msg, err);
       } else {
-        console.info(logData.msg, err);
+        consola.info(logData.msg, err);
       }
     }
   }
@@ -134,7 +135,7 @@ export class ClientLogger implements IAppLogger {
           headers: [[HeaderAppVersion, AppConfig.versioning.appVersion.toString()]]
         });
     } catch(error: any) {
-      console.error('error occured while sending logs to server', error);
+      consola.error('error occured while sending logs to server', error);
     }
   }
 }

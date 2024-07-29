@@ -7,12 +7,11 @@ import isObject from 'lodash-es/isObject';
 import difference from 'lodash-es/difference';
 import uniq from 'lodash-es/uniq';
 import { destr } from 'destr';
-import { type IAppLogger, type Locale, type I18nResName } from './../app-facade/interfaces';
+import { type IAppLogger, type Locale, type I18nResName, type IInitializableOnStartup } from './../app-facade/interfaces';
 import { AppException, AppExceptionCodeEnum, AvailableLocaleCodes } from './../app-facade/implementation';
 
-export interface IServerI18n {
+export interface IServerI18n extends IInitializableOnStartup {
   getLocalizedResource(resName: I18nResName, locale: Locale): string;
-  initialize(): void;
 }
 
 export class ServerI18n implements IServerI18n {
@@ -25,7 +24,7 @@ export class ServerI18n implements IServerI18n {
     this.localizationMap = new Map<Locale, NonNullable<unknown>>();
   }
 
-  initialize = (): void => {
+  initialize = async (): Promise<void> => {
     this.localizationMap = this.createLocalizationMap();
   };
 

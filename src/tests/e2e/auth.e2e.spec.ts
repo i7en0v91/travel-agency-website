@@ -7,7 +7,7 @@ import dayjs from 'dayjs';
 import { parseURL, joinURL } from 'ufo';
 import { TEST_SERVER_PORT, createLogger, ScreenshotDir, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD } from '../../shared/testing/common';
 import { spinWait, delay } from '../../shared/common';
-import { CookieI18nLocale, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, type Locale, AvailableLocaleCodes, DefaultLocale, ApiEndpointTestingInvlidatePage, HeaderContentType } from '../../shared/constants';
+import { CookieI18nLocale, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, type Locale, AvailableLocaleCodes, DefaultLocale, ApiEndpointTestingInvlidatePage, HeaderContentType, ApiAppEndpointPrefix } from '../../shared/constants';
 import { AllHtmlPages, EntityIdPages } from '../../shared/page-query-params';
 import type { IAppLogger } from '../../shared/applogger';
 import  { localizePath } from './../../shared/i18n';
@@ -109,7 +109,7 @@ class AuthTestCaseRunner {
     this.outstandingRequestsCount = 0;
   };
 
-  needCountRequestInOutstanding = (request: Request) => request.url().includes('/api/') && !request.url().includes('/api/log/');
+  needCountRequestInOutstanding = (request: Request) => request.url().includes(`/${ApiAppEndpointPrefix}/`) && !request.url().includes(`/${ApiAppEndpointPrefix}/log/`);
 
   onRequestStart = (request: Request) => {
     if(this.needCountRequestInOutstanding(request)) {
@@ -240,7 +240,7 @@ class AuthTestCaseRunner {
     const page = this.currentPage!;
     await (await page.locator('#nav-user-menu-anchor')).click();
     this.prepareOutstandingRequestsCounter();
-    await (await page.locator('.nav-user-menu-list .nav-user-menu-item:last-child button')).click();
+    await (await page.locator('.nav-user-menu-list .nav-user-menu-item:last-child button')).dispatchEvent('click');
     await delay(PageNavigationDelayMs);
     await this.ensurePageMounted();
 
@@ -327,9 +327,9 @@ class AuthTestCaseRunner {
     this.logger.debug(`current page screenshot was taken, currentPage=${this.currentPage!.url()}, fileName=${fileName}`);
   };
 
-  ensurePageMounted = async (timeoutSecs?: number): Promise<boolean> => {
-    timeoutSecs ??= TestTimeout;
-    this.logger.debug(`ensuring current page was mounted, currentPage=${this.currentPage?.url()}, timeoutSecs=${timeoutSecs}`);
+  ensurePageMounted = async (timeoutMs?: number): Promise<boolean> => {
+    timeoutMs ??= TestTimeout;
+    this.logger.debug(`ensuring current page was mounted, currentPage=${this.currentPage?.url()}, timeoutMs=${timeoutMs}`);
     const page = this.currentPage;
     if (!page) {
       this.logger.warn('current page is undefined');
@@ -366,7 +366,7 @@ class AuthTestCaseRunner {
     this.logger.debug(`spin waiting for indicator element..., currentPage=${this.currentPage?.url()}`);
     let result = await spinWait(async () => {
       return await testIndicatorElement();
-    }, timeoutSecs);
+    }, timeoutMs);
     if(!result) {
       this.logger.warn(`spin wait for page indicator element failed, currentPage=${this.currentPage?.url()}`);
       return false;
@@ -376,7 +376,7 @@ class AuthTestCaseRunner {
     result = await spinWait(async () => {
       this.logger.debug(`outstanding page requests count=${this,this.outstandingRequestsCount}, currentPage=${this.currentPage?.url()}`);
       return Promise.resolve(this.outstandingRequestsCount <= 0);
-    }, timeoutSecs);
+    }, timeoutMs);
     if(!result) {
       this.logger.warn(`spin wait for page requests to complete failed, currentPage=${this.currentPage?.url()}`);
       return false;
@@ -402,7 +402,7 @@ class AuthTestCaseRunner {
         const switchLinkId = `#locale-switch-link-${locale.toLowerCase()}`;
         this.prepareOutstandingRequestsCounter();
         await page.locator('#nav-locale-switcher-navLocaleSwitcher').click();
-        await page.locator(switchLinkId).click();
+        await page.locator(switchLinkId).dispatchEvent('click');
 
         await spinWait(() => {
           return Promise.resolve(this.getCurrentPageLocale() === locale);
@@ -878,7 +878,7 @@ describe('e2e:auth User authentication', async () => {
   });
 
   const TestName5 = 'preferred locale differs from default (first-time visit), both auth providers';
-  test(TestName5, AppConfig.caching.htmlPageCachingSeconds ?
+  test(TestName5, AppConfig.caching.intervalSeconds ?
     { 
       skip: true /** with page caching enabled on server-side the auto-redirection code (i18n plugin) may not be reached */ 
     } : DefaultTestOptions, async () => {

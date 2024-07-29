@@ -3,7 +3,7 @@ import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { type EntityId, type IStayOffer, type IFlightOffer, type EntityDataAttrsOnly } from './../../../shared/interfaces';
 import { getI18nResName3 } from './../../../shared/i18n';
 import { type Locale } from './../../../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../../../shared/page-query-params';
+import { AppPage, getPagePath } from './../../../shared/page-query-params';
 
 interface IProps {
   ctrlKey: string,
@@ -13,7 +13,7 @@ interface IProps {
 const props = defineProps<IProps>();
 
 const logger = CommonServicesLocator.getLogger();
-const localePath = useLocalePath();
+const navLinkBuilder = useNavLinkBuilder();
 
 const { locale } = useI18n();
 const theme = useThemeSettings();
@@ -64,7 +64,7 @@ async function onBtnClick(): Promise<void> {
           :label-res-name="getI18nResName3('accountPage', 'tabHistory', 'btnDownload')"
           @click="onBtnClick"
         />
-        <NuxtLink class="ticket-card-booking-link btn btn-icon icon-nav-link btn-support brdr-1 tabbable" :to="localePath(`/${getHtmlPagePath(HtmlPage.BookingDetails)}/${bookingId}`)"/>
+        <NuxtLink class="ticket-card-booking-link btn btn-icon icon-nav-link btn-support brdr-1 tabbable" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.BookingDetails)}/${bookingId}`, locale as Locale)"/>
       </div>
     </div>
   </article>

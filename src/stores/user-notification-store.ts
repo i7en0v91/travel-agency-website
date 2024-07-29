@@ -10,6 +10,10 @@ export interface IUserNotificationParams {
   resArgs?: any
 }
 
+export interface IUserNotificationStore {
+  show: (params: IUserNotificationParams) => void;
+};
+
 export const useUserNotificationStore = defineStore('userNotificationStore', () => {
   const logger = CommonServicesLocator.getLogger();
   const { t } = useI18n();
@@ -41,20 +45,10 @@ export const useUserNotificationStore = defineStore('userNotificationStore', () 
       if(isDevOrTestEnv()) {
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'showing notification from server side is not implemented', 'error-page');
       }
-      /*
-      logger.verbose('(user-notification-store): saving new notification on server for restoring on client', params);
-      if (notificationsToHydate.length >= AppConfig.userNotifications.maxItems) {
-        logger.warn('(user-notification-store): cannot add new notification on server, maximum number of items exceeded', null, params);
-        return;
-      }
-      
-      notificationsToHydate.push(params);
-      addPayload(nuxtApp, DataKeyUserNotifications, notificationsToHydate);
-      */
     }
   };
 
   return {
     show
-  };
+  } as IUserNotificationStore;
 });

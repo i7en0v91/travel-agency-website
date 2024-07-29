@@ -1,7 +1,7 @@
-import { type TimestampSystemParamOptions, type InternalSystemParamOptions, type CacheParamsVariedByValueRanges, type CacheParamsVariedBySystemParamsOnly, type CacheByPageTimestamp, type AnyParamValue, type BoolFalse, type BoolTrue, type EmptyParamListOptions, type TripType, type CacheablePageParamsBase, type StayServiceLevel, type FlightClass } from './interfaces';
-import { type RecoverPasswordCompleteResultEnum, type Theme } from './constants';
+import { type PreviewSystemParamOptions, type TimestampSystemParamOptions, type InternalSystemParamOptions, type CacheParamsVariedByValueRanges, type CacheParamsVariedBySystemParamsOnly, type CacheByPageTimestamp, type AnyParamValue, type BoolFalse, type BoolTrue, type EmptyParamListOptions, type TripType, type CacheablePageParamsBase, type StayServiceLevel, type FlightClass } from './interfaces';
+import { PreviewModeParamEnabledValue, type RecoverPasswordCompleteResultEnum, type Theme } from './constants';
 
-export enum HtmlPage {
+export enum AppPage {
   Index = 'Index',
   Account = 'Account',
   Favourites = 'Favourites',
@@ -25,8 +25,12 @@ export enum HtmlPage {
   BookStay = 'BookStay',
   BookingDetails = 'BookingDetails'
 };
-export const AllHtmlPages = Object.values(HtmlPage);
-export const EntityIdPages: HtmlPage[] = [HtmlPage.FlightDetails, HtmlPage.BookFlight, HtmlPage.StayDetails, HtmlPage.BookStay, HtmlPage.BookingDetails];
+export enum SystemPage {
+  Drafts = 'Drafts'
+};
+
+export const AllHtmlPages = Object.values(AppPage);
+export const EntityIdPages: AppPage[] = [AppPage.FlightDetails, AppPage.BookFlight, AppPage.StayDetails, AppPage.BookStay, AppPage.BookingDetails];
 
 export const internalSystemParamOptions: InternalSystemParamOptions = { 
   i: { isRequired: false, isSystem: true, acceptableValues: ['0', '1'] }
@@ -34,6 +38,10 @@ export const internalSystemParamOptions: InternalSystemParamOptions = {
 export const timestampSystemParamOptions: TimestampSystemParamOptions = { 
   t: { isRequired: true, isSystem: true, acceptableValues: 'anyValue' }
  };
+export const previewSystemParamOptions: PreviewSystemParamOptions = { 
+  drafts: { isRequired: false, isSystem: true, acceptableValues: [PreviewModeParamEnabledValue, 'false'] }
+};
+ 
 
 // Index page
 export interface IndexCacheParams extends CacheParamsVariedByValueRanges<EmptyParamListOptions> {};
@@ -41,10 +49,14 @@ export interface IndexCacheParams extends CacheParamsVariedByValueRanges<EmptyPa
 export interface PrivacyCacheParams extends CacheParamsVariedByValueRanges<EmptyParamListOptions> {};
 // Login page
 export declare type LoginPageAllowedParamsOptions = {
-  callbackUrl: { isRequired: BoolFalse, isSystem: BoolFalse, acceptableValues: AnyParamValue } 
+  originPath: { isRequired: BoolFalse, isSystem: BoolFalse, acceptableValues: AnyParamValue },
+  callbackUrl: { isRequired: BoolFalse, isSystem: BoolFalse, acceptableValues: AnyParamValue },  
+  error: { isRequired: BoolFalse, isSystem: BoolFalse, acceptableValues: AnyParamValue }
 };
 export const loginPageAllowedParamsOptions: LoginPageAllowedParamsOptions = {
-  callbackUrl: { isRequired: false, isSystem: false, acceptableValues: 'anyValue' }
+  originPath: { isRequired: false, isSystem: false, acceptableValues: 'anyValue' },
+  callbackUrl: { isRequired: false, isSystem: false, acceptableValues: 'anyValue' },
+  error: { isRequired: false, isSystem: false, acceptableValues: 'anyValue' }
 };
 export interface LoginCacheParams extends CacheParamsVariedBySystemParamsOnly<LoginPageAllowedParamsOptions> {};
 // Forgot password page
@@ -175,7 +187,7 @@ export const bookingDetailsAllowedParamsOptions: BookingDetailsAllowedParamsOpti
 };
 export interface BookingCacheParams extends CacheByPageTimestamp<BookingDetailsAllowedParamsOptions> {};
 
-declare interface ICachePageQueryMapGeneric { map: Record<keyof typeof HtmlPage, CacheablePageParamsBase> };
+declare interface ICachePageQueryMapGeneric { map: Record<keyof typeof AppPage, CacheablePageParamsBase> };
 declare interface ICachePageQueryMapTyped extends ICachePageQueryMapGeneric {
   map: { 
     'Index': IndexCacheParams,
@@ -203,33 +215,36 @@ declare interface ICachePageQueryMapTyped extends ICachePageQueryMapGeneric {
   }
 };
 declare type CachePageQueryMap = ICachePageQueryMapTyped['map'];
-export declare type GetHtmlPageCacheObjType<TPage extends keyof typeof HtmlPage = keyof typeof HtmlPage> =
+export declare type GetHtmlPageCacheObjType<TPage extends keyof typeof AppPage = keyof typeof AppPage> =
   CachePageQueryMap extends {[P in TPage]: CacheablePageParamsBase} ? ReturnType<ICachePageQueryMapTyped['map'][TPage]['getCacheKeyObject']> : never;
 
-const HtmlPagePaths: ReadonlyMap<HtmlPage, string> = new Map<HtmlPage, string>([
-  [HtmlPage.Index ,  ''],  
-  [HtmlPage.Account ,  'account'],  
-  [HtmlPage.Favourites ,  'favourites'],  
-  [HtmlPage.EmailVerifyComplete ,  'email-verify-complete'],  
-  [HtmlPage.FindFlights ,  'find-flights'],  
-  [HtmlPage.FindStays ,  'find-stays'],  
-  [HtmlPage.FlightDetails ,  'flight-details'],  
-  [HtmlPage.BookFlight ,  'flight-book'],  
-  [HtmlPage.Flights ,  'flights'],  
-  [HtmlPage.ForgotPasswordComplete ,  'forgot-password-complete'],  
-  [HtmlPage.ForgotPasswordSet ,  'forgot-password-set'],  
-  [HtmlPage.ForgotPasswordVerify ,  'forgot-password-verify'],  
-  [HtmlPage.ForgotPassword ,  'forgot-password'],  
-  [HtmlPage.Login ,  'login'],  
-  [HtmlPage.Privacy ,  'privacy'],  
-  [HtmlPage.SignupComplete ,  'signup-complete'],  
-  [HtmlPage.SignupVerify ,  'signup-verify'],  
-  [HtmlPage.Signup ,  'signup'],  
-  [HtmlPage.Stays ,  'stays'],  
-  [HtmlPage.StayDetails ,  'stay-details'],  
-  [HtmlPage.BookStay ,  'stay-book'],  
-  [HtmlPage.BookingDetails ,  'booking']
+const HtmlPagePaths: ReadonlyMap<AppPage, string> = new Map<AppPage, string>([
+  [AppPage.Index ,  ''],  
+  [AppPage.Account ,  'account'],  
+  [AppPage.Favourites ,  'favourites'],  
+  [AppPage.EmailVerifyComplete ,  'email-verify-complete'],  
+  [AppPage.FindFlights ,  'find-flights'],  
+  [AppPage.FindStays ,  'find-stays'],  
+  [AppPage.FlightDetails ,  'flight-details'],  
+  [AppPage.BookFlight ,  'flight-book'],  
+  [AppPage.Flights ,  'flights'],  
+  [AppPage.ForgotPasswordComplete ,  'forgot-password-complete'],  
+  [AppPage.ForgotPasswordSet ,  'forgot-password-set'],  
+  [AppPage.ForgotPasswordVerify ,  'forgot-password-verify'],  
+  [AppPage.ForgotPassword ,  'forgot-password'],  
+  [AppPage.Login ,  'login'],  
+  [AppPage.Privacy ,  'privacy'],  
+  [AppPage.SignupComplete ,  'signup-complete'],  
+  [AppPage.SignupVerify ,  'signup-verify'],  
+  [AppPage.Signup ,  'signup'],  
+  [AppPage.Stays ,  'stays'],  
+  [AppPage.StayDetails ,  'stay-details'],  
+  [AppPage.BookStay ,  'stay-book'],  
+  [AppPage.BookingDetails ,  'booking']
 ]);
-export function getHtmlPagePath(page: HtmlPage): string {
+export function getPagePath(page: AppPage | SystemPage): string {
+  if(page === SystemPage.Drafts) {
+    return 'drafts';
+  }
   return HtmlPagePaths.get(page)!;
 };

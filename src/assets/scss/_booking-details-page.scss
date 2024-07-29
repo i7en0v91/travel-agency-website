@@ -114,7 +114,6 @@
   $booking-ticket-border-thickness: 1px;
 
   display: grid;
-  //width: fit-content;
   width: 100%;
   height: auto;
   gap: 0px;
@@ -151,15 +150,16 @@
     grid-row-end: 3;
     grid-column-start: 1;
     grid-column-end: 2;
+
+    @include with-theme-color('booking-ticket-dates-bg') using($css-var) {
+      background-color: var($css-var);
+    }
+    
     @include for-medium-and-large() {
       grid-row-start: 1;
       grid-row-end: 4;
       border-top-left-radius: $booking-ticket-border-radius;
       border-bottom-left-radius: $booking-ticket-border-radius;
-    }
-
-    @include with-theme-color('booking-ticket-dates-bg') using($css-var) {
-      background-color: var($css-var);
     }
   }
       
@@ -247,14 +247,15 @@
       width: min-content;
       margin-left: auto;
       margin-right: auto;
+
+      @include with-theme-color('booking-ticket-dates-bg') using($css-var) {
+        background-color: var($css-var);
+      }
+
       @include for-medium-and-large() {
         width: 100%;
         margin-left: unset;
         margin-right: unset;
-      }
-      
-      @include with-theme-color('booking-ticket-dates-bg') using($css-var) {
-        background-color: var($css-var);
       }
   
       @include for-medium-and-large() {
@@ -280,7 +281,6 @@
         }
   
         .ticket-date-item-sub {
-          //width: auto;
           white-space: nowrap;
           display: block;
           
@@ -301,15 +301,6 @@
         min-width: $booking-ticket-image-width;
         min-height: $booking-ticket-image-height;
   
-        //transform: rotate(90deg);
-        margin-left: auto;
-        margin-right: auto;
-        @include for-medium-and-large() {
-          transform: unset;
-          margin-left: unset;
-          margin-right: unset;
-        }
-  
         -webkit-mask-size: $booking-ticket-image-width $booking-ticket-image-height;
         mask-size: $booking-ticket-image-width $booking-ticket-image-height;
         -webkit-mask-repeat: no-repeat;
@@ -319,6 +310,14 @@
         vertical-align: middle;
         @include with-theme-color('booking-ticket-transition') using($css-var) {
           background-color: var($css-var);
+        }
+
+        margin-left: auto;
+        margin-right: auto;
+        @include for-medium-and-large() {
+          transform: unset;
+          margin-left: unset;
+          margin-right: unset;
         }
       }
   
@@ -532,9 +531,6 @@
         width: calc(min(80%, 330px));
         aspect-ratio: 248 / 81;
         height: auto;
-        @include for-small-and-above() {
-          width: calc(min(60%, 330px));
-        }
 
         -webkit-mask-size: contain;
         mask-size: contain;
@@ -546,6 +542,10 @@
         mask-image: url('~/public/img/ticket-barcode.svg');
         @include with-theme-color('input-ctrl-primary') using($css-var) {
           background-color: var($css-var);
+        }
+
+        @include for-small-and-above() {
+          width: calc(min(60%, 330px));
         }
       }
     }
@@ -804,12 +804,6 @@
         height: $ticket-details-item-icon-size;
         max-width: $ticket-details-item-icon-size;
         max-height: $ticket-details-item-icon-size;
-
-        @include for-medium-and-large() {
-          transform: unset;
-          margin-left: unset;
-          margin-right: unset;
-        }
   
         -webkit-mask-size: $ticket-details-item-icon-size $ticket-details-item-icon-size;
         mask-size: $ticket-details-item-icon-size $ticket-details-item-icon-size;
@@ -819,6 +813,12 @@
         mask-position: center center;
         @include with-theme-color('booking-ticket-item') using($css-var) {
           background-color: var($css-var);
+        }
+
+        @include for-medium-and-large() {
+          transform: unset;
+          margin-left: unset;
+          margin-right: unset;
         }
       }
     }

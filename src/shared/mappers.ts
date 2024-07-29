@@ -1,7 +1,7 @@
 import { Decimal } from 'decimal.js';
 import orderBy from 'lodash-es/orderBy';
-import type { EntityId, Timestamp, IOfferBooking, IStayImageShort, IStayOfferDetails, IStay, ICity, ISearchFlightOffersResult, ISearchStayOffersResult, EntityDataAttrsOnly, IFlightOffer, IFlight, IAirlineCompany, IAirport, IAirplane, IStayOffer, IStayShort } from './interfaces';
-import type { IUserFavouritesResultDto, IStayDto, IFlightDto, IFlightOfferDetailsDto, IStayOfferDetailsDto, ICityDto, ISearchStayOffersResultDto, IAirlineCompanyDto, ISearchedFlightDto, ISearchedFlightOfferDto, IAirportDto, IAirplaneDto, ISearchedStayOfferDto, ISearchFlightOffersResultDto, ISearchedStayDto, IBookingDetailsDto, IUserTicketsResultDto } from './../server/dto';
+import type { ReviewSummary, EntityId, Timestamp, IOfferBooking, IStayImageShort, IStayOfferDetails, IStay, ICity, ISearchFlightOffersResult, ISearchStayOffersResult, EntityDataAttrsOnly, IFlightOffer, IFlight, IAirlineCompany, IAirport, IAirplane, IStayOffer, IStayShort } from './interfaces';
+import type { IUserFavouritesResultDto, IStayDto, IFlightDto, IFlightOfferDetailsDto, IStayOfferDetailsDto, ICityDto, ISearchStayOffersResultDto, IAirlineCompanyDto, ISearchedFlightDto, ISearchedFlightOfferDto, IAirportDto, IAirplaneDto, ISearchedStayOfferDto, ISearchFlightOffersResultDto, ISearchedStayDto, IBookingDetailsDto, IUserTicketsResultDto, IReviewSummaryDto } from './../server/dto';
 import { AppException, AppExceptionCodeEnum } from './exceptions';
 
 export function mapAirlineCompany (dto: IAirlineCompanyDto): EntityDataAttrsOnly<IAirlineCompany> {
@@ -12,8 +12,10 @@ export function mapAirlineCompany (dto: IAirlineCompanyDto): EntityDataAttrsOnly
     city: {
       geo: dto.city.geo
     },
-    numReviews: dto.numReviews,
-    reviewScore: dto.reviewScore
+    reviewSummary: {
+      numReviews: dto.numReviews,
+      score: dto.reviewScore
+    }
   };
 }
 
@@ -121,7 +123,7 @@ export function mapFlightOfferDetails (dto: IFlightOfferDetailsDto): Omit<IFligh
   };
 }
 
-function mapStay (dto: IStayDto): EntityDataAttrsOnly<Omit<IStay, 'images' | 'reviews'> & { images: IStayImageShort[] } & IStayShort> {
+function mapStay (dto: IStayDto, reviewSummary?: ReviewSummary): EntityDataAttrsOnly<Omit<IStay, 'images' | 'reviews'> & IStayShort & { images: IStayImageShort[], reviewSummary?: ReviewSummary }> {
   return {
     id: dto.id,
     city: mapCity(dto.city),
@@ -147,8 +149,10 @@ function mapStay (dto: IStayDto): EntityDataAttrsOnly<Omit<IStay, 'images' | 're
         order: idx
       };
     }),
-    numReviews: dto.numReviews,
-    reviewScore: dto.reviewScore,
+    reviewSummary: reviewSummary ? {
+      numReviews: reviewSummary.numReviews,
+      score: reviewSummary.score,
+    } : undefined,
     photo: dto.images.filter(i => i.order === 0).map((i) => {
       return {
         slug: i.slug,
@@ -158,7 +162,7 @@ function mapStay (dto: IStayDto): EntityDataAttrsOnly<Omit<IStay, 'images' | 're
   };
 }
 
-export function mapStayOfferDetails (dto: IStayOfferDetailsDto): Omit<IStayOfferDetails, 'dataHash'> {
+export function mapStayOfferDetails (dto: IStayOfferDetailsDto, reviewSummary: ReviewSummary | undefined): Omit<IStayOfferDetails, 'dataHash'> {
   return {
     id: dto.id,
     createdUtc: new Date(Date.parse(dto.createdUtc)),
@@ -171,7 +175,7 @@ export function mapStayOfferDetails (dto: IStayOfferDetailsDto): Omit<IStayOffer
     numRooms: dto.numRooms,
     totalPrice: new Decimal(dto.totalPrice),
     isFavourite: dto.isFavourite,
-    stay: mapStay(dto.stay),
+    stay: mapStay(dto.stay, reviewSummary),
     prices: {
       Base: new Decimal(dto.prices.Base),
       CityView1: new Decimal(dto.prices.CityView1),
@@ -281,7 +285,7 @@ export function mapSearchFlightOffersResult (resultDto: ISearchFlightOffersResul
   };
 }
 
-export function mapSearchedStay (dto: ISearchedStayDto, lookup: ISearchStayOffersResultLookup): EntityDataAttrsOnly<IStayShort> {
+export function mapSearchedStay (dto: ISearchedStayDto, lookup: ISearchStayOffersResultLookup): EntityDataAttrsOnly<IStayShort> & { reviewSummary?: ReviewSummary } {
   return {
     city: lookup.lookupCity(dto.cityId),
     id: dto.id,
@@ -290,8 +294,10 @@ export function mapSearchedStay (dto: ISearchedStayDto, lookup: ISearchStayOffer
       lon: dto.geo.lon
     },
     name: dto.name,
-    numReviews: dto.numReviews,
-    reviewScore: dto.reviewScore,
+    reviewSummary: dto.reviewSummary ? {
+      numReviews: dto.reviewSummary.numReviews,
+      score: dto.reviewSummary.score,
+    } : undefined,
     slug: dto.slug,
     photo: dto.photo
   };
@@ -351,7 +357,14 @@ export function mapBookingDetails (dto: IBookingDetailsDto): EntityDataAttrsOnly
       firstName: dto.bookedUser.firstName,
       lastName: dto.bookedUser.lastName
     },
-    offer: dto.kind === 'flights' ? mapFlightOfferDetails(dto.flightOffer!) : mapStayOfferDetails(dto.stayOffer!),
+    offer: dto.kind === 'flights' ? mapFlightOfferDetails(dto.flightOffer!) : mapStayOfferDetails(dto.stayOffer!, dto.stayOffer!.reviewSummary),
     serviceLevel: dto.kind === 'stays' ? dto.serviceLevel : undefined
+  };
+}
+
+export function mapReviewSummary(dto: IReviewSummaryDto): ReviewSummary {
+  return {
+    numReviews: dto.numReviews,
+    score: dto.score
   };
 }

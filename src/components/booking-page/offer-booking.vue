@@ -4,9 +4,11 @@ import { type ILocalizableValue, ImageCategory, type StayServiceLevel, type Enti
 import PaymentController from './../payments/payment-controller.vue';
 import PricingDetails from './pricing-details.vue';
 import { type I18nResName, getI18nResName2, getI18nResName3 } from './../../shared/i18n';
-import { AvailableLocaleCodes, UserNotificationLevel } from './../../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../../shared/page-query-params';
-import ComponentWaiterIndicator from './../../components/component-waiting-indicator.vue';
+import { type Locale, AvailableLocaleCodes, UserNotificationLevel } from './../../shared/constants';
+import { AppPage, getPagePath } from './../../shared/page-query-params';
+import ComponentWaitingIndicator from './../../components/component-waiting-indicator.vue';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
+import { usePreviewState } from './../../composables/preview-state';
 
 interface IProps {
   ctrlKey: string,
@@ -19,9 +21,10 @@ const props = defineProps<IProps>();
 
 const logger = CommonServicesLocator.getLogger();
 
-const { t } = useI18n();
-const localePath = useLocalePath();
+const { t, locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
 
+const { requestUserAction } = usePreviewState();
 const userNotificationStore = useUserNotificationStore();
 const offerBookingStoreFactory = await useOfferBookingStoreFactory();
 const offerBookingStore = await offerBookingStoreFactory.createNewBooking<TOffer>(props.offerId, props.offerKind, props.serviceLevel);
@@ -46,10 +49,16 @@ function getI18ResAsLocalizableValue (resName: I18nResName): ILocalizableValue {
 
 async function onPay (): Promise<void> {
   logger.debug(`(OfferBooking) pay handler, ctrlKey=${props.ctrlKey}, offerId=${props.offerId}, kind=${props.offerKind}`);
+  
+  if(!await requestUserAction()) {
+    logger.verbose(`(OfferBooking) pay handler hasn't run - not allowed in preview mode, ctrlKey=${props.ctrlKey}, offerId=${props.offerId}, kind=${props.offerKind}`);
+    return;
+  }
+
   paymentProcessing.value = true;
   try {
     const bookingId = await offerBookingStore.store();
-    await navigateTo(localePath(`/${getHtmlPagePath(HtmlPage.BookingDetails)}/${bookingId}`));
+    await navigateTo(navLinkBuilder.buildLink(`/${getPagePath(AppPage.BookingDetails)}/${bookingId}`, locale.value as Locale));
     logger.debug(`(OfferBooking) pay handler completed, ctrlKey=${props.ctrlKey}, offerId=${props.offerId}, kind=${props.offerKind}`);
   } catch (err: any) {
     logger.warn(`(OfferBooking) exception occured while executing book HTTP request, ctrlKey=${props.ctrlKey}, offerId=${props.offerId}, kind=${props.offerKind}`, err);
@@ -73,7 +82,7 @@ async function onPay (): Promise<void> {
       <ClientOnly>    
         <PaymentController :ctrl-key="`${ctrlKey}-Payments`" :payment-processing="paymentProcessing" :amount="offer?.totalPrice?.toNumber()" @pay="onPay" />
         <template #fallback>
-          <ComponentWaiterIndicator :ctrl-key="`${ctrlKey}-Payments-ClientFallback`"/>
+          <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-Payments-ClientFallback`"/>
         </template>
       </ClientOnly>
     </div>
@@ -90,13 +99,11 @@ async function onPay (): Promise<void> {
           {
             sub: (offer as EntityDataAttrsOnly<IFlightOffer>).departFlight.airplane.name,
             main: getI18ResAsLocalizableValue(getI18nResName3('searchFlights', 'class', (offer as EntityDataAttrsOnly<IFlightOffer>).class as any)),
-            reviewScore: (offer as EntityDataAttrsOnly<IFlightOffer>).departFlight.airlineCompany.reviewScore,
-            reviewsCount: (offer as EntityDataAttrsOnly<IFlightOffer>).departFlight.airlineCompany.numReviews
+            reviewSummary: (offer as EntityDataAttrsOnly<IFlightOffer>).departFlight.airlineCompany.reviewSummary
           } : {
             sub: (offer as EntityDataAttrsOnly<IStayOfferDetails>).stay.name,
             main: getI18ResAsLocalizableValue(getI18nResName3('stayDetailsPage', 'availableRooms', props.serviceLevel === 'Base' ? 'base' : 'city')),
-            reviewScore: (offer as EntityDataAttrsOnly<IStayOfferDetails>).stay.reviewScore,
-            reviewsCount: (offer as EntityDataAttrsOnly<IStayOfferDetails>).stay.numReviews
+            reviewSummary: (offer as EntityDataAttrsOnly<IStayOfferDetails>).stay.reviewSummary
           }) : undefined"
         :price-decompoisition="priceDecompoisition"
       />

@@ -2,7 +2,7 @@ export type * from '../../../shared/interfaces';
 export { TokenKind, AuthProvider } from '../../../shared/interfaces';
 export type * from '../../../shared/constants';
 export type * from '../../../shared/i18n';
-export { type IServerI18n } from '../../../server-logic/helpers/i18n';
+export { type IServerI18n } from '../../../server/backend/helpers/i18n';
 export { type IServerServicesLocator } from '../../../shared/serviceLocator';
 export { type IAppLogger } from '../../../shared/applogger';
 export { type IAppConfig } from '../../../appconfig';

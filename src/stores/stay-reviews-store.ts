@@ -56,7 +56,7 @@ async function sendCreateOrUpdateReviewRequest (stayId: EntityId, textOrHtml: st
     textOrHtml
   };
   logger.debug(`(stay-reviews-store) sending create or update HTTP request, stayId=${stayId}`);
-  const resultDto = await post(ApiEndpointStayReviews(stayId), undefined, bodyDto, undefined, true, 'default') as IModifyStayReviewResultDto;
+  const resultDto = await post(`/${ApiEndpointStayReviews(stayId)}`, undefined, bodyDto, undefined, true, undefined, 'default') as IModifyStayReviewResultDto;
   if (!resultDto) {
     logger.warn(`(stay-reviews-store) exception occured while sending create or update HTTP request, stayId=${stayId}, textOrHtml=${textOrHtml}`);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
@@ -67,7 +67,7 @@ async function sendCreateOrUpdateReviewRequest (stayId: EntityId, textOrHtml: st
 
 async function sendDeleteReviewRequest (stayId: EntityId, logger: IAppLogger): Promise<void> {
   logger.debug(`(stay-reviews-store) sending delete HTTP request, stayId=${stayId}`);
-  const resultDto = await del(ApiEndpointStayReviews(stayId), undefined, true, 'default') as IModifyStayReviewResultDto;
+  const resultDto = await del(`/${ApiEndpointStayReviews(stayId)}`, undefined, true, 'default') as IModifyStayReviewResultDto;
   if (!resultDto) {
     logger.warn(`(stay-reviews-store) exception occured while sending delete HTTP request, stayId=${stayId}`);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
@@ -77,7 +77,7 @@ async function sendDeleteReviewRequest (stayId: EntityId, logger: IAppLogger): P
 
 async function sendFetchReviewsRequest (stayId: EntityId, logger: IAppLogger): Promise<IStayReviewItemInternal[]> {
   logger.debug(`(stay-reviews-store) sending get HTTP request, stayId=${stayId}`);
-  const resultDto = await getObject(ApiEndpointStayReviews(stayId), undefined, 'no-store', true, undefined, 'default') as IStayReviewsDto;
+  const resultDto = await getObject(`/${ApiEndpointStayReviews(stayId)}`, undefined, 'no-store', true, undefined, 'default') as IStayReviewsDto;
   if (!resultDto) {
     logger.warn(`(stay-reviews-store) exception occured while sending get HTTP request, stayId=${stayId}`);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');

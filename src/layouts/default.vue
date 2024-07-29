@@ -15,7 +15,7 @@ import AppConfig from './../appconfig';
 import { type NavBarMode, ImageCategory } from './../shared/interfaces';
 import { lookupPageByUrl } from './../shared/common';
 import { MainTitleSlug } from './../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../shared/page-query-params';
+import { AppPage, getPagePath } from './../shared/page-query-params';
 import AppFooter from './../components/footer/app-footer.vue';
 import CookieBanner from './../components/cookie-banner.vue';
 import SearchPageHead from './../components/common-page-components/search-page-head.vue';
@@ -35,64 +35,30 @@ useHead({
   },
   script: [
     { src: '/js/page-load.min.js' },
-    { src: '/js/canvas-to-blob.min.js', defer: true }
     // { src: 'https://www.google.com/recaptcha/api.js' }
   ],
   link: [
     { rel: 'icon', href: '/img/waiter.gif' }
   ],
   titleTemplate: computed(() => `%s %separator ${t(getI18nResName2('site', 'name'))}`),
-  title,
-  // at the moment nuxt seo module doesn't fully support i18n so define SEO attributes manually
-  meta: [{
-    property: 'og:site_name', content: t(getI18nResName2('site', 'name'))
-  }, {
-    property: 'title', content: title
-  }, {
-    name: 'description', content: t(getI18nResName2('site', 'description'))
-  }, {
-    property: 'og:description', content: t(getI18nResName2('site', 'description'))
-  }, {
-    property: 'locale', content: locale
-  }, {
-    property: 'og:locale', content: locale
-  }]
+  title
 });
 
-const nuxtApp = useNuxtApp();
+useServerSeoMeta({
+  title,
+  description: t(getI18nResName2('site', 'description')),
+  ogLocale: locale,
+  ogSiteName: t(getI18nResName2('site', 'name')),
+  ogDescription: t(getI18nResName2('site', 'description'))
+});
 
-const toastOptions : PluginOptions = {
-  maxToasts: AppConfig.userNotifications.maxItems,
-  timeout: AppConfig.userNotifications.timeoutMs,
-  position: ToastPosition.TOP_CENTER,
-  hideProgressBar: true,
-  containerClassName: 'user-notification-container mt-xs-2',
-  toastClassName: 'user-notification-toast mb-xs-2 brdr-2',
-  closeButtonClassName: 'user-notification-button',
-  filterBeforeCreate: filterNotificationDuplicates
-};
-nuxtApp.vueApp.use(Toast, toastOptions);
-
-const systemConfigurationStore = useSystemConfigurationStore();
-await systemConfigurationStore.initialize();
-
-function filterNotificationDuplicates (
-  toast: any,
-  toasts: any[]
-): any {
-  if (AppConfig.userNotifications.filterDuplicates) {
-    if (toasts.filter(t => t.content.toString() === toast.content.toString()).length !== 0) {
-      return false;
-    }
-  }
-  return toast;
-}
+await usePageSetup();
 
 const navBarMode : ComputedRef<NavBarMode> = computed(
-  () => (lookupPageByUrl(route.path) === HtmlPage.Index && !error.value) ? 'landing' : 'inApp');
+  () => (lookupPageByUrl(route.path) === AppPage.Index && !error.value) ? 'landing' : 'inApp');
 
 const error = useError();
-const isAuthFormsPage = computed(() => route.path.includes(`/${getHtmlPagePath(HtmlPage.Login)}`) || route.path.includes(`/${getHtmlPagePath(HtmlPage.Signup)}`) || route.path.includes(`/${getHtmlPagePath(HtmlPage.ForgotPassword)}`) || route.path.includes(`/${getHtmlPagePath(HtmlPage.EmailVerifyComplete)}`));
+const isAuthFormsPage = computed(() => route.path.includes(`/${getPagePath(AppPage.Login)}`) || route.path.includes(`/${getPagePath(AppPage.Signup)}`) || route.path.includes(`/${getPagePath(AppPage.ForgotPassword)}`) || route.path.includes(`/${getPagePath(AppPage.EmailVerifyComplete)}`));
 const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.value);
 
 </script>

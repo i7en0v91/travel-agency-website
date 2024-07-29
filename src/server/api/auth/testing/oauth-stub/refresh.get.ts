@@ -32,15 +32,15 @@ export default defineWebApiEventHandler(async (event: H3Event) => {
   const body = await readBody<{ refreshToken: string }>(event);
 
   if (!body.refreshToken) {
-    logger.warn('(oauth-stub:login) Unauthorized, no refreshToken in payload');
-    throw new AppException(AppExceptionCodeEnum.UNAUTHORIZED, 'refreshToken was not specified', 'error-page');
+    logger.warn('(oauth-stub:login) Unauthenticated, no refreshToken in payload');
+    throw new AppException(AppExceptionCodeEnum.UNAUTHENTICATED, 'refreshToken was not specified', 'error-page');
   }
 
   const decoded = verify(body.refreshToken, OAUTH_SECRET) as JwtPayload | undefined;
 
   if (!decoded) {
-    logger.warn('(oauth-stub:login) Unauthorized, refreshToken can`t be verified');
-    throw new AppException(AppExceptionCodeEnum.UNAUTHORIZED, 'refreshToken can`t be verified', 'error-page');
+    logger.warn('(oauth-stub:login) Unauthenticated, refreshToken can`t be verified');
+    throw new AppException(AppExceptionCodeEnum.UNAUTHENTICATED, 'refreshToken can`t be verified', 'error-page');
   }
 
   const expiresIn = 60 * 5; // 5 minutes

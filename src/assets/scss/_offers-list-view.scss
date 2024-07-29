@@ -33,6 +33,11 @@ $range-slider-tooltip-padding: 10%;
   }
 
   .filter-panel {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
     grid-column-start: 1;
     grid-column-end: 2;
     grid-row-start: 1;
@@ -40,11 +45,6 @@ $range-slider-tooltip-padding: 10%;
     @include for-medium-and-large() {
       grid-row-end: 3;
     }
-
-    width: 100%;
-    height: 100%;
-
-    display: block;
 
     @include for-medium-and-large() {
       @include with-theme-color('control-frame') using($css-var) {
@@ -153,12 +153,8 @@ $range-slider-tooltip-padding: 10%;
 
           &:nth-child(2) {
             .slider-tooltip {
-              //transform: translateX(-$range-slider-tooltip-padding);
               transform: translateX(calc($range-slider-tooltip-padding * -1.0 + var(--#{$prefix}-slider-left-handle-pos) * (-100% + #{$range-slider-tooltip-padding})));
               &::before {
-                //transform: unset;
-                //left: math.div($range-slider-tooltip-padding, 2);
-                //right: unset;
                 display: none; //TODO: find a way to correctly position arrow
               }
             }
@@ -166,12 +162,8 @@ $range-slider-tooltip-padding: 10%;
 
           &:last-child {
             .slider-tooltip {
-              //transform: translateX(-(100% - $range-slider-tooltip-padding));
               transform: translateX(calc($range-slider-tooltip-padding * -1.0 + var(--#{$prefix}-slider-right-handle-pos) * (-100% + #{$range-slider-tooltip-padding})));
               &::before {
-                //transform: unset;
-                //left: unset;
-                //right: math.div($range-slider-tooltip-padding, 2);
                 display: none; //TODO: find a way to correctly position arrow
               }
             }
@@ -358,6 +350,9 @@ $range-slider-tooltip-padding: 10%;
   }
 
   .list-paging {
+    width: 100%;
+    height: auto;
+
     grid-column-start: 1;
     grid-column-end: 2;
     grid-row-start: 4;
@@ -368,9 +363,6 @@ $range-slider-tooltip-padding: 10%;
       grid-row-start: 3;
       grid-row-end: 4;
     }
-
-    width: 100%;
-    height: auto;
 
     .list-paging-btn {
       width: 100%;

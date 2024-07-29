@@ -2,23 +2,27 @@
 
 import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
 import AccountFormPhotos from './../components/account/form-photos.vue';
-import { SignUpCompleteResultEnum, ApiEndpointSignUpComplete, SecretValueMask, HeaderAppVersion } from './../shared/constants';
-import { HtmlPage, getHtmlPagePath } from './../shared/page-query-params';
+import { type Locale, SignUpCompleteResultEnum, ApiEndpointSignUpComplete, SecretValueMask, HeaderAppVersion } from './../shared/constants';
+import { AppPage, getPagePath } from './../shared/page-query-params';
 import { type ISignUpCompleteResultDto } from './../server/dto';
 import AppConfig from './../appconfig';
 import { type EntityId } from './../shared/interfaces';
+import { useNavLinkBuilder } from './../composables/nav-link-builder';
+import { usePreviewState } from './../composables/preview-state';
 
 definePageMeta({
   middleware: 'auth',
   auth: {
     unauthenticatedOnly: true,
-    navigateAuthenticatedTo: '/'
+    navigateAuthenticatedTo: `/${getPagePath(AppPage.Index)}`
   },
   title: { resName: getI18nResName2('signUpCompletePage', 'title'), resArgs: undefined }
 });
 useOgImage();
 
-const localePath = useLocalePath();
+const { locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
+const { enabled } = usePreviewState();
 const completionResult = ref<SignUpCompleteResultEnum | undefined>(undefined);
 
 const logger = CommonServicesLocator.getLogger();
@@ -37,7 +41,7 @@ if (!tokenId || !tokenValue) {
   logger.info(`(SignUpComplete) link doesnt contain token data: id=${tokenId}, value=${tokenValue ? SecretValueMask : '[empty]'}`);
   completionResult.value = SignUpCompleteResultEnum.LINK_INVALID;
 } else {
-  const { data, error } = await useFetch(ApiEndpointSignUpComplete,
+  const { data, error } = await useFetch(`/${ApiEndpointSignUpComplete}`,
     {
       method: 'post',
       server: true,
@@ -47,6 +51,8 @@ if (!tokenId || !tokenValue) {
         id: tokenId,
         value: tokenValue
       },
+      cache: 'no-cache',
+      query: { drafts: enabled },
       transform: (response: any) => {
         const dto = response as ISignUpCompleteResultDto;
         if (!dto) {
@@ -82,25 +88,25 @@ if (!tokenId || !tokenValue) {
       <div class="signup-complete-page-content">
         <div v-if="completionResult === SignUpCompleteResultEnum.SUCCESS">
           {{ $t(getI18nResName3('signUpCompletePage', 'text', 'success')) }}
-          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${getHtmlPagePath(HtmlPage.Login)}`)">
+          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
             {{ $t(getI18nResName2('accountPageCommon', 'login')) }}
           </NuxtLink>
         </div>
         <div v-else-if="completionResult === SignUpCompleteResultEnum.ALREADY_CONSUMED">
           {{ $t(getI18nResName3('signUpCompletePage', 'text', 'alreadyConsumed')) }}
-          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${getHtmlPagePath(HtmlPage.Login)}`)">
+          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
             {{ $t(getI18nResName2('accountPageCommon', 'login')) }}
           </NuxtLink>
         </div>
         <div v-else-if="completionResult === SignUpCompleteResultEnum.LINK_EXPIRED">
           {{ $t(getI18nResName3('signUpCompletePage', 'text', 'linkExpired')) }}
-          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${getHtmlPagePath(HtmlPage.Signup)}`)">
+          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="navLinkBuilder.buildPageLink(AppPage.Signup, locale as Locale)">
             {{ $t(getI18nResName2('accountPageCommon', 'signUp')) }}
           </NuxtLink>
         </div>
         <div v-else>
           {{ $t(getI18nResName3('signUpCompletePage', 'text', 'linkInvalid')) }}
-          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="localePath(`/${getHtmlPagePath(HtmlPage.Index)}`)">
+          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
             {{ $t(getI18nResName2('accountPageCommon', 'toHome')) }}
           </NuxtLink>
         </div>

@@ -7,7 +7,7 @@ import { AppException, AppExceptionCodeEnum } from './../../app-facade/implement
 import { AcsysClientViewer } from './acsys-client-viewer';
 
 export class AcsysClientStandard extends AcsysClientViewer implements IAcsysClientStandard {
-  public static inject = ['logger'] as const;
+  public static override inject = ['logger'] as const;
   constructor (baseUrl: string, userOptions: IUserOptions, logger: IAppLogger, roleKind?: UserRoleEnum) {
     super(baseUrl, userOptions, logger, roleKind ?? UserRoleEnum.Standard);
   }

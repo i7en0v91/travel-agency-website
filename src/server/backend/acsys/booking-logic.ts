@@ -1,12 +1,11 @@
 import { type IAppLogger, type EntityId, type IStayOfferDetails, type IBookingLogic, type IFlightOffer, type IOfferBooking, type IOfferBookingData } from './../../backend/app-facade/interfaces';
-import type { BookingLogic as BookingLogicPrisma } from '../services/booking-logic';
 
 export class BookingLogic implements IBookingLogic {
   private readonly logger: IAppLogger;
-  private readonly prismaImplementation: BookingLogicPrisma;
+  private readonly prismaImplementation: IBookingLogic;
 
   public static inject = ['bookingLogicPrisma', 'logger'] as const;
-  constructor (prismaImplementation: BookingLogicPrisma, logger: IAppLogger) {
+  constructor (prismaImplementation: IBookingLogic, logger: IAppLogger) {
     this.logger = logger;
     this.prismaImplementation = prismaImplementation;
   }

@@ -35,17 +35,23 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
   }
 
   .footer-section-main {
+    flex: 0 0 auto;
+    min-width: 200px;
+
     order: 1;
     @media only screen and (min-width: $app-footer-centering-breakpoint) {
       order: 2;
     }
-    flex: 0 0 auto;
-    min-width: 200px;
-
+    
     .footer-app-logo {
       display: block;
       width: markup-to-rem(120px);
       height: markup-to-rem(40px);
+
+      background-image: url('~/public/img/logo-footer.svg');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center bottom;
 
       margin-left: auto;
       margin-right: auto;
@@ -53,11 +59,6 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
         margin-left: unset;
         margin-right: unset;
       }
-
-      background-image: url('~/public/img/logo-footer.svg');
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center bottom;
 
       &:focus-visible {
         @include with-outline();
@@ -122,6 +123,8 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
     width: 100%;
     flex: 1 1 auto;
 
+    gap: 24px;
+
     order: 1;
     display: grid;
     grid-auto-flow: row;
@@ -131,10 +134,8 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
       grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
       place-content: unset;
       order: 2;
-    }
-  
+    }  
 
-    gap: 24px;
     @include for-medium-and-large() {
       gap: 50px;
     }
@@ -162,9 +163,6 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
       .footer-item {
         width: 100%;
         max-width: 290px;
-        @include for-small-and-above() {
-          max-width: 270px;  
-        }
         margin-left: auto;
         margin-right: auto; 
         text-align: center;
@@ -172,6 +170,10 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
           text-align: start;
           margin-left: unset;
           margin-right: unset;
+        }
+
+        @include for-small-and-above() {
+          max-width: 270px;  
         }
 
         &:not(:first-child) {
@@ -187,16 +189,16 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
           max-width: 100%;
           overflow: hidden;
 
+          @include with-theme-color('input-ctrl-primary') using ($css-var) {
+            color: var($css-var);
+          }
+
           margin-left: auto;
           margin-right: auto;
+          @include with-body-font('nav-control');
           @media only screen and (min-width: $app-footer-centering-breakpoint) {
             margin-left: unset;
             margin-right: unset;
-          }
-
-          @include with-body-font('nav-control');
-          @include with-theme-color('input-ctrl-primary') using ($css-var) {
-            color: var($css-var);
           }
       
           &:focus-visible {
@@ -301,14 +303,14 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
     height: 100%;
     aspect-ratio: 4 / 3;
 
-    display: none;
-    @include for-large-and-extra-large() {
-      display: block;
-    }
-
     background-image: escape-svg(svg.$subscribe-mailbox);
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center bottom;
+
+    display: none;
+    @include for-large-and-extra-large() {
+      display: block;
+    }
   }
 }

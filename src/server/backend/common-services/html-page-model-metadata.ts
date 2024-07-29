@@ -1,5 +1,5 @@
 import type { EntityModel } from './change-dependency-tracker';
-import { type HtmlPage, type ParseQueryCacheResult, type GetCachePageParamListObj, type GetParamsOptionsResult, type NormalizedQueryResult, type GetParamsOptionsKind, type PageCacheVaryOptions, type CacheParamsVariedByValueRanges, type CacheParamsVariedBySystemParamsOnly, type CacheByPageTimestamp, type EmptyParamListOptions, type CachePageParamOptions, type IAppLogger, type CacheablePageParamsBase, type GetCachePageParamsVaryMode, bookingDetailsAllowedParamsOptions, emailVerifyCompleteAllowedParamsOptions, findFlightsAllowedParamsOptions, findStaysAllowedParamsOptions, flightsAllowedParamsOptions, forgotPasswordCompleteCacheParamsOptions, forgotPasswordSetAllowedParamsOptions, internalSystemParamOptions, loginPageAllowedParamsOptions, signUpCompleteAllowedParamsOptions, stayBookAllowedParamsOptions, staysAllowedParamsOptions, timestampSystemParamOptions, type AccountCacheParams, type BookFlightCacheParams, type BookStayCacheParams, type BookingCacheParams, type BookingDetailsAllowedParamsOptions, type EmailVerifyCompleteAllowedParamsOptions, type EmailVerifyCompleteCacheParams, type FavouritesCacheParams, type FindFlightsAllowedParamsOptions, type FindFlightsCacheParams, type FindStaysAllowedParamsOptions, type FindStaysCacheParams, type FlightDetailsCacheParams, type FlightsAllowedParamsOptions, type FlightsCacheParams, type ForgotPasswordCacheParams, type ForgotPasswordCompleteCacheParams, type ForgotPasswordCompleteCacheParamsOptions, type ForgotPasswordSetAllowedParamsOptions, type ForgotPasswordSetCacheParams, type ForgotPasswordVerifyCacheParams, type GetHtmlPageCacheObjType, type IndexCacheParams, type LoginCacheParams, type LoginPageAllowedParamsOptions, type ParseQueryCacheError, type ParseQueryCacheRedundantParam, type ParseQueryCacheRequiredParamMissed, type ParseQueryCacheSuccess, type ParseQueryCacheValueNotAllowed, type PrivacyCacheParams, type SignupCacheParams, type SignupCompleteAllowedParamsOptions, type SignupCompleteCacheParams, type SignupVerifyCacheParams, type StayBookAllowedParamsOptions, type StayDetailsCacheParams, type StaysAllowedParamsOptions, type StaysCacheParams, type SystemQueryParamsListOptions } from '../app-facade/interfaces';
+import { type AppPage, type ParseQueryCacheResult, type GetCachePageParamListObj, type GetParamsOptionsResult, type NormalizedQueryResult, type GetParamsOptionsKind, type PageCacheVaryOptions, type CacheParamsVariedByValueRanges, type CacheParamsVariedBySystemParamsOnly, type CacheByPageTimestamp, type EmptyParamListOptions, type CachePageParamOptions, type IAppLogger, type CacheablePageParamsBase, type GetCachePageParamsVaryMode, bookingDetailsAllowedParamsOptions, emailVerifyCompleteAllowedParamsOptions, findFlightsAllowedParamsOptions, findStaysAllowedParamsOptions, flightsAllowedParamsOptions, forgotPasswordCompleteCacheParamsOptions, forgotPasswordSetAllowedParamsOptions, previewSystemParamOptions, internalSystemParamOptions, loginPageAllowedParamsOptions, signUpCompleteAllowedParamsOptions, stayBookAllowedParamsOptions, staysAllowedParamsOptions, timestampSystemParamOptions, type AccountCacheParams, type BookFlightCacheParams, type BookStayCacheParams, type BookingCacheParams, type BookingDetailsAllowedParamsOptions, type EmailVerifyCompleteAllowedParamsOptions, type EmailVerifyCompleteCacheParams, type FavouritesCacheParams, type FindFlightsAllowedParamsOptions, type FindFlightsCacheParams, type FindStaysAllowedParamsOptions, type FindStaysCacheParams, type FlightDetailsCacheParams, type FlightsAllowedParamsOptions, type FlightsCacheParams, type ForgotPasswordCacheParams, type ForgotPasswordCompleteCacheParams, type ForgotPasswordCompleteCacheParamsOptions, type ForgotPasswordSetAllowedParamsOptions, type ForgotPasswordSetCacheParams, type ForgotPasswordVerifyCacheParams, type GetHtmlPageCacheObjType, type IndexCacheParams, type LoginCacheParams, type LoginPageAllowedParamsOptions, type ParseQueryCacheError, type ParseQueryCacheRedundantParam, type ParseQueryCacheRequiredParamMissed, type ParseQueryCacheSuccess, type ParseQueryCacheValueNotAllowed, type PrivacyCacheParams, type SignupCacheParams, type SignupCompleteAllowedParamsOptions, type SignupCompleteCacheParams, type SignupVerifyCacheParams, type StayBookAllowedParamsOptions, type StayDetailsCacheParams, type StaysAllowedParamsOptions, type StaysCacheParams, type SystemQueryParamsListOptions } from '../app-facade/interfaces';
 import { AppException, AppExceptionCodeEnum } from '../app-facade/implementation';
 
 import { parseURL, parseQuery } from 'ufo';
@@ -15,11 +15,11 @@ import uniq from 'lodash-es/uniq';
 declare type ParseCacheQueryParamsArgs = string;
 // KB: additional cache invalidation is needed for timestamped page to refresh
 declare type TimestampedPageParamListOptions = SystemQueryParamsListOptions<'VaryByIdAndSystemParamsOnly'>;
-const timestampedPageParamListOptions: TimestampedPageParamListOptions = internalSystemParamOptions;
+const timestampedPageParamListOptions: TimestampedPageParamListOptions = { ...internalSystemParamOptions, ...previewSystemParamOptions };
 declare type TimestampedPageCacheObjType = GetCachePageParamListObj<TimestampedPageParamListOptions>[];
 
 export interface HtmlPageModel<
-    TPage extends keyof typeof HtmlPage = keyof typeof HtmlPage,
+    TPage extends keyof typeof AppPage = keyof typeof AppPage,
     TCacheQuery extends CacheablePageParamsBase = CacheablePageParamsBase
 > {
   page: TPage,
@@ -36,17 +36,17 @@ export interface HtmlPageModel<
    * Changes in any entity of those types will result in html render cache invalidation for this page.
    * E.g. list of feedback reviews on main page. If text of any review changes, main page will be marked for re-rendering
    */
-  accosiatedWith?: EntityModel[] | undefined,
+  associatedWith?: EntityModel[] | undefined,
   getCacheVaryOptions: () => GetCachePageParamsVaryMode<TCacheQuery>,
   parseCacheQueryParams: (url: ParseCacheQueryParamsArgs) => ParseQueryCacheResult<TCacheQuery>,
   getAllCachingQueryVariants: () => GetCachePageParamsVaryMode<TCacheQuery> extends 'UseEntityChangeTimestamp' ? TimestampedPageCacheObjType :  GetHtmlPageCacheObjType<TPage>[]
 };
 
 /** 
- * Information about displayed & related entities on pages ({@link HtmlPage})
+ * Information about displayed & related entities on pages ({@link AppPage})
  */
 export interface IHtmlPageModelMetadata {
-  getMetadata(page: keyof typeof HtmlPage): HtmlPageModel<typeof page>;
+  getMetadata(page: keyof typeof AppPage): HtmlPageModel<typeof page>;
 }
 
 export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
@@ -174,7 +174,8 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
         ...allowedParamsOptions,
         ...cacheParamsOptions,
         ...internalSystemParamOptions,
-        ...timestampSystemParamOptions
+        ...timestampSystemParamOptions,
+        ...previewSystemParamOptions
       };
       const providedDefaults = new Map<string, string>(
         missedParamNames
@@ -207,7 +208,8 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
 
     const allQueryOptions = {
       ...allowedAndCacheParamsOptions,
-      ...internalSystemParamOptions
+      ...internalSystemParamOptions,
+      ...previewSystemParamOptions
     } as GetParamsOptionsResult<'all', 'UseEntityChangeTimestamp', EmptyParamListOptions, TAllowedAndCacheParamsOptions>;
     
     const resultParser = ((url: ParseCacheQueryParamsArgs): ParseQueryCacheError | ParseQueryCacheSuccess<CacheParamsVariedByValueRanges<TAllowedAndCacheParamsOptions>> => 
@@ -228,7 +230,10 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
             case 'cache':
               return allowedAndCacheParamsOptions;
             case 'system':
-              return internalSystemParamOptions;
+              return { 
+                ...internalSystemParamOptions,
+                ...previewSystemParamOptions
+              };
             default:
               return allQueryOptions;
           }
@@ -259,7 +264,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
 
     const resultParser = ((url: ParseCacheQueryParamsArgs): ParseQueryCacheError | ParseQueryCacheSuccess<CacheParamsVariedBySystemParamsOnly<TQueryParamsOptions>> => 
     {
-      const parseResult = this.parseAndValidateQueryWithVariantValues(url, queryParamsOptions, internalSystemParamOptions);
+      const parseResult = this.parseAndValidateQueryWithVariantValues(url, queryParamsOptions, { ...internalSystemParamOptions, ...previewSystemParamOptions });
       if(!parseResult.success) {
         return parseResult.error;
       }
@@ -273,13 +278,14 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
             case 'allowed':
               return queryParamsOptions as GetParamsOptionsResult<TKind, 'VaryByIdAndSystemParamsOnly', TQueryParamsOptions, EmptyParamListOptions>;;
             case 'cache':
-              return  {} as GetParamsOptionsResult<TKind, 'VaryByIdAndSystemParamsOnly', TQueryParamsOptions, EmptyParamListOptions>;
+              return { } as GetParamsOptionsResult<TKind, 'VaryByIdAndSystemParamsOnly', TQueryParamsOptions, EmptyParamListOptions>;
             case 'system':
-              return internalSystemParamOptions as GetParamsOptionsResult<TKind, 'VaryByIdAndSystemParamsOnly', TQueryParamsOptions, EmptyParamListOptions>;
+              return { ...internalSystemParamOptions, ...previewSystemParamOptions } as GetParamsOptionsResult<TKind, 'VaryByIdAndSystemParamsOnly', TQueryParamsOptions, EmptyParamListOptions>;
             default:
               return  {
                 ...queryParamsOptions,
-                ...internalSystemParamOptions
+                ...internalSystemParamOptions,
+                ...previewSystemParamOptions,
               } as GetParamsOptionsResult<TKind, 'VaryByIdAndSystemParamsOnly', TQueryParamsOptions, EmptyParamListOptions>;
           }
         },
@@ -312,7 +318,8 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
       const allQueryOptions = {
         ...queryParamsOptions,
         ...internalSystemParamOptions,
-        ...timestampSystemParamOptions
+        ...timestampSystemParamOptions,
+        ...previewSystemParamOptions
       } as GetParamsOptionsResult<'all', 'UseEntityChangeTimestamp', TQueryParamsOptions, EmptyParamListOptions>;
       const parseResult = this.parseAndValidateQueryWithVariantValues(url, allQueryOptions, {});
       if(!parseResult.success) {
@@ -332,7 +339,8 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
             case 'system':
               return { 
                 ...internalSystemParamOptions,
-                ...timestampSystemParamOptions
+                ...timestampSystemParamOptions,
+                ...previewSystemParamOptions,
               } as GetParamsOptionsResult<TKind, 'UseEntityChangeTimestamp', TQueryParamsOptions, EmptyParamListOptions>;
             default:
               return allQueryOptions as GetParamsOptionsResult<TKind, 'UseEntityChangeTimestamp', TQueryParamsOptions, EmptyParamListOptions>;
@@ -352,151 +360,145 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
     return resultParser;
   };
 
-  getMetadata(page: keyof typeof HtmlPage): HtmlPageModel<typeof page> {
+  getMetadata(page: keyof typeof AppPage): HtmlPageModel<typeof page> {
     this.logger.debug(`(HtmlPageModelMetadata) get metdata, page=${page}`);
 
     let result: HtmlPageModel<typeof page>;
     if(page === 'Index') {
-      const cachingQueryVariants = this.createCachingQueryVariants(internalSystemParamOptions);
+      const cachingQueryVariants = this.createCachingQueryVariants({ ...internalSystemParamOptions, ...previewSystemParamOptions });
       const typedResult: HtmlPageModel<'Index', IndexCacheParams> = {
         page,
         identity: undefined,
-        accosiatedWith: ['PopularCity', 'City', 'CompanyReview'],
+        associatedWith: ['PopularCity', 'City', 'CompanyReview'],
         getCacheVaryOptions: () => 'PathAndPredefinedVariants',
         parseCacheQueryParams: this.createVariedByValueRangesParser<EmptyParamListOptions>({}),
         getAllCachingQueryVariants: () => cachingQueryVariants 
       };
       result = typedResult;
     } else if(page === 'Privacy') {
-      const cachingQueryVariants =  this.createCachingQueryVariants(internalSystemParamOptions);
+      const cachingQueryVariants =  this.createCachingQueryVariants({ ...internalSystemParamOptions, ...previewSystemParamOptions });
       const typedResult: HtmlPageModel<'Privacy', PrivacyCacheParams> = {
         page,
         identity: undefined,
-        accosiatedWith: undefined, // can be refreshed via service endpoint
+        associatedWith: undefined, // can be refreshed via service endpoint
         getCacheVaryOptions: () => 'PathAndPredefinedVariants',
         parseCacheQueryParams: this.createVariedByValueRangesParser<EmptyParamListOptions>({}),
         getAllCachingQueryVariants: () => cachingQueryVariants
       };
       result = typedResult;
     } else if(page === 'Login') {
-      const cachingQueryVariants = this.createCachingQueryVariants(internalSystemParamOptions);
       const typedResult: HtmlPageModel<'Login', LoginCacheParams> = {
         page,
         identity: undefined,
-        accosiatedWith: ['AuthFormImage'], // only photos slider affects cached content
+        associatedWith: ['AuthFormImage'], // only photos slider affects cached content
         getCacheVaryOptions: () => 'VaryByIdAndSystemParamsOnly',
         parseCacheQueryParams: this.createVariedByIdAndSystemParamsParser<LoginPageAllowedParamsOptions>(loginPageAllowedParamsOptions),
-        getAllCachingQueryVariants: () => cachingQueryVariants
+        getAllCachingQueryVariants: () => []
       };
       result = typedResult;
     } else if(page === 'ForgotPassword') {
-      const cachingQueryVariants = this.createCachingQueryVariants(internalSystemParamOptions);
+      const cachingQueryVariants = this.createCachingQueryVariants({ ...internalSystemParamOptions, ...previewSystemParamOptions });
       const typedResult: HtmlPageModel<'ForgotPassword', ForgotPasswordCacheParams> = {
         page,
         identity: undefined,
-        accosiatedWith: ['AuthFormImage'], // only photos slider affects cached content
+        associatedWith: ['AuthFormImage'], // only photos slider affects cached content
         getCacheVaryOptions: () => 'PathAndPredefinedVariants',
         parseCacheQueryParams: this.createVariedByValueRangesParser<EmptyParamListOptions>({}),
         getAllCachingQueryVariants: () => cachingQueryVariants
       };
       result = typedResult;
     } else if(page === 'ForgotPasswordComplete') {
-      const cachingQueryVariants = this.createCachingQueryVariants({ ...forgotPasswordCompleteCacheParamsOptions, ...internalSystemParamOptions });
+      const cachingQueryVariants = this.createCachingQueryVariants({ ...forgotPasswordCompleteCacheParamsOptions, ...internalSystemParamOptions, ...previewSystemParamOptions });
       const typedResult: HtmlPageModel<'ForgotPasswordComplete', ForgotPasswordCompleteCacheParams> = {
         page,
         identity: undefined,
-        accosiatedWith: ['AuthFormImage'], // only photos slider affects cached content
+        associatedWith: ['AuthFormImage'], // only photos slider affects cached content
         getCacheVaryOptions: () => 'PathAndPredefinedVariants',
         parseCacheQueryParams: this.createVariedByValueRangesParser<ForgotPasswordCompleteCacheParamsOptions>(forgotPasswordCompleteCacheParamsOptions),
         getAllCachingQueryVariants: () => cachingQueryVariants
       };
       result = typedResult;
     } else if(page === 'ForgotPasswordSet') {
-      const cachingQueryVariants = this.createCachingQueryVariants(internalSystemParamOptions);
       const typedResult: HtmlPageModel<'ForgotPasswordSet', ForgotPasswordSetCacheParams> = {
         page,
         identity: undefined,
-        accosiatedWith: ['AuthFormImage'], // only photos slider affects cached content
+        associatedWith: ['AuthFormImage'], // only photos slider affects cached content
         getCacheVaryOptions: () => 'VaryByIdAndSystemParamsOnly',
         parseCacheQueryParams: this.createVariedByIdAndSystemParamsParser<ForgotPasswordSetAllowedParamsOptions>(forgotPasswordSetAllowedParamsOptions),
-        getAllCachingQueryVariants: () => cachingQueryVariants
+        getAllCachingQueryVariants: () => []
       };
       result = typedResult;
     } else if(page === 'ForgotPasswordVerify') {
-      const cachingQueryVariants = this.createCachingQueryVariants(internalSystemParamOptions);
+      const cachingQueryVariants = this.createCachingQueryVariants({ ...internalSystemParamOptions, ...previewSystemParamOptions });
       const typedResult: HtmlPageModel<'ForgotPasswordVerify', ForgotPasswordVerifyCacheParams> = {
         page,
         identity: undefined,
-        accosiatedWith: ['AuthFormImage'], // only photos slider affects cached content
+        associatedWith: ['AuthFormImage'], // only photos slider affects cached content
         getCacheVaryOptions: () => 'PathAndPredefinedVariants',
         parseCacheQueryParams: this.createVariedByValueRangesParser<EmptyParamListOptions>({}),
         getAllCachingQueryVariants: () => cachingQueryVariants
       };
       result = typedResult;
     } else if(page === 'Signup') {
-      const cachingQueryVariants = this.createCachingQueryVariants(internalSystemParamOptions);
+      const cachingQueryVariants = this.createCachingQueryVariants({ ...internalSystemParamOptions, ...previewSystemParamOptions });
       const typedResult: HtmlPageModel<'Signup', SignupCacheParams> = {
         page,
         identity: undefined,
-        accosiatedWith: ['AuthFormImage'], // only photos slider affects cached content
+        associatedWith: ['AuthFormImage'], // only photos slider affects cached content
         getCacheVaryOptions: () => 'PathAndPredefinedVariants',
         parseCacheQueryParams: this.createVariedByValueRangesParser<EmptyParamListOptions>({}),
         getAllCachingQueryVariants: () => cachingQueryVariants
       };
       result = typedResult;
     } else if(page === 'SignupComplete') {
-      const cachingQueryVariants  = this.createCachingQueryVariants(internalSystemParamOptions);
       const typedResult: HtmlPageModel<'SignupComplete', SignupCompleteCacheParams> = {
         page,
         identity: undefined,
-        accosiatedWith: ['AuthFormImage'], // only photos slider affects cached content
+        associatedWith: ['AuthFormImage'], // only photos slider affects cached content
         getCacheVaryOptions: () => 'VaryByIdAndSystemParamsOnly',
         parseCacheQueryParams: this.createVariedByIdAndSystemParamsParser<SignupCompleteAllowedParamsOptions>(signUpCompleteAllowedParamsOptions),
-        getAllCachingQueryVariants: () => cachingQueryVariants
+        getAllCachingQueryVariants: () => []
       };
       result = typedResult;
     } else if(page === 'SignupVerify') {
-      const cachingQueryVariants = this.createCachingQueryVariants(internalSystemParamOptions);
+      const cachingQueryVariants = this.createCachingQueryVariants({ ...internalSystemParamOptions, ...previewSystemParamOptions });
       const typedResult: HtmlPageModel<'SignupVerify', SignupVerifyCacheParams> = {
         page,
         identity: undefined,
-        accosiatedWith: ['AuthFormImage'], // only photos slider affects cached content
+        associatedWith: ['AuthFormImage'], // only photos slider affects cached content
         getCacheVaryOptions: () => 'PathAndPredefinedVariants',
         parseCacheQueryParams: this.createVariedByValueRangesParser<EmptyParamListOptions>({}),
         getAllCachingQueryVariants: () => cachingQueryVariants
       };
       result = typedResult;
     } else if(page === 'EmailVerifyComplete') {
-      const cachingQueryVariants = this.createCachingQueryVariants(internalSystemParamOptions);
       const typedResult: HtmlPageModel<'EmailVerifyComplete', EmailVerifyCompleteCacheParams> =  {
         page,
         identity: undefined,
-        accosiatedWith: ['AuthFormImage'], // only photos slider affects cached content
+        associatedWith: ['AuthFormImage'], // only photos slider affects cached content
         getCacheVaryOptions: () => 'VaryByIdAndSystemParamsOnly',
         parseCacheQueryParams: this.createVariedByIdAndSystemParamsParser<EmailVerifyCompleteAllowedParamsOptions>(emailVerifyCompleteAllowedParamsOptions),
-        getAllCachingQueryVariants: () => cachingQueryVariants
+        getAllCachingQueryVariants: () => []
       };
       result = typedResult;
     } else if(page === 'Flights') {
-      const cachingQueryVariants = this.createCachingQueryVariants(internalSystemParamOptions);
       const typedResult: HtmlPageModel<'Flights', FlightsCacheParams> = {
         page,
         identity: undefined,
-        accosiatedWith: ['PopularCity', 'City'],
+        associatedWith: ['PopularCity', 'City'],
         getCacheVaryOptions: () => 'VaryByIdAndSystemParamsOnly',
         parseCacheQueryParams: this.createVariedByIdAndSystemParamsParser<FlightsAllowedParamsOptions>(flightsAllowedParamsOptions),
-        getAllCachingQueryVariants: () => cachingQueryVariants
+        getAllCachingQueryVariants: () => []
       };
       result = typedResult;
     } else if(page === 'FindFlights') {
-      const cachingQueryVariants = this.createCachingQueryVariants(internalSystemParamOptions);
       const typedResult: HtmlPageModel<'FindFlights', FindFlightsCacheParams> = {
         page,
         identity: undefined,
-        accosiatedWith: undefined,
+        associatedWith: undefined,
         getCacheVaryOptions: () => 'VaryByIdAndSystemParamsOnly',
         parseCacheQueryParams: this.createVariedByIdAndSystemParamsParser<FindFlightsAllowedParamsOptions>(findFlightsAllowedParamsOptions),
-        getAllCachingQueryVariants: () => cachingQueryVariants
+        getAllCachingQueryVariants: () => []
       };
       result = typedResult;
     } else if(page === 'FlightDetails') {
@@ -504,7 +506,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
       const typedResult: HtmlPageModel<'FlightDetails', FlightDetailsCacheParams> = {
         page: page as any,
         identity: 'FlightOffer',
-        accosiatedWith: undefined,
+        associatedWith: undefined,
         getCacheVaryOptions: () => 'UseEntityChangeTimestamp',
         parseCacheQueryParams: this.createCacheByEntityTimestampParser<EmptyParamListOptions>({}),
         getAllCachingQueryVariants: () => cachingQueryVariants
@@ -515,32 +517,30 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
       const typedResult: HtmlPageModel<'BookFlight', BookFlightCacheParams> = {
         page,
         identity: 'FlightOffer',
-        accosiatedWith: undefined,
+        associatedWith: undefined,
         getCacheVaryOptions: () => 'UseEntityChangeTimestamp',
         parseCacheQueryParams: this.createCacheByEntityTimestampParser<EmptyParamListOptions>({}),
         getAllCachingQueryVariants: () => cachingQueryVariants
       };
       result = typedResult;
     } else if(page === 'Stays') {
-      const cachingQueryVariants = this.createCachingQueryVariants(internalSystemParamOptions);
       const typedResult: HtmlPageModel<'Stays', StaysCacheParams> = {
         page,
         identity: undefined,
-        accosiatedWith: ['PopularCity', 'City'],
+        associatedWith: ['PopularCity', 'City'],
         getCacheVaryOptions: () => 'VaryByIdAndSystemParamsOnly',
         parseCacheQueryParams: this.createVariedByIdAndSystemParamsParser<StaysAllowedParamsOptions>(staysAllowedParamsOptions),
-        getAllCachingQueryVariants: () => cachingQueryVariants
+        getAllCachingQueryVariants: () => []
       };
       result = typedResult;
     } else if(page === 'FindStays') {
-      const cachingQueryVariants = this.createCachingQueryVariants(internalSystemParamOptions);
       const typedResult: HtmlPageModel<'FindStays', FindStaysCacheParams> = {
         page,
         identity: undefined,
-        accosiatedWith: undefined,
+        associatedWith: undefined,
         getCacheVaryOptions: () => 'VaryByIdAndSystemParamsOnly',
         parseCacheQueryParams: this.createVariedByIdAndSystemParamsParser<FindStaysAllowedParamsOptions>(findStaysAllowedParamsOptions),
-        getAllCachingQueryVariants: () => cachingQueryVariants
+        getAllCachingQueryVariants: () => []
       };
       result = typedResult;
     } else if(page === 'StayDetails') {
@@ -548,7 +548,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
       const typedResult: HtmlPageModel<'StayDetails', StayDetailsCacheParams> = {
         page,
         identity: 'StayOffer',
-        accosiatedWith: undefined,
+        associatedWith: undefined,
         getCacheVaryOptions: () => 'UseEntityChangeTimestamp',
         parseCacheQueryParams: this.createCacheByEntityTimestampParser<EmptyParamListOptions>({}),
         getAllCachingQueryVariants: () => cachingQueryVariants
@@ -559,7 +559,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
       const typedResult: HtmlPageModel<'BookStay', BookStayCacheParams> = {
         page,
         identity: 'StayOffer',
-        accosiatedWith: undefined,
+        associatedWith: undefined,
         getCacheVaryOptions: () => 'UseEntityChangeTimestamp',
         parseCacheQueryParams: this.createCacheByEntityTimestampParser<StayBookAllowedParamsOptions>(stayBookAllowedParamsOptions),
         getAllCachingQueryVariants: () => cachingQueryVariants
@@ -570,29 +570,29 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
       const typedResult: HtmlPageModel<'BookingDetails', BookingCacheParams> = {
         page,
         identity: 'Booking',
-        accosiatedWith: undefined,
+        associatedWith: undefined,
         getCacheVaryOptions: () => 'UseEntityChangeTimestamp',
         parseCacheQueryParams: this.createCacheByEntityTimestampParser<BookingDetailsAllowedParamsOptions>(bookingDetailsAllowedParamsOptions),
         getAllCachingQueryVariants: () => cachingQueryVariants
       };
       result = typedResult;
     } else if(page === 'Account') {
-      const cachingQueryVariants = this.createCachingQueryVariants(internalSystemParamOptions);
+      const cachingQueryVariants = this.createCachingQueryVariants({ ...internalSystemParamOptions, ...previewSystemParamOptions });
       const typedResult: HtmlPageModel<'Account', AccountCacheParams> = {
         page,
         identity: undefined,
-        accosiatedWith: undefined,
+        associatedWith: undefined,
         getCacheVaryOptions: () => 'PathAndPredefinedVariants',
         parseCacheQueryParams: this.createVariedByValueRangesParser<EmptyParamListOptions>({}),
         getAllCachingQueryVariants: () => cachingQueryVariants
       };
       result = typedResult;
     } else if(page === 'Favourites') {
-      const cachingQueryVariants = this.createCachingQueryVariants(internalSystemParamOptions);
+      const cachingQueryVariants = this.createCachingQueryVariants({ ...internalSystemParamOptions, ...previewSystemParamOptions });
       const typedResult: HtmlPageModel<'Favourites', FavouritesCacheParams> = {
         page,
         identity: undefined,
-        accosiatedWith: undefined,
+        associatedWith: undefined,
         getCacheVaryOptions: () => 'PathAndPredefinedVariants',
         parseCacheQueryParams: this.createVariedByValueRangesParser<EmptyParamListOptions>({}),
         getAllCachingQueryVariants: () => cachingQueryVariants
@@ -603,11 +603,8 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected exception occured', 'error-page');
     }
 
-    if(result.identity && result.accosiatedWith) {
-      this.logger.warn(
-`(HtmlPageModelMetadata) page content depends on entity identity, but it's html cache can be reset for all instances at once due to association relations.
-Ensure that possible query variants (getAllCachingQueryVariants) is set to ['AssumeNoQueryParams'] to prevent [__og-image__image] cache reset for all og-images for all pages in Nitro cache \
-(otherwise it will result in performance degradation), page=${(page as any).valueOf()}`);
+    if(!result.identity && !(result.associatedWith?.length ?? 0) && result.getCacheVaryOptions() === 'UseEntityChangeTimestamp') {
+      this.logger.warn(`(HtmlPageModelMetadata) page has ${<PageCacheVaryOptions>'UseEntityChangeTimestamp'}, but it does not have any related entity. Another cache variation option must be chosen, page=${(page as any).valueOf()}`);
     }
     return result;
   }

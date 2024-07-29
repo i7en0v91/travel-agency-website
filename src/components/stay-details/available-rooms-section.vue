@@ -1,13 +1,15 @@
 <script setup lang="ts">
 
-import { withQuery } from 'ufo';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import range from 'lodash-es/range';
-import { HtmlPage,getHtmlPagePath } from '../../shared/page-query-params';
+import { AppPage,getPagePath } from '../../shared/page-query-params';
 import { type Timestamp, type StayServiceLevel, type EntityId, type Price, ImageCategory } from './../../shared/interfaces';
 import { getI18nResName3, getI18nResName2 } from './../../shared/i18n';
+import { type Locale } from './../../shared/constants';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
-const localePath = useLocalePath();
+const { locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
 const route = useRoute();
 
 interface IRoomInfo {
@@ -71,7 +73,7 @@ withDefaults(defineProps<IProps>(), {
                 <span v-if="room">{{ $n(Math.floor(room.price.toNumber()), 'currency') }}<wbr>&#47;<span class="stays-price-night">{{ $t(getI18nResName2('searchStays', 'night')) }}</span></span>
                 <div v-else class="data-loading-stub text-data-loading" />
               </div>
-              <NuxtLink class="btn btn-primary available-room-book-btn brdr-1" :to="offerId ? withQuery(localePath(`/${getHtmlPagePath(HtmlPage.BookStay)}/${offerId!}`), { serviceLevel: room!.serviceLevel }) : localePath(route.fullPath)">
+              <NuxtLink class="btn btn-primary available-room-book-btn brdr-1" :to="offerId ? navLinkBuilder.buildLink(`/${getPagePath(AppPage.BookStay)}/${offerId!}`, locale as Locale, { serviceLevel: room!.serviceLevel }) : navLinkBuilder.buildLink(route.fullPath, locale as Locale)">
                 {{ $t(getI18nResName2('offerDetailsPage', 'bookBtn')) }}
               </NuxtLink>
             </div>

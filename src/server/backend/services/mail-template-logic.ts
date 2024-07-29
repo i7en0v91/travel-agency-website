@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import type { Locale, IAppLogger, EmailTemplateEnum, IMailTemplateLogic, ILocalizableValue, EntityId } from './../../backend/app-facade/interfaces';
 import { getLocalizeableValue, LocaleEnum, DbVersionInitial, newUniqueId } from './../app-facade/implementation';
-import { mapEnumValue } from './db';
+import { mapEnumValue } from '../helpers/db';
 
 export class MailTemplateLogic implements IMailTemplateLogic {
   private logger: IAppLogger;

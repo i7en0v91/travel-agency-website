@@ -1,8 +1,8 @@
 import type { PrismaClient } from '@prisma/client';
 import dayjs from 'dayjs';
 import { TokenKind, type IAppLogger, type ITokenLogic, type ITokenIssueResult, type EntityId, type TokenConsumeResult } from './../../backend/app-facade/interfaces';
-import { parseEnumOrThrow, AppConfig, DbVersionInitial, AppException, AppExceptionCodeEnum, newUniqueId } from './../app-facade/implementation';
-import { mapEnumValue } from './db';
+import { lookupValueOrThrow, AppConfig, DbVersionInitial, AppException, AppExceptionCodeEnum, newUniqueId } from './../app-facade/implementation';
+import { mapEnumValue } from '../helpers/db';
 import { generateNewTokenValue, verifyTokenValue } from './../helpers/crypto';
 
 export class TokenLogic implements ITokenLogic {
@@ -225,7 +225,7 @@ export class TokenLogic implements ITokenLogic {
       });
       return { code: 'failed', userId: tokenEntity.userId ?? undefined };
     } else {
-      await this.onTokenConsumeAction(parseEnumOrThrow(TokenKind, tokenEntity.kind), id, tokenEntity.userId ?? undefined);
+      await this.onTokenConsumeAction(lookupValueOrThrow(TokenKind, tokenEntity.kind), id, tokenEntity.userId ?? undefined);
 
       this.logger.info(`(TokenLogic) token consumed: id=${id}`);
       await this.dbRepository.verificationToken.update({

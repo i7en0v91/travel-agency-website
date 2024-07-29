@@ -9,61 +9,71 @@
 
 $stay-image-border-radius: map.get($borders-radius, '3');
 @mixin reset-border-radius() {
-  border-top-left-radius: unset;  
-  border-top-right-radius: unset; 
-  border-bottom-left-radius: unset;  
-  border-bottom-right-radius: unset;  
-  .static-image-stub {
+  & {
     border-top-left-radius: unset;  
     border-top-right-radius: unset; 
     border-bottom-left-radius: unset;  
     border-bottom-right-radius: unset;  
-  }
-  img {
-    border-top-left-radius: unset;  
-    border-top-right-radius: unset; 
-    border-bottom-left-radius: unset;  
-    border-bottom-right-radius: unset;  
+    .static-image-stub {
+      border-top-left-radius: unset;  
+      border-top-right-radius: unset; 
+      border-bottom-left-radius: unset;  
+      border-bottom-right-radius: unset;  
+    }
+    img {
+      border-top-left-radius: unset;  
+      border-top-right-radius: unset; 
+      border-bottom-left-radius: unset;  
+      border-bottom-right-radius: unset;  
+    }
   }
 }
 
-@mixin with-top-left-border-radius() {
-  border-top-left-radius: $stay-image-border-radius;
-  .static-image-stub {
+@mixin with-top-left-border-radius() {  
+  & {
     border-top-left-radius: $stay-image-border-radius;
-  }
-  img {
-    border-top-left-radius: $stay-image-border-radius;
+    .static-image-stub {
+      border-top-left-radius: $stay-image-border-radius;
+    }
+    img {
+      border-top-left-radius: $stay-image-border-radius;
+    }
   }
 }
 
 @mixin with-top-right-border-radius() {
-  border-top-right-radius: $stay-image-border-radius;
-  .static-image-stub {
+  & {
     border-top-right-radius: $stay-image-border-radius;
-  }
-  img {
-    border-top-right-radius: $stay-image-border-radius;
+    .static-image-stub {
+      border-top-right-radius: $stay-image-border-radius;
+    }
+    img {
+      border-top-right-radius: $stay-image-border-radius;
+    }
   }
 }
 
 @mixin with-bottom-right-border-radius() {
-  border-bottom-right-radius: $stay-image-border-radius;
-  .static-image-stub {
+  & {
     border-bottom-right-radius: $stay-image-border-radius;
-  }
-  img {
-    border-bottom-right-radius: $stay-image-border-radius;
+    .static-image-stub {
+      border-bottom-right-radius: $stay-image-border-radius;
+    }
+    img {
+      border-bottom-right-radius: $stay-image-border-radius;
+    }
   }
 }
 
 @mixin with-bottom-left-border-radius() {
-  border-bottom-left-radius: $stay-image-border-radius;
-  .static-image-stub {
+  & {
     border-bottom-left-radius: $stay-image-border-radius;
-  }
-  img {
-    border-bottom-left-radius: $stay-image-border-radius;
+    .static-image-stub {
+      border-bottom-left-radius: $stay-image-border-radius;
+    }
+    img {
+      border-bottom-left-radius: $stay-image-border-radius;
+    }
   }
 }
 
@@ -765,10 +775,6 @@ $stay-image-border-radius: map.get($borders-radius, '3');
         grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));  
       }
 
-      @include for-medium-and-large() {
-        //column-gap: 300px;
-      }
-
       .stay-amenities-item {
         display: flex;
         align-items: center;
@@ -988,10 +994,6 @@ $stay-image-border-radius: map.get($borders-radius, '3');
             }
 
             .stay-reviews-card-content {
-              width: max-content;
-              &.test-user-review {
-                width: fit-content;
-              }
               height: auto;
               
               display: flex;
@@ -1000,10 +1002,15 @@ $stay-image-border-radius: map.get($borders-radius, '3');
               align-items: flex-start;
               gap: 8px;
 
-              font-size: markup-to-rem(14px);
-              @include with-body-font('body-primary');
               @include with-theme-color('input-ctrl-primary') using ($css-var) {
                 color: var(#{$css-var});
+              }
+              
+              width: max-content;
+              font-size: markup-to-rem(14px);
+              @include with-body-font('body-primary');
+              &.test-user-review {
+                width: fit-content;
               }
 
               .stay-reviews-card-scoring {
@@ -1031,16 +1038,16 @@ $stay-image-border-radius: map.get($borders-radius, '3');
                 }
 
                 .stay-reviews-card-scoring-separator {
+                  @include with-theme-color('input-ctrl-primary') using ($css-var) {
+                    background-color: var(#{$css-var});
+                  }
+
                   width: 2px;
                   height: 1rem;
 
                   display: none;
                   @include for-small-and-above() {
                     display: block;
-                  }
-
-                  @include with-theme-color('input-ctrl-primary') using ($css-var) {
-                    background-color: var(#{$css-var});
                   }
                 }
 
@@ -1181,15 +1188,14 @@ $stay-image-border-radius: map.get($borders-radius, '3');
 .review-editor {
   width: 100%;
   height: 200px;
-  @include for-small-and-above() {
-    height: 300px;    
-  }
-
   @include with-theme-color('input-ctrl-primary') using($css-var) {
     color: var($css-var);
     button {
       color: var($css-var);
     }
+  }
+  @include for-small-and-above() {
+    height: 300px;    
   }
 
   .review-editor-container {

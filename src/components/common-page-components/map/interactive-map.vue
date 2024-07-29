@@ -4,7 +4,7 @@ import { getLocalizeableValue } from '../../../shared/common';
 import { type Locale } from '../../../shared/constants';
 import { getI18nResName2 } from './../../../shared/i18n';
 import type { GeoPoint, EntityDataAttrsOnly, ICity } from './../../../shared/interfaces';
-import ComponentWaiterIndicator from './../../component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
 import AppConfig from './../../../appconfig';
 
 interface IProps {
@@ -45,7 +45,7 @@ const MapComponent = AppConfig.maps ? resolveComponent(AppConfig.maps.mapControl
 
 <template>
   <div class="interactive-map">
-    <ClientOnly v-if="AppConfig.maps">
+    <ClientOnly v-if="!!AppConfig.maps">
       <ErrorHelm :is-error="isError">
         <div class="interactive-map-container brdr-4">
           <component
@@ -66,7 +66,7 @@ const MapComponent = AppConfig.maps ? resolveComponent(AppConfig.maps.mapControl
         <div v-else class="data-loading-stub text-data-loading" />
       </div>
       <template #fallback>
-        <ComponentWaiterIndicator :ctrl-key="`${ctrlKey}-MapWaiterFallback`" class="interactive-map-waiting-indicator my-xs-5" />
+        <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-MapWaiterFallback`" class="interactive-map-waiting-indicator my-xs-5" />
       </template>
     </ClientOnly>
     <div v-else class="interactive-map-disabled">

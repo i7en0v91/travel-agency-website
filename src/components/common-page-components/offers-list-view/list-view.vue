@@ -5,7 +5,7 @@ import DisplayOptions from './display-options.vue';
 import ResultItemsList from './result-items-list.vue';
 import ListPaging from './list-paging.vue';
 import { type OfferKind } from './../../../shared/interfaces';
-import ComponentWaiterIndicator from './../../component-waiting-indicator.vue';
+import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
 
 interface IProps {
   ctrlKey: string,
@@ -45,7 +45,7 @@ onMounted(() => {
 
 <template>
   <div class="offers-list-view" role="search">
-    <ComponentWaiterIndicator v-if="showWaitingStub && !isError" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="offers-list-view-waiter mt-xs-5" />
+    <ComponentWaitingIndicator v-if="showWaitingStub && !isError" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="offers-list-view-waiter mt-xs-5" />
     <ErrorHelm v-model:is-error="isError">
       <div v-if="!showWaitingStub" class="offers-list-view-grid">
         <FilterPanel :ctrl-key="`${ctrlKey}-FilterPanel`" :offers-kind="props.offersKind" />

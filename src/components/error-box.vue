@@ -1,7 +1,9 @@
 <script setup lang="ts">
 
 import { type I18nResName, getI18nResName2 } from './../shared/i18n';
-import { getHtmlPagePath, HtmlPage } from './../shared/page-query-params';
+import { type Locale } from './../shared/constants';
+import { AppPage } from './../shared/page-query-params';
+import { useNavLinkBuilder } from './../composables/nav-link-builder';
 
 interface IProps {
   httpCode: number,
@@ -12,7 +14,8 @@ const props = withDefaults(defineProps<IProps>(), {
   msgResParams: undefined
 });
 
-const localePath = useLocalePath();
+const { locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
 const httpCodeResName = props.httpCode === 404 ? '404' : '500';
 
 </script>
@@ -27,7 +30,7 @@ const httpCodeResName = props.httpCode === 404 ? '404' : '500';
         <h1 class="font-h2">{{ $t(getI18nResName2('httpCodes', httpCodeResName)) }}</h1>
         <p> {{ $t(msgResName, msgResParams) }} </p>
       </div>
-      <NuxtLink class="error-box-homelink btn" :to="localePath(`/${getHtmlPagePath(HtmlPage.Index)}`)">
+      <NuxtLink class="error-box-homelink btn" :to="navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
         {{ $t(getI18nResName2('errorBox', 'homeLink')) }}
       </NuxtLink>
     </div>
