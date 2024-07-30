@@ -17,37 +17,7 @@ https://github.com/user-attachments/assets/9ff4fafd-f0ba-4637-a08e-5bd162eb816c
 - PDF generation for ticket/booking documents
 - Advanced error handling: error page / popup notification / HTML error stub on problematic component depending on source and severity of error as well as additional logging on server-side and on client-side (via REST endpoint)
 
-## Tech
-Project uses a number of open source projects to work properly:
-- [Nuxt](https://github.com/Nuxt) - highly customizable web application server which provides easy integration with third-party solutions & plugins. E.g. some of used modules are:
-  - [i18n](https://github.com/nuxt-modules/i18n) - for localization
-  - [Nuxt Auth](https://github.com/sidebase/nuxt-auth) - for authentication & authorization
-  - [Unlighthouse](https://github.com/harlan-zw/unlighthouse) - for performing site quality scan using Google Lighthouse
-  - [Nuxt SEO](https://github.com/harlan-zw/nuxt-seo) - the complete SEO solution for Nuxt
-  - [Nuxt Swiper](https://github.com/cpreston321/nuxt-swiper) - integration with [Swiper.js](https://github.com/nolimits4web/swiper) - mobile touch slider with hardware accelerated transitions and amazing native behavior
-- [Vue 3](https://github.com/vuejs) - progressive, incrementally-adoptable JavaScript framework for building UI on the web
-- [Vite](https://github.com/vitejs) - Next generation frontend tooling. It's fast!
-- [node.js](https://github.com/nodejs) - evented I/O for the backend
-- [Prisma](https://github.com/prisma) - ORM solution to support different databases
-- [Pinia](https://github.com/vuejs/pinia) - intuitive, type safe and flexible Store for Vue
-- [Nodemailer](https://github.com/nodemailer/nodemailer) - for sending emails
-- [Playwright](https://github.com/microsoft/playwright) - for Web Testing and Automation
-- [Winston](https://github.com/winstonjs/winston) - for logging
-- [Nuxt OgImage](https://github.com/nuxt-modules/og-image) - for generating OpenGraph images for entities on-the-fly using [Satori](https://github.com/vercel/satori)
-- [Vue Yandex Maps](https://github.com/yandex-maps-unofficial/vue-yandex-maps) - for marking hotel locations on interactive world map
-- [PDFKit](https://github.com/foliojs/pdfkit) - A JavaScript PDF generation library for Node and the browser
-- Other third-party UI components:
-  - [CropperJS](https://github.com/fengyuanchen/cropperjs) - for uploading photos
-  - [VCalendar](https://github.com/nathanreyes/v-calendar) - An elegant calendar and date picker plugin for Vuejs
-  - [Vue Final Modal](https://github.com/vue-final/vue-final-modal) - for managing modal windows
-  - [Floating Vue](https://github.com/Akryum/floating-vue) - for popups & drop downs
-  - [Vue Toastification](https://github.com/Maronato/vue-toastification) - for notifications
-  - [Vuelidate](https://github.com/vuelidate/vuelidate) - for user input validation
-  - [TipTap](https://github.com/ueberdosis/tiptap) - The headless rich text editor, was used for creating user reviews
-  - [vue3-perfect-scrollbar](https://github.com/mercs600/vue3-perfect-scrollbar) - A minimalistic yet powerful Vue.js wrapper for [Perfect Scrollbar](https://perfectscrollbar.com)
-
 ## Installation
-
 Project requires [Node.js](https://nodejs.org/) v20+ to be installed. 
 (it should also run on Node v18 but was not tested in that configuration)
 
@@ -83,6 +53,41 @@ npm run quickstart
 After server is started CMS will be available at `http://localhost:9000`, admin login and password should be already pre-filled.
 Almost any type of entities are available for editing, but some operations may be restricted or won't take any effect for a couple of auto-generated entities or fields whose modifications should trigger non-trivial app logic.
 **NOTE**: by default SSR caches rendered html page markup in Nitro cache, so changes made in CMS won't be immediately reflected in browser even when reloading with browser-side caching disabled. 10 minute-interval refresh task is running in background on server. Not to wait for 10 minutes you should either disable caching in project config [here](https://github.com/i7en0v91/travel-agency-website/blob/10037865c9da947be8056151e84600e2d40c3f72/src/appconfig.ts#L11) or call POST /api/purge-cache API endpoint
+
+
+## Architecture
+
+![travel-agency-demo](https://github.com/user-attachments/assets/5605a97d-487f-4311-bc60-f75ea1fedd04)
+
+## Tech
+Project uses a number of open source projects to work properly:
+- [Nuxt](https://github.com/Nuxt) - highly customizable web application server which provides easy integration with third-party solutions & plugins. E.g. some of used modules are:
+  - [i18n](https://github.com/nuxt-modules/i18n) - for localization
+  - [Nuxt Auth](https://github.com/sidebase/nuxt-auth) - for authentication & authorization
+  - [Unlighthouse](https://github.com/harlan-zw/unlighthouse) - for performing site quality scan using Google Lighthouse
+  - [Nuxt SEO](https://github.com/harlan-zw/nuxt-seo) - the complete SEO solution for Nuxt
+  - [Nuxt Swiper](https://github.com/cpreston321/nuxt-swiper) - integration with [Swiper.js](https://github.com/nolimits4web/swiper) - mobile touch slider with hardware accelerated transitions and amazing native behavior
+- [Vue 3](https://github.com/vuejs) - progressive, incrementally-adoptable JavaScript framework for building UI on the web
+- [Vite](https://github.com/vitejs) - Next generation frontend tooling. It's fast!
+- [node.js](https://github.com/nodejs) - evented I/O for the backend
+- [Prisma](https://github.com/prisma)
+- ORM solution to support different databases
+- [Pinia](https://github.com/vuejs/pinia) - intuitive, type safe and flexible Store for Vue
+- [Nodemailer](https://github.com/nodemailer/nodemailer) - for sending emails
+- [Playwright](https://github.com/microsoft/playwright) - for Web Testing and Automation
+- [Winston](https://github.com/winstonjs/winston) - for logging
+- [Nuxt OgImage](https://github.com/nuxt-modules/og-image) - for generating OpenGraph images for entities on-the-fly using [Satori](https://github.com/vercel/satori)
+- [Vue Yandex Maps](https://github.com/yandex-maps-unofficial/vue-yandex-maps) - for marking hotel locations on interactive world map
+- [PDFKit](https://github.com/foliojs/pdfkit) - A JavaScript PDF generation library for Node and the browser
+- Other third-party UI components:
+  - [CropperJS](https://github.com/fengyuanchen/cropperjs) - for uploading photos
+  - [VCalendar](https://github.com/nathanreyes/v-calendar) - An elegant calendar and date picker plugin for Vuejs
+  - [Vue Final Modal](https://github.com/vue-final/vue-final-modal) - for managing modal windows
+  - [Floating Vue](https://github.com/Akryum/floating-vue) - for popups & drop downs
+  - [Vue Toastification](https://github.com/Maronato/vue-toastification) - for notifications
+  - [Vuelidate](https://github.com/vuelidate/vuelidate) - for user input validation
+  - [TipTap](https://github.com/ueberdosis/tiptap) - The headless rich text editor, was used for creating user reviews
+  - [vue3-perfect-scrollbar](https://github.com/mercs600/vue3-perfect-scrollbar) - A minimalistic yet powerful Vue.js wrapper for [Perfect Scrollbar](https://perfectscrollbar.com)
 
 ## License
 
