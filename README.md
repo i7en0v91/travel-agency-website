@@ -56,9 +56,9 @@ Almost any type of entities are available for editing, but some operations may b
 
 ## Setting up development environment
 Development mode provides many useful things among which are hot module reload and rich and more meaningful stack traces. It also assumes reduced optimization and performance penalty for diagnostics overhead. This demo project is also configured differently when running in development environment. Here are required steps:
-- Setup MySQL database. Compatible analog like MariaDB should also work.
-  - Install and run MySQL instance
-  - Copy and edit in some text editor SQL statements from `src/scripts/mysql-db-config.sql`. You will need to replace `IDENTIFIED BY '***'` with password of new `golobe` user which will be used to connect to the database. **NOTE**, this script will reset MySQL server's time zone to UTC
+- Setup MariaDB database. To be sure, that all development scripts & migrations are compatible and won't fail at build stage use MariaDB Server version 10.6.18, protocol 10. If you decide to use another database, you will probably have to adjust *.SQL migration scripts to match syntax specific to that database.
+  - Install and run MariaDB instance
+  - Copy and edit in some text editor SQL statements from `src/scripts/mysql-db-config.sql`. You will need to replace `IDENTIFIED BY '***'` with password of new `golobe` user which will be used to connect to the database. **NOTE**, this script will reset MariaDB server's time zone to UTC
   - Login as root user and run SQL statements 
   - Update `DATABASE_URL` in `src/.env` with connection string `DATABASE_URL=mysql://golobe:YOUR_PASSWORD@localhost/golobe`. Connection via Unix sockets should also work, e.g. `DATABASE_URL="mysql://golobe:YOUR_PASSWORD@localhost/golobe?socket=/var/run/mysqld/mysqld.sock"` (check where precicely mysqld.sock file is located on your distributive)
 - Obtain GitHub & Google OAuth providers secrets and paste them into `OAUTH_GITHUB_CLIENT_ID`, `OAUTH_GITHUB_CLIENT_SECRET`, `OAUTH_GOOGLE_CLIENT_ID`, `OAUTH_GOOGLE_CLIENT_SECRET`. These are disabled in quickstart configuration, so you may also disable them from code as well for development environment and proceed without OAuth client registrations
