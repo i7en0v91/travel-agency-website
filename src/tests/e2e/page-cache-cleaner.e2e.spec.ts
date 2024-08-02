@@ -9,11 +9,11 @@ import { serialize as serializeCookie } from 'cookie-es';
 import { setup, createPage, createBrowser, getBrowser } from '@nuxt/test-utils/e2e';
 import dayjs from 'dayjs';
 import { murmurHash } from 'ohash';
-import { type EntityId, type StayServiceLevel } from './../../shared/interfaces';
+import { type EntityId, type PreviewMode, type StayServiceLevel } from './../../shared/interfaces';
 import { type ParsedURL, joinURL, parseQuery, parseURL, stringifyParsedURL, stringifyQuery, withQuery } from 'ufo';
 import { TEST_SERVER_PORT, createLogger, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD } from '../../shared/testing/common';
 import { spinWait, delay } from '../../shared/common';
-import { type Locale, type RecoverPasswordCompleteResultEnum, ApiEndpointBookingDownload, HeaderAppVersion, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, ApiEndpointPurgeCache, ApiEndpointTestingPageCacheAction, DefaultLocale, CookieI18nLocale, HeaderDate, HeaderLastModified, HeaderCacheControl, HeaderEtag, HeaderContentType, ApiEndpointTestingCacheCleanup, OgImagePathSegment, OgImageExt, HeaderCookies, DefaultTheme } from '../../shared/constants';
+import { type Locale, type RecoverPasswordCompleteResultEnum, ApiEndpointBookingDownload, HeaderAppVersion, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, ApiEndpointPurgeCache, ApiEndpointTestingPageCacheAction, DefaultLocale, CookieI18nLocale, HeaderDate, HeaderLastModified, HeaderCacheControl, HeaderEtag, HeaderContentType, ApiEndpointTestingCacheCleanup, OgImagePathSegment, OgImageExt, HeaderCookies, DefaultTheme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue } from '../../shared/constants';
 import { AppPage, emailVerifyCompleteAllowedParamsOptions, flightsAllowedParamsOptions, forgotPasswordCompleteCacheParamsOptions, forgotPasswordSetAllowedParamsOptions, getPagePath, loginPageAllowedParamsOptions, signUpCompleteAllowedParamsOptions, stayBookAllowedParamsOptions, staysAllowedParamsOptions } from '../../shared/page-query-params';
 import type { IAppLogger } from '../../shared/applogger';
 import { type ITestingPageCacheActionDto, type ITestingPageCacheActionResultDto, TestingPageCacheActionEnum } from './../../server/dto';
@@ -30,6 +30,7 @@ import fromPairs from 'lodash-es/fromPairs';
 import AppConfig from './../../appconfig';
 import { HtmlPageModelMetadata, type IHtmlPageModelMetadata, type HtmlPageModel } from './../../server/backend/common-services/html-page-model-metadata';
 import  { getLocaleFromUrl, localizePath } from './../../shared/i18n';
+import isBoolean from 'lodash-es/isBoolean';
 
 const TestTimeout = 600000;
 const DefaultTestOptions: TestOptions = {
@@ -169,11 +170,7 @@ class PageTestHelper {
   }
 
   generateNewToken = (): PageTestToken => {
-    return Buffer.concat(
-      range(0, 8).map(_ => 
-        Uint8Array.of(random(1000000))
-      )
-    ).toString('base64');
+    return range(0, 8).map(_ => random(1000000).toString(20)).join('');
   };
 
   normalizeUrl = (url: string, query: any): string => {
@@ -491,13 +488,17 @@ class PageTestHelper {
     this.logger.debug(`page html loaded - ensured, url=${this.url}, current url=${await this.currentPage!.url()}`);
   };
 
-  testPageResponse = async(testToken: PageTestToken, query: any, addRedundantParam: boolean | number, expectedErrorCode?: number | undefined): Promise<PageResponseTestResult> => {
-    this.logger.verbose(`testing page response, testToken=${testToken}, query=${JSON.stringify(query)}, addRedundantParam=${addRedundantParam}, expectedErrorCode=${expectedErrorCode ?? ''}, current url=${await this.currentPage!.url()}`);
+  testPageResponse = async(testToken: PageTestToken, query: any, addRedundantParam: boolean | number, previewMode: PreviewMode | undefined, expectedErrorCode?: number | boolean | undefined): Promise<PageResponseTestResult> => {
+    this.logger.verbose(`testing page response, testToken=${testToken}, query=${JSON.stringify(query)}, addRedundantParam=${addRedundantParam}, previewMode=${previewMode ?? ''}, expectedErrorCode=${expectedErrorCode ?? ''}, current url=${await this.currentPage!.url()}`);
 
     const requestQuery = query === null ? null : (query ? clone(query) : {});
     if(addRedundantParam) {
       const redundantParamValue = isNumber(addRedundantParam) ? addRedundantParam : new Date().getTime();
       set(requestQuery, RedundantQueryParamName, redundantParamValue);
+    }
+
+    if(previewMode !== undefined) {
+      set(requestQuery, QueryPagePreviewModeParam, previewMode ? PreviewModeParamEnabledValue : 'false');
     }
 
     const newUrl = this.normalizeUrl(this.url, requestQuery);
@@ -509,29 +510,39 @@ class PageTestHelper {
 
     const statusCode =  this.loadingPageResponseState.httpResponseDetails?.statusCode;
     if(!statusCode || statusCode >= 400) {
-      if(statusCode && expectedErrorCode && statusCode === expectedErrorCode) {
-        this.logger.verbose(`page response test completed with expected error code, url=${this.url}, testToken=${testToken}, query=${JSON.stringify(query)}, addRedundantParam=${addRedundantParam}, expectedErrorCode=${expectedErrorCode ?? ''}`);
-        return defu({ 
-          httpResponseDetails: { statusCode, isHtml: true }, 
-          tokenPresent: false
-        }, 
-        this.loadingPageResponseState || {  }, 
-        { 
-          redirect: undefined, 
-          lastChanged: 0 
-        }, 
-        { 
-          httpResponseDetails: { 
-            etag: undefined, 
-            date: undefined, 
-            cacheControl: undefined 
-          } 
-        });
+      if(statusCode && expectedErrorCode) {
+        if((isNumber(expectedErrorCode) && statusCode === expectedErrorCode) || isBoolean(expectedErrorCode)) {
+          this.logger.verbose(`page response test completed with error code (as expected), url=${this.url}, testToken=${testToken}, query=${JSON.stringify(query)}, addRedundantParam=${addRedundantParam}, statusCode=${statusCode}, expectedErrorCode=${expectedErrorCode ?? ''}`);
+          return defu({ 
+            httpResponseDetails: { 
+              statusCode, isHtml: true, 
+              cacheControl: this.loadingPageResponseState.httpResponseDetails?.cacheControl
+            }, 
+            tokenPresent: false,
+          }, 
+          this.loadingPageResponseState,
+          { 
+            redirect: undefined, 
+            lastChanged: 0,
+            httpResponseDetails: { 
+              etag: undefined, 
+              date: undefined,
+              cacheControl: undefined as any
+            } 
+          });
+        }
+        
       }
 
       const msg = `got non-OK http status code=${statusCode}, url=${newUrl}, current url=${await this.currentPage!.url()}`;
       this.logger.warn(msg);
       throw new Error(msg);
+    } else {
+      if(expectedErrorCode) {
+        const msg = `page response test completed successfully while error code was expected, url=${this.url}, testToken=${testToken}, query=${JSON.stringify(query)}, addRedundantParam=${addRedundantParam}, statusCode=${statusCode}, expectedErrorCode=${expectedErrorCode ?? ''}`;
+        this.logger.warn(msg);
+        throw new Error(msg);
+      }
     }
 
     const isHtml = this.loadingPageResponseState.httpResponseDetails?.isHtml ?? false;
@@ -745,7 +756,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
         const prepareResult = await testHelper.performPageAction(AppPage.Index, TestingPageCacheActionEnum.Prepare, testId, undefined);
         testId = prepareResult.testId;
         let testToken = testHelper.generateNewToken();
-        let pageTestResult = await testHelper.testPageResponse(testToken, undefined, true);
+        let pageTestResult = await testHelper.testPageResponse(testToken, undefined, true, undefined);
         assert(!pageTestResult.tokenPresent, 'expected token to be absent');
         const initialChangeTimestamp = pageTestResult.lastChanged;
 
@@ -754,7 +765,8 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
         const changeResult = await testHelper.performPageAction(AppPage.Index, TestingPageCacheActionEnum.Change, testId, testToken);
         testId = changeResult.testId;
         await delay(LastModifiedTimeHeaderPrecision);
-        pageTestResult = await testHelper.testPageResponse(testToken, undefined, false);
+  
+        pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, false);
         assert(!pageTestResult.tokenPresent, 'expected token to be absent'); // cache cleanup hasn't run yet
         assert(pageTestResult.lastChanged === initialChangeTimestamp, 'expected page last changed time to be the same as on prepare stage');
         
@@ -762,7 +774,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
         logger.verbose(`${TestName1} - running cache cleanup`);
         await testHelper.runCacheCleanup();
 
-        pageTestResult = await testHelper.testPageResponse(testToken, undefined, false);
+        pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, undefined);
         const changedTimestamp = pageTestResult.lastChanged;
         assert(pageTestResult.tokenPresent, 'expected token to present');
         assert(changedTimestamp > initialChangeTimestamp, 'expected page change timestamp to increase');
@@ -770,7 +782,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
         await delay(LastModifiedTimeHeaderPrecision);
         logger.verbose(`${TestName1} - running cache cleanup again`);
         await testHelper.runCacheCleanup();
-        pageTestResult = await testHelper.testPageResponse(testToken, undefined, true);
+        pageTestResult = await testHelper.testPageResponse(testToken, undefined, true, false);
         assert(pageTestResult.tokenPresent, 'expected token to present');
         assert(pageTestResult.lastChanged === changedTimestamp, 'expected page change timestamp to remain unchanged since last cache cleanup');
       } finally {
@@ -824,8 +836,13 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
 
       // caching for this pages must be disabled in config
       const pageCachingMustBeDisabled = [
-        AppPage.ForgotPasswordSet, 
+        AppPage.ForgotPassword,
+        AppPage.ForgotPasswordComplete,
+        AppPage.ForgotPasswordSet,
+        AppPage.ForgotPasswordVerify,
+        AppPage.Signup,
         AppPage.SignupComplete, 
+        AppPage.SignupVerify,
         AppPage.EmailVerifyComplete
       ].includes(testPage);
 
@@ -841,7 +858,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           const prepareResult = await testHelper.performPageAction(testPage, TestingPageCacheActionEnum.Prepare, testId, undefined);
           testId = prepareResult.testId;
           let testToken = testHelper.generateNewToken();
-          let pageTestResult = await testHelper.testPageResponse(testToken, undefined, true);
+          let pageTestResult = await testHelper.testPageResponse(testToken, undefined, true, false);
           assert(!pageTestResult.tokenPresent, 'expected token to be absent');
           const initialChangeTimestamp = pageTestResult.lastChanged;
     
@@ -852,7 +869,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
 
           if(!pageCachingMustBeDisabled) {
             await delay(LastModifiedTimeHeaderPrecision);
-            pageTestResult = await testHelper.testPageResponse(testToken, undefined, false);
+            pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, undefined);
             assert(!pageTestResult.tokenPresent, 'expected token to be absent'); // cache cleanup hasn't run yet
             assert(pageTestResult.lastChanged === initialChangeTimestamp, 'expected page last changed time to be the same as on prepare stage');  
           }
@@ -861,7 +878,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           logger.verbose(`${testPageName} - running cache cleanup`);
           await testHelper.runCacheCleanup();
     
-          pageTestResult = await testHelper.testPageResponse(testToken, undefined, false);
+          pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, undefined);
           const changedTimestamp = pageTestResult.lastChanged;
           assert(pageTestResult.tokenPresent, 'expected token to present');
           assert(changedTimestamp > initialChangeTimestamp, 'expected page change timestamp to increase');
@@ -870,7 +887,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
             await delay(LastModifiedTimeHeaderPrecision);
             logger.verbose(`${testPageName} - running cache cleanup again`);
             await testHelper.runCacheCleanup();
-            pageTestResult = await testHelper.testPageResponse(testToken, undefined, true);
+            pageTestResult = await testHelper.testPageResponse(testToken, undefined, true, false);
             assert(pageTestResult.tokenPresent, 'expected token to present');
             assert(pageTestResult.lastChanged === changedTimestamp, 'expected page change timestamp to remain unchanged since last cache cleanup');
           }
@@ -896,11 +913,11 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
 
           logger.verbose(`${testPageName} - initial page open`);
           const testToken = testHelper.generateNewToken();
-          let pageTestResult = await testHelper.testPageResponse(testToken, undefined, false);
+          let pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, undefined);
           const initialChangeTimestamp = pageTestResult.lastChanged;
 
           await delay(LastModifiedTimeHeaderPrecision);
-          pageTestResult = await testHelper.testPageResponse(testToken, undefined, false);
+          pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, undefined);
           assert(pageTestResult.lastChanged > initialChangeTimestamp, 'expected page change timestamp to increase');
         } finally {
           await testHelper.stop();
@@ -925,11 +942,11 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
 
           logger.verbose(`${testPageName} - initial page open`);
           const testToken = testHelper.generateNewToken();
-          let pageTestResult = await testHelper.testPageResponse(testToken, undefined, false);
+          let pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, undefined);
           const initialChangeTimestamp = pageTestResult.lastChanged;
 
           await delay(LastModifiedTimeHeaderPrecision);
-          pageTestResult = await testHelper.testPageResponse(testToken, undefined, false);
+          pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, undefined);
           assert(pageTestResult.lastChanged > initialChangeTimestamp, 'expected page change timestamp to increase');
         } finally {
           await testHelper.stop();
@@ -969,7 +986,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           await testHelper.purgeCache();
           
           let testToken = testHelper.generateNewToken();
-          let pageTestResult = await testHelper.testPageResponse(testToken, defaultQuery, true);
+          let pageTestResult = await testHelper.testPageResponse(testToken, defaultQuery, true, false);
           assert(!pageTestResult.tokenPresent, 'expected token to be absent');
           const initialChangeTimestamp = pageTestResult.lastChanged;
           await delay(LastModifiedTimeHeaderPrecision);
@@ -977,8 +994,9 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           if(testPage === AppPage.BookStay) {
             logger.verbose(`${testPageName} - try open page with incorrect parameter`);
             const incorrectServiceLevelQuery = set({}, serviceLevelParamName!, random(10000).toString());
-            const incorrectServiceLevelPageTestResult = await testHelper.testPageResponse(testToken, incorrectServiceLevelQuery, false, 400);
+            const incorrectServiceLevelPageTestResult = await testHelper.testPageResponse(testToken, incorrectServiceLevelQuery, false, undefined, 400);
             assert(incorrectServiceLevelPageTestResult.httpResponseDetails.statusCode === 400, 'expected bad request response');  
+            assert(incorrectServiceLevelPageTestResult.httpResponseDetails.cacheControl === 'no-cache', `error page must not be cached (got ${incorrectServiceLevelPageTestResult.httpResponseDetails.cacheControl})`);  
             await delay(LastModifiedTimeHeaderPrecision);
           }
 
@@ -994,7 +1012,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           const changeResult = await testHelper.performPageAction(testPage, TestingPageCacheActionEnum.Change, flightOfferId, testToken);
           flightOfferId = changeResult.testId;
           await delay(LastModifiedTimeHeaderPrecision);
-          pageTestResult = await testHelper.testPageResponse(testToken, defaultQuery, false);
+          pageTestResult = await testHelper.testPageResponse(testToken, defaultQuery, false, undefined);
           assert(!pageTestResult.tokenPresent, 'expected token to be absent'); // cache cleanup hasn't run yet
           assert(pageTestResult.lastChanged === initialChangeTimestamp, 'expected page last changed time to be the same as on prepare stage');
 
@@ -1009,7 +1027,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           logger.verbose(`${testPage} - running cache cleanup`);
           await testHelper.runCacheCleanup();
 
-          pageTestResult = await testHelper.testPageResponse(testToken, defaultQuery, false);
+          pageTestResult = await testHelper.testPageResponse(testToken, defaultQuery, false, undefined);
           const changedTimestamp = pageTestResult.lastChanged;
           assert(pageTestResult.tokenPresent, 'expected token to present');
           assert(changedTimestamp > initialChangeTimestamp, 'expected page change timestamp to increase');
@@ -1025,7 +1043,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           await delay(LastModifiedTimeHeaderPrecision);
           logger.verbose(`${testPage} - running cache cleanup again`);
           await testHelper.runCacheCleanup();
-          pageTestResult = await testHelper.testPageResponse(testToken, defaultQuery, true);
+          pageTestResult = await testHelper.testPageResponse(testToken, defaultQuery, true, undefined);
           assert(pageTestResult.tokenPresent, 'expected token to present');
           assert(pageTestResult.lastChanged === changedTimestamp, 'expected page change timestamp to remain unchanged since last cache cleanup');
 
@@ -1064,7 +1082,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           await testHelper.purgeCache();
           
           let testToken = testHelper.generateNewToken();
-          let pageTestResult = await testHelper.testPageResponse(testToken, undefined, true);
+          let pageTestResult = await testHelper.testPageResponse(testToken, undefined, true, undefined);
           assert(!pageTestResult.tokenPresent, 'expected token to be absent');
           const initialChangeTimestamp = pageTestResult.lastChanged;
           
@@ -1080,7 +1098,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           const changeResult = await testHelper.performPageAction(testPage, TestingPageCacheActionEnum.Change, stayOfferId, testToken);
           stayOfferId = changeResult.testId;
           await delay(LastModifiedTimeHeaderPrecision);
-          pageTestResult = await testHelper.testPageResponse(testToken, undefined, false);
+          pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, false);
           assert(!pageTestResult.tokenPresent, 'expected token to be absent'); // cache cleanup hasn't run yet
           assert(pageTestResult.lastChanged === initialChangeTimestamp, 'expected page last changed time to be the same as on prepare stage');
 
@@ -1095,7 +1113,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           logger.verbose(`${testPage} - running cache cleanup`);
           await testHelper.runCacheCleanup();
 
-          pageTestResult = await testHelper.testPageResponse(testToken, undefined, false);
+          pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, undefined);
           const changedTimestamp = pageTestResult.lastChanged;
           assert(pageTestResult.tokenPresent, 'expected token to present');
           assert(changedTimestamp > initialChangeTimestamp, 'expected page change timestamp to increase');
@@ -1111,7 +1129,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           await delay(LastModifiedTimeHeaderPrecision);
           logger.verbose(`${testPage} - running cache cleanup again`);
           await testHelper.runCacheCleanup();
-          pageTestResult = await testHelper.testPageResponse(testToken, undefined, true);
+          pageTestResult = await testHelper.testPageResponse(testToken, undefined, true, false);
           assert(pageTestResult.tokenPresent, 'expected token to present');
           assert(pageTestResult.lastChanged === changedTimestamp, 'expected page change timestamp to remain unchanged since last cache cleanup');
 
@@ -1150,14 +1168,14 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           const prepareResult = await testHelper.performPageAction(testPage, TestingPageCacheActionEnum.Prepare, testId, undefined);
           testId = prepareResult.testId;
           let testToken = testHelper.generateNewToken();
-          let emptyCityPageTestResult = await testHelper.testPageResponse(testToken, null, true);
+          let emptyCityPageTestResult = await testHelper.testPageResponse(testToken, null, true, undefined);
           assert(!emptyCityPageTestResult.tokenPresent, 'expected token to be absent');
           const emptyCityTimestamp = emptyCityPageTestResult.lastChanged;
 
           await delay(LastModifiedTimeHeaderPrecision);
           logger.verbose(`${testPageName} - open page with existing city`);
           const existingCityQuery = set({}, citySlugParamName, existingCitySlug);
-          let existingCityPageTestResult = await testHelper.testPageResponse(testToken, existingCityQuery, true);
+          let existingCityPageTestResult = await testHelper.testPageResponse(testToken, existingCityQuery, true, undefined);
           assert(!existingCityPageTestResult.tokenPresent, 'expected token to be absent');
           const existingCityTimestamp = existingCityPageTestResult.lastChanged;
           assert(existingCityTimestamp !== emptyCityTimestamp, 'expected timestamps to differ'); // page have been opened with different citySlug params
@@ -1166,7 +1184,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           await delay(LastModifiedTimeHeaderPrecision);
           logger.verbose(`${testPageName} - try open page with non-existing city`);
           const nonExistingCityQuery = set({}, citySlugParamName, random(10000).toString());
-          const nonExistingCityPageTestResult = await testHelper.testPageResponse(testToken, nonExistingCityQuery, false, 404);
+          const nonExistingCityPageTestResult = await testHelper.testPageResponse(testToken, nonExistingCityQuery, false, undefined, 404);
           assert(nonExistingCityPageTestResult.httpResponseDetails.statusCode === 404, 'expected not found respose');
 
           
@@ -1175,11 +1193,11 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           const changeResult = await testHelper.performPageAction(testPage, TestingPageCacheActionEnum.Change, testId, testToken);
           testId = changeResult.testId;
           await delay(LastModifiedTimeHeaderPrecision);
-          emptyCityPageTestResult = await testHelper.testPageResponse(testToken, null, false);
+          emptyCityPageTestResult = await testHelper.testPageResponse(testToken, null, false, undefined);
           assert(!emptyCityPageTestResult.tokenPresent, 'expected token to be absent'); // cache cleanup hasn't run yet
           assert(emptyCityPageTestResult.lastChanged === emptyCityTimestamp, 'expected page last changed time to be the same as on prepare stage');
 
-          existingCityPageTestResult = await testHelper.testPageResponse(testToken, existingCityQuery, false);
+          existingCityPageTestResult = await testHelper.testPageResponse(testToken, existingCityQuery, false, undefined);
           assert(!existingCityPageTestResult.tokenPresent, 'expected token to be absent'); // cache cleanup hasn't run yet
           assert(existingCityPageTestResult.lastChanged === existingCityTimestamp, 'expected page last changed time to be the same as on prepare stage');
 
@@ -1188,12 +1206,12 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           logger.verbose(`${testPageName} - running cache cleanup`);
           await testHelper.runCacheCleanup();
     
-          emptyCityPageTestResult = await testHelper.testPageResponse(testToken, null, false);
+          emptyCityPageTestResult = await testHelper.testPageResponse(testToken, null, false, undefined);
           const emptyCityChangedTimestamp = emptyCityPageTestResult.lastChanged;
           assert(emptyCityPageTestResult.tokenPresent, 'expected token to present');
           assert(emptyCityChangedTimestamp > emptyCityTimestamp, 'expected page change timestamp to increase');
 
-          existingCityPageTestResult = await testHelper.testPageResponse(testToken, existingCityQuery, false);
+          existingCityPageTestResult = await testHelper.testPageResponse(testToken, existingCityQuery, false, undefined);
           const existingCityChangedTimestamp = existingCityPageTestResult.lastChanged;
           assert(existingCityPageTestResult.tokenPresent, 'expected token to present');
           assert(existingCityChangedTimestamp > existingCityTimestamp, 'expected page change timestamp to increase');
@@ -1203,11 +1221,11 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           await delay(LastModifiedTimeHeaderPrecision);
           logger.verbose(`${testPageName} - running cache cleanup again`);
           await testHelper.runCacheCleanup();
-          emptyCityPageTestResult = await testHelper.testPageResponse(testToken, null, true);
+          emptyCityPageTestResult = await testHelper.testPageResponse(testToken, null, true, undefined);
           assert(emptyCityPageTestResult.tokenPresent, 'expected token to present');
           assert(emptyCityPageTestResult.lastChanged === emptyCityChangedTimestamp, 'expected page change timestamp to remain unchanged since last cache cleanup');
 
-          existingCityPageTestResult = await testHelper.testPageResponse(testToken, existingCityQuery, false);
+          existingCityPageTestResult = await testHelper.testPageResponse(testToken, existingCityQuery, false, undefined);
           assert(existingCityPageTestResult.tokenPresent, 'expected token to present');
           assert(existingCityPageTestResult.lastChanged === existingCityChangedTimestamp, 'expected page change timestamp to remain unchanged since last cache cleanup');
         } finally {
@@ -1245,7 +1263,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
         assert(bookingDocument.statusCode < 400 && bookingDocument.imageBytesHash, 'expected booking document successfull download');
 
         const dummyToken = testHelper.generateNewToken(); // KB: user's booking data is client-only, so tokens won't be present in markup
-        let pageTestResult = await testHelper.testPageResponse(dummyToken, undefined, true);
+        let pageTestResult = await testHelper.testPageResponse(dummyToken, undefined, true, false);
         const initialChangeTimestamp = pageTestResult.lastChanged;
         await delay(LastModifiedTimeHeaderPrecision);
 
@@ -1268,7 +1286,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
         assert(ogImageTestResult.imageBytesHash, 'expected non-empty og image');
 
         // booking page caching must be disabled - changes will be immediately available
-        pageTestResult = await testHelper.testPageResponse(dummyToken, undefined, false);
+        pageTestResult = await testHelper.testPageResponse(dummyToken, undefined, false, false);
         const changedTimestamp = pageTestResult.lastChanged;
         assert(changedTimestamp > initialChangeTimestamp, 'expected page change timestamp to increase');
 
@@ -1282,5 +1300,63 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
     });
   }
 
-  
+  const TestName9 = `[/${getPagePath(AppPage.Privacy)}] (${DefaultLocale}) - pages aren't cached in preview mode`;
+  test(TestName9, DefaultTestOptions, async () => {
+    const pageUrl =  localizePath(`/${getPagePath(AppPage.Privacy)}`, DefaultLocale);
+    let testHelper: PageTestHelper | undefined;
+    try {
+      await ensureServerStarted(logger);
+      const testHelper = new PageTestHelper(TestName9, pageUrl, DefaultLocale, false, logger);
+      await testHelper.start();
+      await testHelper.purgeCache();
+
+      const testToken = testHelper.generateNewToken();
+      let pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, undefined);
+      assert(!pageTestResult.tokenPresent, 'expected token to be absent');
+      assert(
+        pageTestResult.httpResponseDetails.cacheControl === 'public',
+        `expected caching enabled for ${AppPage.Privacy} page (got ${pageTestResult.httpResponseDetails.cacheControl})`
+      );
+
+      pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, true);
+      assert(!pageTestResult.tokenPresent, 'expected token to be absent');
+      assert(pageTestResult.httpResponseDetails.cacheControl === 'no-store', `expected no caching in preview mode (got ${pageTestResult.httpResponseDetails.cacheControl})`);
+    } finally {
+      await testHelper?.stop();
+    }
+  });
+
+  const Test10Pages = [AppPage.FlightDetails, AppPage.BookFlight, AppPage.StayDetails, AppPage.BookStay];
+  for(let i = 0; i < Test10Pages.length; i++) {
+    const testPage = Test10Pages[i];
+    const testPageName = `[/${getPagePath(testPage)}] (${DefaultLocale}) - error pages aren't cached`;
+    let serviceLevelParamName: string | undefined = 'serviceLevel';
+    test(testPageName, DefaultTestOptions, async () => {
+      let testHelper: PageTestHelper | undefined;
+      try {
+        await ensureServerStarted(logger);
+        
+        const notExistingId = `NotExistingId${new Date().getTime()}`;
+        const pageUrl = localizePath(`/${getPagePath(testPage)}/${notExistingId}`, DefaultLocale);
+        testHelper = new PageTestHelper(testPageName, pageUrl, DefaultLocale, false, logger);
+
+        let defaultQuery: any = undefined;
+        if(testPage === AppPage.BookStay) {
+          serviceLevelParamName = keys(stayBookAllowedParamsOptions).find(x => x === serviceLevelParamName);
+          assert(!!serviceLevelParamName, `expected serviceLevel param to be allowed for ${AppPage.BookStay} page`);
+          defaultQuery = set({}, serviceLevelParamName, <StayServiceLevel>'CityView2');
+        }
+         
+        await testHelper.start();
+        await testHelper.purgeCache();
+        
+        const testToken = testHelper.generateNewToken();
+        const nonExistingEntityTestResult = await testHelper.testPageResponse(testToken, defaultQuery, true, false, true);
+        assert(nonExistingEntityTestResult.httpResponseDetails.cacheControl === AppConfig.caching.httpDefaults, `error page must not be cached, expected ${HeaderCacheControl} header to have [${AppConfig.caching.httpDefaults}] value (got ${nonExistingEntityTestResult.httpResponseDetails.cacheControl})`);
+
+      } finally {
+        await testHelper?.stop();
+      }  
+    });
+  };
 });

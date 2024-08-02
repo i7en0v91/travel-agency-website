@@ -11,7 +11,7 @@ const excludedRoutesCommon = [
   `/${getPagePath(AppPage.BookFlight)}/*`,
   `/${getPagePath(AppPage.BookStay)}/*`,
   `/${getPagePath(AppPage.BookingDetails)}/*`,
-  `/${getPagePath(SystemPage.Drafts)}/*`
+  `/${getPagePath(SystemPage.Drafts)}`
 ];
 
 // KB: to obtain route IDs - run quickstart mode - it will spawn a DB - navigate to respective pages & copy id from browser's navbar

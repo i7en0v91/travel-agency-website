@@ -209,8 +209,7 @@ export type GetParamsOptionsResult<
 export interface CacheablePageParamsBase<
     TVaryMode extends PageCacheVaryOptions = PageCacheVaryOptions, 
     TAddAllowedParamsOptions extends Record<any, CachePageParamOptions> = Record<any, CachePageParamOptions>,
-    TCacheParamsOptions extends Record<any, CachePageParamOptions> = Record<any, CachePageParamOptions>,
-    TPageTimestampRequired extends number | never = TVaryMode extends 'UseEntityChangeTimestamp' ? number : never
+    TCacheParamsOptions extends Record<any, CachePageParamOptions> = Record<any, CachePageParamOptions>
 > {
   /** Cache vary mode used by this page */
   getCacheVaryOptions(): TVaryMode;
@@ -218,9 +217,8 @@ export interface CacheablePageParamsBase<
   getParamsOptions<TKind extends GetParamsOptionsKind>(kind: TKind): GetParamsOptionsResult<TKind, TVaryMode, TAddAllowedParamsOptions, TCacheParamsOptions>;
   /** 
    * Returns normalized and filtered according to {@link getAllowedQueryParams} url query object 
-   * @param pageTimestamp actual page timestamp, if specified, will be added to result, overriding existing if present
    * */
-  getNormalizedUrlQuery(pageTimestamp: TPageTimestampRequired): NormalizedQueryResult<TVaryMode, TAddAllowedParamsOptions, TCacheParamsOptions>;
+  getNormalizedUrlQuery(): NormalizedQueryResult<TVaryMode, TAddAllowedParamsOptions, TCacheParamsOptions>;
   /** Returns object which fields-values are used to compute page cache key (excluding locale, which is taken from url and handled separately) */
   getCacheKeyObject(): TVaryMode extends 'UseEntityChangeTimestamp' ? never : CacheKeyObj<TVaryMode, TCacheParamsOptions>
 };

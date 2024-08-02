@@ -259,8 +259,8 @@ class AuthTestCaseRunner {
       .cookies())
       .filter(cookie => !cookieNames.includes(cookie.name));
 
-    pageContext.clearCookies();
-    pageContext.addCookies(filteredCookies);
+    await pageContext.clearCookies();
+    await pageContext.addCookies(filteredCookies);
 
     this.logger.debug(`cookies removed, currentPage=${this.currentPage?.url()}, cookiesToRemove=${cookieNames.join(', ')}, remainedCookies=${filteredCookies.map(x => x.name).join(', ')}`);
   };
@@ -424,49 +424,51 @@ class AuthTestCaseRunner {
       throw new Error('current page is undefined');
     }
 
-    if (type === 'login' && await this.isAuthenticated()) {
-      this.logger.warn(`cannot navigate authenticated user to login page, currentPage=${this.currentPage?.url()}`);
-      throw new Error('cannot navigate authenticated user to login page');
-    }
-
-    if (type === 'account' && !(await this.isAuthenticated())) {
-      this.logger.warn(`cannot navigate unauthenticated user to account page, currentPage=${this.currentPage?.url()}`);
-      throw new Error('cannot navigate unauthenticated user to account page');
-    }
-
     const currentPageType = this.getCurrentPageType();
     if (currentPageType === type) {
       this.logger.warn(`attempt to navigate to the same page ${type}`);
       return;
     }
 
-    const navigateByClick = async (locator: string, targetPageType: AuthTestNavigationPage): Promise<void> => {
-      this.logger.debug(`navigating to page ${targetPageType} by click locator ${locator}`);
+    let pageAfterRedirections = type;
+    const isAuthenticated = await this.isAuthenticated();
+    if (type === 'login' && isAuthenticated) {
+      this.logger.verbose(`navigating authenticated user to login page - should  be redirected to index page, currentPage=${this.currentPage?.url()}`);
+      pageAfterRedirections = 'index';
+    }
+
+    if (type === 'account' && !isAuthenticated) {
+      this.logger.verbose(`navigating unauthenticated user to account page - should  be redirected to login page, currentPage=${this.currentPage?.url()}`);
+      pageAfterRedirections = 'login';
+    }
+    
+    const navigateByClick = async (locator: string, waitForPage: AuthTestNavigationPage): Promise<void> => {
+      this.logger.debug(`navigating (waiting) for page ${waitForPage} by click locator ${locator}`);
       this.prepareOutstandingRequestsCounter();
       await (await page.locator(locator)).click();
       await delay(PageNavigationDelayMs);
 
       await spinWait(() => {
-        return Promise.resolve(this.getCurrentPageType() === targetPageType);
+        return Promise.resolve(this.getCurrentPageType() === waitForPage);
       }, TestTimeout);
       await this.ensurePageMounted();
 
-      this.logger.debug(`navigated to page ${targetPageType} by click successfully`);
+      this.logger.debug(`navigated to page ${waitForPage} by click successfully`);
     };
 
     switch (currentPageType) {
       case 'index':
         switch (type) {
           case 'login':
-            await navigateByClick('#NavBar-login-link a', type);
+            await navigateByClick('#NavBar-login-link a', pageAfterRedirections);
             break;
           case 'account':
             await page.locator('#nav-user-menu-anchor').click();
             const accountUrl = this.localizeUrl('/account', this.getCurrentPageLocale());
-            await navigateByClick(`.nav-user-menu-item a[href*="${accountUrl}"]`, type);
+            await navigateByClick(`.nav-user-menu-item a[href*="${accountUrl}"]`, pageAfterRedirections);
             break;
           case 'flights':
-            await navigateByClick('.nav-bar a.nav-link-icon-airplane', type);
+            await navigateByClick('.nav-bar a.nav-link-icon-airplane', pageAfterRedirections);
             break;
           default:
             this.logger.warn(`unexpected page type = ${type}, currentPage=${this.currentPage?.url()}`);
@@ -476,10 +478,10 @@ class AuthTestCaseRunner {
       case 'account':
         switch (type) {
           case 'index':
-            await navigateByClick('.nav-bar a.nav-logo', type);
+            await navigateByClick('.nav-bar a.nav-logo', pageAfterRedirections);
             break;
           case 'flights':
-            await navigateByClick('.nav-bar a.nav-link-icon-airplane', type);
+            await navigateByClick('.nav-bar a.nav-link-icon-airplane', pageAfterRedirections);
             break;
           default:
             this.logger.warn(`unexpected page type = ${type}, currentPage=${this.currentPage?.url()}`);
@@ -489,16 +491,16 @@ class AuthTestCaseRunner {
       case 'flights':
         switch (type) {
           case 'index':
-            await navigateByClick('.nav-bar a.nav-logo', type);
+            await navigateByClick('.nav-bar a.nav-logo', pageAfterRedirections);
             break;
           case 'account':
             await page.locator('#nav-user-menu-anchor').click();
             const accountUrl = this.localizeUrl('/account', this.getCurrentPageLocale());
-            await navigateByClick(`.nav-user-menu-item a[href*="${accountUrl}"]`, type);
+            await navigateByClick(`.nav-user-menu-item a[href*="${accountUrl}"]`, pageAfterRedirections);
             break;
           case 'login':
             const loginUrl = this.localizeUrl('/login', this.getCurrentPageLocale());
-            await navigateByClick(`.nav-bar .nav-login a[href*="${loginUrl}"]`, type);
+            await navigateByClick(`.nav-bar .nav-login a[href*="${loginUrl}"]`, pageAfterRedirections);
             break;
           default:
             this.logger.warn(`unexpected page type = ${type}, currentPage=${this.currentPage?.url()}`);
@@ -508,7 +510,7 @@ class AuthTestCaseRunner {
       case 'login':
         switch (type) {
           case 'index':
-            await navigateByClick('a.nav-logo', type);
+            await navigateByClick('a.nav-logo', pageAfterRedirections);
             break;
           default:
             this.logger.warn(`cannot navigate unauthenticated user from login page to ${type} page, currentPage=${this.currentPage?.url()}`);
@@ -1244,6 +1246,147 @@ describe('e2e:auth User authentication', async () => {
     };
 
     const logger = createLogger(TestName13);
+
+    logger.info('testing with credentials provider');
+    let testCase = getTestCase('credentials');
+    await runAuthTest(testCase, logger);
+
+    logger.info('testing with oauth provider');
+    testCase = getTestCase('oauth');
+    await runAuthTest(testCase, logger);
+  });
+
+  const TestName14 = 'sign-in when app started from login page';
+  test(TestName14, DefaultTestOptions, async () => {
+    const getTestCase = (authProvider: AuthProviderType): IAuthTestCase => {
+      return {
+        testName: TestName14,
+        authProvider,
+        initialState: {
+          visitingPage: 'login',
+          userPreferredLocale: 'en'
+        },
+        navigatedPages: [
+          {
+            visitingPage: 'login',
+            actionsOnPage: [{ type: 'login' }]
+          }
+        ],
+        expectations: {
+          isAuthenticated: true,
+          page: 'index',
+          locale: {
+            inUrl: 'en'
+          }
+        }
+      };
+    };
+
+    const logger = createLogger(TestName14);
+
+    logger.info('testing with credentials provider');
+    let testCase = getTestCase('credentials');
+    await runAuthTest(testCase, logger);
+
+    logger.info('testing with oauth provider');
+    testCase = getTestCase('oauth');
+    await runAuthTest(testCase, logger);
+  });
+
+  const TestName15 = 'redirect to login page when unauthenticated user opens account page';
+  test(TestName15, DefaultTestOptions, async () => {
+    const getTestCase = (authProvider: AuthProviderType): IAuthTestCase => {
+      return {
+        testName: TestName15,
+        authProvider,
+        initialState: {
+          visitingPage: 'account'
+        },
+        expectations: {
+          isAuthenticated: false,
+          page: 'login'
+        }
+      };
+    };
+
+    const logger = createLogger(TestName15);
+
+    logger.info('testing with credentials provider');
+    let testCase = getTestCase('credentials');
+    await runAuthTest(testCase, logger);
+
+    logger.info('testing with oauth provider');
+    testCase = getTestCase('oauth');
+    await runAuthTest(testCase, logger);
+  });
+
+  const TestName16 = 'redirect to index page when authenticated user opens login page';
+  test(TestName16, DefaultTestOptions, async () => {
+    const getTestCase = (authProvider: AuthProviderType): IAuthTestCase => {
+      return {
+        testName: TestName16,
+        authProvider,
+        initialState: {
+          authenticated: true,
+          visitingPage: 'login',
+          userPreferredLocale: 'ru',
+          localeSelected: {
+            locale: 'ru',
+            type: 'manual-with-cookie'
+          }
+        },
+        expectations: {
+          isAuthenticated: true,
+          page: 'index',
+          locale: {
+            inUrl: 'ru'
+          }
+        }
+      };
+    };
+
+    const logger = createLogger(TestName16);
+
+    logger.info('testing with credentials provider');
+    let testCase = getTestCase('credentials');
+    await runAuthTest(testCase, logger);
+
+    logger.info('testing with oauth provider');
+    testCase = getTestCase('oauth');
+    await runAuthTest(testCase, logger);
+  });
+
+  const TestName17 = 'redirect to login page on unauthenticated fetch response error';
+  test(TestName17, DefaultTestOptions, async () => {
+    const getTestCase = (authProvider: AuthProviderType): IAuthTestCase => {
+      return {
+        testName: TestName17,
+        authProvider,
+        initialState: {
+          authenticated: true,
+          visitingPage: 'index',
+          userPreferredLocale: 'en',
+          localeSelected: {
+            locale: 'en',
+            type: 'manual-with-cookie'
+          }
+        },
+        navigatedPages: [{ 
+          visitingPage: 'index',
+          actionsOnPage: [{
+            type: 'authCookieRemoved'
+          }]
+        }, {
+          visitingPage: 'account'
+        }],
+        expectations: {
+          isAuthenticated: false,
+          page: 'login'
+        }
+      };
+    };
+
+    const logger = createLogger(TestName17);
 
     logger.info('testing with credentials provider');
     let testCase = getTestCase('credentials');

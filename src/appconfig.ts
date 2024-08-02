@@ -112,7 +112,8 @@ export interface IAppConfig {
         pageTimestampsUpdateBatch: number
       },
       ogImageCachePrefix: string
-    }
+    },
+    httpDefaults: string
   },
   searchOffers: {
     listPageSize: number,
@@ -319,7 +320,8 @@ const Config : IAppConfig = {
         pageTimestampsUpdateBatch: isTestEnv() ? 10 : 500 // // maximum size of records used in single request to DB for creating/updating page timestamps
       },
       ogImageCachePrefix: 'cache:nuxt-og-image@3.0.0-rc.64' // prefix for og-image cache keys
-    }
+    },
+    httpDefaults: 'no-store, private' // default value for 'Cache-Control' response header if not filled by app server
   },
   searchOffers: { // settings related to flight & stay offers search pages with filter & pagination
     listPageSize: 20, // pagination - number of offer items fetched from server in one request

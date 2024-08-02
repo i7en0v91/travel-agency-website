@@ -1,5 +1,5 @@
 import { parseQuery, parseURL, type ParsedURL, stringifyQuery, stringifyParsedURL } from 'ufo';
-import { QueryDraftRequestPathParam, type UninitializedPageTimestamp, ApiEndpointPrefix, NuxtIslandPathSegment, NuxtImagePathSegment, QueryPageTimestampParam, QueryInternalRequestParam, DefaultLocale } from '../../shared/constants';
+import { QueryDraftRequestPathParam, type UninitializedPageTimestamp, ApiEndpointPrefix, NuxtIslandPathSegment, NuxtImagePathSegment, QueryPageTimestampParam, QueryInternalRequestParam, DefaultLocale, QueryPagePreviewModeParam } from '../../shared/constants';
 import { type IAppLogger } from '../../shared/applogger';
 import { extractIdFromUrl, lookupPageByUrl } from '../../shared/common';
 import { type H3Event } from 'h3';
@@ -174,17 +174,30 @@ export default defineEventHandler(async (event) => {
   const cacheablePageQuery = cacheableQueryParseResult.parsedQuery;
 
   const isCachingEnabled = AppConfig.caching.intervalSeconds;
-  if(isCachingEnabled && cacheablePageQuery.getCacheVaryOptions() === 'UseEntityChangeTimestamp' && !isPreviewMode) {
-    if(!isNumber(pageTimestamp) && !isDate(pageTimestamp)) {
-      logger?.error(`(cacheable-page) page cache is timestamp-based, but current timestamp is not initialized, url=${event.node.req.url}, currentPage=${currentPage}`);
-      return;
+  if(isCachingEnabled && !isPreviewMode) {
+    let redirectQuery: any = undefined;
+
+    if(cacheablePageQuery.getCacheVaryOptions() === 'UseEntityChangeTimestamp') {
+      if(!isNumber(pageTimestamp) && !isDate(pageTimestamp)) {
+        logger?.error(`(cacheable-page) page cache is timestamp-based, but current timestamp is not initialized, url=${event.node.req.url}, currentPage=${currentPage}`);
+        return;
+      }
+      
+      const requestTimestamp = (<CacheByPageTimestamp<any>>cacheablePageQuery).t;
+      const actualTimestamp = (isDate(pageTimestamp) ? pageTimestamp.getTime() : pageTimestamp).toString();
+      if(actualTimestamp !== requestTimestamp) {
+        logger?.verbose(`(cacheable-page) request query timestamp does not match current actual, url=${event.node.req.url}, currentPage=${currentPage}, request t=${requestTimestamp}, actual t=${actualTimestamp}`);
+        redirectQuery = set((redirectQuery ?? parseQuery(url.search)), QueryPageTimestampParam, actualTimestamp);
+      }
     }
-    
-    const requestTimestamp = (<CacheByPageTimestamp<any>>cacheablePageQuery).t;
-    const actualTimestamp = (isDate(pageTimestamp) ? pageTimestamp.getTime() : pageTimestamp).toString();
-    if(actualTimestamp !== requestTimestamp) {
-      logger?.verbose(`(cacheable-page) request query timestamp does not match current actual, url=${event.node.req.url}, currentPage=${currentPage}, request t=${requestTimestamp}, actual t=${actualTimestamp}`);
-      await redirectWithNewQuery(url, set(parseQuery(url.search), QueryPageTimestampParam, actualTimestamp), event, logger);
+
+    if(cacheablePageQuery.getNormalizedUrlQuery().drafts?.length) {
+      logger?.verbose(`(cacheable-page) request query specifies disabled preview mode argument, url=${event.node.req.url}, currentPage=${currentPage}`);
+      redirectQuery = omit((redirectQuery ?? parseQuery(url.search)), QueryPagePreviewModeParam);
+    }
+
+    if(redirectQuery !== undefined) {
+      await redirectWithNewQuery(url, redirectQuery, event, logger);
       return;
     }
   }

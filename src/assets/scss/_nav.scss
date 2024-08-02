@@ -61,6 +61,12 @@ $nav-logo-inapp-l-offset: -1.3rem;
     display: contents;
   }
 
+  @include for-large-and-extra-large() {
+    .btn-user-name {
+      transform: translateY(-0.05rem);
+    }
+  }
+
   &.nav-bar-inapp {
     position: sticky;
     z-index: 5;
@@ -108,23 +114,8 @@ $nav-logo-inapp-l-offset: -1.3rem;
       }
     }
 
-    .theme-switcher {
-      @include for-large-and-extra-large() {
-        transform: translateY(-0.2rem);
-      }
-    }
-
-    .locale-switcher-nav-item {
-      transform: translateY(0.15rem);
-      @include for-large-and-extra-large() {
-        transform: translateY(-0.05rem);
-      }
-    }
-
-    @include for-large-and-extra-large() {
-      .btn-user-name {
-        transform: translateY(-0.05rem);
-      }
+    .theme-switcher button, .locale-switcher-nav-item button {
+      transform: translateY(-0.5 * $nav-link-highlight-thickness);
     }
   }
 
@@ -274,14 +265,6 @@ $nav-logo-inapp-l-offset: -1.3rem;
     
     .nav-login {
       display: contents;
-
-      .nav-page-link {
-        transform: translateY(-0.2rem);
-        @include for-small-and-above() {
-          transform: translateY(0.05rem);
-        }
-      }
-
       .nav-signup-btn {
         padding-top: map.get($spacings, '2');
         padding-bottom: map.get($spacings, '2');
@@ -448,22 +431,11 @@ $nav-logo-inapp-l-offset: -1.3rem;
   }    
 
   &.nav-bar-landing { 
-    .locale-switcher-nav-item {
-      transform: translateY(0.1rem);
-      @include for-large-and-extra-large() {
-        transform: translateY(0.1rem);
-      }
-    }
-
     .locale-switcher-btn {
       color: $landing-color;
     }
 
     .theme-switcher {
-      @include for-large-and-extra-large() {
-        transform: translateY(-0.1rem);
-      }
-
       button {
         border: 2px $landing-color solid;
         &::after {
@@ -531,7 +503,7 @@ $nav-logo-inapp-l-offset: -1.3rem;
     }
     @include for-large-and-extra-large() {
       .locale-switcher-nav-item, .theme-switcher {
-        display: block;
+        display: contents;
       }
     }
     @include for-extra-large-only() {
@@ -561,6 +533,9 @@ $nav-logo-inapp-l-offset: -1.3rem;
   flex-wrap: nowrap;
   align-items: center;
   gap: map.get($spacings, '2');
+  @include for-small-and-above() {
+    gap: map.get($spacings, '3');
+  }
 }
 
 .theme-switcher {
@@ -568,13 +543,13 @@ $nav-logo-inapp-l-offset: -1.3rem;
   height: fit-content;
   vertical-align: middle;
   align-self: center;
-  display: flex;
+  display: contents;
   flex-wrap: nowrap;
   flex-direction: row;
   align-items: center;
 
   button {
-    display: inline-block;
+    display: block;
     position: relative;
     
     width: calc($theme-switcher-aspect-ratio * $theme-switcher-button-size);
@@ -951,6 +926,7 @@ $nav-logo-inapp-l-offset: -1.3rem;
   white-space: nowrap;
   width: 100%;
   line-height: 1rem;
+  padding-top: 0.15rem;
 
   @include with-theme-color('input-ctrl-primary') using ($css-var) {
     color: var(#{$css-var});

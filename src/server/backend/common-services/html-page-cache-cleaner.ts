@@ -373,7 +373,8 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
     }
 
     if(timestamp === 0) {
-      this.logger.warn(`(HtmlPageCacheCleaner) current page timestamp evaluated as uninitialized, page=${page}, id=${id ?? ''}, initializeIfNotExists=${initializeIfNotExists}, result=${timestamp}`);
+      this.logger.warn(`(HtmlPageCacheCleaner) cannot calculate page timestamp, page=${page}, id=${id ?? ''}, initializeIfNotExists=${initializeIfNotExists}, result=${timestamp}`);
+      throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'failed to calculate page timestamp', 'error-page');
     } else {
       this.logger.debug(`(HtmlPageCacheCleaner) page current timestamp - obtained, page=${page}, id=${id ?? ''}, initializeIfNotExists=${initializeIfNotExists}, result=${timestamp.toISOString()}`);
     }

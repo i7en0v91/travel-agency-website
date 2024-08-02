@@ -159,7 +159,7 @@ class PageScreenshoter {
   };
 }
 
-// KB: screenshots were built with Chromium 116.0.5845.82
+// KB: screenshots were built with Chromium 127.0.6533.17
 describe('og:image screenshots generation', async () => {
   const logger = createLogger('(og-screenshots)');
   logger.info('>>>>>>>>>>>>> NEW TEST RUN <<<<<<<<<<<<<<<<<<');
