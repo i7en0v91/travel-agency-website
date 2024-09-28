@@ -10,8 +10,6 @@ declare module 'process' {
         OAUTH_GITHUB_CLIENT_SECRET: string,
         OAUTH_GOOGLE_CLIENT_ID: string,
         OAUTH_GOOGLE_CLIENT_SECRET: string,
-        SMTP_USERNAME: string,
-        SMTP_PASSWORD: string,
         GOOGLE_RECAPTCHA_SECRETKEY: string,
         VITE_GOOGLE_RECAPTCHA_PUBLICKEY: string,
         VITE_YANDEX_MAPS_API_KEY: string

@@ -9,7 +9,9 @@ declare module 'process' {
         ACSYS_VIEWER_USER_PASSWORD: string,
         DATABASE_URL: string,
         APP_ADMIN_PWD: string,
-        APP_SECONDARYUSER_PWD: string
+        APP_SECONDARYUSER_PWD: string,
+        SMTP_USERNAME: string,
+        SMTP_PASSWORD: string,
       }
     }
   }
