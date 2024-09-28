@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { type EntityId, type EntityDataAttrsOnly, type IStayOffer } from './../../../shared/interfaces';
+import { getI18nResName2, getI18nResName3, type EntityId, type EntityDataAttrsOnly, type IStayOffer } from '@golobe-demo/shared';
 import TicketCardContainer from './ticket-card-container.vue';
 import TicketStayTitle from './../../booking-ticket/booking-ticket-stay-title.vue';
-import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
 
 interface IProps {
   ctrlKey: string,

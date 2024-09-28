@@ -1,9 +1,8 @@
-import type { H3Event } from 'h3';
-import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
-import type { EntityId } from '../../../../shared/interfaces';
-import { type ITravelDetailsDto } from './../../../dto';
+import { AppConfig, type EntityId, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import { type ITravelDetailsDto } from '../../../api-definitions';
 import { defineWebApiEventHandler } from './../../../utils/webapi-event-handler';
-import AppConfig from './../../../../appconfig';
+import type { H3Event } from 'h3';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 function readCityIdParameter (event : H3Event): EntityId {
   const query = getQuery(event);
@@ -16,8 +15,9 @@ function readCityIdParameter (event : H3Event): EntityId {
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const cityId = readCityIdParameter(event);
-  const citiesLogic = ServerServicesLocator.getCitiesLogic();
-  const flightsLogic = ServerServicesLocator.getFlightsLogic();
+  const serverServices = getServerServices()!;
+  const citiesLogic = serverServices.getCitiesLogic();
+  const flightsLogic = serverServices.getFlightsLogic();
 
   const travelDetails = await citiesLogic.getTravelDetails(cityId, event.context.preview.mode);
   const price = (await flightsLogic.getFlightPromoPrice(cityId, event.context.preview.mode)).toNumber();

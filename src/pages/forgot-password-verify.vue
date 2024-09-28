@@ -1,10 +1,6 @@
 <script setup lang="ts">
-
-import { getI18nResName2 } from './../shared/i18n';
-import { type Locale } from './../shared/constants';
+import { AppConfig, getPagePath, AppPage, type Locale, getI18nResName2 } from '@golobe-demo/shared';
 import AccountFormPhotos from './../components/account/form-photos.vue';
-import AppConfig from './../appconfig';
-import { getPagePath, AppPage } from './../shared/page-query-params';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 
 definePageMeta({

@@ -1,15 +1,14 @@
+import { AppConfig, AppException, AppExceptionCodeEnum, ImageCategory } from '@golobe-demo/shared';
+import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
+import { type IImageDetailsDto } from '../../../api-definitions';
 import type { H3Event } from 'h3';
 import toPairs from 'lodash-es/toPairs';
 import dayjs from 'dayjs';
 import max from 'lodash-es/max';
-import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { ImageCategory } from '../../../../shared/interfaces';
-import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
-import { type IImageDetailsDto } from '../../../dto';
-import AppConfig from './../../../../appconfig';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const imageLogic = ServerServicesLocator.getImageLogic();
+  const imageLogic = getServerServices()!.getImageLogic();
 
   const query = getQuery(event);
   const categoryParam = query?.category?.toString();

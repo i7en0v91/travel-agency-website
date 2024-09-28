@@ -1,9 +1,5 @@
 <script setup lang="ts">
-
-import { type Locale } from './../../../shared/constants';
-import { type ILocalizableValue, ImageCategory, type IImageEntitySrc } from './../../../shared/interfaces';
-import { getI18nResName3 } from './../../../shared/i18n';
-import { AppPage } from './../../../shared/page-query-params';
+import { AppPage, getI18nResName3, type IImageEntitySrc, type ILocalizableValue, ImageCategory, type Locale } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 
 interface IProps {

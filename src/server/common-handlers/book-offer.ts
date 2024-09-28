@@ -1,14 +1,15 @@
+import { type IOfferBookingData, AvailableStayServiceLevel, type EntityId, type OfferKind, type StayServiceLevel, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import { defineWebApiEventHandler } from '../../server/utils/webapi-event-handler';
+import { type IBookingResultDto } from '../../server/api-definitions';
+import { extractUserIdFromSession } from '../../server/utils/auth';
 import type { H3Event } from 'h3';
-import { defineWebApiEventHandler } from '../utils/webapi-event-handler';
-import { AvailableStayServiceLevel, type EntityId, type IOfferBookingData, type OfferKind, type StayServiceLevel } from '../../shared/interfaces';
-import { type IBookingResultDto } from '../dto';
-import { AppException, AppExceptionCodeEnum } from '../../shared/exceptions';
 import { getServerSession } from '#auth';
-import { extractUserIdFromSession } from '../utils/auth';
+import { getServerServices } from '../../helpers/service-accessors';
 
 const defineBookOfferWebApiHandler = (offerKind: OfferKind) => defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = ServerServicesLocator.getLogger();
-  const bookingLogic = ServerServicesLocator.getBookingLogic();
+  const serverServices = getServerServices()!;
+  const logger = serverServices.getLogger();
+  const bookingLogic = serverServices.getBookingLogic();
 
   const offerIdParam = getRouterParams(event)?.id?.toString() ?? '';
   if (!offerIdParam) {

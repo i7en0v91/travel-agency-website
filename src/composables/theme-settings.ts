@@ -1,5 +1,6 @@
-import { SessionThemeKey, type Theme } from '../shared/constants';
-import { getCurrentThemeSettings, setCurrentThemeSettings } from './../client/helpers';
+import { SessionThemeKey, type Theme } from '@golobe-demo/shared';
+import { getCurrentThemeSettings, setCurrentThemeSettings } from './../helpers/dom';
+import { getCommonServices } from '../helpers/service-accessors';
 
 export interface IThemeSettings {
   currentTheme: Ref<Theme>,
@@ -10,7 +11,7 @@ let themeValue: Ref<Theme> | undefined;
 let instance: IThemeSettings | undefined;
 
 export function useThemeSettings (): IThemeSettings {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
 
   const toggleTheme = () => {
     if (!instance) {

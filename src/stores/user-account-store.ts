@@ -1,10 +1,9 @@
+import { spinWait, type IImageEntitySrc, type EntityId } from '@golobe-demo/shared';
+import { type IUserAccountDto, ApiEndpointUserAccount } from '../server/api-definitions';
+import { getObject }  from './../helpers/rest-utils';
 import assign from 'lodash-es/assign';
 import keys from 'lodash-es/keys';
-import { ApiEndpointUserAccount } from '../shared/constants';
-import { getObject }  from './../shared/rest-utils';
-import { type IImageEntitySrc, type EntityId } from '../shared/interfaces';
-import { type IUserAccountDto } from './../server/dto';
-import { spinWait } from './../shared/common';
+import { getCommonServices } from '../helpers/service-accessors';
 
 export interface IUserAccount {
   userId?: EntityId,
@@ -16,7 +15,7 @@ export interface IUserAccount {
 }
 
 export const useUserAccountStore = defineStore('userAccountStore', () => {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   const { status, data, getSession } = useAuth();
 
   const userAccountValue = reactive<IUserAccount>({});

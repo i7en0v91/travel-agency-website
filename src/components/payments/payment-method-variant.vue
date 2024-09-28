@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type I18nResName } from './../../shared/i18n';
-import { type PaymentMethodType } from './../../shared/interfaces';
+import { type PaymentMethodType, type I18nResName } from '@golobe-demo/shared';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -12,7 +12,7 @@ interface IProps {
 };
 
 const props = defineProps<IProps>();
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const $emit = defineEmits<{(event: 'update:selected', value: boolean): void}>();
 

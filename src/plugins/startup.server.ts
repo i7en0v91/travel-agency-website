@@ -1,17 +1,11 @@
+import { type AppPage, AllHtmlPages, EntityIdPages, lookupParentDirectory, type Locale, AvailableLocaleCodes, getOgImageFileName, AppConfig, type IAppLogger } from '@golobe-demo/shared';
 import { access } from 'fs/promises';
 import once from 'lodash-es/once';
 import { join } from 'pathe';
-import { type IAppLogger } from '../shared/applogger';
-import { ServerLogger } from '../server/backend/helpers/logging';
-import AppConfig from '../appconfig';
 import installLoggingHooks from './logging-hooks';
 import toPairs from 'lodash-es/toPairs';
-import { getOgImageFileName } from '../shared/common';
-import { type Locale, AvailableLocaleCodes } from '../shared/constants';
-import { resolveParentDirectory } from '../server/utils/fs';
 import type { NitroRouteConfig } from 'nitropack';
-import { type AppPage, AllHtmlPages, EntityIdPages } from '../shared/page-query-params';
-import type { IInitializableOnStartup } from './../shared/interfaces';
+import { getCommonServices } from '../helpers/service-accessors';
 
 async function checkOgImageConfiguration (logger: IAppLogger): Promise<void> {
   if (!process.env.PUBLISH) {
@@ -25,7 +19,7 @@ async function checkOgImageConfiguration (logger: IAppLogger): Promise<void> {
   }
 
   logger.verbose('starting OG images check');
-  const publicAssetsDir = await resolveParentDirectory('.', 'public');
+  const publicAssetsDir = await lookupParentDirectory('.', 'public', async (path: string) => { await access(path); return true; });
   if (!publicAssetsDir) {
     logger.error('OG image check failed - cannot locate public directory!');
     throw new Error('OG image check failed - cannot locate public directory!');
@@ -49,22 +43,10 @@ async function checkOgImageConfiguration (logger: IAppLogger): Promise<void> {
 }
 
 const initApp = once(async () => {
-  const logger = new ServerLogger(); // container has not built yet
+  const logger = getCommonServices().getLogger();
   try {
     logger.always(`APP STARTING... (${import.meta.env.MODE})`); // use error level to be sure it is logged no matter which logging level is in config
-    const initializables: IInitializableOnStartup[] = [
-      ServerServicesLocator.getEmailSender(),  
-      ServerServicesLocator.getServerI18n(),
-      ServerServicesLocator.getEntityChangeNotifications(),
-      ServerServicesLocator.getHtmlPageCacheCleaner(),
-      ServerServicesLocator.getImageCategoryLogic(),
-      ServerServicesLocator.getImageBytesProvider(),
-      ServerServicesLocator.getAirlineCompanyLogic(),
-      ServerServicesLocator.getAirplaneLogic()
-    ];
-    for(let i = 0; i < initializables.length; i++) {
-      await initializables[i].initialize();
-    }
+    
 
     await checkOgImageConfiguration(logger);
   } catch (e) {
@@ -74,7 +56,7 @@ const initApp = once(async () => {
 });
 
 const logRouteRulesOnce = once((routeRules: [string, NitroRouteConfig][]) => { 
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   // remove notion of 'error' from message
   const filteredRoutes = routeRules.map(rr => `[${rr[0]}: ${JSON.stringify(rr[1])}]`).filter(t => !t.includes('error'));
   logger.info(`Route rules config: ${JSON.stringify(filteredRoutes)}`);
@@ -82,7 +64,7 @@ const logRouteRulesOnce = once((routeRules: [string, NitroRouteConfig][]) => {
 
 export default defineNuxtPlugin({
   parallel: false,
-  dependsOn: ['data-seed.server'],
+  dependsOn: ['error-page-handler.server'],
   async setup (nuxtApp) {
     await initApp();
     const rules = toPairs(nuxtApp.$config.nitro?.routeRules) ?? [];

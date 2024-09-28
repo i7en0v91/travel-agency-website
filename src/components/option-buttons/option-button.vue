@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type IOptionButtonProps } from './../../shared/interfaces';
+import { type IOptionButtonProps } from './../../types';
 
 const props = withDefaults(defineProps<IOptionButtonProps>(), {
   isActive: false,

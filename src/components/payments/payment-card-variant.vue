@@ -1,6 +1,6 @@
 <script setup lang="ts">
-
-import { formatValidThruDate } from './../../shared/common';
+import { formatValidThruDate } from '@golobe-demo/shared';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -10,7 +10,7 @@ interface IProps {
 };
 
 const props = defineProps<IProps>();
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const $emit = defineEmits<{(event: 'update:selected', value: boolean): void}>();
 

@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import { type IBookingTicketFlightGfxProps } from './../../types';
 import throttle from 'lodash-es/throttle';
 import { useThemeSettings } from './../../composables/theme-settings';
-import type { IBookingTicketFlightGfxProps } from './../../shared/interfaces';
 import BookingTicketFlightLabel from './booking-ticket-flight-label.vue';
-import { AppException, AppExceptionCodeEnum } from './../../shared/exceptions';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 const props = defineProps<IBookingTicketFlightGfxProps>();
 
@@ -14,7 +15,7 @@ const FlightRouteVertexSize = 5;
 const FlightRouteVertexPosAdj = 136 * 0.5;
 const FlightRouteCurvenessOffset = -100;
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const canvasEl = shallowRef<HTMLCanvasElement>();
 const containerEl = shallowRef<HTMLElement>();

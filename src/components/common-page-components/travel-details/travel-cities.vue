@@ -1,15 +1,13 @@
 <script setup lang="ts">
-
+import { AppConfig, getI18nResName2 } from '@golobe-demo/shared';
+import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../../../helpers/dom';
+import { type IPopularCityDto, ApiEndpointPopularCitiesList } from './../../../server/api-definitions';
 import { Navigation, Autoplay, Mousewheel } from 'swiper/modules';
 import range from 'lodash-es/range';
 import PageSection from './../page-section.vue';
 import TravelCityCard from './travel-city-card.vue';
-import { getI18nResName2 } from './../../../shared/i18n';
-import { ApiEndpointPopularCitiesList, TabIndicesUpdateDefaultTimeout } from './../../../shared/constants';
-import { type IPopularCityDto } from './../../../server/dto';
-import AppConfig from './../../../appconfig';
-import { updateTabIndices } from './../../../shared/dom';
 import { usePreviewState } from './../../../composables/preview-state';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -17,7 +15,7 @@ interface IProps {
 };
 const props = defineProps<IProps>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const nuxtApp = useNuxtApp();
 const { enabled } = usePreviewState();

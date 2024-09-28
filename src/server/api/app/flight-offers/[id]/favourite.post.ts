@@ -1,14 +1,14 @@
-import type { H3Event } from 'h3';
-import { defineWebApiEventHandler } from '../../../../utils/webapi-event-handler';
-import { type IToggleFavouriteOfferResultDto } from '../../../../dto';
-import { AppException, AppExceptionCodeEnum } from '../../../../../shared/exceptions';
-import type { EntityId } from '../../../../../shared/interfaces';
-import { getServerSession } from '#auth';
+import { type EntityId, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import { type IToggleFavouriteOfferResultDto } from '../../../../api-definitions';
 import { extractUserIdFromSession } from './../../../../../server/utils/auth';
+import { defineWebApiEventHandler } from '../../../../utils/webapi-event-handler';
+import type { H3Event } from 'h3';
+import { getServerSession } from '#auth';
+import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = ServerServicesLocator.getLogger();
-  const flightsLogic = ServerServicesLocator.getFlightsLogic();
+  const logger = getCommonServices().getLogger();
+  const flightsLogic = getServerServices()!.getFlightsLogic();
 
   const offerParam = getRouterParams(event)?.id?.toString() ?? '';
   if (!offerParam) {

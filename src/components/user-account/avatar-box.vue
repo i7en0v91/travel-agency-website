@@ -1,10 +1,9 @@
 <script setup lang="ts">
 
-import { getI18nResName2 } from './../../shared/i18n';
-import { ImageCategory, type IImageEntitySrc } from './../../shared/interfaces';
-import { DefaultUserAvatarSlug } from './../../shared/constants';
+import { DefaultUserAvatarSlug, ImageCategory, type IImageEntitySrc, getI18nResName2 } from '@golobe-demo/shared';
 import EditableImage from './../images/editable-image.vue';
 import { type ComponentInstance } from 'vue';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string
@@ -16,7 +15,7 @@ const userAvatarImage = shallowRef<ComponentInstance<typeof EditableImage>>();
 const userAccountStore = useUserAccountStore();
 const userAccount = await userAccountStore.getUserAccount();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const imageSrc = ref(userAccount.avatar
   ? { slug: userAccount.avatar!.slug, timestamp: userAccount.avatar!.timestamp }

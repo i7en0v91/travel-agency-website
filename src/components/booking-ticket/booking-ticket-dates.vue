@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { IBookingTicketDatesProps } from './../../shared/interfaces';
+import { type IBookingTicketDatesProps } from './../../types';
 import BookingTicketDateItem from './booking-ticket-date-item.vue';
 
 withDefaults(defineProps<IBookingTicketDatesProps>(), {

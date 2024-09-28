@@ -1,10 +1,11 @@
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type IEmailVerifyCompleteDto, type IEmailVerifyCompleteResultDto, EmailVerifyCompleteDtoSchema, EmailVerifyCompleteResultCode } from '../../../dto';
+import { type IEmailVerifyCompleteDto, type IEmailVerifyCompleteResultDto, EmailVerifyCompleteDtoSchema, EmailVerifyCompleteResultCode } from '../../../api-definitions';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event) => {
   const emailVerifyCompleteCompleteDto = await readBody(event) as IEmailVerifyCompleteDto;
 
-  const tokenLogic = ServerServicesLocator.getTokenLogic();
+  const tokenLogic = getServerServices()!.getTokenLogic();
   const registrationResult = await tokenLogic.consumeToken(emailVerifyCompleteCompleteDto.id, emailVerifyCompleteCompleteDto.value);
   let responseDto: IEmailVerifyCompleteResultDto | undefined;
   switch (registrationResult.code) {

@@ -1,15 +1,11 @@
 <script setup lang="ts">
-
+import { AppConfig, type ReviewSummary, type IStayOfferDetails, type ILocalizableValue, ImageCategory, type EntityId, AppPage, getPagePath, type Locale, getLocalizeableValue, getI18nResName2 } from '@golobe-demo/shared';
+import { ApiEndpointStayOfferDetails, ApiEndpointStayOfferReviewSummary } from './../../server/api-definitions';
+import { mapStayOfferDetails, mapReviewSummary } from './../../helpers/entity-mappers';
 import range from 'lodash-es/range';
 import CaptchaProtection from './../../components/forms/captcha-protection.vue';
-import { getI18nResName2 } from './../../shared/i18n';
 import OfferDetailsSummary from './../../components/common-page-components/offer-details-summary.vue';
-import { getLocalizeableValue } from './../../shared/common';
-import { ApiEndpointStayOfferDetails, type Locale, ApiEndpointStayOfferReviewSummary } from './../../shared/constants';
-import { AppPage, getPagePath } from './../../shared/page-query-params';
-import { type ReviewSummary, type IStayOfferDetails, type ILocalizableValue, ImageCategory, type EntityId } from './../../shared/interfaces';
-import { type IStayOfferDetailsDto, type IReviewSummaryDto } from './../../server/dto';
-import { mapStayOfferDetails, mapReviewSummary } from './../../shared/mappers';
+import { type IStayOfferDetailsDto, type IReviewSummaryDto } from '../../server/api-definitions';
 import OverviewSection from './../../components/stay-details/overview-section.vue';
 import AvailableRoomSection from './../../components/stay-details/available-rooms-section.vue';
 import AmenitiesSection from './../../components/stay-details/amenities-section.vue';
@@ -17,17 +13,17 @@ import LocationMap from './../../components/stay-details/location-map.vue';
 import ReviewSection from './../../components/stay-details/reviews/review-section.vue';
 import ComponentWaitingIndicator from './../../components/component-waiting-indicator.vue';
 import { useCaptchaToken, type ICaptchaTokenComposable } from './../../composables/captcha-token';
-import AppConfig from './../../appconfig';
 import { isRobot } from './../../composables/is-robot';
 import { type ComponentInstance } from 'vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 const { d, locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
 const route = useRoute();
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const offerParam = useRoute().params?.id?.toString() ?? '';
 if (offerParam.length === 0) {

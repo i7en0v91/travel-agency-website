@@ -1,10 +1,6 @@
-
-import { AppPage, getPagePath } from '../shared/page-query-params';
-import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue } from './../shared/constants';
+import { type Locale, localizePath, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppPage, getPagePath } from '@golobe-demo/shared';
 import set from 'lodash-es/set';
 import { parseQuery, parseURL, stringifyParsedURL, withQuery } from 'ufo';
-import { localizePath } from './../shared/i18n';
-import { type Locale } from './../shared/constants';
 import assign from 'lodash-es/assign';
 import { usePreviewState } from './../composables/preview-state';
 

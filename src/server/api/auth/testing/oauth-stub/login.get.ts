@@ -1,10 +1,9 @@
- 
+import { AppException, AppExceptionCodeEnum, AuthProvider, type EntityId } from '@golobe-demo/shared';
+import { OAUTH_SECRET, OAUTH_TESTUSER_PROFILE as testUserProfile } from '../../../../../helpers/testing'; 
 import { sign } from 'jsonwebtoken';
 import type { H3Event } from 'h3';
 import { withQuery } from 'ufo';
-import { OAUTH_SECRET, OAUTH_TESTUSER_PROFILE as testUserProfile } from '../../../../../shared/testing/common';
-import { AuthProvider, type EntityId } from '../../../../../shared/interfaces';
-import { AppException, AppExceptionCodeEnum } from '../../../../../shared/exceptions';
+import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
 
 const refreshTokens: Record<number, Record<string, any>> = {};
 
@@ -16,10 +15,10 @@ declare type LoginResult = {
 };
 
 async function ensureAppUser (): Promise<EntityId> {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   logger.info('(oauth-stub:login) setting up user TestLocal profile');
 
-  const userLogic = ServerServicesLocator.getUserLogic();
+  const userLogic = getServerServices()!.getUserLogic();
   const userId = (await userLogic.ensureOAuthUser(AuthProvider.TestLocal, testUserProfile.sub, testUserProfile.firstName, testUserProfile.lastName, testUserProfile.email, true)).id;
   logger.info(`(oauth-stub:login) test user exists in DB, userId=${userId}`);
   return userId;
@@ -27,7 +26,7 @@ async function ensureAppUser (): Promise<EntityId> {
 
 function buildRedirectUrl (event: H3Event): string {
   const requestQuery = getQuery(event);
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   logger.verbose('(oauth-stub:login) building redirect uri');
 
   const { redirect_uri, response_type, state } = requestQuery;
@@ -52,7 +51,7 @@ function buildRedirectUrl (event: H3Event): string {
 }
 
 export default defineWebApiEventHandler(async (event: H3Event): Promise<LoginResult> => {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   logger.info('(oauth-stub:login) enter');
 
   const expiresIn = 15;

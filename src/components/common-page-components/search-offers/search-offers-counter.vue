@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { updateTabIndices } from './../../../shared/dom';
-import { type I18nResName } from './../../../shared/i18n';
+import { type I18nResName } from '@golobe-demo/shared';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import SimpleButton from './../../forms/simple-button.vue';
-import { TabIndicesUpdateDefaultTimeout } from './../../../shared/constants';
 import { type ComponentInstance } from 'vue';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -24,7 +24,7 @@ const btnDecrement = shallowRef<ComponentInstance<typeof SimpleButton>>();
 const btnIncrement = shallowRef<ComponentInstance<typeof SimpleButton>>();
 const hasMounted = ref(false);
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const controlSettingsStore = useControlSettingsStore();
 const controlValueSetting = controlSettingsStore.getControlValueSetting<number>(props.ctrlKey, props.defaultValue, true);

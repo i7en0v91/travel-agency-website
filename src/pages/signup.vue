@@ -1,24 +1,19 @@
 <script setup lang="ts">
-
+import { isPasswordSecure, AppPage, getPagePath, type Locale, UserNotificationLevel, SignUpResultEnum, AuthProvider, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { ApiEndpointSignUp, type ISignUpDto, type ISignUpResultDto } from '../server/api-definitions';
+import { post } from './../helpers/rest-utils';
+import { formatAuthCallbackUrl } from './../helpers/dom';
 import { useVuelidate } from '@vuelidate/core';
 import * as validators from '@vuelidate/validators';
 import { email, required, minLength, sameAs } from '@vuelidate/validators';
-import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
-import { AuthProvider } from './../shared/interfaces';
 import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
 import CheckBox from './../components/forms/check-box.vue';
 import SimpleButton from './../components/forms/simple-button.vue';
-import { type Locale, ApiEndpointSignUp, UserNotificationLevel, SignUpResultEnum } from './../shared/constants';
-import { AppPage, getPagePath } from './../shared/page-query-params';
-import { type ISignUpDto, type ISignUpResultDto } from './../server/dto';
-import { isPasswordSecure } from './../shared/common';
-import { post } from './../shared/rest-utils';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
 import CaptchaProtection from './../components/forms/captcha-protection.vue';
 import { type ComponentInstance } from 'vue';
-import { formatAuthCallbackUrl } from './../client/helpers';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
 

@@ -1,21 +1,19 @@
 <script setup lang="ts">
-
-import type { Tooltip } from 'floating-vue';
+import { AppConfig, type OfferKind, AppPage, getPagePath, getI18nResName1, getI18nResName2, type Locale, PreviewModeParamEnabledValue, QueryPagePreviewModeParam, CheckInOutDateUrlFormat } from '@golobe-demo/shared';
+import { type ISearchStayOffersMainParams, type ISearchFlightOffersMainParams, type ISearchFlightOffersParams, type ISearchListItem, type ISearchStayOffersParams } from './../../../types';
+import { type Tooltip } from 'floating-vue';
 import dayjs from 'dayjs';
 import isEqual from 'lodash-es/isEqual';
 import pick from 'lodash-es/pick';
-import { type Locale, PreviewModeParamEnabledValue, QueryPagePreviewModeParam, CheckInOutDateUrlFormat, TooltipHideTimeout } from './../../../shared/constants';
-import { AppPage, getPagePath } from './../../../shared/page-query-params';
 import OptionButtonGroup from './../../../components/option-buttons/option-button-group.vue';
-import { getI18nResName1, getI18nResName2 } from './../../../shared/i18n';
+import { TooltipHideTimeout } from './../../../helpers/constants';
 import SearchFlightOffers from './search-flight-offers.vue';
 import SearchStayOffers from './search-stay-offers.vue';
-import { type ISearchStayOffersMainParams, type ISearchFlightOffersMainParams, type ISearchFlightOffersParams, type OfferKind, type ISearchListItem, type ISearchStayOffersParams } from './../../../shared/interfaces';
-import AppConfig from './../../../appconfig';
 import { type RouteLocationRaw } from 'vue-router';
 import set from 'lodash-es/set';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 import { usePreviewState } from './../../../composables/preview-state';
+import { getClientServices, getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -34,7 +32,7 @@ const SearchTabStays = `${props.ctrlKey}-TabStays`;
 const DefaultSearchTab = props.singleTab === 'stays' ? SearchTabStays : SearchTabFlights;
 
 const searchOffersStoreAccessor = useSearchOffersStore();
-const clientEntityCache = import.meta.client ? ClientServicesLocator.getEntityCache() : undefined;
+const clientEntityCache = import.meta.client ? getClientServices().getEntityCache() : undefined;
 
 const controlSettingsStore = useControlSettingsStore();
 const activeSearchTab = controlSettingsStore.getControlValueSetting(`${props.ctrlKey}-TabControl`, DefaultSearchTab);
@@ -45,7 +43,7 @@ const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
 const searchFlights = shallowRef<InstanceType<typeof SearchFlightOffers> | undefined>();
 const searchStays = shallowRef<InstanceType<typeof SearchStayOffers> | undefined>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const router = useRouter();
 const navLinkBuilder = useNavLinkBuilder();
 const { enabled } = usePreviewState();
@@ -255,9 +253,9 @@ onMounted(async () => {
   });
 });
 
-const flightsTabHtmlId = useId();
-const staysTabHtmlId = useId();
-const tooltipId = useId();
+const flightsTabHtmlId = useId()!;
+const staysTabHtmlId = useId()!;
+const tooltipId = useId()!;
 
 </script>
 

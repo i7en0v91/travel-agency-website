@@ -1,21 +1,17 @@
 <script setup lang="ts">
-
+import { type EntityId, type OfferKind, lookupPageByUrl, AppPage, SystemPage, KeyCodeEsc, type Locale, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { type ActivePageLink, type NavBarMode } from './../../types';
+import { formatAuthCallbackUrl, updateTabIndices, isPrefersReducedMotionEnabled } from './../../helpers/dom';
 import { withQuery } from 'ufo';
-import { updateTabIndices, isPrefersReducedMotionEnabled } from './../../shared/dom';
-import { type ActivePageLink, type EntityId, type NavBarMode, type OfferKind } from './../../shared/interfaces';
-import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
 import NavLink from './nav-link.vue';
 import NavUser from './nav-user.vue';
 import NavLogo from './nav-logo.vue';
 import NavSearchPageLinks from './nav-search-page-links.vue';
 import LocaleSwitcher from './locale-switcher.vue';
 import ThemeSwitcher from './theme-switcher.vue';
-import { KeyCodeEsc, type Locale } from './../../shared/constants';
-import { AppPage, SystemPage } from './../../shared/page-query-params';
-import { lookupPageByUrl } from './../../shared/common';
-import { formatAuthCallbackUrl } from './../../client/helpers';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 const { status } = useAuth();
 const { enabled } = usePreviewState();
@@ -26,7 +22,7 @@ interface IProps {
 }
 const props = defineProps<IProps>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const nuxtApp = useNuxtApp();
 const route = useRoute();
 const { locale } = useI18n();

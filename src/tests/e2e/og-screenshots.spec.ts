@@ -4,13 +4,9 @@ import { setup, createPage } from '@nuxt/test-utils/e2e';
 import { join } from 'pathe';
 import { joinURL } from 'ufo';
 import isString from 'lodash-es/isString';
-import { TEST_SERVER_PORT, createLogger } from '../../shared/testing/common';
-import { delay, getOgImageFileName } from '../../shared/common';
-import { type Locale, CookieI18nLocale, AvailableLocaleCodes, DefaultLocale, OgImageExt } from '../../shared/constants';
-import { AppPage, AllHtmlPages, EntityIdPages, getPagePath } from '../../shared/page-query-params';
-import type { IAppLogger } from '../../shared/applogger';
-import AppConfig from './../../appconfig';
-import { resolveParentDirectory } from './../../server/utils/fs';
+import { lookupParentDirectory, AppConfig, type IAppLogger, AppPage, AllHtmlPages, EntityIdPages, getPagePath, type Locale, CookieI18nLocale, AvailableLocaleCodes, DefaultLocale, OgImageExt, delay, getOgImageFileName } from '@golobe-demo/shared';
+import { TEST_SERVER_PORT, createLogger } from '../../helpers/testing';
+import { access } from 'fs/promises';
 
 const TestTimeout = 300000;
 const TestRunOptions: TestOptions = {
@@ -175,7 +171,7 @@ describe('og:image screenshots generation', async () => {
 
   test('og images generation (screenshots for pages with static og image)', TestRunOptions, async () => {
     const imgPages: AppPage[] = AllHtmlPages.filter(p => !EntityIdPages.includes(p as AppPage));
-    const publicAssetsDir = await resolveParentDirectory('.', 'public');
+    const publicAssetsDir = await lookupParentDirectory('.', 'public', async (path: string) => { await access(path); return true; });
     if (!publicAssetsDir) {
       logger.error('screenshot generation FAILED - cannot locate public directory!');
       throw new Error('screenshot generation FAILED - cannot locate public directory!');

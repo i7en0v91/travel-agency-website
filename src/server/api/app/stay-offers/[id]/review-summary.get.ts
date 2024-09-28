@@ -1,12 +1,12 @@
-import type { H3Event } from 'h3';
+import { type EntityId, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { defineWebApiEventHandler } from '../../../../utils/webapi-event-handler';
-import { type IReviewSummaryDto } from '../../../../dto';
-import { AppException, AppExceptionCodeEnum } from '../../../../../shared/exceptions';
-import { type EntityId } from '../../../../../shared/interfaces';
+import { type IReviewSummaryDto } from '../../../../api-definitions';
+import type { H3Event } from 'h3';
+import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = ServerServicesLocator.getLogger();
-  const staysLogic = ServerServicesLocator.getStaysLogic();
+  const logger = getCommonServices().getLogger();
+  const staysLogic = getServerServices()!.getStaysLogic();
 
   const offerParam = getRouterParams(event)?.id?.toString() ?? '';
   const stayOfferId: EntityId | undefined = offerParam;

@@ -1,6 +1,7 @@
-import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
-import type { CaptchaProtection } from '#build/components';
-import { type ComponentInstance } from 'vue';
+import { AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import type CaptchaProtection from './../components/forms/captcha-protection.vue';
+import { type ComponentInstance, type Ref } from 'vue';
+import { getCommonServices } from '../helpers/service-accessors';
 
 export interface ICaptchaTokenComposable {
   requestToken: () => Promise<string>,
@@ -9,7 +10,7 @@ export interface ICaptchaTokenComposable {
 }
 
 export function useCaptchaToken (captcha: Ref<ComponentInstance<typeof CaptchaProtection>>): ICaptchaTokenComposable {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
 
   let captchaVerificationResolveCallback: ((value: string | PromiseLike<string>) => void) | undefined;
   let captchaVerificationRejectCallback: ((reason?: any) => void) | undefined;

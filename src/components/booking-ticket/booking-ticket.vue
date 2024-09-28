@@ -1,5 +1,5 @@
 <script setup lang="ts">
-
+import { type IBookingTicketFlightGfxProps, type IBookingTicketStayTitleProps, type IBookingTicketProps } from './../../types';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import BookingTicketDates from './booking-ticket-dates.vue';
 import BookingTicketGeneral from './booking-ticket-general.vue';
@@ -7,7 +7,6 @@ import BookingTicketDetails from './booking-ticket-details.vue';
 import BookingTicketCodes from './booking-ticket-codes.vue';
 import BookingTicketFlightGfx from './booking-ticket-flight-gfx.vue';
 import BookingTicketStayTitle from './booking-ticket-stay-title.vue';
-import { type IBookingTicketFlightGfxProps, type IBookingTicketStayTitleProps, type IBookingTicketProps } from './../../shared/interfaces';
 import ComponentWaitingIndicator from './../../components/component-waiting-indicator.vue';
 
 withDefaults(defineProps<IBookingTicketProps>(), {

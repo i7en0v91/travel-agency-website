@@ -1,7 +1,6 @@
 <script setup lang="ts">
-
-import { type I18nResName } from './../../shared/i18n';
-import { type ButtonKind } from './../../shared/interfaces';
+import { type I18nResName } from '@golobe-demo/shared';
+import { type ButtonKind } from './../../types';
 
 interface IProps {
   ctrlKey: string,

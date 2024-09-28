@@ -1,7 +1,6 @@
 <script setup lang="ts">
 
-import { type I18nResName } from './../../shared/i18n';
-import { ImageCategory } from './../../shared/interfaces';
+import { type I18nResName, ImageCategory } from '@golobe-demo/shared';
 
 interface IProps {
   ctrlKey: string,

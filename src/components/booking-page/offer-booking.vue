@@ -1,14 +1,12 @@
 <script setup lang="ts" generic="TOffer extends IFlightOffer | IStayOfferDetails">
+import { type ILocalizableValue, ImageCategory, type StayServiceLevel, type EntityId, type EntityDataAttrsOnly, type IFlightOffer, type IStayOfferDetails, type OfferKind, AppPage, getPagePath, type Locale, AvailableLocaleCodes, UserNotificationLevel, type I18nResName, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import fromPairs from 'lodash-es/fromPairs';
-import { type ILocalizableValue, ImageCategory, type StayServiceLevel, type EntityId, type EntityDataAttrsOnly, type IFlightOffer, type IStayOfferDetails, type OfferKind } from './../../shared/interfaces';
 import PaymentController from './../payments/payment-controller.vue';
 import PricingDetails from './pricing-details.vue';
-import { type I18nResName, getI18nResName2, getI18nResName3 } from './../../shared/i18n';
-import { type Locale, AvailableLocaleCodes, UserNotificationLevel } from './../../shared/constants';
-import { AppPage, getPagePath } from './../../shared/page-query-params';
 import ComponentWaitingIndicator from './../../components/component-waiting-indicator.vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -19,7 +17,7 @@ interface IProps {
 };
 const props = defineProps<IProps>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const { t, locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();

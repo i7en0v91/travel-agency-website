@@ -1,11 +1,7 @@
 <script setup lang="ts">
-
-import { type OfferKind, type EntityDataAttrsOnly, type IStayOffer, type IFlightOffer, type EntityId } from '../../shared/interfaces';
+import { type I18nResName, type OfferKind, type EntityDataAttrsOnly, type IStayOffer, type IFlightOffer, type EntityId } from '@golobe-demo/shared';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 import ComponentWaitingIndicator from './../component-waiting-indicator.vue';
-import { type I18nResName } from './../../shared/i18n';
-import { TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
-import { updateTabIndices } from './../../shared/dom';
-
 
 interface IProps {
   ctrlKey: string,

@@ -1,18 +1,14 @@
 <script setup lang="ts">
-
+import { type EntityId, ImageCategory, type Locale, getLocalizeableValue, getScoreClassResName, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices, isPrefersReducedMotionEnabled } from './../../../helpers/dom';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { Grid, Navigation } from 'swiper/modules';
-import { type Swiper } from 'swiper/core';
-import { getI18nResName3, getI18nResName2 } from './../../../shared/i18n';
-import { getLocalizeableValue, getScoreClassResName } from './../../../shared/common';
-import { type Locale } from './../../../shared/constants';
-import { type EntityId, ImageCategory } from './../../../shared/interfaces';
+import { type Swiper } from 'swiper';
 import ComponentWaitingIndicator from './../../../components/component-waiting-indicator.vue';
 import { type IStayReviewItem } from './../../../stores/stay-reviews-store';
 import { useConfirmBox } from './../../../composables/confirm-box';
-import { TabIndicesUpdateDefaultTimeout } from './../../../shared/constants';
-import { updateTabIndices, isPrefersReducedMotionEnabled } from './../../../shared/dom';
 import { usePreviewState } from './../../../composables/preview-state';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 const { locale } = useI18n();
 
@@ -27,7 +23,7 @@ const { status } = useAuth();
 const { requestUserAction } = usePreviewState();
 
 const props = defineProps<IProps>();
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const swiper = shallowRef<InstanceType<typeof Swiper>>();
 const isSwiperReady = ref(false);

@@ -1,22 +1,17 @@
 <script setup lang="ts">
-
-import dayjs from 'dayjs';
-import { type Locale } from './../../shared/constants';
-import { type BookStayCacheParams, AppPage } from './../../shared/page-query-params';
-import { type StayServiceLevel, ImageCategory, type EntityDataAttrsOnly, type IStayOfferDetails, type ILocalizableValue, type EntityId, AvailableStayServiceLevel } from './../../shared/interfaces';
-import { getI18nResName3, getI18nResName2, type I18nResName } from './../../shared/i18n';
-import { getLocalizeableValue } from './../../shared/common';
+import { type BookStayPageArgs, AppException, AppExceptionCodeEnum, getLocalizeableValue, type StayServiceLevel, ImageCategory, type EntityDataAttrsOnly, type IStayOfferDetails, type ILocalizableValue, type EntityId, AvailableStayServiceLevel, AppPage, type Locale, getI18nResName3, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
 import OfferBooking from './../../components/booking-page/offer-booking.vue';
 import { type IOfferBookingStoreFactory } from './../../stores/offer-booking-store';
 import OfferDetailsBreadcrumbs from './../../components/common-page-components/offer-details-breadcrumbs.vue';
-import { AppException, AppExceptionCodeEnum } from './../../shared/exceptions';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
+import dayjs from 'dayjs';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 const { d, locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
 const route = useRoute();
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const isError = ref(false);
 
@@ -27,7 +22,7 @@ if (offerParam.length === 0) {
 const offerId: EntityId = offerParam;
 
 const reqEvent = import.meta.server ? useRequestEvent() : undefined;
-const stayBookOgImageQueryInfo = reqEvent?.context.cacheablePageParams as BookStayCacheParams;
+const stayBookOgImageQueryInfo = reqEvent?.context.cacheablePageParams as BookStayPageArgs;
 const serviceLevel = ((stayBookOgImageQueryInfo?.serviceLevel ?? route.query.serviceLevel)?.toString() ?? '').trim() as StayServiceLevel;
 if (!AvailableStayServiceLevel.includes(serviceLevel)) {
   logger.warn(`(StayOfferBooking) failed to parse service level argument: serviceLevel=${serviceLevel}, offerId=${offerParam}`);

@@ -1,19 +1,14 @@
 <script setup lang="ts">
-
+import { clampTextLine, type Locale, AppPage, getPagePath, AppConfig, getI18nResName3, ImageCategory } from '@golobe-demo/shared';
+import { UserAccountTabAccount, UserAccountTabPayments, UserAccountOptionButtonGroup, UserAccountOptionButtonPayments, UserAccountOptionButtonAccount } from './../../helpers/constants';
+import { updateTabIndices, TabIndicesUpdateDefaultTimeout, formatAuthCallbackUrl, getLastSelectedOptionStorageKey } from './../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 import { stringifyParsedURL, parseURL } from 'ufo';
-import { ImageCategory } from './../../shared/interfaces';
 import StaticImage from './../images/static-image.vue';
-import { getI18nResName3 } from './../../shared/i18n';
-import { clampTextLine, getLastSelectedOptionStorageKey } from './../../shared/common';
-import { updateTabIndices } from './../../shared/dom';
 import NavUserMenuItem from './nav-user-menu-item.vue';
-import { type Locale, UserAccountTabAccount, UserAccountTabPayments, UserAccountOptionButtonGroup, TabIndicesUpdateDefaultTimeout, UserAccountOptionButtonPayments, UserAccountOptionButtonAccount } from './../../shared/constants';
-import { AppPage, getPagePath } from './../../shared/page-query-params';
-import AppConfig from './../../appconfig';
-import { formatAuthCallbackUrl } from './../../client/helpers';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string
@@ -26,7 +21,7 @@ const navLinkBuilder = useNavLinkBuilder();
 const nuxtApp = useNuxtApp();
 const { enabled } = usePreviewState();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const userAccountStore = useUserAccountStore();
 const userAccount = await userAccountStore.getUserAccount();

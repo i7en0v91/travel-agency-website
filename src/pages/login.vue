@@ -1,21 +1,17 @@
 <script setup lang="ts">
-
+import { type Locale, CookieLoginOrigin, AppPage, getPagePath, AppException, getUsrMsgResName, AuthProvider, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { formatAuthCallbackUrl } from './../helpers/dom';
 import { useVuelidate } from '@vuelidate/core';
 import * as validators from '@vuelidate/validators';
 import { email, required } from '@vuelidate/validators';
-import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
-import { AuthProvider } from './../shared/interfaces';
 import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
 import SimpleButton from './../components/forms/simple-button.vue';
-import { AppException, getUsrMsgResName } from './../shared/exceptions';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
-import { AppPage, getPagePath } from './../shared/page-query-params';
-import { formatAuthCallbackUrl } from './../client/helpers';
-import { type Locale, CookieLoginOrigin } from './../shared/constants';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
+import { getCommonServices } from '../helpers/service-accessors';
 
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
@@ -62,7 +58,7 @@ const rules = computed(() => ({
 const v$ = useVuelidate(rules, { username, password, $lazy: true });
 
 function prepareCallbackUrl(originPathFromUrl: string | undefined): string {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   let callbackUrl: string;
   if(originPathFromUrl?.trim()) {
     callbackUrl = formatAuthCallbackUrl(originPathFromUrl, enabled);

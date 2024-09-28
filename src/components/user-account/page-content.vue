@@ -1,11 +1,10 @@
 <script setup lang="ts">
-
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
+import { UserAccountOptionButtonAccount, UserAccountOptionButtonHistory, UserAccountOptionButtonPayments } from './../../helpers/constants';
 import ComponentWaitingIndicator from './../component-waiting-indicator.vue';
-import { UserAccountOptionButtonAccount, UserAccountOptionButtonHistory, UserAccountOptionButtonPayments, TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
 import TabAccount from './tabs/tab-account.vue';
 import TabHistory from './tabs/tab-history.vue';
 import TabPayments from './tabs/tab-payments.vue';
-import { updateTabIndices } from './../../shared/dom';
 
 interface IProps {
   ctrlKey: string,

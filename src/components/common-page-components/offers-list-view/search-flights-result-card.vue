@@ -1,15 +1,11 @@
 <script setup lang="ts">
-
+import { AppPage, getPagePath, type Locale, getLocalizeableValue, getScoreClassResName, extractAirportCode, getValueForFlightDurationFormatting, getValueForTimeOfDayFormatting, getI18nResName2, getI18nResName3, type EntityDataAttrsOnly, type IFlightOffer, type OfferKind, ImageCategory } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
-import { type EntityDataAttrsOnly, type IFlightOffer, type OfferKind, ImageCategory } from './../../../shared/interfaces';
-import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
-import { getLocalizeableValue, getScoreClassResName, extractAirportCode, getValueForFlightDurationFormatting, getValueForTimeOfDayFormatting } from './../../../shared/common';
-import { type Locale } from './../../../shared/constants';
-import { AppPage, getPagePath } from './../../../shared/page-query-params';
 import { useUserFavouritesStore } from './../../../stores/user-favourites-store';
 import { useOfferFavouriteStatus } from './../../../composables/offer-favourite-status';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 import { usePreviewState } from './../../../composables/preview-state';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -23,7 +19,7 @@ const { locale, t } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 const { requestUserAction } = usePreviewState();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const userFavouritesStore = useUserFavouritesStore();
 
 const isError = ref(false);

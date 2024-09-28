@@ -1,17 +1,15 @@
 <script setup lang="ts">
-
-import type { Tooltip } from 'floating-vue';
-import { DefaultStayReviewScore, TooltipHideTimeout } from './../../../shared/constants';
-import { getScoreClassResName } from './../../../shared/common';
-import { getI18nResName2, getI18nResName3, type I18nResName } from './../../../shared/i18n';
-import type { EntityId, ReviewSummary } from './../../../shared/interfaces';
+import { type EntityId, type ReviewSummary, getI18nResName2, getI18nResName3, type I18nResName, DefaultStayReviewScore, getScoreClassResName } from '@golobe-demo/shared';
+import { TooltipHideTimeout } from './../../../helpers/constants';
 import { type IStayReviewItem } from './../../../stores/stay-reviews-store';
 import ReviewEditor from './review-editor.client.vue';
 import ReviewList from './review-list.vue';
 import CollapsableSection from './../../collapsable-section.vue';
 import ComponentWaitingIndicator from './../../../components/component-waiting-indicator.vue';
+import type { Tooltip } from 'floating-vue';
 import { type ComponentInstance } from 'vue';
 import { usePreviewState } from './../../../composables/preview-state';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 const { t } = useI18n();
 
@@ -26,7 +24,7 @@ const props = defineProps<IProps>();
 const { status } = useAuth();
 const { enabled, requestUserAction } = usePreviewState();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const reviewStoreFactory = useStayReviewsStoreFactory();
 const reviewStore = await reviewStoreFactory.getInstance(props.stayId);

@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { type I18nResName } from '@golobe-demo/shared';
+import { type IDropdownListProps, type IDropdownListItemProps, type DropdownListValue } from './../../types';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
-import { type IDropdownListProps, type IDropdownListItemProps, type DropdownListValue } from './../../shared/interfaces';
-import { updateTabIndices } from './../../shared/dom';
 import FieldFrame from './../forms/field-frame.vue';
-import { type I18nResName } from './../../shared/i18n';
-import { TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 const props = withDefaults(defineProps<IDropdownListProps>(), {
   selectedValue: undefined,
@@ -19,7 +19,7 @@ const elBtn = shallowRef<HTMLElement>();
 const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
 const hasMounted = ref(false);
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const controlSettingsStore = useControlSettingsStore();
 const controlValueSetting = controlSettingsStore.getControlValueSetting<DropdownListValue | undefined>(props.ctrlKey, props.defaultValue, props.persistent);

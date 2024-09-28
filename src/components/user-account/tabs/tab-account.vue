@@ -1,18 +1,15 @@
 <script setup lang="ts">
-
+import { UserNotificationLevel, maskLog, AppConfig, getI18nResName2, getI18nResName3, type I18nResName } from '@golobe-demo/shared';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
+import { ApiEndpointUserAccount, type IUpdateAccountDto, type IUpdateAccountResultDto, UpdateAccountResultCode } from '../../../server/api-definitions';
 import PropertyGrid from './../../forms/property-grid/property-grid.vue';
 import SimplePropertyEdit from './../../forms/property-grid/simple-property-edit.vue';
 import ListPropertyEdit from './../../forms/property-grid/list-property-edit.vue';
-import { getI18nResName2, getI18nResName3, type I18nResName } from './../../../shared/i18n';
-import { updateTabIndices } from './../../../shared/dom';
-import AppConfig from './../../../appconfig';
-import { maskLog } from './../../../shared/applogger';
 import CaptchaProtection from './../../../components/forms/captcha-protection.vue';
 import { useCaptchaToken } from './../../../composables/captcha-token';
-import { post } from './../../../shared/rest-utils';
-import { ApiEndpointUserAccount, TabIndicesUpdateDefaultTimeout, UserNotificationLevel } from './../../../shared/constants';
-import { type IUpdateAccountDto, type IUpdateAccountResultDto, UpdateAccountResultCode } from './../../../server/dto';
+import { post } from './../../../helpers/rest-utils';
 import { type ComponentInstance } from 'vue';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -33,7 +30,7 @@ const userAccount = await userAccountStore.getUserAccount();
 const themeSettings = useThemeSettings();
 
 const { locale } = useI18n();
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const isError = ref(false);
 

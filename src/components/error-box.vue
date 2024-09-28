@@ -1,8 +1,5 @@
 <script setup lang="ts">
-
-import { type I18nResName, getI18nResName2 } from './../shared/i18n';
-import { type Locale } from './../shared/constants';
-import { AppPage } from './../shared/page-query-params';
+import { AppPage, type Locale, type I18nResName, getI18nResName2 } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 
 interface IProps {

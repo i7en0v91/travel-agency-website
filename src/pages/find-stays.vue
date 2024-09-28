@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { getI18nResName2 } from './../shared/i18n';
+import { getI18nResName2 } from '@golobe-demo/shared';
 import SearchOffers from './../components/common-page-components/search-offers/search-offers.vue';
 import OffersListView from './../components/common-page-components/offers-list-view/list-view.vue';
 

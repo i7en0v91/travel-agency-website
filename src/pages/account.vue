@@ -1,11 +1,10 @@
 <script setup lang="ts">
-
-import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
+import { getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { UserAccountTabAccount, UserAccountTabPayments, UserAccountTabHistory, UserAccountOptionButtonGroup, UserAccountOptionButtonAccount, UserAccountOptionButtonHistory, UserAccountOptionButtonPayments } from './../helpers/constants';
 import AvatarBox from './../components/user-account/avatar-box.vue';
 import UserCover from './../components/user-account/user-cover.vue';
 import OptionButtonGroup from './../components/option-buttons/option-button-group.vue';
 import PageContent from './../components/user-account/page-content.vue';
-import { UserAccountTabAccount, UserAccountTabPayments, UserAccountTabHistory, UserAccountOptionButtonGroup, UserAccountOptionButtonAccount, UserAccountOptionButtonHistory, UserAccountOptionButtonPayments } from './../shared/constants';
 import ComponentWaitingIndicator from './../components/component-waiting-indicator.vue';
 
 definePageMeta({

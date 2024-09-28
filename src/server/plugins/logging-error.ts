@@ -1,12 +1,12 @@
-import { type IAppLogger } from '../../shared/applogger';
-import { checkNeedSuppressServerMsg } from '../../shared/applogger';
+import { checkNeedSuppressServerMsg } from '@golobe-demo/shared';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('error', (err) => {
     if(checkNeedSuppressServerMsg(err.message, err)) {
       return;
     }
-    const logger = ((globalThis as any).CommonServicesLocator as any)?.getLogger() as IAppLogger;
+    const logger = getCommonServices()?.getLogger();
     logger?.error('(nitro:error) error occured', err);
   });
 });

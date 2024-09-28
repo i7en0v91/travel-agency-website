@@ -1,9 +1,9 @@
 <script setup lang="ts">
-
+import { type Locale, getLocalizeableValue } from '@golobe-demo/shared';
 import isString from 'lodash-es/isString';
-import { getLocalizeableValue } from './../../../../shared/common';
-import { type Locale, SearchOffersFilterTabGroupId } from './../../../../shared/constants';
-import { type ISearchOffersFilterVariant } from './../../../../shared/interfaces';
+import { SearchOffersFilterTabGroupId } from './../../../../helpers/constants';
+import { type ISearchOffersFilterVariant } from './../../../../types';
+import { getCommonServices } from '../../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -15,7 +15,7 @@ const props = defineProps<IProps>();
 
 const { locale } = useI18n();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const $emit = defineEmits<{(event: 'update:value', value: boolean): void}>();
 

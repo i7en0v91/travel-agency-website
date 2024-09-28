@@ -1,18 +1,13 @@
 /* eslint-disable no-case-declarations */
+import { AppConfig, localizePath, type IAppLogger, AllHtmlPages, EntityIdPages, HeaderContentType, DefaultLocale, CookieI18nLocale, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, type Locale, AvailableLocaleCodes, spinWait, delay, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD } from '@golobe-demo/shared';
+import { ApiAppEndpointPrefix, ApiEndpointTestingInvlidatePage, type ITestingInvalidateCacheDto } from '../../server/api-definitions';
+import { TEST_SERVER_PORT, createLogger, ScreenshotDir } from '../../helpers/testing';
 import { describe, test, type TestOptions } from 'vitest';
 import { type Page, type Request } from 'playwright-core';
 import { setup, createPage, createBrowser } from '@nuxt/test-utils/e2e';
 import { join } from 'pathe';
 import dayjs from 'dayjs';
 import { parseURL, joinURL } from 'ufo';
-import { TEST_SERVER_PORT, createLogger, ScreenshotDir, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD } from '../../shared/testing/common';
-import { spinWait, delay } from '../../shared/common';
-import { CookieI18nLocale, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, type Locale, AvailableLocaleCodes, DefaultLocale, ApiEndpointTestingInvlidatePage, HeaderContentType, ApiAppEndpointPrefix } from '../../shared/constants';
-import { AllHtmlPages, EntityIdPages } from '../../shared/page-query-params';
-import type { IAppLogger } from '../../shared/applogger';
-import  { localizePath } from './../../shared/i18n';
-import { type ITestingInvalidateCacheDto } from './../../server/dto';
-import AppConfig from './../../appconfig';
 
 type AuthProviderType = 'credentials' | 'oauth';
 type AuthTestNavigationPage = 'index' | 'login' | 'account' | 'flights';

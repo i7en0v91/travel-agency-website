@@ -1,8 +1,7 @@
 <script setup lang="ts">
+import { type IOtherOptionsButtonGroupProps } from './../../types';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
-import { type IOtherOptionsButtonGroupProps } from './../../shared/interfaces';
-import { updateTabIndices } from './../../shared/dom';
-import { TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
 
 const props = defineProps<IOtherOptionsButtonGroupProps>();
 

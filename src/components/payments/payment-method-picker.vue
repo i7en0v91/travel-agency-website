@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import dayjs from 'dayjs';
+import { type PaymentMethodType, getI18nResName3, getI18nResName1 } from '@golobe-demo/shared';
+import { TooltipHideTimeout } from './../../helpers/constants';
 import type { Tooltip } from 'floating-vue';
-import { TooltipHideTimeout } from './../../shared/constants';
-import { getI18nResName3, getI18nResName1 } from './../../shared/i18n';
-import { type PaymentMethodType } from './../../shared/interfaces';
 import PriceMethodVariant from './payment-method-variant.vue';
+import dayjs from 'dayjs';
 
 interface IProps {
   ctrlKey: string,

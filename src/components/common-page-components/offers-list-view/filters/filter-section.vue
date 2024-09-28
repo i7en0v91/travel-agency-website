@@ -1,8 +1,7 @@
 <script setup lang="ts">
-
-import { getI18nResName3, type I18nResName } from './../../../../shared/i18n';
+import { getI18nResName3, type I18nResName } from '@golobe-demo/shared';
+import { SearchOffersFilterTabGroupId } from './../../../../helpers/constants';
 import CollapsableSection from './../../../collapsable-section.vue';
-import { SearchOffersFilterTabGroupId } from './../../../../shared/constants';
 
 interface IProps {
   ctrlKey: string,

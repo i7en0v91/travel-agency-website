@@ -1,7 +1,6 @@
 <script setup lang="ts">
-
+import { type I18nResName } from '@golobe-demo/shared';
 import { VueFinalModal } from 'vue-final-modal';
-import { type I18nResName } from './../shared/i18n';
 
 interface IProps {
   ctrlKey: string

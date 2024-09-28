@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import { ImageCategory, type EntityId, type EntityDataAttrsOnly, type IFlightOffer } from './../../../shared/interfaces';
+import { getLocalizeableValue, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, getValueForFlightDurationFormatting, extractAirportCode, type Locale, getI18nResName2, getI18nResName3, ImageCategory, type EntityId, type EntityDataAttrsOnly, type IFlightOffer } from '@golobe-demo/shared';
 import TicketCardContainer from './ticket-card-container.vue';
-import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
-import { type Locale } from './../../../shared/constants';
-import { getLocalizeableValue, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, getValueForFlightDurationFormatting, extractAirportCode } from './../../../shared/common';
 
 interface IProps {
   ctrlKey: string,

@@ -1,29 +1,39 @@
-import type {  IClientServicesLocator, ICommonServicesLocator, IServerServicesLocator } from './shared/serviceLocator';
-import type { CacheablePageParamsBase, IOgImageContext, IPreviewModeContext } from './shared/interfaces';
-import type { ParseQueryCacheRequiredParamMissed, ParseQueryCacheValueNotAllowed } from './server/backend/common-services/html-page-model-metadata';
-import type { AppException } from './shared/exceptions';
 import type { createFetch, FetchExOptions } from './composables/fetch-ex';
 
-declare global {
-  let ClientServicesLocator: IClientServicesLocator;
-  let ServerServicesLocator : IServerServicesLocator;
-  let CommonServicesLocator: ICommonServicesLocator;
+declare module 'process' {
+  global {
+    namespace NodeJS {
+      interface ProcessEnv {
+        H3_SESSION_ENCRYPTION_KEY: string,
+        AUTH_SECRET: string,
+        OAUTH_GITHUB_CLIENT_ID: string,
+        OAUTH_GITHUB_CLIENT_SECRET: string,
+        OAUTH_GOOGLE_CLIENT_ID: string,
+        OAUTH_GOOGLE_CLIENT_SECRET: string,
+        SMTP_USERNAME: string,
+        SMTP_PASSWORD: string,
+        GOOGLE_RECAPTCHA_SECRETKEY: string,
+        VITE_GOOGLE_RECAPTCHA_PUBLICKEY: string,
+        VITE_YANDEX_MAPS_API_KEY: string
+      }
+    }
+  }
+}
+
+declare module 'nuxt/app' {
+  interface NuxtApp {
+      $fetchEx: (options: FetchExOptions) => ReturnType<typeof createFetch>;
+  }
 }
 
 declare module 'h3' {
   interface H3EventContext {
-    ogImageContext?: IOgImageContext,
-    preview: IPreviewModeContext,
-    cacheablePageParamsError?: ParseQueryCacheRequiredParamMissed['result'] | ParseQueryCacheValueNotAllowed['result'] | undefined,
-    cacheablePageParams?: CacheablePageParamsBase,
+    ogImageContext?: import('./packages/backend/types').IOgImageContext,
+    preview: import('./packages/backend/types').IPreviewModeContext,
+    cacheablePageParamsError?: import('./packages/backend/types').ParseQueryCacheRequiredParamMissed['result'] | import('@golobe-demo/backend/types').ParseQueryCacheValueNotAllowed['result'] | undefined,
+    cacheablePageParams?: import('./packages/backend/types').CacheablePageParamsBase,
+    appException?: import('./packages/shared').AppException,
     authCookies?: string[],
-    authenticated?: boolean,
-    appException?: AppException
-  }
-}
-
-declare module '#app' {
-  interface NuxtApp {
-      $fetchEx: (options: FetchExOptions) => ReturnType<typeof createFetch>;
+    authenticated?: boolean
   }
 }

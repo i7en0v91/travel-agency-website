@@ -1,8 +1,6 @@
 <script setup lang="ts">
-
-import { getI18nResName3, type I18nResName } from './../../shared/i18n';
-import { updateTabIndices } from './../../shared/dom';
-import { TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
+import { getI18nResName3, type I18nResName } from '@golobe-demo/shared';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 
 interface IProps {
   ctrlKey: string

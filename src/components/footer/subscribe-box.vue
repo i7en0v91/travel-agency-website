@@ -1,10 +1,8 @@
 <script setup lang="ts">
-
+import { UserNotificationLevel, getI18nResName2 } from '@golobe-demo/shared';
 import { useVuelidate } from '@vuelidate/core';
 import * as validators from '@vuelidate/validators';
 import { email, required } from '@vuelidate/validators';
-import { getI18nResName2 } from './../../shared/i18n';
-import { UserNotificationLevel } from './../../shared/constants';
 
 interface IProps {
   ctrlKey: string

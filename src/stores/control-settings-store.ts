@@ -1,6 +1,7 @@
+import { type EntityId } from '@golobe-demo/shared';
 import isArray from 'lodash-es/isArray';
 import isString from 'lodash-es/isString';
-import { type EntityId } from '../shared/interfaces';
+import { getCommonServices } from '../helpers/service-accessors';
 
 export type ControlValueSettingType = EntityId | string;
 export interface IControlValueSetting<T = ControlValueSettingType | ControlValueSettingType[]> {
@@ -9,7 +10,7 @@ export interface IControlValueSetting<T = ControlValueSettingType | ControlValue
 }
 
 export const useControlSettingsStore = defineStore('controlSettingsStore', () => {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
 
   const valueSettingsCache = new Map<string, IControlValueSetting<any>>();
 

@@ -1,18 +1,16 @@
 <script setup lang="ts">
-
+import { AppConfig, UserNotificationLevel, type I18nResName, getI18nResName2, getI18nResName3, type ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
+import { type IImageUploadResultDto, ApiEndpointUserImageUpload } from '../../server/api-definitions';
+import { CroppingImageDataKey } from './../../helpers/constants';
+import { post } from './../../helpers/rest-utils';
 import isString from 'lodash-es/isString';
 import { useModal } from 'vue-final-modal';
 import { basename, extname } from 'pathe';
-import { type ImageCategory, type IImageEntitySrc } from './../../shared/interfaces';
-import { type I18nResName, getI18nResName2, getI18nResName3 } from './../../shared/i18n';
 import StaticImage from './static-image.vue';
-import { UserNotificationLevel, CroppingImageDataKey, ApiEndpointUserImageUpload } from './../../shared/constants';
-import AppConfig from './../../appconfig';
 import CroppingBox from './cropping-box.vue';
 import ModalWaitingIndicator from './../modal-waiting-indicator.vue';
-import { post } from './../../shared/rest-utils';
-import { type IImageUploadResultDto } from './../../server/dto';
 import { type ComponentInstance } from 'vue';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 globalThis.Buffer = globalThis.Buffer || Buffer;
 
@@ -73,7 +71,7 @@ const fileInputEl = shallowRef<HTMLInputElement>();
 const staticImageComponent = shallowRef<ComponentInstance<typeof StaticImage>>();
 
 const userNotificationStore = useUserNotificationStore();
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 let uploadingFileName: string = '';
 

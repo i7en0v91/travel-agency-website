@@ -1,13 +1,12 @@
-import type { H3Event } from 'h3';
+import { AppPage, lookupValueOrThrow, type EntityId } from '@golobe-demo/shared';
+import { type ITestingInvalidateCacheDto, type ITestingInvalidateCacheResultDto, TestingInvalidateCacheDtoSchema } from '../../../api-definitions';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type EntityId } from '../../../../shared/interfaces';
-import { type ITestingInvalidateCacheDto, type ITestingInvalidateCacheResultDto, TestingInvalidateCacheDtoSchema } from '../../../dto';
-import { lookupValueOrThrow } from '../../../../shared/common';
-import { AppPage } from '../../../../shared/page-query-params';
+import type { H3Event } from 'h3';
+import { getCommonServices, getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = ServerServicesLocator.getLogger();
-  const cacheCleanerLogic = ServerServicesLocator.getHtmlPageCacheCleaner();
+  const logger = getCommonServices().getLogger();
+  const cacheCleanerLogic = getServerServices()!.getHtmlPageCacheCleaner();
 
   const isPreviewMode = event.context.preview.mode;
   if(isPreviewMode) {

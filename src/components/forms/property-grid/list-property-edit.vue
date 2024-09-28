@@ -1,16 +1,13 @@
 <script setup lang="ts">
-
+import { AppException, AppExceptionCodeEnum, maskLog, MaxListPropertyElementsCount, UserNotificationLevel, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
+import { type SimplePropertyType, type PropertyGridControlButtonType } from './../../../types';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import range from 'lodash-es/range';
 import SimplePropertyEdit from './../../forms/property-grid/simple-property-edit.vue';
 import PropertyGrid from './../../forms/property-grid/property-grid.vue';
-import { updateTabIndices } from './../../../shared/dom';
-import { getI18nResName2, type I18nResName } from './../../../shared/i18n';
-import { type SimplePropertyType, type PropertyGridControlButtonType } from './../../../shared/interfaces';
-import { MaxListPropertyElementsCount, UserNotificationLevel, TabIndicesUpdateDefaultTimeout } from './../../../shared/constants';
-import { maskLog } from './../../../shared/applogger';
-import { AppException, AppExceptionCodeEnum } from './../../../shared/exceptions';
 import { useConfirmBox } from './../../../composables/confirm-box';
 import { type ComponentInstance } from 'vue';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -34,7 +31,7 @@ const props = withDefaults(defineProps<IProps>(), {
   autoTrim: true
 });
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const confirmBox = useConfirmBox();
 const userNotificationStore = useUserNotificationStore();
 

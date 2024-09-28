@@ -1,10 +1,7 @@
 <script setup lang="ts" generic="TOffer extends EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>">
+  import { type Locale, getScoreClassResName, getLocalizeableValue, type I18nResName, getI18nResName2, getI18nResName3, type ReviewSummary, type ImageCategory, type IImageEntitySrc, type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, type ILocalizableValue } from '@golobe-demo/shared';
 import sum from 'lodash-es/sum';
-import { type ReviewSummary, type ImageCategory, type IImageEntitySrc, type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, type ILocalizableValue } from './../../shared/interfaces';
-import { type I18nResName, getI18nResName2, getI18nResName3 } from './../../shared/i18n';
 import StaticImage from './../../components/images/static-image.vue';
-import { getScoreClassResName, getLocalizeableValue } from './../../shared/common';
-import { type Locale } from './../../shared/constants';
 import PriceDecompositionItem from './price-decomposition-item.vue';
 
 interface IProps {

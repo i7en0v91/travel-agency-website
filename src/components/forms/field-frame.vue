@@ -1,6 +1,5 @@
 <script setup lang="ts">
-
-import { type I18nResName } from './../../shared/i18n';
+import { type I18nResName } from '@golobe-demo/shared';
 
 const { t } = useI18n();
 

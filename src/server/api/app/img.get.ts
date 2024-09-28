@@ -1,13 +1,12 @@
+import { AppConfig, AppException, AppExceptionCodeEnum, ImageCategory } from '@golobe-demo/shared';
 import { Readable } from 'stream';
 import type { H3Event } from 'h3';
 import { getQuery } from 'ufo';
 import sharp from 'sharp';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
-import { ImageCategory } from '../../../shared/interfaces';
-import { AppException, AppExceptionCodeEnum } from '../../../shared/exceptions';
-import { getServerSession } from '#auth';
-import AppConfig from '../../../appconfig';
 import { extractUserIdFromSession } from '../../utils/auth';
+import { getServerSession } from '#auth';
+import { getCommonServices, getServerServices } from '../../../helpers/service-accessors';
 
 async function convertToJpeg (bytes: Buffer): Promise<Buffer> {
   const sharpObj = sharp(bytes);
@@ -19,9 +18,10 @@ async function convertToJpeg (bytes: Buffer): Promise<Buffer> {
 }
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = CommonServicesLocator.getLogger();
-  const imageBytesProvider = ServerServicesLocator.getImageBytesProvider();
-  const imageLogic = ServerServicesLocator.getImageLogic();
+  const logger = getCommonServices().getLogger();
+  const serverServices = getServerServices()!;
+  const imageBytesProvider = serverServices.getImageBytesProvider();
+  const imageLogic = serverServices.getImageLogic();
 
   let url = event.node.req.url;
   if (!url) {

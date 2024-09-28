@@ -1,7 +1,6 @@
 <script setup lang="ts">
-
+import { getI18nResName2 } from '@golobe-demo/shared';
 import { useThemeSettings } from './../../composables/theme-settings';
-import { getI18nResName2 } from './../../shared/i18n';
 
 interface IProps {
   ctrlKey: string

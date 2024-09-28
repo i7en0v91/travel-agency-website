@@ -1,13 +1,11 @@
 /**
  * Performs various configuration checks
  */
-
+import { AppConfig, isQuickStartEnv } from '@golobe-demo/shared';
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { destr } from 'destr';
 import { consola } from 'consola';
-import AppConfig from './../appconfig';
-import { isQuickStartEnv } from './../shared/constants';
 
 const OgImageNpmPackageName = 'nuxt-og-image';
 const PackageJsonFile = `node_modules/${OgImageNpmPackageName}/package.json`;

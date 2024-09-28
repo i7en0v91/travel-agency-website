@@ -1,9 +1,7 @@
 <script setup lang="ts">
+import { AppPage, getPagePath, type Locale, getI18nResName3, type EntityId, type IStayOffer, type IFlightOffer, type EntityDataAttrsOnly } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
-import { type EntityId, type IStayOffer, type IFlightOffer, type EntityDataAttrsOnly } from './../../../shared/interfaces';
-import { getI18nResName3 } from './../../../shared/i18n';
-import { type Locale } from './../../../shared/constants';
-import { AppPage, getPagePath } from './../../../shared/page-query-params';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -12,7 +10,7 @@ interface IProps {
 };
 const props = defineProps<IProps>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const navLinkBuilder = useNavLinkBuilder();
 
 const { locale } = useI18n();

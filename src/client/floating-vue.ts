@@ -1,4 +1,5 @@
-import { type FloatingVueHydrationHints } from './../shared/interfaces';
+import { getCommonServices } from '../helpers/service-accessors';
+import { type FloatingVueHydrationHints } from './../types';
 
 const PopperClassNamePatches: { customTheme: string, extensionList: string[] }[] = [
   { customTheme: 'default-dropdown', extensionList: ['dropdown'] },
@@ -11,7 +12,7 @@ const PopperClassNamePatches: { customTheme: string, extensionList: string[] }[]
 ];
 
 export function patchPopperComponent(el: HTMLElement, hints: FloatingVueHydrationHints) {
-  const logger = (globalThis as any).CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   try {
     logger.debug(`(floating-vue) checking popper element, id=${el.id ?? ''}, className=${el.className}`);
 

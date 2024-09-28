@@ -1,14 +1,14 @@
-import type { H3Event } from 'h3';
+import { type EntityId, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import { type ICreateOrUpdateStayReviewDto, type IModifyStayReviewResultDto, CreateOrUpdateStayReviewDtoSchema } from '../../../../api-definitions';
 import { defineWebApiEventHandler } from '../../../../utils/webapi-event-handler';
-import { type ICreateOrUpdateStayReviewDto, type IModifyStayReviewResultDto, CreateOrUpdateStayReviewDtoSchema } from '../../../../dto';
-import { AppException, AppExceptionCodeEnum } from '../../../../../shared/exceptions';
-import { getServerSession } from '#auth';
 import { extractUserIdFromSession } from './../../../../../server/utils/auth';
-import { type EntityId } from './../../../../../shared/interfaces';
+import { getServerSession } from '#auth';
+import type { H3Event } from 'h3';
+import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = ServerServicesLocator.getLogger();
-  const staysLogic = ServerServicesLocator.getStaysLogic();
+  const logger = getCommonServices().getLogger();
+  const staysLogic = getServerServices()!.getStaysLogic();
 
   const stayParam = getRouterParams(event)?.id?.toString() ?? '';
   const stayId: EntityId | undefined = stayParam;

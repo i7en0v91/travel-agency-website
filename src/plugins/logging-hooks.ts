@@ -1,7 +1,8 @@
+import { wrapExceptionIfNeeded, parseLevelFromNuxtLog, checkNeedSuppressVueMsg, checkNeedSuppressServerMsg } from '@golobe-demo/shared';
+import { defaultErrorHandler } from '../helpers/exceptions';
 import castArray from 'lodash-es/castArray';
 import omit from 'lodash-es/omit';
-import { wrapExceptionIfNeeded, defaultErrorHandler } from '../shared/exceptions';
-import { parseLevelFromNuxtLog, checkNeedSuppressVueMsg, checkNeedSuppressServerMsg } from '../shared/applogger';
+import { getCommonServices } from '../helpers/service-accessors';
 
 export default defineNuxtPlugin((nuxtApp) => {
   nuxtApp.vueApp.config.errorHandler = (err : any, _, info : string) => {
@@ -9,8 +10,8 @@ export default defineNuxtPlugin((nuxtApp) => {
       return;
     }
 
-    const logger = CommonServicesLocator.getLogger();
-    logger?.error('(nuxtApp.vueApp.config.exceptionHandler) ' + info, wrapExceptionIfNeeded(err));
+    const logger = getCommonServices().getLogger();
+    logger.error('(nuxtApp.vueApp.config.exceptionHandler) ' + info, wrapExceptionIfNeeded(err));
 
     if (import.meta.client && err.errorHelmed) {
       // error has been already processed by ErrorHelm component
@@ -24,8 +25,8 @@ export default defineNuxtPlugin((nuxtApp) => {
       return;
     }
 
-    const logger = CommonServicesLocator.getLogger();
-    logger?.warn(`(nuxtApp.vueApp.config.warnHandler): ${msg}; trace: ${trace}`);
+    const logger = getCommonServices().getLogger();
+    logger.warn(`(nuxtApp.vueApp.config.warnHandler): ${msg}; trace: ${trace}`);
   };
 
   nuxtApp.hook('vue:error', (err : any, _, info : string) => {
@@ -33,8 +34,8 @@ export default defineNuxtPlugin((nuxtApp) => {
       return;
     }
 
-    const logger = CommonServicesLocator.getLogger();
-    logger?.error('(nuxtApp.hook vue:exception) ' + info, wrapExceptionIfNeeded(err));
+    const logger = getCommonServices().getLogger();
+    logger.error('(nuxtApp.hook vue:exception) ' + info, wrapExceptionIfNeeded(err));
 
     if (import.meta.client && err.errorHelmed) {
       // error has been already processed by ErrorHelm component
@@ -48,8 +49,8 @@ export default defineNuxtPlugin((nuxtApp) => {
       return;
     }
 
-    const logger = CommonServicesLocator.getLogger();
-    logger?.error('(app:chunkError) app error occured', wrapExceptionIfNeeded(err));
+    const logger = getCommonServices().getLogger();
+    logger.error('(app:chunkError) app error occured', wrapExceptionIfNeeded(err));
   });
 
   nuxtApp.hook('app:error', (err: any) => {
@@ -57,8 +58,8 @@ export default defineNuxtPlugin((nuxtApp) => {
       return;
     }
     
-    const logger = CommonServicesLocator.getLogger();
-    logger?.error('(app:error) error occured', wrapExceptionIfNeeded(err));
+    const logger = getCommonServices().getLogger();
+    logger.error('(app:error) error occured', wrapExceptionIfNeeded(err));
 
     defaultErrorHandler(err);
   });
@@ -68,7 +69,7 @@ export default defineNuxtPlugin((nuxtApp) => {
       return;
     }
 
-    const logger = CommonServicesLocator.getLogger();
+    const logger = getCommonServices().getLogger();
     try {
       for (let i = 0; i < logs.length; i++) {
         const logItem = logs[i];
@@ -101,12 +102,12 @@ export default defineNuxtPlugin((nuxtApp) => {
         }
       }
     } catch (err: any) {
-      logger?.error(`(nuxt:dev) error occured when processing nuxt dev logs, logsObj=${JSON.stringify(logs)}`, err);
+      logger.error(`(nuxt:dev) error occured when processing nuxt dev logs, logsObj=${JSON.stringify(logs)}`, err);
     }
   });
 
   (nuxtApp.$i18n as any).onBeforeLanguageSwitch = (oldLocale: string, newLocale: string) => {
-    const logger = CommonServicesLocator.getLogger();
+    const logger = getCommonServices().getLogger();
     logger.info(`(onBeforeLanguageSwitch) from ${oldLocale}, to ${newLocale}`);
   };
 

@@ -1,12 +1,11 @@
 <script setup lang="ts">
-
+import { getI18nResName3, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import { type IMapControlProps } from './../../../types';
 import type { YMap } from '@yandex/ymaps3-types';
 import { YandexMapHint, YandexMapControlButton, VueYandexMaps, YandexMapControls, YandexMapZoomControl, YandexMap, YandexMapDefaultMarker, YandexMapDefaultSchemeLayer, YandexMapDefaultFeaturesLayer } from 'vue-yandex-maps';
 import isString from 'lodash-es/isString';
 import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
-import { type IMapControlProps } from './../../../shared/interfaces';
-import { AppException, AppExceptionCodeEnum } from './../../../shared/exceptions';
-import { getI18nResName3 } from './../../../shared/i18n';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 const DefaultZoomLevel = 14;
 
@@ -18,7 +17,7 @@ const props = withDefaults(defineProps<IMapControlProps>(), {
 const { t } = useI18n();
 
 const theme = useThemeSettings();
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const map = shallowRef<YMap>();
 

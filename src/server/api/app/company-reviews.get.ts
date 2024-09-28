@@ -1,10 +1,11 @@
+import { AppConfig } from '@golobe-demo/shared';
 import type { H3Event } from 'h3';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
-import { type ICompanyReviewDto } from '../../dto';
-import AppConfig from '../../../appconfig';
+import { type ICompanyReviewDto } from '../../api-definitions';
+import { getServerServices } from '../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const companyReviewsLogic = ServerServicesLocator.getCompanyReviewsLogic();
+  const companyReviewsLogic = getServerServices()!.getCompanyReviewsLogic();
   const companyReviews = await companyReviewsLogic.getReviews(event.context.preview.mode);
   const modifiedSince = new Date(Math.max(...companyReviews.map(r => r.timestamp)));
   modifiedSince.setMilliseconds(0);

@@ -1,13 +1,12 @@
+import { type EntityId, AppException, AppExceptionCodeEnum, type Locale, type Theme } from '@golobe-demo/shared';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type IUpdateAccountDto, UpdateAccountDtoSchema, type IUpdateAccountResultDto, UpdateAccountResultCode } from '../../../dto';
-import { type Locale, type Theme } from '../../../../shared/constants';
-import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
-import { type EntityId } from '../../../../shared/interfaces';
+import { extractUserIdFromSession } from './../../../utils/auth';
+import { type IUpdateAccountDto, UpdateAccountDtoSchema, type IUpdateAccountResultDto, UpdateAccountResultCode } from '../../../api-definitions';
 import { getServerSession } from '#auth';
-import { extractUserIdFromSession } from './../../../../server/utils/auth';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event) => {
-  const userLogic = ServerServicesLocator.getUserLogic();
+  const userLogic = getServerServices()!.getUserLogic();
 
   const updateAccountDto = await readBody(event) as IUpdateAccountDto;
   const authSession = await getServerSession(event);

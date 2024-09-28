@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { type IOptionButtonGroupProps } from './../../shared/interfaces';
-import { getLastSelectedOptionStorageKey } from './../../shared/common';
+import { type IOptionButtonGroupProps } from './../../types';
+import { getLastSelectedOptionStorageKey } from './../../helpers/dom';
 import OptionButton from './option-button.vue';
 import OtherOptionsButton from './other-options-button.vue';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 const props = withDefaults(defineProps<IOptionButtonGroupProps>(), {
   useAdaptiveButtonWidth: false
@@ -10,7 +11,7 @@ const props = withDefaults(defineProps<IOptionButtonGroupProps>(), {
 
 const $emit = defineEmits<{(event: 'update:activeOptionCtrl', newActiveOptionCtrlKey: string, prevActiveOptionCtrlKey?: string): void}>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 function saveLastSelectedOption (lastSelectOption?: string) {
   const storageKey = getLastSelectedOptionStorageKey(props.ctrlKey);

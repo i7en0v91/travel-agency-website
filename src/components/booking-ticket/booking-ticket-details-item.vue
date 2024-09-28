@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { IBookingTicketDetailsItemProps } from './../../shared/interfaces';
+import { type IBookingTicketDetailsItemProps } from './../../types';
 
 withDefaults(defineProps<IBookingTicketDetailsItemProps>(), {
   text: undefined

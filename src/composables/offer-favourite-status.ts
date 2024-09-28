@@ -1,8 +1,9 @@
-import type { OfferKind, EntityId } from './../shared/interfaces';
+import { type OfferKind, type EntityId } from '@golobe-demo/shared';
 import { useUserFavouritesStore } from './../stores/user-favourites-store';
+import { getCommonServices } from '../helpers/service-accessors';
 
 export function useOfferFavouriteStatus (offerId: EntityId, offerKind: OfferKind): { isFavourite: boolean } {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
 
   const { status } = useAuth();
   const userFavouritesStoreFactory = useUserFavouritesStore();

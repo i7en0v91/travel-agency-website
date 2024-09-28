@@ -1,15 +1,16 @@
-import type { H3Event } from 'h3';
-import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
+import { type EntityId, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type IUserFavouritesResultDto } from '../../../dto';
-import type { EntityId } from '../../../../shared/interfaces';
-import { mapSearchFlightOfferResultEntities, mapSearchedFlightOffer, mapSearchedStayOffer, mapSearchStayOfferResultEntities } from './../../../utils/mappers';
-import { getServerSession } from '#auth';
+import { type IUserFavouritesResultDto } from '../../../api-definitions';
+import { mapSearchFlightOfferResultEntities, mapSearchedFlightOffer, mapSearchedStayOffer, mapSearchStayOfferResultEntities } from '../../../utils/dto-mappers';
 import { extractUserIdFromSession } from './../../../../server/utils/auth';
+import { getServerSession } from '#auth';
+import type { H3Event } from 'h3';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const flightsLogic = ServerServicesLocator.getFlightsLogic();
-  const staysLogic = ServerServicesLocator.getStaysLogic();
+  const serverServices = getServerServices()!;
+  const flightsLogic = serverServices.getFlightsLogic();
+  const staysLogic = serverServices.getStaysLogic();
 
   const authSession = await getServerSession(event);
   const userId: EntityId | undefined = extractUserIdFromSession(authSession);

@@ -1,10 +1,8 @@
 <script setup lang="ts">
-
-import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
+import { AppPage, getPagePath, RecoverPasswordCompleteResultEnum, type Locale, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import AccountFormPhotos from './../components/account/form-photos.vue';
-import { type Locale, RecoverPasswordCompleteResultEnum } from './../shared/constants';
-import { AppPage, getPagePath } from './../shared/page-query-params';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
+import { getCommonServices } from '../helpers/service-accessors';
 
 definePageMeta({
   middleware: 'auth',
@@ -19,7 +17,7 @@ useOgImage();
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const completionResult = ref(RecoverPasswordCompleteResultEnum.LINK_INVALID);
 const route = useRoute();
 const resultParam = route.query.result?.toString();

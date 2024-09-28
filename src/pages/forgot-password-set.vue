@@ -1,20 +1,16 @@
 <script setup lang="ts">
-
+import { type EntityId, isPasswordSecure, type Locale, SecretValueMask, RecoverPasswordCompleteResultEnum, AppPage, getPagePath, getI18nResName2 } from '@golobe-demo/shared';
+import { ApiEndpointPasswordRecoveryComplete, type IRecoverPasswordCompleteDto, type IRecoverPasswordCompleteResultDto } from './../server/api-definitions';
+import { post } from './../helpers/rest-utils';
 import { useVuelidate } from '@vuelidate/core';
 import * as validators from '@vuelidate/validators';
 import { minLength, required, sameAs } from '@vuelidate/validators';
-import { getI18nResName2 } from './../shared/i18n';
 import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
 import SimpleButton from './../components/forms/simple-button.vue';
-import { type Locale, ApiEndpointPasswordRecoveryComplete, SecretValueMask, RecoverPasswordCompleteResultEnum } from './../shared/constants';
-import { AppPage, getPagePath } from './../shared/page-query-params';
-import { type IRecoverPasswordCompleteDto, type IRecoverPasswordCompleteResultDto } from './../server/dto';
-import { post } from './../shared/rest-utils';
 import AccountFormPhotos from './../components/account/form-photos.vue';
-import { isPasswordSecure } from './../shared/common';
-import { type EntityId } from './../shared/interfaces';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
+import { getCommonServices } from '../helpers/service-accessors';
 
 const { t, locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
@@ -47,7 +43,7 @@ const rules = computed(() => ({
 }));
 const v$ = useVuelidate(rules, { password, confirmPassword, $lazy: true });
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const route = useRoute();
 let tokenId: EntityId | undefined;
 let tokenValue = '';

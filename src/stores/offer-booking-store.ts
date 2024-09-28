@@ -1,15 +1,12 @@
+import { TemporaryEntityId, type IAppLogger, AppException, AppExceptionCodeEnum, type ReviewSummary, type StayServiceLevel, type EntityDataAttrsOnly, type EntityId, type OfferKind, type IOfferBooking, type IFlightOffer, type IStayOfferDetails } from '@golobe-demo/shared';
+import { type IBookingDetailsDto, type IBookingResultDto, type IFlightOfferDetailsDto, type IReviewSummaryDto, type IStayOfferDetailsDto, ApiEndpointBookingDetails, ApiEndpointFlightOfferBook, ApiEndpointFlightOfferDetails, ApiEndpointStayOfferBook, ApiEndpointStayOfferDetails, ApiEndpointStayOfferReviewSummary } from './../server/api-definitions';
+import type { IUserAccount } from './user-account-store';
+import { getObject, post } from './../helpers/rest-utils';
+import { mapFlightOfferDetails, mapStayOfferDetails, mapBookingDetails, mapReviewSummary } from './../helpers/entity-mappers';
 import isObject from 'lodash-es/isObject';
 import type { UnwrapRef, WatchStopHandle } from 'vue';
 import type { H3Event } from 'h3';
-import { type ReviewSummary, type StayServiceLevel, type EntityDataAttrsOnly, type EntityId, type OfferKind, type IOfferBooking, type IFlightOffer, type IStayOfferDetails } from '../shared/interfaces';
-import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
-import { ApiEndpointBookingDetails, ApiEndpointFlightOfferBook, ApiEndpointFlightOfferDetails, ApiEndpointStayOfferBook, ApiEndpointStayOfferDetails, ApiEndpointStayOfferReviewSummary, TemporaryEntityId } from './../shared/constants';
-import type { IUserAccount } from './user-account-store';
-import { getObject, post } from './../shared/rest-utils';
-import { mapFlightOfferDetails, mapStayOfferDetails, mapBookingDetails, mapReviewSummary } from './../shared/mappers';
-import { type IAppLogger } from './../shared/applogger';
-import type { IBookingDetailsDto, IBookingResultDto, IFlightOfferDetailsDto, IReviewSummaryDto, IStayOfferDetailsDto } from './../server/dto';
-
+import { getCommonServices } from '../helpers/service-accessors';
 declare type NewBookingId = typeof TemporaryEntityId;
 export type BookingStoreItem<TOffer extends IFlightOffer | IStayOfferDetails> = Omit<EntityDataAttrsOnly<IOfferBooking<TOffer>>, 'id' | 'bookedUser'> & { id: EntityId | NewBookingId } & Partial<Pick<IOfferBooking<TOffer>, 'bookedUser'>>;
 
@@ -112,7 +109,7 @@ export async function useOfferBookingStoreFactory() {
 
   return defineStore('offer-booking-store-factory', () => {
     const allInstances = new Map<EntityId | NewBookingId, OfferBookingStoreInternalRef<any>>();
-    const logger = CommonServicesLocator.getLogger();
+    const logger = getCommonServices().getLogger();
   
     let userAccount: IUserAccount | undefined;
     let userAccountStopWatch: WatchStopHandle;

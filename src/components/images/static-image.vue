@@ -1,19 +1,17 @@
 <script setup lang="ts">
-
-import { type CSSProperties, type ComponentInstance } from 'vue';
+import { DataKeyImageDetails, PreviewModeParamEnabledValue, QueryPagePreviewModeParam, type IAppLogger, type I18nResName, type ImageCategory, ImageAuthRequiredCategories, type IImageEntitySrc, type CssPropertyList } from '@golobe-demo/shared';
+import { getObject } from './../../helpers/rest-utils';
+import { addPayload, getPayload } from './../../helpers/payload';
+import { ApiEndpointImageDetails, ApiEndpointImage } from './../../server/api-definitions';
+import { type ComponentInstance, type GlobalComponents } from 'vue';
 import fromPairs from 'lodash-es/fromPairs';
 import isString from 'lodash-es/isString';
-import { type ImageCategory, ImageAuthRequiredCategories, type IImageEntitySrc } from './../../shared/interfaces';
-import { type I18nResName } from './../../shared/i18n';
-import { type IAppLogger } from './../../shared/applogger';
-import { addPayload, getPayload } from './../../shared/payload';
-import { DataKeyImageDetails, PreviewModeParamEnabledValue, QueryPagePreviewModeParam, ApiEndpointImageDetails, ApiEndpointImage } from './../../shared/constants';
 import ErrorHelm from './../error-helm.vue';
-import type { NuxtImg } from '#build/components';
-import { getObject } from './../../shared/rest-utils';
 import { stringifyParsedURL, stringifyQuery } from 'ufo';
 import set from 'lodash-es/set';
 import { usePreviewState } from './../../composables/preview-state';
+import { getCommonServices } from '../../helpers/service-accessors';
+type NuxtImg = GlobalComponents['NuxtImg'];
 
 interface IPublicAssetSrc {
   filename: string,
@@ -28,7 +26,7 @@ interface IProps {
   entitySrc?: IImageEntitySrc,
   sizes: string, // e.g. sm:100vw md:100vw lg:80vw xl:60vw xxl:40vw
   imgClass?: string | undefined,
-  stubStyle?: CSSProperties | 'default' | 'custom-if-configured', // false - do not show custom stub (use default)
+  stubStyle?: CssPropertyList | 'default' | 'custom-if-configured', // false - do not show custom stub (use default)
   requestExtraDisplayOptions?: boolean,
   overlayClass?: string,
   altResName?: I18nResName | undefined,
@@ -39,7 +37,7 @@ interface IProps {
 }
 
 declare interface IFetchedImageDetails {
-  stubCssStyle: CSSProperties | undefined,
+  stubCssStyle: CssPropertyList | undefined,
   invertForDarkTheme: boolean
 };
 
@@ -90,17 +88,16 @@ const imgUrl = computed(() => {
   return undefined;
 });
 
-// custom stub css styling
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
-const imgComponent = shallowRef<ComponentInstance<typeof NuxtImg>>();
+const imgComponent = shallowRef<ComponentInstance<NuxtImg>>();
 
 const invertForDarkTheme = ref<boolean>(false);
-const finalStubStyle = shallowRef<CSSProperties | undefined>(!isString(props.stubStyle) ? (props.stubStyle as CSSProperties) : undefined);
+const finalStubStyle = shallowRef<CssPropertyList | undefined>(!isString(props.stubStyle) ? (props.stubStyle as CssPropertyList) : undefined);
 
 const imageDetails = ref<IFetchedImageDetails | undefined>();
 function updateImageStylingDetails () {
-  finalStubStyle.value = (!isString(props.stubStyle) ? (props.stubStyle as CSSProperties) : undefined) ?? imageDetails.value?.stubCssStyle ?? undefined;
+  finalStubStyle.value = (!isString(props.stubStyle) ? (props.stubStyle as CssPropertyList) : undefined) ?? imageDetails.value?.stubCssStyle ?? undefined;
   invertForDarkTheme.value = (props.requestExtraDisplayOptions ? (imageDetails.value?.invertForDarkTheme) : undefined) ?? false;
   logger.verbose(`(StaticImage) applying stub custom css style, ctrlKey=${props.ctrlKey}, style=[${finalStubStyle.value ? JSON.stringify(finalStubStyle.value) : 'empty'}], invertForDarkTheme=${invertForDarkTheme.value}`);
 }
@@ -151,9 +148,9 @@ async function fetchDisplayDetailsIfNeeded (): Promise<void> {
     
     logger.verbose(`(StaticImage) image details obtained, ctrlKey=${props.ctrlKey}, slug=${props.entitySrc.slug}`);
     if (dto) {
-      let resultCssStyle: CSSProperties | undefined;
+      let resultCssStyle: CssPropertyList | undefined;
       if (dto.stubCssStyle) {
-        resultCssStyle = fromPairs(dto.stubCssStyle as any) as CSSProperties;
+        resultCssStyle = fromPairs(dto.stubCssStyle as any) as CssPropertyList;
         logger.verbose(`(StaticImage) stub custom css style fetched, style=[${JSON.stringify(resultCssStyle)}], ctrlKey=${props.ctrlKey}, slug=${props.entitySrc.slug}`);
       }
       imageDetails.value = { stubCssStyle: resultCssStyle, invertForDarkTheme: dto.invertForDarkTheme } as IFetchedImageDetails;
@@ -190,7 +187,7 @@ async function onError (err: any) {
 const $emit = defineEmits(['imageReady', 'imageFailed']);
 
 function getLogger () : IAppLogger {
-  return CommonServicesLocator.getLogger();
+  return getCommonServices().getLogger();
 }
 
 function fireIfLoadedImmediately () {

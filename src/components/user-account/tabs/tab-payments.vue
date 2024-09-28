@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { getI18nResName3 } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
-import { getI18nResName3 } from './../../../shared/i18n';
 import PaymentCard from './../../payments/payment-card.vue';
 import AddNewCard from './../../payments/add-new-card.vue';
 import dayjs from 'dayjs';

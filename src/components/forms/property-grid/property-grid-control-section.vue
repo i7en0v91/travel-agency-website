@@ -1,8 +1,8 @@
 <script setup lang="ts">
-
-import { getI18nResName3 } from './../../../shared/i18n';
-import { type PropertyGridControlButtonType } from './../../../shared/interfaces';
+import { getI18nResName3 } from '@golobe-demo/shared';
+import { type PropertyGridControlButtonType } from './../../../types';
 import SimpleButton from './../../forms/simple-button.vue';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -10,7 +10,7 @@ interface IProps {
 }
 const props = defineProps<IProps>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 function onControlButtonClick (button: PropertyGridControlButtonType) {
   logger.debug(`(ProperyGridControlSection) onControlButtonClick, ctrlKey=${props.ctrlKey}, button=${button}`);

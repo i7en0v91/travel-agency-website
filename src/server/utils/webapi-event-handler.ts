@@ -1,16 +1,11 @@
+import { AppConfig, type IAppLogger, AppException, AppExceptionCodeEnum, mapAppExceptionToHttpStatus, validateObject, isQuickStartEnv, HeaderAppVersion, testHeaderValue } from '@golobe-demo/shared';
 import type { H3Event, EventHandler, EventHandlerRequest, EventHandlerResponse } from 'h3';
-
 import axios from 'axios';
 import { withQuery } from 'ufo';
 import { type ObjectSchema } from 'yup';
-import { testHeaderValue } from '../../shared/common';
-import { isQuickStartEnv, HeaderAppVersion } from '../../shared/constants';
-import { validateObject } from '../../shared/validation';
-import { AppException, AppExceptionCodeEnum, mapAppExceptionToHttpStatus } from '../../shared/exceptions';
-import { type IAppLogger } from '../../shared/applogger';
-import { type IApiErrorDto, type ICaptchaVerificationDto } from './../dto';
-import AppConfig from './../../appconfig';
+import { type IApiErrorDto, type ICaptchaVerificationDto } from '../api-definitions';
 import { getServerSession } from '#auth';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 type YupMaybe<T> = T | null | undefined;
 type YupAnyObject = { [k: string]: any; };
@@ -28,7 +23,7 @@ function wrapHandler<Request extends EventHandlerRequest = EventHandlerRequest, 
   options: IWebApiEventHandlerOptions<TBodySchema>)
     : EventHandler<Request, Promise<Response | IApiErrorDto>> {
   return defineEventHandler(async (event) => {
-    const logger = ((globalThis as any)?.ServerServicesLocator as any)?.getLogger() as IAppLogger;
+    const logger = getCommonServices().getLogger();
 
     const { logResponseBody, authorizedOnly, validationSchema, captchaProtected, allowedEnvironments } = options;
 
@@ -38,7 +33,7 @@ function wrapHandler<Request extends EventHandlerRequest = EventHandlerRequest, 
       requestAppVersion = getRequestHeader(event, HeaderAppVersion) ?? '';
 
       if (!checkAllowedEnvironments(allowedEnvironments)) {
-        logger?.warn(`endpoint is not available in current environment, url=${event.node.req.url}, env=${process.env.NODE_ENV}`);
+        logger.warn(`endpoint is not available in current environment, url=${event.node.req.url}, env=${process.env.NODE_ENV}`);
         throw new AppException(AppExceptionCodeEnum.FORBIDDEN, 'endpoint is not available', 'error-page');
       }
 
@@ -60,19 +55,19 @@ function wrapHandler<Request extends EventHandlerRequest = EventHandlerRequest, 
       }
       
       const isAuthorized = !!(await getServerSession(event));
-      logger?.info(`received request (appVer=${requestAppVersion}) - ${event.node.req.url} (auth=${isAuthorized})`, reqBody ?? '');
+      logger.info(`received request (appVer=${requestAppVersion}) - ${event.node.req.url} (auth=${isAuthorized})`, reqBody ?? '');
 
       if (contentType === 'json' && validationSchema) {
-        const validationError = validateObject(reqBody, validationSchema);
+        const validationError = await validateObject(reqBody, validationSchema);
         if (validationError) {
-          logger?.warn(`input data does not match schema, url=${event.node.req.url}, msg=${validationError.message}, issues=${validationError.errors.join('; ')}]`, undefined, reqBody);
+          logger.warn(`input data does not match schema, url=${event.node.req.url}, msg=${validationError.message}, issues=${validationError.errors.join('; ')}]`, undefined, reqBody);
           throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'input data does not match schema', 'error-stub');
         }
       }
 
       if (captchaProtected && AppConfig.reCaptcha.enabled) {
         if (contentType !== 'json') {
-          logger?.warn(`endpoint requires captcha verification but received content is not in a JSON format, url=${event.node.req.url}, contentType=${contentType}`);
+          logger.warn(`endpoint requires captcha verification but received content is not in a JSON format, url=${event.node.req.url}, contentType=${contentType}`);
           throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected content type', 'error-stub');
         }
         await verifyCaptcha(reqBody as ICaptchaVerificationDto, event, logger);
@@ -82,9 +77,9 @@ function wrapHandler<Request extends EventHandlerRequest = EventHandlerRequest, 
       const logMsg = `request finished - ${event.node.req.url} - code ${event.node.res.statusCode}` +
         (event.node.res?.statusMessage ? `(msg: ${event.node.res?.statusMessage})` : '');
       if (event.node.res.statusCode < 400) {
-        logger?.info(logMsg, logResponseBody ? (result as object) : undefined);
+        logger.info(logMsg, logResponseBody ? (result as object) : undefined);
       } else {
-        logger?.warn(logMsg, logResponseBody ? (result as object) : undefined);
+        logger.warn(logMsg, logResponseBody ? (result as object) : undefined);
       }
       return result;
     } catch (err: any) {
@@ -95,18 +90,18 @@ function wrapHandler<Request extends EventHandlerRequest = EventHandlerRequest, 
   });
 }
 
-function handleErrorResponse (event: H3Event, err: any, requestAppVersion: string, logger?: IAppLogger): { errorDto: IApiErrorDto, httpStatus: number } {
+function handleErrorResponse (event: H3Event, err: any, requestAppVersion: string, logger: IAppLogger): { errorDto: IApiErrorDto, httpStatus: number } {
   let httpStatus: number = 500;
   let errorDto: IApiErrorDto;
 
   if (AppException.isAppException(err)) {
     const appException = err as AppException;
-    logger?.warn(`app exception at ${event.node.req.url} (appVer=${requestAppVersion}) - ${appException.internalMsg}, code: ${appException.code}, stack: [${appException.stack}]`, err);
+    logger.warn(`app exception at ${event.node.req.url} (appVer=${requestAppVersion}) - ${appException.internalMsg}, code: ${appException.code}, stack: [${appException.stack}]`, err);
     errorDto = buildErrorResponseDtoFromAppException(appException);
     httpStatus = mapAppExceptionToHttpStatus(appException.code);
   } else {
     const errd = new Error(err as any);
-    logger?.warn(`exception occured at ${event.node.req.url} - ${errd.message}, cause ${errd.cause}, stack: [${errd.stack}]`);
+    logger.warn(`exception occured at ${event.node.req.url} - ${errd.message}, cause ${errd.cause}, stack: [${err?.stack ?? errd.stack}]`);
     errorDto = buildErrorResponseDto(err);
   }
 
@@ -152,9 +147,9 @@ function buildErrorResponseDtoFromAppException (appException: AppException): IAp
   };
 }
 
-async function verifyCaptcha (captchaDto: ICaptchaVerificationDto, event: H3Event, logger?: IAppLogger): Promise<void> {
+async function verifyCaptcha (captchaDto: ICaptchaVerificationDto, event: H3Event, logger: IAppLogger): Promise<void> {
   if (!captchaDto.captchaToken) {
-    logger?.warn(`captcha token is not present, url=${event.node.req.url}`);
+    logger.warn(`captcha token is not present, url=${event.node.req.url}`);
     throw new AppException(AppExceptionCodeEnum.CAPTCHA_VERIFICATION_FAILED, 'captcha verification failed (token not present)', 'error-stub');
   }
 
@@ -167,7 +162,7 @@ async function verifyCaptcha (captchaDto: ICaptchaVerificationDto, event: H3Even
     const verificationUrl = withQuery('https://www.google.com/recaptcha/api/siteverify', captchaVerificationParams);
     verificationResponse = await axios.post(verificationUrl);
   } catch (err: any) {
-    logger?.warn(`captcha server verification exception, url=${event.node.req.url}`, err);
+    logger.warn(`captcha server verification exception, url=${event.node.req.url}`, err);
     throw new AppException(AppExceptionCodeEnum.CAPTCHA_VERIFICATION_FAILED, 'captcha verification exception', 'error-stub');
   }
 
@@ -175,9 +170,9 @@ async function verifyCaptcha (captchaDto: ICaptchaVerificationDto, event: H3Even
   const score = (verificationResponse as any)?.data?.score;
 //  const { success, score } = (verificationResponse as any)?.data;
   if (success) {
-    logger?.info(`captcha verified on server successfully, url=${event.node.req.url}, score=${score}`);
+    logger.info(`captcha verified on server successfully, url=${event.node.req.url}, score=${score}`);
   } else {
-    logger?.warn(`captcha server verification failed, url=${event.node.req.url}, score=${score}`, verificationResponse?.data);
+    logger.warn(`captcha server verification failed, url=${event.node.req.url}, score=${score}`, verificationResponse?.data);
     throw new AppException(AppExceptionCodeEnum.CAPTCHA_VERIFICATION_FAILED, 'captcha verification failed', 'error-stub');
   }
 }

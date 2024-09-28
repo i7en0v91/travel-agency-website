@@ -1,11 +1,11 @@
 <script setup lang="ts" generic="TItem extends EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>">
-
+import { type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, type OfferKind } from '@golobe-demo/shared';
 import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
 import FlightsListItemCard from './search-flights-result-card.vue';
 import StaysListItemCard from './search-stays-result-card.vue';
-import { type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, type OfferKind } from './../../../shared/interfaces';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
-declare type WaitingStubMode = 'hidden' | 'shown' | 'not-needed';
+type WaitingStubMode = 'hidden' | 'shown' | 'not-needed';
 
 interface IProps {
   ctrlKey: string,
@@ -18,7 +18,7 @@ const props = withDefaults(defineProps<IProps>(), {
 const searchOffersStoreAccessor = useSearchOffersStore();
 const searchOffersStore = await searchOffersStoreAccessor.getInstance(props.offersKind, true, true);
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const isError = ref(false);
 

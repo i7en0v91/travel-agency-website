@@ -1,12 +1,11 @@
 <script setup lang="ts">
-
+import { AppConfig, getI18nResName1, HeaderAppVersion } from '@golobe-demo/shared';
 import { Pagination, Autoplay } from 'swiper/modules';
-import { getI18nResName1 } from './../../shared/i18n';
-import { ApiEndpointAuthFormPhotos, HeaderAppVersion } from './../../shared/constants';
 import AuthFormsPhoto from './../../components/account/photo-slide.vue';
-import { type IImageDetailsDto } from './../../server/dto';
-import AppConfig from './../../appconfig';
+import { type IImageDetailsDto, ApiEndpointAuthFormPhotos } from './../../server/api-definitions';
 import { usePreviewState } from './../../composables/preview-state';
+import { type Ref } from 'vue';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string
@@ -14,7 +13,7 @@ interface IProps {
 defineProps<IProps>();
 
 const isError = ref(false);
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const { enabled } = usePreviewState();
 

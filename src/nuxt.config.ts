@@ -1,14 +1,13 @@
+import { I18LocalesDirName, lookupValueOrThrow, AppConfig, SystemPage, AppPage, EntityIdPages, getPagePath, LoadingStubFileName, AvailableLocaleCodes, CookieI18nLocale, DefaultLocale, isTestEnv, isPublishEnv } from '@golobe-demo/shared';
+import { ApiEndpointPrefix, ApiEndpointAuthentication, ApiEndpointUserAccount, ApiAppEndpointPrefix, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets } from './server/api-definitions';
+import { resolveSharedPkgPath } from './helpers/resolvers';
 import { joinURL } from 'ufo';
 import { type RollupLog, type LogLevel, type LogOrStringHandler } from 'rollup';
-import { ApiEndpointPrefix, ApiEndpointAuthentication, LoadingStubFileName, AvailableLocaleCodes, ApiEndpointUserAccount, ApiAppEndpointPrefix, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets, CookieI18nLocale, DefaultLocale, isTestEnv, isPublishEnv } from './shared/constants';
-import { SystemPage, AppPage, EntityIdPages, getPagePath } from './shared/page-query-params';
-import { TEST_SERVER_PORT } from './shared/testing/common';
-import AppConfig, { AcsysModuleOptions } from './appconfig';
+import { TEST_SERVER_PORT } from './helpers/testing';
 import toPairs from 'lodash-es/toPairs';
 import fromPairs from 'lodash-es/fromPairs';
 import flatten from 'lodash-es/flatten';
 import { type NitroRouteConfig } from 'nitropack';
-import { lookupValueOrThrow } from './shared/common';
 import { join, resolve } from 'pathe';
 import { writeFile } from 'fs/promises';
 
@@ -111,75 +110,57 @@ export default defineNuxtConfig({
 
   plugins: [
     {
-      name: 'backend-acsys.server',
-      mode: 'server',
-      order: 1,
-      src: '~/plugins/backend-acsys.server.ts'
-    },
-    {
-      name: 'backend-prisma.server',
-      mode: 'server',
-      order: 2,
-      src: '~/plugins/backend-prisma.server.ts'
-    },
-    {
       name: 'error-page-handler.server',
       mode: 'server',
-      order: 3,
+      order: 20,
       src: '~/plugins/error-page-handler.server.ts'
     },
     {
       name: 'logging-hooks',
       mode: 'all',
-      order: 4,
+      order: 30,
       src: '~/plugins/logging-hooks.ts'
-    },
-    {
-      name: 'data-seed.server',
-      mode: 'server',
-      order: 5,
-      src: '~/plugins/data-seed.server.ts'
     },
     {
       name: 'startup.server',
       mode: 'server',
-      order: 6,
+      order: 40,
       src: '~/plugins/startup.server.ts'
     },
     {
       name: 'startup.client',
       mode: 'client',
-      order: 1,
+      order: 10,
       src: '~/plugins/startup.client.ts'
     },
     {
       name: 'custom-fetch',
       mode: 'all',
-      order: 7,
+      order: 50,
       src: '~/plugins/custom-fetch.ts'
     },
     {
       name: 'floating-vue',
       mode: 'all',
-      order: 8,
+      order: 60,
       src: '~/plugins/floating-vue.ts'
     },
     {
       name: 'vue-yandex-maps.client',
       mode: 'client',
-      order: 9,
+      order: 70,
       src: '~/plugins/vue-yandex-maps.client.ts'
     },
     {
       name: 'cacheable-page',
       mode: 'server',
-      order: 10,
+      order: 80,
       src: '~/plugins/cacheable-page.ts'
     },
     {
       name: 'vue-final-modal',
       mode: 'all',
-      order: 11,
+      order: 90,
       src: '~/plugins/vue-final-modal.ts'
     }
   ],
@@ -208,11 +189,11 @@ export default defineNuxtConfig({
 
   i18n: {
     vueI18n: './i18n.config.ts',
-    langDir: './locales',
+    langDir: I18LocalesDirName,
     locales: [
-      { code: 'en', name: 'English', iso: 'en-US', file: 'en.json' },
-      { code: 'fr', name: 'Français', iso: 'fr-FR', file: 'fr.json' },
-      { code: 'ru', name: 'Русский', iso: 'ru-RU', file: 'ru.json' }
+      { code: 'en', name: 'English', language: 'en-US', file: resolveSharedPkgPath('locales/en.json') },
+      { code: 'fr', name: 'Français', language: 'fr-FR', file: resolveSharedPkgPath('locales/fr.json') },
+      { code: 'ru', name: 'Русский', language: 'ru-RU', file: resolveSharedPkgPath('locales/ru.json') }
     ],
     defaultLocale: 'en',
     strategy: 'prefix_except_default',
@@ -227,8 +208,6 @@ export default defineNuxtConfig({
       redirectOn: 'root' // recommended
     }
   },
-
-  acsys: AcsysModuleOptions,
 
   site: {
     url: 'http://localhost:3000',
@@ -285,7 +264,7 @@ export default defineNuxtConfig({
   image: {
     providers: {
       entity: {
-        provider: '~/shared/entityImageProvider'
+        provider: '~/client/entityImageProvider'
       }
     }
   },
@@ -349,7 +328,7 @@ export default defineNuxtConfig({
     transpile: ['jsonwebtoken']
   },
 
-  hooks: AppConfig.customLoadingStub ? {
+  hooks: AppConfig.dataSeeding.customLoadingStub ? {
     'ready': async (nuxt) => {
       const loadingTemplate = nuxt.options.devServer.loadingTemplate({ loading: 'Seeding database & loading' });
       const templateFile = resolve(join('assets', 'templates', LoadingStubFileName));

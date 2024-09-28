@@ -1,11 +1,12 @@
-import type { IAppLogger } from "../shared/applogger";
+import type { IAppLogger } from "@golobe-demo/shared";
 import { type FetchExOptions, createFetch } from './../composables/fetch-ex';
+import { getCommonServices } from "../helpers/service-accessors";
 
 export default defineNuxtPlugin({
   parallel: false,
   enforce: 'default',
   async setup () {
-    const logger = (globalThis as any).CommonServicesLocator.getLogger() as IAppLogger;
+    const logger = getCommonServices().getLogger() as IAppLogger;
     logger.verbose('(custom-fetch) creating custom fetchers');
     const nuxtApp = useNuxtApp();
     const errorStubFetch = createFetch({ defautAppExceptionAppearance: 'error-stub' }, nuxtApp, logger);

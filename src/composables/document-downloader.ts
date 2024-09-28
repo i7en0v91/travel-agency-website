@@ -1,14 +1,13 @@
-import { AppException, AppExceptionCodeEnum, defaultErrorHandler } from '../shared/exceptions';
-import { type EntityId, type EntityDataAttrsOnly, type IFlightOffer, type IStayOfferDetails, type IStayOffer } from '../shared/interfaces';
-import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue, ApiEndpointBookingDownload, type Theme, type Locale } from '../shared/constants';
-import { getI18nResName2 } from './../shared/i18n';
+import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue, getValueForFlightDayFormatting, type Theme, type Locale, getI18nResName2, type EntityId, type EntityDataAttrsOnly, type IFlightOffer, type IStayOfferDetails, type IStayOffer, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import { defaultErrorHandler } from './../helpers/exceptions';
+import { ApiEndpointBookingDownload } from './../server/api-definitions';
 import { useModal } from 'vue-final-modal';
 import { saveAs } from 'file-saver';
-import { getBytes } from './../shared/rest-utils';
-import { getValueForFlightDayFormatting } from './../shared/common';
+import { getBytes } from './../helpers/rest-utils';
 import ModalWaitingIndicator from './../components/modal-waiting-indicator.vue';
 import { usePreviewState } from './../composables/preview-state';
 import set from 'lodash-es/set';
+import { getCommonServices } from '../helpers/service-accessors';
 
 globalThis.Blob = globalThis.Blob || Blob;
 globalThis.Buffer = globalThis.Buffer || Buffer;
@@ -18,7 +17,7 @@ export interface IDocumentDownloader {
 }
 
 export function useDocumentDownloader (): IDocumentDownloader {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
 
   const { d, t } = useI18n();
   const { enabled } = usePreviewState();

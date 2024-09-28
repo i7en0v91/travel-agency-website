@@ -1,10 +1,8 @@
 <script setup lang="ts">
+import { type Locale, AppPage, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { type ITravelDetailsTextingData } from './../../../types';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
-import { type ITravelDetailsTextingData } from './../../../shared/interfaces';
-import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
-import { AppPage } from './../../../shared/page-query-params';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
-import { type Locale } from './../../../shared/constants';
 
 interface IProps {
   ctrlKey: string,
@@ -41,6 +39,8 @@ const bookLinkUrl = computed(() => {
   );
 });
 
+const price = computed(() => props.texting?.price ? props.texting.price.toFixed(0) : undefined);
+
 </script>
 
 <template>
@@ -48,8 +48,8 @@ const bookLinkUrl = computed(() => {
     <div class="travel-details-texting-header">
       <div class="travel-details-texting-price brdr-2 p-xs-2 ml-xs-2">
         {{ $t(getI18nResName2('travelDetails', 'priceFrom')) }}
-        <div :class="`${texting?.price ? 'travel-details-price-value' : 'data-loading-stub text-data-loading'} mt-xs-1`">
-          {{ texting?.price ? `\$${texting?.price}` : '&nbsp;' }}
+        <div :class="`${price ? 'travel-details-price-value' : 'data-loading-stub text-data-loading'} mt-xs-1`">
+          {{ price ? `\$${price}` : '&nbsp;' }}
         </div>
       </div>
       <h3 v-if="texting?.header" class="travel-details-texting-title">

@@ -1,10 +1,7 @@
 <script setup lang="ts">
-
-import { joinURL } from 'ufo';
-import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
-import { type Locale } from './../shared/constants';
-import AppConfig from './../appconfig';
+import { AppConfig, type Locale, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
+import { joinURL } from 'ufo';
 
 definePageMeta({
   title: { resName: getI18nResName2('privacyPage', 'title'), resArgs: undefined }

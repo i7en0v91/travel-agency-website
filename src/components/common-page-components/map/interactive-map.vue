@@ -1,11 +1,7 @@
 <script setup lang="ts">
-
-import { getLocalizeableValue } from '../../../shared/common';
-import { type Locale } from '../../../shared/constants';
-import { getI18nResName2 } from './../../../shared/i18n';
-import type { GeoPoint, EntityDataAttrsOnly, ICity } from './../../../shared/interfaces';
+import { AppConfig, type GeoPoint, type EntityDataAttrsOnly, type ICity, getI18nResName2, type Locale, getLocalizeableValue } from '@golobe-demo/shared';
 import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
-import AppConfig from './../../../appconfig';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -23,7 +19,7 @@ const props = withDefaults(defineProps<IProps>(), {
 
 const { locale } = useI18n();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const isError = ref(false);
 

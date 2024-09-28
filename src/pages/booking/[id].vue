@@ -1,21 +1,18 @@
 <script setup lang="ts">
-
+import { type BookingPageArgs, AppException, AppExceptionCodeEnum, clampTextLine, getLocalizeableValue, getValueForFlightDurationFormatting, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, extractAirportCode, ImageCategory, type ICity, type EntityDataAttrsOnly, type ILocalizableValue, type IFlightOffer, type IStayOfferDetails, type EntityId, type ReviewSummary, getI18nResName2, getI18nResName3, AppPage, type Locale, AvailableLocaleCodes, DefaultTheme } from '@golobe-demo/shared';
 import fromPairs from 'lodash-es/fromPairs';
-import { type Locale, AvailableLocaleCodes, DefaultTheme, ApiEndpointBookingOffer, ApiEndpointStayOfferReviewSummary } from './../../shared/constants';
-import { AppPage, type BookingCacheParams } from './../../shared/page-query-params';
-import { ImageCategory, type ICity, type IBookingTicketProps, type EntityDataAttrsOnly, type ILocalizableValue, type IFlightOffer, type IStayOfferDetails, type IBookingTicketFlightGfxProps, type IBookingTicketStayTitleProps, type EntityId, type ReviewSummary } from './../../shared/interfaces';
-import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
-import { clampTextLine, getLocalizeableValue, getValueForFlightDurationFormatting, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, extractAirportCode } from './../../shared/common';
-import { AppException, AppExceptionCodeEnum } from './../../shared/exceptions';
+import { type IBookingTicketFlightGfxProps, type IBookingTicketStayTitleProps, type IBookingTicketProps } from './../../types';
+import { ApiEndpointBookingOffer, ApiEndpointStayOfferReviewSummary } from './../../server/api-definitions';
 import BookingTicket from './../../components/booking-ticket/booking-ticket.vue';
 import ComponentWaitingIndicator from './../../components/component-waiting-indicator.vue';
 import TermsOfUse from './../../components/booking-page/terms-of-use.vue';
-import { getObject } from './../../shared/rest-utils';
+import { getObject } from './../../helpers/rest-utils';
 import { type IOfferBookingStore } from './../../stores/offer-booking-store';
-import { mapFlightOfferDetails, mapStayOfferDetails, mapReviewSummary } from './../../shared/mappers';
-import { type IReviewSummaryDto } from './../../server/dto';
+import { mapFlightOfferDetails, mapStayOfferDetails, mapReviewSummary } from './../../helpers/entity-mappers';
+import { type IReviewSummaryDto } from '../../server/api-definitions';
 import { useDocumentDownloader } from './../../composables/document-downloader';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 const DisplayedUserNameMaxLength = 25;
 
@@ -24,7 +21,7 @@ const navLinkBuilder = useNavLinkBuilder();
 
 const route = useRoute();
 const { status } = useAuth();
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const reqEvent = import.meta.server ? useRequestEvent() : undefined;
 const isOgImageRequestMode = import.meta.server && !!reqEvent?.context.ogImageContext;
@@ -221,7 +218,7 @@ const displayedPrice = computed(() => offer?.value?.kind === 'flights' ? offer.v
 
 if (import.meta.server) {
   const offerKind = offer!.value!.kind;
-  const bookingOgImageQueryInfo = reqEvent!.context.cacheablePageParams as BookingCacheParams;
+  const bookingOgImageQueryInfo = reqEvent!.context.cacheablePageParams as BookingPageArgs;
   const isInternalRequest = bookingOgImageQueryInfo?.i === '1';
   if (isAuthenticated && !authUserForbidden && isInternalRequest) {
     const theme = bookingOgImageQueryInfo?.theme ?? DefaultTheme;

@@ -1,10 +1,6 @@
 <script setup lang="ts">
-
+import { type Locale, getLocalizeableValue, getI18nResName2, getI18nResName3, type StayServiceLevel, type EntityDataAttrsOnly, type ICity, type ILocalizableValue } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
-import { type StayServiceLevel, type EntityDataAttrsOnly, type ICity, type ILocalizableValue } from './../../shared/interfaces';
-import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
-import { getLocalizeableValue } from './../../shared/common';
-import { type Locale } from './../../shared/constants';
 
 interface IProps {
   ctrlKey: string,

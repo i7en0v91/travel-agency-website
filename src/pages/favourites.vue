@@ -1,14 +1,14 @@
 <script setup lang="ts">
-
-import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
+import { AppException, AppExceptionCodeEnum, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { FavouritesOptionButtonStays, FavouritesOptionButtonGroup, FavouritesOptionButtonFlights } from './../helpers/constants';
+import { defaultErrorHandler } from './../helpers/exceptions';
 import OptionButtonGroup from './../components/option-buttons/option-button-group.vue';
 import OfferTabbedView from './../components/common-page-components/offer-tabbed-view.vue';
 import FlightsListItemCard from './../components/common-page-components/offers-list-view/search-flights-result-card.vue';
 import StaysListItemCard from './../components/common-page-components/offers-list-view/search-stays-result-card.vue';
-import { FavouritesOptionButtonStays, FavouritesOptionButtonGroup, FavouritesOptionButtonFlights } from './../shared/constants';
-import { defaultErrorHandler, AppException, AppExceptionCodeEnum } from './../shared/exceptions';
 import { useUserFavouritesStore } from './../stores/user-favourites-store';
 import ComponentWaitingIndicator from './../components/component-waiting-indicator.vue';
+import { getCommonServices } from '../helpers/service-accessors';
 
 definePageMeta({
   middleware: 'auth',
@@ -19,7 +19,7 @@ useOgImage();
 
 const DefaultActiveTabKey = FavouritesOptionButtonFlights;
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const isError = ref(false);
 
 const userFavouritesStore = useUserFavouritesStore();

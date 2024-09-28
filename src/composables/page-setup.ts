@@ -1,10 +1,11 @@
+import { AppConfig } from '@golobe-demo/shared';
 import Toast, { type PluginOptions, POSITION as ToastPosition } from 'vue-toastification';
-import AppConfig from './../appconfig';
+import { getCommonServices } from '../helpers/service-accessors';
 
 let _ToastPluginUsed = false;
 
 export async function usePageSetup(): Promise<void> {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   logger.verbose('(page-setup) entered');
 
   const nuxtApp = useNuxtApp();

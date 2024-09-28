@@ -1,22 +1,18 @@
 <script setup lang="ts">
-
+import { AppPage, getPagePath, type Locale, RecoverPasswordResultEnum, AuthProvider, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { ApiEndpointPasswordRecovery, type IRecoverPasswordDto, type IRecoverPasswordResultDto } from '../server/api-definitions';
+import { post } from './../helpers/rest-utils';
+import { formatAuthCallbackUrl } from './../helpers/dom';
 import { useVuelidate } from '@vuelidate/core';
 import * as validators from '@vuelidate/validators';
 import { email, required } from '@vuelidate/validators';
-import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
-import { AuthProvider } from './../shared/interfaces';
 import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
-import { type Locale, ApiEndpointPasswordRecovery, RecoverPasswordResultEnum } from './../shared/constants';
-import { AppPage, getPagePath } from './../shared/page-query-params';
 import SimpleButton from './../components/forms/simple-button.vue';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
 import CaptchaProtection from './../components/forms/captcha-protection.vue';
-import { type IRecoverPasswordDto, type IRecoverPasswordResultDto } from './../server/dto';
-import { post } from './../shared/rest-utils';
 import { type ComponentInstance } from 'vue';
-import { formatAuthCallbackUrl } from './../client/helpers';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
 

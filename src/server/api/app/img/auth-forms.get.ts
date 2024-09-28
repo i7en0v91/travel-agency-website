@@ -1,11 +1,12 @@
+import { AppConfig } from '@golobe-demo/shared';
 import type { H3Event } from 'h3';
-import max from 'lodash-es/max';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type IImageDetailsDto } from '../../../dto';
-import AppConfig from '../../../../appconfig';
+import { type IImageDetailsDto } from '../../../api-definitions';
+import max from 'lodash-es/max';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const authFormImageLogic = ServerServicesLocator.getAuthFormImageLogic();
+  const authFormImageLogic = getServerServices()!.getAuthFormImageLogic();
   const imageInfos = await authFormImageLogic.getAllImages(event, event.context.preview.mode);
   const modifiedSince = max(imageInfos.map(x => x.modifiedUtc))!;
   modifiedSince.setMilliseconds(0);

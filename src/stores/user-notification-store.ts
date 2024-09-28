@@ -1,8 +1,6 @@
+import { AppException, AppExceptionCodeEnum, isDevOrTestEnv, UserNotificationLevel, type I18nResName } from '@golobe-demo/shared';
 import { TYPE, useToast } from 'vue-toastification';
-import { type I18nResName } from '../shared/i18n';
-import { UserNotificationLevel } from '../shared/constants';
-import { isDevOrTestEnv } from './../shared/constants';
-import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
+import { getCommonServices } from '../helpers/service-accessors';
 
 export interface IUserNotificationParams {
   level: UserNotificationLevel;
@@ -15,7 +13,7 @@ export interface IUserNotificationStore {
 };
 
 export const useUserNotificationStore = defineStore('userNotificationStore', () => {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   const { t } = useI18n();
 
   const toastManager = import.meta.client ? useToast() : undefined;

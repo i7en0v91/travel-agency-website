@@ -1,15 +1,13 @@
+import { AppConfig, getOgImageFileName, lookupPageByUrl, AppPage, EntityIdPages, SystemPage, type Locale } from '@golobe-demo/shared';
 import { joinURL } from 'ufo';
-import { type Locale } from './../shared/constants';
-import { AppPage, EntityIdPages, SystemPage } from '../shared/page-query-params';
-import { getOgImageFileName, lookupPageByUrl } from './../shared/common';
-import AppConfig from './../appconfig';
 import { defineOgImage, defineOgImageComponent } from '#imports';
+import { getCommonServices } from '../helpers/service-accessors';
 
 export function useOgImage (component?: { name: string, props: any}, skipCache: boolean = false) {
   const route = useRoute();
   const { locale } = useI18n();
 
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   if (!AppConfig.ogImage.enabled) {
     logger.debug(`(og-image) skipping OG image metadata as disabled, path=${route.path}`);
     return;

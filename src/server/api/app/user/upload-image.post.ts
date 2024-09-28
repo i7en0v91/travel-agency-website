@@ -1,16 +1,16 @@
+import { AppException, AppExceptionCodeEnum, type EntityId, ImageCategory } from '@golobe-demo/shared';
+import { CroppingImageFormat } from '../../../../helpers/constants';
+import { extractUserIdFromSession } from './../../../../server/utils/auth';
+import { type IImageUploadResultDto } from '../../../api-definitions';
 import type { H3Event } from 'h3';
 import isString from 'lodash-es/isString';
 import isBuffer from 'lodash-es/isBuffer';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type EntityId, ImageCategory } from '../../../../shared/interfaces';
-import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
-import { extractUserIdFromSession } from './../../../../server/utils/auth';
-import { type IImageUploadResultDto } from '../../../dto';
-import { CroppingImageFormat } from '../../../../shared/constants';
 import { getServerSession } from '#auth';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const userLogic = ServerServicesLocator.getUserLogic();
+  const userLogic = getServerServices()!.getUserLogic();
 
   const query = getQuery(event);
 

@@ -1,16 +1,16 @@
 <script setup lang="ts">
-
+import { getI18nResName3, type OfferKind } from '@golobe-demo/shared';
+import { type ISearchOffersChecklistFilterProps, type ISearchOffersRangeFilterProps } from './../../../types';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
+import { SearchOffersFilterTabGroupId } from './../../../helpers/constants';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import orderBy from 'lodash-es/orderBy';
 import isEqual from 'lodash-es/isEqual';
-import { type ISearchOffersChecklistFilterProps, type ISearchOffersRangeFilterProps, type OfferKind } from './../../../shared/interfaces';
 import CollapsableSection from './../../collapsable-section.vue';
 import RangeFilter from './filters/range-filter.vue';
 import ChecklistFilter from './filters/checklist-filter.vue';
-import { getI18nResName3 } from './../../../shared/i18n';
 import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
-import { updateTabIndices } from './../../../shared/dom';
-import { TabIndicesUpdateDefaultTimeout, SearchOffersFilterTabGroupId } from './../../../shared/constants';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -22,7 +22,7 @@ const props = withDefaults(defineProps<IProps>(), {
 const searchOffersStoreAccessor = useSearchOffersStore();
 const searchOffersStore = await searchOffersStoreAccessor.getInstance(props.offersKind, true, true);
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const isError = ref(false);
 const isCollapsed = ref(false);

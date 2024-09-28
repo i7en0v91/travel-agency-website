@@ -1,15 +1,14 @@
-import type { H3Event } from 'h3';
-import { defineWebApiEventHandler } from '../../../../utils/webapi-event-handler';
-import { type EntityId } from '../../../../../shared/interfaces';
-import { AppException, AppExceptionCodeEnum } from '../../../../../shared/exceptions';
-import { mapFlightOffer } from '../../../../utils/mappers';
-import { getServerSession } from '#auth';
-import AppConfig from './../../../../../appconfig';
+import { AppConfig, AppException, AppExceptionCodeEnum, type EntityId } from '@golobe-demo/shared';
 import { extractUserIdFromSession } from './../../../../../server/utils/auth';
+import { defineWebApiEventHandler } from '../../../../utils/webapi-event-handler';
+import type { H3Event } from 'h3';
+import { mapFlightOffer } from '../../../../utils/dto-mappers';
+import { getServerSession } from '#auth';
+import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = ServerServicesLocator.getLogger();
-  const flightsLogic = ServerServicesLocator.getFlightsLogic();
+  const logger = getCommonServices().getLogger();
+  const flightsLogic = getServerServices()!.getFlightsLogic();
 
   const offerParam = getRouterParams(event)?.id?.toString() ?? '';
   if (!offerParam) {

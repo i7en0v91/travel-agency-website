@@ -1,7 +1,6 @@
 <script setup lang="ts">
 
-import type { AuthProvider } from './../../shared/interfaces';
-import { type I18nResName } from './../../shared/i18n';
+import  { type AuthProvider, type I18nResName } from '@golobe-demo/shared';
 
 interface IProps {
   ctrlKey: string,

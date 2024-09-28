@@ -1,13 +1,11 @@
+import { AppException, AppExceptionCodeEnum, type AppExceptionAppearance, AppConfig, type IAppLogger, HeaderAppVersion } from '@golobe-demo/shared';
+import { defaultErrorHandler } from './../helpers/exceptions';
 import type { FetchResponse, FetchContext } from 'ofetch';
 import type { AvailableRouterMethod as _AvailableRouterMethod } from 'nitropack';
 import { destr } from 'destr';
 import isString from 'lodash-es/isString';
 import isNumber from 'lodash-es/isNumber';
-import { type IApiErrorDto } from '../server/dto';
-import { AppException, AppExceptionCodeEnum, type AppExceptionAppearance, defaultErrorHandler } from './../shared/exceptions';
-import { HeaderAppVersion } from './../shared/constants';
-import { type IAppLogger } from './../shared/applogger';
-import AppConfig from '../appconfig';
+import { type IApiErrorDto } from '../server/api-definitions';
 
 export type FetchExOptions = {
   defautAppExceptionAppearance: AppExceptionAppearance

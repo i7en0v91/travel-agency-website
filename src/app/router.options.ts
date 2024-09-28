@@ -1,5 +1,5 @@
 import type { RouterConfig } from '@nuxt/schema';
-import type { IClientServicesLocator } from '../shared/serviceLocator';
+import { getClientServices } from '../helpers/service-accessors';
 
 export default <RouterConfig> {
   scrollBehavior: (to, from, savedPosition) => {
@@ -8,7 +8,7 @@ export default <RouterConfig> {
 
     // after app is initialized (not when moving to new page) it will try to update scroll position according to it's rules
     // for this one-time case in the beginning we need to force scroll position to where use has scrolled
-    const scrollPositionMayReset = !(<IClientServicesLocator>(globalThis as any).ClientServicesLocator).appMounted;
+    const scrollPositionMayReset = getClientServices().appMounted;
 
     return new Promise((resolve) => {
       setTimeout(() => {

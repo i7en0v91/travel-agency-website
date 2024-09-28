@@ -1,12 +1,9 @@
 <script setup lang="ts">
-
-import AppConfig from './../../appconfig';
+import { maskLog, buildParamsLogData, getI18nResName2, AppConfig, UserNotificationLevel } from '@golobe-demo/shared';
 import { useThemeSettings } from './../../composables/theme-settings';
-import { UserNotificationLevel } from './../../shared/constants';
-import { getI18nResName2 } from './../../shared/i18n';
-import { maskLog, buildParamsLogData } from './../../shared/applogger';
 import type { VueRecaptcha } from '#build/components';
 import { type ComponentInstance } from 'vue';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 const recaptcha = shallowRef<ComponentInstance<typeof VueRecaptcha>>();
 const themeSettings = useThemeSettings();
@@ -18,7 +15,7 @@ interface IProps {
 }
 const props = defineProps<IProps>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 let verificationRequested = false;
 
 function doStartVerification () {

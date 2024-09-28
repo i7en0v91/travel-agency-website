@@ -1,10 +1,10 @@
-import type { H3Event } from 'h3';
-import type { LogLevelEnum} from '../../../shared/constants';
-import { LogAlwaysLevel } from '../../../shared/constants';
+import { LogAlwaysLevel, type LogLevelEnum } from '@golobe-demo/shared';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
+import type { H3Event } from 'h3';
+import { getServerServices } from '../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event: H3Event) => {
-  const logger = ServerServicesLocator.getLogger();
+  const logger = getServerServices()!.getLogger();
 
   // client's message/error will be logged inside handler logging wrapper
   const body = await readBody(event);

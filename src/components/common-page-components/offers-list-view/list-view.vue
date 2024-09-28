@@ -1,11 +1,11 @@
 <script setup lang="ts">
-
+import { type OfferKind } from '@golobe-demo/shared';
 import FilterPanel from './filter-panel.vue';
 import DisplayOptions from './display-options.vue';
 import ResultItemsList from './result-items-list.vue';
 import ListPaging from './list-paging.vue';
-import { type OfferKind } from './../../../shared/interfaces';
 import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -17,7 +17,7 @@ const props = withDefaults(defineProps<IProps>(), {
 const searchOffersStoreAccessor = useSearchOffersStore();
 const searchOffersStore = await searchOffersStoreAccessor.getInstance(props.offersKind, true, true);
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const isError = ref(false);
 

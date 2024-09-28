@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { getI18nResName2 } from './../../shared/i18n';
-import { type Locale } from './../../shared/constants';
-import { type ActivePageLink, type NavBarMode } from './../../shared/interfaces';
+import { AppPage, type Locale, getI18nResName2 } from '@golobe-demo/shared';
+import { type ActivePageLink, type NavBarMode } from './../../types';
 import ThemeSwitcher from './../../components/navbar/theme-switcher.vue';
 import LocaleSwitcher from './../../components/navbar/locale-switcher.vue';
-import { AppPage } from './../../shared/page-query-params';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -15,7 +14,7 @@ interface IProps {
   activePageLink?: ActivePageLink
 }
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();

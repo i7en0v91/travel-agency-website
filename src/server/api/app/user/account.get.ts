@@ -1,13 +1,13 @@
 import type { H3Event } from 'h3';
-import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type EntityId } from '../../../../shared/interfaces';
-import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
-import { type IUserAccountDto } from '../../../dto';
-import { getServerSession } from '#auth';
+import { AppException, AppExceptionCodeEnum, type EntityId } from '@golobe-demo/shared';
 import { extractUserIdFromSession } from './../../../../server/utils/auth';
+import { type IUserAccountDto } from '../../../api-definitions';
+import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
+import { getServerSession } from '#auth';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const userLogic = ServerServicesLocator.getUserLogic();
+  const userLogic = getServerServices()!.getUserLogic();
   const authSession = await getServerSession(event);
   const userId : EntityId | undefined = extractUserIdFromSession(authSession);
   if (!userId) {

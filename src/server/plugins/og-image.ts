@@ -1,8 +1,8 @@
+import { OgImagePathSegment, isDevEnv } from '@golobe-demo/shared';
 import isArray from 'lodash-es/isArray';
 import isObject from 'lodash-es/isObject';
 import { parseURL } from 'ufo';
-import { OgImagePathSegment, isDevEnv } from './../../shared/constants';
-import { type IAppLogger } from './../../shared/applogger';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 function removeTwConfigRecusive (vnode: any) {
   if (!vnode) {
@@ -30,7 +30,7 @@ export default defineNitroPlugin((nitroApp) => {
   });
 
   nitroApp.hooks.hook('request', (event) => {
-    const logger = (globalThis as any)?.CommonServicesLocator?.getLogger() as IAppLogger;
+    const logger = getCommonServices()?.getLogger();
     const fullUrl = event.node.req.url;
     const parsedUrl = parseURL(fullUrl);
     if (parsedUrl.pathname.includes(OgImagePathSegment)) {
@@ -39,7 +39,7 @@ export default defineNitroPlugin((nitroApp) => {
   });
 
   nitroApp.hooks.hook('afterResponse', (event) => {
-    const logger = (globalThis as any)?.CommonServicesLocator?.getLogger() as IAppLogger;
+    const logger = getCommonServices()?.getLogger();
     const fullUrl = event.node.req.url;
     const parsedUrl = parseURL(fullUrl);
     if (parsedUrl.pathname.includes(OgImagePathSegment)) {

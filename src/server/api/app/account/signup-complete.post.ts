@@ -1,11 +1,12 @@
+import { SignUpCompleteResultEnum } from '@golobe-demo/shared';
+import { type ISignUpCompleteDto, SignUpCompleteDtoSchema, type ISignUpCompleteResultDto } from '../../../api-definitions';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type ISignUpCompleteDto, SignUpCompleteDtoSchema, type ISignUpCompleteResultDto } from '../../../dto';
-import { SignUpCompleteResultEnum } from './../../../../shared/constants';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event) => {
   const signUpCompleteDto = await readBody(event) as ISignUpCompleteDto;
 
-  const tokenLogic = ServerServicesLocator.getTokenLogic();
+  const tokenLogic = getServerServices()!.getTokenLogic();
   const registrationResult = await tokenLogic.consumeToken(signUpCompleteDto.id, signUpCompleteDto.value);
   let responseDto: ISignUpCompleteResultDto | undefined;
   switch (registrationResult.code) {

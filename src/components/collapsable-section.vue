@@ -1,9 +1,8 @@
 <script setup lang="ts">
-
+import { getI18nResName2 } from '@golobe-demo/shared';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../helpers/dom';
 import throttle from 'lodash-es/throttle';
-import { updateTabIndices } from './../shared/dom';
-import { TabIndicesUpdateDefaultTimeout } from './../shared/constants';
-import { getI18nResName2 } from './../shared/i18n';
+import { getCommonServices } from '../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -25,7 +24,7 @@ const sectionHtmlElId = props.ctrlKey;
 const controlSettingsStore = useControlSettingsStore();
 const controlSingleValueSetting = props.persistent ? controlSettingsStore.getControlValueSetting<'collapsed' | 'expanded' | undefined>(`${props.ctrlKey}-collapsed`, 'expanded', true) : undefined;
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const toggling = ref(false);
 
 function toggle () {

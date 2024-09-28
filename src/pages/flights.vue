@@ -1,20 +1,19 @@
 <script setup lang="ts">
-
+import { FlightsTitleSlug, ImageCategory, type EntityId, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { TravelDetailsHtmlAnchor } from './../helpers/constants';
 import PageSection from './../components/common-page-components/page-section.vue';
 import HeadingText from './../components/flights/flights-heading-text.vue';
-import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
-import { ImageCategory, type EntityId } from './../shared/interfaces';
-import { FlightsTitleSlug, TravelDetailsHtmlAnchor } from './../shared/constants';
 import WorldMap from './../components/flights/world-map.vue';
 import TravelCities from './../components/common-page-components/travel-details/travel-cities.vue';
 import TravelDetails from './../components/common-page-components/travel-details/travel-details.vue';
+import { getCommonServices } from '../helpers/service-accessors';
 
 definePageMeta({
   title: { resName: getI18nResName2('flightsPage', 'title'), resArgs: undefined }
 });
 useOgImage();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const travelDetailsStore = useTravelDetailsStore();
 function scrollToTravelDetailsSection () {

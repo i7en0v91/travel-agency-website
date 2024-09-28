@@ -1,9 +1,9 @@
 <script setup lang="ts">
-
+import { getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import { VueFinalModal } from 'vue-final-modal';
 import range from 'lodash-es/range';
-import { getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
 import SimpleButton from './../../forms/simple-button.vue';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -12,7 +12,7 @@ interface IProps {
 
 const props = defineProps<IProps>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const hoveredScore = ref<number>();
 
 let resultSet = false;

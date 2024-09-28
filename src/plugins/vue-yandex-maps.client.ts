@@ -1,8 +1,6 @@
+import { getLocaleFromUrl, DefaultLocale, type Locale, AppConfig } from '@golobe-demo/shared';
 import { createYmaps, type VueYandexMaps } from 'vue-yandex-maps';
-import AppConfig from '../appconfig';
-import { type IAppLogger } from '../shared/applogger';
-import { DefaultLocale, type Locale } from './../shared/constants';
-import { getLocaleFromUrl } from './../shared/i18n';
+import { getCommonServices } from '../helpers/service-accessors';
 
 function getLocaleUrlParam (locale: Locale): string {
   switch (locale) {
@@ -14,17 +12,17 @@ function getLocaleUrlParam (locale: Locale): string {
 }
 
 export default defineNuxtPlugin((nuxtApp) => {
-  const logger = ((globalThis as any).CommonServicesLocator as any)?.getLogger() as IAppLogger | undefined;
+  const logger = getCommonServices().getLogger();
   if (!AppConfig.maps) {
-    logger?.info('skipping yandex maps plugin, maps are disabled');
+    logger.info('skipping yandex maps plugin, maps are disabled');
     return;
   }
-  logger?.info('installing yandex maps plugin');
+  logger.info('installing yandex maps plugin');
 
   const apiKey = import.meta.env.VITE_YANDEX_MAPS_API_KEY;
   if (!apiKey) {
     const errmsg = 'YandexMaps API key was not specified';
-    logger?.error(errmsg);
+    logger.error(errmsg);
     throw new Error(errmsg);
   };
 
@@ -39,5 +37,5 @@ export default defineNuxtPlugin((nuxtApp) => {
   };
 
   nuxtApp.vueApp.use(createYmaps(settings));
-  logger?.info(`yandex maps plugin installed, locale=${localeWithRegion}`);
+  logger.info(`yandex maps plugin installed, locale=${localeWithRegion}`);
 });

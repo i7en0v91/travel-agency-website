@@ -1,16 +1,12 @@
 <script setup lang="ts">
-
+import { AvailableFlightClasses, ImageCategory, type IFlightOffer, type ILocalizableValue, type EntityId, AppPage, getPagePath, type Locale, getLocalizeableValue, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { ApiEndpointFlightOfferDetails } from './../../server/api-definitions';
 import orderBy from 'lodash-es/orderBy';
 import range from 'lodash-es/range';
-import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
 import OfferDetailsSummary from './../../components/common-page-components/offer-details-summary.vue';
 import FlightDetailsCard from './../../components/common-page-components/flight-details-card.vue';
-import { getLocalizeableValue } from './../../shared/common';
-import { type Locale, ApiEndpointFlightOfferDetails } from './../../shared/constants';
-import { AppPage, getPagePath } from './../../shared/page-query-params';
-import { AvailableFlightClasses, ImageCategory, type IFlightOffer, type ILocalizableValue, type EntityId } from './../../shared/interfaces';
-import { type IFlightOfferDetailsDto } from './../../server/dto';
-import { mapFlightOfferDetails } from './../../shared/mappers';
+import { type IFlightOfferDetailsDto } from '../../server/api-definitions';
+import { mapFlightOfferDetails } from './../../helpers/entity-mappers';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
 

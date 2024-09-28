@@ -1,25 +1,22 @@
 <script setup lang="ts">
-
+import { mapLocalizeableValues, AppConfig, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
+import { ApiEndpointCompanyReviewsList, ApiEndpointPopularCitiesList, type IPopularCityDto, type ICompanyReviewDto } from '../server/api-definitions';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../helpers/dom';
 import { Navigation, Autoplay, Mousewheel } from 'swiper/modules';
 import range from 'lodash-es/range';
 import PageSection from './../components/common-page-components/page-section.vue';
 import SearchPageImageLink from './../components/index/search-page-image-link.vue';
 import PopularCityCard from './../components/index/popular-city-card.vue';
-import { type IPopularCityDto, type ICompanyReviewDto } from './../server/dto';
-import { getI18nResName3, getI18nResName2 } from './../shared/i18n';
-import { ApiEndpointPopularCitiesList, ApiEndpointCompanyReviewsList, TabIndicesUpdateDefaultTimeout } from './../shared/constants';
 import CompanyReviewCard from './../components/index/company-review-card.vue';
-import { updateTabIndices } from './../shared/dom';
-import AppConfig from './../appconfig';
-import { mapLocalizeableValues } from './../shared/common';
 import { usePreviewState } from './../composables/preview-state';
+import { getCommonServices } from '../helpers/service-accessors';
 
 definePageMeta({
   title: { resName: getI18nResName2('indexPage', 'title'), resArgs: undefined }
 });
 useOgImage();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const nuxtApp = useNuxtApp();
 const { enabled } = usePreviewState();

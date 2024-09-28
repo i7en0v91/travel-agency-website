@@ -1,15 +1,15 @@
-import type { H3Event } from 'h3';
-import { defineWebApiEventHandler } from '../../../../utils/webapi-event-handler';
-import { type IStayReviewsDto } from '../../../../dto';
-import { AppException, AppExceptionCodeEnum } from '../../../../../shared/exceptions';
-import { mapStayReview } from './../../../../utils/mappers';
-import { type EntityId } from './../../../../../shared/interfaces';
-import { getServerSession } from '#auth';
+import { type EntityId, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { extractUserIdFromSession } from './../../../../../server/utils/auth';
+import { defineWebApiEventHandler } from '../../../../utils/webapi-event-handler';
+import { type IStayReviewsDto } from '../../../../api-definitions';
+import { mapStayReview } from '../../../../utils/dto-mappers';
+import { getServerSession } from '#auth';
+import type { H3Event } from 'h3';
+import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = ServerServicesLocator.getLogger();
-  const staysLogic = ServerServicesLocator.getStaysLogic();
+  const logger = getCommonServices().getLogger();
+  const staysLogic = getServerServices()!.getStaysLogic();
 
   const stayParam = getRouterParams(event)?.id?.toString() ?? '';
   const stayId: EntityId | undefined = stayParam;

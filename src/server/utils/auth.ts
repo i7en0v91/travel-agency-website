@@ -1,5 +1,5 @@
+import { type EntityId } from '@golobe-demo/shared';
 import type { getServerSession } from '#auth';
-import type { EntityId } from '../../shared/interfaces';
 import isNumber from 'lodash-es/isNumber';
 
 export function extractUserIdFromSession(session: Awaited<ReturnType<typeof getServerSession>> | null | undefined): EntityId | undefined {

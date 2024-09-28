@@ -1,13 +1,12 @@
+import { type IAppLogger, type IFlightOffersFilterParams, type ISorting, type FlightOffersSortFactor, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import { type ISearchFlightOffersParamsDto, SearchFlightOffersParamsDtoSchema, type ISearchFlightOffersResultDto } from '../../../api-definitions';
+import { mapSearchFlightOfferResultEntities, mapSearchedFlightOffer } from '../../../utils/dto-mappers';
+import { extractUserIdFromSession } from './../../../../server/utils/auth';
+import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
 import type { H3Event } from 'h3';
 import { Decimal } from 'decimal.js';
-import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
-import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type ISearchFlightOffersParamsDto, SearchFlightOffersParamsDtoSchema, type ISearchFlightOffersResultDto } from '../../../dto';
-import type { IFlightOffersFilterParams, ISorting, FlightOffersSortFactor } from '../../../../shared/interfaces';
-import type { IAppLogger } from '../../../../shared/applogger';
-import { mapSearchFlightOfferResultEntities, mapSearchedFlightOffer } from '../../../utils/mappers';
 import { getServerSession } from '#auth';
-import { extractUserIdFromSession } from './../../../../server/utils/auth';
+import { getCommonServices, getServerServices } from '../../../../helpers/service-accessors';
 
 function performAdditionalDtoValidation (dto: ISearchFlightOffersParamsDto, event : H3Event, logger: IAppLogger) {
   if (dto.price?.to && dto.price?.from && dto.price.from > dto.price.to) {
@@ -40,8 +39,8 @@ function getSortDirection (sort: FlightOffersSortFactor): 'asc' | 'desc' {
 }
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = ServerServicesLocator.getLogger();
-  const flightsLogic = ServerServicesLocator.getFlightsLogic();
+  const logger = getCommonServices().getLogger();
+  const flightsLogic = getServerServices()!.getFlightsLogic();
 
   logger.debug('(api:flight-search) parsing flight offers search query from HTTP body');
   const searchParamsDto = SearchFlightOffersParamsDtoSchema.cast(await readBody(event));

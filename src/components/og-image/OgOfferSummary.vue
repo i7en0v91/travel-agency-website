@@ -1,14 +1,10 @@
 <script setup lang="ts">
-
+import { AppConfig, getI18nResName2, AppPage, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, type Locale, DefaultLocale, getLocalizeableValue, getOgImageFileName, getValueForFlightDayFormatting, type ImageCategory, type ILocalizableValue, type ICity, type EntityDataAttrsOnly, type IImageEntitySrc, type IImageCategoryInfo, type OfferKind } from '@golobe-demo/shared';
+import { ApiEndpointImage } from './../../server/api-definitions';
 import { withQuery, joinURL } from 'ufo';
-import type { ImageCategory, ILocalizableValue, ICity, EntityDataAttrsOnly, IImageEntitySrc, IImageCategoryInfo, OfferKind } from './../../shared/interfaces';
-import { getLocalizeableValue, getOgImageFileName, getValueForFlightDayFormatting } from './../../shared/common';
-import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue, ApiEndpointImage, type Locale, DefaultLocale } from './../../shared/constants';
-import { AppPage } from './../../shared/page-query-params';
-import { getI18nResName2 } from './../../shared/i18n';
-import AppConfig from './../../appconfig';
 import { usePreviewState } from './../../composables/preview-state';
 import set from 'lodash-es/set';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   kind: OfferKind,
@@ -27,7 +23,7 @@ const { d, locale } = useI18n();
 const requestLocale = useRequestEvent()?.context.ogImageContext?.locale ?? DefaultLocale;
 locale.value = requestLocale;
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 logger.verbose('(OgOfferSummary) component setup', props.image);
 
 const dateStr = props.kind === 'flights' ? d(getValueForFlightDayFormatting(new Date(props.dateUnixUtc), props.utcOffsetMin!), 'day') : d(new Date(props.dateUnixUtc), 'day');

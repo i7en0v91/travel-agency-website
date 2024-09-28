@@ -1,13 +1,9 @@
 <script setup lang="ts">
-
+import { getI18nResName3, getI18nResName2, type EntityDataAttrsOnly, type IStayDescription, type Locale, getLocalizeableValue, getScoreClassResName } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import orderBy from 'lodash-es/orderBy';
 import zip from 'lodash-es/zip';
 import range from 'lodash-es/range';
-import { getLocalizeableValue, getScoreClassResName } from '../../shared/common';
-import { type Locale } from '../../shared/constants';
-import type { EntityDataAttrsOnly, IStayDescription } from './../../shared/interfaces';
-import { getI18nResName3, getI18nResName2 } from './../../shared/i18n';
 
 const { t, locale } = useI18n();
 

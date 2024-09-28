@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import type { IBookingTicketStayTitleProps } from './../../shared/interfaces';
-import { getLocalizeableValue } from './../../shared/common';
-import { type Locale } from './../../shared/constants';
+import { getLocalizeableValue, type Locale } from '@golobe-demo/shared';
+import type { IBookingTicketStayTitleProps } from './../../types';
 
 defineProps<IBookingTicketStayTitleProps>();
 

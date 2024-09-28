@@ -1,16 +1,13 @@
+import { DefaultLocale, CookieI18nLocale, type Locale, HeaderLocation, patchUrlWithLocale, getLocaleFromUrl, isDevOrTestEnv, isQuickStartEnv, maskLog, AuthProvider, type IUserProfileInfo } from '@golobe-demo/shared';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GitHubProvider from 'next-auth/providers/github';
 import GoogleProvider from 'next-auth/providers/google';
-import TestLocalProvider from '../../../shared/testing/oauth-local-provider';
-import { AuthProvider, type IUserProfileInfo } from '../../../shared/interfaces';
-import { maskLog } from '../../../shared/applogger';
-import { type IAuthUserDto } from './../../dto';
-import { isDevOrTestEnv, isQuickStartEnv } from './../../../shared/constants';
+import TestLocalProvider from './../../../helpers/oauth-local-provider';
+import { type IAuthUserDto } from '../../api-definitions';
 import { NuxtAuthHandler } from '#auth';
 import { type EventHandler, type EventHandlerRequest, type EventHandlerResponse, getCookie } from 'h3';
 import onHeaders from 'on-headers';
-import { patchUrlWithLocale, getLocaleFromUrl } from '../../../shared/i18n';
-import { DefaultLocale, CookieI18nLocale, type Locale, HeaderLocation } from '../../../shared/constants';
+import { getCommonServices, getServerServices } from '../../../helpers/service-accessors';
 
 function mapUserDto (user: IUserProfileInfo) : IAuthUserDto {
   return {
@@ -28,11 +25,12 @@ function wrapI18nRedirect<Request extends EventHandlerRequest = EventHandlerRequ
   return defineEventHandler(async (event) => {
     const url = event.node.req.url;
 
-    if (!(globalThis as any).ServerServicesLocator || !url) {
+    const serverServices = getServerServices();
+    if (!serverServices || !url) {
       return await originalHandler(event); // skipping as nuxt hasn't been fully started
     }
 
-    const logger = ServerServicesLocator.getLogger();
+    const logger = serverServices.getLogger();
     logger.verbose(`(wrapI18nRedirect) called for url=${event.node.req.url}`);
 
     let currentLocale: Locale | undefined;
@@ -106,7 +104,7 @@ export default wrapI18nRedirect(NuxtAuthHandler({
             clientId: process.env.OAUTH_GOOGLE_CLIENT_ID,
             clientSecret: process.env.OAUTH_GOOGLE_CLIENT_SECRET,
             profile: async (profile: any /*, tokens: any */) => {
-              const logger = CommonServicesLocator.getLogger();
+              const logger = getCommonServices().getLogger();
               logger.info('(NuxtAuthHandler) setting up user Google profile');
 
               const providerIdentity = profile.sub.toString();
@@ -123,7 +121,7 @@ export default wrapI18nRedirect(NuxtAuthHandler({
                 lastName = undefined;
               }
 
-              const userLogic = ServerServicesLocator.getUserLogic();
+              const userLogic = getServerServices()!.getUserLogic();
               try {
                 const user = await userLogic.ensureOAuthUser(AuthProvider.Google, providerIdentity, email, emailVerified, firstName, lastName);
                 return mapUserDto(user);
@@ -138,14 +136,14 @@ export default wrapI18nRedirect(NuxtAuthHandler({
             clientId: process.env.OAUTH_GITHUB_CLIENT_ID!,
             clientSecret: process.env.OAUTH_GITHUB_CLIENT_SECRET!,
             profile: async (profile: any /*, tokens: any */) => {
-              const logger = CommonServicesLocator.getLogger();
+              const logger = getCommonServices().getLogger();
               logger.info('(NuxtAuthHandler) setting up user GitHub profile');
 
               const providerIdentity = profile.id?.toString() ?? '';
               const email = undefined; // profile.email as string;
               const firstName = profile.login ?? '.';
 
-              const userLogic = ServerServicesLocator.getUserLogic();
+              const userLogic = getServerServices()!.getUserLogic();
               try {
                 const user = await userLogic.ensureOAuthUser(AuthProvider.GitHub, providerIdentity, firstName, undefined, email, false);
                 return mapUserDto(user);
@@ -167,7 +165,7 @@ export default wrapI18nRedirect(NuxtAuthHandler({
         password: { label: 'Password', type: 'password' }
       },
       async authorize (credentials: any) {
-        const logger = CommonServicesLocator.getLogger();
+        const logger = getCommonServices().getLogger();
 
         const email = credentials?.username as string;
         const password = credentials?.password as string;
@@ -177,7 +175,7 @@ export default wrapI18nRedirect(NuxtAuthHandler({
           return null;
         }
 
-        const userLogic = ServerServicesLocator.getUserLogic();
+        const userLogic = getServerServices()!.getUserLogic();
         try {
           const user = await userLogic.verifyUserPassword(email, password);
           if (user) {

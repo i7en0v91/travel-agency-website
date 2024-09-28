@@ -1,8 +1,7 @@
 <script setup lang="ts">
-
+import { type I18nResName, getI18nResName1, type Locale } from '@golobe-demo/shared';
 import type { Tooltip } from 'floating-vue';
-import { type Locale, TooltipHideTimeout } from './../../shared/constants';
-import { type I18nResName, getI18nResName1 } from './../../shared/i18n';
+import { TooltipHideTimeout } from './../../helpers/constants';
 import SimpleButton from './../../components/forms/simple-button.vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 

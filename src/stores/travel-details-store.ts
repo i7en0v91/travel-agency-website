@@ -1,15 +1,14 @@
+import { getI18nResName2, AppConfig, type EntityId, type IEntityCacheCityItem, AppException, AppExceptionCodeEnum, AppPage, type Locale, UserNotificationLevel } from '@golobe-demo/shared';
+import { TravelDetailsHtmlAnchor } from './../helpers/constants';
+import { type ITravelDetailsData } from './../types';
+import { ApiEndpointPopularCityTravelDetails, ApiEndpointPopularCitiesList, type IPopularCityDto, type ITravelDetailsDto } from '../server/api-definitions';
 import once from 'lodash-es/once';
 import { withQuery, encodeHash, stringifyParsedURL, type ParsedURL } from 'ufo';
-import { type IPopularCityDto, type ITravelDetailsDto } from '../server/dto';
-import { type Locale, ApiEndpointPopularCityTravelDetails, ApiEndpointPopularCitiesList, TravelDetailsHtmlAnchor, UserNotificationLevel } from '../shared/constants';
-import { AppPage } from '../shared/page-query-params';
-import { type EntityId, type IEntityCacheCityItem, type ITravelDetailsData } from '../shared/interfaces';
-import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
-import { getObject } from '../shared/rest-utils';
-import AppConfig from './../appconfig';
-import { getI18nResName2 } from './../shared/i18n';
-import type { AsyncDataRequestStatus } from '#app/composables/asyncData';
+import { getObject } from '../helpers/rest-utils';
 import { usePreviewState } from './../composables/preview-state';
+import { Decimal } from 'decimal.js';
+import type { AsyncDataRequestStatus } from 'nuxt/app';
+import { getClientServices, getCommonServices, getServerServices } from '../helpers/service-accessors';
 
 interface ITravelDetailsStoreState {
   current?: ITravelDetailsData | undefined,
@@ -40,7 +39,7 @@ interface ITimePlayer {
 }
 
 export const useTravelDetailsStore = defineStore('travel-details-store', () => {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   logger.info('(travel-details-store) start store construction');
 
   const userNotificationStore = useUserNotificationStore();
@@ -63,9 +62,9 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
     let cacheResult: IEntityCacheCityItem[] | undefined;
     try {
       if (import.meta.client) {
-        cacheResult = await ClientServicesLocator.getEntityCache().get<'City'>([], [citySlug], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default });
+        cacheResult = await getClientServices().getEntityCache().get<'City'>([], [citySlug], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default });
       } else {
-        cacheResult = await ServerServicesLocator.getEntityCacheLogic().get<'City'>([], [citySlug], 'City', enabled);
+        cacheResult = await getServerServices()!.getEntityCacheLogic().get<'City'>([], [citySlug], 'City', enabled);
       }
     } catch(err: any) {
       logger.warn(`(travel-details-store) exception occured looking up city by slug, slug=${citySlug}`, err);
@@ -380,7 +379,7 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
       texting: {
         header: travelDetailsDto.header,
         text: travelDetailsDto.text,
-        price: travelDetailsDto.price,
+        price: new Decimal(travelDetailsDto.price),
         slug: travelDetailsDto.city.slug
       },
       images: travelDetailsDto.images
@@ -511,7 +510,7 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
           ? {
               header: travelDetailsDto.header,
               text: travelDetailsDto.text,
-              price: travelDetailsDto.price,
+              price: new Decimal(travelDetailsDto.price),
               slug: travelDetailsDto.city.slug
             }
           : undefined

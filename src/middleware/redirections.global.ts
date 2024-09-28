@@ -1,11 +1,9 @@
-import { CookieI18nLocale, DefaultLocale } from '../shared/constants';
-import { AppPage, SystemPage } from '../shared/page-query-params';
-import { getLocaleFromUrl } from './../shared/i18n';
-import { lookupPageByUrl } from './../shared/common';
+import { lookupPageByUrl, getLocaleFromUrl, AppPage, SystemPage, CookieI18nLocale, DefaultLocale } from '@golobe-demo/shared';
+import { getCommonServices } from '../helpers/service-accessors';
 
 export default defineNuxtRouteMiddleware((to, from) => {
   if (import.meta.server) {
-    const logger = CommonServicesLocator.getLogger();
+    const logger = getCommonServices().getLogger();
     try {
       const localeCookie = useCookie(CookieI18nLocale);
       logger.verbose(`(redirections.global) server, from=${from.path}, to=${to.path}`);

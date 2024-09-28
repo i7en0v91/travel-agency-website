@@ -1,8 +1,7 @@
 <script setup lang="ts">
-
+import { getI18nResName1 } from '@golobe-demo/shared';
 import type { Tooltip } from 'floating-vue';
-import { TooltipHideTimeout } from './../../shared/constants';
-import { getI18nResName1 } from './../../shared/i18n';
+import { TooltipHideTimeout } from './../../helpers/constants';
 
 interface IProps {
   ctrlKey: string,

@@ -1,10 +1,5 @@
 <script setup lang="ts">
-
-import { type EntityDataAttrsOnly, type ICity, type ILocalizableValue, type OfferKind } from './../../shared/interfaces';
-import { getI18nResName2 } from './../../shared/i18n';
-import { getLocalizeableValue } from './../../shared/common';
-import { type Locale } from './../../shared/constants';
-import { AppPage } from './../../shared/page-query-params';
+import { AppPage, type Locale, getLocalizeableValue, getI18nResName2, type EntityDataAttrsOnly, type ICity, type ILocalizableValue, type OfferKind } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 interface IProps {

@@ -1,11 +1,13 @@
-import type { H3Event } from 'h3';
+import { AppConfig } from '@golobe-demo/shared';
+import { type IPopularCityDto } from '../../api-definitions';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
-import { type IPopularCityDto } from '../../dto';
-import AppConfig from '../../../appconfig';
+import type { H3Event } from 'h3';
+import { getServerServices } from '../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const citiesLogic = ServerServicesLocator.getCitiesLogic();
-  const flightsLogic = ServerServicesLocator.getFlightsLogic();
+  const serverServices = getServerServices()!;
+  const citiesLogic = serverServices.getCitiesLogic();
+  const flightsLogic = serverServices.getFlightsLogic();
 
   handleCacheHeaders(event, 
     (AppConfig.caching.intervalSeconds && !event.context.preview.mode) ? 

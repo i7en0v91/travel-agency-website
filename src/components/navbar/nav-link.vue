@@ -1,8 +1,7 @@
 <script setup lang="ts">
-
-import { type I18nResName } from './../../shared/i18n';
-import { type Locale } from './../../shared/constants';
+import { type Locale, type I18nResName } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
@@ -21,7 +20,7 @@ const props = withDefaults(defineProps<IProps>(), {
   isActive: false
 });
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 function getClass (): string {
   if (!props.icon) {

@@ -1,20 +1,16 @@
 <script setup lang="ts">
-
+import { mapLocalizeableValues, getLocalizeableValue, type Locale, MaxSearchHistorySize, StaysTitleSlug, AppConfig, AppPage, ImageCategory, getI18nResName2 } from '@golobe-demo/shared';
+import { type ISearchedCityHistoryDto, type IPopularCityDto, ApiEndpointStayOffersSearchHistory, ApiEndpointPopularCitiesList } from './../server/api-definitions';
+import { TravelDetailsHtmlAnchor } from './../helpers/constants';
 import range from 'lodash-es/range';
 import ComponentWaitingIndicator from './../components/component-waiting-indicator.vue';
 import PageSection from './../components/common-page-components/page-section.vue';
 import HeadingText from './../components/stays/stays-heading-text.vue';
-import { getI18nResName2 } from './../shared/i18n';
-import { ImageCategory } from './../shared/interfaces';
-import { type Locale, ApiEndpointStayOffersSearchHistory, ApiEndpointPopularCitiesList, MaxSearchHistorySize, StaysTitleSlug, TravelDetailsHtmlAnchor } from './../shared/constants';
-import { AppPage } from './../shared/page-query-params';
 import TravelCities from './../components/common-page-components/travel-details/travel-cities.vue';
 import TravelDetails from './../components/common-page-components/travel-details/travel-details.vue';
-import { type ISearchedCityHistoryDto, type IPopularCityDto } from './../server/dto';
-import { mapLocalizeableValues, getLocalizeableValue } from './../shared/common';
-import AppConfig from './../appconfig';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
+import { getCommonServices } from '../helpers/service-accessors';
 
 definePageMeta({
   title: { resName: getI18nResName2('staysPage', 'title'), resArgs: undefined }
@@ -23,7 +19,7 @@ useOgImage();
 
 const CtrlKey = 'StaysPage';
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const navLinkBuilder = useNavLinkBuilder();
 const { locale } = useI18n();

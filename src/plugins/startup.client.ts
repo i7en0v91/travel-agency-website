@@ -1,17 +1,17 @@
+import { type IAppLogger } from '@golobe-demo/shared';
+import { ClientLogger } from './../client/logging';
+import { EntityCache } from '../client/entity-cache';
+import { type IClientServicesLocator } from '../types';
+import { SearchFlightOffersDisplayOptions, SearchStayOffersDisplayOptions, FavouritesOptionButtonGroup } from '../helpers/constants';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices, getLastSelectedOptionStorageKey } from './../helpers/dom';
 import { Scope, createInjector } from 'typed-inject';
 import once from 'lodash-es/once';
 import { createStorage, type Storage, type StorageValue } from 'unstorage';
-import { updateTabIndices } from '../shared/dom';
-import { ClientLogger } from '../client/logging';
-import { EntityCache } from '../client/entity-cache';
-import type { IClientServicesLocator } from '../shared/serviceLocator';
-import { TabIndicesUpdateDefaultTimeout, SearchFlightOffersDisplayOptions, SearchStayOffersDisplayOptions, FavouritesOptionButtonGroup } from '../shared/constants';
-import { getLastSelectedOptionStorageKey } from '../shared/common';
 import installLoggingHooks from './logging-hooks';
-import type { IAppLogger } from '../shared/applogger';
+import { getClientServices, getCommonServices } from '../helpers/service-accessors';
 
 function installGlobalExceptionHandler () {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   const prevHandler = window.onerror;
   window.onerror = function (event: Event | string, source?: string, lineno?: number, colno?: number, error?: Error) {
     try {
@@ -68,8 +68,7 @@ const initApp = once(() => {
   const logger = new ClientLogger(); // container has not built yet
   try {
     logger.info(`PAGE INITIALIZING... (${import.meta.env.MODE})`);
-    (globalThis as any).CommonServicesLocator = (globalThis as any).ClientServicesLocator = buildServiceLocator();
-    const clientServicesLocator = (globalThis as any).ClientServicesLocator as IClientServicesLocator;
+    const clientServicesLocator = (globalThis as any).CommonServicesLocator = (globalThis as any).ClientServicesLocator = buildServiceLocator();
     initializeBrowserPage();
 
     resetSearchOffersFilterSettings(logger);
@@ -99,7 +98,7 @@ export default defineNuxtPlugin({
     });
 
     nuxtApp.hook('page:loading:end', () => {
-      const clientServicesLocator = (globalThis as any).ClientServicesLocator as IClientServicesLocator;
+      const clientServicesLocator = getClientServices();
       if (clientServicesLocator.appMounted) {
         setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
       }

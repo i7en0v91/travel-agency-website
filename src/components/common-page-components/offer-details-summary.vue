@@ -1,15 +1,12 @@
 <script setup lang="ts">
-
+import { type Price, type EntityDataAttrsOnly, type EntityId, type ICity, type ILocalizableValue, type OfferKind, getI18nResName1, getI18nResName2, type I18nResName, type Locale, getLocalizeableValue, getScoreClassResName } from '@golobe-demo/shared';
+import { TooltipHideTimeout } from './../../helpers/constants';
 import range from 'lodash-es/range';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import type { Tooltip } from 'floating-vue';
-import { TooltipHideTimeout } from './../../shared/constants';
-import { type Price, type EntityDataAttrsOnly, type EntityId, type ICity, type ILocalizableValue, type OfferKind } from './../../shared/interfaces';
-import { getLocalizeableValue, getScoreClassResName } from './../../shared/common';
-import { type Locale } from './../../shared/constants';
 import { useUserFavouritesStore } from './../../stores/user-favourites-store';
 import { usePreviewState } from './../../composables/preview-state';
-import { getI18nResName1, getI18nResName2, type I18nResName } from './../../shared/i18n';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -37,7 +34,7 @@ const props = withDefaults(defineProps<IProps>(), {
   showReviewDetails: true
 });
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const isError = ref(false);
 

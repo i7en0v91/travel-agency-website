@@ -1,11 +1,9 @@
 <script setup lang="ts">
-
-import { getI18nResName2 } from './../shared/i18n';
-import { QueryDraftRequestPathParam } from './../shared/constants';
-import { AppException, AppExceptionCodeEnum , defaultErrorHandler } from './../shared/exceptions';
+import { SystemPage, lookupPageByUrl, AppException, AppExceptionCodeEnum, QueryDraftRequestPathParam, getI18nResName2 } from '@golobe-demo/shared';
+import { defaultErrorHandler } from './../helpers/exceptions';
 import ComponentWaitingIndicator from './../components/component-waiting-indicator.vue';
-import { lookupPageByUrl } from '../shared/common';
-import { SystemPage } from './../shared/page-query-params';
+import { getCommonServices } from '../helpers/service-accessors';
+
 const { t } = useI18n();
 
 definePageMeta({
@@ -25,7 +23,7 @@ useHead({
 
 await usePageSetup();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const query = useRoute().query;
 
 async function navigateToRequestedPage(): Promise<void> {

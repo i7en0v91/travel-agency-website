@@ -1,12 +1,10 @@
 <script setup lang="ts">
+import { AppConfig, eraseTimeOfDay, type I18nResName } from '@golobe-demo/shared';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 import dayjs from 'dayjs';
-import { updateTabIndices } from './../../../shared/dom';
 import FieldFrame from './../../forms/field-frame.vue';
-import { type I18nResName } from './../../../shared/i18n';
-import { eraseTimeOfDay } from './../../../shared/common';
-import AppConfig from './../../../appconfig';
-import { TabIndicesUpdateDefaultTimeout } from './../../../shared/constants';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -38,7 +36,7 @@ const hasMounted = ref(false);
 const elBtn = shallowRef<HTMLElement>();
 const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const controlSettingsStore = useControlSettingsStore();
 const controlSingleValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(`${props.ctrlKey}-single`, today.toISOString(), true);

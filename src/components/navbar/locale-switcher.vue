@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue, SessionLocaleKey } from '@golobe-demo/shared';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
-import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue, SessionLocaleKey, TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
-import { updateTabIndices } from './../../shared/dom';
 import isString from 'lodash-es/isString';
 import set from 'lodash-es/set';
 import { withQuery } from 'ufo';

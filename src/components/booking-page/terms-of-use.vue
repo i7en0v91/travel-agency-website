@@ -1,7 +1,6 @@
 <script setup lang="ts">
+import { AppConfig, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import range from 'lodash-es/range';
-import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
-import AppConfig from './../../appconfig';
 
 interface IProps {
   ctrlKey: string

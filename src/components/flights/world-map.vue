@@ -1,12 +1,12 @@
 <script setup lang="ts">
-
+import { AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import { WorldMapCityLabelFlipX } from './../../helpers/constants';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import throttle from 'lodash-es/throttle';
 import clamp from 'lodash-es/clamp';
-import { AppException, AppExceptionCodeEnum } from './../../shared/exceptions';
 import WorldMapCityLabel from './world-map-city-label.vue';
-import { WorldMapCityLabelFlipX, TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
-import { updateTabIndices } from './../../shared/dom';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 const MapPointColor = { r: 255, g: 255, b: 255 };
 const MapPointAlphaRange = { from: 0.3, to: 0.6 };
@@ -22,7 +22,7 @@ interface IProps {
 const props = defineProps<IProps>();
 
 const canvasEl = shallowRef<HTMLCanvasElement>();
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const worldMapStore = useWorldMapStore();
 const worldMap = await worldMapStore.getWorldMap();

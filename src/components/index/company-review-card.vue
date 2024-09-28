@@ -1,9 +1,7 @@
 <script setup lang="ts">
-
+import { getI18nResName3, type ILocalizableValue, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
 import range from 'lodash-es/range';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
-import { type ILocalizableValue, ImageCategory, type IImageEntitySrc } from './../../shared/interfaces';
-import { getI18nResName3 } from './../../shared/i18n';
 
 interface IProps {
   ctrlKey: string,

@@ -1,11 +1,10 @@
 <!-- eslint-disable @typescript-eslint/unified-signatures -->
 <script setup lang="ts">
-
+import { ImageCategory, getI18nResName2, type Timestamp, type EntityId } from '@golobe-demo/shared';
+import { type ITravelDetailsData, type TravelDetailsImageStatus } from './../../../types';
 import type { WatchStopHandle, ComponentInstance } from 'vue';
 import TravelDetailsImageFrame from './travel-details-image-frame.vue';
-import { getI18nResName2 } from './../../../shared/i18n';
-import { type TravelDetailsImageStatus, type Timestamp, type ITravelDetailsData, type EntityId } from './../../../shared/interfaces';
-import { ImageCategory } from './../../../shared/interfaces';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -15,7 +14,7 @@ interface IProps {
 };
 const props = defineProps<IProps>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const activeFrame = ref<'initial' | 'A' | 'B'>('initial');
 const frameStatusA = ref<TravelDetailsImageStatus | undefined>();
 const frameStatusB = ref<TravelDetailsImageStatus | undefined>();

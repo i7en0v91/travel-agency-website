@@ -1,3 +1,9 @@
+import { getI18nResName2, getI18nResName3, type I18nResName, AppConfig, AppException, AppExceptionCodeEnum, QueryPagePreviewModeParam, StaysAmenitiesFilterItemId, StaysAmenitiesFilterId, StaysFreebiesFilterItemId, StaysFreebiesFilterId, NumMinutesInDay, StaysPriceFilterId, DefaultStayOffersSorting, StaysRatingFilterId, FlightsTripTypeFilterFlexibleDatesItemId, SearchOffersPriceRange, FlightsTripTypeFilterId, FlightsPriceFilterId, FlightsDepartureTimeFilterId, FlightsRatingFilterId, FlightsAirlineCompanyFilterId, DefaultFlightOffersSorting, DataKeyEntityCacheItems, FlightMinPassengers, UserNotificationLevel, AvailableLocaleCodes, DataKeySearchFlightOffers, DataKeySearchStayOffers, validateObject, eraseTimeOfDay, type OfferKind, type IEntityCacheCityItem, type IStayOffer, type IFlightOffer, type FlightOffersSortFactor, type StayOffersSortFactor, type ISearchFlightOffersResult, type ISearchStayOffersResult, type EntityDataAttrsOnly, type ILocalizableValue } from '@golobe-demo/shared';
+import { mapSearchFlightOffersResult, mapSearchStayOffersResult, mapSearchedFlightOffer, createSearchFlightOfferResultLookup } from '../helpers/entity-mappers';
+import { type ISearchListItem, type ISearchOffersFilterVariant, type ISearchFlightOffersParams, type ISearchStayOffersParams, type ISearchStayOffersMainParams, type ISearchFlightOffersMainParams, type ISearchFlightOffersDisplayOptions, type ISearchStayOffersDisplayOptions, type ISearchOffersChecklistFilterProps, type ISearchOffersRangeFilterProps, type ISearchFlightOffersDisplayOption } from './../types';
+import { ApiEndpointFlightOffersSearch, ApiEndpointStayOffersSearch, type ISearchFlightOffersMainParamsDto, type ISearchStayOffersMainParamsDto, SearchFlightOffersMainParamsDtoSchema, SearchStayOffersMainParamsDtoSchema, type ISearchFlightOffersParamsDto, type ISearchStayOffersParamsDto, type ISearchFlightOffersResultDto, type ISearchStayOffersResultDto } from '../server/api-definitions';
+import { post } from './../helpers/rest-utils';
+import { addPayload, getPayload } from './../helpers/payload';
 import type { ValidationError } from 'yup';
 import dayjs from 'dayjs';
 import uniqueBy from 'lodash-es/unionBy';
@@ -10,19 +16,9 @@ import pick from 'lodash-es/pick';
 import cloneDeep from 'lodash-es/cloneDeep';
 import orderBy from 'lodash-es/orderBy';
 import fromPairs from 'lodash-es/fromPairs';
-import { type ISearchListItem, type ISearchOffersFilterVariant, type ISearchFlightOffersParams, type ISearchStayOffersParams, type OfferKind, type ISearchStayOffersMainParams, type ISearchFlightOffersMainParams, type IEntityCacheCityItem, type ISearchFlightOffersDisplayOptions, type ISearchStayOffersDisplayOptions, type IStayOffer, type IFlightOffer, type FlightOffersSortFactor, type StayOffersSortFactor, type ISearchFlightOffersResult, type ISearchStayOffersResult, type ISearchOffersChecklistFilterProps, type ISearchOffersRangeFilterProps, type ISearchFlightOffersDisplayOption, type EntityDataAttrsOnly, type ILocalizableValue } from '../shared/interfaces';
-import { eraseTimeOfDay } from '../shared/common';
-import { QueryPagePreviewModeParam, StaysAmenitiesFilterItemId, StaysAmenitiesFilterId, StaysFreebiesFilterItemId, StaysFreebiesFilterId, NumMinutesInDay, StaysPriceFilterId, DefaultStayOffersSorting, StaysRatingFilterId, FlightsTripTypeFilterFlexibleDatesItemId, SearchOffersPriceRange, FlightsTripTypeFilterId, FlightsPriceFilterId, FlightsDepartureTimeFilterId, FlightsRatingFilterId, FlightsAirlineCompanyFilterId, DefaultFlightOffersSorting, DataKeyEntityCacheItems, FlightMinPassengers, UserNotificationLevel, AvailableLocaleCodes, ApiEndpointFlightOffersSearch, DataKeySearchFlightOffers, DataKeySearchStayOffers, ApiEndpointStayOffersSearch } from '../shared/constants';
-import { validateObject } from '../shared/validation';
-import { mapSearchFlightOffersResult, mapSearchStayOffersResult, mapSearchedFlightOffer, createSearchFlightOfferResultLookup } from '../shared/mappers';
-import { post } from '../shared/rest-utils';
-import AppConfig from './../appconfig';
-import { type ISearchFlightOffersMainParamsDto, type ISearchStayOffersMainParamsDto, SearchFlightOffersMainParamsDtoSchema, SearchStayOffersMainParamsDtoSchema, type ISearchFlightOffersParamsDto, type ISearchStayOffersParamsDto, type ISearchFlightOffersResultDto, type ISearchStayOffersResultDto } from './../server/dto';
-import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
-import { getI18nResName2, getI18nResName3, type I18nResName } from './../shared/i18n';
-import { addPayload, getPayload } from './../shared/payload';
 import omit from 'lodash-es/omit';
 import { usePreviewState } from './../composables/preview-state';
+import { getClientServices, getCommonServices, getServerServices } from '../helpers/service-accessors';
 
 export type OffersStoreInstanceFetchStatus = 'full-refetch' | 'filter-refetch' | 'sort-refetch' | 'page-fetch' | 'fetched' | 'error';
 export interface ISearchOffersStoreInstance<TParams extends ISearchFlightOffersParams | ISearchStayOffersParams, TMainParams = TParams extends ISearchFlightOffersParams ? ISearchFlightOffersMainParams : ISearchStayOffersMainParams, TDisplayOptions = TParams extends ISearchFlightOffersParams ? ISearchFlightOffersDisplayOptions : ISearchStayOffersDisplayOptions, TItem = TParams extends ISearchFlightOffersParams ? EntityDataAttrsOnly<IFlightOffer> : EntityDataAttrsOnly<IStayOffer>, TSortFactor = TParams extends ISearchFlightOffersParams ? FlightOffersSortFactor : StayOffersSortFactor> {
@@ -61,7 +57,7 @@ function isFlightOffersInstance (instance: ISearchOffersStoreInstance<ISearchFli
 
 type EntityCacheItemsPayload = IEntityCacheCityItem[];
 export const useSearchOffersStore = defineStore('search-offers-store', () => {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   logger.info('(search-offers-store) start store construction');
 
   const nuxtApp = useNuxtApp();
@@ -128,8 +124,8 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
   const router = useRouter();
   const { t } = useI18n();
 
-  const clientEntityCache = import.meta.client ? ClientServicesLocator.getEntityCache() : undefined;
-  const serverEntityCacheLogic = import.meta.server ? ServerServicesLocator.getEntityCacheLogic() : undefined;
+  const clientEntityCache = import.meta.client ? getClientServices().getEntityCache() : undefined;
+  const serverEntityCacheLogic = import.meta.server ? getServerServices()!.getEntityCacheLogic() : undefined;
 
   const getFilterVariantLocalizableText = (resName: I18nResName): ILocalizableValue => {
     return fromPairs(AvailableLocaleCodes.map(l => [l.toLowerCase(), t(resName, '', { locale: l })])) as any;
@@ -206,10 +202,10 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
       let validationError : ValidationError | undefined;
       switch (kind) {
         case 'flights':
-          validationError = validateObject(query, SearchFlightOffersMainParamsDtoSchema);
+          validationError = await validateObject(query, SearchFlightOffersMainParamsDtoSchema);
           break;
         case 'stays':
-          validationError = validateObject(query, SearchStayOffersMainParamsDtoSchema);
+          validationError = await validateObject(query, SearchStayOffersMainParamsDtoSchema);
           break;
       }
       if (validationError) {
@@ -260,7 +256,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
       return;
     }
 
-    const entityCache = ClientServicesLocator.getEntityCache();
+    const entityCache = getClientServices().getEntityCache();
     const cached = (await entityCache.get<'City'>([cityItem.id], [], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }));
     if ((cached?.length ?? 0) === 0) {
       logger.warn(`(search-offers-store) failed to ensure city item slug: cityId=${cityItem.id}`);
@@ -878,7 +874,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
   };
 
   const fillCityCacheFromPayload = async (): Promise<void> => {
-    const entityCache = ClientServicesLocator.getEntityCache();
+    const entityCache = getClientServices().getEntityCache();
     const cachePayload = getPayload<EntityCacheItemsPayload>(nuxtApp, DataKeyEntityCacheItems);
     if (cachePayload) {
       logger.verbose(`(search-offers-store) filling city cache from payload, items=${JSON.stringify(cachePayload)}`);

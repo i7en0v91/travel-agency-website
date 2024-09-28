@@ -1,12 +1,8 @@
 <script setup lang="ts">
 
-import type { GeoPoint, EntityDataAttrsOnly, ICity } from './../../shared/interfaces';
-import AppConfig from './../../appconfig';
+import { AppPage, type Locale, getI18nResName3, AppConfig, type GeoPoint, type EntityDataAttrsOnly, type ICity } from '@golobe-demo/shared';
 import InteractiveMap from './../common-page-components/map/interactive-map.vue';
-import { getI18nResName3 } from './../../shared/i18n';
-import { type Locale } from './../../shared/constants';
 import ComponentWaitingIndicator from './../component-waiting-indicator.vue';
-import { AppPage } from './../../shared/page-query-params';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 const { t, locale } = useI18n();
@@ -39,7 +35,7 @@ const webUrl = ref<string>();
     <ComponentWaitingIndicator v-if="!location || visibility === 'wait'" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="interactive-map-waiting-indicator my-xs-5" />
     <InteractiveMap
       v-else
-      v-model:webUrl="webUrl"
+      v-model:web-url="webUrl"
       :ctrl-key="`${ctrlKey}-InteractiveMap`"
       :origin="location"
       :city="city"

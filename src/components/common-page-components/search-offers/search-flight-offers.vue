@@ -1,14 +1,14 @@
 <script setup lang="ts">
-
-import { FlightMinPassengers, ApiEndpointCitiesSearch } from './../../../shared/constants';
+import { type FlightClass, type TripType, getI18nResName2, FlightMinPassengers } from '@golobe-demo/shared';
+import { type ISearchListItem, type ISearchFlightOffersMainParams, type ISearchFlightOffersParams } from './../../../types';
+import { ApiEndpointCitiesSearch } from './../../../server/api-definitions';
 import FieldFrame from './../../forms/field-frame.vue';
 import SearchListInput from './../../forms/search-list-input.vue';
-import { getI18nResName2 } from './../../../shared/i18n';
-import type { FlightClass, ISearchFlightOffersMainParams, ISearchFlightOffersParams, TripType, ISearchListItem } from './../../../shared/interfaces';
 import DropdownList from './../../../components/forms/dropdown-list.vue';
 import SearchFlightDatePicker from './search-flights-date-picker.vue';
 import SearchFlightsParams from './search-flights-params.vue';
 import { type ComponentInstance } from 'vue';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -18,7 +18,7 @@ const props = withDefaults(defineProps<IProps>(), {
   takeInitialValuesFromUrlQuery: false
 });
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const fromCity = ref<ISearchListItem | undefined>();
 const toCity = ref<ISearchListItem | undefined>();

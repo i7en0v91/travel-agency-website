@@ -1,8 +1,8 @@
 <script setup lang="ts">
-
+import { type ITravelDetailsData, type ITravelDetailsTextingData } from './../../../types';
 import type { WatchStopHandle, ComponentInstance } from 'vue';
 import TravelDetailsTextingFrame from './travel-details-texting-frame.vue';
-import { type ITravelDetailsData, type ITravelDetailsTextingData } from './../../../shared/interfaces';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -10,7 +10,7 @@ interface IProps {
 };
 const props = defineProps<IProps>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const activeFrame = ref<'initial' | 'A' | 'B'>('initial');
 const elFrameA = shallowRef<ComponentInstance<typeof TravelDetailsTextingFrame>>();
 const elFrameB = shallowRef<ComponentInstance<typeof TravelDetailsTextingFrame>>();

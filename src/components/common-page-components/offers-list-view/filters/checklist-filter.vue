@@ -1,13 +1,11 @@
 <script setup lang="ts">
-
+import { getI18nResName3, type Locale, getLocalizeableValue } from '@golobe-demo/shared';
 import isString from 'lodash-es/isString';
 import FlowChecklistItem from './flow-checklist-item.vue';
-import { getLocalizeableValue } from './../../../../shared/common';
-import { type Locale } from './../../../../shared/constants';
-import { type ISearchOffersChecklistFilterProps, type ISearchOffersFilterVariant, type SearchOffersFilterVariantId } from './../../../../shared/interfaces';
-import { getI18nResName3 } from './../../../../shared/i18n';
-import { updateTabIndices } from './../../../../shared/dom';
-import { TabIndicesUpdateDefaultTimeout, SearchOffersFilterTabGroupId } from './../../../../shared/constants';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../../helpers/dom';
+import { SearchOffersFilterTabGroupId } from './../../../../helpers/constants';
+import { type ISearchOffersChecklistFilterProps, type ISearchOffersFilterVariant, type SearchOffersFilterVariantId } from './../../../../types';
+import { getCommonServices } from '../../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -22,7 +20,7 @@ const props = withDefaults(defineProps<IProps>(), {
 
 const { locale } = useI18n();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const $emit = defineEmits<{(event: 'update:value', value: SearchOffersFilterVariantId[]): void}>();
 

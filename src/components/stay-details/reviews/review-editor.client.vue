@@ -1,16 +1,14 @@
 <script setup lang="ts">
-
+import { type EntityId, AppException, AppExceptionCodeEnum, MaxStayReviewLength, getI18nResName2, getI18nResName3, type I18nResName } from '@golobe-demo/shared';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
+import { type ReviewEditorButtonType } from './../../../types';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { useModal } from 'vue-final-modal';
 import { TiptapUnderline, TiptapPlaceholder } from './../../../client/tiptapExt';
 import ReviewEditorButton from './review-editor-button.vue';
 import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
-import { updateTabIndices } from './../../../shared/dom';
-import { AppException, AppExceptionCodeEnum } from './../../../shared/exceptions';
-import { type ReviewEditorButtonType, type EntityId } from './../../../shared/interfaces';
-import { TabIndicesUpdateDefaultTimeout, MaxStayReviewLength } from './../../../shared/constants';
-import { getI18nResName2, getI18nResName3, type I18nResName } from './../../../shared/i18n';
 import ReviewScorePicker from './review-score-picker.vue';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -18,7 +16,7 @@ interface IProps {
 }
 
 const props = defineProps<IProps>();
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const { t } = useI18n();
 
@@ -59,7 +57,7 @@ const { open } = useModal({
       logger.debug(`(ReviewEditor) opened score picker: ctrlKey=${props.ctrlKey}, result=${scorePickerResult.value}`); ;
     },
     onClosed () {
-      const logger = CommonServicesLocator.getLogger();
+      const logger = getCommonServices().getLogger();
       logger.debug(`(ReviewEditor) closing score picker: ctrlKey=${props.ctrlKey}, result=${scorePickerResult.value}`);
       completeCallback!();
       setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);

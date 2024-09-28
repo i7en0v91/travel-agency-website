@@ -1,8 +1,8 @@
+import { HeaderSetCookie, CookieAuthSessionToken, CookieAuthCallbackUrl, CookieAuthCsrfToken, AppConfig, type IAppLogger } from '@golobe-demo/shared';
+import { ApiAppEndpointPrefix,  } from './../api-definitions';
 import { splitCookiesString } from 'h3';
 import flatten from 'lodash-es/flatten';
-import { type IAppLogger } from '../../shared/applogger';
-import { ApiAppEndpointPrefix, HeaderSetCookie, CookieAuthSessionToken, CookieAuthCallbackUrl, CookieAuthCsrfToken } from '../../shared/constants';
-import AppConfig from './../../appconfig';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 /** 
 KB: filters out auth-cookies from "set-cookie":"next.auth...." response headers for some non-auth endpoints 
@@ -21,7 +21,7 @@ export default defineNitroPlugin((nitroApp) => {
     if (!event.headers) {
       return;
     }
-    const logger = (globalThis as any)?.ServerServicesLocator?.getLogger() as IAppLogger | undefined;
+    const logger = getCommonServices()?.getLogger() as IAppLogger | undefined;
     const allHeaders = event.node.res.getHeaders();
     const setCookieValues = allHeaders[HeaderSetCookie];
     if (!setCookieValues || setCookieValues.length === 0) {

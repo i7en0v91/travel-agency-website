@@ -1,13 +1,12 @@
 <script setup lang="ts">
+import { DefaultFlightClass, FlightMinPassengers, FlightMaxPassengers, type FlightClass, getI18nResName1, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 import DropdownList from './../../forms/dropdown-list.vue';
-import { updateTabIndices } from './../../../shared/dom';
 import FieldFrame from './../../forms/field-frame.vue';
-import { getI18nResName1, getI18nResName2, getI18nResName3 } from './../../../shared/i18n';
-import { type FlightClass } from './../../../shared/interfaces';
 import SimpleButton from './../../forms/simple-button.vue';
-import { FlightMinPassengers, FlightMaxPassengers, TabIndicesUpdateDefaultTimeout, DefaultFlightClass } from './../../../shared/constants';
 import SearchOffersCounter from './search-offers-counter.vue';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IFlightParams {
   passengers: number,
@@ -32,7 +31,7 @@ const elDropdownContainer = shallowRef<HTMLElement>();
 const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
 const hasMounted = ref(false);
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const controlSettingsStore = useControlSettingsStore();
 const passengerControlValueSetting = controlSettingsStore.getControlValueSetting<number>(`${props.ctrlKey}-NumPassengers`, FlightMinPassengers, true);

@@ -1,11 +1,9 @@
 <script setup lang="ts">
-
-import { getI18nResName2 } from './../shared/i18n';
+import { AppPage, type Locale, CookiePolicyConsent, getI18nResName2 } from '@golobe-demo/shared';
+import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../helpers/dom';
 import SimpleButton from './forms/simple-button.vue';
-import { type Locale, CookiePolicyConsent, TabIndicesUpdateDefaultTimeout } from './../shared/constants';
-import { AppPage } from './../shared/page-query-params';
-import { updateTabIndices } from './../shared/dom';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
+import { getCommonServices } from '../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string
@@ -18,7 +16,7 @@ const ConsentCookieValue = 'consent-given';
 const consentCookie = useCookie(CookiePolicyConsent, { path: '/', maxAge: 2147483640 /** "never" expire */ });
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 function onAcceptBtnClick () {
   logger.info('(CookieBanner) accept button clicked');

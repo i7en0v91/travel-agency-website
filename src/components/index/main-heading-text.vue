@@ -1,6 +1,5 @@
 <script setup lang="ts">
-
-import { getI18nResName3 } from './../../shared/i18n';
+import { getI18nResName3 } from '@golobe-demo/shared';
 
 interface IProps {
   ctrlKey: string

@@ -1,13 +1,11 @@
+import { type IAppLogger, type EntityId, type ILocalizableValue, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import  { ApiEndpointStayReviews, type ICreateOrUpdateStayReviewDto, type IModifyStayReviewResultDto, type IStayReviewsDto } from '../server/api-definitions';
+import { getObject, post, del } from './../helpers/rest-utils';
+import type { IUserAccount } from './user-account-store';
 import orderBy from 'lodash-es/orderBy';
 import isString from 'lodash-es/isString';
-import type { NuxtApp } from '#app';
-import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
-import { type EntityId, type ILocalizableValue } from './../shared/interfaces';
-import { ApiEndpointStayReviews } from './../shared/constants';
-import { getObject, post, del } from './../shared/rest-utils';
-import { type IAppLogger } from './../shared/applogger';
-import type { IUserAccount } from './user-account-store';
-import type { ICreateOrUpdateStayReviewDto, IModifyStayReviewResultDto, IStayReviewsDto } from './../server/dto';
+import type { NuxtApp } from 'nuxt/app';
+import { getCommonServices } from '../helpers/service-accessors';
 
 interface IStayReviewUser {
   avatar?: {
@@ -116,7 +114,7 @@ async function fetchItems (stayId: EntityId, nuxtApp: NuxtApp, logger: IAppLogge
 export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factory', () => {
   const allInstances = new Map<EntityId, StayReviewsStoreInternalRef>();
 
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   const userAccountStore = useUserAccountStore();
   let userAccount: IUserAccount | undefined;
 

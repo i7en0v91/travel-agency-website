@@ -1,14 +1,13 @@
-import { type Locale, type Theme, SignUpResultEnum } from '../../../../shared/constants';
-import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
+import { AppConfig, AppException, AppExceptionCodeEnum, type Locale, type Theme, SignUpResultEnum } from '@golobe-demo/shared';
+import { type ISignUpDto, SignUpDtoSchema, type ISignUpResultDto } from '../../../api-definitions';
 import { defineWebApiEventHandler } from './../../../utils/webapi-event-handler';
-import { type ISignUpDto, SignUpDtoSchema, type ISignUpResultDto } from './../../../dto';
-import AppConfig from './../../../../appconfig';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event) => {
   const signUpDto = await readBody(event) as ISignUpDto;
 
   const emailingEnabled = AppConfig.email;
-  const userLogic = ServerServicesLocator.getUserLogic();
+  const userLogic = getServerServices()!.getUserLogic();
   const registrationResult = await userLogic.registerUserByEmail(signUpDto.email, signUpDto.password, emailingEnabled ? 'send-email' : 'verified', signUpDto.firstName, signUpDto.lastName, signUpDto.theme as Theme, signUpDto.locale as Locale, event);
   let responseDto: ISignUpResultDto | undefined;
   switch (registrationResult) {

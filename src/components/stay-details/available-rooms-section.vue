@@ -1,11 +1,7 @@
 <script setup lang="ts">
-
+import { type Locale, getI18nResName3, getI18nResName2, type Timestamp, type StayServiceLevel, type EntityId, type Price, ImageCategory, AppPage, getPagePath } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import range from 'lodash-es/range';
-import { AppPage,getPagePath } from '../../shared/page-query-params';
-import { type Timestamp, type StayServiceLevel, type EntityId, type Price, ImageCategory } from './../../shared/interfaces';
-import { getI18nResName3, getI18nResName2 } from './../../shared/i18n';
-import { type Locale } from './../../shared/constants';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 const { locale } = useI18n();

@@ -1,11 +1,9 @@
-import type { NuxtApp } from '#app';
-import { ApiEndpointStayOfferFavourite, ApiEndpointFlightOfferFavourite, ApiEndpointUserFavourites } from '../shared/constants';
-import { type OfferKind, type EntityId, type IFlightOffer, type IStayOffer, type EntityDataAttrsOnly } from '../shared/interfaces';
-import { getObject, post } from './../shared/rest-utils';
-import { type IAppLogger } from './../shared/applogger';
-import { mapUserFavouriteOffersResult } from './../shared/mappers';
-import type { IToggleFavouriteOfferResultDto, IUserFavouritesResultDto } from './../server/dto';
-import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
+import { AppException, AppExceptionCodeEnum, type IAppLogger, type OfferKind, type EntityId, type IFlightOffer, type IStayOffer, type EntityDataAttrsOnly } from '@golobe-demo/shared';
+import { type IToggleFavouriteOfferResultDto, type IUserFavouritesResultDto, ApiEndpointStayOfferFavourite, ApiEndpointFlightOfferFavourite, ApiEndpointUserFavourites } from './../server/api-definitions';
+import { mapUserFavouriteOffersResult } from './../helpers/entity-mappers';
+import { getObject, post } from './../helpers/rest-utils';
+import type { NuxtApp } from 'nuxt/app';
+import { getCommonServices } from '../helpers/service-accessors';
 
 export type UserFavouriteStoreItem = EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>;
 
@@ -26,7 +24,7 @@ export interface IUserFavouritesStoreFactory {
 }
 
 export const useUserFavouritesStore = defineStore('userFavouritesStore', () => {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   let instance: UserFavouritesStoreInternalRef | undefined;
 
   const userAccountStore = useUserAccountStore();

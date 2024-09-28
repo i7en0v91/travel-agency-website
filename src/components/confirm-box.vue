@@ -1,9 +1,9 @@
 <script setup lang="ts">
-
+import { type I18nResName, getI18nResName2 } from '@golobe-demo/shared';
+import { type ConfirmBoxButton } from './../types';
 import { VueFinalModal } from 'vue-final-modal';
-import { type I18nResName, getI18nResName2 } from './../shared/i18n';
 import SimpleButton from './forms/simple-button.vue';
-import { type ConfirmBoxButton } from './../shared/interfaces';
+import { getCommonServices } from '../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -15,7 +15,7 @@ interface IProps {
 
 const props = defineProps<IProps>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const clickedButton = shallowRef<ConfirmBoxButton>();
 
 const $emit = defineEmits(['update:modelValue']);

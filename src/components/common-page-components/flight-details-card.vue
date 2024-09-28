@@ -1,11 +1,7 @@
 <script setup lang="ts">
-
+import { type Locale, getLocalizeableValue, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, getValueForFlightDurationFormatting, extractAirportCode, getI18nResName2, getI18nResName3, type EntityDataAttrsOnly, type ICity, ImageCategory, type ILocalizableValue, type IAirlineCompany } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import type { Decimal } from 'decimal.js';
-import { type EntityDataAttrsOnly, type ICity, ImageCategory, type ILocalizableValue, type IAirlineCompany } from './../../shared/interfaces';
-import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
-import { getLocalizeableValue, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, getValueForFlightDurationFormatting, extractAirportCode } from './../../shared/common';
-import { type Locale } from './../../shared/constants';
 
 interface IProps {
   ctrlKey: string,

@@ -1,4 +1,4 @@
-import { RuPluralizationRule } from './shared/i18n';
+import { RuPluralizationRule } from '@golobe-demo/shared';
 
 const currencyOptions = {
   style: 'currency' as const,

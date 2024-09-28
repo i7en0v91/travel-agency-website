@@ -1,13 +1,13 @@
-import type { H3Event } from 'h3';
-import { validateObject } from '../../../../shared/validation';
-import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
+import { AppConfig, AppException, AppExceptionCodeEnum, validateObject } from '@golobe-demo/shared';
+import { CitiesSearchQuerySchema, type IListItemDto } from '../../../api-definitions';
 import { defineWebApiEventHandler } from './../../../utils/webapi-event-handler';
-import { CitiesSearchQuerySchema, type IListItemDto } from './../../../dto';
-import AppConfig from './../../../../appconfig'; 
+import type { H3Event } from 'h3';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = ServerServicesLocator.getLogger();
-  const citiesLogic = ServerServicesLocator.getCitiesLogic();
+  const serverServices = getServerServices()!;
+  const logger = serverServices.getLogger();
+  const citiesLogic = serverServices.getCitiesLogic();
   const query = getQuery(event);
 
   if (!query) {
@@ -19,7 +19,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  const validationError = validateObject(query, CitiesSearchQuerySchema);
+  const validationError = await validateObject(query, CitiesSearchQuerySchema);
   if (validationError) {
     logger.warn(`(api:cities-search) cities search query does not match schema, url=${event.node.req.url}, msg=${validationError.message}, issues=${validationError.errors?.join('; ') ?? '[empty]'}]`, undefined, query);
     throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'search query arguments has invalid format', 'error-stub');

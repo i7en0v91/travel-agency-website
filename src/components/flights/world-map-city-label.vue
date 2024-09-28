@@ -1,8 +1,6 @@
 <script setup lang="ts">
-
-import { type ILocalizableValue, ImageCategory, type IImageEntitySrc } from './../../shared/interfaces';
-import { getI18nResName3 } from './../../shared/i18n';
-import { WorldMapCityLabelFlipX } from './../../shared/constants';
+import { getI18nResName3, type ILocalizableValue, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
+import { WorldMapCityLabelFlipX } from './../../helpers/constants';
 
 interface IProps {
   ctrlKey: string,

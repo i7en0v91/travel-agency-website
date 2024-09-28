@@ -1,11 +1,10 @@
+import { AppConfig, type Locale, type Theme, RecoverPasswordResultEnum, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import { type IRecoverPasswordDto, type IRecoverPasswordResultDto, RecoverPasswordDtoSchema } from '../../../api-definitions';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type IRecoverPasswordDto, type IRecoverPasswordResultDto, RecoverPasswordDtoSchema } from '../../../dto';
-import { type Locale, type Theme, RecoverPasswordResultEnum } from '../../../../shared/constants';
-import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
-import AppConfig from './../../../../appconfig';
+import { getCommonServices, getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event) => {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   if (!AppConfig.email) {
     const msg = '(recover-password) cannot recover password as emailing is disabled';
     logger.warn(msg);
@@ -14,7 +13,7 @@ export default defineWebApiEventHandler(async (event) => {
 
   const passwordRecoveryDto = await readBody(event) as IRecoverPasswordDto;
 
-  const userLogic = ServerServicesLocator.getUserLogic();
+  const userLogic = getServerServices()!.getUserLogic();
   const recoveryResult = await userLogic.recoverUserPassword(passwordRecoveryDto.email, passwordRecoveryDto.theme as Theme, passwordRecoveryDto.locale as Locale, event);
   let responseDto: IRecoverPasswordResultDto | undefined;
   switch (recoveryResult) {

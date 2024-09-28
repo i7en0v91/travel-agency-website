@@ -1,12 +1,11 @@
 <script setup lang="ts">
-
+import { UserNotificationLevel, getI18nResName2, getI18nResName3, type ImageCategory } from '@golobe-demo/shared';
+import { CroppingImageDataKey, CroppingImageFormat } from './../../helpers/constants';
 import Cropper from 'cropperjs';
 import { VueFinalModal } from 'vue-final-modal';
-import { type ImageCategory } from './../../shared/interfaces';
-import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
-import { UserNotificationLevel, CroppingImageDataKey, CroppingImageFormat } from './../../shared/constants';
 import { useThemeSettings } from './../../composables/theme-settings';
 import SimpleButton from './../forms/simple-button.vue';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 globalThis.Buffer = globalThis.Buffer || Buffer;
 
@@ -26,7 +25,7 @@ const { t } = useI18n();
 const userNotificationStore = useUserNotificationStore();
 const systemConfigurationStore = useSystemConfigurationStore();
 const themeSettings = useThemeSettings();
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const isError = ref(false);
 const cropperImg = shallowRef<InstanceType<typeof HTMLImageElement>>();

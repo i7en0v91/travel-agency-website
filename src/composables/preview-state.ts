@@ -1,10 +1,8 @@
+import { getI18nResName1, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, UserNotificationLevel, AppException, AppExceptionCodeEnum, type IAppLogger } from "@golobe-demo/shared";
 import { type H3Event } from 'h3';
-import { type IAppLogger } from "./../shared/applogger";
-import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue, UserNotificationLevel } from './../shared/constants';
-import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
 import { parseURL, parseQuery } from 'ufo';
-import { getI18nResName1 } from './../shared/i18n';
 import { type IUserNotificationStore } from './../stores/user-notification-store';
+import { getCommonServices } from "../helpers/service-accessors";
 
 let _Enabled: boolean | undefined = undefined;
 
@@ -25,7 +23,7 @@ export function usePreviewState(event: H3Event | undefined = undefined): { enabl
   const nuxtApp = useNuxtApp();
   const userNotificationStore = useUserNotificationStore();
 
-  const logger: IAppLogger = CommonServicesLocator.getLogger();
+  const logger: IAppLogger = getCommonServices().getLogger();
   const requestUserAction = async (): Promise<boolean> => { 
     return await onRequestUserAction(_Enabled ?? false, userNotificationStore, logger);
   };
@@ -52,7 +50,7 @@ export function usePreviewState(event: H3Event | undefined = undefined): { enabl
         }
         query = event.node.req.url ? parseQuery(parseURL(event.node.req.url!).search ?? '') : undefined;
       } else {
-        query = useNuxtApp().$router.currentRoute.value.query;
+        query = (nuxtApp.$router as any).currentRoute.value.query;
       }
       
     }

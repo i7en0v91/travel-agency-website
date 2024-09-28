@@ -1,9 +1,7 @@
+import { CachedResultsInAppServicesEnabled, lookupValueOrThrow, DataKeyImageSrcSizes, TemporaryEntityId, ImageCategory, type IImageCategoryInfo } from '@golobe-demo/shared';
+import { getPayload, addPayload } from './../helpers/payload';
 import { destr } from 'destr';
-import { ImageCategory, type IImageCategoryInfo } from '../shared/interfaces';
-import { DataKeyImageSrcSizes, TemporaryEntityId } from '../shared/constants';
-import { getPayload, addPayload } from './../shared/payload';
-import { lookupValueOrThrow } from './../shared/common';
-import { CachedResultsInAppServicesEnabled } from './../server/backend/helpers/utils';
+import { getCommonServices, getServerServices } from '../helpers/service-accessors';
 
 type CategoryInfoPayload = [string, IImageCategoryInfo];
 
@@ -13,7 +11,7 @@ export interface ISystemConfigurationStore {
 }
 
 export const useSystemConfigurationStore = defineStore('systemConfigurationStore', () => {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   let initialized = false;
   let imageCategoryInfosMap: ReadonlyMap<ImageCategory, IImageCategoryInfo> | undefined;
   let imageCategoryInfosPayload: CategoryInfoPayload[] | undefined;
@@ -23,7 +21,7 @@ export const useSystemConfigurationStore = defineStore('systemConfigurationStore
       logger.verbose('(systemConfigurationStore) building image category infos payload');
       const result: CategoryInfoPayload[] = [];
 
-      const imageCategoryLogic = ServerServicesLocator.getImageCategoryLogic();
+      const imageCategoryLogic = getServerServices()!.getImageCategoryLogic();
       const allCategoryInfos = [...(await imageCategoryLogic.getImageCategoryInfos(CachedResultsInAppServicesEnabled)).entries()];
       for (let i = 0; i < allCategoryInfos.length; i++) {
         const category = allCategoryInfos[i][0];

@@ -1,21 +1,20 @@
+import { AppException, AppExceptionCodeEnum, isPasswordSecure, RecoverPasswordCompleteResultEnum } from '@golobe-demo/shared';
+import { type IRecoverPasswordCompleteDto, RecoverPasswordCompleteDtoSchema, type IRecoverPasswordCompleteResultDto } from '../../../api-definitions';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type IRecoverPasswordCompleteDto, RecoverPasswordCompleteDtoSchema, type IRecoverPasswordCompleteResultDto } from '../../../dto';
-import { RecoverPasswordCompleteResultEnum } from './../../../../shared/constants';
-import { isPasswordSecure } from '../../../../shared/common';
-import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
+import { getCommonServices, getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event) => {
   const recoverPasswordCompleteDto = await readBody(event) as IRecoverPasswordCompleteDto;
 
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   if (!isPasswordSecure(recoverPasswordCompleteDto.password)) {
     const msg = '(recover-password-complete) insecure password';
     logger.warn(msg);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, msg, 'error-page');
   }
 
-  const tokenLogic = ServerServicesLocator.getTokenLogic();
-  const userLogic = ServerServicesLocator.getUserLogic();
+  const tokenLogic = getServerServices()!.getTokenLogic();
+  const userLogic = getServerServices()!.getUserLogic();
   const registrationResult = await tokenLogic.consumeToken(recoverPasswordCompleteDto.id, recoverPasswordCompleteDto.value);
   let responseDto: IRecoverPasswordCompleteResultDto | undefined;
   switch (registrationResult.code) {

@@ -1,12 +1,11 @@
 <script setup lang="ts">
-
+import { type OfferKind, type StayOffersSortFactor, type FlightOffersSortFactor, StayOffersSortFactorEnum, convertTimeOfDay, getI18nResName3, DefaultStayOffersSorting, DefaultFlightOffersSorting, DeviceSizeEnum } from '@golobe-demo/shared';
+import { type ISearchFlightOffersParams, type ISearchStayOffersParams, type ISearchStayOffersDisplayOptions, type IDropdownListItemProps, type OtherOptionButtonVariant, type IOtherOptionsButtonGroupProps, type IOptionButtonProps, type ISearchFlightOffersDisplayOption, type ISearchFlightOffersDisplayOptions, type DropdownListValue } from './../../../types';
 import throttle from 'lodash-es/throttle';
 import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
-import { getI18nResName3 } from './../../../shared/i18n';
-import { SearchStayOffersDisplayOptions, SearchFlightOffersDisplayOptions, DefaultStayOffersSorting, DefaultFlightOffersSorting, DeviceSizeEnum } from './../../../shared/constants';
-import { callForCurrentDeviceSize } from './../../../shared/dom';
-import { convertTimeOfDay } from './../../../shared/common';
-import { StayOffersSortFactorEnum, type ISearchFlightOffersParams, type ISearchStayOffersParams, type ISearchStayOffersDisplayOptions, type IDropdownListItemProps, type StayOffersSortFactor, type FlightOffersSortFactor, type OtherOptionButtonVariant, type IOtherOptionsButtonGroupProps, type OfferKind, type IOptionButtonProps, type ISearchFlightOffersDisplayOption, type ISearchFlightOffersDisplayOptions, type DropdownListValue } from './../../../shared/interfaces';
+import { SearchStayOffersDisplayOptions, SearchFlightOffersDisplayOptions } from './../../../helpers/constants';
+import { callForCurrentDeviceSize } from './../../../helpers/dom';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -30,7 +29,7 @@ const { t } = useI18n();
 const searchOffersStoreAccessor = useSearchOffersStore();
 const searchOffersStore = await searchOffersStoreAccessor.getInstance(props.offersKind, true, true);
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const isError = ref(false);
 

@@ -1,5 +1,6 @@
-import type { IAppLogger } from "./../shared/applogger";
-import { AppException, AppExceptionCodeEnum, createNuxtError } from "./../shared/exceptions";
+import { AppException, AppExceptionCodeEnum, type IAppLogger } from "@golobe-demo/shared";
+import { createNuxtError } from "./../helpers/exceptions";
+import { getServerServices } from "../helpers/service-accessors";
 
 function showExceptionPage(exception: any, logger: IAppLogger) {
   logger.debug('(exception-page-handler) handling exception', exception);
@@ -20,7 +21,7 @@ export default defineNuxtPlugin(
     enforce: 'default',
     async setup (nuxtApp) {
       nuxtApp.hook('app:rendered', (ctx) => {
-        const logger = (globalThis as any).ServerServicesLocator.getLogger();
+        const logger = getServerServices()!.getLogger();
         logger.debug('(exception-page-handler) app:rendered');
 
         const exception = ctx.ssrContext?.event?.context?.appException ?? useError()?.value;

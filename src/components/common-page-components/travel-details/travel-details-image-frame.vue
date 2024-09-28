@@ -1,13 +1,13 @@
 <script setup lang="ts">
-
-import { ImageCategory, type TravelDetailsImageStatus, type Timestamp } from './../../../shared/interfaces';
-import { getI18nResName2 } from './../../../shared/i18n';
-import type { NuxtImg } from '#build/components';
-import { type ComponentInstance } from 'vue';
+import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue, ImageCategory, type Timestamp, getI18nResName2 } from '@golobe-demo/shared';
+import { type TravelDetailsImageStatus } from './../../../types';
+import { ApiEndpointImage } from './../../../server/api-definitions';
+import { type ComponentInstance, type GlobalComponents } from 'vue';
 import { usePreviewState } from './../../../composables/preview-state';
-import { ApiEndpointImage, QueryPagePreviewModeParam, PreviewModeParamEnabledValue } from './../../../shared/constants';
 import { withQuery } from 'ufo';
 import set from 'lodash-es/set';
+import { getCommonServices } from '../../../helpers/service-accessors';
+type NuxtImg = GlobalComponents['NuxtImg'];
 
 interface IProps {
   ctrlKey: string,
@@ -21,12 +21,12 @@ const props = withDefaults(defineProps<IProps>(), {
   timestamp: undefined
 });
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const systemConfigurationStore = useSystemConfigurationStore();
 const { enabled } = usePreviewState();
 
-const imgEl = shallowRef<ComponentInstance<typeof NuxtImg>>();
+const imgEl = shallowRef<ComponentInstance<NuxtImg>>();
 const $emit = defineEmits<{(event: 'update:status', status?: TravelDetailsImageStatus): void}>();
 
 function fireStatusChange (status: TravelDetailsImageStatus) {

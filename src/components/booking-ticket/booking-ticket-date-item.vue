@@ -1,8 +1,7 @@
 <script setup lang="ts">
+import { type Locale, getLocalizeableValue } from '@golobe-demo/shared';
 import isString from 'lodash-es/isString';
-import { getLocalizeableValue } from './../../shared/common';
-import { type Locale } from './../../shared/constants';
-import type { IBookingTicketDatesItemProps } from './../../shared/interfaces';
+import { type IBookingTicketDatesItemProps } from './../../types';
 
 withDefaults(defineProps<IBookingTicketDatesItemProps>(), {
   label: undefined,

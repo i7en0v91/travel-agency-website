@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { type I18nResName, getI18nResName1 } from '@golobe-demo/shared';
+import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 import dayjs from 'dayjs';
-import { updateTabIndices } from './../../shared/dom';
 import FieldFrame from './../forms/field-frame.vue';
-import { type I18nResName, getI18nResName1 } from './../../shared/i18n';
-import { TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -35,7 +35,7 @@ const { d, locale } = useI18n();
 const elBtn = shallowRef<HTMLElement>();
 const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const today = eraseTimeOfDay(dayjs().utc(true).toDate());
 let defaultValue = props.defaultDate ? eraseTimeOfDay(props.defaultDate) : today;

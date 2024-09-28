@@ -1,14 +1,10 @@
+import { HeaderAppVersion, AppException, AppExceptionCodeEnum, AppConfig, type IAppLogger, type ILocalizableValue, type EntityId, type GeoPoint, DataKeyWorldMapData } from '@golobe-demo/shared';
+import { ApiEndpointPopularCitiesList, type IWorldMapDataDto, type IPopularCityDto } from '../server/api-definitions';
+import { isPrefersReducedMotionEnabled } from './../helpers/dom';
+import { usePreviewState } from './../composables/preview-state';
 import range from 'lodash-es/range';
 import clamp from 'lodash-es/clamp';
-import { type IWorldMapDataDto, type IPopularCityDto } from '../server/dto';
-import { DataKeyWorldMapData, ApiEndpointPopularCitiesList } from '../shared/constants';
-import { type ILocalizableValue, type EntityId, type GeoPoint } from '../shared/interfaces';
-import type { IAppLogger } from '../shared/applogger';
-import AppConfig from './../appconfig';
-import { isPrefersReducedMotionEnabled } from './../shared/dom';
-import { AppException, AppExceptionCodeEnum } from './../shared/exceptions';
-import { HeaderAppVersion } from './../shared/constants';
-import { usePreviewState } from './../composables/preview-state';
+import { getCommonServices, getServerServices } from '../helpers/service-accessors';
 
 export interface IWorldMapPoint {
   coord: {
@@ -247,7 +243,7 @@ function onPrepareNewFrame (map: IWorldMapInternal): 'continue-animation' | 'sto
 }
 
 export const useWorldMapStore = defineStore('world-map-store', () => {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   const nuxtApp = useNuxtApp();
   const { enabled } = usePreviewState();
   const citiesListFetch = useFetch<IPopularCityDto[] | null[]>(`/${ApiEndpointPopularCitiesList}`,
@@ -267,7 +263,7 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
   const getWorldMapDataOnServer = async (): Promise<IWorldMapDataDto> => {
     logger.verbose('(world-map-store) loading world map data from assets');
     try {
-      const worldMapDto = await ServerServicesLocator.getAssetsProvider().getAppData('world-map.json') as IWorldMapDataDto;
+      const worldMapDto = await getServerServices()!.getAssetsProvider().getAppData('world-map.json') as IWorldMapDataDto;
       if (!worldMapDto) {
         throw new Error('failed to load world map data from assets');
       }

@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { getI18nResName1, getI18nResName2, getI18nResName3, formatValidThruDate } from '@golobe-demo/shared';
+import { TooltipHideTimeout } from './../../helpers/constants';
 import type { Tooltip } from 'floating-vue';
-import { TooltipHideTimeout } from './../../shared/constants';
-import { getI18nResName1, getI18nResName2, getI18nResName3 } from './../../shared/i18n';
-import { formatValidThruDate } from './../../shared/common';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -11,7 +11,7 @@ interface IProps {
 };
 const props = defineProps<IProps>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
 

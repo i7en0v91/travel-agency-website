@@ -1,9 +1,9 @@
+import { type IEntityCacheItem, type IEntityCacheSlugItem, type CacheEntityType, type EntityId, type GetEntityCacheItem, type IAppLogger } from '@golobe-demo/shared';
 import { type Storage, type StorageValue } from 'unstorage';
+import { ApiEndpointEntityCache } from './../server/api-definitions';
+import { getObject } from './../helpers/rest-utils';
+import { type IEntityCache } from './../types';
 import dayjs from 'dayjs';
-import { type IAppLogger } from '../shared/applogger';
-import { type IEntityCache, type IEntityCacheItem, type IEntityCacheSlugItem, type CacheEntityType, type EntityId, type GetEntityCacheItem } from '../shared/interfaces';
-import { ApiEndpointEntityCache } from '../shared/constants';
-import { getObject } from '../shared/rest-utils';
 
 declare interface IEntityCacheItemEntry<TCacheItem extends { type: CacheEntityType; } & IEntityCacheItem> {
   item: TCacheItem,

@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { getI18nResName3, type I18nResName } from './../../../shared/i18n';
-import { ApiEndpointUserTickets, TabHistoryOptionButtonGroup, TabHistoryOptionButtonFlights, TabHistoryOptionButtonStays } from './../../../shared/constants';
+import { AppConfig, type EntityId, type OfferKind, type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, eraseTimeOfDay, getValueForFlightDayFormatting, getI18nResName3, type I18nResName } from '@golobe-demo/shared';
+import { TabHistoryOptionButtonGroup, TabHistoryOptionButtonFlights, TabHistoryOptionButtonStays } from './../../../helpers/constants';
 import FlightTicketCard from './../../../components/user-account/ticket-card/ticket-flight-card.vue';
 import StayTicketCard from './../../../components/user-account/ticket-card/ticket-stay-card.vue';
-import { type EntityId, type OfferKind, type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer } from './../../../shared/interfaces';
-import { mapUserTicketsResult } from './../../../shared/mappers';
-import { type IUserTicketsResultDto } from './../../../server/dto';
-import { eraseTimeOfDay, getValueForFlightDayFormatting } from './../../../shared/common';
+import { mapUserTicketsResult } from './../../../helpers/entity-mappers';
+import { ApiEndpointUserTickets, type IUserTicketsResultDto } from '../../../server/api-definitions';
 import dayjs from 'dayjs';
-import AppConfig from './../../../appconfig';
 import { usePreviewState } from './../../../composables/preview-state';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 export type UserTicketItem = (EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>) & { bookingId: EntityId, bookingDateUtc: Date };
 declare type TimeRangeFilter = 'upcoming' | 'passed';
@@ -21,7 +19,7 @@ interface IProps {
 }
 const props = defineProps<IProps>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const isError = ref(false);
 
 const controlSettingsStore = useControlSettingsStore();

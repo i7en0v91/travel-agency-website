@@ -1,15 +1,14 @@
 <script setup lang="ts">
-
+import { AppException, AppExceptionCodeEnum, getI18nResName2 } from '@golobe-demo/shared';
+import { type TravelDetailsImageStatus } from './../../../types';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
+import { defaultErrorHandler } from './../../../helpers/exceptions';
 import type { WatchStopHandle, ComponentInstance } from 'vue';
 import range from 'lodash-es/range';
 import PageSection from './../page-section.vue';
 import TravelDetailsTexting from './travel-details-texting.vue';
 import TravelDetailsImage from './travel-details-image.vue';
-import { getI18nResName2 } from './../../../shared/i18n';
-import { type TravelDetailsImageStatus } from './../../../shared/interfaces';
-import { updateTabIndices } from './../../../shared/dom';
-import { TabIndicesUpdateDefaultTimeout } from './../../../shared/constants';
-import { AppException, AppExceptionCodeEnum, defaultErrorHandler } from './../../../shared/exceptions';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -17,7 +16,7 @@ interface IProps {
 };
 const props = defineProps<IProps>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const travelDetailsStore = useTravelDetailsStore();
 const isError = ref(false);
 

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-
+import { getI18nResName3 } from '@golobe-demo/shared';
+import type { ReviewEditorButtonType } from './../../../types';
 import kebabCase from 'lodash-es/kebabCase';
-import { getI18nResName3 } from './../../../shared/i18n';
-import type { ReviewEditorButtonType } from './../../../shared/interfaces';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -12,7 +12,7 @@ interface IProps {
 }
 const props = defineProps<IProps>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const cssClass = computed(() => `review-editor-button brdr-1 editor-icon-${kebabCase(props.type)} ${(props.disabled) ? 'disabled' : ''} ${(props.active) ? 'active' : ''}`);
 

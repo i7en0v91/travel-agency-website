@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { getI18nResName2 } from '@golobe-demo/shared';
 import PaymentMethodPicker from './payment-method-picker.vue';
 import LoginForPay from './login-for-pay.vue';
 import PaymentCardPicker from './payment-card-picker.vue';
-import { getI18nResName2 } from './../../shared/i18n';
 import ComponentWaitingIndicator from './../../components/component-waiting-indicator.vue';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -15,7 +16,7 @@ const props = withDefaults(defineProps<IProps>(), {
   paymentProcessing: false
 });
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const { status } = useAuth();
 

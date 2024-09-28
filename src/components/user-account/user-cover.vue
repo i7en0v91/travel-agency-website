@@ -1,10 +1,8 @@
 <script setup lang="ts">
-
-import { DefaultUserCoverSlug } from './../../shared/constants';
-import { ImageCategory } from './../../shared/interfaces';
-import { getI18nResName2 } from './../../shared/i18n';
+import { ImageCategory, DefaultUserCoverSlug, getI18nResName2 } from '@golobe-demo/shared';
 import EditableImage from './../images/editable-image.vue';
 import { type ComponentInstance } from 'vue';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string
@@ -16,7 +14,7 @@ const userCoverImage = shallowRef<ComponentInstance<typeof EditableImage>>();
 const userAccountStore = useUserAccountStore();
 const userAccount = await userAccountStore.getUserAccount();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const imageSrc = ref(userAccount.cover
   ? { slug: userAccount.cover!.slug, timestamp: userAccount.cover!.timestamp }

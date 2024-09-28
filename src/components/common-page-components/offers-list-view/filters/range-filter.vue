@@ -1,12 +1,11 @@
 <script setup lang="ts">
-
+import { getI18nResName3, convertTimeOfDay } from '@golobe-demo/shared';
+import { type ISearchOffersRangeFilterProps } from './../../../../types';
 import Slider from '@vueform/slider';
 import dayjs from 'dayjs';
 import isNumber from 'lodash-es/isNumber';
 import isString from 'lodash-es/isString';
-import { convertTimeOfDay } from './../../../../shared/common';
-import { type ISearchOffersRangeFilterProps } from './../../../../shared/interfaces';
-import { getI18nResName3 } from './../../../../shared/i18n';
+import { getCommonServices } from '../../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -16,7 +15,7 @@ interface IProps {
 
 const props = defineProps<IProps>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 const editValue = ref([props.value.min, props.value.max]);
 watch(() => props.value, () => {
   logger.debug(`(RangeFilter) received value update, ctrlKey=${props.ctrlKey}, new value min=${props.value.min}, new value max=${props.value.max}, current value min=${editValue.value[0]}, current value max=${editValue.value[1]}`);

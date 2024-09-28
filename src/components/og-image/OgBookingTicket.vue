@@ -1,15 +1,12 @@
 <script setup lang="ts">
-
+import { getI18nResName2, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, OgImageExt, type Locale, type Theme, DefaultLocale, AppConfig, AppPage, type IImageCategoryInfo, getLocalizeableValue, getOgImageFileName, ImageCategory } from '@golobe-demo/shared';
+import { type IBookingTicketStayTitleProps, type IBookingTicketProps, type IBookingTicketFlightGfxProps } from './../../types';
+import { ApiEndpointImage } from './../../server/api-definitions';
 import { withQuery, joinURL } from 'ufo';
 import isString from 'lodash-es/isString';
-import { type IBookingTicketStayTitleProps, ImageCategory, type IBookingTicketProps, type IImageCategoryInfo, type IBookingTicketFlightGfxProps } from './../../shared/interfaces';
-import { getLocalizeableValue, getOgImageFileName } from './../../shared/common';
-import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue, OgImageExt, ApiEndpointImage, type Locale, type Theme, DefaultLocale } from './../../shared/constants';
-import { AppPage } from './../../shared/page-query-params';
-import AppConfig from './../../appconfig';
-import { getI18nResName2 } from './../../shared/i18n';
 import { usePreviewState } from './../../composables/preview-state';
 import set from 'lodash-es/set';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 declare type SvgColorType = 'user-avatar-bg' | 'dates-flights-bg' | 'dates-stays-bg' | 'details-icon' | 'barcode' | 'flight-gfx-highlight' | 'flight-gfx-route' | 'shadow';
 const SvgColors: { [P in Theme]: Record<SvgColorType, string> } = {
@@ -38,7 +35,7 @@ const SvgColors: { [P in Theme]: Record<SvgColorType, string> } = {
 const isError = ref(false);
 const props = defineProps<Required<IBookingTicketProps & { theme: Theme }>>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 logger.verbose(`(OgBookingTicket) component setup, ctrlKey=${props.ctrlKey}, offerKind=${props.offerKind}, gfx=${JSON.stringify(props.titleOrGfx)}, theme=${props.theme}`);
 
 const { locale } = useI18n();

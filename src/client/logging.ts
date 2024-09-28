@@ -1,10 +1,5 @@
+import { flattenError, wrapExceptionIfNeeded, LogAlwaysLevel, LogLevelEnum, type LogLevel, isDevOrTestEnv, HeaderAppVersion, AppConfig, type IAppLogger, wrapLogDataArg, getAppExceptionCustomLogLevel, getErrorAppExceptionCode } from '@golobe-demo/shared';
 import deepmerge from 'lodash-es/merge';
-
-import AppConfig from '../appconfig';
-import { type IAppLogger, wrapLogDataArg, getAppExceptionCustomLogLevel, getErrorAppExceptionCode } from '../shared/applogger';
-
-import { LogAlwaysLevel, LogLevelEnum, type LogLevel, isDevOrTestEnv, HeaderAppVersion } from '../shared/constants';
-import { flattenError, wrapExceptionIfNeeded } from '../shared/exceptions';
 import { consola } from 'consola';
 
 export class ClientLogger implements IAppLogger {

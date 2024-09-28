@@ -1,14 +1,10 @@
 <script setup lang="ts">
-
-import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
+import { type EntityId, AppConfig, SecretValueMask, HeaderAppVersion, type Locale, SignUpCompleteResultEnum, AppPage, getPagePath, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { type ISignUpCompleteResultDto, ApiEndpointSignUpComplete } from './../server/api-definitions';
 import AccountFormPhotos from './../components/account/form-photos.vue';
-import { type Locale, SignUpCompleteResultEnum, ApiEndpointSignUpComplete, SecretValueMask, HeaderAppVersion } from './../shared/constants';
-import { AppPage, getPagePath } from './../shared/page-query-params';
-import { type ISignUpCompleteResultDto } from './../server/dto';
-import AppConfig from './../appconfig';
-import { type EntityId } from './../shared/interfaces';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
+import { getCommonServices } from '../helpers/service-accessors';
 
 definePageMeta({
   middleware: 'auth',
@@ -25,7 +21,7 @@ const navLinkBuilder = useNavLinkBuilder();
 const { enabled } = usePreviewState();
 const completionResult = ref<SignUpCompleteResultEnum | undefined>(undefined);
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const route = useRoute();
 let tokenId: EntityId | undefined;

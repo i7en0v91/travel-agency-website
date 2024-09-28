@@ -1,14 +1,10 @@
 <script setup lang="ts">
-
-import { getI18nResName2, getI18nResName3 } from './../shared/i18n';
+import { AppConfig, type EntityId, AppPage, type Locale, SecretValueMask, HeaderAppVersion, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { ApiEndpointEmailVerifyComplete, EmailVerifyCompleteResultCode, type IEmailVerifyCompleteResultDto } from '../server/api-definitions';
 import AccountFormPhotos from './../components/account/form-photos.vue';
-import { type Locale, ApiEndpointEmailVerifyComplete, SecretValueMask, HeaderAppVersion } from './../shared/constants';
-import { AppPage } from './../shared/page-query-params';
-import { type EntityId } from './../shared/interfaces';
-import { EmailVerifyCompleteResultCode, type IEmailVerifyCompleteResultDto } from './../server/dto';
-import AppConfig from './../appconfig';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
+import { getCommonServices } from '../helpers/service-accessors';
 
 definePageMeta({
   title: { resName: getI18nResName2('emailVerifyCompletePage', 'title'), resArgs: undefined }
@@ -21,7 +17,7 @@ const navLinkBuilder = useNavLinkBuilder();
 const { enabled } = usePreviewState();
 const completionResult = ref<EmailVerifyCompleteResultCode | undefined>(undefined);
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const route = useRoute();
 let tokenId: EntityId | undefined;

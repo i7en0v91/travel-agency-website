@@ -1,15 +1,14 @@
+import { type IStaySearchHistory, SessionStaySearchHistory } from '@golobe-demo/shared';
+import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
+import { type ISearchedCityHistoryDto } from '../../../api-definitions';
+import { getUserSessionValue } from '../../../utils/user-session';
 import type { H3Event } from 'h3';
 import { destr } from 'destr';
-import { SessionStaySearchHistory } from '../../../../shared/constants';
-import { type IStaySearchHistory } from '../../../../shared/interfaces';
-import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type ISearchedCityHistoryDto } from '../../../dto';
-import { getValue } from '../../../../server/backend/helpers/user-session';
+import { getCommonServices, getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = CommonServicesLocator.getLogger();
-
-  const citiesLogic = ServerServicesLocator.getCitiesLogic();
+  const logger = getCommonServices().getLogger();
+  const citiesLogic = getServerServices()!.getCitiesLogic();
 
   handleCacheHeaders(event, {
     cacheControls: ['no-cache'],
@@ -18,7 +17,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   setHeader(event, 'content-type', 'application/json');
 
   const result: ISearchedCityHistoryDto[] = [];
-  const searchedCities = destr<IStaySearchHistory | undefined>(await getValue(event, SessionStaySearchHistory));
+  const searchedCities = destr<IStaySearchHistory | undefined>(await getUserSessionValue(event, SessionStaySearchHistory));
   if (searchedCities?.popularCityIds?.length) {
     const popularCities = await citiesLogic.getPopularCities(event.context.preview.mode);
     const searchedItems = searchedCities!.popularCityIds.map(cid => popularCities.find(c => c.id === cid)).filter(c => c);

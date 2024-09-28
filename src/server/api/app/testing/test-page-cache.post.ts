@@ -1,15 +1,10 @@
-import type { H3Event } from 'h3';
-import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type EntityId, ImageCategory, type ILocalizableValue } from '../../../../shared/interfaces';
-import { type ITestingPageCacheActionDto, type ITestingPageCacheActionResultDto, TestingPageCacheActionDtoSchema, TestingPageCacheActionEnum } from '../../../dto';
-import { lookupValueOrThrow } from '../../../../shared/common';
-import { AvailableLocaleCodes } from '../../../../shared/constants';
-import { AppPage } from '../../../../shared/page-query-params';
-import { AppException, AppExceptionCodeEnum } from '../../../../shared/exceptions';
-import fromPairs from 'lodash-es/fromPairs';
-import type { IAppLogger } from '../../../../shared/applogger';
-import type { PrismaClient } from '@prisma/client';
 import { getServerSession } from '#auth';
+import { lookupValueOrThrow, AvailableLocaleCodes, AppPage, AppException, AppExceptionCodeEnum, type IAppLogger, type EntityId, ImageCategory, type ILocalizableValue } from '@golobe-demo/shared';
+import { type ITestingPageCacheActionDto, type ITestingPageCacheActionResultDto, TestingPageCacheActionDtoSchema, TestingPageCacheActionEnum } from '../../../api-definitions';
+import fromPairs from 'lodash-es/fromPairs';
+import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
+import type { H3Event } from 'h3';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 declare type HandlePageActionResult = {
   testId: string | undefined;
@@ -19,7 +14,10 @@ const NumGeneratedOffersForFlightPages = 5;
 const NumGeneratedOffersForStayPages = 100;
 const NumGeneratedOffersForBookingPages = 1000;
 
-function getDbRepository(): PrismaClient {
+/**
+ * @returns KB: to avoid direct reference to backend-side Prisma package using inline-typings - acceptable in tests only
+ */
+function getDbRepository(): import ('@prisma/client').PrismaClient {
   const client = (globalThis as any).GlobalPrismaClient;
   if(!client) {
     throw new Error('Prisma client is not available');
@@ -41,8 +39,9 @@ async function handleIndexPageActionRequest(action: TestingPageCacheActionEnum, 
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'testToken parameter was not specified', 'error-stub');
     }
 
-    const companyReviewsLogic = ServerServicesLocator.getCompanyReviewsLogic();
-    const imageLogic = ServerServicesLocator.getImageLogic();
+    const serverServices = getServerServices()!;
+    const companyReviewsLogic = serverServices.getCompanyReviewsLogic();
+    const imageLogic = serverServices.getImageLogic();
     const companyReviewImages = await imageLogic.getAllImagesByCategory(ImageCategory.CompanyReview, true, event.context.preview.mode);
     const companyReviewImage = companyReviewImages.find(i => !i.slug.includes('test'));
     if(!companyReviewImage) {
@@ -86,7 +85,7 @@ async function handleIndexPageActionRequest(action: TestingPageCacheActionEnum, 
     }
     const reviewId = testId;
 
-    const companyReviewsLogic = ServerServicesLocator.getCompanyReviewsLogic();
+    const companyReviewsLogic = getServerServices()!.getCompanyReviewsLogic();
     await companyReviewsLogic.deleteReview(reviewId);
     return {
       testId: reviewId
@@ -104,14 +103,14 @@ async function handleAuthFormPageActionRequest(page: AppPage, action: TestingPag
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'testToken parameter was not specified', 'error-stub');
     }
 
-    const authFormImageLogic = ServerServicesLocator.getAuthFormImageLogic();
+    const authFormImageLogic = getServerServices()!.getAuthFormImageLogic();
     const authFormImages = await authFormImageLogic.getAllImages(event, event.context.preview.mode);
     if(!authFormImages.length) {
       logger.warn( `(api:testing:page-action) no auth form images registered in system (db seed needed?), page=${page.valueOf()}`);
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'no any auth forms images registered', 'error-stub');
     }
 
-    const imageLogic = ServerServicesLocator.getImageLogic();
+    const imageLogic = getServerServices()!.getImageLogic();
     const sampleImageSlug = authFormImages[0].image.slug;
     const imageData = await imageLogic.getImageBytes(undefined, sampleImageSlug, ImageCategory.AuthFormsImage, event, event.context.preview.mode);
     if(!imageData) {
@@ -132,7 +131,7 @@ async function handleAuthFormPageActionRequest(page: AppPage, action: TestingPag
     }
     const authFormImageId = testId;
 
-    const authFormImageLogic = ServerServicesLocator.getAuthFormImageLogic();
+    const authFormImageLogic = getServerServices()!.getAuthFormImageLogic();
     await authFormImageLogic.deleteImage(authFormImageId);
     return {
       testId: authFormImageId
@@ -142,7 +141,7 @@ async function handleAuthFormPageActionRequest(page: AppPage, action: TestingPag
 
 async function handleFlightOfferPageActionRequest(page: AppPage, action: TestingPageCacheActionEnum, testId: string | undefined, testToken: string | undefined, logger: IAppLogger, event: H3Event): Promise<HandlePageActionResult> {
   if(action === TestingPageCacheActionEnum.Prepare) {
-    const flightsLogic = ServerServicesLocator.getFlightsLogic();
+    const flightsLogic = getServerServices()!.getFlightsLogic();
     const flightOffers = (await flightsLogic.searchOffers({ }, 'guest', { direction: 'asc' }, { direction: 'asc' }, { skip: 0, take: NumGeneratedOffersForFlightPages }, false, false, event.context.preview.mode)).pagedItems;
     if(!flightOffers.length) {
       logger.warn( `(api:testing:page-action) no flight offers found (db seeding needed?), page=${page.valueOf()}`);
@@ -162,7 +161,7 @@ async function handleFlightOfferPageActionRequest(page: AppPage, action: Testing
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'testToken parameter was not specified', 'error-stub');
     }
 
-    const flightsLogic = ServerServicesLocator.getFlightsLogic();
+    const flightsLogic = getServerServices()!.getFlightsLogic();
     const dbRepository = getDbRepository();
 
     const flightOfferId: EntityId = testId;
@@ -198,7 +197,7 @@ async function handleFlightOfferPageActionRequest(page: AppPage, action: Testing
 
 async function handleStayOfferPageActionRequest(page: AppPage, action: TestingPageCacheActionEnum, testId: string | undefined, testToken: string | undefined, logger: IAppLogger, event: H3Event): Promise<HandlePageActionResult> {
   if(action === TestingPageCacheActionEnum.Prepare) {
-    const staysLogic = ServerServicesLocator.getStaysLogic();
+    const staysLogic = getServerServices()!.getStaysLogic();
     const staysOffers = (await staysLogic.searchOffers({ }, 'guest', { direction: 'asc' }, { skip: 0, take: NumGeneratedOffersForStayPages }, false, event.context.preview.mode)).pagedItems;
     if(!staysOffers.length) {
       logger.warn( `(api:testing:page-action) no stay offers found (db seeding needed?), page=${page.valueOf()}`);
@@ -218,7 +217,7 @@ async function handleStayOfferPageActionRequest(page: AppPage, action: TestingPa
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'testToken parameter was not specified', 'error-stub');
     }
 
-    const staysLogic = ServerServicesLocator.getStaysLogic();
+    const staysLogic = getServerServices()!.getStaysLogic();
     const dbRepository = getDbRepository();
 
     const stayOfferId: EntityId = testId;
@@ -262,7 +261,7 @@ async function handleFlightsOrStaysPageActionRequest(page: AppPage, action: Test
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'testToken parameter was not specified', 'error-stub');
     }
 
-    const citiesLogic = ServerServicesLocator.getCitiesLogic();
+    const citiesLogic = getServerServices()!.getCitiesLogic();
     const popularCities = await citiesLogic.getPopularCities(event.context.preview.mode);
     if(!popularCities.length) {
       logger.warn( `(api:testing:page-action) no popular cities registered in system (db seed needed?), page=${page.valueOf()}`);
@@ -313,7 +312,7 @@ async function handleBookingPageActionRequest(action: TestingPageCacheActionEnum
   }
 
   if(action === TestingPageCacheActionEnum.Prepare) {
-    const flightsLogic = ServerServicesLocator.getFlightsLogic();
+    const flightsLogic = getServerServices()!.getFlightsLogic();
     const flightOffers = (await flightsLogic.searchOffers({ tripType: 'return' }, 'guest', { direction: 'asc' }, { direction: 'asc' }, { skip: 0, take: NumGeneratedOffersForBookingPages }, false, false, event.context.preview.mode)).pagedItems;
     if(!flightOffers.length) {
       logger.warn( `(api:testing:page-action) no flight offers found (db seeding needed?), page=${AppPage.BookingDetails.valueOf()}`);
@@ -322,7 +321,7 @@ async function handleBookingPageActionRequest(action: TestingPageCacheActionEnum
 
     const flightOffer = flightOffers[flightOffers.length - 1];
 
-    const bookingLogic = ServerServicesLocator.getBookingLogic();
+    const bookingLogic = getServerServices()!.getBookingLogic();
     const bookingId = await bookingLogic.createBooking({
       bookedUserId: userId,
       kind: 'flights',
@@ -342,10 +341,10 @@ async function handleBookingPageActionRequest(action: TestingPageCacheActionEnum
     }
 
     const bookingId: EntityId = testId;
-    const bookingLogic = ServerServicesLocator.getBookingLogic();
+    const bookingLogic = getServerServices()!.getBookingLogic();
     const flightOfferId: EntityId = (await bookingLogic.getBooking(bookingId)).offer.id;
 
-    const flightsLogic = ServerServicesLocator.getFlightsLogic();
+    const flightsLogic = getServerServices()!.getFlightsLogic();
     const dbRepository = getDbRepository();
 
     const flightOffer = await flightsLogic.getFlightOffer(flightOfferId, userId, event.context.preview.mode);
@@ -380,7 +379,7 @@ async function handleBookingPageActionRequest(action: TestingPageCacheActionEnum
 
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = ServerServicesLocator.getLogger();
+  const logger = getServerServices()!.getLogger();
   
   logger.debug('(api:testing:page-action) parsing page action request from HTTP body');
   const pageActionDto: ITestingPageCacheActionDto = TestingPageCacheActionDtoSchema.cast(await readBody(event));

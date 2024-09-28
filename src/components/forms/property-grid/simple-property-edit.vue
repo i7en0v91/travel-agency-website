@@ -1,18 +1,15 @@
 <script setup lang="ts">
-
+import { maskLog, SecretValueMask, isPasswordSecure, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
+import { type SimplePropertyType, type PropertyGridControlButtonType } from './../../../types';
+import { defaultErrorHandler } from './../../../helpers/exceptions';
 import { useVuelidate } from '@vuelidate/core';
 import * as validators from '@vuelidate/validators';
 import { email as vEmail, required as vRequired, minLength as vMinLength } from '@vuelidate/validators';
-import { getI18nResName2, type I18nResName } from './../../../shared/i18n';
-import { type SimplePropertyType, type PropertyGridControlButtonType } from './../../../shared/interfaces';
 import PropertyGridRow from './property-grid-row.vue';
 import TextBox from './../../forms/text-box.vue';
-import { updateTabIndices } from './../../../shared/dom';
-import { isPasswordSecure } from './../../../shared/common';
-import { SecretValueMask, TabIndicesUpdateDefaultTimeout } from './../../../shared/constants';
-import { maskLog } from './../../../shared/applogger';
-import { defaultErrorHandler } from './../../../shared/exceptions';
 import { type ComponentInstance } from 'vue';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -45,7 +42,7 @@ const props = withDefaults(defineProps<IProps>(), {
 
 const EmptyValuePlaceholder = '-';
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const rootComponent = shallowRef<ComponentInstance<typeof PropertyGridRow>>();
 const isEditMode = ref(false);
@@ -204,7 +201,7 @@ defineExpose({
     <template #value>
       <TextBox
         v-if="isEditMode"
-        v-model:modelValue="editValue"
+        v-model:model-value="editValue"
         :ctrl-key="`${props.ctrlKey}-input`"
         class="simple-property-input mr-xs-2 mr-s-4"
         :type="type"

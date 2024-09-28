@@ -1,5 +1,4 @@
-import { CookiePolicyConsent, CookieI18nLocale } from './../../shared/constants';
-import { AppPage, SystemPage, getPagePath } from './../../shared/page-query-params';
+import { AppPage, SystemPage, getPagePath, CookiePolicyConsent, CookieI18nLocale } from '@golobe-demo/shared';
 
 const excludedRoutesCommon = [
   '/ru',

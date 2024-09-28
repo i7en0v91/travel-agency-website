@@ -1,10 +1,9 @@
+import { UserNotificationLevel, AppException, AppExceptionCodeEnum, type I18nResName, getI18nResName2 } from '@golobe-demo/shared';
+import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../helpers/dom';
 import { useModal } from 'vue-final-modal';
-import { type I18nResName, getI18nResName2 } from '../shared/i18n';
-import { type ConfirmBoxButton } from '../shared/interfaces';
-import { AppException, AppExceptionCodeEnum } from '../shared/exceptions';
-import { UserNotificationLevel, TabIndicesUpdateDefaultTimeout } from '../shared/constants';
-import { updateTabIndices } from '../shared/dom';
-import { ConfirmBox } from '#components';
+import { type ConfirmBoxButton } from './../types';
+import ConfirmBox from './../components/confirm-box.vue';
+import { getCommonServices } from '../helpers/service-accessors';
 
 export function useConfirmBox (): {
   confirm: (ctrlKey: string, buttons: ConfirmBoxButton[], msgResName: I18nResName, msgResArgs?: any) => Promise<ConfirmBoxButton>
@@ -34,7 +33,7 @@ export function useConfirmBox (): {
         isOpened = true;
       },
       onClosed () {
-        const logger = CommonServicesLocator.getLogger();
+        const logger = getCommonServices().getLogger();
         let resultButton = result.value;
         logger.verbose(`(user-confirm-box) closing confirm box: ctrlKey=${attrCtrlKey.value}, buttons=${JSON.stringify(attrButtons.value)}, msgResName=${attrMsgResName.value}, result=${resultButton}`);
         if (!resultButton) {
@@ -54,7 +53,7 @@ export function useConfirmBox (): {
 
   return {
     confirm: (ctrlKey: string, buttons: ConfirmBoxButton[], msgResName: I18nResName, msgResArgs?: any): Promise<ConfirmBoxButton> => {
-      const logger = CommonServicesLocator.getLogger();
+      const logger = getCommonServices().getLogger();
       logger.verbose(`(user-confirm-box) opening confirm box: ctrlKey=${ctrlKey}, buttons=${JSON.stringify(buttons)}, msgResName=${msgResName}`);
       if (isOpened) {
         logger.warn(`(user-confirm-box) cannot open another confirm box: ctrlKey=${ctrlKey}, buttons=${JSON.stringify(buttons)}, msgResName=${msgResName}`);

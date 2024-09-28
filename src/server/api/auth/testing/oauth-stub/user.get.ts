@@ -1,6 +1,7 @@
+import { OAUTH_SECRET, OAUTH_TOKEN_TYPE } from './../../../../../helpers/testing';
 import { verify, type JwtPayload } from 'jsonwebtoken';
 import type { H3Event } from 'h3';
-import { OAUTH_SECRET, OAUTH_TOKEN_TYPE } from '../../../../../shared/testing/common';
+import { getCommonServices } from '../../../../../helpers/service-accessors';
 
 const extractToken = (authHeaderValue: string) => {
   const [, token] = authHeaderValue.split(`${OAUTH_TOKEN_TYPE} `);
@@ -8,7 +9,7 @@ const extractToken = (authHeaderValue: string) => {
 };
 
 const ensureAuth = (event: H3Event) => {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   logger.verbose('(oauth-stub:user) ensuring auth');
   const authHeaderValue = getRequestHeader(event, 'authorization');
   if (typeof authHeaderValue === 'undefined') {
@@ -29,7 +30,7 @@ const ensureAuth = (event: H3Event) => {
 };
 
 export default defineWebApiEventHandler((event: H3Event): Promise<string | JwtPayload> => {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   logger.verbose('(oauth-stub:user) enter');
   const user = ensureAuth(event);
   logger.verbose('(oauth-stub:user) exit');

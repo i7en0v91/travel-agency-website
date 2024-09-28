@@ -1,14 +1,14 @@
 <script setup lang="ts">
+import { AppConfig, getI18nResName2, StaysMaxRoomsCount, StaysMaxGuestsCount } from '@golobe-demo/shared';
+import type { ISearchListItem, ISearchStayOffersMainParams, ISearchStayOffersParams } from './../../../types';
+import { ApiEndpointCitiesSearch } from './../../../server/api-definitions';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 import dayjs from 'dayjs';
-import { ApiEndpointCitiesSearch, StaysMaxRoomsCount, StaysMaxGuestsCount, TabIndicesUpdateDefaultTimeout } from './../../../shared/constants';
-import type { ISearchListItem, ISearchStayOffersMainParams, ISearchStayOffersParams } from './../../../shared/interfaces';
-import { updateTabIndices } from './../../../shared/dom';
 import SearchListInput from './../../../components/forms/search-list-input.vue';
 import DatePicker from './../../../components/forms/date-picker.vue';
-import { getI18nResName2 } from './../../../shared/i18n';
 import SearchOffersCounter from './search-offers-counter.vue';
-import AppConfig from './../../../appconfig';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -17,7 +17,7 @@ interface IProps {
 const props = withDefaults(defineProps<IProps>(), {
   takeInitialValuesFromUrlQuery: false
 });
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const { t } = useI18n();
 

@@ -1,0 +1,68 @@
+{
+  "name": "@golobe-demo/backend",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "NodeJS-hosted backend logic",
+  "version": "0.1.0",
+  "exports": {
+    ".": {
+      "import": {
+        "node": "./index.ts"
+      } 
+    }
+  },
+  "scripts": {
+    "test": "NODE_OPTIONS='--disable-warning=DEP0166 --disable-warning=DEP0155' npx vitest run --root=. --config=./tests/vitest.config.mjs --slowTestThreshold=1000 --no-file-parallelism",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "cms-startup": "cross-env JITI_ESM_RESOLVE=true npx jiti ./scripts/cms-startup.ts",
+    "prisma:generate-migration-scripts": "cross-env JITI_ESM_RESOLVE=true npx jiti ./scripts/generate-modified-utc-migration.ts && cross-env JITI_ESM_RESOLVE=true npx jiti ./scripts/generate-acsys-views-migration.ts",
+    "prisma:generate-client": "npx prisma generate --schema=./prisma/mysql/schema.prisma",
+    "prisma:migrate-reset": "npx prisma migrate reset --force --schema=./prisma/mysql/schema.prisma",
+    "quickstart:prepare": "cross-env VITE_QUICKSTART=1 DATABASE_URL=\"file:./../../.acsys/dbase.db\" npm run prisma:generate-migration-scripts && cross-env DATABASE_URL=\"file:./../../.acsys/dbase.db\" npx prisma generate --schema=./prisma/sqlite/schema.prisma && cross-env DATABASE_URL=\"file:./../../.acsys/dbase.db\" npx prisma migrate reset --force --schema=./prisma/sqlite/schema.prisma"
+  },
+  "devDependencies": {
+    "prisma": "~5.14.0",
+    "@types/jsonwebtoken": ">=9",
+    "@types/lodash": ">=4",
+    "@types/lodash-es": ">=4",
+    "@types/pdfkit": "^0.13.4",
+    "@types/traverse": ">=0.1",
+    "@types/nodemailer": ">=6",
+    "@types/minipass": "^3.3.5",
+    "@types/sanitize-html": "^2.11.0",
+    "@eslint/js": "^9.11.0",
+    "eslint": "^9.11.0",
+    "globals": "^14.0.0",
+    "typescript-eslint": "^8.6.0",
+    "c12": ">=1",
+    "jiti": ">=1.20",
+    "cross-env": ">=7"
+  },
+  "dependencies": {
+    "@golobe-demo/shared": ">=0.1",
+    "nitropack": ">=2.9",
+    "vite": ">=4",
+    "vitest": ">=1",
+    "@prisma/client": "~5.14.0",
+    "typed-inject": "^4.0.0",
+    "lodash-es": ">=4.17",
+    "jsonwebtoken": ">=9",
+    "nodemailer": "^6.9.7",
+    "sanitize-html": "^2.13.0",
+    "minipass": "^7.1.2",
+    "ufo": ">=1",
+    "dayjs": ">=1.10",
+    "destr": ">=2",
+    "yup": ">=1.4",
+    "decimal.js": ">=10",
+    "pdfkit": "^0.15.0",
+    "sharp": ">=0.1",
+    "pathe": ">=1",
+    "winston": "^3.13.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "traverse": ">=0.6",
+    "juice": ">=10"
+  }
+}

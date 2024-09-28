@@ -1,18 +1,14 @@
 <script setup lang="ts">
+import { AppConfig, HeaderAppVersion, AppException, AppExceptionCodeEnum, UserNotificationLevel, type Locale, type EntityId, type CacheEntityType, type ILocalizableValue, type IEntityCacheItem, type IEntityCacheCityItem, getLocalizeableValue, type I18nResName, getI18nResName2 } from '@golobe-demo/shared';
+import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../../helpers/dom';
+import { type SearchListItemType, type ISearchListItem } from './../../types';
 import type { Dropdown } from 'floating-vue';
 import isArray from 'lodash-es/isArray';
 import isString from 'lodash-es/isString';
 import isObject from 'lodash-es/isObject';
-import { type I18nResName, getI18nResName2 } from './../../shared/i18n';
-import { type EntityId, type CacheEntityType, type SearchListItemType, type ISearchListItem, type ILocalizableValue, type IEntityCacheItem, type IEntityCacheCityItem } from './../../shared/interfaces';
-import { updateTabIndices } from './../../shared/dom';
-import { getLocalizeableValue } from './../../shared/common';
-import AppConfig from './../../appconfig';
-import { type IListItemDto } from './../../server/dto';
-import { UserNotificationLevel, type Locale, TabIndicesUpdateDefaultTimeout } from './../../shared/constants';
-import { AppException, AppExceptionCodeEnum } from './../../shared/exceptions';
-import { HeaderAppVersion } from './../../shared/constants';
+import { type IListItemDto } from '../../server/api-definitions';
 import { usePreviewState } from './../../composables/preview-state';
+import { getClientServices, getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -50,7 +46,7 @@ const exclusionIds: Ref<EntityId[]> = ref([]);
 const hasMounted = ref(false);
 
 const inputEl = shallowRef<HTMLInputElement>();
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const controlSettingsStore = useControlSettingsStore();
 const userNotificationStore = useUserNotificationStore();
@@ -204,7 +200,7 @@ async function updateClientEntityCacheIfNeeded (items: ISearchListItem[]): Promi
   logger.debug(`(SearchListInput) updating entity cache: ctrlKey=${props.ctrlKey}, ids=[${items.map(i => i.id).join(', ')}]`);
 
   const type = getCacheEntityType();
-  const entityCache = ClientServicesLocator.getEntityCache();
+  const entityCache = getClientServices().getEntityCache();
   for (let i = 0; i < items.length; i++) {
     const dto = items[i];
     let item: IEntityCacheItem;
@@ -231,7 +227,7 @@ async function tryLookupLocalizeableDisplayNameOnClient (id: EntityId): Promise<
 }
 
 async function getCityFromCache (cityId: EntityId, fetchFromServer: boolean): Promise<IEntityCacheCityItem | undefined> {
-  const entityCache = ClientServicesLocator.getEntityCache();
+  const entityCache = getClientServices().getEntityCache();
   const entityCacheType = getCacheEntityType();
   const lookupResult = await entityCache.get<'City'>([cityId], [], entityCacheType, fetchFromServer ? { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default } : false);
   return (lookupResult?.length ?? 0) > 0 ? lookupResult![0] : undefined;

@@ -1,7 +1,7 @@
+import { CookieSession, HeaderSetCookie } from '@golobe-demo/shared';
 import { splitCookiesString } from 'h3';
 import flatten from 'lodash-es/flatten';
-import { type IAppLogger } from '../../shared/applogger';
-import { CookieSession, HeaderSetCookie } from '../../shared/constants';
+import { getServerServices } from '../../helpers/service-accessors';
 
 // KB: temporary workaround for duplicated session data values sent in "set-session" header when using H3 session helpers
 export default defineNitroPlugin((nitroApp) => {
@@ -9,7 +9,7 @@ export default defineNitroPlugin((nitroApp) => {
     if (!event.headers) {
       return;
     }
-    const logger = (globalThis as any)?.ServerServicesLocator?.getLogger() as IAppLogger | undefined;
+    const logger = getServerServices()?.getLogger();
     const allHeaders = event.node.res.getHeaders();
     const setCookieValues = allHeaders[HeaderSetCookie];
     if (!setCookieValues || setCookieValues.length === 0) {

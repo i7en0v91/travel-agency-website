@@ -1,6 +1,6 @@
 <script setup lang="ts">
-
-import { type PropertyGridControlButtonType } from './../../../shared/interfaces';
+import { getCommonServices } from '../../../helpers/service-accessors';
+import { type PropertyGridControlButtonType } from './../../../types';
 import PropertyGridControlSection from './property-grid-control-section.vue';
 
 interface IProps {
@@ -10,7 +10,7 @@ interface IProps {
 }
 const props = defineProps<IProps>();
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 function onControlButtonClick (button: PropertyGridControlButtonType) {
   logger.debug(`(ProperyGridRow) onControlButtonClick, ctrlKey=${props.ctrlKey}, button=${button}`);

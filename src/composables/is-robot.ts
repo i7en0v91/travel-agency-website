@@ -1,18 +1,18 @@
+import { HeaderUserAgent, isPublishEnv } from '@golobe-demo/shared';
 import { isbot } from 'isbot';
-import type { IAppLogger } from './../shared/applogger';
-import { HeaderUserAgent, isPublishEnv } from './../shared/constants';
+import { getCommonServices } from '../helpers/service-accessors';
 
 export function isRobot () {
-  const logger = (globalThis as any)?.CommonServicesLocator?.getLogger() as IAppLogger | undefined;
+  const logger = getCommonServices().getLogger();
 
   if (!isPublishEnv()) {
-    logger?.debug('(is-robot) non-publish env');
+    logger.debug('(is-robot) non-publish env');
     return false;
   }
 
   if (import.meta.client) {
     const result = window.navigator?.userAgent ? isbot(window.navigator.userAgent!) : true;
-    logger?.debug(`(is-robot) client, userAgent=[${window.navigator?.userAgent}], result=${result}`);
+    logger.debug(`(is-robot) client, userAgent=[${window.navigator?.userAgent}], result=${result}`);
     return result;
   } else {
     try {
@@ -20,14 +20,14 @@ export function isRobot () {
       const userAgentHeader = requestEvent?.headers?.get(HeaderUserAgent);
       if (userAgentHeader) {
         const result = isbot(userAgentHeader);
-        logger?.debug(`(is-robot) server, userAgent=[${userAgentHeader}], result=${result}`);
+        logger.debug(`(is-robot) server, userAgent=[${userAgentHeader}], result=${result}`);
         return result;
       } else {
-        logger?.debug('(is-robot) server, userAgent=[], result=false');
+        logger.debug('(is-robot) server, userAgent=[], result=false');
         return false;
       }
     } catch (err: any) {
-      logger?.warn('(is-robot) got exception while checking for bot', err);
+      logger.warn('(is-robot) got exception while checking for bot', err);
       return true;
     }
   }

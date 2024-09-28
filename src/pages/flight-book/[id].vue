@@ -1,10 +1,5 @@
 <script setup lang="ts">
-
-import { type Locale } from './../../shared/constants';
-import { AppPage } from './../../shared/page-query-params';
-import { ImageCategory, type EntityDataAttrsOnly, type IFlightOffer, type ILocalizableValue, type EntityId } from './../../shared/interfaces';
-import { getI18nResName3, getI18nResName2, type I18nResName } from './../../shared/i18n';
-import { getLocalizeableValue } from './../../shared/common';
+import { ImageCategory, type EntityDataAttrsOnly, type IFlightOffer, type ILocalizableValue, type EntityId, getLocalizeableValue, getI18nResName3, getI18nResName2, type I18nResName, AppPage, type Locale } from '@golobe-demo/shared';
 import OfferBooking from './../../components/booking-page/offer-booking.vue';
 import { type IOfferBookingStoreFactory } from './../../stores/offer-booking-store';
 import OfferDetailsBreadcrumbs from './../../components/common-page-components/offer-details-breadcrumbs.vue';

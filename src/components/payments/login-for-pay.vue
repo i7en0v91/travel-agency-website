@@ -1,10 +1,7 @@
 <script setup lang="ts">
-import { getI18nResName2, getI18nResName3 } from './../../shared/i18n';
-import { type Locale } from './../../shared/constants';
+import { type Locale, AppPage, AuthProvider, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { formatAuthCallbackUrl } from './../../helpers/dom';
 import OAuthProviderList from './../../components/account/oauth-providers-list.vue';
-import { AuthProvider } from './../../shared/interfaces';
-import { AppPage } from './../../shared/page-query-params';
-import { formatAuthCallbackUrl } from './../../client/helpers';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
 

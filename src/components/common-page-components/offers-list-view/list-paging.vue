@@ -1,8 +1,7 @@
 <script setup lang="ts">
-
+import { type OfferKind, getI18nResName2 } from '@golobe-demo/shared';
 import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
-import { getI18nResName2 } from './../../../shared/i18n';
-import { type OfferKind } from './../../../shared/interfaces';
+import { getCommonServices } from '../../../helpers/service-accessors';
 
 declare type ViewState = 'visible' | 'hidden' | 'waiting-stub';
 
@@ -17,7 +16,7 @@ const { status } = useAuth();
 const searchOffersStoreAccessor = useSearchOffersStore();
 const searchOffersStore = await searchOffersStoreAccessor.getInstance(props.offersKind, true, true);
 
-const logger = CommonServicesLocator.getLogger();
+const logger = getCommonServices().getLogger();
 
 const isShowWaitingStubNeeded = () => !searchOffersStore || searchOffersStore.resultState.status === 'page-fetch';
 const isVisible = () => searchOffersStore && searchOffersStore.resultState.status === 'fetched' && searchOffersStore.viewState.displayOptions.totalCount > 0 && searchOffersStore.resultState.items.length < searchOffersStore.viewState.displayOptions.totalCount;

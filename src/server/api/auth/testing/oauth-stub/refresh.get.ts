@@ -1,8 +1,8 @@
+import { AppException, AppExceptionCodeEnum, AuthProvider, type EntityId } from '@golobe-demo/shared';
+import { OAUTH_SECRET, OAUTH_TESTUSER_PROFILE as testUserProfile } from '../../../../../helpers/testing';
 import { sign, verify } from 'jsonwebtoken';
 import type { H3Event } from 'h3';
-import { AuthProvider, type EntityId } from '../../../../../shared/interfaces';
-import { OAUTH_SECRET, OAUTH_TESTUSER_PROFILE as testUserProfile } from '../../../../../shared/testing/common';
-import { AppException, AppExceptionCodeEnum } from '../../../../../shared/exceptions';
+import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
 
 interface User {
   username: string;
@@ -16,17 +16,17 @@ interface JwtPayload extends User {
 }
 
 async function ensureAppUser (): Promise<EntityId> {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   logger.info('(oauth-stub:refresh) setting up user TestLocal profile');
 
-  const userLogic = ServerServicesLocator.getUserLogic();
+  const userLogic = getServerServices()!.getUserLogic();
   const userId = (await userLogic.ensureOAuthUser(AuthProvider.TestLocal, testUserProfile.sub, testUserProfile.firstName, testUserProfile.lastName, testUserProfile.email, true)).id;
   logger.info(`(oauth-stub:refresh) test user exists in DB, userId=${userId}`);
   return userId;
 }
 
 export default defineWebApiEventHandler(async (event: H3Event) => {
-  const logger = CommonServicesLocator.getLogger();
+  const logger = getCommonServices().getLogger();
   logger.info('(oauth-stub:refresh) enter');
 
   const body = await readBody<{ refreshToken: string }>(event);
