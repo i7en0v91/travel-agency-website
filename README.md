@@ -73,8 +73,8 @@ After infrastructure is ready, execute the following lines:
 ```sh
 cd ./src
 npm install
-npm run prisma:generate-migration-scripts —workspace=@golobe-demo/backend
-npm run prisma:generate-client —workspace=@golobe-demo/backend
+npm run prisma:generate-migration-scripts --workspace=@golobe-demo/backend
+npm run prisma:generate-client --workspace=@golobe-demo/backend
 npm run dev
 ```
 
