@@ -74,6 +74,7 @@ After infrastructure is ready, execute the following lines:
 cd ./src
 npm install
 npm run prisma:generate-migration-scripts --workspace=@golobe-demo/backend
+npm run prisma:migrate-reset --workspace=@golobe-demo/backend
 npm run prisma:generate-client --workspace=@golobe-demo/backend
 npm run dev
 ```
