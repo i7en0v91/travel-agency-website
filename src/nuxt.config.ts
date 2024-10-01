@@ -191,9 +191,9 @@ export default defineNuxtConfig({
     vueI18n: './i18n.config.ts',
     langDir: I18LocalesDirName,
     locales: [
-      { code: 'en', name: 'English', language: 'en-US', file: resolveSharedPkgPath('locales/en.json') },
-      { code: 'fr', name: 'Français', language: 'fr-FR', file: resolveSharedPkgPath('locales/fr.json') },
-      { code: 'ru', name: 'Русский', language: 'ru-RU', file: resolveSharedPkgPath('locales/ru.json') }
+      { code: 'en', name: 'English', iso: 'en-US', language: 'en-US', file: resolveSharedPkgPath('locales/en.json') },
+      { code: 'fr', name: 'Français', iso: 'fr-FR', language: 'fr-FR', file: resolveSharedPkgPath('locales/fr.json') },
+      { code: 'ru', name: 'Русский', iso: 'ru-RU', language: 'ru-RU', file: resolveSharedPkgPath('locales/ru.json') }
     ],
     defaultLocale: 'en',
     strategy: 'prefix_except_default',

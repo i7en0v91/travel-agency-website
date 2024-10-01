@@ -332,7 +332,7 @@ const Config : IAppConfig = {
         relatedEntitiesQueryBatch: isTestEnv() ? 50 : 1000, // maximum size of IDs list used in single request to DB for related entities
         pageTimestampsUpdateBatch: isTestEnv() ? 10 : 500 // // maximum size of records used in single request to DB for creating/updating page timestamps
       },
-      ogImageCachePrefix: 'cache:nuxt-og-image@3.0.2' // prefix for og-image cache keys
+      ogImageCachePrefix: 'cache:nuxt-og-image@3.0.0-rc.64' // prefix for og-image cache keys
     },
     httpDefaults: 'no-store, private' // default value for 'Cache-Control' response header if not filled by app server
   },
@@ -356,7 +356,7 @@ const Config : IAppConfig = {
     : false,
   versioning: {
     appVersion: 1_00_00, // application version passed from user's browser in HTTP request header when calling server API enpoints
-    nuxt: '3.13.2' // additional option to control backward compatibility
+    nuxt: '3.12.4' // additional option to control backward compatibility
   },
   acsys: {
     srcDir: './../externals/acsys', // directory containing Acsys sources 
