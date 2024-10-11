@@ -1,4 +1,4 @@
-import { type Theme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppConfig } from '@golobe-demo/shared';
+import { clampTextLine, AppPage, getI18nResName2, getI18nResName3, type Theme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppConfig } from '@golobe-demo/shared';
 import { DeviceSizeEnum, DeviceSizeBreakpointsMap } from './../helpers/constants';
 import orderBy from 'lodash-es/orderBy';
 import zip from 'lodash-es/zip';
@@ -30,6 +30,8 @@ export function getCurrentThemeSettings () {
 
 export function setCurrentThemeSettings (value: Theme) {
   document.documentElement.dataset.theme = value;
+  document.documentElement.classList.remove('dark', 'light');
+  document.documentElement.classList.add(value);
 };
 
 export function formatAuthCallbackUrl (url: string, preivewMode: boolean): string {
@@ -361,3 +363,124 @@ export function getCurrentDeviceSize (): DeviceSizeEnum {
   }
   return DeviceSizeEnum.XS;
 }
+
+export function getUserMenuLinksInfo() {
+  return [
+    [{
+      kind: 'avatar',
+      labelResName: undefined,
+      icon: undefined,
+      toPage: undefined
+    }], 
+    [{
+      kind: 'account',
+      labelResName: getI18nResName3('nav', 'userBox', 'myAccount'),
+      toPage: AppPage.Account,
+      icon: 'i-heroicons-user-20-solid'
+    },{
+      kind: 'favourites',
+      labelResName: getI18nResName3('nav', 'userBox', 'favourites'),
+      toPage: AppPage.Favourites,
+      icon: 'i-heroicons-heart-solid'
+    },{
+      kind: 'payments',
+      labelResName: getI18nResName3('nav', 'userBox', 'payments'),
+      icon: 'i-mdi-credit-card',
+      toPage: undefined
+    },{
+      kind: 'settings',
+      labelResName: getI18nResName3('nav', 'userBox', 'settings'),
+      icon: 'i-material-symbols-settings',
+      toPage: undefined
+    }],
+    [],
+    [{
+      kind: 'support',
+      labelResName: getI18nResName3('nav', 'userBox', 'support'),
+      icon: 'i-material-symbols-support',
+      toPage: undefined
+    },{
+      kind: 'signout',
+      labelResName: getI18nResName3('nav', 'userBox', 'logout'),
+      icon: 'i-heroicons-solid-login',
+      toPage: undefined
+    }]
+  ];
+}
+
+export function getNavMenuLinksInfo(isHorizontalNav: boolean) {
+  return [[{ 
+    kind: 'nav-logo' as const,
+    authStatus: undefined,
+    verticalNav: false,
+    showOnErrorPage: true
+  },{
+    kind: 'nav-toggler' as const,
+    authStatus: undefined,
+    verticalNav: false,
+    showOnErrorPage: true
+  },{ 
+    kind: 'flights' as const,
+    labelResName: getI18nResName2('nav', 'findFlights'),
+    icon: 'i-material-symbols-flight',
+    iconClass: isHorizontalNav ? 'rotate-90 w-0 lg:w-6' : 'rotate-90',
+    toPage: AppPage.Flights,
+    authStatus: undefined,
+    verticalNav: 1,
+    showOnErrorPage: true
+  },{ 
+    kind: 'stays' as const,
+    labelResName: getI18nResName2('nav', 'findStays'),
+    icon: 'i-material-symbols-bed',
+    iconClass: isHorizontalNav ? 'w-0 lg:w-6' : undefined,
+    toPage: AppPage.Stays,
+    authStatus: undefined,
+    verticalNav: 2,
+    showOnErrorPage: true
+  }],[{
+    kind: 'favourites' as const,
+    labelResName: getI18nResName3('nav', 'userBox', 'favourites'),
+    icon: 'i-heroicons-heart-solid',
+    iconClass: isHorizontalNav ? 'w-0 lg:w-6' : undefined,
+    toPage: AppPage.Favourites,
+    authStatus: true,
+    verticalNav: false,
+    showOnErrorPage: false
+  },{
+    kind: 'locale-switcher' as const,
+    authStatus: undefined,
+    verticalNav: false,
+    showOnErrorPage: false
+  },{
+    kind: 'theme-switcher' as const,
+    authStatus: undefined,
+    verticalNav: false,
+    showOnErrorPage: false
+  },{
+    kind: 'login' as const,
+    labelResName: getI18nResName2('nav', 'login'),
+    icon: 'i-heroicons-solid-login',
+    iconClass: isHorizontalNav ? 'hidden' : 'rotate-180',
+    authStatus: false,
+    verticalNav: 3,
+    showOnErrorPage: false
+  },{
+    kind: 'signup' as const,
+    labelResName: getI18nResName2('nav', 'signUp'),
+    icon: 'i-mdi-light-account',
+    iconClass: isHorizontalNav ? 'hidden' : undefined,
+    authStatus: false,
+    verticalNav: 4,
+    showOnErrorPage: false
+  },{ 
+    kind: 'nav-user' as const,
+    authStatus: true,
+    verticalNav: false,
+    showOnErrorPage: false
+  }]];
+}
+
+export function formatAvatarLabel(firstName: string | undefined, lastName: string | undefined) {
+  return `${clampTextLine(`${firstName ?? '' }`, 30)} ${(lastName ? `${lastName.substring(0, 1).toUpperCase()}.`: '')}`;
+}
+  

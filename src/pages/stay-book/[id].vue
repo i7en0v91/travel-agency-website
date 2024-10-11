@@ -112,6 +112,7 @@ onMounted(() => {
 
 <template>
   <div class="stay-book-page">
+    <!--
     <ErrorHelm :is-error="isError" class="stay-book-page-error-helm">
       <OfferDetailsBreadcrumbs
         :ctrl-key="`${CtrlKey}-Breadcrumbs`"
@@ -141,5 +142,7 @@ onMounted(() => {
         </template>
       </OfferBooking>
     </ErrorHelm>
+    -->
+    PAGE CONTENT
   </div>
 </template>

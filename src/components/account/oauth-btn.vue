@@ -1,6 +1,5 @@
 <script setup lang="ts">
-
-import  { type AuthProvider, type I18nResName } from '@golobe-demo/shared';
+import  { AuthProvider, type I18nResName } from '@golobe-demo/shared';
 
 interface IProps {
   ctrlKey: string,
@@ -19,8 +18,18 @@ function onClick () {
   $emit('click');
 }
 
+let iconName = 'grommet-icons-settings-option';
+switch(props.provider) {
+  case AuthProvider.GitHub:
+    iconName = 'logos-github-icon';
+    break;    
+  case AuthProvider.Google:
+    iconName = 'logos-google-icon';
+    break;
+}
+
 </script>
 
 <template>
-  <button :class="`btn-oauth py-xs-3 icon-login-${provider.toLowerCase()} ${!enabled ? 'disabled' : ''} brdr-1`" type="button" :aria-label="ariaLabelResName ? $t(ariaLabelResName) : ''" @click="onClick" />
+  <UButton :class="`py-4 w-[100px] h-auto *:mx-auto ${props.provider === AuthProvider.GitHub ? 'dark:*:invert' : ''}`" size="xl" :icon="iconName" :disabled="!enabled" :aria-label="ariaLabelResName ? $t(ariaLabelResName) : ''" variant="outline" @click="onClick"/>
 </template>

@@ -73,7 +73,7 @@ const ApiRoutesWithCachingDisabled = [`${ApiAppEndpointPrefix}/stays/**`, `${Api
 
 export default defineNuxtConfig({
   devtools: { enabled: false },
-
+  
   ssr: true,
 
   sourcemap: {
@@ -257,6 +257,10 @@ export default defineNuxtConfig({
     ]
   },
 
+  ui: {
+    safelistColors: ['mintgreen']
+  },
+
   tiptap: {
     prefix: 'Tiptap'
   },
@@ -319,7 +323,9 @@ export default defineNuxtConfig({
     ['@samk-dev/nuxt-vcalendar', {}],
     ['@nuxt/test-utils/module', {}],
     ['nuxt-tiptap-editor', {}],
-    ['@nuxt/eslint', {}]
+    ['@nuxt/eslint', {}],
+    "@nuxt/ui",
+    "nuxt-svgo"
   ],
 
   css: ['vue-final-modal/style.css'],
@@ -360,7 +366,7 @@ export default defineNuxtConfig({
       }
     },
     build: {
-      transpile: ['lodash', 'vue-toastification', 'file-saver']
+      transpile: ['lodash', 'file-saver']
     },
     auth: {
       baseURL: `http://127.0.0.1:${TEST_SERVER_PORT}/${ApiEndpointAuthentication}`
@@ -392,7 +398,7 @@ export default defineNuxtConfig({
   /** Production overrides */
   $production: {
     build: {
-      transpile: ['lodash', 'vue-toastification', 'file-saver']
+      transpile: ['lodash', 'file-saver']
     },
     auth: {
       baseURL: isPublishEnv() ? `https://golobe.demo/${ApiEndpointAuthentication}` : `http://localhost:3000/${ApiEndpointAuthentication}`

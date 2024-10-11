@@ -18,6 +18,7 @@ const navLinkBuilder = useNavLinkBuilder();
 <template>
   <!-- eslint-disable vue/no-v-html -->
   <article class="privacy-page no-hidden-parent-tabulation-check">
+    <!--
     <h1 class="privacy-title font-h3">
       <strong>{{ $t(getI18nResName2('privacyPage', 'documentHeader')) }}</strong>
     </h1>
@@ -189,5 +190,7 @@ const navLinkBuilder = useNavLinkBuilder();
         <li v-html="$t(getI18nResName3('privacyPage', 'section12', 'paragraph3'), { privacyUrl : joinURL(siteConfig.url, navLinkBuilder.buildLink(route.path, locale as Locale)) })" />
       </ol>
     </div>
+    -->
+    PAGE CONTENT
   </article>
 </template>

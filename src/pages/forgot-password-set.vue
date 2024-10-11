@@ -2,9 +2,11 @@
 import { type EntityId, isPasswordSecure, type Locale, SecretValueMask, RecoverPasswordCompleteResultEnum, AppPage, getPagePath, getI18nResName2 } from '@golobe-demo/shared';
 import { ApiEndpointPasswordRecoveryComplete, type IRecoverPasswordCompleteDto, type IRecoverPasswordCompleteResultDto } from './../server/api-definitions';
 import { post } from './../helpers/rest-utils';
+/*
 import { useVuelidate } from '@vuelidate/core';
 import * as validators from '@vuelidate/validators';
 import { minLength, required, sameAs } from '@vuelidate/validators';
+*/
 import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
 import SimpleButton from './../components/forms/simple-button.vue';
@@ -25,6 +27,7 @@ definePageMeta({
 });
 useOgImage();
 
+/*
 const password = ref('');
 const confirmPassword = ref('');
 
@@ -78,11 +81,13 @@ function submitClick () {
     callServerPasswordSet(password.value);
   }
 }
+  */
 
 </script>
 
 <template>
   <div class="set-password-page account-page no-hidden-parent-tabulation-check">
+    <!--
     <div class="set-password-page-content">
       <NavLogo ctrl-key="setPasswordPageAppLogo" mode="inApp" />
       <h1 class="set-password-title font-h2">
@@ -122,5 +127,7 @@ function submitClick () {
       <SimpleButton ctrl-key="setPasswordSubmitBtn" class="set-password-btn mt-xs-2" :label-res-name="getI18nResName2('forgotPasswordSetPage', 'setPassword')" @click="submitClick" />
     </div>
     <AccountFormPhotos ctrl-key="SetPasswordPhotos" class="set-password-account-forms-photos" />
+    -->
+    PAGE CONTENT
   </div>
 </template>

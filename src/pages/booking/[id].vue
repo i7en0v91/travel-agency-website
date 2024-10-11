@@ -341,6 +341,7 @@ async function onDownloadBtnClick (): Promise<void> {
 
 <template>
   <ClientOnly>
+    <!--
     <div class="booking-details-page">
       <ErrorHelm :is-error="isError" class="booking-details-error-helm">
         <OfferDetailsBreadcrumbs
@@ -390,5 +391,7 @@ async function onDownloadBtnClick (): Promise<void> {
     <template #fallback>
       <ComponentWaitingIndicator ctrl-key="BookingPageClientFallback" class="my-xs-5"/>
     </template>
+    -->
+    <div>PAGE CONTENT</div>
   </ClientOnly>
 </template>

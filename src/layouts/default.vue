@@ -1,12 +1,7 @@
 <script setup lang="ts">
 
-import 'vue-toastification/dist/index.css';
-import 'cropperjs/dist/cropper.css';
-import 'vue3-perfect-scrollbar/style.css';
-import '@vueform/slider/themes/default.css';
-
 import { AppPage, getPagePath, MainTitleSlug, lookupPageByUrl, getI18nResName2, ImageCategory } from '@golobe-demo/shared';
-import { type NavBarMode } from './../types';
+/*
 import { ModalsContainer } from 'vue-final-modal';
 import AppContainer from './../components/app-container.vue';
 import NavBar from './../components/navbar/nav-bar.vue';
@@ -14,6 +9,7 @@ import HeadingText from './../components/index/main-heading-text.vue';
 import AppFooter from './../components/footer/app-footer.vue';
 import CookieBanner from './../components/cookie-banner.vue';
 import SearchPageHead from './../components/common-page-components/search-page-head.vue';
+*/
 
 const route = useRoute();
 const { t, locale } = useI18n();
@@ -49,9 +45,6 @@ useServerSeoMeta({
 
 await usePageSetup();
 
-const navBarMode : ComputedRef<NavBarMode> = computed(
-  () => (lookupPageByUrl(route.path) === AppPage.Index && !error.value) ? 'landing' : 'inApp');
-
 const error = useError();
 const isAuthFormsPage = computed(() => route.path.includes(`/${getPagePath(AppPage.Login)}`) || route.path.includes(`/${getPagePath(AppPage.Signup)}`) || route.path.includes(`/${getPagePath(AppPage.ForgotPassword)}`) || route.path.includes(`/${getPagePath(AppPage.EmailVerifyComplete)}`));
 const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.value);
@@ -59,62 +52,44 @@ const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.val
 </script>
 
 <template>
-  <div>
-    <AppContainer>
-      <SearchPageHead
-        v-if="navBarMode === 'landing' && showDefaultComponents"
-        ctrl-key="SearchPageHead"
-        class="search-page-head-landing"
-        :image-entity-src="{ slug: MainTitleSlug }"
-        :category="ImageCategory.MainTitle"
-        :image-alt-res-name="getI18nResName2('searchPageCommon', 'mainImageAlt')"
-        overlay-class="search-page-head-landing-overlay"
-      >
-        <NavBar ctrl-key="NavBar" :mode="navBarMode" />
-        <HeadingText ctrl-key="IndexPageMainHeading" />
-      </SearchPageHead>
-      <NavBar v-else-if="showDefaultComponents" ctrl-key="NavBar" :mode="navBarMode" />
-      <slot />
-      <AppFooter v-if="showDefaultComponents" ctrl-key="footer" />
-    </AppContainer>
+  <div class="page-content w-full h-full min-w-minpgw">
+    <NavBar v-if="showDefaultComponents" ctrl-key="NavBar">
+      <div class="w-full h-auto px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
+        <slot/>
+      </div>
+    </NavBar>
+    <div v-else class="w-full h-auto px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
+      <ClientOnly>
+        <NavLogo v-if="!isAuthFormsPage" ctrl-key="standaloneAppLogo" />
+      </ClientOnly>
+      <slot/>
+    </div>
     <ClientOnly>
-      <CookieBanner ctrl-key="CookieBanner" />
+      <UNotifications />
     </ClientOnly>
-    <ModalsContainer />
+    
+    
+        <!--
+        <SearchPageHead
+          v-if="navBarMode === 'landing' && showDefaultComponents"
+          ctrl-key="SearchPageHead"
+          class="search-page-head-landing"
+          :image-entity-src="{ slug: MainTitleSlug }"
+          :category="ImageCategory.MainTitle"
+          :image-alt-res-name="getI18nResName2('searchPageCommon', 'mainImageAlt')"
+          overlay-class="search-page-head-landing-overlay"
+        >
+          <NavBar ctrl-key="NavBar"  />
+          <HeadingText ctrl-key="IndexPageMainHeading" />
+        </SearchPageHead>
+        <NavBar v-else-if="showDefaultComponents" ctrl-key="NavBar" :mode="navBarMode" />
+        <slot />
+        <AppFooter v-if="showDefaultComponents" ctrl-key="footer" />
+      </AppContainer>
+      <ClientOnly>
+        <CookieBanner ctrl-key="CookieBanner" />
+      </ClientOnly>
+      <ModalsContainer />
+    -->
   </div>
 </template>
-
-<style lang="scss">
-    @use "~/assets/scss/utils";
-    @use "~/assets/scss/themes";
-    @use "~/assets/scss/svg";
-    @use "~/assets/scss/main";
-    @use "~/assets/scss/system";
-    @use "~/assets/scss/transitions";
-    @use "~/assets/scss/user-notification";
-    @use "~/assets/scss/buttons";
-    @use "~/assets/scss/option-buttons";
-    @use "~/assets/scss/dropdowns";
-    @use "~/assets/scss/checkbox";
-    @use "~/assets/scss/images";
-    @use "~/assets/scss/nav";
-    @use "~/assets/scss/footer";
-    @use "~/assets/scss/account";
-    @use "~/assets/scss/user-account";
-    @use "~/assets/scss/property-grid";
-    @use "~/assets/scss/privacy";
-    @use "~/assets/scss/common-page-components";
-    @use "~/assets/scss/offers-list-view";
-    @use "~/assets/scss/index-page";
-    @use "~/assets/scss/flights-page";
-    @use "~/assets/scss/stays-page";
-    @use "~/assets/scss/search-flights-page";
-    @use "~/assets/scss/search-stays-page";
-    @use "~/assets/scss/flight-details-page";
-    @use "~/assets/scss/stay-details-page";
-    @use "~/assets/scss/flight-book-page";
-    @use "~/assets/scss/stay-book-page";
-    @use "~/assets/scss/payments";
-    @use "~/assets/scss/booking-details-page";
-    @use "~/assets/scss/favourites-page";
-</style>

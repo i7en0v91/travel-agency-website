@@ -68,15 +68,14 @@ onMounted(() => {
 
 <template>
   <div class="drafts-waiting-indicator-div">
+    <!--
     <ComponentWaitingIndicator ctrl-key="DraftPageWaiter" class="drafts-waiting-indicator" />
+    -->
+    PAGE CONTENT
   </div>
 </template>
 
 
 <style lang="scss">
-  @use "~/assets/scss/utils";
-  @use "~/assets/scss/themes";
-  @use "~/assets/scss/svg";
-  @use "~/assets/scss/main";
-  @use "~/assets/scss/system";
+
 </style>

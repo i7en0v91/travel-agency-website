@@ -32,6 +32,7 @@ const activeOptionCtrl = ref<string | undefined>();
 
 <template>
   <ClientOnly>
+    <!--
     <div class="user-account-page no-hidden-parent-tabulation-check">
       <div class="profile-images">
         <UserCover ctrl-key="userCover" />
@@ -66,5 +67,7 @@ const activeOptionCtrl = ref<string | undefined>();
     <template #fallback>
       <ComponentWaitingIndicator ctrl-key="AccountPageClientFallback" class="my-xs-5"/>
     </template>
+    -->
+    <div>PAGE CONTENT</div>
   </ClientOnly>
 </template>

@@ -173,6 +173,7 @@ onMounted(() => {
 
 <template>
   <article class="stay-details-page no-hidden-parent-tabulation-check">
+    <!--
     <ErrorHelm :is-error="stayDetailsFetch.status.value === 'error'" class="stay-details-page-error-helm">
       <OfferDetailsBreadcrumbs
         :ctrl-key="`${CtrlKey}-Breadcrumbs`"
@@ -237,5 +238,7 @@ onMounted(() => {
       <ComponentWaitingIndicator v-else :ctrl-key="`${CtrlKey}-ReviewsWaiterFallback`" class="stay-reviews-waiting-indicator my-xs-5" />
       <CaptchaProtection v-if="!!AppConfig.maps && !isRobotRequest" ref="captcha" ctrl-key="StayDetailsCaptchaProtection" @verified="onCaptchaVerified" @failed="onCaptchaFailed" />
     </ErrorHelm>
+  -->
+    PAGE CONTENT
   </article>
 </template>

@@ -22,13 +22,9 @@ function onAuthBtnBlick (provider: AuthProvider) {
 </script>
 
 <template>
-  <div class="oauth-providers-list-div">
-    <div v-if="divisorLabelResName" class="providers-list-divisor">
-      <div class="providers-list-divisor-label pl-xs-3 pr-xs-3">
-        {{ $t(divisorLabelResName) }}
-      </div>
-    </div>
-    <ol class="oauth-providers-list">
+  <div class="mt-[28px] md:mt-[40px]">
+    <UDivider v-if="divisorLabelResName" :label="$t(divisorLabelResName)" class="w-full h-auto" />
+    <ol class="flex flex-row flex-wrap gap-4 justify-center mx-auto mt-[28px] md:mt-[40px]">
       <li>
         <OAuthBtn :ctrl-key="`${ctrlKey}-oauthGoogle`" :provider="AuthProvider.Google" :enabled="thirdPartyOAuthEnabled" :aria-label-res-name="getI18nResName2('ariaLabels', 'btnGoogleLogin')" @click="() => onAuthBtnBlick(AuthProvider.Google)" />
       </li>

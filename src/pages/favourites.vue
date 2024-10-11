@@ -73,6 +73,7 @@ onMounted(() => {
 
 <template>
   <ClientOnly>
+    <!--
     <section class="favourites-page">
       <ErrorHelm v-model:is-error="isError" class="favourites-page-error-helm">
         <h1 class="favourites-page-title">
@@ -106,5 +107,7 @@ onMounted(() => {
     <template #fallback>
       <ComponentWaitingIndicator ctrl-key="FavouritesPageClientFallback" class="my-xs-5"/>
     </template>
+    -->
+    <div>PAGE CONTENT</div>
   </ClientOnly>
 </template>

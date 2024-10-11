@@ -74,6 +74,7 @@ if (!tokenId || !tokenValue) {
 
 <template>
   <div class="email-verify-complete-page account-page no-hidden-parent-tabulation-check">
+    <!--
     <AccountFormPhotos ctrl-key="EmailVerifyCompletedPhotos" class="email-verify-complete-forms-photos" />
     <div class="email-verify-complete-page-div">
       <NavLogo ctrl-key="emailVerifyCompletePageAppLogo" class="email-verify-complete-page-logo" mode="inApp" />
@@ -104,5 +105,7 @@ if (!tokenId || !tokenValue) {
         </div>
       </div>
     </div>
+    -->
+    PAGE CONTENT
   </div>
 </template>

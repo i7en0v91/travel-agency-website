@@ -11,25 +11,26 @@ const props = withDefaults(defineProps<IProps>(), {
   msgResParams: undefined
 });
 
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 const httpCodeResName = props.httpCode === 404 ? '404' : '500';
 
 </script>
 
 <template>
-  <div class="error-box">
-    <p class="error-box-code mr-m-4 font-h2">
+  <div class="flex flex-col md:flex-row flex-nowrap w-fit mt-[100px] mx-[30px] md:mx-auto">
+    <p class="text-gray-400 mr-6 text-5xl font-normal">
       {{ httpCode }}
     </p>
-    <div class="error-box-details" role="alert">
-      <div class="error-box-msg pl-m-4 mb-xs-5">
-        <h1 class="font-h2">{{ $t(getI18nResName2('httpCodes', httpCodeResName)) }}</h1>
-        <p> {{ $t(msgResName, msgResParams) }} </p>
+    <div class="text-gray-600 dark:text-gray-300" role="alert">
+      <div class="flex flex-row items-stretch mb-8">
+        <UDivider color="gray" orientation="vertical" class="hidden h-auto md:inline-block" size="sm"/>
+        <div class="block md:inline-block md:pl-4">
+          <h1 class="text-5xl font-normal">{{ $t(getI18nResName2('httpCodes', httpCodeResName)) }}</h1>
+          <p> {{ $t(msgResName, msgResParams) }} </p>
+        </div>
       </div>
-      <NuxtLink class="error-box-homelink btn" :to="navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
-        {{ $t(getI18nResName2('errorBox', 'homeLink')) }}
-      </NuxtLink>
+      <UButton :to="navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)" :label="t(getI18nResName2('errorBox', 'homeLink'))" class="block w-fit" variant="solid" color="primary" size="xl"/>
     </div>
   </div>
 </template>

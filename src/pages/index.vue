@@ -62,7 +62,8 @@ function onActiveSlideChanged () {
 </script>
 
 <template>
-  <div class="index-page-content no-hidden-parent-tabulation-check">
+  <div class="golobe-landing-page">
+    <!--
     <PageSection
       ctrl-key="PerfectTripSection"
       :header-res-name="getI18nResName3('indexPage', 'perfectTripSection', 'title')"
@@ -140,5 +141,7 @@ function onActiveSlideChanged () {
         </SwiperSlide>
       </Swiper>
     </PageSection>
+    -->
+    <div class="h-screen">PAGE CONTENT</div>
   </div>
 </template>

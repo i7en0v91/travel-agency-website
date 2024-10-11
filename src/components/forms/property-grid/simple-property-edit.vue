@@ -3,9 +3,11 @@ import { maskLog, SecretValueMask, isPasswordSecure, getI18nResName2, type I18nR
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import { type SimplePropertyType, type PropertyGridControlButtonType } from './../../../types';
 import { defaultErrorHandler } from './../../../helpers/exceptions';
+/*
 import { useVuelidate } from '@vuelidate/core';
 import * as validators from '@vuelidate/validators';
 import { email as vEmail, required as vRequired, minLength as vMinLength } from '@vuelidate/validators';
+*/
 import PropertyGridRow from './property-grid-row.vue';
 import TextBox from './../../forms/text-box.vue';
 import { type ComponentInstance } from 'vue';
@@ -40,6 +42,7 @@ const props = withDefaults(defineProps<IProps>(), {
   lastControlSectionButtons: 'default'
 });
 
+/*
 const EmptyValuePlaceholder = '-';
 
 const logger = getCommonServices().getLogger();
@@ -179,9 +182,13 @@ function exitEditModeInternal () {
     setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
   }
 }
+*/
+defineEmits<{
+  (event: 'update:value', value: string | undefined): void, (event: 'enterEditMode', ctrlKey: string): void, 
+  (event: 'buttonClick', button: PropertyGridControlButtonType): void
+}>();
 
-const $emit = defineEmits<{(event: 'update:value', value: string | undefined): void, (event: 'enterEditMode', ctrlKey: string): void,
-(event: 'buttonClick', button: PropertyGridControlButtonType): void}>();
+function exitEditMode () {};
 
 defineExpose({
   exitEditMode
@@ -190,6 +197,7 @@ defineExpose({
 </script>
 
 <template>
+  <!--
   <PropertyGridRow
     ref="rootComponent"
     class="simple-property-edit"
@@ -227,4 +235,8 @@ defineExpose({
       </div>
     </template>
   </PropertyGridRow>
+  -->
+  <div>
+    Property Edit
+  </div>
 </template>

@@ -5,7 +5,8 @@ import { type I18nResName, ImageCategory } from '@golobe-demo/shared';
 interface IProps {
   ctrlKey: string,
   altResName: I18nResName,
-  imgSlug: string
+  imgSlug: string,
+  increasedHeight?: boolean
 }
 defineProps<IProps>();
 
@@ -16,8 +17,8 @@ defineProps<IProps>();
     :ctrl-key="`${ctrlKey}StaticImg`"
     :show-stub="true"
     :is-high-priority="true"
-    class="account-forms-photo"
-    img-class="account-forms-photo-img"
+    class="w-full h-full"
+    :img-class="increasedHeight ? '!h-[1054px]' : '!h-[812px]'"
     :entity-src="{ slug: imgSlug }"
     :category="ImageCategory.AuthFormsImage"
     sizes="xs:0vw sm:50vw md:50vw lg:40vw xl:30vw"

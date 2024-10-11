@@ -118,11 +118,13 @@ if(props.entitySrc) {
 // no need to make it computed at the moment
 const stubCssClass = computed(() => {
   const hasStaticStubData = finalStubStyle.value && JSON.stringify(finalStubStyle.value).length > 3;
-  return `${loaded.value ? 'img-loaded' : ''} ${hasStaticStubData ? '' : 'static-image-stub-animated'} ${!props.showStub ? 'static-image-stub-hidden' : ''}`;
+  //return `${loaded.value ? 'img-loaded' : ''} ${hasStaticStubData ? '' : 'static-image-stub-animated'} ${!props.showStub ? 'static-image-stub-hidden' : ''}`;
+  return `${loaded.value ? 'invisible' : ''} ${!props.showStub ? 'invisible' : ''}`;
+  
 });
 
 const imgCssClass = computed(() => {
-  return `static-image-img ${props.imgClass} ${(loaded.value && (!props.requestExtraDisplayOptions || imageDetails.value)) ? 'img-loaded' : ''} ${invertForDarkTheme.value ? 'dark-theme-invert' : ''}`;
+  return `row-start-1 row-end-2 col-start-1 col-end-2 block w-auth h-auto object-cover text-[0] z-[2] bg-transparent ${props.imgClass} ${invertForDarkTheme.value ? 'invert' : ''}`;
 });
 
 async function fetchDisplayDetailsIfNeeded (): Promise<void> {
@@ -205,10 +207,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="static-image" role="img">
-    <ErrorHelm v-model:is-error="isError" :appearance="'error-stub'" :user-notification="false">
-      <div class="static-image-div">
-        <div :class="`static-image-stub ${stubCssClass}`" :style="finalStubStyle" />
+  <div role="img">
+    <ErrorHelm v-model:is-error="isError" appearance="error-stub" :user-notification="false">
+      <div class="w-full h-full grid grid-rows-1 grid-cols-1 overflow-hidden">
+        <USkeleton v-if="!loaded && showStub" class="row-start-1 row-end-2 col-start-1 col-end-2 block w-full h-full"/>
+        <div v-else :class="`row-start-1 row-end-2 col-start-1 col-end-2 block w-full h-full ${stubCssClass}`" :style="finalStubStyle"/>
         <ClientOnly v-if="imgIsClientOnly">
           <nuxt-img
             v-if="imgUrl"
@@ -243,7 +246,7 @@ onMounted(() => {
           @load="onLoad"
           @error="onError"
         />
-        <div v-if="overlayClass" :class="`static-image-overlay ${props.overlayClass}`" />
+        <div v-if="overlayClass" :class="`row-start-1 row-end-2 col-start-1 col-end-2 block w-full h-full rounded-none z-[3] ${props.overlayClass}`" />
       </div>
     </ErrorHelm>
   </div>

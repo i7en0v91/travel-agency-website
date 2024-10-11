@@ -6,7 +6,6 @@ export type PropertyGridControlButtonType = 'change' | 'apply' | 'cancel' | 'del
 export type ConfirmBoxButton = 'yes' | 'no' | 'cancel';
 
 export type ActivePageLink = AppPage.Flights | AppPage.Stays | AppPage.Favourites;
-export type NavBarMode = 'landing' | 'inApp';
 export type ButtonKind = 'default' | 'accent' | 'support' | 'icon';
 
 export type FloatingVueHydrationHints = {

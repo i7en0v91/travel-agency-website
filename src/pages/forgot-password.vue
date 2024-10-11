@@ -3,9 +3,11 @@ import { AppPage, getPagePath, type Locale, RecoverPasswordResultEnum, AuthProvi
 import { ApiEndpointPasswordRecovery, type IRecoverPasswordDto, type IRecoverPasswordResultDto } from '../server/api-definitions';
 import { post } from './../helpers/rest-utils';
 import { formatAuthCallbackUrl } from './../helpers/dom';
+/*
 import { useVuelidate } from '@vuelidate/core';
 import * as validators from '@vuelidate/validators';
 import { email, required } from '@vuelidate/validators';
+*/
 import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
 import SimpleButton from './../components/forms/simple-button.vue';
@@ -30,6 +32,7 @@ definePageMeta({
 });
 useOgImage();
 
+/*
 const { signIn } = useAuth();
 const localePath = useLocalePath();
 const { enabled } = usePreviewState();
@@ -103,11 +106,13 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
       break;
   }
 }
+  */
 
 </script>
 
 <template>
   <div class="forgot-password-page account-page no-hidden-parent-tabulation-check">
+    <!--
     <div class="forgot-password-page-content">
       <NavLogo ctrl-key="forgotPasswordPageAppLogo" mode="inApp" />
       <NuxtLink class="back-to-login-link brdr-1" :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
@@ -139,5 +144,7 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
       <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('forgotPasswordPage', 'loginWith')" @click="onOAuthProviderClick" />
     </div>
     <AccountFormPhotos ctrl-key="ForgotPasswordPhotos" class="forgot-password-account-forms-photos" />
+    -->
+    PAGE CONTENT
   </div>
 </template>

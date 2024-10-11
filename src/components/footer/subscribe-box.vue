@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { UserNotificationLevel, getI18nResName2 } from '@golobe-demo/shared';
+/*
 import { useVuelidate } from '@vuelidate/core';
 import * as validators from '@vuelidate/validators';
 import { email, required } from '@vuelidate/validators';
+*/
 
 interface IProps {
   ctrlKey: string
 }
 defineProps<IProps>();
 
+/*
 const elInput = shallowRef<HTMLInputElement | undefined>();
 const useremail = ref('');
 const userNotificationStore = useUserNotificationStore();
@@ -42,11 +45,13 @@ function onSubscribeClick () {
 }
 
 const emailId = useId();
+*/
 
 </script>
 
 <template>
   <section class="subscribe-box brdr-4">
+    <!--
     <div class="subscribe-box-controls p-xs-4">
       <h2 class="subscribe-box-header">
         {{ t(getI18nResName2('subscribeBox', 'title')) }}
@@ -85,5 +90,7 @@ const emailId = useId();
       </div>
     </div>
     <div class="subscribe-box-image mr-xs-4" />
+    -->
+    Subscribe box
   </section>
 </template>
