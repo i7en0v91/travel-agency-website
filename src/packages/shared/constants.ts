@@ -404,37 +404,6 @@ export enum EmailTemplateEnum {
 };
 export const AvailableEmailTemplates = Object.values(EmailTemplateEnum).map(v => v.valueOf());
 
-export enum DeviceSizeEnum {
-  S = 'S',
-  M = 'M',
-  L = 'L',
-  XL = 'XL'
-}
-
-/** breakpoints for adaptive layout in pixels, see $breakpoints map in _utils.scss */
-export const DeviceSizeS = 550;
-export const DeviceSizeM = 872;
-export const DeviceSizeL = 1040;
-export const DeviceSizeXL = 1376;
-
-export const MinPageWidth = 375;
-export const MaxPageWidth = 1800;
-
-export const getBreakpointForDevice = function (deviceSize: DeviceSizeEnum): number {
-  switch (deviceSize) {
-    case DeviceSizeEnum.S:
-      return DeviceSizeS;
-    case DeviceSizeEnum.M:
-      return DeviceSizeM;
-    case DeviceSizeEnum.L:
-      return DeviceSizeL;
-    case DeviceSizeEnum.XL:
-      return DeviceSizeXL;
-    default:
-      throw new Error('unexpected device size');
-  }
-};
-
 export const KeyCodeEsc = 'Escape';
 
 // Id value for objects which have been not saved to DB

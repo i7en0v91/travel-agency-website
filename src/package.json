@@ -33,7 +33,7 @@
     "unlighthouse-guest": "cd ./tests/unlighthouse && cross-env UNLIGHTHOUSE_MODE=guest npx unlighthouse",
     "unlighthouse-authenticated": "cd ./tests/unlighthouse && cross-env UNLIGHTHOUSE_MODE=authenticated npx unlighthouse",
     "quickstart:build": "env-cmd -f ./packages/backend/.env cross-env NODE_ENV=production VITE_QUICKSTART=1 NODE_OPTIONS='--disable-warning=DEP0166 --disable-warning=DEP0155' npm run build",
-    "quickstart:run": "env-cmd -f ./packages/backend/.env cross-env NODE_ENV=production VITE_QUICKSTART=1 NEXTAUTH_URL=http://127.0.0.1:3000/api/auth npm run preview",
+    "quickstart:run": "cross-env NODE_ENV=production VITE_QUICKSTART=1 npm run preview",
     "quickstart": "npm run quickstart:prepare --workspace=@golobe-demo/backend && npm run quickstart:build && npm run quickstart:run"
   },
   "optionalDependencies": {

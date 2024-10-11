@@ -1,4 +1,5 @@
-import { DeviceSizeEnum, DeviceSizeS, getBreakpointForDevice, type Theme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppConfig } from '@golobe-demo/shared';
+import { type Theme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppConfig } from '@golobe-demo/shared';
+import { DeviceSizeEnum, DeviceSizeBreakpointsMap } from './../helpers/constants';
 import orderBy from 'lodash-es/orderBy';
 import zip from 'lodash-es/zip';
 import range from 'lodash-es/range';
@@ -349,14 +350,14 @@ export function isPrefersReducedMotionEnabled (): boolean {
   return mediaQueryResult !== undefined && (mediaQueryResult.media === 'reduce' || (mediaQueryResult.matches && mediaQueryResult.media === '(prefers-reduced-motion)'));
 }
 
-export async function callForCurrentDeviceSize<TResult> (fn: (currentSize: DeviceSizeEnum, breakpoint: number) => Promise<TResult>): Promise<TResult> {
-  const allDeviceSizes = orderBy(Object.values(DeviceSizeEnum).map((x) => { return { value: x, width: getBreakpointForDevice(DeviceSizeEnum[x] as DeviceSizeEnum) }; }), ['width'], ['desc']);
-  for (let i = 0; i < allDeviceSizes.length; i++) {
-    const deviceSize = allDeviceSizes[i];
+export function getCurrentDeviceSize (): DeviceSizeEnum {
+  const deviceSizesOrdered = orderBy(Object.values(DeviceSizeEnum).map((x) => { return { value: x, width: DeviceSizeBreakpointsMap.get(x)! }; }), ['width'], ['desc']);
+  for (let i = 0; i < deviceSizesOrdered.length; i++) {
+    const deviceSize = deviceSizesOrdered[i];
     const mediaQuery = window.matchMedia(`only screen and (min-width: ${deviceSize.width}px)`);
     if (mediaQuery.matches) {
-      return await fn(deviceSize.value, deviceSize.width);
+      return deviceSize.value;
     }
   }
-  return await fn(DeviceSizeEnum.S, DeviceSizeS);
+  return DeviceSizeEnum.XS;
 }

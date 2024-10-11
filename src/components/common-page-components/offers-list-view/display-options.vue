@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { type OfferKind, type StayOffersSortFactor, type FlightOffersSortFactor, StayOffersSortFactorEnum, convertTimeOfDay, getI18nResName3, DefaultStayOffersSorting, DefaultFlightOffersSorting, DeviceSizeEnum } from '@golobe-demo/shared';
+import { type OfferKind, type StayOffersSortFactor, type FlightOffersSortFactor, StayOffersSortFactorEnum, convertTimeOfDay, getI18nResName3, DefaultStayOffersSorting, DefaultFlightOffersSorting } from '@golobe-demo/shared';
 import { type ISearchFlightOffersParams, type ISearchStayOffersParams, type ISearchStayOffersDisplayOptions, type IDropdownListItemProps, type OtherOptionButtonVariant, type IOtherOptionsButtonGroupProps, type IOptionButtonProps, type ISearchFlightOffersDisplayOption, type ISearchFlightOffersDisplayOptions, type DropdownListValue } from './../../../types';
 import throttle from 'lodash-es/throttle';
 import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
-import { SearchStayOffersDisplayOptions, SearchFlightOffersDisplayOptions } from './../../../helpers/constants';
-import { callForCurrentDeviceSize } from './../../../helpers/dom';
+import { DeviceSizeEnum, SearchStayOffersDisplayOptions, SearchFlightOffersDisplayOptions } from './../../../helpers/constants';
+import { getCurrentDeviceSize } from './../../../helpers/dom';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
@@ -328,20 +328,17 @@ function refreshDisplayedOptionButtons () {
 async function updateTabButtonsCount (): Promise<void> {
   logger.debug(`(DisplayOptions) updating tab buttons count, ctrlKey=${props.ctrlKey}, current=${numTabButtons.value}`);
 
-  const fn = (deviceSize: DeviceSizeEnum, _: number): Promise<number> => {
-    switch (deviceSize) {
-      case DeviceSizeEnum.S:
-      case DeviceSizeEnum.M:
-        return Promise.resolve(1);
-      case DeviceSizeEnum.L:
-        return Promise.resolve(props.offersKind === 'flights' ? 2 : 3);
-      case DeviceSizeEnum.XL:
-        return Promise.resolve(3);
-      default:
-        return Promise.resolve(1);
-    }
+  const deviceSize = getCurrentDeviceSize();
+  let newTabButtonsCount = 1;
+  switch(deviceSize) {
+    case DeviceSizeEnum.LG:
+      newTabButtonsCount = props.offersKind === 'flights' ? 2 : 3;
+      break;
+    case DeviceSizeEnum.XL:
+    case DeviceSizeEnum.XXL:
+      newTabButtonsCount = 3;
+      break;
   };
-  const newTabButtonsCount = await callForCurrentDeviceSize<number>(fn);
   if (newTabButtonsCount !== numTabButtons.value) {
     logger.verbose(`(DisplayOptions) tab buttons count changed, ctrlKey=${props.ctrlKey}, old=${numTabButtons.value}, new=${newTabButtonsCount}`);
     numTabButtons.value = newTabButtonsCount;
