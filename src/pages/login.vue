@@ -21,8 +21,6 @@ const { t, locale } = useI18n();
 const localePath = useLocalePath();
 const navLinkBuilder = useNavLinkBuilder();
 
-const logger = getCommonServices().getLogger();
-
 const originPageCookie = useCookie(CookieLoginOrigin, { 
   path: '/', 
   secure: false, 

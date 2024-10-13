@@ -257,6 +257,9 @@ export default defineNuxtConfig({
     ]
   },
 
+  svgo: {
+    autoImportPath: false,
+  },
   ui: {
     safelistColors: ['mintgreen']
   },

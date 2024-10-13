@@ -269,12 +269,12 @@ const verticalNavLinks = computed(() => {
       [&_ul:first-of-type_li:last-of-type]:hidden
       lg:[&_ul:first-of-type_li:last-of-type]:list-item
 
-      [&_ul:last-of-type_li:first-of-type:has(a[href])]:hidden 
-      2xl:[&_ul:last-of-type_li:first-of-type:has(a[href])]:list-item
+      [&_ul:last-of-type_li:first-of-type:has(.favourites-link)]:hidden 
+      2xl:[&_ul:last-of-type_li:first-of-type:has(.favourites-link)]:list-item
 
       [&_ul:last-of-type_li:has(.auth-link)]:hidden 
       sm:[&_ul:last-of-type_li:has(.auth-link)]:list-item
-      `"
+`"
   >   
     <!-- KB: z-10 used below are to capture click event & fix label dissapearing when hovered in light theme  -->
     <template #default="{ link }">
@@ -283,11 +283,11 @@ const verticalNavLinks = computed(() => {
       <LocaleSwitcher v-else-if="link.kind === 'locale-switcher' && navButtonsVisible" ref="localeSwitcher" ctrl-key="navLocaleSwitcher" class="z-70"/>
       <ThemeSwitcher v-else-if="link.kind === 'theme-switcher'" ref="themeSwitcher" ctrl-key="navThemeSwitcher" :class="`${navButtonsVisible ? 'visible' : 'invisible'}`" />
       <NavUser v-else-if="link.kind === 'nav-user' && navButtonsVisible" ctrl-key="navUser" @vertical-nav-toggled="toggleVerticalNav"/>
-      <NuxtLink v-else-if="link.kind === 'favourites' && navButtonsVisible" :class="`flex flex-row relative focus-visible:outline-primary-500 dark:focus-visible:outline-inherit`"  :to="link.to">
+      <NuxtLink v-else-if="link.kind === 'favourites' && navButtonsVisible" :class="`favourites-link flex flex-row relative focus-visible:outline-primary-500 dark:focus-visible:outline-inherit`"  :to="link.to">
         <span class="mx-2">{{ link.label }}</span>
         <UDivider orientation="vertical" size="xs"/>
       </NuxtLink>
-      <span v-else :class="`text-sm sm:text-base text-nowrap z-10 ${link.kind === 'signup' ? 'auth-link bg-black text-white hover:bg-white-100/80 dark:bg-white dark:text-black dark:hover:bg-gray-100/80 rounded-lg px-3.5 py-2 sm:py-3.5 font-semibold' : (link.kind === 'login' ? 'auth-link' : 'search-page-link')}`" >{{ link.label }}</span>
+      <span v-else :class="`text-sm sm:text-base text-nowrap z-10 ${link.kind === 'signup' ? 'auth-link bg-black text-white hover:bg-white-100/80 dark:bg-white dark:text-black dark:hover:bg-gray-100/80 rounded-lg px-3.5 py-2 sm:py-3.5 font-semibold' : (link.kind === 'login' ? 'auth-link' : (link.kind === 'favourites' ? 'favourites-link' : 'search-page-link'))}`" >{{ link.label }}</span>
     </template>
   </UHorizontalNavigation>
   <UContainer v-if="verticalNavCollapsed" class="pt-4">
