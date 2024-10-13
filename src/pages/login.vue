@@ -39,6 +39,7 @@ useOgImage();
 
 const { signIn } = useAuth();
 const { enabled } = usePreviewState();
+const logger = getCommonServices().getLogger();
 
 const username = ref('');
 const password = ref('');
@@ -58,7 +59,6 @@ const rules = computed(() => ({
 const v$ = useVuelidate(rules, { username, password, $lazy: true });
 
 function prepareCallbackUrl(originPathFromUrl: string | undefined): string {
-  const logger = getCommonServices().getLogger();
   let callbackUrl: string;
   if(originPathFromUrl?.trim()) {
     callbackUrl = formatAuthCallbackUrl(originPathFromUrl, enabled);
@@ -76,13 +76,18 @@ function prepareCallbackUrl(originPathFromUrl: string | undefined): string {
 
 const mySignInHandler = async (username: string, password: string) => {
   const route = useRoute();
-  const callbackUrl = prepareCallbackUrl(route.query.originPath?.toString());
   try {
-    const signInResult = (await signIn('credentials', { username, password, callbackUrl, redirect: true }));
+    const callbackUrl = prepareCallbackUrl(route.query.originPath?.toString());
+
+    const signInResult = (await signIn('credentials', { username, password, redirect: false, external: false }));
     if (signInResult) {
       if (signInResult.error) {
         loginErrorMsgResName.value = getI18nResName2('loginPage', 'invalidCredentials');
+        return;
       }
+
+      logger.verbose(`(Login) credentials sign-in succeeded, navigating to callbackUrl=${callbackUrl}`);
+      await navigateTo(callbackUrl, { external: false });
     } else {
       loginErrorMsgResName.value = getI18nResName2('loginPage', 'invalidCredentials');
     }
