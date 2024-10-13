@@ -155,9 +155,7 @@ async function onError (event: FormErrorEvent) {
 
 <template>
   <div class="md:flex md:flex-row md:flex-nowrap md:gap-[60px] xl:gap-[104px]">
-    <ClientOnly>
-      <NavLogo ctrl-key="standaloneAppLogo" class="md:absolute md:mt-[77px] lg:mt-0 lg:left-[-20px] xl:left-[-52px]"/>
-    </ClientOnly>
+    <NavLogo ctrl-key="standaloneAppLogo" class="md:absolute md:mt-[77px] lg:mt-0 lg:!left-[-60px] xl:!left-[-52px]"/>
     <div class="w-auto h-auto flex-1 basis-auto md:pt-[77px] md:pb-[104px] md:mb-[123px]">
       <h1 class="text-gray-600 dark:text-gray-300 text-5xl font-normal mt-[36px] md:mt-[102px] lg:mt-[64px]">
         {{ t(getI18nResName2('loginPage', 'title')) }}

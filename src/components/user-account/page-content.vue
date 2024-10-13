@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 import { UserAccountOptionButtonAccount, UserAccountOptionButtonHistory, UserAccountOptionButtonPayments } from './../../helpers/constants';
 import ComponentWaitingIndicator from './../component-waiting-indicator.vue';
 import TabAccount from './tabs/tab-account.vue';
@@ -28,13 +27,6 @@ const tabReady = computed(() =>
     (props.activeOption === UserAccountOptionButtonHistory && historyTabReady.value) ||
     (props.activeOption === UserAccountOptionButtonAccount && accountTabReady.value)
   ));
-
-watch(() => props.activeOption, () => {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-});
-watch(tabReady, () => {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-});
 
 </script>
 

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type I18nResName } from '@golobe-demo/shared';
 import { type IDropdownListProps, type IDropdownListItemProps, type DropdownListValue } from './../../types';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 import FieldFrame from './../forms/field-frame.vue';
 import { getCommonServices } from '../../helpers/service-accessors';
@@ -30,14 +29,6 @@ if (props.initiallySelectedValue) {
 } else if (props.initiallySelectedValue === null) {
   controlValueSetting.value = props.defaultValue;
   selectedItemResName.value = lookupValueResName(controlValueSetting.value);
-}
-
-function onMenuShown () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
-function onMenuHide () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 }
 
 function hideDropdown () {
@@ -104,8 +95,6 @@ onMounted(() => {
       :boundary="elBtn"
       :theme="kind === 'primary' ? 'control-dropdown' : 'secondary-dropdown'"
       no-auto-focus
-      @apply-show="onMenuShown"
-      @apply-hide="onMenuHide"
     >
       <FieldFrame :text-res-name="captionResName" class="dropdown-list-field-frame">
         <button

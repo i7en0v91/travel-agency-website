@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { getI18nResName3, type I18nResName } from '@golobe-demo/shared';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 
 interface IProps {
   ctrlKey: string
@@ -19,7 +18,6 @@ const listExpanded = ref(false);
 
 function toggleList () {
   listExpanded.value = !listExpanded.value;
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 }
 
 const amenities: IAmenityItem[] = [

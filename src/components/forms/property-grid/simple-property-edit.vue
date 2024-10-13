@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { maskLog, SecretValueMask, isPasswordSecure, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import { type SimplePropertyType, type PropertyGridControlButtonType } from './../../../types';
 import { defaultErrorHandler } from './../../../helpers/exceptions';
 /*
@@ -142,7 +141,6 @@ async function onControlButtonClick (button: PropertyGridControlButtonType): Pro
         $emit('enterEditMode', props.ctrlKey);
         nextTick(() => {
           focusInput();
-          setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
         });
       }
       break;
@@ -156,7 +154,6 @@ async function onControlButtonClick (button: PropertyGridControlButtonType): Pro
         logger.verbose(`(SimplePropertyEdit) value updated, ctrlKey=${props.ctrlKey}, value=${maskLogValue(editValue.value)}, prev=${props.value}`);
         $emit('update:value', editValue.value);
         isEditMode.value = false;
-        setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
       }
       break;
     case 'cancel':
@@ -179,7 +176,6 @@ function exitEditMode () {
 function exitEditModeInternal () {
   if (isEditMode.value) {
     exitEditMode();
-    setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
   }
 }
 */

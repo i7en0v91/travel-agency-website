@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type EntityId, ImageCategory, type Locale, getLocalizeableValue, getScoreClassResName, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices, isPrefersReducedMotionEnabled } from './../../../helpers/dom';
+import { isPrefersReducedMotionEnabled } from './../../../helpers/dom';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { Grid, Navigation } from 'swiper/modules';
 import { type Swiper } from 'swiper';
@@ -122,10 +122,6 @@ async function onDeleteUserReviewBtnClick (): Promise<void> {
   }
 }
 
-function refreshTabIndices () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
 function onSwiperInit () {
   logger.debug(`(ReviewList) swiper initialized, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
   swiper.value = (document.querySelector('.stay-reviews-swiper') as any).swiper as Swiper;
@@ -136,7 +132,6 @@ function onSwiperInit () {
 function onSwiperSlideChanged () {
   logger.debug(`(ReviewList) swiper slide changed, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
   refreshPagingState();
-  refreshTabIndices();
 }
 
 function onNavNextBtnClick () {

@@ -3,12 +3,12 @@ import { ClientLogger } from './../client/logging';
 import { EntityCache } from '../client/entity-cache';
 import { type IClientServicesLocator } from '../types';
 import { SearchFlightOffersDisplayOptions, SearchStayOffersDisplayOptions, FavouritesOptionButtonGroup } from '../helpers/constants';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices, getLastSelectedOptionStorageKey } from './../helpers/dom';
+import { getLastSelectedOptionStorageKey } from './../helpers/dom';
 import { Scope, createInjector } from 'typed-inject';
 import once from 'lodash-es/once';
 import { createStorage, type Storage, type StorageValue } from 'unstorage';
 import installLoggingHooks from './logging-hooks';
-import { getClientServices, getCommonServices } from '../helpers/service-accessors';
+import { getCommonServices } from '../helpers/service-accessors';
 
 function installGlobalExceptionHandler () {
   const logger = getCommonServices().getLogger();
@@ -76,11 +76,8 @@ const initApp = once(() => {
 
     const nuxtApp = useNuxtApp();
     nuxtApp.hook('app:mounted', () => {
-      updateTabIndices();
       clientServicesLocator.appMounted = true;
     });
-
-    window.addEventListener('resize', () => setTimeout(updateTabIndices, TabIndicesUpdateDefaultTimeout));
   } catch (e) {
     logger.error('app initialization failed', e);
     throw e;
@@ -95,13 +92,6 @@ export default defineNuxtPlugin({
 
     nuxtApp.hook('app:created', () => {
       installLoggingHooks(nuxtApp);
-    });
-
-    nuxtApp.hook('page:loading:end', () => {
-      const clientServicesLocator = getClientServices();
-      if (clientServicesLocator.appMounted) {
-        setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-      }
     });
   }
 });

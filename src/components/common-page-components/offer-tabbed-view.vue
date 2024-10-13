@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type I18nResName, type OfferKind, type EntityDataAttrsOnly, type IStayOffer, type IFlightOffer, type EntityId } from '@golobe-demo/shared';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 import ComponentWaitingIndicator from './../component-waiting-indicator.vue';
 
 interface IProps {
@@ -14,10 +13,6 @@ interface IProps {
 const props = defineProps<IProps>();
 
 const isError = ref(false);
-
-watch(() => props.selectedKind, () => {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-});
 
 </script>
 

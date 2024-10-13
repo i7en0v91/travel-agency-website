@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { DefaultFlightClass, FlightMinPassengers, FlightMaxPassengers, type FlightClass, getI18nResName1, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 import DropdownList from './../../forms/dropdown-list.vue';
 import FieldFrame from './../../forms/field-frame.vue';
@@ -48,14 +47,6 @@ const selectedClass = ref<FlightClass | undefined>();
 const numPassengers = ref<number | undefined>();
 
 const { t } = useI18n();
-
-function onMenuShown () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
-function onMenuHide () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
 
 function hideDropdown () {
   dropdown.value?.hide();
@@ -152,8 +143,6 @@ function onEscape () {
       :flip="false"
       :boundary="elBtn"
       theme="control-dropdown"
-      @apply-show="onMenuShown"
-      @apply-hide="onMenuHide"
       @keyup.escape="onEscape"
     >
       <FieldFrame :text-res-name="getI18nResName2('searchFlights', 'flightParamsCaption')" class="dropdown-list-field-frame">

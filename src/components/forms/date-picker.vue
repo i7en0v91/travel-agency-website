@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type I18nResName, getI18nResName1 } from '@golobe-demo/shared';
-import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 import dayjs from 'dayjs';
 import FieldFrame from './../forms/field-frame.vue';
@@ -69,14 +68,6 @@ function eraseTimeOfDay (dateTime: Date): Date {
   return new Date(totalMs - totalMs % (1000 * 60 * 60 * 24));
 }
 
-function onMenuShown () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
-function onMenuHide () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
 function hideDropdown () {
   dropdown.value?.hide();
 }
@@ -138,8 +129,6 @@ watch(() => props.selectedDate, () => {
       :flip="false"
       :boundary="elBtn"
       theme="control-dropdown"
-      @apply-show="onMenuShown"
-      @apply-hide="onMenuHide"
     >
       <FieldFrame :text-res-name="captionResName" class="date-picker-field-frame">
         <div class="date-picker-field-div">

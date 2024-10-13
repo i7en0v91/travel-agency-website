@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { getI18nResName2 } from '@golobe-demo/shared';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../helpers/dom';
 import throttle from 'lodash-es/throttle';
 import { getCommonServices } from '../helpers/service-accessors';
 
@@ -79,7 +78,6 @@ function onAnimationEnd () {
   if (props.collapseEnabled) {
     toggling.value = false;
   }
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 }
 
 const $emit = defineEmits<{(event: 'update:collapsed', value?: boolean): void}>();

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { getI18nResName3, type OfferKind } from '@golobe-demo/shared';
 import { type ISearchOffersChecklistFilterProps, type ISearchOffersRangeFilterProps } from './../../../types';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import { SearchOffersFilterTabGroupId } from './../../../helpers/constants';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import orderBy from 'lodash-es/orderBy';
@@ -69,7 +68,6 @@ function refreshFilterParams () {
       filters[i].params = filtersOrdered[i];
     }
   }
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
   logger.debug(`(FilterPanel) filter params refreshed, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
 }
 if (import.meta.server) {

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { mapLocalizeableValues, AppConfig, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
 import { ApiEndpointCompanyReviewsList, ApiEndpointPopularCitiesList, type IPopularCityDto, type ICompanyReviewDto } from '../server/api-definitions';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../helpers/dom';
 import { Navigation, Autoplay, Mousewheel } from 'swiper/modules';
 import range from 'lodash-es/range';
 import PageSection from './../components/common-page-components/page-section.vue';
@@ -54,10 +53,6 @@ const reviewsListFetch = await useFetch(`/${ApiEndpointCompanyReviewsList}`,
     },
     $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-stub' })
   });
-
-function onActiveSlideChanged () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
 
 </script>
 

@@ -59,9 +59,7 @@ const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.val
       </div>
     </NavBar>
     <div v-else class="w-full h-auto px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
-      <ClientOnly>
-        <NavLogo v-if="!isAuthFormsPage" ctrl-key="standaloneAppLogo" />
-      </ClientOnly>
+      <NavLogo v-if="!isAuthFormsPage" ctrl-key="standaloneAppLogo" />
       <slot/>
     </div>
     <ClientOnly>

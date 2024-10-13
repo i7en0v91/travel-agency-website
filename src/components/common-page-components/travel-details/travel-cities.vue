@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { AppConfig, getI18nResName2 } from '@golobe-demo/shared';
-import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../../../helpers/dom';
 import { type IPopularCityDto, ApiEndpointPopularCitiesList } from './../../../server/api-definitions';
 import { Navigation, Autoplay, Mousewheel } from 'swiper/modules';
 import range from 'lodash-es/range';
@@ -38,14 +37,6 @@ const popularCitiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`
     $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-page' })
   });
 
-function onActiveSlideChanged () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
-watch(popularCitiesListFetch.status, () => {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-});
-
 </script>
 
 <template>
@@ -76,7 +67,6 @@ watch(popularCitiesListFetch.status, () => {
       :mousewheel="{
         forceToAxis: true
       }"
-      @slide-change="onActiveSlideChanged"
     >
       <SwiperSlide
         v-for="(city, index) in popularCitiesListFetch.data.value"

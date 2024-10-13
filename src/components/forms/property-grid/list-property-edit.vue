@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { AppException, AppExceptionCodeEnum, maskLog, MaxListPropertyElementsCount, UserNotificationLevel, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
 import { type SimplePropertyType, type PropertyGridControlButtonType } from './../../../types';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import range from 'lodash-es/range';
 import SimplePropertyEdit from './../../forms/property-grid/simple-property-edit.vue';
 import PropertyGrid from './../../forms/property-grid/property-grid.vue';
@@ -146,9 +145,6 @@ async function onControlButtonClick (button: PropertyGridControlButtonType, prop
       const result = await onValidateAndSave('delete', propIdx, undefined);
       if (result === 'success') {
         handleItemValueChange('delete', propIdx, undefined);
-        nextTick(() => {
-          setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-        });
       } else if (result !== 'cancel') {
         userNotificationStore.show({
           level: UserNotificationLevel.WARN,

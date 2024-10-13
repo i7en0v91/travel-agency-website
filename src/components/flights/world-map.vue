@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { WorldMapCityLabelFlipX } from './../../helpers/constants';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import throttle from 'lodash-es/throttle';
 import clamp from 'lodash-es/clamp';
@@ -159,18 +158,6 @@ function raiseWorldMapInViewportIfNeeded () {
   }
 }
 
-watch(() => worldMap.displayedObjects.cities, () => {
-  if ((worldMap.displayedObjects.cities?.length ?? 0) > 0 && worldMap.displayedObjects.citiesVisible) {
-    setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-  }
-});
-
-function onScroll () {
-  if (((worldMap.displayedObjects.cities?.length ?? 0) > 0) && worldMap.displayedObjects.citiesVisible) {
-    setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-  }
-}
-
 const isServer = import.meta.server ?? false;
 const isMounted = ref(false);
 const cityLabelsVisibilityClass = computed(() => {
@@ -226,7 +213,6 @@ onUnmounted(() => {
         }"
         :watch-options="false"
         tag="div"
-        @ps-scroll-x="onScroll"
       >
         <div class="world-map-content">
           <canvas v-if="worldMap?.status.value === 'ready' && worldMap?.viewport" id="worldMapCanvas" ref="canvasEl" :width="worldMap.viewport.width" :height="worldMap.viewport.height" />

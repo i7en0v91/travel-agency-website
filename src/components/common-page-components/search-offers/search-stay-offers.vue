@@ -2,7 +2,6 @@
 import { AppConfig, getI18nResName2, StaysMaxRoomsCount, StaysMaxGuestsCount } from '@golobe-demo/shared';
 import type { ISearchListItem, ISearchStayOffersMainParams, ISearchStayOffersParams } from './../../../types';
 import { ApiEndpointCitiesSearch } from './../../../server/api-definitions';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 import dayjs from 'dayjs';
 import SearchListInput from './../../../components/forms/search-list-input.vue';
@@ -95,14 +94,6 @@ const displayText = computed(() => {
   return `${numRoomsText}, ${numGuestsText}`;
 });
 
-function onMenuShown () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
-function onMenuHide () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
 function hideDropdown () {
   dropdown.value?.hide();
 }
@@ -130,7 +121,6 @@ onBeforeMount(() => {
 });
 onMounted(() => {
   hasMounted.value = true;
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 });
 
 watch(checkInDate, () => {
@@ -201,8 +191,6 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
       :no-auto-focus="true"
       :boundary="elBtn"
       theme="control-dropdown"
-      @apply-show="onMenuShown"
-      @apply-hide="onMenuHide"
       @keyup.escape="onEscape"
     >
       <FieldFrame :text-res-name="getI18nResName2('searchStays', 'roomsGuestsCaption')" class="search-stays-bookparams-frame">

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { AppConfig, eraseTimeOfDay, type I18nResName } from '@golobe-demo/shared';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 import dayjs from 'dayjs';
 import FieldFrame from './../../forms/field-frame.vue';
@@ -64,14 +63,6 @@ function initialValuesFromSettings () {
       controlRangeValueSetting.value = [dateFrom.toISOString(), dateTo.toISOString()];
     }
   }
-}
-
-function onMenuShown () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
-function onMenuHide () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 }
 
 function hideDropdown () {
@@ -148,8 +139,6 @@ watch(() => props.mode, () => {
       :flip="false"
       :boundary="elBtn"
       theme="control-dropdown"
-      @apply-show="onMenuShown"
-      @apply-hide="onMenuHide"
     >
       <FieldFrame :text-res-name="captionResName" class="date-picker-field-frame">
         <button

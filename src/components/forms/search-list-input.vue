@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { AppConfig, HeaderAppVersion, AppException, AppExceptionCodeEnum, UserNotificationLevel, type Locale, type EntityId, type CacheEntityType, type ILocalizableValue, type IEntityCacheItem, type IEntityCacheCityItem, getLocalizeableValue, type I18nResName, getI18nResName2 } from '@golobe-demo/shared';
-import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../../helpers/dom';
 import { type SearchListItemType, type ISearchListItem } from './../../types';
 import type { Dropdown } from 'floating-vue';
 import isArray from 'lodash-es/isArray';
@@ -77,15 +76,10 @@ await setupInitialValue();
 let popupShowCounter = 0;
 let scheduledPopupShows: number[] = [];
 
-function onMenuShown () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
 function onMenuHide () {
   if (document.activeElement !== inputEl.value && props.selectedValue) {
     searchTerm.value = selectedItemName;
   }
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 }
 
 function onInputBlur () {
@@ -143,7 +137,6 @@ function cancelSuggestionPopup () {
     const userAgent = (window?.navigator as any)?.userAgent;
     logger.warn(`(SearchListInput) exception on hiding dropdown: ctrlKey=${props.ctrlKey}`, err, { userAgent });
   }
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 }
 
 function setExclusionIds (idsList?: EntityId[]) {
@@ -286,7 +279,6 @@ watch(status, () => {
         logger.verbose(`(SearchListInput) showing dropdown, ctrlKey=${props.ctrlKey}, url=${props.itemSearchUrl}, count=${data.value!.length}`);
         setTimeout(() => {
           dropdown.value?.show();
-          setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
         }, 0);
       } else {
         logger.debug(`(SearchListInput) dropdown is already visible, ctrlKey=${props.ctrlKey}, url=${props.itemSearchUrl}, count=${data.value!.length}`);
@@ -442,7 +434,6 @@ onMounted(async () => {
       :flip="false"
       theme="control-dropdown"
       no-auto-focus
-      @apply-show="onMenuShown"
       @apply-hide="onMenuHide"
     >
       <template #popper>

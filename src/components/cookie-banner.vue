@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { AppPage, type Locale, CookiePolicyConsent, getI18nResName2 } from '@golobe-demo/shared';
-import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../helpers/dom';
 import SimpleButton from './forms/simple-button.vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { getCommonServices } from '../helpers/service-accessors';
@@ -22,7 +21,6 @@ function onAcceptBtnClick () {
   logger.info('(CookieBanner) accept button clicked');
   if (!consentCookie.value) {
     consentCookie.value = ConsentCookieValue;
-    setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
   }
 }
 

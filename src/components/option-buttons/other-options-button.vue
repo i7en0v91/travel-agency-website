@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type IOtherOptionsButtonGroupProps } from './../../types';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 
 const props = defineProps<IOtherOptionsButtonGroupProps>();
@@ -40,14 +39,6 @@ function onClick () {
   }
 }
 
-function onDropdownShown () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
-function onDropdownHide () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
 const $emit = defineEmits<{(event: 'itemClick', ctrlKey: string): void}>();
 
 const htmlId = useId();
@@ -77,8 +68,6 @@ const htmlId = useId();
       :skidding="-100"
       theme="options-button-dropdown"
       no-auto-focus
-      @apply-show="onDropdownShown"
-      @apply-hide="onDropdownHide"
     >
       <div :class="`option-button-div other-options-button-div`">
         <div class="option-button-icon option-button-icon-menu mr-xs-2" />

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type I18nResName } from '@golobe-demo/shared';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import SimpleButton from './../../forms/simple-button.vue';
 import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
@@ -52,9 +51,6 @@ function onIncrementClick () {
   if (updatedValue > props.maxValue) {
     return;
   }
-  if ((updatedValue === props.maxValue) || (updatedValue === 2)) {
-    setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-  }
   if (updatedValue === props.maxValue) {
     btnIncrement.value?.$el.blur();
   }
@@ -66,9 +62,6 @@ function onDecrementClick () {
   const updatedValue = props.value! - 1;
   if (updatedValue < props.minValue) {
     return;
-  }
-  if ((updatedValue === props.minValue) || (updatedValue === props.maxValue - 1)) {
-    setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
   }
   if (updatedValue === props.minValue) {
     btnDecrement.value?.$el.blur();

@@ -340,7 +340,7 @@ const Config : IAppConfig = {
     listPageSize: 20, // pagination - number of offer items fetched from server in one request
     flexibleDatesRangeDays: FlexibleDatesRangeDays // allowed depart/return date adjustment in days for searched offers when "My Dates Are Flexible" flag is set
   },
-  enableHtmlTabIndex: true, // if enabled, system will automatically compute and fill tabIndex property for all interactive html elements (including dropdowns, menus e.t.c). If disabled, tabIndex="-1" will be used
+  enableHtmlTabIndex: false, // ignored in Nuxt-ui
   ogImage: {
     enabled: true, // if enabled, system will add og:image metadata tag to pages and setup (pre-)rendering logic
     screenSize: { // ogImage size (device width/height); 1200x630 is optimal image size for most social networks

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { AppException, AppExceptionCodeEnum, getI18nResName2 } from '@golobe-demo/shared';
 import { type TravelDetailsImageStatus } from './../../../types';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import { defaultErrorHandler } from './../../../helpers/exceptions';
 import type { WatchStopHandle, ComponentInstance } from 'vue';
 import range from 'lodash-es/range';
@@ -74,7 +73,6 @@ function processUpcomingStatusChanges () {
       }
       textingComponent.value!.swapFrames();
       storeInstance.onPreRenderCompleted(toBeDisplayedCityId);
-      setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
     } else if (toBeDisplayedCityId) {
       logger.debug(`(TravelDetails) processUpcomingStatusChanges, prerendered city is out of sync, ctrlKey=${props.ctrlKey}, preRendered cityId=${toBeDisplayedCityId}, store upcoming cityId=${storeInstance.upcoming?.cityId}`);
     }

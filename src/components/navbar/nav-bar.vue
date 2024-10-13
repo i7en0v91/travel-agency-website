@@ -278,7 +278,7 @@ const verticalNavLinks = computed(() => {
   >   
     <!-- KB: z-10 used below are to capture click event & fix label dissapearing when hovered in light theme  -->
     <template #default="{ link }">
-      <NavLogo v-if="link.kind === 'nav-logo' && navButtonsVisible"  ctrl-key="navLogo"/>
+      <NavLogo v-if="link.kind === 'nav-logo'"  ctrl-key="navLogo"/>
       <UButton v-else-if="link.kind === 'nav-toggler'" size="md" :class="`lg:hidden p-0 z-10 ${navButtonsVisible ? 'visible' : 'invisible'}`" :icon="`${verticalNavCollapsed ? 'cil-hamburger-menu' : 'i-ph-x'}`" variant="link" color="gray" @click="toggleVerticalNav"/>
       <LocaleSwitcher v-else-if="link.kind === 'locale-switcher' && navButtonsVisible" ref="localeSwitcher" ctrl-key="navLocaleSwitcher" class="z-70"/>
       <ThemeSwitcher v-else-if="link.kind === 'theme-switcher'" ref="themeSwitcher" ctrl-key="navThemeSwitcher" :class="`${navButtonsVisible ? 'visible' : 'invisible'}`" />
