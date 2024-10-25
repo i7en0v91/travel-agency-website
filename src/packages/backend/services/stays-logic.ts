@@ -1,4 +1,4 @@
-import { type ISearchStayOffersResultFilterParams, type ISearchStayOffersResult, type IStayData, type IStayOffersFilterParams, DefaultStayReviewScore, normalizePrice, AppException, AppExceptionCodeEnum, AppConfig, MaxOfferGenerationMemoryBufferItems, DefaultStayOffersSorting, DbVersionInitial, TemporaryEntityId, newUniqueId, type IAppLogger, type IStayOfferDetails, type IStayReview, type StayServiceLevel, type ICity, type StayOffersSortFactor, type IPagination, type ISorting, type Price, type EntityId, type IStayShort, type EntityDataAttrsOnly, type IStayOffer, type IStay, type ReviewSummary, type PreviewMode } from '@golobe-demo/shared';
+import { type ISearchStayOffersResultFilterParams, type ISearchStayOffersResult, type IStayData, type IStayOffersFilterParams, DefaultStayReviewScore, normalizePrice, AppException, AppExceptionCodeEnum, AppConfig, MaxOfferGenerationMemoryBufferItems, DefaultStayOffersSorting, DbVersionInitial, TemporaryEntityId, newUniqueId, type IAppLogger, type IStayOfferDetails, type IStayReview, type StayServiceLevel, type ICity, type StayOffersSortFactor, type IPagination, type ISorting, type Price, type EntityId, type IStayShort, type EntityDataAttrsOnly, type IStayOffer, type IStay, type ReviewSummary, type PreviewMode, StaysMinGuestsCount, StaysMinRoomsCount } from '@golobe-demo/shared';
 import { type IStaysLogic } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import { Decimal } from 'decimal.js';
@@ -711,8 +711,8 @@ export class StaysLogic implements IStaysLogic {
 
     this.logger.debug(`(StaysLogic) generating full stay offer variants, userId=${userId}, stay variants count=${stayVariants.length}`);
 
-    const numGuests = filter.numGuests ?? 1;
-    const numRooms = filter.numRooms ?? 1;
+    const numGuests = filter.numGuests ?? StaysMinGuestsCount;
+    const numRooms = filter.numRooms ?? StaysMinRoomsCount;
 
     const usedDataHashes = new Set<string>(); // for preventing duplicates
     const result: OfferWithSortFactor<IStayOffer>[] = [];

@@ -279,20 +279,24 @@ export async function buildBackendServicesLocator(logger: IAppLogger): Promise<I
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, errMsg, 'error-page');
   }
 
-  logger.verbose('starting initializable services');
-  const initializables: IInitializableOnStartup[] = [
-    result.getEmailSender(),  
-    result.getServerI18n(),
-    result.getEntityChangeNotifications(),
-    result.getHtmlPageCacheCleaner(),
-    result.getImageCategoryLogic(),
-    result.getImageBytesProvider(),
-    result.getAirlineCompanyLogic(),
-    result.getAirplaneLogic()
-  ];
-  for(let i = 0; i < initializables.length; i++) {
-    await initializables[i].initialize();
+  const isPrerendering = !!import.meta.prerender;
+  if(!isPrerendering) {
+    logger.verbose('starting initializable services');
+    const initializables: IInitializableOnStartup[] = [
+      result.getEmailSender(),  
+      result.getServerI18n(),
+      result.getEntityChangeNotifications(),
+      result.getHtmlPageCacheCleaner(),
+      result.getImageCategoryLogic(),
+      result.getImageBytesProvider(),
+      result.getAirlineCompanyLogic(),
+      result.getAirplaneLogic()
+    ];
+    for(let i = 0; i < initializables.length; i++) {
+      await initializables[i].initialize();
+    }  
   }
+  
 
   logger.verbose('services container was built');
   return result;
