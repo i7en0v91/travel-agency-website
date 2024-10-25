@@ -19,10 +19,16 @@ export interface IEntityCache {
   get: <TEntityType extends CacheEntityType>(ids: EntityId[], slugs: string[], type: TEntityType, fetchOnCacheMiss: false | { expireInSeconds: number | undefined }) => Promise<GetEntityCacheItem<TEntityType>[] | undefined>
 }
 
-/** Components - option buttons */
-export type IOptionButtonRole = { role: 'radio'} | { role: 'tab', tabPanelId: string };
+/** Component - static image */
+export interface IStaticImageUiProps {
+  wrapper?: string,
+  img?: string,
+  stub?: string,
+  overlay?: string
+}
 
-export interface IOptionButtonProps {
+/** Components - tabs */
+export interface ITabProps {
   ctrlKey: string,
   enabled: boolean,
   isActive?: boolean,
@@ -30,25 +36,24 @@ export interface IOptionButtonProps {
   subtextResName?: I18nResName | null | undefined,
   subtextResArgs?: any,
   shortIcon?: string,
-  tabName?: string,
-  role: IOptionButtonRole
+  tabName?: string
 }
 
-export type OtherOptionButtonVariant = Omit<IOptionButtonProps, 'subtextResName' | 'subtextResArgs' | 'shortIcon'>;
+export type OtherOptionButtonVariant = Omit<ITabProps, 'subtextResName' | 'subtextResArgs' | 'shortIcon'>;
 
-export interface IOtherOptionsButtonGroupProps extends Omit<IOptionButtonProps, 'isActive' | 'shortIcon' | 'labelResName'> {
+export interface ITabGroupMenuProps extends Omit<ITabProps, 'isActive' | 'shortIcon' | 'labelResName'> {
   defaultResName: I18nResName,
   selectedResName: I18nResName,
   variants: OtherOptionButtonVariant[]
 }
 
-export interface IOptionButtonGroupProps {
+export interface ITabGroupProps {
   ctrlKey: string,
-  options: IOptionButtonProps[],
-  otherOptions?: IOtherOptionsButtonGroupProps,
-  activeOptionCtrl?: string,
+  tabs: ITabProps[],
+  menu?: ITabGroupMenuProps,
+  activeTabKey?: string,
   useAdaptiveButtonWidth?: boolean,
-  role: 'radiogroup' | 'tablist'
+  ui?: { compactTabs?: boolean }
 }
 
 /** Components - dropdown lists */
@@ -61,13 +66,15 @@ export interface IDropdownListProps {
   ctrlKey: string,
   captionResName?: I18nResName,
   persistent: boolean,
-  selectedValue?: DropdownListValue | undefined,
   defaultValue?: DropdownListValue | undefined,
-  initiallySelectedValue?: DropdownListValue | null | undefined,
   placeholderResName?: I18nResName,
   listContainerClass?: string,
   items: IDropdownListItemProps[],
-  kind?: 'primary' | 'secondary'
+  kind?: 'primary' | 'secondary',
+  ui?: {
+    wrapper?: string,
+    input?: string
+  }
 }
 
 /** Components - travel details */

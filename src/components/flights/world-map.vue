@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { WorldMapCityLabelFlipX } from './../../helpers/constants';
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import throttle from 'lodash-es/throttle';
 import clamp from 'lodash-es/clamp';
 import WorldMapCityLabel from './world-map-city-label.vue';

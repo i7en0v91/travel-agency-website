@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { getI18nResName3, type ILocalizableValue, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
 import range from 'lodash-es/range';
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 
 interface IProps {
   ctrlKey: string,
@@ -14,59 +13,84 @@ const props = defineProps<IProps>();
 
 const { locale } = useI18n();
 const expanded = ref(false);
+const cardBody = ref<HTMLElement>();
 
 function toggleReviewText () {
   expanded.value = !expanded.value;
+
+  const bodyEl = cardBody.value;
+  if(bodyEl) {
+    bodyEl.scrollTop = 0;
+  }
 }
+
+const uiStyling = {
+  base: 'col-start-1 col-end-2 row-start-1 row-end-2 z-[2] w-full h-full mr-[16px] sm:mr-[26px]',
+  background: 'bg-white dark:bg-gray-900',
+  shadow: 'shadow-lg',
+  rounded: 'rounded-3xl',
+  divide: 'divide-none',
+  header: {
+    padding: 'pt-6 sm:pt-6'
+  },
+  body: {
+    padding: 'pt-0 sm:pt-0'
+  }
+};
 
 </script>
 
 <template>
-  <article class="company-review-card mx-xs-3">
-    <div class="company-review-card-backface my-xs-3 my-s-4" />
-    <div class="company-review-card-frontface py-xs-3 py-s-4">
-      <h3 :class="`${props.header ? 'review-card-header px-xs-3 px-s-4' : 'data-loading-stub text-data-loading mx-xs-3 mx-s-4 mb-xs-1'} font-h4`">
-        {{ props.header ? (props.header as any)[locale] : '&nbsp;' }}
-      </h3>
-      <PerfectScrollbar
-        class="review-card-scroll-container"
-        :options="{
-          suppressScrollY: !expanded,
-          suppressScrollX: true,
-          wheelPropagation: true
-        }"
-        :watch-options="true"
-        tag="div"
-      >
-        <div :class="`review-card-content px-xs-3 px-s-4 ${expanded ? 'expanded' : ''}`">
-          <p :class="props.body ? 'review-card-body' : 'data-loading-stub text-data-loading mt-xs-3'">
-            {{ props.body ? (props.body as any)[locale] : '&nbsp;' }}
-          </p>
-          <button class="review-expand-btn mt-xs-3 mr-xs-1 brdr-1 no-hidden-parent-tabulation-check" type="button" @click="toggleReviewText">
-            {{ $t(getI18nResName3('indexPage', 'companyReviewSection', expanded ? 'collapseBtn' : 'expandBtn')) }}
-          </button>
-          <div class="review-card-stars mt-xs-3">
-            <div v-for="i in range(0, 5)" :key="`${props.ctrlKey}-ReviewStar-${i}`" class="review-card-star" />
+  <div class="pb-[32px] sm:pb-[32px] mr-[40px] grid grid-cols-1 grid-rows-1 rounded-3xl max-w-[500px] company-review-card">
+    <div class="col-start-1 col-end-2 row-start-1 row-end-2 z-[1] w-full h-full rounded-3xl bg-primary-200 dark:bg-primary-800 mt-[16px] ml-[16px] sm:mt-[26px] sm:ml-[26px]" />
+    <UCard as="article" :ui="uiStyling">
+      <template #header>
+        <div class="w-full h-auto overflow-x-hidden">
+          <h3 v-if="props.header" class="h-16 max-h-16 text-2xl font-bold w-fit overflow-hidden line-clamp-2 whitespace-pre-wrap review-card-header">
+            {{ (props.header as any)[locale] }}
+          </h3>
+          <USkeleton v-else as="h3" class="w-50 h-16 max-h-16"/>
+        </div>
+      </template>
+
+      <div ref="cardBody" :class="`w-full min-h-[calc(306px+4rem)] sm:min-h-[calc(378px+4rem)] flex flex-col flex-nowrap items-stretch ${expanded ? 'overflow-auto max-h-[calc(306px+4rem)] sm:max-h-[calc(378px+4rem)]' : 'overflow-hidden'} review-card-content`">
+        <p v-if="props.body" :class="`flex-grow flex-shrink-0 basis-auto text-gray-400 dark:text-gray-500 leading-5 font-medium ${expanded ? 'h-auto' : 'h-[60px] overflow-hidden'} review-card-body`">
+          {{ (props.body as any)[locale] }}
+        </p>
+        <USkeleton v-else as="p" class="h-[60px] mt-4"/>
+
+        <UButton class="border-none ring-0 w-fit self-end text-black dark:text-white font-semibold" variant="outline" color="gray" @click="toggleReviewText">
+          {{ $t(getI18nResName3('indexPage', 'companyReviewSection', expanded ? 'collapseBtn' : 'expandBtn')) }}
+        </UButton>
+
+        <div class="flex flex-row flex-wrap gap-[12px] mt-[8px]">
+          <UIcon v-for="i in range(0, 5)" :key="`${props.ctrlKey}-ReviewStar-${i}`" name="i-material-symbols-star" class="w-6 h-6 max-w-[32px] bg-yellow-400" />
+        </div>
+        <div class="mt-[8px] sm:mt-[20px]">
+          <div v-if="props.userName" class="font-bold text-black dark:text-white review-card-user-name">
+            {{ (props.userName as any)[locale] }}
           </div>
-          <div class="review-card-userinfo mt-xs-2 mt-s-4">
-            <div :class="props.userName ? 'review-card-user-name' : 'data-loading-stub text-data-loading'">
-              {{ props.userName ? (props.userName as any)[locale] : '&nbsp;' }}
-            </div>
-            <div class="review-card-user-company mt-xs-1">
-              {{ $t(getI18nResName3('indexPage', 'companyReviewSection', 'userCompany')) }}
-            </div>
+          <USkeleton v-else class="w-50 h-4"/>
+          <div class="text-gray-400 dark:text-gray-500 mt-1">
+            {{ $t(getI18nResName3('indexPage', 'companyReviewSection', 'userCompany')) }}
           </div>
-          <StaticImage
+        </div>
+
+        <StaticImage
             :ctrl-key="ctrlKey"
             :entity-src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
             :category="ImageCategory.CompanyReview"
             sizes="xs:80vw sm:50vw md:50vw lg:50vw xl:40vw"
-            class="review-card-img brdr-3"
+            :class="expanded ? 'mt-[40px]' : 'mt-2'"
+            :ui="{ 
+              wrapper: 'rounded-xl w-100 h-[200px] h-full justify-self-end review-card-img',
+              stub: 'h-[200px] h-full rounded-xl',
+              img: 'h-[200px] h-full rounded-xl'
+            }"
             :alt-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'imgAlt')"
             :show-stub="true"
           />
-        </div>
-      </PerfectScrollbar>
-    </div>
-  </article>
+      </div>
+    </UCard>
+  </div>
 </template>

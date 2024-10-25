@@ -18,7 +18,7 @@ defineProps<IProps>();
       :ctrl-key="ctrlKey"
       :asset-src="{ filename: `image-link-flights.webp`, width: 590, height: 550 }"
       sizes="xs:10vw sm:10vw md:30vw lg:30vw xl:30vw"
-      class="booking-ticket-flight-img brdr-2"
+      :ui="{ wrapper: 'booking-ticket-flight-img brdr-2' }"
       :alt-res-name="getI18nResName2('ticket', 'cityImgAlt')"
       :show-stub="true"
     />

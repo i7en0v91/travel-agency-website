@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { UserAccountTabAccount, UserAccountTabPayments, UserAccountTabHistory, UserAccountOptionButtonGroup, UserAccountOptionButtonAccount, UserAccountOptionButtonHistory, UserAccountOptionButtonPayments } from './../helpers/constants';
+import { UserAccount, UserPayments, UserHistory, UserAccountTabGroup, UserAccountTabAccount, UserAccountTabHistory, UserAccountTabPayments } from './../helpers/constants';
 import AvatarBox from './../components/user-account/avatar-box.vue';
 import UserCover from './../components/user-account/user-cover.vue';
-import OptionButtonGroup from './../components/option-buttons/option-button-group.vue';
+import TabsGroup from '../components/forms/tabs-group.vue';
 import PageContent from './../components/user-account/page-content.vue';
 import ComponentWaitingIndicator from './../components/component-waiting-indicator.vue';
 
@@ -27,7 +27,7 @@ const primaryEmail = computed(() => {
     : undefined;
 });
 
-const activeOptionCtrl = ref<string | undefined>();
+const activeTabCtrl = ref<string | undefined>();
 </script>
 
 <template>

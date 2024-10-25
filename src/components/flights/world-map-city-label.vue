@@ -42,7 +42,7 @@ onMounted(() => {
       :entity-src="{ slug: imgSrc.slug, timestamp: imgSrc.timestamp }"
       :category="ImageCategory.CityCard"
       sizes="xs:30vw sm:20vw md:10vw lg:10vw xl:10vw"
-      class="world-map-city-label-img brdr-2"
+      :ui="{ wrapper: 'world-map-city-label-img brdr-2' }"
       :alt-res-name="getI18nResName3('flightsPage', 'worldMap', 'cityImgAlt')"
       :show-stub="true"
     />

@@ -140,12 +140,6 @@ export default defineNuxtConfig({
       src: '~/plugins/custom-fetch.ts'
     },
     {
-      name: 'floating-vue',
-      mode: 'all',
-      order: 60,
-      src: '~/plugins/floating-vue.ts'
-    },
-    {
       name: 'vue-yandex-maps.client',
       mode: 'client',
       order: 70,
@@ -169,7 +163,11 @@ export default defineNuxtConfig({
     {
       path: '~/components',
       pathPrefix: false
-    }
+    },
+    {
+      path: '~/content/prose',
+      pathPrefix: false
+    },
   ],
 
   app: {
@@ -260,6 +258,13 @@ export default defineNuxtConfig({
   svgo: {
     autoImportPath: false,
   },
+
+  content: {
+    ignores: [
+      'content/prose'
+    ]
+  },
+
   ui: {
     safelistColors: ['mintgreen']
   },
@@ -321,17 +326,15 @@ export default defineNuxtConfig({
     ['dayjs-nuxt', {}],
     ['@nuxtjs/seo', {}],
     ['@pinia/nuxt', {}],
-    ['floating-vue/nuxt', {}],
-    ['nuxt-swiper', {}],
-    ['@samk-dev/nuxt-vcalendar', {}],
     ['@nuxt/test-utils/module', {}],
     ['nuxt-tiptap-editor', {}],
     ['@nuxt/eslint', {}],
     "@nuxt/ui",
-    "nuxt-svgo"
+    "nuxt-svgo",
+    "@nuxt/content"
   ],
 
-  css: ['vue-final-modal/style.css'],
+  //css: ['vue-final-modal/style.css'],
 
   build: {
     transpile: ['jsonwebtoken']

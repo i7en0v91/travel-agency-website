@@ -27,12 +27,11 @@ const detailsCommon = [
           <div class="ticket-card-general">
             <StaticImage
               :ctrl-key="`${ctrlKey}-CompanyLogo-${i}`"
-              class="ticket-card-image ticket-flight-card-company-logo brdr-3 p-xs-2"
+              :ui="{ wrapper: 'ticket-card-image ticket-flight-card-company-logo brdr-3 p-xs-2', img: 'ticket-flight-card-company-logo-img' }"
               :entity-src="item.airlineCompany.logoImage"
               :category="ImageCategory.AirlineLogo"
               :show-stub="false"
               :request-extra-display-options="true"
-              img-class="ticket-flight-card-company-logo-img"
               sizes="xs:30vw sm:30vw md:20vw lg:20vw xl:20vw"
               :alt-res-name="getI18nResName2('searchFlights', 'airlineCompanyLogoAlt')"
             />

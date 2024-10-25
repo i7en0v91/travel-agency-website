@@ -25,6 +25,8 @@ if (appExceptionCode) {
 
 <template>
   <NuxtLayout>
-    <ErrorBox :http-code="httpStatusCode" :msg-res-name="errorMsgResName" :msg-res-params="appExceptionParams" />
+    <UContainer>
+      <ErrorBox :http-code="httpStatusCode" :msg-res-name="errorMsgResName" :msg-res-params="appExceptionParams" />
+    </UContainer>
   </NuxtLayout>
 </template>

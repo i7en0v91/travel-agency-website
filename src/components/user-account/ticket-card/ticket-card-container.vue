@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { AppPage, getPagePath, type Locale, getI18nResName3, type EntityId, type IStayOffer, type IFlightOffer, type EntityDataAttrsOnly } from '@golobe-demo/shared';
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {

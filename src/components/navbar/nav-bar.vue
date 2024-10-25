@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { UserNotificationLevel, ImageCategory, type EntityId, type OfferKind, lookupPageByUrl, AppPage, SystemPage, type Locale, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { type ActivePageLink } from './../../types';
+import { ImageCategory, AppPage, type Locale, getI18nResName2 } from '@golobe-demo/shared';
 import { ApiEndpointImage } from './../../server/api-definitions';
 import { DeviceSizeEnum } from './../../helpers/constants';
 import { formatAvatarLabel, getUserMenuLinksInfo, getNavMenuLinksInfo, formatAuthCallbackUrl, getCurrentDeviceSize } from './../../helpers/dom';
-import { withQuery } from 'ufo';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
@@ -16,7 +14,7 @@ import NavUser from './nav-user.vue';
 import orderBy from 'lodash-es/orderBy';
 import get from 'lodash-es/get';
 import throttle from 'lodash-es/throttle';
-import { stringifyParsedURL, parseURL, stringifyQuery } from 'ufo';
+import { withQuery, stringifyParsedURL, stringifyQuery } from 'ufo';
 
 interface IProps {
   ctrlKey: string
@@ -32,7 +30,6 @@ const { status } = useAuth();
 const { enabled } = usePreviewState();
 
 const logger = getCommonServices().getLogger();
-const nuxtApp = useNuxtApp();
 const route = useRoute();
 const { locale, t } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
@@ -85,7 +82,6 @@ defineShortcuts({
   escape: {
     usingInput: true,
     handler: () => {
-      console.log('ESC');
       if(!verticalNavCollapsed.value) {
         logger.debug(`(NavBar) closing vertical nav by [ESC] press, ctrlKey=${props.ctrlKey}`);
         verticalNavCollapsed.value = true;
@@ -247,10 +243,11 @@ const verticalNavLinks = computed(() => {
 <template>
   <!-- class selectors for horizontal layout: 
     1. remove ring highlight from logo link
-    2. hide hamburger toggler for mobile layout
+    2. hide hamburger toggler for >= large layouts
     3. hide search page links for mobile layout
     4. show favourites links only for XL devices
     5. hide Login & SignUp links for XS devices
+    TODO: check moving into :ui props of UHorizontalNavigation
     -->
   <UHorizontalNavigation
     id="nav-main-h" 
@@ -279,14 +276,16 @@ const verticalNavLinks = computed(() => {
     <!-- KB: z-10 used below are to capture click event & fix label dissapearing when hovered in light theme  -->
     <template #default="{ link }">
       <NavLogo v-if="link.kind === 'nav-logo'"  ctrl-key="navLogo"/>
-      <UButton v-else-if="link.kind === 'nav-toggler'" size="md" :class="`lg:hidden p-0 z-10 ${navButtonsVisible ? 'visible' : 'invisible'}`" :icon="`${verticalNavCollapsed ? 'cil-hamburger-menu' : 'i-ph-x'}`" variant="link" color="gray" @click="toggleVerticalNav"/>
-      <LocaleSwitcher v-else-if="link.kind === 'locale-switcher' && navButtonsVisible" ref="localeSwitcher" ctrl-key="navLocaleSwitcher" class="z-70"/>
-      <ThemeSwitcher v-else-if="link.kind === 'theme-switcher'" ref="themeSwitcher" ctrl-key="navThemeSwitcher" :class="`${navButtonsVisible ? 'visible' : 'invisible'}`" />
+      <ClientOnly v-else-if="link.kind === 'nav-toggler'" >
+        <UButton size="md" :class="`lg:hidden p-0 z-10 ${navButtonsVisible ? 'visible' : 'invisible'}`" :icon="`${verticalNavCollapsed ? 'cil-hamburger-menu' : 'i-ph-x'}`" variant="link" color="gray" @click="toggleVerticalNav"/>
+      </ClientOnly>
+      <ClientOnly v-else-if="link.kind === 'locale-switcher' && navButtonsVisible">
+        <LocaleSwitcher  ref="localeSwitcher" ctrl-key="navLocaleSwitcher" class="z-70"/>
+      </ClientOnly>
+      <ClientOnly v-else-if="link.kind === 'theme-switcher'">
+        <ThemeSwitcher ref="themeSwitcher" ctrl-key="navThemeSwitcher" :class="`${navButtonsVisible ? 'visible' : 'invisible'}`" />
+      </ClientOnly>
       <NavUser v-else-if="link.kind === 'nav-user' && navButtonsVisible" ctrl-key="navUser" @vertical-nav-toggled="toggleVerticalNav"/>
-      <NuxtLink v-else-if="link.kind === 'favourites' && navButtonsVisible" :class="`favourites-link flex flex-row relative focus-visible:outline-primary-500 dark:focus-visible:outline-inherit`"  :to="link.to">
-        <span class="mx-2">{{ link.label }}</span>
-        <UDivider orientation="vertical" size="xs"/>
-      </NuxtLink>
       <span v-else :class="`text-sm sm:text-base text-nowrap z-10 ${link.kind === 'signup' ? 'auth-link bg-black text-white hover:bg-white-100/80 dark:bg-white dark:text-black dark:hover:bg-gray-100/80 rounded-lg px-3.5 py-2 sm:py-3.5 font-semibold' : (link.kind === 'login' ? 'auth-link' : (link.kind === 'favourites' ? 'favourites-link' : 'search-page-link'))}`" >{{ link.label }}</span>
     </template>
   </UHorizontalNavigation>

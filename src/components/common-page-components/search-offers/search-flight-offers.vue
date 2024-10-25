@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type FlightClass, type TripType, getI18nResName2, FlightMinPassengers } from '@golobe-demo/shared';
+import { type EntityId, type FlightClass, type TripType, getI18nResName2, FlightMinPassengers } from '@golobe-demo/shared';
 import { type ISearchListItem, type ISearchFlightOffersMainParams, type ISearchFlightOffersParams } from './../../../types';
 import { ApiEndpointCitiesSearch } from './../../../server/api-definitions';
-import FieldFrame from './../../forms/field-frame.vue';
+import InputFieldFrame from '../../forms/input-field-frame.vue';
 import SearchListInput from './../../forms/search-list-input.vue';
 import DropdownList from './../../../components/forms/dropdown-list.vue';
 import SearchFlightDatePicker from './search-flights-date-picker.vue';
@@ -18,29 +18,36 @@ const props = withDefaults(defineProps<IProps>(), {
   takeInitialValuesFromUrlQuery: false
 });
 
-const logger = getCommonServices().getLogger();
-
-const fromCity = ref<ISearchListItem | undefined>();
-const toCity = ref<ISearchListItem | undefined>();
-const flightParams = ref<{ passengers: number, class: FlightClass } | undefined>();
-const tripType = ref<TripType>('return');
-const tripDates = ref<Date[]>([]);
-
-const fromComponent = shallowRef<ComponentInstance<typeof SearchListInput>>();
-const toComponent = shallowRef<ComponentInstance<typeof SearchListInput>>();
-const tripTypeComponent = shallowRef<ComponentInstance<typeof DropdownList>>();
-
-const searchOffersStoreAccessor = useSearchOffersStore();
-
 defineExpose({
   getSearchParamsFromInputControls
 });
+
+const logger = getCommonServices().getLogger();
+
+let fromCity: Ref<ISearchListItem | null | undefined>;
+let toCity: Ref<ISearchListItem | null | undefined>;
+let tripType: Ref<TripType | null | undefined>;
+let tripDates: Ref<Date[] | null | undefined>;
+let flightParams: Ref<{ passengers: number, class: FlightClass } | null | undefined>;
+
+const searchOffersStoreAccessor = useSearchOffersStore();
 
 let searchOffersStore: Awaited<ReturnType<typeof searchOffersStoreAccessor.getInstance<ISearchFlightOffersParams>>> | undefined;
 let displayedSearchParams: ComputedRef<Partial<ISearchFlightOffersMainParams>> | undefined;
 if (props.takeInitialValuesFromUrlQuery) {
   searchOffersStore = await searchOffersStoreAccessor.getInstance('flights', true, false);
   displayedSearchParams = computed<Partial<ISearchFlightOffersMainParams>>(() => { return searchOffersStore!.viewState.currentSearchParams; });
+  fromCity = ref(displayedSearchParams.value.fromCity ?? null);
+  toCity = ref(displayedSearchParams.value.toCity ?? null);
+  tripType = ref(displayedSearchParams.value.tripType ?? null);
+  tripDates = ref(displayedSearchParams.value ? (getInitiallySelectedDates(displayedSearchParams.value) ?? null) : null);
+  flightParams = ref((displayedSearchParams.value?.class && displayedSearchParams.value?.numPassengers) ? 
+    { 
+      class: displayedSearchParams.value?.class ?? 'economy', 
+      passengers: displayedSearchParams.value?.numPassengers ?? FlightMinPassengers 
+    } 
+    : null
+  );
   watch([fromCity, toCity, flightParams, tripType, tripDates], () => {
     logger.debug(`(SearchFlightOffers) search params watch handler, ctrlKey=${props.ctrlKey}`);
     const inputParams = getSearchParamsFromInputControls();
@@ -49,11 +56,20 @@ if (props.takeInitialValuesFromUrlQuery) {
 } else {
   searchOffersStore = await searchOffersStoreAccessor.getInstance('flights', false, false);
   displayedSearchParams = computed<Partial<ISearchFlightOffersMainParams>>(getSearchParamsFromInputControls);
+  fromCity = ref(undefined);
+  toCity = ref(undefined);
+  tripDates = ref(undefined);
+  tripType = ref(undefined);
+  flightParams = ref(undefined);
   watch(displayedSearchParams, () => {
     logger.debug(`(SearchFlightOffers) search params change handler, ctrlKey=${props.ctrlKey}`);
     $emit('change', displayedSearchParams!.value);
   });
 }
+
+const fromComponent = shallowRef<ComponentInstance<typeof SearchListInput>>();
+const toComponent = shallowRef<ComponentInstance<typeof SearchListInput>>();
+const tripTypeComponent = shallowRef<ComponentInstance<typeof DropdownList>>();
 
 function getSearchParamsFromInputControls (): Partial<ISearchFlightOffersMainParams> {
   return {
@@ -61,8 +77,8 @@ function getSearchParamsFromInputControls (): Partial<ISearchFlightOffersMainPar
     fromCity: fromCity.value,
     toCity: toCity.value,
     tripType: tripType.value,
-    dateFrom: (tripDates.value?.length ?? 0) > 0 ? tripDates.value[0] : undefined,
-    dateTo: (tripDates.value?.length ?? 0) > 1 ? tripDates.value[1] : undefined,
+    dateFrom: (tripDates.value?.length ?? 0) > 0 ? tripDates.value![0] : undefined,
+    dateTo: (tripDates.value?.length ?? 0) > 1 ? tripDates.value![1] : undefined,
     numPassengers: flightParams.value?.passengers,
     class: flightParams.value?.class
   } as Partial<ISearchFlightOffersMainParams>;
@@ -80,7 +96,7 @@ function getInitiallySelectedDates (params: Partial<ISearchFlightOffersMainParam
 let swapOperationInProgress = false;
 let autoFocusAllowed = false;
 
-function onDestinationChanged (isFrom: boolean, newValue?: ISearchListItem | undefined) {
+function onDestinationChanged (isFrom: boolean, newValue?: ISearchListItem | null | undefined) {
   logger.verbose(`(SearchFlightOffers) destination changes, isFrom=${isFrom}, id=${newValue?.id ?? '[none]'}}, swapInProgress=${swapOperationInProgress}`);
   if (swapOperationInProgress) {
     return;
@@ -93,7 +109,9 @@ function onDestinationChanged (isFrom: boolean, newValue?: ISearchListItem | und
       toComponent.value?.setExclusionIds([]);
     }
     if (autoFocusAllowed && newValue) { // newId not-null check not to jump out of empty input field
-      toComponent.value?.setInputFocus();
+      setTimeout(() => {
+        toComponent.value?.setInputFocus();
+      }, 1);
     }
   } else {
      
@@ -106,32 +124,42 @@ function onDestinationChanged (isFrom: boolean, newValue?: ISearchListItem | und
 }
 
 function onSwapButtonClick () {
-  swapOperationInProgress = true;
+  logger.verbose(`(SearchFlightOffers) starting swap city operation, fromCityId=${fromCity.value?.id}, toCityId=${toCity.value?.id}`);
 
+  let oldFromCityId: EntityId | undefined;
+  let oldToCityId: EntityId | undefined;
+
+  swapOperationInProgress = true;
   try {
     toComponent.value!.setExclusionIds([]);
     fromComponent.value!.setExclusionIds([]);
 
-    const fromCityValue = fromComponent.value!.getValue();
-    const toCityValue = toComponent.value!.getValue();
+    const fromCityValue = fromCity.value;
+    const toCityValue = toCity.value;
 
-    const oldFromCityId = fromCityValue?.id;
-    const oldToCityId = toCityValue?.id;
+    oldFromCityId = fromCityValue?.id;
+    oldToCityId = toCityValue?.id;
 
-    fromComponent.value!.setValue(toCityValue);
-    toComponent.value!.setValue(fromCityValue);
-
-    setTimeout(() => {
+    fromCity.value = toCityValue;
+    toCity.value = fromCityValue;
+  } finally {
+    swapOperationInProgress = false;
+  }
+  
+  swapOperationInProgress = true;
+  setTimeout(() => {
+    try {
       if (oldToCityId) {
         toComponent.value!.setExclusionIds([oldToCityId]);
       }
       if (oldFromCityId) {
         fromComponent.value!.setExclusionIds([oldFromCityId]);
       }
-    }, 0);
-  } finally {
-    swapOperationInProgress = false;
-  }
+    } finally {
+      logger.debug(`(SearchFlightOffers) swap city operation completed, fromCityId=${fromCity.value?.id}, toCityId=${toCity.value?.id}`);
+      swapOperationInProgress = false;
+    }   
+  }, 0);
 }
 
 onMounted(() => {
@@ -140,65 +168,66 @@ onMounted(() => {
   }, 1000);
 });
 
+watch(fromCity, () => {
+  onDestinationChanged(true, fromCity.value);
+});
+
+watch(toCity, () => {
+  onDestinationChanged(false, toCity.value);
+});
+
 const $emit = defineEmits<{(event: 'change', params: Partial<ISearchFlightOffersMainParams>): void}>();
 
 </script>
 
 <template>
-  <div class="search-offers-controls search-flight-offers">
-    <FieldFrame class="search-flights-geo" :text-res-name="getI18nResName2('searchFlights', 'destinationCaption')">
-      <div class="search-flights-geo-content">
-        <div class="search-flights-geo-searchlists">
+  <div class="flex flex-col flex-nowrap gap-[16px] sm:gap-[24px] xl:flex-row w-full">
+    <InputFieldFrame class="flex-grow flex-shrink-[6] basis-auto w-full" :text-res-name="getI18nResName2('searchFlights', 'destinationCaption')">
+      <div class="flex flex-row flex-nowrap w-full min-h-[3.25rem] max-h-[3.25rem] align-middle items-center gap-[6px] rounded ring-1 ring-inset ring-gray-500 dark:ring-gray-400 px-[16px]">
+        <div class="flex flex-row flex-grow flex-shrink basis-auto flex-nowrap items-center justify-center gap-[6px] text-gray-500 dark:text-gray-400 font-medium">
           <SearchListInput
             ref="fromComponent"
             v-model:selected-value="fromCity"
-            :initially-selected-value="takeInitialValuesFromUrlQuery ? (displayedSearchParams?.fromCity ?? null) : undefined"
+            class="w-full min-h-[3.25rem] max-h-[3.25rem]"
             :ctrl-key="`${props.ctrlKey}-From`"
             :item-search-url="`/${ApiEndpointCitiesSearch}`"
             :persistent="true"
             type="destination"
-            list-container-class="search-offers-dropdown-list-container"
             :placeholder-res-name="getI18nResName2('searchFlights', 'fromPlaceholder')"
             :aria-label-res-name="getI18nResName2('ariaLabels', 'ariaLabelFrom')"
-            @update:selected-value="(value?: ISearchListItem | undefined) => { onDestinationChanged(true, value); }"
           />
-          <span class="flights-geo-searchlists-sep">-</span>
+          <span class="text-gray-500 dark:text-gray-400">-</span>
           <SearchListInput
             ref="toComponent"
             v-model:selected-value="toCity"
-            :initially-selected-value="takeInitialValuesFromUrlQuery ? (displayedSearchParams?.toCity ?? null) : undefined"
+            class="w-full min-h-[3.25rem] max-h-[3.25rem]"
             :ctrl-key="`${props.ctrlKey}-To`"
             :item-search-url="`/${ApiEndpointCitiesSearch}`"
             :persistent="true"
             type="destination"
-            list-container-class="search-offers-dropdown-list-container"
             :placeholder-res-name="getI18nResName2('searchFlights', 'toPlaceholder')"
             :aria-label-res-name="getI18nResName2('ariaLabels', 'ariaLabelTo')"
-            @update:selected-value="(value?: ISearchListItem | undefined) => { onDestinationChanged(false, value); }"
           />
         </div>
-        <div class="search-flights-geo-swap-div brdr-1">
-          <button class="search-flights-geo-swap" type="button" :aria-label="$t(getI18nResName2('ariaLabels', 'ariaLabelSwap'))" @click="onSwapButtonClick">
-&nbsp;
-          </button>
-        </div>
+        <UButton size="xl" icon="ion-swap-horizontal" class="flex-grow-0 flex-shrink-0 basis-auto p-0 max-h-[3.25rem]" variant="link" color="gray" :aria-label="$t(getI18nResName2('ariaLabels', 'ariaLabelSwap'))"  @click="onSwapButtonClick"/>        
       </div>
-    </FieldFrame>
-    <div class="search-flights-triparams">
+    </InputFieldFrame>
+    <div class="flex flex-col sm:flex-row flex-nowrap flex-grow flex-shrink-[5] flex-basis-auto w-full gap-[16px] sm:gap-[24px]">
       <DropdownList
         ref="tripTypeComponent"
         v-model:selected-value="tripType"
-        :initially-selected-value="takeInitialValuesFromUrlQuery ? (displayedSearchParams?.tripType ?? null) : undefined"
         :ctrl-key="`${props.ctrlKey}-TripType`"
-        class="search-flights-trip-type"
         :caption-res-name="getI18nResName2('searchFlights', 'tripCaption')"
         :persistent="true"
         default-value="oneway"
-        list-container-class="search-offers-dropdown-list-container"
         :items="[ {value: 'oneway', resName: getI18nResName2('searchFlights', 'tripOneway')}, {value: 'return', resName: getI18nResName2('searchFlights', 'tripReturn')} ]"
+        :ui="{ 
+          wrapper: 'flex-grow flex-shrink-[3] basis-auto w-full min-h-[3.25rem] max-h-[3.25rem]', 
+          input: 'min-h-[3.25rem] max-h-[3.25rem] !pl-[16px] font-medium' 
+        }"
       />
-      <SearchFlightDatePicker v-model:selected-dates="tripDates" :initially-selected-dates="takeInitialValuesFromUrlQuery ? (displayedSearchParams ? (getInitiallySelectedDates(displayedSearchParams) ?? null) : null) : undefined" :ctrl-key="`${ctrlKey}-Dates`" :caption-res-name="tripType === 'oneway' ? (getI18nResName2('searchFlights', 'dateSingle')) : (getI18nResName2('searchFlights', 'dateRange'))" :mode="tripType === 'oneway' ? 'single' : 'range'" />
+      <SearchFlightDatePicker v-model:selected-dates="tripDates" :ui="{ wrapper: 'flex-grow-[2] flex-shrink-[2] basis-auto w-full min-h-[3.25rem] max-h-[3.25rem]', input: 'min-h-[3.25rem] max-h-[3.25rem]' }" :ctrl-key="`${ctrlKey}-Dates`" :caption-res-name="tripType === 'oneway' ? (getI18nResName2('searchFlights', 'dateSingle')) : (getI18nResName2('searchFlights', 'dateRange'))" :mode="tripType === 'oneway' ? 'single' : 'range'" />
     </div>
-    <SearchFlightsParams v-model:params="flightParams" :initially-selected-params="takeInitialValuesFromUrlQuery ? ( (displayedSearchParams?.class && displayedSearchParams?.numPassengers) ? { class: displayedSearchParams?.class ?? 'economy', passengers: displayedSearchParams?.numPassengers ?? FlightMinPassengers } : null) : undefined" class="search-flights-flightparams" :ctrl-key="`${ctrlKey}-FlightParams`" />
+    <SearchFlightsParams v-model:params="flightParams" :ui="{ wrapper: 'flex-grow flex-shrink-[7] basis-auto w-full min-h-[3.25rem] max-h-[3.25rem]', input: 'min-h-[3.25rem] max-h-[3.25rem]' }" :ctrl-key="`${ctrlKey}-FlightParams`" />
   </div>
 </template>

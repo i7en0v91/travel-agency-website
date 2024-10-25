@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { AppPage, type Locale, CookiePolicyConsent, getI18nResName2 } from '@golobe-demo/shared';
-import SimpleButton from './forms/simple-button.vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { getCommonServices } from '../helpers/service-accessors';
 
@@ -27,22 +26,24 @@ function onAcceptBtnClick () {
 </script>
 
 <template>
-  <section v-if="consentCookie !== ConsentCookieValue" class="cookie-banner px-xs-3 px-s-4 py-xs-4 tabbable tabbable-group-cookie-banner tabbable-last" role="contentinfo">
-    <div class="cookie-banner-text">
-      <h3 class="cookie-banner-title">
+  <section v-if="consentCookie !== ConsentCookieValue" class="w-full h-auto max-w-lvw px-4 sm:px-6 py-6 bottom-0 fixed z-[100] flex flex-col items-center gap-4 text-sm bg-primary-200 dark:bg-gray-700 sm:flex-row sm:gap-6 sm:items-end sm:text-base" role="contentinfo">
+    <div class="text-primary-600 dark:text-gray-400 font-normal flex-grow-[4] flex-shrink basis-auto w-full text-center sm:text-left cookie-banner-text">
+      <h3 class="text-4xl font-semibold break-all cookie-banner-title">
         {{ $t(getI18nResName2('cookieBanner', 'title')) }}
       </h3>
-      <i18n-t :keypath="getI18nResName2('cookieBanner', 'text')" tag="div" scope="global" class="cookie-banner-text mt-xs-2 mt-s-3">
+      <i18n-t :keypath="getI18nResName2('cookieBanner', 'text')" tag="div" scope="global" class="mt-2 sm:mt-4">
         <template #privacyLink>
-          <NuxtLink 
-            class="cookie-banner-privacy-link brdr-1 tabbable-group-cookie-banner" 
+          <ULink 
+            class="font-bold underline cookie-banner-privacy-link" 
             target="_blank" 
             :to="navLinkBuilder.buildPageLink(AppPage.Privacy, locale as Locale)">
             {{ $t(getI18nResName2('signUpPage', 'privacyLinkText')) }}
-          </NuxtLink>
+          </ULink>
         </template>
       </i18n-t>
     </div>
-    <SimpleButton kind="accent" class="cookie-banner-accept-btn tabbable-group-cookie-banner" :ctrl-key="`${ctrlKey}-acceptBtn`" :label-res-name="getI18nResName2('cookieBanner', 'btnAccept')" @click="onAcceptBtnClick" />
+    <UButton size="xl" class="flex-grow flex-shrink-[4] basis-auto w-full min-w-[130px] justify-center" variant="solid" color="primary" @click="onAcceptBtnClick">
+      {{ $t(getI18nResName2('cookieBanner', 'btnAccept')) }}
+    </UButton>
   </section>
 </template>

@@ -11,8 +11,8 @@ import { parseURL, stringifyParsedURL, stringifyQuery } from 'ufo';
 import set from 'lodash-es/set';
 import { getCommonServices } from './service-accessors';
 
-export function getLastSelectedOptionStorageKey (optionCtrlKey: string) {
-  return `lastOptBtn:${optionCtrlKey}`;
+export function getLastSelectedTabStorageKey (tabCtrlKey: string) {
+  return `lastSelTab:${tabCtrlKey}`;
 }
 
 export function isInViewport (element: HTMLElement, includeVeticallyScrollableTo = false) {
@@ -211,7 +211,7 @@ export function getNavMenuLinksInfo(isHorizontalNav: boolean) {
     kind: 'flights' as const,
     labelResName: getI18nResName2('nav', 'findFlights'),
     icon: 'i-material-symbols-flight',
-    iconClass: isHorizontalNav ? 'rotate-90 w-0 lg:w-6' : 'rotate-90',
+    iconClass: isHorizontalNav ? 'w-0 lg:w-6' : undefined,
     toPage: AppPage.Flights,
     authStatus: undefined,
     verticalNav: 1,

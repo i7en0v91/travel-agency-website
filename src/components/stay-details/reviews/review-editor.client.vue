@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type EntityId, AppException, AppExceptionCodeEnum, MaxStayReviewLength, getI18nResName2, getI18nResName3, type I18nResName } from '@golobe-demo/shared';
 import { type ReviewEditorButtonType } from './../../../types';
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { useModal } from 'vue-final-modal';
 import { TiptapUnderline, TiptapPlaceholder } from './../../../client/tiptapExt';
 import ReviewEditorButton from './review-editor-button.vue';

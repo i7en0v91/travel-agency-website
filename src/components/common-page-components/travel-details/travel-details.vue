@@ -115,9 +115,11 @@ onMounted(() => {
 <template>
   <PageSection
     :ctrl-key="`${ctrlKey}-TravelDetails`"
-    :header-res-name="getI18nResName2('travelDetails', 'title')"
-    :subtext-res-name="getI18nResName2('travelCities', 'subtext')"
-    :btn-text-res-name="getI18nResName2('travelCities', 'btn')"
+    :content="{
+      headerResName: getI18nResName2('travelDetails', 'title'),
+      subtextResName: getI18nResName2('travelCities', 'subtext'),
+      btnTextResName: getI18nResName2('travelCities', 'btn')
+    }"
     :content-padded="true"
     :is-error="isError"
   >

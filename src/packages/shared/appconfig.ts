@@ -217,13 +217,7 @@ const Config : IAppConfig = {
     suppress: {
       vue: [
         /** suppressing passing inherited properties values */
-        { messageFitler: /Extraneous non-props attributes .* were passed to component but could not be automatically inherited/gi, componentNameFilter: /.*/ },
-        /** suppressing floating-vue^5.2.2 dispose exception (in webkit)
-         * ({"error":"[CLIENT LOG]","level":"error","message":"Reflect.get requires the first argument be an object","msg":"(nuxtApp.vueApp.config.exceptionHandler) beforeUnmount hook","name":"TypeError",
-         * "stack":"get@[native code]\nget@[native code]\nhide@http://localhost:3000/_nuxt/node_modules/.cache/vite/client/deps/floating-vue.js:1785:31
-         * \ndispose@http://localhost:3000/_nuxt/node_modules/.cache/vite/client/deps/floating-vue.js:1803:91\nbeforeUnmount@http://localhost:3000/_nuxt/node_modules/.cache/vite/client/deps/floating-vue.js:1773:17\ncallWithErrorHandling)
-         * */
-        { messageFitler: /.*beforeUnmount hook.*/gi, componentNameFilter: /.*floating-vue.*/gi }
+        { messageFitler: /Extraneous non-props attributes .* were passed to component but could not be automatically inherited/gi, componentNameFilter: /.*/ }
       ],
       server: [
         // not yet
@@ -297,8 +291,8 @@ const Config : IAppConfig = {
     size: 'invisible' // also may be normal
   },
   maxUploadImageSizeMb: 2, // maximum allowed image size to upload
-  suggestionPopupDelayMs: 1000, // delay in ms for suggestion popup to show after last user keypress
-  sliderAutoplayPeriodMs: 5000, // default delay in ms for swiper's slide player
+  suggestionPopupDelayMs: 200, // delay in ms for suggestion popup to show after last user keypress
+  sliderAutoplayPeriodMs: 5000, // default delay in ms for slider player
   worldMap: {
     animationDurationMs: 3000, // number of millisenconds for map appearing animation to complete
     pointHighlightAnimationMs: 400 // highlight duration in millisenconds for map point when it appears on the map

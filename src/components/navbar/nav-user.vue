@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { clampTextLine, type Locale, AppPage, getPagePath, AppConfig, getI18nResName3, ImageCategory } from '@golobe-demo/shared';
-import { UserAccountTabAccount, UserAccountTabPayments, UserAccountOptionButtonGroup, UserAccountOptionButtonPayments, UserAccountOptionButtonAccount, DeviceSizeEnum } from './../../helpers/constants';
-import { formatAvatarLabel, getUserMenuLinksInfo, getCurrentDeviceSize, formatAuthCallbackUrl, getLastSelectedOptionStorageKey } from './../../helpers/dom';
-import type { Dropdown } from 'floating-vue';
+import { DeviceSizeEnum } from './../../helpers/constants';
+import { formatAvatarLabel, getUserMenuLinksInfo, getCurrentDeviceSize, formatAuthCallbackUrl, getLastSelectedTabStorageKey } from './../../helpers/dom';
 import { stringifyParsedURL, parseURL, stringifyQuery } from 'ufo';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';

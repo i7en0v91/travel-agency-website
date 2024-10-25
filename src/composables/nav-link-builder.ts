@@ -1,6 +1,6 @@
 import { type Locale, localizePath, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppPage, getPagePath, type IAppLogger } from '@golobe-demo/shared';
-import { formatAuthCallbackUrl, getLastSelectedOptionStorageKey } from './../helpers/dom';
-import { UserAccountTabPayments, UserAccountOptionButtonAccount, UserAccountTabAccount, UserAccountOptionButtonGroup, UserAccountOptionButtonPayments } from './../helpers/constants';
+import { formatAuthCallbackUrl, getLastSelectedTabStorageKey } from './../helpers/dom';
+import { UserPayments, UserAccountTabAccount, UserAccount, UserAccountTabGroup, UserAccountTabPayments } from './../helpers/constants';
 import set from 'lodash-es/set';
 import { parseQuery, parseURL, stringifyParsedURL, withQuery } from 'ufo';
 import assign from 'lodash-es/assign';
@@ -65,11 +65,11 @@ async function handlePaymentsClick (
   logger.verbose(`(NavLinkBuilder) handling payments menu click: locale=${locale}, isOgImageRequest=${isOgImageRequest}`);
   const onAccountPage = isCurrentlyOnAccountPage(route);
   if(onAccountPage) {
-    (document.querySelector(`[data-tab-name="${UserAccountTabPayments}"]`) as HTMLElement)?.click();
+    (document.querySelector(`[data-tab-name="${UserPayments}"]`) as HTMLElement)?.click();
   } else {
     // set payment tab to be automatically selected on mount
-    const optionKey = getLastSelectedOptionStorageKey(UserAccountOptionButtonGroup);
-    localStorage.setItem(optionKey, UserAccountOptionButtonPayments);
+    const optionKey = getLastSelectedTabStorageKey(UserAccountTabGroup);
+    localStorage.setItem(optionKey, UserAccountTabPayments);
     await navigateTo(navLinkBuilder.buildPageLink(AppPage.Account, locale));
   }
   logger.verbose(`(NavLinkBuilder) payments menu click handler completed: locale=${locale}, isOgImageRequest=${isOgImageRequest}`);
@@ -87,11 +87,11 @@ async function handleSettingsClick (
   //onMenuItemClick();
 
   if(onAccountPage) {
-    (document.querySelector(`[data-tab-name="${UserAccountTabAccount}"]`) as HTMLElement)?.click();
+    (document.querySelector(`[data-tab-name="${UserAccount}"]`) as HTMLElement)?.click();
   } else {
     // set payment tab to be automatically selected on mount
-    const optionKey = getLastSelectedOptionStorageKey(UserAccountOptionButtonGroup);
-    localStorage.setItem(optionKey, UserAccountOptionButtonAccount);
+    const optionKey = getLastSelectedTabStorageKey(UserAccountTabGroup);
+    localStorage.setItem(optionKey, UserAccountTabAccount);
     await navigateTo(navLinkBuilder.buildPageLink(AppPage.Account, locale));
   }
   logger.verbose(`(NavLinkBuilder) settings menu click handler completed: locale=${locale}, isOgImageRequest=${isOgImageRequest}`);

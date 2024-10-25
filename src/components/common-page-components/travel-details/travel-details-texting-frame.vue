@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type Locale, AppPage, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import { type ITravelDetailsTextingData } from './../../../types';
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 
 interface IProps {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { AppConfig, HeaderAppVersion, AppException, AppExceptionCodeEnum, UserNotificationLevel, type Locale, type EntityId, type CacheEntityType, type ILocalizableValue, type IEntityCacheItem, type IEntityCacheCityItem, getLocalizeableValue, type I18nResName, getI18nResName2 } from '@golobe-demo/shared';
+import { AppConfig, AppException, AppExceptionCodeEnum, UserNotificationLevel, type Locale, type EntityId, type CacheEntityType, type ILocalizableValue, type IEntityCacheItem, type IEntityCacheCityItem, getLocalizeableValue, type I18nResName, getI18nResName2 } from '@golobe-demo/shared';
 import { type SearchListItemType, type ISearchListItem } from './../../types';
-import type { Dropdown } from 'floating-vue';
+import { getObject } from './../../helpers/rest-utils';
 import isArray from 'lodash-es/isArray';
 import isString from 'lodash-es/isString';
 import isObject from 'lodash-es/isObject';
@@ -14,164 +14,91 @@ interface IProps {
   itemSearchUrl: string,
   type: SearchListItemType,
   persistent: boolean,
-  selectedValue: ISearchListItem | undefined,
-  initiallySelectedValue?: ISearchListItem | null | undefined,
   placeholderResName?: I18nResName,
   minSuggestionInputChars?: number,
   maxSuggestionItemsCount?: number,
-  listContainerClass?: string,
   additionalQueryParams?: any,
   ariaLabelResName?: I18nResName
 }
 const props = withDefaults(defineProps<IProps>(), {
-  selectedValue: undefined,
   placeholderResName: undefined,
   minSuggestionInputChars: 3,
   maxSuggestionItemsCount: 10,
   listContainerClass: undefined,
   additionalQueryParams: undefined,
-  ariaLabelResName: undefined,
-  initiallySelectedValue: undefined
+  ariaLabelResName: undefined
 });
 
 const { locale } = useI18n();
 const { enabled } = usePreviewState();
 
-let showOnDataChanged = false;
-const searchTerm = ref<string | undefined>('');
+const selectedMenuItem = ref<ISearchListItem & { label: string } | undefined>();
+const fetchInProgress = ref(false);
+
 let selectedItemName: string | undefined;
 const exclusionIds: Ref<EntityId[]> = ref([]);
 
-const hasMounted = ref(false);
-
-const inputEl = shallowRef<HTMLInputElement>();
+const componentRef = shallowRef();
 const logger = getCommonServices().getLogger();
 
 const controlSettingsStore = useControlSettingsStore();
 const userNotificationStore = useUserNotificationStore();
 
+const modelRef = defineModel<ISearchListItem | null | undefined>('selectedValue');
+
 defineExpose({
   setExclusionIds,
-  setValue,
-  getValue,
   setInputFocus
 });
 
 const getControlValueSetting = () => controlSettingsStore.getControlValueSetting<EntityId | undefined>(props.ctrlKey, undefined, props.persistent);
 
-async function setupInitialValue () {
-  if (props.initiallySelectedValue && props.initiallySelectedValue.displayName) {
+async function applyInitialValue () {
+  const initiallySelectedValue = modelRef.value;
+  if (initiallySelectedValue && initiallySelectedValue.displayName) {
     const controlValueSetting = getControlValueSetting();
-    const displayName = (import.meta.client ? (await tryLookupLocalizeableDisplayNameOnClient(props.initiallySelectedValue.id)) : undefined) ?? getItemDisplayText(props.initiallySelectedValue.displayName)!;
-    controlValueSetting.value = props.initiallySelectedValue.id;
-    selectedItemName = searchTerm.value = getItemDisplayText(displayName);
-  } else if (props.initiallySelectedValue === null) {
+    const displayName = (import.meta.client ? (await tryLookupLocalizeableDisplayNameOnClient(initiallySelectedValue.id)) : undefined) ?? getItemDisplayText(initiallySelectedValue.displayName)!;
+    controlValueSetting.value = initiallySelectedValue.id;
+    modelRef.value = { ...initiallySelectedValue, displayName };
+    selectedMenuItem.value = { ...modelRef.value, label: getItemDisplayText(displayName)! };
+  } else if (initiallySelectedValue === null) {
     const controlValueSetting = getControlValueSetting();
     controlValueSetting.value = undefined;
-    selectedItemName = searchTerm.value = undefined;
-  }
-}
-await setupInitialValue();
-
-let popupShowCounter = 0;
-let scheduledPopupShows: number[] = [];
-
-function onMenuHide () {
-  if (document.activeElement !== inputEl.value && props.selectedValue) {
-    searchTerm.value = selectedItemName;
-  }
-}
-
-function onInputBlur () {
-  if (!isSuggestionPopupShown()) {
-    if (props.selectedValue) {
-      searchTerm.value = selectedItemName;
-    }
-    cancelSuggestionPopup();
-  }
-}
-
-function isSuggestionPopupShown () {
-  return (dropdown.value?.$el.className as string)?.includes('v-popper--shown') ?? false;
-}
-
-function onSuggestionPopupShowFired () {
-  if ((searchTerm.value?.length ?? 0) >= props.minSuggestionInputChars) {
-    showOnDataChanged = true;
-    if (searchTermQueryParam.value !== searchTerm.value) {
-      searchTermQueryParam.value = searchTerm.value; // will automatically trigger refresh
-    } else {
-      refresh();
-    }
-  } else {
-    logger.verbose(`(SearchListInput) won't send search request as searchTerm is too short: ctrlKey=${props.ctrlKey}, ctr=${popupShowCounter}`);
-    data.value = undefined;
-    cancelSuggestionPopup();
-  }
-}
-
-function scheduleSuggestionPopup () {
-  if (isSuggestionPopupShown()) {
-    logger.debug(`(SearchListInput) popup show won't be scheduled as it is currently shown: ctrlKey=${props.ctrlKey}`);
-    return;
-  }
-
-  popupShowCounter++;
-  logger.debug(`(SearchListInput) scheduling popup show: ctrlKey=${props.ctrlKey}, ctr=${popupShowCounter}`);
-  scheduledPopupShows.push(popupShowCounter);
-  const showScheduleNumber = popupShowCounter;
-  setTimeout(() => {
-    if (scheduledPopupShows.includes(showScheduleNumber)) {
-      logger.debug(`(SearchListInput) scheduled popup show fired: ctrlKey=${props.ctrlKey}, ctr=${showScheduleNumber}`);
-      onSuggestionPopupShowFired();
-    }
-  }, AppConfig.suggestionPopupDelayMs);
-}
-
-function cancelSuggestionPopup () {
-  logger.debug(`(SearchListInput) hiding scheduled popup requests: ctrlKey=${props.ctrlKey}`);
-  scheduledPopupShows = [];
-  try {
-    dropdown.value?.hide();
-  } catch (err: any) { // KB: sometimes throws error on webkit
-    const userAgent = (window?.navigator as any)?.userAgent;
-    logger.warn(`(SearchListInput) exception on hiding dropdown: ctrlKey=${props.ctrlKey}`, err, { userAgent });
+    modelRef.value = selectedMenuItem.value = undefined;
   }
 }
 
 function setExclusionIds (idsList?: EntityId[]) {
   logger.verbose(`(SearchListInput) setting exclusion ids list: ctrlKey=${props.ctrlKey}, list=${JSON.stringify(idsList ?? [])}`);
   exclusionIds.value = idsList ?? [];
-  if (props.selectedValue && exclusionIds.value.includes(props.selectedValue.id)) {
-    setValue(undefined);
+  if (modelRef.value && exclusionIds.value.includes(modelRef.value.id)) {
+    setSelectedItem(undefined);
   }
 }
 
-function setValue (value?: ISearchListItem | undefined) {
-  logger.verbose(`(SearchListInput) setting new value: ctrlKey=${props.ctrlKey}, id=${value?.id ?? '[none]'}`);
+function setSelectedItem (item?: ISearchListItem | null | undefined) {
+  logger.verbose(`(SearchListInput) setting selected item: ctrlKey=${props.ctrlKey}, id=${item?.id ?? '[none]'}`);
 
-  if (!value) {
-    selectedItemName = searchTerm.value = undefined;
-    updateSelectedValue(undefined);
+  if (!item) {
+    selectedItemName = selectedMenuItem.value = undefined;
+    updateValue(undefined);
     return;
   }
 
-  selectedItemName = searchTerm.value = getItemDisplayText(value.displayName);
-  updateSelectedValue(value);
-}
-
-function getValue () : ISearchListItem | undefined {
-  if (!props.selectedValue || !selectedItemName) {
-    logger.debug(`(SearchListInput) current value accessed: ctrlKey=${props.ctrlKey}, result=undefined`);
-    return undefined;
-  }
-
-  logger.debug(`(SearchListInput) current value accessed: ctrlKey=${props.ctrlKey}, id=${props.selectedValue.id}, slug=${props.selectedValue.slug}`);
-  return props.selectedValue;
+  selectedItemName = getItemDisplayText(item.displayName);
+  selectedMenuItem.value = { ...item, label: selectedItemName! } ;
+  updateValue(item);
 }
 
 function setInputFocus () {
-  inputEl.value?.focus();
+  const inputEl = document.querySelector(`[data-ctrlkey="${props.ctrlKey}"]`) as HTMLElement;
+  if(!inputEl) {
+    logger.warn(`(SearchListInput) cannot set focus, input element not found: ctrlKey=${props.ctrlKey}`);
+    return;
+  }
+  
+  logger.debug(`(SearchListInput) setting input focus: ctrlKey=${props.ctrlKey}, id=${inputEl.id}`);
+  inputEl.focus();
 }
 
 function getCacheEntityType (): CacheEntityType {
@@ -226,90 +153,18 @@ async function getCityFromCache (cityId: EntityId, fetchFromServer: boolean): Pr
   return (lookupResult?.length ?? 0) > 0 ? lookupResult![0] : undefined;
 }
 
-const searchTermQueryParam = ref<string | undefined>();
-const { data, error, status, refresh } = await useFetch(props.itemSearchUrl,
-  {
-    method: 'get',
-    server: false,
-    lazy: true,
-    headers: [[HeaderAppVersion, AppConfig.versioning.appVersion.toString()]],
-    cache: enabled ? 'no-cache' : 'default',
-    query: {
-      locale,
-      size: props.maxSuggestionItemsCount,
-      onlyPopular: false,
-      searchTerm: searchTermQueryParam,
-      drafts: enabled,
-      ...(props.additionalQueryParams ? props.additionalQueryParams : {})
-    },
-    immediate: false,
-    transform: (response: any) => {
-      const dto = response as IListItemDto[];
-      if (dto || isArray(dto)) {
-        logger.verbose(`(SearchListInput) received list search results, ctrlKey=${props.ctrlKey}, count=${dto.length}`);
-      } else {
-        logger.warn(`(SearchListInput) request response contains empty data, ctrlKey=${props.ctrlKey}, url=${props.itemSearchUrl}, props=${JSON.stringify(props)}`);
-        return undefined;
-      }
-      const result: ISearchListItem[] = (dto.map((t) => {
-        return {
-          id: t.id,
-          slug: t.slug,
-          displayName: t.displayName
-        };
-      }));
-      return result;
-    }
-  });
-watch(error, () => {
-  if (error.value) {
-    logger.warn(`(SearchListInput) search request failed with exception, ctrlKey=${props.ctrlKey}, url=${props.itemSearchUrl}, props=${JSON.stringify(props)}`, error.value);
-    data.value = undefined;
-  }
-});
-watch(status, () => {
-  logger.verbose(`(SearchListInput) request fetch status changed, ctrlKey=${props.ctrlKey}, url=${props.itemSearchUrl}, status=${status.value}`);
-  if (status.value === 'success' && data.value) {
-    updateClientEntityCacheIfNeeded(data.value!);
-  }
 
-  if (showOnDataChanged && (status.value === 'success' || status.value === 'error')) {
-    if (status.value === 'success' && (data.value?.filter(d => !exclusionIds.value.includes(d.id)).length ?? 0) > 0) {
-      if (!isSuggestionPopupShown()) {
-        logger.verbose(`(SearchListInput) showing dropdown, ctrlKey=${props.ctrlKey}, url=${props.itemSearchUrl}, count=${data.value!.length}`);
-        setTimeout(() => {
-          dropdown.value?.show();
-        }, 0);
-      } else {
-        logger.debug(`(SearchListInput) dropdown is already visible, ctrlKey=${props.ctrlKey}, url=${props.itemSearchUrl}, count=${data.value!.length}`);
-      }
-    } else {
-      data.value = undefined;
-      cancelSuggestionPopup();
-    }
-    showOnDataChanged = false;
-  }
-  if (status.value === 'error') {
-    userNotificationStore.show({
-      level: UserNotificationLevel.ERROR,
-      resName: getI18nResName2('appErrors', 'unknown')
-    });
-  }
-});
-
-const $emit = defineEmits<{(event: 'update:selectedValue', value?: ISearchListItem | undefined): void}>();
-
-function updateSelectedValue (item?: ISearchListItem | undefined) {
+function updateValue (item?: ISearchListItem | undefined) {
   const itemDisplayText = getItemDisplayText(item?.displayName);
-  logger.verbose(`(SearchListInput) updating selected item: ctrlKey=${props.ctrlKey}, id=${item?.id}, text=${itemDisplayText}, type=${props.type}`);
+  logger.verbose(`(SearchListInput) updating value: ctrlKey=${props.ctrlKey}, id=${item?.id}, text=${itemDisplayText}, type=${props.type}`);
   const controlValueSetting = getControlValueSetting();
   controlValueSetting.value = item ? item.id : undefined;
-  $emit('update:selectedValue', item);
-  logger.verbose(`(SearchListInput) selected item updated: ctrlKey=${props.ctrlKey}, id=${item?.id}, text=${itemDisplayText}, type=${props.type}`);
+  modelRef.value = item;
+  logger.verbose(`(SearchListInput) value updated: ctrlKey=${props.ctrlKey}, id=${item?.id}, text=${itemDisplayText}, type=${props.type}`);
 }
 
 watch(locale, async () => {
-  let item = props.selectedValue;
+  let item = modelRef.value;
   if (!item?.id) {
     return;
   }
@@ -318,41 +173,19 @@ watch(locale, async () => {
   if (!isObject(item?.displayName)) {
     logger.debug(`(SearchListInput) checking cache for text localization: ctrlKey=${props.ctrlKey}, id=${item.id}`);
 
-    const selectedItemId = props.selectedValue!.id;
+    const selectedItemId = item.id;
     const cacheItem = await getCityFromCache(selectedItemId, false);
     if (!cacheItem) {
       logger.warn(`(SearchListInput) entity cache empty, cannot localize displayed text: ctrlKey=${props.ctrlKey}, id=${item.id}, type=${props.type}, locale=${locale.value}`);
       return;
     }
     item = cacheItem;
-    setValue(item);
+    setSelectedItem(item);
     logger.verbose(`(SearchListInput) displayed text updated: ctrlKey=${props.ctrlKey}, id=${item.id}, type=${props.type}, locale=${locale.value}`);
   } else if (item?.displayName) {
-    setValue(item);
+    setSelectedItem(item);
   }
 });
-
-function onInputTextChanged () {
-  let inputText = inputEl.value?.value ?? '';
-  logger.debug(`(SearchListInput) on input text changed: ctrlKey=${props.ctrlKey}, text=${inputText}`);
-  inputText = inputText.trim();
-  if (inputText.length >= props.minSuggestionInputChars) {
-    searchTerm.value = inputText.trim();
-    cancelSuggestionPopup();
-    setTimeout(() => {
-      scheduleSuggestionPopup();
-    }, 0);
-  } else if (inputText.length === 0) {
-    searchTerm.value = '';
-    selectedItemName = undefined;
-    cancelSuggestionPopup();
-    updateSelectedValue(undefined);
-  } else {
-    cancelSuggestionPopup();
-  }
-}
-
-const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
 
 function getItemDisplayText (text?: string | ILocalizableValue): string | undefined {
   if (!text) {
@@ -367,94 +200,134 @@ function getItemDisplayText (text?: string | ILocalizableValue): string | undefi
 }
 
 function onActivate (item: ISearchListItem) {
-  logger.verbose(`(SearchListInput) list item activated: ctrlKey=${props.ctrlKey}, id=${item.id}, displayName=${item.displayName}`);
-  cancelSuggestionPopup();
-  selectedItemName = searchTerm.value = getItemDisplayText(item.displayName);
-  updateSelectedValue(item);
+  logger.verbose(`(SearchListInput) list item activated: ctrlKey=${props.ctrlKey}, id=${item.id}, displayName=${getItemDisplayText(item.displayName)}`);
+  updateValue(item);
 }
 
-function onEscape () {
-  cancelSuggestionPopup();
+function normalizeSearchTerm(q: string) {
+  return q?.trim()?.toLocaleLowerCase() ?? '';
+}
+
+async function fetchSearchItems (q: string) {
+  const searchTermNormalized = normalizeSearchTerm(q);
+  if((searchTermNormalized?.length ?? 0) < props.minSuggestionInputChars) {
+    logger.debug(`(SearchListInput) ignoring search request, search term is too short: ctrlKey=${props.ctrlKey}, searchTerm=[${q}]`);
+    return [];
+  }
+  
+  logger.debug(`(SearchListInput) sending search request: ctrlKey=${props.ctrlKey}, searchTerm=[${q}], normalized=[${searchTermNormalized}]`);
+  fetchInProgress.value = true;
+
+  try {
+    const dto = await getObject<IListItemDto[]>(props.itemSearchUrl, {
+        locale: locale.value,
+        size: props.maxSuggestionItemsCount,
+        onlyPopular: false,
+        searchTerm: q,
+        drafts: enabled,
+        ...(props.additionalQueryParams ? props.additionalQueryParams : {})
+      }, enabled ? 'no-cache' : 'default', false, undefined, 'default');
+
+      if (dto) {
+        if(isArray(dto)) {
+          logger.verbose(`(SearchListInput) received list search results, ctrlKey=${props.ctrlKey}, count=${dto.length}, searchTerm=[${q}]`);
+        } else {
+          logger.warn(`(SearchListInput) received non-array response on search request, ctrlKey=${props.ctrlKey}, url=${props.itemSearchUrl}, searchTerm=[${q}], normalized=[${searchTermNormalized}], props=${JSON.stringify(props)}`);
+          userNotificationStore.show({
+            level: UserNotificationLevel.ERROR,
+            resName: getI18nResName2('appErrors', 'unknown')
+          });
+          return [];
+        }        
+      } else {
+        logger.verbose(`(SearchListInput) search response contains empty data, ctrlKey=${props.ctrlKey}, url=${props.itemSearchUrl}, searchTerm=[${q}], normalized=[${searchTermNormalized}], props=${JSON.stringify(props)}`);
+        return [];
+      }
+      
+      let result: ISearchListItem[] = (dto.map((t) => {
+        return {
+          id: t.id,
+          slug: t.slug,
+          displayName: t.displayName,
+          label: getItemDisplayText(t.displayName)
+        };
+      }));
+      await updateClientEntityCacheIfNeeded(result);
+
+      if(exclusionIds.value.length) {
+        result = result.filter(d => !exclusionIds.value.includes(d.id));
+        if(!result.length) {
+          logger.verbose(`(SearchListInput) after filtering search result does not contain matching items, ctrlKey=${props.ctrlKey}, url=${props.itemSearchUrl}, searchTerm=[${q}], exclusionIds=[${exclusionIds.value.join('; ')}], props=${JSON.stringify(props)}`);
+          return [];
+        }
+      }
+      return result;
+  } catch(err: any) {
+    logger.warn(`(SearchListInput) search request exception occured, ctrlKey=${props.ctrlKey}, url=${props.itemSearchUrl}, searchTerm=[${q}], normalized=[${searchTermNormalized}], props=${JSON.stringify(props)}`, err);
+    userNotificationStore.show({
+      level: UserNotificationLevel.ERROR,
+      resName: getI18nResName2('appErrors', 'unknown')
+    });
+    return [];
+  } finally {
+    fetchInProgress.value = false;
+  }
 }
 
 onMounted(async () => {
-  hasMounted.value = true;
+  await applyInitialValue();
 
   const controlValueSetting = getControlValueSetting();
   if (controlValueSetting.value) {
     const entityId = controlValueSetting.value as EntityId;
-    logger.debug(`(SearchListInput) obtaining value display text: ctrlKey=${props.ctrlKey}, id=${entityId}, type=${props.type}`);
+    logger.debug(`(SearchListInput) obtaining selected item display text: ctrlKey=${props.ctrlKey}, id=${entityId}, type=${props.type}`);
     const displayName = await tryLookupLocalizeableDisplayNameOnClient(entityId);
     if (displayName) {
-      selectedItemName = searchTerm.value = getItemDisplayText(displayName);
-      $emit('update:selectedValue', { id: entityId, displayName });
+      selectedItemName = getItemDisplayText(displayName);
+      const item = { id: entityId, displayName };
+      selectedMenuItem.value = { ...item, label: selectedItemName! };
+      updateValue(item);
     } else {
-      logger.debug(`(SearchListInput) obtaining value display text from cache: ctrlKey=${props.ctrlKey}, id=${entityId}, type=${props.type}`);
+      logger.debug(`(SearchListInput) obtaining selected item display text from cache: ctrlKey=${props.ctrlKey}, id=${entityId}, type=${props.type}`);
       const cachedEntity = await getCityFromCache(entityId, true);
       if (cachedEntity) {
-        selectedItemName = searchTerm.value = getItemDisplayText(cachedEntity.displayName);
-        updateSelectedValue(cachedEntity!);
+        selectedItemName = getItemDisplayText(cachedEntity.displayName);
+        selectedMenuItem.value = { ...cachedEntity!, label: selectedItemName! };
+        updateValue(cachedEntity);
       } else {
-        logger.warn(`(SearchListInput) failed to obtain value display text: ctrlKey=${props.ctrlKey}, id=${entityId}, type=${props.type}`);
+        logger.warn(`(SearchListInput) failed to obtain selected item display text: ctrlKey=${props.ctrlKey}, id=${entityId}, type=${props.type}`);
       }
     }
   }
+
+  watch(selectedMenuItem, () => {
+    logger.debug(`(SearchListInput) selected menu item changed: ctrlKey=${props.ctrlKey}, id=${selectedMenuItem.value?.id}, displayName=${getItemDisplayText(selectedMenuItem.value?.displayName)}`);
+    if(selectedMenuItem.value) {
+      onActivate(selectedMenuItem.value);
+    } else {
+      setSelectedItem(undefined);
+    }
+  }, { immediate: true });
+
+  watch(modelRef, () => {
+    if((!!modelRef.value && modelRef.value.id === selectedMenuItem.value?.id) || (!modelRef.value && !selectedMenuItem.value?.id)) {
+      return;
+    }
+    logger.debug(`(SearchListInput) model value changed, setting selected menu item: ctrlKey=${props.ctrlKey}, id=${modelRef.value?.id}, displayName=${getItemDisplayText(modelRef.value?.displayName)}`);
+    setSelectedItem(modelRef.value);
+  });
 });
 
 </script>
 
 <template>
-  <div
-    class="search-list-input"
-    role="searchbox"
-    :aria-label="ariaLabelResName ? $t(ariaLabelResName) : ''"
-    @keyup.escape="onEscape"
-  >
-    <input
-      :id="ctrlKey"
-      ref="inputEl"
-      type="text"
-      class="search-list-input-el"
-      :placeholder="placeholderResName ? $t(placeholderResName) : ''"
-      :value="hasMounted ? searchTerm : ''"
-      :maxLength="256"
-      autocomplete="off"
-      @input="onInputTextChanged"
-      @blur="onInputBlur"
-    >
-    <VDropdown
-      ref="dropdown"
-      v-floating-vue-hydration="{ tabIndex: 0 }"
-      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
-      :aria-id="`${ctrlKey}-DropDownWrapper`"
-      :distance="14"
-      :hide-triggers="(triggers: any) => [...triggers, 'click']"
-      :show-triggers="(triggers: any) => [...triggers, 'click']"
-      placement="bottom-start"
-      :flip="false"
-      theme="control-dropdown"
-      no-auto-focus
-      @apply-hide="onMenuHide"
-    >
-      <template #popper>
-        <div :class="`search-list-input-select-div ${listContainerClass}`" :data-popper-anchor="ctrlKey">
-          <ClientOnly>
-            <ol v-if="(data?.filter(d => !exclusionIds.includes(d.id)).length ?? 0) > 0" role="select">
-              <li
-                v-for="(v, idx) in (data?.filter(d => !exclusionIds.includes(d.id)))"
-                :key="`${props.ctrlKey}-SearchRes-${idx}`"
-                :class="`search-list-input-item p-xs-1 brdr-1 tabbable`"
-                @click="() => { onActivate(v); }"
-                @keyup.space="() => { onActivate(v); }"
-                @keyup.enter="() => { onActivate(v); }"
-                @keyup.escape="onEscape"
-              >
-                {{ (v.displayName as any)[locale] }}
-              </li>
-            </ol>
-          </ClientOnly>
-        </div>
-      </template>
-    </VDropdown>
-  </div>
+   <UInputMenu ref="componentRef" v-model="selectedMenuItem" :data-ctrlkey="ctrlKey" option-attribute="label" by="id" :loading="fetchInProgress" :search="fetchSearchItems" :placeholder="placeholderResName ? $t(placeholderResName) : ''" :debounce="AppConfig.suggestionPopupDelayMs" nullable :ui="!fetchInProgress ? { base: '!pl-0' } : undefined" variant="none" :aria-label="ariaLabelResName ? $t(ariaLabelResName) : ''">
+    <template #option-empty="{ query }">
+      <span v-if="normalizeSearchTerm(query).length < minSuggestionInputChars" class="text-wrap">{{ $t(getI18nResName2('searchList', 'termTooShort'), { count: minSuggestionInputChars }) }}</span>
+      <span v-else class="text-wrap">{{ $t(getI18nResName2('searchList', 'notFound')) }}</span>
+    </template>
+    <template #empty>
+      <span class="text-wrap">{{ $t(getI18nResName2('searchList', 'termTooShort'), { count: minSuggestionInputChars }) }}</span>
+    </template>
+  </UInputMenu>
 </template>

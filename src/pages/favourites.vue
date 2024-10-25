@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { AppException, AppExceptionCodeEnum, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { FavouritesOptionButtonStays, FavouritesOptionButtonGroup, FavouritesOptionButtonFlights } from './../helpers/constants';
+import { FavouritesTabStays, FavouritesTabGroup, FavouritesTabFlights } from './../helpers/constants';
 import { defaultErrorHandler } from './../helpers/exceptions';
-import OptionButtonGroup from './../components/option-buttons/option-button-group.vue';
+import TabsGroup from '../components/forms/tabs-group.vue';
 import OfferTabbedView from './../components/common-page-components/offer-tabbed-view.vue';
 import FlightsListItemCard from './../components/common-page-components/offers-list-view/search-flights-result-card.vue';
 import StaysListItemCard from './../components/common-page-components/offers-list-view/search-stays-result-card.vue';
@@ -17,7 +17,7 @@ definePageMeta({
 });
 useOgImage();
 
-const DefaultActiveTabKey = FavouritesOptionButtonFlights;
+const DefaultActiveTabKey = FavouritesTabFlights;
 
 const logger = getCommonServices().getLogger();
 const isError = ref(false);
@@ -34,7 +34,7 @@ try {
 const flightsTabHtmlId = useId();
 const staysTabHtmlId = useId();
 
-const activeOptionCtrl = ref<string | undefined>();
+const activeTabCtrl = ref<string | undefined>();
 
 const displayedItems = computed(() => {
   return userFavourites
@@ -85,8 +85,8 @@ onMounted(() => {
           :ctrl-key="FavouritesOptionButtonGroup"
           role="tablist"
           :options="[
-            { ctrlKey: FavouritesOptionButtonFlights, labelResName: getI18nResName2('favouritesPage', 'flightsTab'), shortIcon: 'airplane', enabled: true, role: { role: 'tab', tabPanelId: flightsTabHtmlId }, subtextResName: displayedItems.flights !== undefined ? getI18nResName2('favouritesPage', 'numMarked') : undefined, subtextResArgs: displayedItems.flights !== undefined ? { count: displayedItems.flights.length } : undefined},
-            { ctrlKey: FavouritesOptionButtonStays, labelResName: getI18nResName2('favouritesPage', 'staysTab'), shortIcon: 'bed', enabled: true, role: { role: 'tab', tabPanelId: staysTabHtmlId }, subtextResName: displayedItems.flights !== undefined ? getI18nResName2('favouritesPage', 'numMarked') : undefined, subtextResArgs: displayedItems.stays !== undefined ? { count: displayedItems.stays.length } : undefined }
+            { ctrlKey: FavouritesOptionButtonFlights, labelResName: getI18nResName2('favouritesPage', 'flightsTab'), shortIcon: 'i-material-symbols-flight', enabled: true, role: { role: 'tab', tabPanelId: flightsTabHtmlId }, subtextResName: displayedItems.flights !== undefined ? getI18nResName2('favouritesPage', 'numMarked') : undefined, subtextResArgs: displayedItems.flights !== undefined ? { count: displayedItems.flights.length } : undefined},
+            { ctrlKey: FavouritesOptionButtonStays, labelResName: getI18nResName2('favouritesPage', 'staysTab'), shortIcon: 'i-material-symbols-bed', enabled: true, role: { role: 'tab', tabPanelId: staysTabHtmlId }, subtextResName: displayedItems.flights !== undefined ? getI18nResName2('favouritesPage', 'numMarked') : undefined, subtextResArgs: displayedItems.stays !== undefined ? { count: displayedItems.stays.length } : undefined }
           ]"
         />
         <OfferTabbedView

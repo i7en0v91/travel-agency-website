@@ -10,6 +10,34 @@ type UI = {
   [key: string]: any;
 } & DeepPartial<typeof config, string>;
 
+const inputUi: UI['input'] = {
+  rounded: 'rounded',
+  size: {
+    '2xs': 'text-xs',
+    xs: 'text-xs',
+    sm: 'text-sm sm:text-base',
+    md: 'text-sm sm:text-base',
+    lg: 'text-sm sm:text-base',
+    xl: 'text-base',
+  },
+  padding: {
+    '2xs': 'px-2 py-2',
+    xs: 'px-3.5 py-3.5',
+    sm: 'px-3.5 py-3.5',
+    md: 'px-4 py-4',
+    lg: 'px-4.5 py-4.5',
+    xl: 'px-4.5 py-4.5',
+  },
+  color: {
+    white: {
+      outline: 'bg-white dark:bg-gray-900 ring-1 focus-visible:ring-3 ring-gray-500 dark:ring-gray-400 focus-visible:ring-gray-500 dark:focus-visible:ring-gray-400',
+    },
+    gray: {
+      outline: 'text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 ring-1 focus-visible:ring-3 ring-gray-500 dark:ring-gray-400 focus-visible:ring-gray-500 dark:focus-visible:ring-gray-400'
+    }
+  }
+};
+
 export default defineAppConfig({
   ui: <UI>{
     strategy: 'merge',
@@ -17,7 +45,7 @@ export default defineAppConfig({
     gray: 'cool',
     container: {
       base: 'mx-auto',
-      padding: 'px-4 sm:px-6 lg:px-8',
+      padding: '!p-0 my-0 mx-auto',
       constrained: 'max-w-maxpgw'
     },
     notification: {
@@ -48,17 +76,36 @@ export default defineAppConfig({
       },
       inactive: 'text-gray-900'
     },
+    tabs: {
+      list: {
+        background: 'bg-transparent dark:bg-transparent',
+        height: 'h-16',
+        padding: '!pb-4 !pt-3',
+        marker: {
+          wrapper: '!top-[unset] !bottom-[1px] !h-[2px]',
+          base: 'w-full !h-[2px]',
+          background: 'bg-primary-500 dark:bg-primary-400',
+          rounded: 'rounded-none',
+          shadow: 'shadow-none'
+        },
+        tab: {
+          size: 'text-sm sm:text-base',
+          font: 'font-semibold',
+          active: 'text-gray-900 dark:text-white',
+          inactive: 'text-gray-500 dark:text-gray-400',
+          padding: 'px-2 py-4',
+          icon: 'w-4 h-4 sm:w-6 sm:h-6'
+        } 
+      }
+    },
     button: {
       base: 'text-sm sm:text-base',
       rounded: 'rounded'
     },
     formGroup: {
       label: {
-        base: 'font-normal'
-      }
-    },
-    input: {
-      rounded: 'rounded',
+        base: 'text-gray-600 dark:text-gray-300 font-normal'
+      },
       size: {
         '2xs': 'text-xs',
         xs: 'text-xs',
@@ -66,23 +113,15 @@ export default defineAppConfig({
         md: 'text-sm sm:text-base',
         lg: 'text-sm sm:text-base',
         xl: 'text-base',
-      },
-      padding: {
-        '2xs': 'px-2 py-2',
-        xs: 'px-3.5 py-3.5',
-        sm: 'px-3.5 py-3.5',
-        md: 'px-4 py-4',
-        lg: 'px-4.5 py-4.5',
-        xl: 'px-4.5 py-4.5',
-      },
-      color: {
-        white: {
-          outline: 'ring-2 focus:ring-3',
-        },
-        gray: {
-          outline: 'ring-2 focus:ring-3',
-        },
-      },
+      }
+    },
+    input: inputUi,
+    inputMenu: {
+      //ring: 'ring-gray-500 dark:ring-gray-400 shadow-none',
+      option: {
+        color: 'dark:text-white',
+        active: 'bg-primary-200 dark:bg-gray-700',
+      }
     },
     dropdown: {
       divide: 'divide-gray-900 divide-dashed px-2',
@@ -95,6 +134,21 @@ export default defineAppConfig({
           inactive: 'text-gray-900'
         }
       }
+    },
+    select: { 
+      ...inputUi, 
+      base: '!cursor-pointer'
+    },
+    selectMenu: {
+      //ring: 'ring-gray-500 dark:ring-gray-400 shadow-none',
+      option: {
+        color: 'dark:text-white',
+        active: 'bg-primary-200 dark:bg-gray-700',
+      }
+    },
+    popover: {
+      //ring: 'ring-1 ring-gray-400 dark:ring-gray-400 shadow-none', 
+      //background: 'bg-white dark:!bg-gray-800'
     },
     divider: {
       label: 'text-sm sm:text-base font-normal'

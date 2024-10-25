@@ -15,7 +15,7 @@ defineProps<IProps>();
 </script>
 
 <template>
-  <ULink class="lg:absolute origin-center lg:translate-x-[50vw] lg:left-[-80px] xl:left-[-128px] translate-y-1 lg:-translate-y-1/3 focus-visible:outline-primary-500 dark:focus-visible:outline-primary-400" :to="navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
+  <ULink class="lg:absolute lg:translate-x-[50vw] lg:left-[-79px] xl:left-[-119px] translate-y-1 lg:-translate-y-1/3 focus-visible:outline-primary-500 dark:focus-visible:outline-primary-400" :to="navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
     <NavLogoDark class="!w-[110px] !h-auto dark:hidden" filled />
     <NavLogoLight class="!w-[110px] !h-auto hidden dark:block" filled />
   </ULink>

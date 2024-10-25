@@ -9,7 +9,7 @@ const LoggingPrefix = '(init-backend-services)';
 const initServices = once(async (event: H3Event, logger: IAppLogger) => {  
   try {
     logger.info(`${LoggingPrefix} initializing services container`);
-    (globalThis as any).CommonServicesLocator = (globalThis as any).ServerServicesLocator = await buildBackendServicesLocator(logger, event);
+    (globalThis as any).CommonServicesLocator = (globalThis as any).ServerServicesLocator = await buildBackendServicesLocator(logger);
     logger.info(`${LoggingPrefix} services container initialized`);
   } catch (e) {
     logger.error(`${LoggingPrefix} services container initialization failed`, e);
@@ -23,7 +23,7 @@ export default defineEventHandler(async (event: H3Event) => {
     // already initialized
     return;
   }
-
+  
   const logger = createBackendLogger(); // container has not built yet
   try {
     await initServices(event, logger);

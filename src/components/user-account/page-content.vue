@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { UserAccountOptionButtonAccount, UserAccountOptionButtonHistory, UserAccountOptionButtonPayments } from './../../helpers/constants';
+import { UserAccountTabAccount, UserAccountTabHistory, UserAccountTabPayments } from './../../helpers/constants';
 import ComponentWaitingIndicator from './../component-waiting-indicator.vue';
 import TabAccount from './tabs/tab-account.vue';
 import TabHistory from './tabs/tab-history.vue';
@@ -7,7 +7,7 @@ import TabPayments from './tabs/tab-payments.vue';
 
 interface IProps {
   ctrlKey: string,
-  activeOption?: string,
+  activeTab?: string,
   tabPanelIds: {
     account: string,
     history: string,
@@ -15,17 +15,17 @@ interface IProps {
   }
 }
 const props = withDefaults(defineProps<IProps>(), {
-  activeOption: undefined
+  activeTab: undefined
 });
 
 const paymentsTabReady = ref(false);
 const historyTabReady = ref(false);
 const accountTabReady = ref(false);
 const tabReady = computed(() =>
-  props.activeOption && (
-    (props.activeOption === UserAccountOptionButtonPayments && paymentsTabReady.value) ||
-    (props.activeOption === UserAccountOptionButtonHistory && historyTabReady.value) ||
-    (props.activeOption === UserAccountOptionButtonAccount && accountTabReady.value)
+  props.activeTab && (
+    (props.activeTab === UserAccountTabPayments && paymentsTabReady.value) ||
+    (props.activeTab === UserAccountTabHistory && historyTabReady.value) ||
+    (props.activeTab === UserAccountTabAccount && accountTabReady.value)
   ));
 
 </script>
@@ -36,8 +36,8 @@ const tabReady = computed(() =>
     <ClientOnly>
       <div class="account-page-tab" :style="{ display: tabReady ? 'block' : 'none' }">
         <KeepAlive>
-          <TabPayments v-if="props.activeOption === UserAccountOptionButtonPayments" :id="tabPanelIds.payments" v-model:ready="paymentsTabReady" ctrl-key="userAccountTabPayments" />
-          <TabHistory v-else-if="props.activeOption === UserAccountOptionButtonHistory" :id="tabPanelIds.history" v-model:ready="historyTabReady" ctrl-key="userAccountTabHistory" />
+          <TabPayments v-if="props.activeTab === UserAccountTabPayments" :id="tabPanelIds.payments" v-model:ready="paymentsTabReady" ctrl-key="userAccountTabPayments" />
+          <TabHistory v-else-if="props.activeTab === UserAccountTabHistory" :id="tabPanelIds.history" v-model:ready="historyTabReady" ctrl-key="userAccountTabHistory" />
           <TabAccount v-else :id="tabPanelIds.account" v-model:ready="accountTabReady" ctrl-key="userAccountTabAccount" />
         </KeepAlive>
       </div>

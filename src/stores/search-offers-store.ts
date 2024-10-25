@@ -1,4 +1,4 @@
-import { getI18nResName2, getI18nResName3, type I18nResName, AppConfig, AppException, AppExceptionCodeEnum, QueryPagePreviewModeParam, StaysAmenitiesFilterItemId, StaysAmenitiesFilterId, StaysFreebiesFilterItemId, StaysFreebiesFilterId, NumMinutesInDay, StaysPriceFilterId, DefaultStayOffersSorting, StaysRatingFilterId, FlightsTripTypeFilterFlexibleDatesItemId, SearchOffersPriceRange, FlightsTripTypeFilterId, FlightsPriceFilterId, FlightsDepartureTimeFilterId, FlightsRatingFilterId, FlightsAirlineCompanyFilterId, DefaultFlightOffersSorting, DataKeyEntityCacheItems, FlightMinPassengers, UserNotificationLevel, AvailableLocaleCodes, DataKeySearchFlightOffers, DataKeySearchStayOffers, validateObject, eraseTimeOfDay, type OfferKind, type IEntityCacheCityItem, type IStayOffer, type IFlightOffer, type FlightOffersSortFactor, type StayOffersSortFactor, type ISearchFlightOffersResult, type ISearchStayOffersResult, type EntityDataAttrsOnly, type ILocalizableValue } from '@golobe-demo/shared';
+import { getI18nResName2, getI18nResName3, type I18nResName, AppConfig, AppException, AppExceptionCodeEnum, QueryPagePreviewModeParam, StaysAmenitiesFilterItemId, StaysAmenitiesFilterId, StaysFreebiesFilterItemId, StaysFreebiesFilterId, NumMinutesInDay, StaysPriceFilterId, DefaultStayOffersSorting, StaysRatingFilterId, FlightsTripTypeFilterFlexibleDatesItemId, SearchOffersPriceRange, FlightsTripTypeFilterId, FlightsPriceFilterId, FlightsDepartureTimeFilterId, FlightsRatingFilterId, FlightsAirlineCompanyFilterId, DefaultFlightOffersSorting, DataKeyEntityCacheItems, FlightMinPassengers, UserNotificationLevel, AvailableLocaleCodes, DataKeySearchFlightOffers, DataKeySearchStayOffers, validateObject, eraseTimeOfDay, type OfferKind, type IEntityCacheCityItem, type IStayOffer, type IFlightOffer, type FlightOffersSortFactor, type StayOffersSortFactor, type ISearchFlightOffersResult, type ISearchStayOffersResult, type EntityDataAttrsOnly, type ILocalizableValue, StaysMinGuestsCount, StaysMinRoomsCount } from '@golobe-demo/shared';
 import { mapSearchFlightOffersResult, mapSearchStayOffersResult, mapSearchedFlightOffer, createSearchFlightOfferResultLookup } from '../helpers/entity-mappers';
 import { type ISearchListItem, type ISearchOffersFilterVariant, type ISearchFlightOffersParams, type ISearchStayOffersParams, type ISearchStayOffersMainParams, type ISearchFlightOffersMainParams, type ISearchFlightOffersDisplayOptions, type ISearchStayOffersDisplayOptions, type ISearchOffersChecklistFilterProps, type ISearchOffersRangeFilterProps, type ISearchFlightOffersDisplayOption } from './../types';
 import { ApiEndpointFlightOffersSearch, ApiEndpointStayOffersSearch, type ISearchFlightOffersMainParamsDto, type ISearchStayOffersMainParamsDto, SearchFlightOffersMainParamsDtoSchema, SearchStayOffersMainParamsDtoSchema, type ISearchFlightOffersParamsDto, type ISearchStayOffersParamsDto, type ISearchFlightOffersResultDto, type ISearchStayOffersResultDto } from '../server/api-definitions';
@@ -202,10 +202,10 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
       let validationError : ValidationError | undefined;
       switch (kind) {
         case 'flights':
-          validationError = await validateObject(query, SearchFlightOffersMainParamsDtoSchema);
+          validationError = await validateObject(omit(query, QueryPagePreviewModeParam), SearchFlightOffersMainParamsDtoSchema);
           break;
         case 'stays':
-          validationError = await validateObject(query, SearchStayOffersMainParamsDtoSchema);
+          validationError = await validateObject(omit(query, QueryPagePreviewModeParam), SearchStayOffersMainParamsDtoSchema);
           break;
       }
       if (validationError) {
@@ -322,8 +322,8 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
         checkIn: instance.viewState.currentSearchParams.checkIn /* range of dates will be used on server */,
         checkOut: instance.viewState.currentSearchParams.checkOut /* range of dates will be used on server */,
         citySlug: instance.viewState.currentSearchParams.city?.slug,
-        numGuests: instance.viewState.currentSearchParams.numGuests ?? 1,
-        numRooms: instance.viewState.currentSearchParams.numRooms ?? 1
+        numGuests: instance.viewState.currentSearchParams.numGuests ?? StaysMinGuestsCount,
+        numRooms: instance.viewState.currentSearchParams.numRooms ?? StaysMinRoomsCount
       };
     }
   };
@@ -374,13 +374,13 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
 
         // update display options state
         if (instance.resultState.status !== 'page-fetch' && instance.resultState.status !== 'sort-refetch') {
-          const currentlyActiveOption = instance.viewState.displayOptions.primaryOptions.find(x => x.isActive)?.type ?? DefaultFlightOffersSorting;
+          const currentlyActiveTab = instance.viewState.displayOptions.primaryOptions.find(x => x.isActive)?.type ?? DefaultFlightOffersSorting;
           instance.viewState.displayOptions.primaryOptions = fetchResult.topOffers?.map((o) => {
             return <ISearchFlightOffersDisplayOption>{
               duration: o.duration,
               price: o.price,
               type: o.factor,
-              isActive: o.factor === currentlyActiveOption
+              isActive: o.factor === currentlyActiveTab
             };
           }) ?? getFlightOffersDefaultPrimaryOptions();
         }

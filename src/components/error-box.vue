@@ -18,7 +18,7 @@ const httpCodeResName = props.httpCode === 404 ? '404' : '500';
 </script>
 
 <template>
-  <div class="flex flex-col md:flex-row flex-nowrap w-fit mt-[100px] mx-[30px] md:mx-auto">
+  <div class="flex flex-col md:flex-row flex-nowrap w-fit h-full py-[100px] mx-[30px] md:mx-auto">
     <p class="text-gray-400 mr-6 text-5xl font-normal">
       {{ httpCode }}
     </p>

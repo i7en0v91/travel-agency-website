@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { AppPage, getPagePath, type Locale, getLocalizeableValue, getScoreClassResName, extractAirportCode, getValueForFlightDurationFormatting, getValueForTimeOfDayFormatting, getI18nResName2, getI18nResName3, type EntityDataAttrsOnly, type IFlightOffer, type OfferKind, ImageCategory } from '@golobe-demo/shared';
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { useUserFavouritesStore } from './../../../stores/user-favourites-store';
 import { useOfferFavouriteStatus } from './../../../composables/offer-favourite-status';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
@@ -61,8 +60,7 @@ async function favouriteBtnClick (): Promise<void> {
             :entity-src="props.offer.departFlight.airlineCompany.logoImage"
             :category="ImageCategory.AirlineLogo"
             sizes="xs:60vw sm:40vw md:40vw lg:30vw xl:30vw"
-            class="airline-company-logo"
-            img-class="airline-company-logo-img"
+            :ui="{ wrapper: 'airline-company-logo', img: 'airline-company-logo-img' }"
             :show-stub="false"
             :request-extra-display-options="true"
             :alt-res-name="getI18nResName2('searchFlights', 'airlineCompanyLogoAlt')"

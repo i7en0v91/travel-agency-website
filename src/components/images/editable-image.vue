@@ -11,6 +11,7 @@ import CroppingBox from './cropping-box.vue';
 import ModalWaitingIndicator from './../modal-waiting-indicator.vue';
 import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../helpers/service-accessors';
+import type { IStaticImageUiProps } from '../../types';
 
 globalThis.Buffer = globalThis.Buffer || Buffer;
 
@@ -25,11 +26,11 @@ interface IProps {
   altResParams?: any | undefined,
   showStub?: boolean,
   isHighPriority?: boolean,
-  styling?: {
-    containerClass?: string,
-    htmlImgClass?: string,
-    btnClass?: string,
-    btnIcon?: string
+  ui?: {
+    wrapper?: string,
+    image?: IStaticImageUiProps,
+    button?: string,
+    icon?: string
   }
 }
 
@@ -41,7 +42,8 @@ const props = withDefaults(defineProps<IProps>(), {
   showStub: true,
   fillAlpha: true,
   styling: undefined,
-  isHighPriority: false
+  isHighPriority: false,
+  ui: undefined
 });
 
 const { status } = useAuth();
@@ -237,20 +239,19 @@ defineExpose({
 </script>
 
 <template>
-  <div class="editable-image" role="img">
+  <div :class="`editable-image ${props.ui?.wrapper ?? ''}`" role="img">
     <StaticImage
       ref="staticImageComponent"
       :ctrl-key="`editableImage-${ctrlKey}`"
-      :class="`editable-image-static-view ${styling?.containerClass}`"
+      :ui="{ ...(ui?.image ?? {}), wrapper: `editable-image-static-view ${ui?.image?.wrapper ?? ''}` }"
       :show-stub="showStub"
-      :img-class="styling?.htmlImgClass"
       :entity-src="entitySrc"
       :category="category"
       :sizes="sizes"
       :is-high-priority="isHighPriority"
       :alt-res-name="altResName"
     />
-    <label :for="fileInputHtmlId" :class="`tabbable btn ${styling?.btnClass} py-xs-3 px-xs-2 ${styling?.btnIcon ? `btn-icon icon-${styling?.btnIcon}` : ''}`" @keyup.enter="openFileDialog" @keyup.space="openFileDialog">{{ btnResName ? $t(btnResName) : '&nbsp;' }}</label>
+    <label :for="fileInputHtmlId" :class="`tabbable btn ${ui?.button ?? ''} py-xs-3 px-xs-2 ${ui?.icon ? `btn-icon icon-${ui?.icon}` : ''}`" @keyup.enter="openFileDialog" @keyup.space="openFileDialog">{{ btnResName ? $t(btnResName) : '&nbsp;' }}</label>
     <input
       :id="fileInputHtmlId"
       ref="fileInputEl"

@@ -52,17 +52,19 @@ const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.val
 </script>
 
 <template>
-  <div class="page-content w-full h-full min-w-minpgw">
+  <div class="page-content bg-gray-50 dark:bg-gray-900 w-full min-h-lvh min-w-minpgw">
     <NavBar v-if="showDefaultComponents" ctrl-key="NavBar">
-      <div class="w-full h-auto px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
+      <div class="w-full h-auto relative z-0">
         <slot/>
+        <AppFooter ctrl-key="Footer" />
       </div>
     </NavBar>
-    <div v-else class="w-full h-auto px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
+    <div v-else class="w-full h-auto relative z-0">
       <NavLogo v-if="!isAuthFormsPage" ctrl-key="standaloneAppLogo" />
       <slot/>
     </div>
     <ClientOnly>
+      <CookieBanner ctrl-key="CookieBanner" />
       <UNotifications />
     </ClientOnly>
     

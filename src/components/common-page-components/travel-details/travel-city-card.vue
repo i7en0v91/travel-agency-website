@@ -44,7 +44,7 @@ const { locale } = useI18n();
       :entity-src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
       :category="ImageCategory.CityCard"
       sizes="xs:90vw sm:80vw md:60vw lg:50vw xl:50vw"
-      class="travel-city-card-img brdr-3"
+      :ui="{ wrapper: 'travel-city-card-img brdr-3' }"
       :alt-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'imgAlt')"
       :show-stub="true"
     />

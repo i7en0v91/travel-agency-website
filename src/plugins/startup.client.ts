@@ -2,8 +2,8 @@ import { type IAppLogger } from '@golobe-demo/shared';
 import { ClientLogger } from './../client/logging';
 import { EntityCache } from '../client/entity-cache';
 import { type IClientServicesLocator } from '../types';
-import { SearchFlightOffersDisplayOptions, SearchStayOffersDisplayOptions, FavouritesOptionButtonGroup } from '../helpers/constants';
-import { getLastSelectedOptionStorageKey } from './../helpers/dom';
+import { SearchFlightOffersDisplayOptions, SearchStayOffersDisplayOptions, FavouritesTabGroup } from '../helpers/constants';
+import { getLastSelectedTabStorageKey } from './../helpers/dom';
 import { Scope, createInjector } from 'typed-inject';
 import once from 'lodash-es/once';
 import { createStorage, type Storage, type StorageValue } from 'unstorage';
@@ -55,13 +55,13 @@ function buildServiceLocator () : IClientServicesLocator {
 
 function resetSearchOffersFilterSettings (logger: IAppLogger) {
   logger.verbose('resetting user filter settings');
-  localStorage.removeItem(getLastSelectedOptionStorageKey(SearchFlightOffersDisplayOptions));
-  localStorage.removeItem(getLastSelectedOptionStorageKey(SearchStayOffersDisplayOptions));
+  localStorage.removeItem(getLastSelectedTabStorageKey(SearchFlightOffersDisplayOptions));
+  localStorage.removeItem(getLastSelectedTabStorageKey(SearchStayOffersDisplayOptions));
 }
 
 function resetFavouritesTabSettings (logger: IAppLogger) {
   logger.verbose('resetting user favourites tab settings');
-  localStorage.removeItem(getLastSelectedOptionStorageKey(FavouritesOptionButtonGroup));
+  localStorage.removeItem(getLastSelectedTabStorageKey(FavouritesTabGroup));
 }
 
 const initApp = once(() => {

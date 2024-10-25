@@ -2,7 +2,6 @@
 import { getI18nResName3, type OfferKind } from '@golobe-demo/shared';
 import { type ISearchOffersChecklistFilterProps, type ISearchOffersRangeFilterProps } from './../../../types';
 import { SearchOffersFilterTabGroupId } from './../../../helpers/constants';
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import orderBy from 'lodash-es/orderBy';
 import isEqual from 'lodash-es/isEqual';
 import CollapsableSection from './../../collapsable-section.vue';

@@ -86,32 +86,28 @@ npm run dev
 ## Tech
 Project uses a number of open source projects to work properly:
 - [Nuxt](https://github.com/Nuxt) - highly customizable web application server which provides easy integration with third-party solutions & plugins. E.g. some of used modules are:
-  - [i18n](https://github.com/nuxt-modules/i18n) - for localization
+  - [Nuxt UI](https://ui.nuxt.com) - A UI Library for Modern Web Apps
   - [Nuxt Auth](https://github.com/sidebase/nuxt-auth) - for authentication & authorization
-  - [Unlighthouse](https://github.com/harlan-zw/unlighthouse) - for performing site quality scan using Google Lighthouse
   - [Nuxt SEO](https://github.com/harlan-zw/nuxt-seo) - the complete SEO solution for Nuxt
-  - [Nuxt Swiper](https://github.com/cpreston321/nuxt-swiper) - integration with [Swiper.js](https://github.com/nolimits4web/swiper) - mobile touch slider with hardware accelerated transitions and amazing native behavior
+  - [Nuxt OgImage](https://github.com/nuxt-modules/og-image) - for generating OpenGraph images for entities on-the-fly using [Satori](https://github.com/vercel/satori)
+  - [Nuxt Content](https://content.nuxt.com) - for pages with large amount of text
+  - [Nuxt I18n](https://github.com/nuxt-modules/i18n) - internationalization (i18n) for Nuxt 
+  apps
+  - [Unlighthouse](https://github.com/harlan-zw/unlighthouse) - for performing site quality scan using Google Lighthouse
 - [Vue 3](https://github.com/vuejs) - progressive, incrementally-adoptable JavaScript framework for building UI on the web
 - [Vite](https://github.com/vitejs) - Next generation frontend tooling. It's fast!
 - [node.js](https://github.com/nodejs) - evented I/O for the backend
-- [Prisma](https://github.com/prisma)
-- ORM solution to support different databases
+- [Prisma](https://github.com/prisma) - ORM solution to support different databases
 - [Pinia](https://github.com/vuejs/pinia) - intuitive, type safe and flexible Store for Vue
 - [Nodemailer](https://github.com/nodemailer/nodemailer) - for sending emails
 - [Playwright](https://github.com/microsoft/playwright) - for Web Testing and Automation
 - [Winston](https://github.com/winstonjs/winston) - for logging
-- [Nuxt OgImage](https://github.com/nuxt-modules/og-image) - for generating OpenGraph images for entities on-the-fly using [Satori](https://github.com/vercel/satori)
 - [Vue Yandex Maps](https://github.com/yandex-maps-unofficial/vue-yandex-maps) - for marking hotel locations on interactive world map
 - [PDFKit](https://github.com/foliojs/pdfkit) - A JavaScript PDF generation library for Node and the browser
 - Other third-party UI components:
-  - [CropperJS](https://github.com/fengyuanchen/cropperjs) - for uploading photos
   - [VCalendar](https://github.com/nathanreyes/v-calendar) - An elegant calendar and date picker plugin for Vuejs
-  - [Vue Final Modal](https://github.com/vue-final/vue-final-modal) - for managing modal windows
-  - [Floating Vue](https://github.com/Akryum/floating-vue) - for popups & drop downs
-  - [Vue Toastification](https://github.com/Maronato/vue-toastification) - for notifications
-  - [Vuelidate](https://github.com/vuelidate/vuelidate) - for user input validation
+  - [CropperJS](https://github.com/fengyuanchen/cropperjs) - for uploading photos
   - [TipTap](https://github.com/ueberdosis/tiptap) - The headless rich text editor, was used for creating user reviews
-  - [vue3-perfect-scrollbar](https://github.com/mercs600/vue3-perfect-scrollbar) - A minimalistic yet powerful Vue.js wrapper for [Perfect Scrollbar](https://perfectscrollbar.com)
 
 ## License
 

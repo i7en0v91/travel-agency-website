@@ -6,7 +6,6 @@ import ReviewEditor from './review-editor.client.vue';
 import ReviewList from './review-list.vue';
 import CollapsableSection from './../../collapsable-section.vue';
 import ComponentWaitingIndicator from './../../../components/component-waiting-indicator.vue';
-import type { Tooltip } from 'floating-vue';
 import { type ComponentInstance } from 'vue';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';

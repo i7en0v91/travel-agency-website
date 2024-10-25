@@ -1,12 +1,16 @@
 <script setup lang="ts">
 
 import { type I18nResName, ImageCategory } from '@golobe-demo/shared';
+import { type IStaticImageUiProps } from './../../types';
 
 interface IProps {
   ctrlKey: string,
   altResName: I18nResName,
   imgSlug: string,
-  increasedHeight?: boolean
+  ui?: {
+    wrapper?: string
+    image?: IStaticImageUiProps
+  } 
 }
 defineProps<IProps>();
 
@@ -17,8 +21,8 @@ defineProps<IProps>();
     :ctrl-key="`${ctrlKey}StaticImg`"
     :show-stub="true"
     :is-high-priority="true"
-    class="w-full h-full"
-    :img-class="increasedHeight ? '!h-[1054px]' : '!h-[812px]'"
+    :class="ui?.wrapper"
+    :ui="{ ...(ui?.image ?? {  }), wrapper: `w-full h-full ${ui?.image?.wrapper ?? ''}` }"
     :entity-src="{ slug: imgSlug }"
     :category="ImageCategory.AuthFormsImage"
     sizes="xs:0vw sm:50vw md:50vw lg:40vw xl:30vw"

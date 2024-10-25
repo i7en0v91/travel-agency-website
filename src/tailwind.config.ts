@@ -36,6 +36,11 @@ export default <Partial<Config>>{
           950: '#0a241f'
         }
       },
+      gridTemplateColumns: {
+        'cityxs': 'repeat(auto-fill, minmax(21.25rem, 1fr))',
+        'citymd': 'repeat(auto-fill, minmax(23.125rem, 1fr))',
+        'footernav': 'repeat(auto-fill, minmax(16.875rem, 1fr))'
+      },
       borderRadius: {
         '4xl': '2rem'
       }

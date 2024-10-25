@@ -56,11 +56,18 @@ onMounted(() => {
     v-model:entity-src="imageSrc"
     :category="ImageCategory.UserCover"
     ctrl-key="userCover"
-    class="user-cover"
     sizes="xs:100vw sm:100vw md:100vw lg:100vw xl:100vw"
     :is-high-priority="true"
     :alt-res-name="getI18nResName2('accountPage', 'coverAlt')"
     :btn-res-name="getI18nResName2('accountPage', 'uploadCover')"
-    :styling="{ containerClass: 'user-cover-image-container', htmlImgClass: 'user-cover-image-el', btnClass: 'user-cover-upload-btn', btnIcon: 'upload' }"
+    :ui="{ 
+      wrapper: 'user-cover', 
+      image: { 
+        wrapper: 'user-cover-image-container', 
+        img: 'user-cover-image-el'
+      }, 
+      button: 'user-cover-upload-btn', 
+      icon: 'upload' 
+    }"
   />
 </template>
