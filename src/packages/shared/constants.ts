@@ -169,7 +169,9 @@ export const MaxListPropertyElementsCount = 256;
 export const FlightMinPassengers = 1;
 export const FlightMaxPassengers = 8;
 export const DefaultFlightClass = 'economy';
+export const StaysMinRoomsCount = 1;
 export const StaysMaxRoomsCount = 4;
+export const StaysMinGuestsCount = 1;
 export const StaysMaxGuestsCount = 10;
 
 export const DefaultEmailTheme = <Theme>'light';

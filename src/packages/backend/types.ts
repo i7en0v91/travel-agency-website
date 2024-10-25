@@ -469,7 +469,7 @@ export interface ITokenLogic {
 
 /** Document generation */
 export interface IDocumentCreator {
-  getBookingTicket(booking: IOfferBooking<IFlightOffer | IStayOfferDetails>, params: DocumentCommonParams, imageDownloadFn: (url: string, query: any) => Promise<Buffer>, event: H3Event | undefined): Promise<Buffer | undefined>;
+  getBookingTicket(booking: IOfferBooking<IFlightOffer | IStayOfferDetails>, params: DocumentCommonParams, imageDownloadFn: (url: string, query: any) => Promise<Buffer | undefined>, event: H3Event | undefined): Promise<Buffer>;
 }
 
 /** Emails */
