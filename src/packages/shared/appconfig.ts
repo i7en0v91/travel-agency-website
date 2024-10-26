@@ -371,7 +371,7 @@ const Config : IAppConfig = {
   dataSeeding: { // initial seeding with demo data settings 
     customLoadingStub: isQuickStartEnv(), // whether to display loading page (from Nuxt templates) while seeding DB with data on first-time server app start
     dirs: { // directory names where to look for content
-      content: 'content', // primary content folder
+      content: 'sample-data', // sample data folder
       appData: 'appdata', // app logic data folder
       publicRes: 'public' // public assets
     }

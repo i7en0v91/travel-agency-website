@@ -167,7 +167,7 @@ export default defineNuxtConfig({
     {
       path: '~/content/prose',
       pathPrefix: false
-    },
+    }
   ],
 
   app: {
@@ -315,6 +315,10 @@ export default defineNuxtConfig({
     {
       baseName: 'templates',
       dir: './../assets/templates'
+    },
+    {
+      baseName: 'locales',
+      dir: './../assets/locales'
     }]
   },
 
@@ -439,7 +443,19 @@ export default defineNuxtConfig({
           }
         },
         onLog: rollupLogHandler
-      }
+      },
+      prerender: {
+        failOnError: true
+      },
+      hooks: {
+        'compiled':  async (ctx) => { 
+          // TODO: temporary workaround to be sure build process exits
+          const allCompleted = !!ctx._prerenderedRoutes?.length;
+          if(allCompleted) {
+            process.exit(0);
+          }
+        },
+      },
     },
     vite: {
       build: {

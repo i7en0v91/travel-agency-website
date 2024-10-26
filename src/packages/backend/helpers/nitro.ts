@@ -30,6 +30,21 @@ export async function getAppAssetsStorage (logger?: IAppLogger): Promise<Storage
   return result;
 }
 
+export async function getLocalesAssetsStorage (logger?: IAppLogger): Promise<Storage<StorageValue>> {
+  const result = (globalThis as any).$localesStorage as Storage<StorageValue>;
+  if (!result) {
+    logger?.error('locales assets storage is not available');
+    throw new Error('locales assets storage is not available');
+  }
+
+  if (!(await result.getItem('en.json'))) {
+    logger?.error('locales assets storage is miconfigured');
+    throw new Error('locales assets storage is miconfigured');
+  }
+
+  return result;
+}
+
 export async function getPdfFontsAssetsStorage (logger?: IAppLogger): Promise<Storage<StorageValue>> {
   const result = (globalThis as any).$pdfFontsStorage as Storage<StorageValue>;
   if (!result) {

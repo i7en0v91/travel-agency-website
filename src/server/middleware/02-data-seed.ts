@@ -1,10 +1,11 @@
-import { AppConfig, spinWait, type IAppLogger, HeaderContentType, LoadingStubFileName, HeaderCacheControl, isTestEnv } from '@golobe-demo/shared';
+import { lookupPageByUrl, AppConfig, spinWait, type IAppLogger, HeaderContentType, LoadingStubFileName, HeaderCacheControl, isTestEnv } from '@golobe-demo/shared';
 import { type IServerServicesLocator } from '@golobe-demo/backend';
 import { defineEventHandler, sendWebResponse, type H3Event } from 'h3';
 import { type Storage, type StorageValue } from 'unstorage';
-import { ApiEndpointPrefix } from '../api-definitions';
+import { ApiEndpointLogging, ApiEndpointNuxtContentPrefix, ApiEndpointPrefix } from '../api-definitions';
 import fromPairs from 'lodash-es/fromPairs';
 import isBuffer from 'lodash-es/isBuffer';
+import { consola } from 'consola';
 import { getCommonServices, getServerServices } from '../../helpers/service-accessors';
 
 async function getTemplatesAssetsStorage (logger: IAppLogger): Promise<Storage<StorageValue>> {
@@ -18,6 +19,8 @@ async function getTemplatesAssetsStorage (logger: IAppLogger): Promise<Storage<S
 }
 
 async function executeDataSeeding(event: H3Event): Promise<void> {
+  consola.info('seeding with sample data - started (may take few minutes)');
+
   const logger = getCommonServices().getLogger();
   logger.info(`(data-seed) data seeding - start`);
   try {
@@ -25,8 +28,10 @@ async function executeDataSeeding(event: H3Event): Promise<void> {
     logger.lowerWarnsWithoutErrorLevel(true);
     await dataSeedingLogic.seed(event);
     logger.info(`(data-seed) data seeding - completed`);
+    consola.info('seeding with sample data - completed');
   } catch(err: any) {
     logger.error(`(data-seed) data seeding - failed`, err);
+    consola.error('seeding with sample data - FAILED', err);
     throw err;
   } finally {
     logger.lowerWarnsWithoutErrorLevel(false);
@@ -75,8 +80,16 @@ async function sendTemplateHtml(isLoading: boolean, event: H3Event, logger: IApp
 
 let seedMethodExecuted = false;
 export default defineEventHandler(async (event: H3Event) => {
-  const isApiRequest = event.node.req.url?.includes(`/${ApiEndpointPrefix}`);
-  if(isApiRequest) {
+  const url = event.node.req.url;
+  if(!url) {
+    return;
+  }
+
+  const isPageRequest = !url.includes(`/${ApiEndpointPrefix}`) && !!lookupPageByUrl(url);
+  const isAppApiRequest = url.includes(`/${ApiEndpointPrefix}`) && 
+    !url.includes(ApiEndpointNuxtContentPrefix) && !url.includes(ApiEndpointLogging);
+  const routeRequiresSampleData = isPageRequest || isAppApiRequest;
+  if(!routeRequiresSampleData) {
     return;
   }
 
@@ -95,7 +108,10 @@ export default defineEventHandler(async (event: H3Event) => {
   }
 
   logger.verbose(`(data-seed) current status=${dbSeedStatus}, url=${event.node.req.url}`);  
-  if(AppConfig.dataSeeding.customLoadingStub) {
+
+  const isPrerendering = !!import.meta.prerender;  
+
+  if(!isPrerendering && AppConfig.dataSeeding.customLoadingStub) {
     if(dbSeedStatus === 'required') {
       if (!seedMethodExecuted) {
         seedMethodExecuted = true;

@@ -14,14 +14,14 @@
     "url": "https://github.com/i7en0v91/travel-agency-website/issues"
   },
   "scripts": {
-    "prebuild": "npm run prisma:generate-migration-scripts --workspace=@golobe-demo/backend && npm run cms-startup --workspace=@golobe-demo/backend && npx uglifyjs public/js/page-load.js  --compress --mangle -o public/js/page-load.min.js",
-    "build": "npm run build:checks && cross-env NODE_OPTIONS='--max-old-space-size=4096' nuxt build && npx copyfiles -E -f ./packages/shared/locales/* .output/locales",
+    "prebuild": "npm run prisma:generate-migration-scripts --workspace=@golobe-demo/backend && npm run cms-startup --workspace=@golobe-demo/backend && npx uglifyjs public/js/page-load.js  --compress --mangle -o public/js/page-load.min.js && npx copyfiles -E -f ./packages/shared/locales/* assets/locales",
+    "build": "npm run build:checks && cross-env NODE_OPTIONS='--max-old-space-size=4096' nuxt build",
     "build:checks": "npx jiti ./scripts/build-checks.ts",
     "dev": "npm run prebuild && npx copyfiles -E -f ./packages/shared/locales/* .nuxt/locales && cross-env NEXTAUTH_URL=http://127.0.0.1:3000/api/auth nuxt dev",
     "generate": "nuxt generate",
-    "preview": "cross-env NEXTAUTH_URL=http://127.0.0.1:3000/api/auth env-cmd -f ./packages/backend/.env nuxt preview",
+    "preview": " npx copyfiles -E -f ./packages/shared/locales/* .output/locales && cross-env NEXTAUTH_URL=http://127.0.0.1:3000/api/auth env-cmd -f ./packages/backend/.env nuxt preview",
     "postinstall": "nuxt prepare",
-    "apptests": "npx copyfiles -E -f ./packages/shared/locales/* .nuxt/locales && cross-env VITE_VITEST=true NODE_OPTIONS='--max-old-space-size=4096 --disable-warning=DEP0166 --disable-warning=DEP0155' NEXTAUTH_URL=http://127.0.0.1:43321/api/auth env-cmd -f ./packages/backend/.env npx vitest run --dir=./tests",
+    "apptests": "cross-env VITE_VITEST=true NODE_OPTIONS='--max-old-space-size=4096 --disable-warning=DEP0166 --disable-warning=DEP0155' NEXTAUTH_URL=http://127.0.0.1:43321/api/auth env-cmd -f ./packages/backend/.env npx vitest run --dir=./tests",
     "test": "npm run test:e2e",
     "test:e2e": "npm run apptests -- -t e2e:",
     "test:og-image-static": "npm run apptests -- -t og:image",

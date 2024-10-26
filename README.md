@@ -19,7 +19,6 @@ https://github.com/user-attachments/assets/9ff4fafd-f0ba-4637-a08e-5bd162eb816c
 
 ## Installation
 Project requires [Node.js](https://nodejs.org/) v20+ to be installed. 
-(it should also run on Node v18 but was not tested in that configuration)
 
 ### Without CMS (default)
 
