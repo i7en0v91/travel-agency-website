@@ -28,6 +28,7 @@ async function toggleTheme () {
     square 
     class="*:w-5 *:h-5 *:sm:w-6 *:sm:h-6"
     :icon="`${themeSettings.currentTheme.value === 'light' ? 'i-heroicons-sun' : 'i-heroicons-moon'}`"
+    :ui="{ icon: { base: 'bg-gray-900 dark:bg-gray-400' } }"
     :aria-label="$t(getI18nResName2('ariaLabels', 'btnThemeSwitcher'))"
     :aria-checked="themeSettings.currentTheme.value === 'light'"
     @click="toggleTheme"

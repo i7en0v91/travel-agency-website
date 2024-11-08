@@ -28,6 +28,11 @@
     "login": "Connecter",
     "signUp": "S'inscrire",
     "navToggler": "basculeur de liens de navigation",
+    "search": {
+      "navItem": "Rechercher sur le site",
+      "placeholder": "@:nav.search.navItem ...",
+      "noResults": "Non trouvé (ou non disponible en démo)"
+    },
     "userBox": {
       "navAvatarAlt": "avatar de l'utilisateur",
       "favourites": "Favoris",
@@ -231,6 +236,8 @@
     "ariaLabelSearch": "lancer la recherche d'offres",
     "ariaLabelRangeHandler": "gestionnaire de curseur de plage",
     "btnThemeSwitcher": "changeur de thème",
+    "btnSiteSearch": "@:nav.search.navItem",
+    "btnClose": "@:close",
     "imgLinkMainPage": "lien vers l'image de la page principale",
     "footerSocialLinkTwitter": "lien image Twitter",
     "footerSocialLinkYoutube": "lien de l'image YouTube",
@@ -292,31 +299,12 @@
       "main": "VIVRE & VOYAGE",
       "sub": "Offres spéciales adaptées à votre forfait"
     },
-    "perfectTripSection": {
-      "title": "Planifiez votre voyage parfait",
-      "subtext": "Rechercher des vols et des lieux de location vers nos destinations les plus populaires",
-      "btn": "D'autres lieux"
-    },
     "popularCity": {
       "imgAlt": "image de la ville",
       "flights": "Vols",
       "stays": "Hôtels"
     },
-    "imgLinkAlt": "image du lien vers la page",
-    "flightsImgLink": {
-      "title": "Vols",
-      "sub": "Rechercher des vols et des lieux de location vers nos destinations les plus populaires",
-      "btn": "Afficher les vols"
-    },
-    "staysImgLink": {
-      "title": "Hôtels",
-      "sub": "Rechercher des hôtels et des lieux de location vers nos destinations les plus populaires",
-      "btn": "Afficher les hôtels"
-    },
     "companyReviewSection": {
-      "title": "Critiques",
-      "subtext": "Ce que les gens disent des installations de Golobe",
-      "btn": "Voir tout",
       "expandBtn": "Voir plus",
       "collapseBtn": "Voir moins",
       "imgAlt": "examiner l'image",
@@ -325,11 +313,6 @@
   },
   "flightsPage": {
     "title": "Trouver des vols",
-    "letsGoPlacesSection": {
-      "title": "Allons ensemble",
-      "subtext": "Découvrez les dernières offres et actualités et commencez à planifier votre prochain voyage avec nous.",
-      "btn": "Voir tout"
-    },
     "worldMap": {
       "cityImgAlt": "image de la ville",
       "cityTravelInfoAria": "accéder aux informations de voyage de la ville"
@@ -345,7 +328,6 @@
   "staysPage": {
     "title": "Trouver des séjours",
     "cityPlacesCount": "{n} lieu | {n} lieux",
-    "recentSearchesTitle": "Vos recherches récentes",
     "searchHistoryEmpty": "Rien à afficher. Essayez de saisir le nom d'une ville populaire, par ex. {cityLink}"    
   },
   "offerDetailsPage": {
@@ -502,18 +484,12 @@
     "placeholder": "Écrivez votre avis ici..."
   },
   "travelCities": {
-    "title": "Tombez dans le voyage",
-    "subtext": "Vous allez quelque part pour célébrer cette saison ? Que vous rentriez chez vous ou quelque part en itinérance, nous avons les outils de voyage pour vous amener à votre destination.",
-    "btn": "Voir tout",
     "bookBtn": {
       "flight": "Réserver un vol",
       "stay": "Réserver un hôtel"
     }
   },
   "travelDetails": {
-    "title": "Tombez dans le voyage",
-    "subtext": "Vous allez quelque part pour célébrer cette saison ? Que vous rentriez chez vous ou quelque part en itinérance, nous avons les outils de voyage pour vous amener à votre destination.",
-    "btn": "Voir tout",
     "travelImgAlt": "une des photos de la ville",
     "priceFrom": "De"
   },

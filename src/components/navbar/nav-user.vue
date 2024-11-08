@@ -29,6 +29,7 @@ const userAvatarUrl = computed(() => {
       search: stringifyQuery({ 
         t: userAccount.avatar.timestamp,  
         slug: userAccount.avatar.slug, 
+        scale: 1,
         category: ImageCategory.UserAvatar.valueOf()}) }) :
     undefined;
 });
@@ -54,7 +55,6 @@ const userMenuItems = computed(() => {
           };
         default:
           return {
-            //kind: li.kind,
             label: li.labelResName ? t(li.labelResName) : undefined,
             labelClass: li.labelResName ? 'w-full text-left after:content-[">"] after:float-right' : undefined,
             icon: li.icon,
@@ -94,10 +94,10 @@ function onUserMenuClick(e: InputEvent) {
       v-if="userAvatarUrl"
       :src="userAvatarUrl"
       :alt="t(getI18nResName3('nav', 'userBox', 'navAvatarAlt'))"
-      class="w-[44px] h-[44px] rounded-full"
+      :ui="{ rounded: 'rounded-full' }"
       @click.capture="onUserMenuClick"
     />
-    <Icon v-else name="i-heroicons-user-20-solid" class="w-[44px] h-[44px]" :alt="t(getI18nResName3('nav', 'userBox', 'navAvatarAlt'))" @click.capture="onUserMenuClick"/>
+    <Icon v-else name="i-heroicons-user-20-solid" class="w-8 h-8" :alt="t(getI18nResName3('nav', 'userBox', 'navAvatarAlt'))" @click.capture="onUserMenuClick"/>
     <UDropdown :items="userMenuItems" :popper="{ placement: 'bottom-end' }" :ui="{ container: 'w-[320px] max-w-[320px]' }" class="*:hidden sm:*:block" @click.capture="onUserMenuClick">
       <UButton color="gray" variant="link" class="max-w-[200px] font-semibold text-gray-900 hover:text-gray-900 *:overflow-hidden *:text-ellipsis *:text-nowrap" :label="formatAvatarLabel(userAccount.firstName, userAccount.lastName)" />
     </UDropdown>

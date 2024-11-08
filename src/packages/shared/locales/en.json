@@ -28,6 +28,11 @@
     "login": "Login",
     "signUp": "Sign up",
     "navToggler": "navigation links toggler",
+    "search": {
+      "navItem": "Search site",
+      "placeholder": "@:nav.search.navItem ...",
+      "noResults": "Not found (or not available in demo)"
+    },
     "userBox": {
       "navAvatarAlt": "user avatar",
       "favourites": "Favourites",
@@ -231,6 +236,8 @@
     "ariaLabelSearch": "start offers search",
     "ariaLabelRangeHandler": "range slider handler",
     "btnThemeSwitcher": "theme switcher",
+    "btnSiteSearch": "@:nav.search.navItem",
+    "btnClose": "@:close",
     "imgLinkMainPage": "main page image link",
     "footerSocialLinkTwitter": "Twitter image link",
     "footerSocialLinkYoutube": "YouTube image link",
@@ -292,31 +299,12 @@
       "main": "LIVE & TRAVEL",
       "sub": "Special offers to suit your plan"
     },
-    "perfectTripSection": {
-      "title": "Plan your perfect trip",
-      "subtext": "Search Flights & Places Hire to our most popular destinations",
-      "btn": "See more places"
-    },
     "popularCity": {
       "imgAlt": "city image",
       "flights": "Flights",
       "stays": "Hotels"
     },
-    "imgLinkAlt": "page link image",
-    "flightsImgLink": {
-      "title": "Flights",
-      "sub": "Search Flights & Places Hire to our most popular destinations",
-      "btn": "Show Flights"
-    },
-    "staysImgLink": {
-      "title": "Hotels",
-      "sub": "Search hotels & Places Hire to our most popular destinations",
-      "btn": "Show Hotels"
-    },
     "companyReviewSection": {
-      "title": "Reviews",
-      "subtext": "What people says about Golobe facilities",
-      "btn": "See All",
       "expandBtn": "View more",
       "collapseBtn": "View less",
       "imgAlt": "review image",
@@ -325,11 +313,6 @@
   },
   "flightsPage": {
     "title": "Find Flights",
-    "letsGoPlacesSection": {
-      "title": "Let's go places together",
-      "subtext": "Discover the latest offers and news and start planning your next trip with us.",
-      "btn": "See All"
-    },
     "worldMap": {
       "cityImgAlt": "city image",
       "cityTravelInfoAria": "navigate to city's travel info"
@@ -344,7 +327,6 @@
   },
   "staysPage": {
     "title": "Find Stays",
-    "recentSearchesTitle": "Your recent searches",
     "searchHistoryEmpty": "Nothing to display. Try to type name of a popular city, e.g. {cityLink}",
     "cityPlacesCount": "{n} place | {n} places"  
   },
@@ -502,18 +484,12 @@
     "placeholder": "Write your review here..."
   },
   "travelCities": {
-    "title": "Fall into travel",
-    "subtext": "Going somewhere to celebrate this season? Whether you’re going home or somewhere to roam, we’ve got the travel tools to get you to your destination.",
-    "btn": "See all",
     "bookBtn": {
       "flight": "Book Flight",
       "stay": "Book a Hotel"
     }
   },
   "travelDetails": {
-    "title": "Fall into travel",
-    "subtext": "Going somewhere to celebrate this season? Whether you’re going home or somewhere to roam, we’ve got the travel tools to get you to your destination.",
-    "btn": "See all",
     "travelImgAlt": "one of city photos",
     "priceFrom": "From"
   },

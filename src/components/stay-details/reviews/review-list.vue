@@ -3,7 +3,7 @@ import { type EntityId, ImageCategory, type Locale, getLocalizeableValue, getSco
 import { isPrefersReducedMotionEnabled } from './../../../helpers/dom';
 import ComponentWaitingIndicator from './../../../components/component-waiting-indicator.vue';
 import { type IStayReviewItem } from './../../../stores/stay-reviews-store';
-import { useConfirmBox } from './../../../composables/confirm-box';
+//import { useConfirmBox } from './../../../composables/confirm-box';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
@@ -66,7 +66,7 @@ const reviewStore = await reviewStoreFactory.getInstance(props.stayId);
 const userAccountStore = useUserAccountStore();
 const userAccount = ref<IUserAccount>();
 
-const confirmBox = useConfirmBox();
+//const confirmBox = useConfirmBox();
 
 const isError = ref(reviewStore.status === 'error');
 
@@ -102,6 +102,7 @@ function onEditUserReviewBtnClick () {
   $emit('editBtnClick');
 }
 
+/*
 async function onDeleteUserReviewBtnClick (): Promise<void> {
   logger.verbose(`(ReviewList) delete review btn click handler, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
 
@@ -118,6 +119,7 @@ async function onDeleteUserReviewBtnClick (): Promise<void> {
     $emit('userReviewDeleted', deletingReview);
   }
 }
+  */
 
 function onSwiperInit () {
   /*

@@ -11,7 +11,7 @@ const DefaultZoomLevel = 14;
 
 const props = withDefaults(defineProps<IMapControlProps>(), {
   webUrl: undefined,
-  cssClass: undefined
+  styleClass: undefined
 });
 
 const { t } = useI18n();
@@ -90,7 +90,7 @@ onMounted(() => {
       <ComponentWaitingIndicator ctrl-key="YandexMap-InitializationWaiter" class="interactive-map-waiting-indicator" />
     </div>
     <div :style="map ? {width: '100%', height: 'auto'} : {width: '100%', height: 0, maxHeight: 0, overflowY: 'hidden'}">
-      <YandexMap v-model="map" :settings="{ location: { center: [props.origin.lon, props.origin.lat], zoom: DefaultZoomLevel }, showScaleInCopyrights: true, theme: theme.currentTheme.value, className: cssClass }">
+      <YandexMap v-model="map" :settings="{ location: { center: [props.origin.lon, props.origin.lat], zoom: DefaultZoomLevel }, showScaleInCopyrights: true, theme: theme.currentTheme.value, className: styleClass }">
         <YandexMapDefaultFeaturesLayer />
         <YandexMapDefaultSchemeLayer :settings="{ theme: theme.currentTheme.value }" />
 

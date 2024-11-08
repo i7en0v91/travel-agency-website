@@ -1,15 +1,6 @@
 <script setup lang="ts">
 
-import { AppPage, getPagePath, MainTitleSlug, lookupPageByUrl, getI18nResName2, ImageCategory } from '@golobe-demo/shared';
-/*
-import { ModalsContainer } from 'vue-final-modal';
-import AppContainer from './../components/app-container.vue';
-import NavBar from './../components/navbar/nav-bar.vue';
-import HeadingText from './../components/index/main-heading-text.vue';
-import AppFooter from './../components/footer/app-footer.vue';
-import CookieBanner from './../components/cookie-banner.vue';
-import SearchPageHead from './../components/common-page-components/search-page-head.vue';
-*/
+import { AppPage, getPagePath, getI18nResName2 } from '@golobe-demo/shared';
 
 const route = useRoute();
 const { t, locale } = useI18n();
@@ -26,7 +17,7 @@ useHead({
   },
   script: [
     { src: '/js/page-load.min.js' },
-    // { src: 'https://www.google.com/recaptcha/api.js' }
+    { src: 'https://www.google.com/recaptcha/api.js' }
   ],
   link: [
     { rel: 'icon', href: '/img/waiter.gif' }
@@ -67,29 +58,5 @@ const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.val
       <CookieBanner ctrl-key="CookieBanner" />
       <UNotifications />
     </ClientOnly>
-    
-    
-        <!--
-        <SearchPageHead
-          v-if="navBarMode === 'landing' && showDefaultComponents"
-          ctrl-key="SearchPageHead"
-          class="search-page-head-landing"
-          :image-entity-src="{ slug: MainTitleSlug }"
-          :category="ImageCategory.MainTitle"
-          :image-alt-res-name="getI18nResName2('searchPageCommon', 'mainImageAlt')"
-          overlay-class="search-page-head-landing-overlay"
-        >
-          <NavBar ctrl-key="NavBar"  />
-          <HeadingText ctrl-key="IndexPageMainHeading" />
-        </SearchPageHead>
-        <NavBar v-else-if="showDefaultComponents" ctrl-key="NavBar" :mode="navBarMode" />
-        <slot />
-        <AppFooter v-if="showDefaultComponents" ctrl-key="footer" />
-      </AppContainer>
-      <ClientOnly>
-        <CookieBanner ctrl-key="CookieBanner" />
-      </ClientOnly>
-      <ModalsContainer />
-    -->
   </div>
 </template>

@@ -89,7 +89,7 @@ Project uses a number of open source projects to work properly:
   - [Nuxt Auth](https://github.com/sidebase/nuxt-auth) - for authentication & authorization
   - [Nuxt SEO](https://github.com/harlan-zw/nuxt-seo) - the complete SEO solution for Nuxt
   - [Nuxt OgImage](https://github.com/nuxt-modules/og-image) - for generating OpenGraph images for entities on-the-fly using [Satori](https://github.com/vercel/satori)
-  - [Nuxt Content](https://content.nuxt.com) - for pages with large amount of text
+  - [Nuxt Content](https://content.nuxt.com) - for search across site pages and markups with large amount of text
   - [Nuxt I18n](https://github.com/nuxt-modules/i18n) - internationalization (i18n) for Nuxt 
   apps
   - [Unlighthouse](https://github.com/harlan-zw/unlighthouse) - for performing site quality scan using Google Lighthouse
@@ -105,7 +105,7 @@ Project uses a number of open source projects to work properly:
 - [PDFKit](https://github.com/foliojs/pdfkit) - A JavaScript PDF generation library for Node and the browser
 - Other third-party UI components:
   - [VCalendar](https://github.com/nathanreyes/v-calendar) - An elegant calendar and date picker plugin for Vuejs
-  - [CropperJS](https://github.com/fengyuanchen/cropperjs) - for uploading photos
+  - [CropperJS](https://github.com/fengyuanchen/cropperjs) - for editing & uploading photos
   - [TipTap](https://github.com/ueberdosis/tiptap) - The headless rich text editor, was used for creating user reviews
 
 ## License

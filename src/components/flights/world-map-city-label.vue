@@ -29,7 +29,7 @@ onMounted(() => {
 
 <template>
   <div
-    class="world-map-city-label p-xs-2 px brdr-2"
+    class="flex flex-row flex-nowrap items-center gap-[8px] h-min w-fit max-w-[190px] md:max-w-[240px] p-2 rounded-md shadow-md bg-white dark:bg-gray-900 text-xs sm:text-sm"
     :style="{
       position: 'relative',
       top: `${Math.round(props.relativeCoord.y * 100)}%`,
@@ -42,15 +42,19 @@ onMounted(() => {
       :entity-src="{ slug: imgSrc.slug, timestamp: imgSrc.timestamp }"
       :category="ImageCategory.CityCard"
       sizes="xs:30vw sm:20vw md:10vw lg:10vw xl:10vw"
-      :ui="{ wrapper: 'world-map-city-label-img brdr-2' }"
+      :ui="{ 
+        wrapper: 'aspect-square rounded size-[40px] min-w-[40px] min-h-[40px] lg:size-[50px] lg:min-w-[50px] lg:min-h-[50px]',
+        stub: 'rounded',
+        img: 'w-full h-full rounded object-cover'
+      }"
       :alt-res-name="getI18nResName3('flightsPage', 'worldMap', 'cityImgAlt')"
       :show-stub="true"
     />
-    <div class="world-map-city-info">
-      <NuxtLink :external="false" :replace="true" :href="cityUrl" class="world-map-city-name brdr-1 no-hidden-parent-tabulation-check" :aria-label="$t(getI18nResName3('flightsPage', 'worldMap', 'cityTravelInfoAria'))">
+    <div class="w-full h-fullworld-map-city-info">
+      <ULink :external="false" :replace="true" :to="cityUrl" class="text-gray-400 dark:text-gray-500 font-semibold" :aria-label="$t(getI18nResName3('flightsPage', 'worldMap', 'cityTravelInfoAria'))">
         {{ (props.cityName as any)[locale] }}
-      </NuxtLink>
-      <div class="world-map-city-country">
+      </ULink>
+      <div class="text-gray-600 dark:text-gray-300 font-normal">
         {{ (props.countryName as any)[locale] }}
       </div>
     </div>

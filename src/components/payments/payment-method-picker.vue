@@ -3,6 +3,7 @@ import { type PaymentMethodType, getI18nResName3, getI18nResName1 } from '@golob
 import { TooltipHideTimeout } from './../../helpers/constants';
 import PriceMethodVariant from './payment-method-variant.vue';
 import dayjs from 'dayjs';
+import { type ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string,
@@ -34,7 +35,7 @@ const paymentMethods = computed(() => [
   }
 ]);
 
-const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
+const tooltip = shallowRef<ComponentInstance<typeof Tooltip>>();
 
 const selectedPaymentMethod = ref<PaymentMethodType>('full');
 

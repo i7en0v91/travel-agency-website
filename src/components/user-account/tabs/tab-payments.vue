@@ -30,6 +30,7 @@ const paymentCards = [
 
 <template>
   <div class="account-tab-container" role="form">
+    <!--
     <h2 class="account-page-tab-name mb-xs-2 mb-s-3 font-h3">
       {{ $t(getI18nResName3('accountPage', 'tabPayments', 'title')) }}
     </h2>
@@ -53,5 +54,6 @@ const paymentCards = [
         </div>  
       </ErrorHelm>
     </div>
+    -->
   </div>
 </template>

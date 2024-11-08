@@ -4,7 +4,7 @@ import AuthFormsPhoto from './../../components/account/photo-slide.vue';
 import { type IImageDetailsDto, ApiEndpointAuthFormPhotos } from './../../server/api-definitions';
 import { usePreviewState } from './../../composables/preview-state';
 import { type IStaticImageUiProps } from './../../types';
-import { type Ref } from 'vue';
+import { type ComponentInstance, type Ref } from 'vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 import type { UCarousel } from '../../.nuxt/components';
 import { useCarouselPlayer } from '../../composables/carousel-player';
@@ -23,7 +23,7 @@ const logger = getCommonServices().getLogger();
 
 const { enabled } = usePreviewState();
 
-const carouselRef = shallowRef<InstanceType<typeof UCarousel> | undefined>();
+const carouselRef = shallowRef<ComponentInstance<typeof UCarousel> | undefined>();
 useCarouselPlayer(carouselRef);
 
 const authFormsImagesUrl = `/${ApiEndpointAuthFormPhotos}`;

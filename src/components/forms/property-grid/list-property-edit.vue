@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { AppException, AppExceptionCodeEnum, maskLog, MaxListPropertyElementsCount, UserNotificationLevel, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
-import { type SimplePropertyType, type PropertyGridControlButtonType } from './../../../types';
+import { type SimplePropertyType, type PropertyGridControlButtonType, type ConfirmBoxButton } from './../../../types';
 import range from 'lodash-es/range';
 import SimplePropertyEdit from './../../forms/property-grid/simple-property-edit.vue';
 import PropertyGrid from './../../forms/property-grid/property-grid.vue';
-import { useConfirmBox } from './../../../composables/confirm-box';
+import ConfirmBox from './../../confirm-box.vue';
+import { useConfirmBoxResult } from './../../../composables/confirm-box-result';
 import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
@@ -31,7 +32,6 @@ const props = withDefaults(defineProps<IProps>(), {
 });
 
 const logger = getCommonServices().getLogger();
-const confirmBox = useConfirmBox();
 const userNotificationStore = useUserNotificationStore();
 
 if (props.maxElementsCount > MaxListPropertyElementsCount) {
@@ -40,8 +40,12 @@ if (props.maxElementsCount > MaxListPropertyElementsCount) {
 }
 const propList: Ref<ComponentInstance<typeof SimplePropertyEdit> | undefined>[] = range(0, props.maxElementsCount).map(() => { return shallowRef<ComponentInstance<typeof SimplePropertyEdit> | undefined>(); });
 const propAdd = shallowRef<ComponentInstance<typeof SimplePropertyEdit>>();
+const confirmBoxRef = shallowRef<ComponentInstance<typeof ConfirmBox>>()as Ref<ComponentInstance<typeof ConfirmBox>>;  
 const editValues = range(0, props.maxElementsCount).map((idx: number) => ref<string | undefined>(props.values[idx]));
 const addingNewValue = ref<string | undefined>('');
+const open = ref(false);
+const result = ref<ConfirmBoxButton>();
+const confirmMsgBoxParam = ref<{ itemText: string }>({ itemText: '' });
 
 function getPropertyComponent (propIdx: number): ComponentInstance<typeof SimplePropertyEdit> | undefined {
   if (propIdx >= props.maxElementsCount) {
@@ -140,8 +144,10 @@ async function onControlButtonClick (button: PropertyGridControlButtonType, prop
     }
     onPropertyEnterEditMode(propIdx);
     const itemText = editValues[propIdx].value;
-    const result = await confirmBox.confirm(`${props.ctrlKey}-DeleteConfirm`, ['yes', 'no'], getI18nResName2('propertyGrid', 'deleteConfirmMsg'), { itemText });
-    if (result === 'yes') {
+    confirmMsgBoxParam.value = { itemText : itemText ?? '' };
+    const confirmBox = useConfirmBoxResult(confirmBoxRef, { open, result } );
+    const msgBoxResult = await confirmBox.confirm();
+    if (msgBoxResult === 'yes') {
       const result = await onValidateAndSave('delete', propIdx, undefined);
       if (result === 'success') {
         handleItemValueChange('delete', propIdx, undefined);
@@ -173,48 +179,51 @@ defineExpose({
 </script>
 
 <template>
-  <PropertyGrid :ctrl-key="`${props.ctrlKey}-propGrid`" class="list-property-edit">
-    <SimplePropertyEdit
-      v-for="(v, idx) in values"
-      :key="`${props.ctrlKey}-v${idx}`"
-      :ref="propList[idx]"
-      v-model:value="editValues[idx].value"
-      :ctrl-key="`${props.ctrlKey}-v${idx}`"
-      :type="type"
-      :caption-res-name="captionResName"
-      :placeholder-res-name="placeholderResName"
-      :max-length="maxLength"
-      :min-length="minLength"
-      :auto-trim="autoTrim"
-      :required="required"
-      :validate-and-save="async (value?: string) => { return await onValidateAndSave('change', idx, value); }"
-      :first-control-section-buttons="{ view: ['delete'], edit: ['cancel'] }"
-      :last-control-section-buttons="{ view: ['change'], edit: ['apply'] }"
-      @enter-edit-mode="() => onPropertyEnterEditMode(idx)"
-      @update:value="(value?: string) => handleItemValueChange('change', idx, value)"
-      @button-click="(button: PropertyGridControlButtonType) => onControlButtonClick(button, idx)"
-    />
-    <SimplePropertyEdit
-      v-if="values.length < maxElementsCount"
-      :key="`${props.ctrlKey}-Add`"
-      ref="propAdd"
-      v-model:value="addingNewValue"
-      :ctrl-key="`${props.ctrlKey}-Add`"
-      :type="type"
-      class="list-property-edit-add"
-      :caption-res-name="captionResName"
-      :placeholder-res-name="placeholderResName"
-      :max-length="maxLength"
-      :min-length="minLength"
-      :auto-trim="autoTrim"
-      :required="required"
-      :auto-clear-on-edit-start="true"
-      :validate-and-save="async (value?: string) => { return await onValidateAndSave('add', 'add', value); }"
-      :first-control-section-buttons="{ view: [], edit: ['cancel'] }"
-      :last-control-section-buttons="{ view: ['add'], edit: ['apply'] }"
-      @enter-edit-mode="() => onPropertyEnterEditMode('add')"
-      @update:value="(value?: string) => handleItemValueChange('add', 'add', value)"
-      @button-click="(button: PropertyGridControlButtonType) => onControlButtonClick(button, 'add')"
-    />
-  </PropertyGrid>
+  <div class="contents">
+    <PropertyGrid :ctrl-key="`${props.ctrlKey}-propGrid`" class="list-property-edit">
+      <SimplePropertyEdit
+        v-for="(v, idx) in values"
+        :key="`${props.ctrlKey}-v${idx}`"
+        :ref="propList[idx]"
+        v-model:value="editValues[idx].value"
+        :ctrl-key="`${props.ctrlKey}-v${idx}`"
+        :type="type"
+        :caption-res-name="captionResName"
+        :placeholder-res-name="placeholderResName"
+        :max-length="maxLength"
+        :min-length="minLength"
+        :auto-trim="autoTrim"
+        :required="required"
+        :validate-and-save="async (value?: string) => { return await onValidateAndSave('change', idx, value); }"
+        :first-control-section-buttons="{ view: ['delete'], edit: ['cancel'] }"
+        :last-control-section-buttons="{ view: ['change'], edit: ['apply'] }"
+        @enter-edit-mode="() => onPropertyEnterEditMode(idx)"
+        @update:value="(value?: string) => handleItemValueChange('change', idx, value)"
+        @button-click="(button: PropertyGridControlButtonType) => onControlButtonClick(button, idx)"
+      />
+      <SimplePropertyEdit
+        v-if="values.length < maxElementsCount"
+        :key="`${props.ctrlKey}-Add`"
+        ref="propAdd"
+        v-model:value="addingNewValue"
+        :ctrl-key="`${props.ctrlKey}-Add`"
+        :type="type"
+        :caption-res-name="captionResName"
+        :placeholder-res-name="placeholderResName"
+        :max-length="maxLength"
+        :min-length="minLength"
+        :auto-trim="autoTrim"
+        :required="required"
+        :is-add-row-in-list-edit="true"
+        :auto-clear-on-edit-start="true"
+        :validate-and-save="async (value?: string) => { return await onValidateAndSave('add', 'add', value); }"
+        :first-control-section-buttons="{ view: [], edit: ['cancel'] }"
+        :last-control-section-buttons="{ view: ['add'], edit: ['apply'] }"
+        @enter-edit-mode="() => onPropertyEnterEditMode('add')"
+        @update:value="(value?: string) => handleItemValueChange('add', 'add', value)"
+        @button-click="(button: PropertyGridControlButtonType) => onControlButtonClick(button, 'add')"
+      />
+    </PropertyGrid>
+    <ConfirmBox ref="confirmBoxRef" v-model:open="open" v-model:result="result" :ctrl-key="`${props.ctrlKey}-DeleteConfirm`" :buttons="['yes', 'no']" :msg-res-name="getI18nResName2('propertyGrid', 'deleteConfirmMsg')" :msg-res-args="confirmMsgBoxParam"/>
+  </div>
 </template>

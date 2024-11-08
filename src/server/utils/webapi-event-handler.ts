@@ -169,7 +169,6 @@ async function verifyCaptcha (captchaDto: ICaptchaVerificationDto, event: H3Even
 
   const success = (verificationResponse as any)?.data?.success;
   const score = (verificationResponse as any)?.data?.score;
-//  const { success, score } = (verificationResponse as any)?.data;
   if (success) {
     logger.info(`captcha verified on server successfully, url=${event.node.req.url}, score=${score}`);
   } else {

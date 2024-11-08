@@ -26,7 +26,7 @@ const socialLinks = [{
 
 </script>
 <template>
-  <footer class="w-full bg-primary-300 dark:bg-gray-800 pb-[200px]">
+  <footer class="relative z-[-1] w-full bg-primary-300 dark:bg-gray-800 pb-[200px]">
     <div class="mt-[151px] w-full h-auto px-[14px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
       <div class="-translate-y-[91px] block w-full h-auto">
         <SubscribeBox ctrl-key="subscribeBox" />

@@ -52,7 +52,6 @@ async function handleSignOutClick (
   callbackUrl = formatAuthCallbackUrl(callbackUrl, previewMode);
   await signOutFn({ callbackUrl, redirect: true });
   logger.verbose(`(NavLinkBuilder) sign out menu handler completed: locale=${locale}, isOgImageRequest=${isOgImageRequest}`);
-  //hideDropdown();
 }
 
 async function handlePaymentsClick (
@@ -84,7 +83,6 @@ async function handleSettingsClick (
 ): Promise<void> {
   logger.verbose(`(NavLinkBuilder) handling settings menu click: locale=${locale}, isOgImageRequest=${isOgImageRequest}`);
   const onAccountPage = isCurrentlyOnAccountPage(route);
-  //onMenuItemClick();
 
   if(onAccountPage) {
     (document.querySelector(`[data-tab-name="${UserAccount}"]`) as HTMLElement)?.click();

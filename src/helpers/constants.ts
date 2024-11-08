@@ -25,7 +25,9 @@ export const DeviceSizeBreakpointsMap: ReadonlyMap<DeviceSizeEnum, number> =
   
 export const CroppingImageDataKey = 'current-cropping-image-data';
 export const CroppingImageFormat = MimeTypeWebp;
+export const CropperHeightViewportRatio = 0.4;
 export const TooltipHideTimeout = 2000;
+export const SiteSearchMaxMatchLength = 60;
 export const HashNavigationPageTimeout = 3000;
 
 export const UserAccount = 'account';

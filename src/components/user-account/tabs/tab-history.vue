@@ -89,6 +89,7 @@ onMounted(() => {
 
 <template>
   <div class="account-tab-container" role="form">
+    <!--
     <div class="account-tab-history-head mb-xs-2 mb-s-3 "> 
       <h2 class="account-page-tab-name font-h3">
         {{ $t(getI18nResName3('accountPage', 'tabHistory', 'title')) }}
@@ -131,5 +132,6 @@ onMounted(() => {
           }" />
       </ErrorHelm>
     </div>
+    -->
   </div>
 </template>

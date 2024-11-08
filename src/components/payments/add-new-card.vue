@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { getI18nResName1, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import { TooltipHideTimeout } from './../../helpers/constants';
+import { type ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string
 };
 defineProps<IProps>();
 
-const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
+const tooltip = shallowRef<ComponentInstance<typeof Tooltip>>();
 
 function scheduleTooltipAutoHide () {
   setTimeout(() => { tooltip.value?.hide(); }, TooltipHideTimeout);

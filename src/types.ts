@@ -24,7 +24,8 @@ export interface IStaticImageUiProps {
   wrapper?: string,
   img?: string,
   stub?: string,
-  overlay?: string
+  overlay?: string,
+  errorStub?: string
 }
 
 /** Components - tabs */
@@ -189,7 +190,7 @@ export interface ISearchStayOffersDisplayOptions extends ISearchOffersCommonDisp
 export interface IMapControlProps {
   ctrlKey: string,
   origin: GeoPoint,
-  cssClass?: string,
+  styleClass?: string,
   webUrl?: string
 }
 

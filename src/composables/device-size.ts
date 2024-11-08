@@ -11,7 +11,7 @@ export function useDeviceSize (): IDeviceSize {
   const logger = getCommonServices().getLogger();
 
   if(import.meta.server) {
-    logger.verbose('(device-size) assuming desktop size for server size');
+    logger.verbose('(device-size) assuming desktop size for server side');
     return {
       current: computed(() => DeviceSizeEnum.XXL)
     };

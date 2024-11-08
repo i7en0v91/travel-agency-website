@@ -6,13 +6,13 @@ import { getCommonServices } from '../../../helpers/service-accessors';
 interface IProps {
   ctrlKey: string,
   origin: GeoPoint,
-  cssClass?: string,
+  styleClass?: string,
   webUrl?: string,
   city?: EntityDataAttrsOnly<ICity>
 }
 
 const props = withDefaults(defineProps<IProps>(), {
-  cssClass: undefined,
+  styleClass: undefined,
   webUrl: undefined,
   city: undefined
 });
@@ -46,7 +46,7 @@ const MapComponent = AppConfig.maps ? resolveComponent(AppConfig.maps.mapControl
         <div class="interactive-map-container brdr-4">
           <component
             :is="MapComponent"
-            :css-class="cssClass"
+            :style-class="styleClass"
             :origin="props.origin"
             :ctrl-key="`${ctrlKey}-MapCtrl`"
             @update:web-url="onWebUrlChange"

@@ -1,15 +1,8 @@
-import { clampTextLine, AppPage, getI18nResName2, getI18nResName3, type Theme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppConfig } from '@golobe-demo/shared';
+import { clampTextLine, AppPage, getI18nResName2, getI18nResName3, type Theme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue } from '@golobe-demo/shared';
 import { DeviceSizeEnum, DeviceSizeBreakpointsMap } from './../helpers/constants';
 import orderBy from 'lodash-es/orderBy';
-import zip from 'lodash-es/zip';
-import range from 'lodash-es/range';
-import throttle from 'lodash-es/throttle';
-import groupBy from 'lodash-es/groupBy';
-import keys from 'lodash-es/keys';
-import flatten from 'lodash-es/flatten';
 import { parseURL, stringifyParsedURL, stringifyQuery } from 'ufo';
 import set from 'lodash-es/set';
-import { getCommonServices } from './service-accessors';
 
 export function getLastSelectedTabStorageKey (tabCtrlKey: string) {
   return `lastSelTab:${tabCtrlKey}`;
@@ -46,82 +39,6 @@ export function formatAuthCallbackUrl (url: string, preivewMode: boolean): strin
   }
   const urlWithoutHost = stringifyParsedURL(parsedUrl);
   return urlWithoutHost.startsWith('/') ? urlWithoutHost : `/${urlWithoutHost}`;
-}
-
-
-function testRectIntersection (rect1: DOMRect, rect2: DOMRect): boolean {
-  return !((rect1.left > rect2.right) || (rect1.bottom < rect2.top) || (rect1.right < rect2.left) || (rect1.top > rect2.bottom));
-}
-
-function isElementItselfVisible (element: HTMLElement) {
-  const isTransparent = ((element.style.opacity?.length ?? 0) > 0) && element.style.opacity.split('.').every((p) => { return parseInt(p) === 0; });
-  const isNotDisplayed = element.style.display === 'none' && !element.className.includes('nav-search-page-links'); // handle .nav-search-page-links separately because of 'display: none' style added by vue's Trransition
-  const isInvisible = window.getComputedStyle(element).visibility === 'hidden';
-  const isOutOfViewport = !isInViewport(element, true);
-  return !(isNotDisplayed || isInvisible || isOutOfViewport || isTransparent);
-}
-
-function isElementHiddenOverflowVisible (testElement: HTMLElement, parentElement?: HTMLElement | null) : boolean {
-  if (!parentElement) {
-    if (!testElement.parentElement) {
-      return true;
-    }
-    return isElementHiddenOverflowVisible(testElement, testElement.parentElement);
-  }
-
-  const parentClientRect = parentElement.getBoundingClientRect();
-  const testElemRect = testElement.getBoundingClientRect();
-  if (parentElement.className.includes('hidden-overflow-nontabbable') && !testRectIntersection(testElemRect, parentClientRect)) {
-    return false;
-  }
-
-  if (!parentElement.parentElement) {
-    return true;
-  }
-  return isElementHiddenOverflowVisible(testElement, parentElement.parentElement);
-}
-
-function hasHiddenParent (element: HTMLElement) : boolean {
-  if (element.className.includes('app-track') || element.tagName.toLowerCase() === 'body') {
-    return false;
-  }
-  if (element.className.includes('no-hidden-parent-tabulation-check')) {
-    return false;
-  }
-  if (!isElementItselfVisible(element)) {
-    return true;
-  }
-  if (!element.parentElement) {
-    return false;
-  }
-  return hasHiddenParent(element.parentElement);
-}
-
-export function isElementVisible (element: HTMLElement) {
-  const isTransparent = ((element.style.opacity?.length ?? 0) > 0) && element.style.opacity.split('.').every((p) => { return parseInt(p) === 0; });
-  const hiddenOverflowVisibilityCheck = !element.className.includes('hidden-overflow-nontabbable') || isElementHiddenOverflowVisible(element);
-  const hasHiddenParentCheck = element.className.includes('no-hidden-parent-tabulation-check') || !hasHiddenParent(element);
-  const viewportCheck = isInViewport(element, true);
-  return viewportCheck && hasHiddenParentCheck && !isTransparent && hiddenOverflowVisibilityCheck;
-}
-
-export function calculateTabIndicies (rects: {x: number, y: number, width: number, height: number}[], snapSize = 1): number[] {
-  function snapToGrid (value: number) {
-    return Math.floor(value / snapSize) * snapSize;
-  }
-
-  return orderBy(
-    zip(
-      range(1, rects.length + 1),
-      orderBy(rects.map((r, idx) => {
-        return {
-          idx,
-          cx: snapToGrid(r.x + r.width / 2),
-          cy: snapToGrid(r.y + r.height / 2)
-        };
-      }), ['cy', 'cx'], ['asc', 'asc']).map(r => r.idx + 1)
-    ), ['1'], ['asc'])
-    .map(r => r[0]!);
 }
 
 export function getPreferredTheme (): Theme | undefined {
@@ -225,6 +142,14 @@ export function getNavMenuLinksInfo(isHorizontalNav: boolean) {
     authStatus: undefined,
     verticalNav: 2,
     showOnErrorPage: true
+  },{
+    kind: 'site-search' as const,
+    labelResName: isHorizontalNav ? undefined : getI18nResName3('nav', 'search', 'navItem'),
+    icon: isHorizontalNav ? undefined : 'i-heroicons-magnifying-glass',
+    iconClass: undefined,
+    authStatus: undefined,
+    verticalNav: 3,
+    showOnErrorPage: true
   }],[{
     kind: 'favourites' as const,
     labelResName: getI18nResName3('nav', 'userBox', 'favourites'),
@@ -250,7 +175,7 @@ export function getNavMenuLinksInfo(isHorizontalNav: boolean) {
     icon: 'i-heroicons-solid-login',
     iconClass: isHorizontalNav ? 'hidden' : 'rotate-180',
     authStatus: false,
-    verticalNav: 3,
+    verticalNav: 4,
     showOnErrorPage: false
   },{
     kind: 'signup' as const,
@@ -258,7 +183,7 @@ export function getNavMenuLinksInfo(isHorizontalNav: boolean) {
     icon: 'i-mdi-light-account',
     iconClass: isHorizontalNav ? 'hidden' : undefined,
     authStatus: false,
-    verticalNav: 4,
+    verticalNav: 5,
     showOnErrorPage: false
   },{ 
     kind: 'nav-user' as const,
@@ -271,4 +196,5 @@ export function getNavMenuLinksInfo(isHorizontalNav: boolean) {
 export function formatAvatarLabel(firstName: string | undefined, lastName: string | undefined) {
   return `${clampTextLine(`${firstName ?? '' }`, 30)} ${(lastName ? `${lastName.substring(0, 1).toUpperCase()}.`: '')}`;
 }
+
   

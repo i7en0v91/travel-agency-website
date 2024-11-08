@@ -28,8 +28,12 @@ switch(props.provider) {
     break;
 }
 
+const uiStyling = {
+  base: `py-4 w-[100px] h-auto *:mx-auto ${props.provider === AuthProvider.GitHub ? 'dark:*:invert' : ''}`
+};
+
 </script>
 
 <template>
-  <UButton :class="`py-4 w-[100px] h-auto *:mx-auto ${props.provider === AuthProvider.GitHub ? 'dark:*:invert' : ''}`" size="xl" :icon="iconName" :disabled="!enabled" :aria-label="ariaLabelResName ? $t(ariaLabelResName) : ''" variant="outline" @click="onClick"/>
+  <UButton :ui="uiStyling" size="xl" :icon="iconName" :disabled="!enabled" :aria-label="ariaLabelResName ? $t(ariaLabelResName) : ''" variant="outline" @click="onClick"/>
 </template>

@@ -8,7 +8,7 @@ defineProps<IProps>();
 </script>
 
 <template>
-  <table class="property-grid">
+  <div class="w-full h-auto grid grid-flow-row auto-rows-auto gap-x-4 gap-y-6 sm:gap-y-8 grid-cols-propertygrid">
     <slot />
-  </table>
+  </div>
 </template>

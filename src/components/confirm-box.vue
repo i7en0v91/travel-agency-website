@@ -1,84 +1,83 @@
 <script setup lang="ts">
 import { type I18nResName, getI18nResName2 } from '@golobe-demo/shared';
 import { type ConfirmBoxButton } from './../types';
-import { VueFinalModal } from 'vue-final-modal';
-import SimpleButton from './forms/simple-button.vue';
 import { getCommonServices } from '../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
-  setResultCallback: (button: ConfirmBoxButton) => void,
   buttons: ConfirmBoxButton[],
   msgResName: I18nResName,
   msgResArgs?: any
 }
 
+defineShortcuts({
+  escape: {
+    usingInput: true,
+    handler: () => { 
+      const closeResultBtn = props.buttons.includes('cancel') ? 'cancel' : (props.buttons.includes('no') ? 'no' : undefined);
+      if(!closeResultBtn) {
+        logger.debug(`(ConfirmBox) ignoring escape btn close, no cancel result is not expected: ctrlKey=${props.ctrlKey}`);
+        return;
+      }
+      setResultAndClose(closeResultBtn);
+    }
+  },
+});
+
 const props = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
-const clickedButton = shallowRef<ConfirmBoxButton>();
+const { t } = useI18n();
 
-const $emit = defineEmits(['update:modelValue']);
+const open = defineModel<boolean>('open');
+const result = defineModel<ConfirmBoxButton | undefined>('result');
 
-function setResultAndClose () {
-  if (!clickedButton.value) {
-    clickedButton.value = 'cancel';
+function setResultAndClose (value: ConfirmBoxButton | undefined) {
+  if (!value) {
+    value = 'cancel';
   }
-  props.setResultCallback(clickedButton.value);
-  $emit('update:modelValue', false);
+  result.value = value;
+  open.value = false;
 }
 
 function onClosed () {
-  if (!clickedButton.value) {
-    clickedButton.value = 'cancel';
-    props.setResultCallback(clickedButton.value);
+  if (!result.value) {
+    result.value = 'cancel';
   }
 }
 
 function onButtonClick (button: ConfirmBoxButton) {
-  logger.verbose(`(ConfirmBox) button clicked: ctrlKey=${props.ctrlKey}, butotn=${button}`);
-  clickedButton.value = button;
-  setResultAndClose();
+  logger.verbose(`(ConfirmBox) button clicked: ctrlKey=${props.ctrlKey}, button=${button}`);
+  setResultAndClose(button);
 }
+
+const uiStyling = { 
+  container: 'items-center',
+  width: 'w-fit',
+  height: 'h-auto' 
+};
 
 </script>
 
 <template>
-  <VueFinalModal
-    class="modal-window"
-    content-class="confirm-box p-xs-3 p-s-4"
-    :lock-scroll="false"
-    @closed="onClosed"
-    @update:model-value="(val: boolean) => $emit('update:modelValue', val)"
-  >
+  <UModal v-model="open" :ui="uiStyling" @closed="onClosed">
     <ClientOnly>
-      <div class="confirm-box-msg">
-        {{ $t(props.msgResName, props.msgResArgs) }}
-      </div>
-      <div class="confirm-box-buttons mt-xs-4">
-        <SimpleButton
-          v-if="props.buttons.includes('yes')"
-          :ctrl-key="`${props.ctrlKey}-btnYes`"
-          :label-res-name="getI18nResName2('confirmBox', 'btnYes')"
-          kind="support"
-          @click="() => onButtonClick('yes')"
-        />
-        <SimpleButton
-          v-if="props.buttons.includes('no')"
-          :ctrl-key="`${props.ctrlKey}-btnNo`"
-          :label-res-name="getI18nResName2('confirmBox', 'btnNo')"
-          kind="support"
-          @click="() => onButtonClick('no')"
-        />
-        <SimpleButton
-          v-if="props.buttons.includes('cancel')"
-          :ctrl-key="`${props.ctrlKey}-btnCancel`"
-          :label-res-name="getI18nResName2('confirmBox', 'btnCancel')"
-          kind="support"
-          icon="cross"
-          @click="() => onButtonClick('cancel')"
-        />
+      <div class="w-full h-auto p-4 sm:p-6">
+        <h3 class="font-semibold text-xl mb-2 sm:mb-6">
+          {{ $t(props.msgResName, props.msgResArgs) }}
+        </h3>  
+        <div class="flex flex-row flex-wrap justify-end mt-6 gap-2 confirm-box-buttons">
+          <UButton v-if="props.buttons.includes('yes')" size="lg" icon="i-heroicons-check" variant="solid" color="primary" @click="() => onButtonClick('yes')">
+            {{ t(getI18nResName2('confirmBox', 'btnYes')) }}
+          </UButton>
+          <UButton v-if="props.buttons.includes('no')" size="lg" icon="i-mdi-close" variant="outline" color="gray" @click="() => onButtonClick('no')">
+            {{ t(getI18nResName2('confirmBox', 'btnNo')) }}
+          </UButton>
+          <UButton v-if="props.buttons.includes('cancel')" size="lg" icon="mdi-close-circle-outline" variant="outline" color="gray" @click="() => onButtonClick('cancel')">
+            {{ t(getI18nResName2('confirmBox', 'btnCancel')) }}
+          </UButton>
+        </div>
       </div>
     </ClientOnly>
-  </VueFinalModal>
+  </UModal>
 </template>

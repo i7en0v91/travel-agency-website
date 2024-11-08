@@ -1,16 +1,8 @@
 <script setup lang="ts">
-import { AppConfig, DefaultLocale, type Locale, getI18nResName2 } from '@golobe-demo/shared';
+import { type Locale, localizePath, getPagePath, AppConfig, getI18nResName2, AppPage } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { joinURL } from 'ufo';
-import CProseH1 from './../content/prose/CProseH1.vue';
-import CProseH2 from './../content/prose/CProseH2.vue';
-import CProseOl from './../content/prose/CProseOl.vue';
-import CProseUl from './../content/prose/CProseUl.vue';
-import CProseThHidden from './../content/prose/CProseThHidden.vue';
-import CProseTheadHidden from './../content/prose/CProseTheadHidden.vue';
-import CProseTd from './../content/prose/CProseTd.vue';
-import CProseTr from './../content/prose/CProseTr.vue';
-import CProseP from './../content/prose/CProseP.vue';
+import ProseStyling from './../content/prose/styling';
 
 definePageMeta({
   title: { resName: getI18nResName2('privacyPage', 'title'), resArgs: undefined }
@@ -30,35 +22,21 @@ const contentParams = computed(() => {
   };
 });
 
-
-const proseStyling = {
-  'h1': CProseH1,
-  'h2': CProseH2,
-  'ol': CProseOl,
-  'ul': CProseUl,
-  'tr': CProseTr,
-  'td': CProseTd,
-  'th': CProseThHidden,
-  'thead': CProseTheadHidden,
-  'p': CProseP
-};
-
+//const contentQueryParams = computed(() => queryContent().locale(locale.value).params());
 const contentQueryParams = queryContent().params();
 
 </script>
 
 <template>
-  <AppPageBody>
-    <div class="px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
-      <ContentDoc tag="article" :query="contentQueryParams" >
-        <template #default="{ doc }">
-          <ContentRenderer 
-            :value="doc" 
-            :data="contentParams"
-            :components="proseStyling"
-          />
-        </template>
-      </ContentDoc>
-    </div>
-  </AppPageBody>
+  <div class="px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
+    <ContentDoc tag="article" :path="localizePath(`/${getPagePath(AppPage.Privacy)}`, locale as Locale)" :query="contentQueryParams" >
+      <template #default="{ doc }">
+        <ContentRenderer 
+          :value="doc" 
+          :data="contentParams"
+          :components="ProseStyling"
+        />
+      </template>
+    </ContentDoc>
+  </div>
 </template>

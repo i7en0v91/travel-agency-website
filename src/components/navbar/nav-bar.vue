@@ -9,6 +9,7 @@ import { getCommonServices } from '../../helpers/service-accessors';
 import { type ComponentInstance } from 'vue';
 import ThemeSwitcher from './theme-switcher.vue';
 import LocaleSwitcher from './locale-switcher.vue';
+import SiteSearchTool from './site-search-tool.vue';
 import NavLogo from './nav-logo.vue';
 import NavUser from './nav-user.vue';
 import orderBy from 'lodash-es/orderBy';
@@ -23,6 +24,7 @@ const props = defineProps<IProps>();
 
 const localeSwitcher = shallowRef<ComponentInstance<typeof LocaleSwitcher>>();
 const themeSwitcher = shallowRef<ComponentInstance<typeof ThemeSwitcher>>();
+const siteSearchTool = shallowRef<ComponentInstance<typeof SiteSearchTool>>();
 
 const verticalNavCollapsed = ref(true);
 
@@ -89,6 +91,13 @@ defineShortcuts({
     }
   }
 });
+
+function openSiteSearch () {
+  setTimeout(() => {
+    logger.debug('(NavBar) showing site search');
+    siteSearchTool.value?.$el?.querySelector('button')?.click();
+  }, 0);
+}
 
 function toggleVerticalNav () {
   setTimeout(() => {
@@ -177,7 +186,10 @@ const verticalNavLinks = computed(() => {
             locale.value as Locale
           ) : undefined)
         ),
-        click: toggleVerticalNav
+        click: li.kind === 'site-search' ? (() => {
+          openSiteSearch();
+          toggleVerticalNav();
+        }) : toggleVerticalNav
       };
     })
   ).filter(group => group.length);
@@ -238,13 +250,19 @@ const verticalNavLinks = computed(() => {
   return [ avatarGroup ?? [], ...navMenuLinks, ...userMenuLinks];
 });
 
+const uiStyling = computed(() => {
+  return {
+    base: `lg:hidden p-0 z-10 ${navButtonsVisible.value ? 'visible' : 'invisible'}`
+  };
+});
+
 </script>
 
 <template>
   <!-- class selectors for horizontal layout: 
     1. remove ring highlight from logo link
     2. hide hamburger toggler for >= large layouts
-    3. hide search page links for mobile layout
+    3. hide search page links & site search for mobile layouts
     4. show favourites links only for XL devices
     5. hide Login & SignUp links for XS devices
     TODO: check moving into :ui props of UHorizontalNavigation
@@ -263,6 +281,8 @@ const verticalNavLinks = computed(() => {
 
       [&_ul:first-of-type_li:nth-of-type(3)]:hidden
       lg:[&_ul:first-of-type_li:nth-of-type(3)]:list-item
+      [&_ul:first-of-type_li:nth-of-type(4)]:hidden
+      lg:[&_ul:first-of-type_li:nth-of-type(4)]:list-item
       [&_ul:first-of-type_li:last-of-type]:hidden
       lg:[&_ul:first-of-type_li:last-of-type]:list-item
 
@@ -277,7 +297,7 @@ const verticalNavLinks = computed(() => {
     <template #default="{ link }">
       <NavLogo v-if="link.kind === 'nav-logo'"  ctrl-key="navLogo"/>
       <ClientOnly v-else-if="link.kind === 'nav-toggler'" >
-        <UButton size="md" :class="`lg:hidden p-0 z-10 ${navButtonsVisible ? 'visible' : 'invisible'}`" :icon="`${verticalNavCollapsed ? 'cil-hamburger-menu' : 'i-ph-x'}`" variant="link" color="gray" @click="toggleVerticalNav"/>
+        <UButton size="md" :ui="uiStyling" :icon="`${verticalNavCollapsed ? 'cil-hamburger-menu' : 'i-ph-x'}`" variant="link" color="gray" @click="toggleVerticalNav"/>
       </ClientOnly>
       <ClientOnly v-else-if="link.kind === 'locale-switcher' && navButtonsVisible">
         <LocaleSwitcher  ref="localeSwitcher" ctrl-key="navLocaleSwitcher" class="z-70"/>
@@ -285,14 +305,17 @@ const verticalNavLinks = computed(() => {
       <ClientOnly v-else-if="link.kind === 'theme-switcher'">
         <ThemeSwitcher ref="themeSwitcher" ctrl-key="navThemeSwitcher" :class="`${navButtonsVisible ? 'visible' : 'invisible'}`" />
       </ClientOnly>
+      <ClientOnly v-else-if="link.kind === 'site-search'">
+        <SiteSearchTool ref="siteSearchTool" :class="`${navButtonsVisible ? 'visible' : 'invisible'}`" />
+      </ClientOnly>
       <NavUser v-else-if="link.kind === 'nav-user' && navButtonsVisible" ctrl-key="navUser" @vertical-nav-toggled="toggleVerticalNav"/>
       <span v-else :class="`text-sm sm:text-base text-nowrap z-10 ${link.kind === 'signup' ? 'auth-link bg-black text-white hover:bg-white-100/80 dark:bg-white dark:text-black dark:hover:bg-gray-100/80 rounded-lg px-3.5 py-2 sm:py-3.5 font-semibold' : (link.kind === 'login' ? 'auth-link' : (link.kind === 'favourites' ? 'favourites-link' : 'search-page-link'))}`" >{{ link.label }}</span>
     </template>
   </UHorizontalNavigation>
-  <UContainer v-if="verticalNavCollapsed" class="pt-4">
-    <slot />
-  </UContainer>
-  <UContainer v-else>
-    <UVerticalNavigation id="nav-main-v" :links="verticalNavLinks" class="mt-2" :aria-label="$t(getI18nResName2('ariaLabels', 'navMain'))"/>   
+  <UContainer class="pt-4">
+    <div :class="!verticalNavCollapsed ? `absolute z-0 hidden` : ''">
+      <slot />
+    </div>
+    <UVerticalNavigation v-if="!verticalNavCollapsed" id="nav-main-v" :links="verticalNavLinks" class="mt-2 relative z-[1]" :aria-label="$t(getI18nResName2('ariaLabels', 'navMain'))"/>   
   </UContainer>
 </template>

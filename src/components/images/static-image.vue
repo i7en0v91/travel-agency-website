@@ -119,13 +119,12 @@ if(props.entitySrc) {
 }
 
 // no need to make it computed at the moment
-const stubCssClass = computed(() => {
-  //return `${loaded.value ? 'img-loaded' : ''} ${hasStaticStubData ? '' : 'static-image-stub-animated'} ${!props.showStub ? 'static-image-stub-hidden' : ''}`;
+const stubStyleClass = computed(() => {
   return `${loaded.value ? 'invisible' : ''} ${!props.showStub ? 'invisible' : ''}`;
   
 });
 
-const imgCssClass = computed(() => {
+const imgStyleClass = computed(() => {
   return `row-start-1 row-end-2 col-start-1 col-end-2 block w-full h-auto object-cover text-[0] z-[2] bg-transparent ${props.ui?.img ?? ''} ${invertForDarkTheme.value ? 'invert' : ''}`;
 });
 
@@ -213,10 +212,10 @@ onMounted(() => {
 
 <template>
   <div role="img" :class="ui?.wrapper">
-    <ErrorHelm v-model:is-error="isError" appearance="error-stub" :user-notification="false">
+    <ErrorHelm v-model:is-error="isError" :ui="{ stub: ui?.errorStub }" appearance="error-stub" :user-notification="false">
       <div class="w-full h-full grid grid-rows-1 grid-cols-1 overflow-hidden">
         <USkeleton v-if="!loaded && showStub && !finalStubStyle" :class="`row-start-1 row-end-2 col-start-1 col-end-2 block w-full h-full ${ui?.stub ?? ''}`"/>
-        <div v-else :class="`row-start-1 row-end-2 col-start-1 col-end-2 block w-full h-full ${stubCssClass} ${ui?.stub ?? ''}`" :style="finalStubStyle"/>
+        <div v-else :class="`row-start-1 row-end-2 col-start-1 col-end-2 block w-full h-full ${stubStyleClass} ${ui?.stub ?? ''}`" :style="finalStubStyle"/>
         <ClientOnly v-if="imgIsClientOnly">
           <nuxt-img
             v-if="imgUrl"
@@ -229,7 +228,7 @@ onMounted(() => {
             :provider="props.entitySrc ? 'entity' : undefined"
             :modifiers="props.entitySrc ? { imgSrcSize: imageSize } : {}"
             :alt="props.altResName ? $t(props.altResName!, props.altResParams) : ''"
-            :class="imgCssClass"
+            :class="imgStyleClass"
             :fetchpriority="isHighPriority ? 'high' : 'auto'"
             @load="onLoad"
             @error="onError"
@@ -246,7 +245,7 @@ onMounted(() => {
           :provider="props.entitySrc ? 'entity' : undefined"
           :modifiers="props.entitySrc ? { imgSrcSize: imageSize } : {}"
           :alt="props.altResName ? $t(props.altResName!, props.altResParams) : ''"
-          :class="imgCssClass"
+          :class="imgStyleClass"
           :fetchpriority="isHighPriority ? 'high' : 'auto'"
           @load="onLoad"
           @error="onError"

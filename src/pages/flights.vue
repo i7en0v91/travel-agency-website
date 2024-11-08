@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { FlightsTitleSlug, ImageCategory, type EntityId, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { type Locale, localizePath, getPagePath, AppPage, FlightsTitleSlug, ImageCategory, type EntityId, getI18nResName2 } from '@golobe-demo/shared';
 import { TravelDetailsHtmlAnchor } from './../helpers/constants';
-import PageSection from './../components/common-page-components/page-section.vue';
 import HeadingText from './../components/flights/flights-heading-text.vue';
-import WorldMap from './../components/flights/world-map.vue';
-import TravelCities from './../components/common-page-components/travel-details/travel-cities.vue';
-import TravelDetails from './../components/common-page-components/travel-details/travel-details.vue';
 import { getCommonServices } from '../helpers/service-accessors';
+import ProseStyling from './../content/prose/styling';
 
 definePageMeta({
   title: { resName: getI18nResName2('flightsPage', 'title'), resArgs: undefined }
@@ -14,6 +11,11 @@ definePageMeta({
 useOgImage();
 
 const logger = getCommonServices().getLogger();
+
+const { locale } = useI18n();
+
+//const contentQueryParams = computed(() => queryContent().locale(locale.value).params());
+const contentQueryParams = queryContent().params();
 
 const travelDetailsStore = useTravelDetailsStore();
 function scrollToTravelDetailsSection () {
@@ -64,31 +66,32 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flights-page no-hidden-parent-tabulation-check">
-    <!--
+  <div class="flights-page">
     <SearchPageHead
       ctrl-key="SearchPageHeadFlights"
-      class="flights-page-head"
       :image-entity-src="{ slug: FlightsTitleSlug }"
       :category="ImageCategory.PageTitle"
       :image-alt-res-name="getI18nResName2('searchPageCommon', 'mainImageAlt')"
-      overlay-class="search-flights-page-head-overlay"
       single-tab="flights"
+      :ui="{
+        content: 'h-[701px] max-h-[701px] md:h-[581px] md:max-h-[581px]',
+        image: {
+          wrapper: 'h-[701px] max-h-[701px] md:h-[581px] md:max-h-[581px]',
+          img: 'h-full max-h-[701px] md:max-h-[581px]',
+          overlay: 'bg-gradient-to-b from-gray-700 to-60% opacity-75'
+        }
+      }"
     >
       <HeadingText ctrl-key="FlightsPageHeading" />
     </SearchPageHead>
-    <PageSection
-      ctrl-key="LetGoPlacesSectionFlights"
-      :header-res-name="getI18nResName3('flightsPage', 'letsGoPlacesSection', 'title')"
-      :subtext-res-name="getI18nResName3('flightsPage', 'letsGoPlacesSection', 'subtext')"
-      :btn-text-res-name="getI18nResName3('flightsPage', 'letsGoPlacesSection', 'btn')"
-      :content-padded="false"
-    >
-      <WorldMap ctrl-key="WorldMap" />
-    </PageSection>
-    <TravelCities ctrl-key="FlightsTravelCitiesSection" book-kind="flight" />
-    <TravelDetails :id="TravelDetailsHtmlAnchor" ctrl-key="FlightsTravelDetailsSection" book-kind="flight" />
-    -->
-    PAGE CONTENT
+
+    <ContentDoc :path="localizePath(`/${getPagePath(AppPage.Flights)}`, locale as Locale)" :query="contentQueryParams" >
+      <template #default="{ doc }">
+        <ContentRenderer 
+          :value="doc" 
+          :components="ProseStyling"
+        />
+      </template>
+    </ContentDoc>
   </div>
 </template>

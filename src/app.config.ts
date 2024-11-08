@@ -58,6 +58,7 @@ export default defineAppConfig({
     horizontalNavigation: {
       base: 'sm:text-base font-semibold focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400',
       label: 'sm:text-base',
+      after: 'after:h-[4px] after:rounded-none',
       icon: {
         base: 'sm:w-6 sm:h-6',
         active: 'text-gray-900',
@@ -82,8 +83,8 @@ export default defineAppConfig({
         height: 'h-16',
         padding: '!pb-4 !pt-3',
         marker: {
-          wrapper: '!top-[unset] !bottom-[1px] !h-[2px]',
-          base: 'w-full !h-[2px]',
+          wrapper: '!top-[unset] !bottom-[1px] !h-[4px]',
+          base: 'w-full !h-[4px]',
           background: 'bg-primary-500 dark:bg-primary-400',
           rounded: 'rounded-none',
           shadow: 'shadow-none'

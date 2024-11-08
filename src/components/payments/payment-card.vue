@@ -2,6 +2,7 @@
 import { getI18nResName1, getI18nResName2, getI18nResName3, formatValidThruDate } from '@golobe-demo/shared';
 import { TooltipHideTimeout } from './../../helpers/constants';
 import { getCommonServices } from '../../helpers/service-accessors';
+import { type ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string,
@@ -12,7 +13,7 @@ const props = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 
-const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
+const tooltip = shallowRef<ComponentInstance<typeof Tooltip>>();
 
 function scheduleTooltipAutoHide () {
   setTimeout(() => { tooltip.value?.hide(); }, TooltipHideTimeout);

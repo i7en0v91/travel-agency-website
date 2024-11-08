@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { AppPage, type Locale, getI18nResName3, getI18nResName2, type ILocalizableValue, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
-import { useNavLinkBuilder } from '../../composables/nav-link-builder';
+import { useNavLinkBuilder } from '../../../composables/nav-link-builder';
 
 interface IProps {
   ctrlKey: string,
@@ -30,7 +30,7 @@ const navLinkBuilder = useNavLinkBuilder();
         :show-stub="true"
       />
       <div class="w-fit h-max flex-grow-0 flex-shrink basis-auto">
-        <div v-if="text" class="ml-1 text-gray-400 dark:text-gray-500 w-fit h-auto overflow-hidden line-clamp-2 whitespace-pre-wrap font-semibold font-h5">
+        <div v-if="text" class="ml-1 text-gray-400 dark:text-gray-500 w-fit h-auto overflow-hidden line-clamp-2 whitespace-pre-wrap font-semibold">
           {{ (props.text as any)[locale] }}
         </div>
         <USkeleton v-else class="w-50 h-3" />

@@ -1,9 +1,9 @@
 import { getCommonServices } from '../helpers/service-accessors';
-import type { ShallowRef } from 'vue';
+import type { ComponentInstance, ShallowRef } from 'vue';
 import type { UCarousel } from '../.nuxt/components';
 import { AppConfig } from '@golobe-demo/shared';
 
-export function useCarouselPlayer (carouselRef: ShallowRef<InstanceType<typeof UCarousel>>) {
+export function useCarouselPlayer (carouselRef: ShallowRef<ComponentInstance<typeof UCarousel>>) {
   const logger = getCommonServices().getLogger();
 
   if(import.meta.server) {
@@ -13,7 +13,7 @@ export function useCarouselPlayer (carouselRef: ShallowRef<InstanceType<typeof U
 
   let timerHandle: ReturnType<typeof startTimer> | undefined;
 
-  function startTimer(instance: InstanceType<typeof UCarousel>, intervalMs: number) {
+  function startTimer(instance: ComponentInstance<typeof UCarousel>, intervalMs: number) {
     logger.verbose(`(carousel-player) starting player`);
 
     const handle = setInterval(() => {

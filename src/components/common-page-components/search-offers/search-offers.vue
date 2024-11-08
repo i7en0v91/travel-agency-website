@@ -9,6 +9,7 @@ import { TooltipHideTimeout } from './../../../helpers/constants';
 import type SearchFlightOffers from './search-flight-offers.vue';
 import type SearchStayOffers from './search-stay-offers.vue';
 import { type RouteLocationRaw } from 'vue-router';
+import { type ComponentInstance } from 'vue';
 import set from 'lodash-es/set';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 import { usePreviewState } from './../../../composables/preview-state';
@@ -38,8 +39,8 @@ const searchStayStore = await searchOffersStoreAccessor.getInstance<ISearchStayO
 const selectedTab = ref<string | undefined>();
 
 const promoTooltipShown = ref(false);
-const searchFlights = shallowRef<InstanceType<typeof SearchFlightOffers> | undefined>();
-const searchStays = shallowRef<InstanceType<typeof SearchStayOffers> | undefined>();
+const searchFlights = shallowRef<ComponentInstance<typeof SearchFlightOffers> | undefined>();
+const searchStays = shallowRef<ComponentInstance<typeof SearchStayOffers> | undefined>();
 
 const logger = getCommonServices().getLogger();
 const router = useRouter();
@@ -262,6 +263,7 @@ const searchBtnLabel = computed(() => {
   <section class="block w-[95%] max-w-[1700px] !overflow-visible bg-white dark:bg-gray-900 rounded-3xl shadow-lg dark:shadow-gray-700 mx-auto px-4 md:px-8 pt-1 pb-8 overflow-x-clip -translate-y-[10%] z-[2]" role="search">
     <div v-if="!minimumButtons" class="block w-full h-auto">
       <TabsGroup
+        v-if="!singleTab"
         v-model:activeTabKey="selectedTab"
         class="w-full pt-1"
         :ctrl-key="`${props.ctrlKey}-TabControl`"
@@ -276,6 +278,13 @@ const searchBtnLabel = computed(() => {
           <SearchStayOffers v-else :id="staysTabHtmlId" ref="searchStays" ctrl-key="SearchStayOffersBox" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
         </KeepAlive>
       </TabsGroup>
+      <div v-else>
+        <h2 class="text-xl font-semibold mt-6 sm:mt-8 mb-8 text-gray-900 dark:text-white">
+          {{ $t(getI18nResName2('searchOffers', 'whereToFly')) }}
+        </h2>
+        <SearchFlightOffers v-if="singleTab === 'flights'" :id="flightsTabHtmlId" ref="searchFlights" ctrl-key="SearchFlightOffersBox" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
+        <SearchStayOffers v-else :id="staysTabHtmlId" ref="searchStays" ctrl-key="SearchStayOffersBox" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
+      </div>
       <div class="flex flex-col sm:flex-row justify-end items-center flex-nowrap gap-[8px] sm:gap-[24px] mt-[8px] sm:mt-[32px]">
         <UPopover v-model:open="promoTooltipShown" :popper="{ placement: 'bottom' }" class="flex-grow-0 flex-shrink basis-auto">
           <UButton icon="i-ion-add" size="lg" class="text-gray-500 dark:text-gray-400 focus-visible:ring-2 focus-visible:ring-gray-500 dark:focus-visible:ring-gray-400  bg-transparent hover:bg-gray-100 disabled:bg-transparent aria-disabled:bg-transparent dark:bg-transparent dark:hover:bg-gray-800 dark:disabled:!bg-transparent dark:aria-disabled:!bg-transparent" variant="soft" color="gray" @click="scheduleTooltipAutoHide">

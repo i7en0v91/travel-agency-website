@@ -29,7 +29,7 @@ function onClick () {
   $emit('click');
 }
 
-const cssClass = computed(() => {
+const styleClass = computed(() => {
   let result = `btn py-xs-3 px-xs-2 ${props.icon ? `btn-icon icon-${props.icon}` : ''} ${!(props.labelResName?.length ?? 0) ? 'btn-icon-only' : ''} ${(props.enabled ?? true) ? 'enabled' : 'disabled'} ${props.tabbableGroupId ? `tabbable-group-${props.tabbableGroupId}` : ''}`;
   switch (props.kind) {
     case 'icon':
@@ -48,7 +48,7 @@ const cssClass = computed(() => {
 </script>
 
 <template>
-  <button :class="cssClass" type="button" :aria-label="ariaLabelResName ? $t(ariaLabelResName) : undefined" :title="titleResName ? $t(titleResName) : undefined" @click="onClick">
+  <button :class="styleClass" type="button" :aria-label="ariaLabelResName ? $t(ariaLabelResName) : undefined" :title="titleResName ? $t(titleResName) : undefined" @click="onClick">
     {{ labelResName ? (labelResArgs ? $t(labelResName, labelResArgs) : $t(labelResName)) : '' }}
   </button>
 </template>

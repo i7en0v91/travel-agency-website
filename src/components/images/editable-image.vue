@@ -29,8 +29,15 @@ interface IProps {
   ui?: {
     wrapper?: string,
     image?: IStaticImageUiProps,
-    button?: string,
-    icon?: string
+    btn?: { 
+      wrapper?: string,
+      base?: string,
+      rounded?: string,
+      icon?: {
+        name?: string,
+        base?: string
+      } 
+    }
   }
 }
 
@@ -48,19 +55,7 @@ const props = withDefaults(defineProps<IProps>(), {
 
 const { status } = useAuth();
 
-const { open } = useModal({
-  component: CroppingBox,
-  attrs: {
-    ctrlKey: `${props.ctrlKey}-croppingBox`,
-    category: props.category,
-    fillAlpha: props.fillAlpha,
-    clickToClose: false,
-    escToClose: true,
-    onClosed () {
-      uploadCroppedImage();
-    }
-  }
-});
+const open = ref(false);
 
 const modalWaitingIndicator = useModal({
   component: ModalWaitingIndicator,
@@ -70,6 +65,7 @@ const modalWaitingIndicator = useModal({
   }
 });
 const fileInputEl = shallowRef<HTMLInputElement>();
+const selectedFile = ref<FileList | null>(null);
 const staticImageComponent = shallowRef<ComponentInstance<typeof StaticImage>>();
 
 const userNotificationStore = useUserNotificationStore();
@@ -79,7 +75,13 @@ let uploadingFileName: string = '';
 
 const $emit = defineEmits(['update:entitySrc']);
 
-async function uploadCroppedImage () : Promise<void> {
+function onClosed () {
+  logger.debug(`(editable-image) cropper window closed, ctrlKey=${props.ctrlKey}`);
+  open.value = false;
+  uploadCroppedImageIfSpecified();
+}
+
+async function uploadCroppedImageIfSpecified () : Promise<void> {
   if (status.value !== 'authenticated') {
     resetCurrentImageData();
     const { signIn } = useAuth();
@@ -91,17 +93,17 @@ async function uploadCroppedImage () : Promise<void> {
   if (imageDataBase64 && imageDataBase64.length > 0) {
     try {
       const imageBytes = Buffer.from(imageDataBase64, 'base64');
-      logger.info(`(editable-image) starting to upload image data, size=${imageBytes.length}, fileName=${uploadingFileName}`);
+      logger.info(`(editable-image) starting to upload image data, ctrlKey=${props.ctrlKey}, size=${imageBytes.length}, fileName=${uploadingFileName}`);
       await modalWaitingIndicator.open();
 
       const query = uploadingFileName.length > 0 ? { fileName: uploadingFileName, category: props.category } : undefined;
       const uploadedImageInfo = await post<any, IImageUploadResultDto>(`/${ApiEndpointUserImageUpload}`, query, imageBytes, undefined, true, undefined, 'default');
       if (uploadedImageInfo) {
-        logger.info(`(editable-image) image uploaded, size=${imageBytes.length}, fileName=${uploadingFileName}`);
+        logger.info(`(editable-image) image uploaded, ctrlKey=${props.ctrlKey}, size=${imageBytes.length}, fileName=${uploadingFileName}`);
         $emit('update:entitySrc', uploadedImageInfo);
       }
     } catch (err: any) {
-      logger.warn(`(editable-image) failed to upload image data, size=${imageDataBase64.length}, fileName=${uploadingFileName}`, err);
+      logger.warn(`(editable-image) failed to upload image data, ctrlKey=${props.ctrlKey}, size=${imageDataBase64.length}, fileName=${uploadingFileName}`, err);
       throw err;
     } finally {
       resetCurrentImageData();
@@ -119,9 +121,7 @@ function readCurrentImageData (): string | undefined {
 
 function resetCurrentImageData () {
   setCurrentImageData(null);
-  if (fileInputEl.value) {
-    fileInputEl.value.value = '';
-  }
+  selectedFile.value = null;
 }
 
 function setCurrentImageData (data: string | null) {
@@ -134,7 +134,7 @@ function setImageForEdit (file: File) {
 
     reader.onload = (event) => {
       if (!event.target?.result) {
-        logger.warn('(editable-image) failed to load image - empty file');
+        logger.warn(`(editable-image) failed to load image - empty file, ctrlKey=${props.ctrlKey}`);
         userNotificationStore.show({
           level: UserNotificationLevel.ERROR,
           resName: getI18nResName3('editableImage', 'issues', 'imageLoadFailed')
@@ -154,7 +154,7 @@ function setImageForEdit (file: File) {
       const fileBase64 = event.target!.result as string;
       setCurrentImageData(fileBase64);
       uploadingFileName = file.name ? basename(file.name, extname(file.name)) : '';
-      open();
+      open.value = true;
     };
     reader.onerror = () => {
       logger.warn('(editable-image) exception during image load');
@@ -187,6 +187,7 @@ function setImageForEdit (file: File) {
 function onFileSelected (e: Event) {
   const htmlInputElement = (e.target as HTMLInputElement);
   const files = htmlInputElement.files;
+  logger.verbose(`(editable-image) selected files changed handler, ctrlKey=${props.ctrlKey}, count=${files?.length}`);
   if ((files?.length ?? 0) === 0) {
     logger.info('(editable-image) no files were selected');
     resetCurrentImageData();
@@ -210,7 +211,7 @@ function onFileSelected (e: Event) {
   }
 
   if (!file.type.includes('image/')) {
-    logger.info(`(editable-image) file is not an image, type = ${file.type}`);
+    logger.info(`(editable-image) file is not an image, ctrlKey=${props.ctrlKey}, type = ${file.type}`);
     resetCurrentImageData();
     userNotificationStore.show({
       level: UserNotificationLevel.WARN,
@@ -220,6 +221,7 @@ function onFileSelected (e: Event) {
   }
 
   setImageForEdit(file);
+  logger.debug(`(editable-image) selected files changed handler completed, ctrlKey=${props.ctrlKey}, count=${files?.length}`);
 }
 
 function setImage (image: IImageEntitySrc) {
@@ -227,7 +229,13 @@ function setImage (image: IImageEntitySrc) {
 }
 
 function openFileDialog () {
-  fileInputEl.value?.click();
+  const inputEl = fileInputEl.value;
+  if(!inputEl) {
+    logger.warn(`(editable-image) file dialog not button not found, ctrlKey=${props.ctrlKey}`);
+    return;
+  }
+  inputEl.value = inputEl.innerText = '';
+  inputEl.click();
 }
 
 const fileInputHtmlId = useId();
@@ -236,14 +244,28 @@ defineExpose({
   setImage
 });
 
+const uiStyling = props.ui?.btn ? { 
+  base: props.ui.btn.base,
+  rounded: props.ui.btn.rounded,
+  icon: { 
+    base: props.ui.btn.icon?.base
+  }
+} : undefined;
+
+watch(open, () => {
+  if(!open.value) {
+    onClosed();
+  }
+}, { immediate: false });
+
 </script>
 
 <template>
-  <div :class="`editable-image ${props.ui?.wrapper ?? ''}`" role="img">
+  <div :class="`${props.ui?.wrapper ?? ''}`" role="img">
     <StaticImage
       ref="staticImageComponent"
       :ctrl-key="`editableImage-${ctrlKey}`"
-      :ui="{ ...(ui?.image ?? {}), wrapper: `editable-image-static-view ${ui?.image?.wrapper ?? ''}` }"
+      :ui="ui?.image"
       :show-stub="showStub"
       :entity-src="entitySrc"
       :category="category"
@@ -251,15 +273,33 @@ defineExpose({
       :is-high-priority="isHighPriority"
       :alt-res-name="altResName"
     />
-    <label :for="fileInputHtmlId" :class="`tabbable btn ${ui?.button ?? ''} py-xs-3 px-xs-2 ${ui?.icon ? `btn-icon icon-${ui?.icon}` : ''}`" @keyup.enter="openFileDialog" @keyup.space="openFileDialog">{{ btnResName ? $t(btnResName) : '&nbsp;' }}</label>
-    <input
-      :id="fileInputHtmlId"
-      ref="fileInputEl"
-      :style=" { display: 'none' } "
-      type="file"
-      name="image"
-      accept="image/*"
-      @change="onFileSelected"
-    >
+    <div :class="`relative ${props.ui?.btn?.wrapper ?? ''}`">
+      <input
+        :id="fileInputHtmlId"
+        ref="fileInputEl"
+        class="hidden"
+        type="file"
+        name="image"
+        accept="image/*"
+        @change="onFileSelected"
+      >
+      <UButton size="lg" :icon="ui?.btn?.icon?.name ?? 'ion-cloud-upload-sharp'" :ui="uiStyling" variant="solid" color="primary" :aria-label="$t(getI18nResName2('ariaLabels', 'ariaLabelSwap'))"  @click="openFileDialog">        
+        {{ btnResName ? $t(btnResName) : '' }}
+      </UButton>
+
+      <UModal
+        v-model="open" 
+        :ui="{ 
+          container: 'items-center',
+          width: 'w-full min-w-[300px] w-[calc(min(85vw,70vh))]',
+          height: 'h-auto' 
+        }">
+        <CroppingBox 
+          :ctrl-key="`${props.ctrlKey}-croppingBox`"
+          :category="props.category"
+          :fill-alpha="props.fillAlpha"
+          @close="onClosed"/>
+      </UModal>
+    </div>
   </div>
 </template>

@@ -161,14 +161,14 @@ const isServer = import.meta.server ?? false;
 const isMounted = ref(false);
 const cityLabelsVisibilityClass = computed(() => {
   if (isServer) {
-    return '';
+    return 'invisible';
   }
 
   if (!isMounted.value) {
-    return '';
+    return 'invisible';
   }
 
-  return (worldMap?.displayedObjects.citiesVisible ?? false) ? 'visible' : '';
+  return (worldMap?.displayedObjects.citiesVisible ?? false) ? '' : 'invisible';
 });
 
 let worldMapInViewportEventRaised = false;
@@ -201,24 +201,15 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="world-map">
-    <ErrorHelm :is-error="(worldMap ? (worldMap.status.value === 'error') : false) || worldMapRenderError">
-      <PerfectScrollbar
-        class="world-map-container"
-        :options="{
-          suppressScrollY: true,
-          swipeEasing: true,
-          wheelPropagation: true
-        }"
-        :watch-options="false"
-        tag="div"
-      >
-        <div class="world-map-content">
-          <canvas v-if="worldMap?.status.value === 'ready' && worldMap?.viewport" id="worldMapCanvas" ref="canvasEl" :width="worldMap.viewport.width" :height="worldMap.viewport.height" />
+  <div class="w-full min-h-worldmaph bg-primary-300 dark:bg-mintgreen-600 world-map">
+    <ErrorHelm :is-error="(worldMap ? (worldMap.status.value === 'error') : false) || worldMapRenderError" :ui="{ stub: 'min-h-worldmaph rounded-none' }">
+      <div class="overflow-x-auto overflow-y-hidden w-full h-full">
+        <div class="aspect-worldmap grid grid-rows-1 grid-cols-1 min-w-worldmapw max-w-worldmapw md:w-full md:max-w-full">
+          <canvas v-if="worldMap?.status.value === 'ready' && worldMap?.viewport" id="worldMapCanvas" ref="canvasEl" :width="worldMap.viewport.width" :height="worldMap.viewport.height" class="w-full h-full row-start-1 row-end-2 col-start-1 col-end-2 z-[1]" />
           <WorldMapCityLabel
             v-for="(city) in (worldMap?.displayedObjects.cities ?? [])"
             :key="`world-map-city-${city.slug}`"
-            :class="cityLabelsVisibilityClass"
+            :class="`row-start-1 row-end-2 col-start-1 col-end-2 z-[2] ${cityLabelsVisibilityClass}`"
             :slug="city.slug"
             :ctrl-key="`WorldMapCityLabel-${city.slug}`"
             :city-name="city.cityDisplayName"
@@ -227,7 +218,7 @@ onUnmounted(() => {
             :relative-coord="city.nearestPoint.coord"
           />
         </div>
-      </PerfectScrollbar>
+      </div>
     </ErrorHelm>
   </div>
 </template>

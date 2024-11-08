@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { AppConfig, getI18nResName2 } from '@golobe-demo/shared';
+import { AppConfig } from '@golobe-demo/shared';
 import { type IPopularCityDto, ApiEndpointPopularCitiesList } from './../../../server/api-definitions';
 import range from 'lodash-es/range';
-import PageSection from './../page-section.vue';
 import TravelCityCard from './travel-city-card.vue';
+import { type ComponentInstance } from 'vue';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
+import { useCarouselPlayer } from '../../../composables/carousel-player';
+import type { UCarousel } from './../../../.nuxt/components';
+
 
 interface IProps {
   ctrlKey: string,
@@ -17,6 +20,9 @@ const logger = getCommonServices().getLogger();
 
 const nuxtApp = useNuxtApp();
 const { enabled } = usePreviewState();
+
+const carouselRef = shallowRef<ComponentInstance<typeof UCarousel> | undefined>();
+useCarouselPlayer(carouselRef);
 
 const popularCitiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`,
   {
@@ -39,53 +45,26 @@ const popularCitiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`
 </script>
 
 <template>
-  <PageSection
-    :ctrl-key="`${ctrlKey}-TravelCities`"
-    :content="{
-      headerResName: getI18nResName2('travelCities', 'title'),
-      subtextResName: getI18nResName2('travelCities', 'subtext'),
-      btnTextResName: getI18nResName2('travelCities', 'btn')
-    }"
-    :content-padded="true"
-    :is-error="!!popularCitiesListFetch.error.value"
-  >
-  <!--
-  <Swiper
-      class="travel-cities-swiper pb-xs-4"
-      :modules="[Navigation, Mousewheel, Autoplay]"
-      slides-per-view="auto"
-      :navigation="{
-        enabled: true,
-        nextEl: null,
-        prevEl: null
+  <ErrorHelm :is-error="!!popularCitiesListFetch.error.value">
+    <UCarousel
+      v-slot="{ item: city }" 
+      ref="carouselRef"
+      :items="popularCitiesListFetch.data.value" 
+      :ui="{ 
+        container: 'gap-4',
+        item: 'snap-end justify-around basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5 xxl:basis-1/6' 
       }"
-      space-between="16"
-      :loop="true"
-      :allow-touch-move="true"
-      :simulate-touch="true"
-      :autoplay="{
-        delay: AppConfig.sliderAutoplayPeriodMs
-      }"
-      :mousewheel="{
-        forceToAxis: true
-      }"
+      :indicators="false" 
     >
-      <SwiperSlide
-        v-for="(city, index) in popularCitiesListFetch.data.value"
-        :key="`${ctrlKey}-TravelCity-${index}`"
-        :style="{width: 'auto'}"
-      >
-        <TravelCityCard
-          :ctrl-key="`${ctrlKey}-TravelCity-${index}`"
-          :book-kind="bookKind"
-          :city-name="city?.cityDisplayName ?? undefined"
-          :promo-line="city?.promoLine ?? undefined"
-          :promo-price="city?.promoPrice ?? undefined"
-          :img-src="city?.imgSlug ? { slug: city.imgSlug, timestamp: city.timestamp } : undefined"
-          :city-slug="city?.slug"
-        />
-      </SwiperSlide>
-    </Swiper>
-  -->
-  </PageSection>
+    <TravelCityCard
+      :ctrl-key="`${ctrlKey}-TravelCity-${city?.id}`"
+      :book-kind="bookKind"
+      :city-name="city?.cityDisplayName ?? undefined"
+      :promo-line="city?.promoLine ?? undefined"
+      :promo-price="city?.promoPrice ?? undefined"
+      :img-src="city?.imgSlug ? { slug: city.imgSlug, timestamp: city.timestamp } : undefined"
+      :city-slug="city?.slug"
+    />
+    </UCarousel>
+  </ErrorHelm>
 </template>

@@ -1,20 +1,28 @@
-# Policy regarding the processing of personal data
+---
+title: 'Privacy policy'
+description: 'Policy regarding the processing of personal data'
+head: false
+---
 
-1. ## General Provisions
+# Policy regarding the processing of personal data &nbsp;
+
+<!--more-->
+
+## 1. General Provisions &nbsp;
 
 This personal data processing policy has been drawn up in accordance with the requirements of the Federal Law of July 27, 2006. № 152-FZ «On personal data» (hereinafter referred to as the Personal Data Law) and determines the procedure for processing personal data and measures to ensure the security of personal data by the website information system (hereinafter referred to as the Operator).
 
 1.1. The operator sets as its most important goal and condition for carrying out its activities the observance of the rights and freedoms of man and citizen when processing his personal data, including the protection of the rights to privacy, personal and family secrets.
 
-1.2. This Operator's policy regarding the processing of personal data (hereinafter referred to as the Policy) applies to all information that the Operator may receive about visitors to the website [{{ $doc.siteUrl }}](/) 
+1.2. This Operator's policy regarding the processing of personal data (hereinafter referred to as the Policy) applies to all information that the Operator may receive about visitors to the website [{{ $doc.siteUrl }}](/).
 
-2. ## Basic concepts used in the Policy
+## 2. Basic concepts used in the Policy &nbsp;
 
 2.1. Automated processing of personal data — processing of personal data using computer technology.
 
 2.2. Blocking personal data — temporary cessation of processing of personal data (except for cases where processing is necessary to clarify personal data).
 
-2.3. Website — a set of graphic and information materials, as well as computer programs and databases that ensure their availability on the Internet at the network address [{{ $doc.siteUrl }}](/)
+2.3. Website — a set of graphic and information materials, as well as computer programs and databases that ensure their availability on the Internet at the network address [{{ $doc.siteUrl }}](/).
 
 2.4. Personal data information system — the totality of personal data contained in databases and the information technologies and technical means that ensure their processing.
 
@@ -24,11 +32,11 @@ This personal data processing policy has been drawn up in accordance with the re
 
 2.7. Operator — state body, municipal body, legal entity or individual, independently or jointly with other persons organizing and/or carrying out the processing of personal data, as well as determining the purposes of processing personal data, the composition of personal data to be processed, actions (operations) performed with personal data.
 
-2.8. Personal data — any information relating directly or indirectly to a specific or identifiable User of the website [{{ $doc.siteUrl }}](/)
+2.8. Personal data — any information relating directly or indirectly to a specific or identifiable User of the website [{{ $doc.siteUrl }}](/).
 
 2.9. Personal data authorized by the subject of personal data for distribution, — personal data, access to an unlimited number of persons is provided by the subject of personal data by giving consent to the processing of personal data authorized by the subject of personal data for distribution in the manner prescribed by the Law on Personal Data (hereinafter referred to as personal data permitted for distribution).
 
-2.10. User — any visitor to the website [{{ $doc.siteUrl }}](/)
+2.10. User — any visitor to the website [{{ $doc.siteUrl }}](/).
 
 2.11. Providing personal data — actions aimed at disclosing personal data to a certain person or a certain circle of persons.
 
@@ -38,7 +46,7 @@ This personal data processing policy has been drawn up in accordance with the re
 
 2.14. Destruction of personal data — any actions as a result of which personal data is irretrievably destroyed with the impossibility of further restoration of the content of personal data in the personal data information system and/or the physical media of personal data are destroyed.
 
-3. ## Basic rights and obligations of the Operator
+## 3. Basic rights and obligations of the Operator &nbsp;
 
 3.1. The operator has the right:
 - receive from the subject of personal data reliable information and/or documents containing personal data;
@@ -56,7 +64,7 @@ This personal data processing policy has been drawn up in accordance with the re
 - perform other duties provided for by the Personal Data Law.
 
 
-4. ## Basic rights and obligations of personal data subjects
+## 4. Basic rights and obligations of personal data subjects &nbsp;
 
 4.1. Subjects of personal data have the right:
 - receive information regarding the processing of his personal data, except for cases provided for by federal laws. The information is provided to the subject of personal data by the Operator in an accessible form, and it should not contain personal data relating to other subjects of personal data, except in cases where there are legal grounds for the disclosure of such personal data. The list of information and the procedure for obtaining it is established by the Law on Personal Data;
@@ -73,7 +81,7 @@ This personal data processing policy has been drawn up in accordance with the re
 
 4.3. Persons who provided the Operator with false information about themselves, or information about another subject of personal data without the latter's consent, are liable in accordance with the legislation of the Russian Federation.
 
-5. ## Principles for processing personal data
+## 5. Principles for processing personal data &nbsp;
 
 5.1. Processing of personal data is carried out on a legal and fair basis.
 
@@ -89,7 +97,7 @@ This personal data processing policy has been drawn up in accordance with the re
 
 5.7. Personal data is stored in a form that makes it possible to identify the subject of personal data, no longer than required by the purposes of processing personal data, unless the storage period for personal data is established by federal law, an agreement to which the party, beneficiary or guarantor to which the subject of personal data is. The processed personal data is destroyed or anonymized upon achievement of the processing goals or in the event of the loss of the need to achieve these goals, unless otherwise provided by federal law.
 
-6. ## Purposes of processing personal data
+## 6. Purposes of processing personal data &nbsp;
 
 <div class="overflow-y-auto">
 
@@ -102,7 +110,7 @@ This personal data processing policy has been drawn up in accordance with the re
 
 </div>
 
-7. ## Conditions for processing personal data
+## 7. Conditions for processing personal data &nbsp;
 
 7.1. Processing of personal data is carried out with the consent of the subject of personal data to the processing of his personal data.
 
@@ -118,7 +126,7 @@ This personal data processing policy has been drawn up in accordance with the re
 
 7.7. We process personal data that is subject to publication or mandatory disclosure in accordance with federal law.
 
-8. ## Procedure for collection, storage, transfer and other types of processing of personal data
+## 8. Procedure for collection, storage, transfer and other types of processing of personal data &nbsp;
 
 The security of personal data processed by the Operator is ensured by implementing legal, organizational and technical measures necessary to fully comply with the requirements of current legislation in the field of personal data protection.
 
@@ -141,26 +149,26 @@ The user can at any time withdraw his consent to the processing of personal data
 
 8.9. The condition for terminating the processing of personal data may be the achievement of the purposes of processing personal data, the expiration of the consent of the subject of personal data, withdrawal of consent by the subject of personal data or a requirement to cease processing of personal data, as well as identification of unlawful processing of personal data.
 
-9. ## List of actions performed by the Operator with the received personal data
+## 9. List of actions performed by the Operator with the received personal data &nbsp;
 
 9.1. The operator collects, records, systematizes, accumulates, stores, refines (updates, changes), extracts, uses, transfers (distribution, provision, access), depersonalizes, blocks, deletes and destroys personal data.
 
 9.2. The operator carries out automated processing of personal data with or without receiving and/or transmitting the received information via information and telecommunication networks.
 
-10. ## Cross-border transfer of personal data
+## 10. Cross-border transfer of personal data &nbsp;
 
 10.1. Before commencing activities for the cross-border transfer of personal data, the operator is obliged to notify the authorized body for the protection of the rights of personal data subjects of its intention to carry out cross-border transfer of personal data (such notification is sent separately from the notification of the intention to process personal data).
 
 10.2. Before submitting the above notification, the operator is obliged to obtain relevant information from the authorities of a foreign state, foreign individuals, foreign legal entities to whom the cross-border transfer of personal data is planned.
 
-11. ## Confidentiality of personal data
+## 11. Confidentiality of personal data &nbsp;
 
 The operator and other persons who have access to personal data are obliged not to disclose to third parties or distribute personal data without the consent of the subject of personal data, unless otherwise provided by federal law.
 
-12. ## Final provisions
+## 12. Final provisions &nbsp;
 
-12.1. The User can receive any clarification on issues of interest regarding the processing of his personal data by contacting the Operator via email {{ $doc.contactEmail }}
+12.1. The User can receive any clarification on issues of interest regarding the processing of his personal data by contacting the Operator via email {{ $doc.contactEmail }}.
 
 12.2. This document will reflect any changes to the Operator's personal data processing policy. The policy is valid indefinitely until replaced by a new version.
 
-12.3. The current version of the Policy is freely available on the Internet at [{{ $doc.privacyUrl }}](/privacy)
+12.3. The current version of the Policy is freely available on the Internet at [{{ $doc.privacyUrl }}](/privacy).

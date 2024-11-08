@@ -4,7 +4,9 @@ import { ImageCategory, getI18nResName2, type Timestamp, type EntityId } from '@
 import { type ITravelDetailsData, type TravelDetailsImageStatus } from './../../../types';
 import type { WatchStopHandle, ComponentInstance } from 'vue';
 import TravelDetailsImageFrame from './travel-details-image-frame.vue';
+import TravelDetailsFrameContainer from './travel-details-frame-container.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
+import { TravelDetails } from '../../../client/vue-transitions';
 
 interface IProps {
   ctrlKey: string,
@@ -230,23 +232,26 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="travel-details-image">
+  <div class="w-full aspect-traveldetails rounded-2xl">
     <ErrorHelm :is-error="isError">
-      <div class="travel-details-frame-container">
+      <TravelDetailsFrameContainer>
         <StaticImage
           v-if="!staticImageHidden"
           :ctrl-key="`${ctrlKey}-TravelDetailsImage-Initial`"
           :entity-src="dataBufInitial?.slug ? { slug: dataBufInitial!.slug, timestamp: dataBufInitial!.timestamp } : undefined"
           :category="ImageCategory.TravelBlock"
           sizes="xs:100vw sm:50vw md:50vw lg:50vw xl:50vw"
-          :ui="{ wrapper: 'travel-details-frame' }"
-          :style="{ display: 'block' }"
+          :ui="{ 
+            wrapper: 'block rounded-2xl w-full h-full row-start-1 row-end-2 col-start-1 col-end-2 z-[1]', 
+            stub: 'rounded-2xl',
+            img: 'w-full h-full rounded-2xl object-cover' 
+          }"
           :alt-res-name="getI18nResName2('travelDetails','travelImgAlt')"
           :show-stub="true"
           @image-ready="onStaticImageReady"
           @image-failed="onStaticImageFailed"
         />
-        <Transition name="travel-details-fade">
+        <Transition v-bind="TravelDetails">
           <TravelDetailsImageFrame
             v-show="activeFrame === 'A'"
             ref="elFrameA"
@@ -254,10 +259,10 @@ onBeforeUnmount(() => {
             :ctrl-key="`${ctrlKey}-TravelDetailsImage-FrameA`"
             :slug="dataBuf2?.slug"
             :timestamp="dataBuf2?.timestamp"
-            :class="framesActivated ? 'frames-activated' : 'frames-not-activated'"
+            :class="framesActivated ? '' : 'invisible'"
           />
         </Transition>
-        <Transition name="travel-details-fade">
+        <Transition v-bind="TravelDetails">
           <TravelDetailsImageFrame
             v-show="activeFrame === 'B'"
             ref="elFrameB"
@@ -267,7 +272,7 @@ onBeforeUnmount(() => {
             :timestamp="dataBuf1?.timestamp"
           />
         </Transition>
-      </div>
+      </TravelDetailsFrameContainer>
     </ErrorHelm>
   </div>
 </template>

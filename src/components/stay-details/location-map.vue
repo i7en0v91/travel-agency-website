@@ -39,7 +39,7 @@ const webUrl = ref<string>();
       :ctrl-key="`${ctrlKey}-InteractiveMap`"
       :origin="location"
       :city="city"
-      css-class="stay-details-map-class"
+      styleClass="stay-details-map-class"
       class="mt-xs-5 brdr-4"
     />
   </section>

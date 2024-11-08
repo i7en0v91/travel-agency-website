@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { AppException, AppExceptionCodeEnum, getI18nResName2 } from '@golobe-demo/shared';
+import { AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { type TravelDetailsImageStatus } from './../../../types';
 import { defaultErrorHandler } from './../../../helpers/exceptions';
 import type { WatchStopHandle, ComponentInstance } from 'vue';
 import range from 'lodash-es/range';
-import PageSection from './../page-section.vue';
 import TravelDetailsTexting from './travel-details-texting.vue';
 import TravelDetailsImage from './travel-details-image.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
@@ -113,27 +112,16 @@ onMounted(() => {
 </script>
 
 <template>
-  <PageSection
-    :ctrl-key="`${ctrlKey}-TravelDetails`"
-    :content="{
-      headerResName: getI18nResName2('travelDetails', 'title'),
-      subtextResName: getI18nResName2('travelCities', 'subtext'),
-      btnTextResName: getI18nResName2('travelCities', 'btn')
-    }"
-    :content-padded="true"
-    :is-error="isError"
-  >
-    <article class="travel-details">
-      <TravelDetailsTexting ref="textingComponent" :ctrl-key="`${ctrlKey}-TravelDetailsTexting`" :book-kind="bookKind" />
-      <TravelDetailsImage
-        v-for="(idx) in range(0, 4).map((i: any) => i)"
-        ref="imageComponents"
-        :key="`${ctrlKey}-TravelDetailsImage-${idx}`"
-        :ctrl-key="`${ctrlKey}-TravelDetailsImage-${idx}`"
-        :image-index="idx"
-        @update:current-status="(status?: TravelDetailsImageStatus) => imagesCurrentStatuses[idx].value = status"
-        @update:upcoming-status="(status?: TravelDetailsImageStatus) => imagesUpcomingStatuses[idx].value = status"
-      />
-    </article>
-  </PageSection>
+  <article class="w-full h-full grid gap-6 items-stretch grid-rows-travelxs grid-cols-travelxs travelsmd:grid-rows-travelsmd travelsmd:grid-cols-travelsmd md:grid-rows-travelmd md:grid-cols-travelmd xl:grid-rows-travelxl xl:grid-cols-travelxl">
+    <TravelDetailsTexting ref="textingComponent" :ctrl-key="`${ctrlKey}-TravelDetailsTexting`" :book-kind="bookKind" />
+    <TravelDetailsImage
+      v-for="(idx) in range(0, 4).map((i: any) => i)"
+      ref="imageComponents"
+      :key="`${ctrlKey}-TravelDetailsImage-${idx}`"
+      :ctrl-key="`${ctrlKey}-TravelDetailsImage-${idx}`"
+      :image-index="idx"
+      @update:current-status="(status?: TravelDetailsImageStatus) => imagesCurrentStatuses[idx].value = status"
+      @update:upcoming-status="(status?: TravelDetailsImageStatus) => imagesUpcomingStatuses[idx].value = status"
+    />
+  </article>  
 </template>

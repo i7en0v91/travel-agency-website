@@ -5,6 +5,7 @@ import range from 'lodash-es/range';
 import { useUserFavouritesStore } from './../../stores/user-favourites-store';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
+import { type ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string,
@@ -40,7 +41,7 @@ const { status } = useAuth();
 const { t, locale } = useI18n();
 const { requestUserAction } = usePreviewState();
 
-const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
+const tooltip = shallowRef<ComponentInstance<typeof Tooltip>>();
 const userFavouritesStoreFactory = useUserFavouritesStore();
 let favouriteStatusWatcher: ReturnType<typeof useOfferFavouriteStatus> | undefined;
 const isFavourite = ref(false);

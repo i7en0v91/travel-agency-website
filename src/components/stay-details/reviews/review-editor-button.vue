@@ -14,7 +14,7 @@ const props = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 
-const cssClass = computed(() => `review-editor-button brdr-1 editor-icon-${kebabCase(props.type)} ${(props.disabled) ? 'disabled' : ''} ${(props.active) ? 'active' : ''}`);
+const styleClass = computed(() => `review-editor-button brdr-1 editor-icon-${kebabCase(props.type)} ${(props.disabled) ? 'disabled' : ''} ${(props.active) ? 'active' : ''}`);
 
 const $emit = defineEmits(['click']);
 function onClick () {
@@ -27,7 +27,7 @@ function onClick () {
 <template>
   <button
     :disabled="disabled"
-    :class="cssClass"
+    :class="styleClass"
     :aria-label="$t(getI18nResName3('reviewEditor', 'buttons', type))"
     @click="onClick"
   />

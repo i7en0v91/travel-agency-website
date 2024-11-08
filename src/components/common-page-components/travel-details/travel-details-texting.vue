@@ -2,7 +2,9 @@
 import { type ITravelDetailsData, type ITravelDetailsTextingData } from './../../../types';
 import type { WatchStopHandle, ComponentInstance } from 'vue';
 import TravelDetailsTextingFrame from './travel-details-texting-frame.vue';
+import TravelDetailsFrameContainer from './travel-details-frame-container.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
+import { TravelDetails } from '../../../client/vue-transitions';
 
 interface IProps {
   ctrlKey: string,
@@ -106,43 +108,49 @@ onBeforeUnmount(() => {
   stopWatchingForDataChanges();
 });
 
+const GridLayoutClass = `
+row-start-1 row-end-2 col-start-1 col-end-2 
+travelsmd:row-start-1 travelsmd:row-end-5 travelsmd:col-start-1 travelsmd:col-end-2 
+md:row-start-1 md:row-end-2 md:col-start-1 md:col-end-3 
+xl:row-start-1 xl:row-end-3 xl:col-start-1 xl:col-end-2 
+`.replaceAll(/[\n\r\t]/g, '');
+
 </script>
 
 <template>
-  <div class="travel-details-texting brdr-3" role="article">
+  <div :class="`w-full h-full ${GridLayoutClass} bg-primary-200 dark:bg-gray-700 rounded-xl`" role="article">
     <ErrorHelm :is-error="isError">
-      <div class="travel-details-frame-container">
-        <Transition name="travel-details-fade">
+      <TravelDetailsFrameContainer>
+        <Transition v-bind="TravelDetails">
           <TravelDetailsTextingFrame
             v-show="activeFrame === 'initial'"
             :ctrl-key="`${ctrlKey}-TravelDetailsTexting-Initial`"
             :texting="dataBufInitial"
             :book-kind="bookKind"
             :is-initial="activeFrame === 'initial'"
-            :style="{ display: 'flex' }"
           />
         </Transition>
-        <Transition name="travel-details-fade">
+        <Transition v-bind="TravelDetails">
           <TravelDetailsTextingFrame
             v-show="activeFrame === 'A'"
             ref="elFrameA"
             :book-kind="bookKind"
             :ctrl-key="`${ctrlKey}-TravelDetailsTexting-FrameA`"
             :texting="dataBuf2"
-            :class="clientFramesActivated ? 'frames-activated' : 'frames-not-activated'"
+            :class="clientFramesActivated ? '' : 'invisible'"
           />
         </Transition>
-        <Transition name="travel-details-fade">
+        <Transition v-bind="TravelDetails">
           <TravelDetailsTextingFrame
             v-show="activeFrame === 'B'"
             ref="elFrameB"
             :book-kind="bookKind"
             :ctrl-key="`${ctrlKey}-TravelDetailsTexting-FrameB`"
             :texting="dataBuf1"
-            :class="(clientFramesActivated && initialFrameHidden) ? 'frames-activated' : 'frames-not-activated'"
+            :class="(clientFramesActivated && initialFrameHidden) ? '' : 'invisible'"
           />
         </Transition>
-      </div>
+      </TravelDetailsFrameContainer>
     </ErrorHelm>
   </div>
 </template>

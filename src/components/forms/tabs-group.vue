@@ -117,7 +117,7 @@ const tabsStyling = computed(() => {
     container: '!mt-8',
     list: {
       base: props.ui?.compactTabs ? 'gap-4 sm:gap-6' : undefined,
-      padding: props.ui?.compactTabs ? '!pl-0' : undefined,
+      padding: props.ui?.compactTabs ? '!pl-0' : 'px-4 sm:px-6',
       width: props.ui?.compactTabs ? 'w-auto' : undefined,
       tab: { 
         base: props.ui?.compactTabs ? 'justify-start w-min pl-0' : undefined
@@ -134,6 +134,7 @@ const items = computed(() => {
     return {
       label: t(tab.labelResName),
       icon: tab.shortIcon,
+      disabled: !tab.enabled,
       tab
     };
   });

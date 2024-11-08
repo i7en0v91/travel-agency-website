@@ -20,6 +20,9 @@ const rollupLogHandler = (
   if (log.code === 'CIRCULAR_DEPENDENCY') {
     return; // Ignore circular dependency warnings
   }
+  if (log.code === 'UNUSED_EXTERNAL_IMPORT' && log.names?.length === 1 && log.names[0] === 'isError') {
+    return; // Ignore unused "isError" is imported from external module warning in prerendering mode
+  }
   defaultHandler(level, log);
 };
 
@@ -166,7 +169,13 @@ export default defineNuxtConfig({
     },
     {
       path: '~/content/prose',
-      pathPrefix: false
+      pathPrefix: false,
+      global: true
+    },
+    {
+      path: '~/content/components',
+      pathPrefix: false,
+      global: true
     }
   ],
 
@@ -260,9 +269,17 @@ export default defineNuxtConfig({
   },
 
   content: {
+    //locales: AvailableLocaleCodes,
+    //defaultLocale: DefaultLocale,
+    contentHead: false,
+    highlight: false,
     ignores: [
-      'content/prose'
-    ]
+      'content/prose',
+      'content/components'
+    ],
+    experimental: {
+      search: true
+    }
   },
 
   ui: {
@@ -283,7 +300,9 @@ export default defineNuxtConfig({
 
   router: {
     options: {
-      scrollBehaviorType: 'smooth'
+      scrollBehaviorType: 'auto',
+      hashMode: false,
+      strict: false
     }
   },
 
@@ -333,9 +352,9 @@ export default defineNuxtConfig({
     ['@nuxt/test-utils/module', {}],
     ['nuxt-tiptap-editor', {}],
     ['@nuxt/eslint', {}],
-    "@nuxt/ui",
-    "nuxt-svgo",
-    "@nuxt/content"
+    ["@nuxt/ui", {}],
+    ["nuxt-svgo", {}],
+    ["@nuxt/content", {}]
   ],
 
   //css: ['vue-final-modal/style.css'],

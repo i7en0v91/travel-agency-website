@@ -21,7 +21,7 @@ defineProps<IProps>();
 </script>
 
 <template>
-  <div :class="`block w-full h-auto ${ui?.wrapper ?? ''}`">
+  <div :class="`relative z-[2] block w-full h-auto ${ui?.wrapper ?? ''}`">
     <div class="w-full h-auto grid grid-cols-1 grid-rows-1">
       <StaticImage
         :ctrl-key="`${ctrlKey}-MainImage`"

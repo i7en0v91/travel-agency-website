@@ -1,20 +1,28 @@
-# Politique relative au traitement des données personnelles
+---
+title: 'Politique de confidentialité'
+description: 'Politique relative au traitement des données personnelles'
+head: false
+---
 
-1. ## Dispositions générales
+# Politique relative au traitement des données personnelles &nbsp;
+
+<!--more-->
+
+## 1. Dispositions générales &nbsp;
 
 Cette politique de traitement des données personnelles est établie conformément aux exigences de la loi fédérale du 27 juillet 2006. № 152-FZ «Sur les données personnelles» (ci-après dénommée la loi sur les données personnelles ) et détermine la procédure de traitement des données personnelles et les mesures visant à assurer la sécurité des données personnelles par le système d'information du site Web (ci-après dénommé l'Exploitant).
 
 1.1. L'opérateur fixe comme objectif et condition les plus importants pour l'exercice de ses activités le respect des droits et libertés de l'homme et du citoyen lors du traitement de ses données personnelles, y compris la protection des droits à la vie privée, personnelle et secrets de famille.
 
-1.2. La politique de cet Opérateur concernant le traitement des données personnelles (ci-après — Politique) s'applique à toutes les informations que l'Opérateur peut recevoir sur les visiteurs du site Web [{{ $doc.siteUrl }}](/) 
+1.2. La politique de cet Opérateur concernant le traitement des données personnelles (ci-après — Politique) s'applique à toutes les informations que l'Opérateur peut recevoir sur les visiteurs du site Web [{{ $doc.siteUrl }}](/).
 
-2. ## Concepts de base utilisés dans la Politique
+## 2. Concepts de base utilisés dans la Politique &nbsp;
 
 2.1. Traitement automatisé de données personnelles - traitement de données personnelles utilisant la technologie informatique.
 
 2.2. Blocage des données personnelles - cessation temporaire du traitement des données personnelles (sauf dans les cas où le traitement est nécessaire pour clarifier les données personnelles).
 
-2.3. Site Web - une collection de matériel graphique et d'information, ainsi que des programmes informatiques et des bases de données qui assurent leur disponibilité sur Internet à l'adresse réseau [{{ $doc.siteUrl }}](/)
+2.3. Site Web - une collection de matériel graphique et d'information, ainsi que des programmes informatiques et des bases de données qui assurent leur disponibilité sur Internet à l'adresse réseau [{{ $doc.siteUrl }}](/).
 
 2.4. Système d'information sur les données personnelles - un ensemble de données personnelles contenues dans des bases de données et des technologies de l'information et des moyens techniques qui assurent leur traitement.
 
@@ -24,11 +32,11 @@ Cette politique de traitement des données personnelles est établie conforméme
 
 2.7. Opérateur - organisme public, organisme municipal, personne morale ou personne physique, indépendamment ou conjointement avec d'autres personnes organisant et/ou effectuant le traitement des données personnelles, ainsi que déterminant les finalités du traitement des données personnelles, le composition des données personnelles à traiter, actions (opérations) effectuées avec des données personnelles.
 
-2.8. Données personnelles — toute information relative directement ou indirectement à un Utilisateur spécifique ou identifiable du site [{{ $doc.siteUrl }}](/)
+2.8. Données personnelles — toute information relative directement ou indirectement à un Utilisateur spécifique ou identifiable du site [{{ $doc.siteUrl }}](/).
 
 2.9. Données personnelles autorisées par le sujet des données personnelles pour la distribution, — données personnelles, dont l'accès à un nombre illimité de personnes est fourni par le sujet des données personnelles en donnant son consentement au traitement des données personnelles autorisé par le sujet des données personnelles à distribuer de la manière prescrite par la loi sur les données personnelles (ci-après - données personnelles dont la distribution est autorisée).
 
-2.10. Utilisateur — tout visiteur du site Web [{{ $doc.siteUrl }}](/)
+2.10. Utilisateur — tout visiteur du site Web [{{ $doc.siteUrl }}](/).
 
 2.11. Fourniture de données personnelles - actions visant à divulguer des données personnelles à une certaine personne ou à un certain cercle de personnes.
 
@@ -38,7 +46,7 @@ Cette politique de traitement des données personnelles est établie conforméme
 
 2.14. Destruction des données personnelles - toute action à la suite de laquelle les données personnelles sont détruites de manière irrévocable avec l'impossibilité de restaurer davantage le contenu des données personnelles dans le système d'information sur les données personnelles et/ou les supports matériels des données personnelles les données sont détruites.
 
-3. ## Droits et obligations fondamentaux de l'Opérateur
+## 3. Droits et obligations fondamentaux de l'Opérateur &nbsp;
 
 3.1. L'opérateur a le droit :
 - recevoir du sujet des données personnelles des informations fiables et/ou des documents contenant des données personnelles ;
@@ -56,7 +64,7 @@ Cette politique de traitement des données personnelles est établie conforméme
 - effectuer d'autres tâches prévues par la loi sur les données personnelles.
 
 
-4. ## Droits et obligations fondamentaux des personnes concernées
+## 4. Droits et obligations fondamentaux des personnes concernées &nbsp;
 
 4.1. Les personnes concernées ont le droit :
 - recevoir des informations concernant le traitement de ses données personnelles, sauf dans les cas prévus par les lois fédérales. Les informations sont fournies au sujet des données personnelles par l'Opérateur sous une forme accessible et ne doivent pas contenir de données personnelles liés à d'autres sujets de données personnelles, sauf dans les cas où il existe des motifs juridiques pour la divulgation de ces données personnelles. La liste des informations et la procédure pour les obtenir sont établies par la loi sur les données personnelles ;
@@ -72,7 +80,7 @@ Cette politique de traitement des données personnelles est établie conforméme
 
 4.3. Les personnes qui ont fourni à l'Opérateur de fausses informations les concernant ou des informations sur un autre sujet de données personnelles sans le consentement de ce dernier, sont responsables conformément à la législation de la Fédération de Russie.
 
-5. ## Principes de traitement des données personnelles
+## 5. Principes de traitement des données personnelles &nbsp;
 
 5.1. Le traitement des données personnelles est effectué sur une base légale et équitable.
 
@@ -88,7 +96,7 @@ Cette politique de traitement des données personnelles est établie conforméme
 
 5.7. Les données personnelles sont stockées sous une forme permettant d'identifier le sujet des données personnelles, pas plus longtemps que ne l'exigent les finalités du traitement des données personnelles, à moins que la durée de conservation des données personnelles ne soit fixée par la loi fédérale , un accord auquel est partie, bénéficiaire ou garant auquel appartient le sujet des données personnelles. Les données personnelles traitées sont détruites ou anonymisées lors de la réalisation des finalités du traitement ou en cas de perte de la nécessité d'atteindre ces finalités, à moins que autrement prévu par la loi fédérale.
 
-6. ## Finalités du traitement des données personnelles
+## 6. Finalités du traitement des données personnelles &nbsp;
 
 <div class="overflow-y-auto">
 
@@ -101,7 +109,7 @@ Cette politique de traitement des données personnelles est établie conforméme
 
 </div>
 
-7. ## Conditions de traitement des données personnelles
+## 7. Conditions de traitement des données personnelles &nbsp;
 
 7.1. Le traitement des données personnelles est effectué avec le consentement de la personne concernée au traitement de ses données personnelles.
 
@@ -117,7 +125,7 @@ Cette politique de traitement des données personnelles est établie conforméme
 
 7.7. Nous traitons les données personnelles soumises à la publication ou à la divulgation obligatoire conformément à la loi fédérale.
 
-8. ## Procédure de collecte, de stockage, de transfert et d'autres types de traitement des données personnelles
+## 8. Procédure de collecte, de stockage, de transfert et d'autres types de traitement des données personnelles &nbsp;
 
 La sécurité des données personnelles traitées par l'Opérateur est assurée par la mise en œuvre des mesures juridiques, organisationnelles et techniques nécessaires pour se conformer pleinement aux exigences de la législation en vigueur dans le domaine de la protection des données personnelles.
 
@@ -140,26 +148,26 @@ L'utilisateur peut à tout moment retirer son consentement au traitement des don
 
 8.9. La condition pour mettre fin au traitement des données personnelles peut être la réalisation des finalités du traitement des données personnelles, l'expiration du consentement du sujet des données personnelles, le retrait du consentement par le sujet des données personnelles ou une obligation de cesser le traitement des données personnelles, ainsi que l'identification d'un traitement illégal de données personnelles.
 
-9. ## Liste des actions effectuées par l'Opérateur avec les données personnelles reçues
+## 9. Liste des actions effectuées par l'Opérateur avec les données personnelles reçues &nbsp;
 
 9.1. L'opérateur collecte, enregistre, systématise, accumule, stocke, affine (mises à jour, modifications), extrait, utilise, transfère (distribution, mise à disposition, accès), dépersonnalise, bloque, supprime et détruit les données personnelles.
 
 9.2. L'opérateur effectue un traitement automatisé de données personnelles avec ou sans réception et/ou transmission des informations reçues via les réseaux d'information et de télécommunication.
 
-10. ## Transfert transfrontalier de données personnelles
+## 10. Transfert transfrontalier de données personnelles &nbsp;
 
 10.1. Avant de commencer les activités de transfert transfrontalier de données personnelles, l'opérateur est tenu d'informer l'organisme autorisé pour la protection des droits des personnes concernées de données personnelles de son intention d'effectuer un transfert transfrontalier de données personnelles. données personnelles (cette notification est envoyée séparément de la notification de l'intention de traiter les données personnelles).
 
 10.2. Avant de soumettre la notification ci-dessus, l'opérateur est tenu d'obtenir les informations pertinentes auprès des autorités d'un État étranger, des personnes physiques étrangères, des personnes morales étrangères vers lesquelles le transfert transfrontalier de données personnelles est prévu.
 
-11. ## Confidentialité des données personnelles
+## 11. Confidentialité des données personnelles &nbsp;
 
 L'opérateur et les autres personnes ayant accès aux données personnelles sont tenus de ne pas divulguer à des tiers ou de ne pas diffuser de données personnelles sans le consentement de la personne concernée, sauf disposition contraire de la loi fédérale.
 
-12. ## Dispositions finales
+## 12. Dispositions finales &nbsp;
 
-12.1. L'Utilisateur peut recevoir toute clarification sur les questions d'intérêt concernant le traitement de ses données personnelles en contactant l'Opérateur par e-mail {{ $doc.contactEmail }}
+12.1. L'Utilisateur peut recevoir toute clarification sur les questions d'intérêt concernant le traitement de ses données personnelles en contactant l'Opérateur par e-mail {{ $doc.contactEmail }}.
 
 12.2. Ce document reflétera toute modification apportée à la politique de traitement des données personnelles de l'Opérateur. La politique est valable indéfiniment jusqu'à ce qu'elle soit remplacée par une nouvelle version.
 
-12.3. La version actuelle de la Politique est disponible gratuitement sur Internet à l'adresse [{{ $doc.privacyUrl }}](/fr/privacy)
+12.3. La version actuelle de la Politique est disponible gratuitement sur Internet à l'adresse [{{ $doc.privacyUrl }}](/fr/privacy).

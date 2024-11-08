@@ -91,7 +91,6 @@ const gfxHighlightStyles = [
   }
 ];
 
-//
 const gfxFlightRouteLabelStyleCommon = {
   boxShadow: `0px 4px 16px ${SvgColors[props.theme].shadow}`,
   position: 'absolute'

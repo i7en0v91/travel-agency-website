@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Locale, AppPage, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { type Locale, AppPage, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
 import { type ITravelDetailsTextingData } from './../../../types';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 
@@ -18,12 +18,11 @@ const props = withDefaults(defineProps<IProps>(), {
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
-const fadeIn = ref<boolean | undefined>(undefined);
-const cssClass = computed(() => {
+const styleClass = computed(() => {
   if (!props.texting) {
-    return props.isInitial ? 'initialized' : 'initializing';
+    return props.isInitial ? 'z-[2]' : 'invisible';
   }
-  return 'initialized loaded';
+  return 'z-[3]';
 });
 
 const bookLinkUrl = computed(() => {
@@ -40,37 +39,57 @@ const bookLinkUrl = computed(() => {
 
 const price = computed(() => props.texting?.price ? props.texting.price.toFixed(0) : undefined);
 
+const uiStyling = {
+  base: 'w-full h-full flex flex-col flex-nowrap gap-0 items-stretch',
+  background: 'bg-transparent dark:bg-transparent',
+  shadow: 'shadow-none',
+  rounded: 'rounded-2xl',
+  divide: 'divide-none',
+  header: {
+    base: 'flex-grow-0 flex-shrink basis-auto h-auto'
+  },
+  footer: {
+    base: 'flex-grow-0 flex-shrink basis-auto h-min'
+  },
+  body: {
+    base: 'flex-grow flex-shrink basis-auto h-full overflow-x-hidden overflow-y-auto mx-1'
+  },
+};
+
+
 </script>
 
 <template>
-  <div :class="`travel-details-frame travel-details-texting-frame p-xs-4 brdr-4 ${cssClass}`">
-    <div class="travel-details-texting-header">
-      <div class="travel-details-texting-price brdr-2 p-xs-2 ml-xs-2">
-        {{ $t(getI18nResName2('travelDetails', 'priceFrom')) }}
-        <div :class="`${price ? 'travel-details-price-value' : 'data-loading-stub text-data-loading'} mt-xs-1`">
-          {{ price ? `\$${price}` : '&nbsp;' }}
-        </div>
-      </div>
-      <h3 v-if="texting?.header" class="travel-details-texting-title">
-        {{ (texting.header as any)[locale] }}
-      </h3>
-      <div v-else class="data-loading-stub text-data-loading"> &nbsp; </div>
-    </div>
-    <PerfectScrollbar
-      :options="{
-        suppressScrollX: true,
-        wheelPropagation: true
-      }"
-      :watch-options="false"
-      tag="div"
-      :class="texting?.text ? 'travel-details-texting-paragraph my-xs-3' : 'data-loading-stub text-data-loading'"
-    >
-      <p>
-        {{ texting?.text ? (texting?.text as any)[locale] : '&nbsp;' }}
+  <div :class="`flex flex-col gap-[12px] w-full h-[31.625rem] travelsmd:h-full md:h-[20.375rem] xl:h-full row-start-1 row-end-2 col-start-1 col-end-2 z-[1] rounded-2xl ${styleClass}`">
+    <UCard as="div" :ui="uiStyling">
+      <template #header>
+        <UBadge 
+          v-if="price" 
+          :ui="{ 
+            base: 'ml-2 mt-1 mb-2 inline float-right min-w-[90px] text-center',
+            rounded: 'rounded-lg' 
+          }"
+          size="md"
+        >
+          {{ $t(getI18nResName2('travelDetails', 'priceFrom')) }}
+          {{ `\$${price}` }}
+        </UBadge>
+        <USkeleton v-else class="w-[50px] h-3 mt-1" />
+        <h3 v-if="texting?.header" class="w-full inline break-words text-4xl font-bold">
+          {{ (texting.header as any)[locale] }}
+        </h3>
+        <USkeleton v-else class="w-1/2 h-9 mt-2" />
+      </template>
+
+      <p v-if="texting?.text" class="w-full h-full">
+        {{ (texting?.text as any)[locale] }}
       </p>
-    </PerfectScrollbar>
-    <NuxtLink :class="`btn btn-primary brdr-1 travel-details-book-btn ${ (!fadeIn && !isInitial) ? '' : 'nontabbable' }`" :to="bookLinkUrl">
-      {{ $t(getI18nResName3('travelCities', 'bookBtn', bookKind)) }}
-    </NuxtLink>
+
+      <template #footer>
+        <UButton size="lg" class="w-full justify-center" variant="solid" color="primary" :to="bookLinkUrl">
+          {{ $t(getI18nResName3('travelCities', 'bookBtn', bookKind)) }}
+        </UButton>
+      </template>
+    </UCard>
   </div>
 </template>

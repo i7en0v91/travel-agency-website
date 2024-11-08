@@ -30,7 +30,7 @@ const reviewStore = await reviewStoreFactory.getInstance(props.stayId);
 
 const editorHidden = ref(true);
 
-const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
+const tooltip = shallowRef<ComponentInstance<typeof Tooltip>>();
 const reviewListComponent = shallowRef<ComponentInstance<typeof ReviewList>>();
 const editorSection = shallowRef<ComponentInstance<typeof CollapsableSection>>();
 const editor = shallowRef<ComponentInstance<typeof ReviewEditor>>();

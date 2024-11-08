@@ -53,17 +53,17 @@ function getImgUrl (slug?: string, timestamp?: Timestamp): string | undefined {
 const imgUrl = computed(() => { return getImgUrl(props.slug, props.timestamp); });
 
 const fadeIn = ref<boolean | undefined>(undefined);
-const cssClass = computed(() => {
+const styleClass = computed(() => {
   if (!props.slug && !props.status) {
-    return 'initializing';
+    return '';
   }
   if (!props.slug) {
-    return 'initialized';
+    return 'z-[2]';
   }
   if (props.status === 'loading' || props.status === 'error') {
-    return 'initialized';
+    return 'z-[2]';
   }
-  return 'initialized loaded';
+  return 'z-[3]';
 });
 
 function onLoad () {
@@ -90,7 +90,7 @@ const imageSize = await systemConfigurationStore.getImageSrcSize(ImageCategory.T
 </script>
 
 <template>
-  <div :class="`travel-details-frame brdr-3 ${cssClass}`">
+  <div :class="`w-full h-full row-start-1 row-end-2 col-start-1 col-end-2 z-[1] rounded-2xl ${styleClass}`">
     <nuxt-img
       v-if="imgUrl"
       ref="imgEl"
@@ -100,6 +100,7 @@ const imageSize = await systemConfigurationStore.getImageSrcSize(ImageCategory.T
       :height="imageSize.height"
       sizes="xs:100vw sm:50vw md:50vw lg:50vw xl:50vw"
       provider="entity"
+      class="w-full h-full rounded-2xl"
       :modifiers="{ imgSrcSize: imageSize }"
       :alt="$t(getI18nResName2('travelDetails','travelImgAlt'))"
       @load="onLoad"
