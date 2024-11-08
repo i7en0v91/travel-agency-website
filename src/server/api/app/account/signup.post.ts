@@ -8,7 +8,7 @@ export default defineWebApiEventHandler(async (event) => {
 
   const emailingEnabled = AppConfig.email;
   const userLogic = getServerServices()!.getUserLogic();
-  const registrationResult = await userLogic.registerUserByEmail(signUpDto.email, signUpDto.password, emailingEnabled ? 'send-email' : 'verified', signUpDto.firstName, signUpDto.lastName, signUpDto.theme as Theme, signUpDto.locale as Locale, event);
+  const registrationResult = await userLogic.registerUserByEmail(signUpDto.email, signUpDto.password, emailingEnabled ? 'send-email' : 'verified', signUpDto.firstName, signUpDto.lastName, signUpDto.theme as Theme, signUpDto.locale as Locale);
   let responseDto: ISignUpResultDto | undefined;
   switch (registrationResult) {
     case 'already-exists':

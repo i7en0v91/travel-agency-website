@@ -196,7 +196,10 @@ function getLogger () : IAppLogger {
 
 function fireIfLoadedImmediately () {
   const elImg = imgComponent.value?.$el as HTMLImageElement;
-  if (elImg?.complete) {
+  if(elImg?.dataset['error'] === '1') {
+    getLogger().warn(`(StaticImage) detected image load failed, ctrlKey=${props.ctrlKey}, url=${imgUrl.value}, category=${props.category!}`);
+    onError(undefined);
+  } else if (elImg?.complete) {
     getLogger().debug(`(StaticImage) detected immediate image load, ctrlKey=${props.ctrlKey}, url=${imgUrl.value}, category=${props.category!}`);
     onLoad();
   }

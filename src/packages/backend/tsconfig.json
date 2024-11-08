@@ -8,6 +8,12 @@
     "moduleResolution": "Bundler",
     "lib": [
       "ESNext"
-    ]
-  }
+    ],
+    "composite": true,
+    "declaration": true
+  },
+  
+  "references": [
+    { "path": "../shared" }
+  ]
 }

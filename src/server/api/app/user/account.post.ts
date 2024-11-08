@@ -19,7 +19,7 @@ export default defineWebApiEventHandler(async (event) => {
     );
   }
 
-  const updateResult = await userLogic.updateUserAccount(userId, updateAccountDto.firstName, updateAccountDto.lastName, updateAccountDto.password, updateAccountDto.emails?.map(e => e?.trim()), updateAccountDto.theme as Theme, updateAccountDto.locale as Locale, event);
+  const updateResult = await userLogic.updateUserAccount(userId, updateAccountDto.firstName, updateAccountDto.lastName, updateAccountDto.password, updateAccountDto.emails?.map(e => e?.trim()), updateAccountDto.theme as Theme, updateAccountDto.locale as Locale);
   let responseDto: IUpdateAccountResultDto | undefined;
   switch (updateResult) {
     case 'email-already-exists':

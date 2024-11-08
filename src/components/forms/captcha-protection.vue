@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { maskLog, buildParamsLogData, getI18nResName2, AppConfig, UserNotificationLevel } from '@golobe-demo/shared';
 import { useThemeSettings } from './../../composables/theme-settings';
-import type { VueRecaptcha } from '#build/components';
+import type { VueRecaptcha } from './../../.nuxt/components';
 import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 

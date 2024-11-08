@@ -13,7 +13,8 @@
   ],
   "scripts": {
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "test": "NODE_OPTIONS='--disable-warning=DEP0166 --disable-warning=DEP0155' npx vitest run --root=. --config=./tests/vitest.config.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.11.0",
