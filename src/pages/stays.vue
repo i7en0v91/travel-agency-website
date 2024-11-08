@@ -69,6 +69,7 @@ watch(searchHistoryFetch.status, () => {
 
 <template>
   <div class="stays-page no-hidden-parent-tabulation-check">
+    <!--
     <SearchPageHead
       ctrl-key="SearchPageHeadStays"
       class="stays-page-head"
@@ -117,5 +118,7 @@ watch(searchHistoryFetch.status, () => {
     </PageSection>
     <TravelCities ctrl-key="StaysTravelCitiesSection" book-kind="stay" class="stays-page-travel-cities-section" />
     <TravelDetails :id="TravelDetailsHtmlAnchor" ctrl-key="StaysTravelDetailsSection" book-kind="stay" />
+    -->
+    PAGE CONTENT
   </div>
 </template>

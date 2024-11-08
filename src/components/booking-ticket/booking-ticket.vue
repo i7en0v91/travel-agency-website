@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type IBookingTicketFlightGfxProps, type IBookingTicketStayTitleProps, type IBookingTicketProps } from './../../types';
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import BookingTicketDates from './booking-ticket-dates.vue';
 import BookingTicketGeneral from './booking-ticket-general.vue';
 import BookingTicketDetails from './booking-ticket-details.vue';

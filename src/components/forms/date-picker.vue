@@ -1,28 +1,28 @@
 <script setup lang="ts">
-import { type I18nResName, getI18nResName1 } from '@golobe-demo/shared';
-import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../../helpers/dom';
-import type { Dropdown } from 'floating-vue';
+import { type I18nResName } from '@golobe-demo/shared';
 import dayjs from 'dayjs';
-import FieldFrame from './../forms/field-frame.vue';
+import InputFieldFrame from './input-field-frame.vue';
+import { DatePicker as VCalendarDatePicker } from 'v-calendar';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
   captionResName: I18nResName,
   persistent: boolean,
-  selectedDate?: Date,
-  initiallySelectedDate?: Date | null | undefined,
   defaultDate?: Date,
   icon?: boolean,
-  minDate?: Date
+  minDate?: Date,
+  ui?: {
+    wrapper?: string,
+    input?: string
+  }
 }
 
 const props = withDefaults(defineProps<IProps>(), {
-  selectedDate: undefined,
   defaultDate: undefined,
-  initiallySelectedDate: undefined,
   icon: true,
-  minDate: undefined
+  minDate: undefined,
+  ui: undefined
 });
 
 type DatePickerDate = number | string | Date | null | {
@@ -32,53 +32,26 @@ type DatePickerDate = number | string | Date | null | {
 
 const { d, locale } = useI18n();
 
-const elBtn = shallowRef<HTMLElement>();
-const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
-
-const logger = getCommonServices().getLogger();
-
 const today = eraseTimeOfDay(dayjs().utc(true).toDate());
 let defaultValue = props.defaultDate ? eraseTimeOfDay(props.defaultDate) : today;
 if (dayjs(defaultValue).isBefore(today)) {
   defaultValue = today;
 }
-
 const controlSettingsStore = useControlSettingsStore();
 const controlValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(props.ctrlKey, defaultValue.toISOString(), props.persistent);
-if (dayjs(controlValueSetting.value).isBefore(today)) {
-  controlValueSetting.value = today.toISOString();
-}
 
-let initialValue = defaultValue;
-if (props.initiallySelectedDate) {
-  initialValue = props.initiallySelectedDate;
-  if (dayjs(initialValue).isBefore(today)) {
-    initialValue = today;
-  }
-  controlValueSetting.value = initialValue.toISOString();
-} else if (props.initiallySelectedDate === null) {
-  initialValue = defaultValue;
-  controlValueSetting.value = initialValue.toISOString();
-}
+const logger = getCommonServices().getLogger();
 
-const selectedValue = ref<Date>(initialValue);
+const modelRef = defineModel<Date  | null | undefined>('selectedDate');
+const open = ref(false);
+
+const selectedValue = ref<Date>(today);
+
 const hasMounted = ref(false);
 
 function eraseTimeOfDay (dateTime: Date): Date {
   const totalMs = dateTime.getTime();
   return new Date(totalMs - totalMs % (1000 * 60 * 60 * 24));
-}
-
-function onMenuShown () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
-function onMenuHide () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
-function hideDropdown () {
-  dropdown.value?.hide();
 }
 
 function fireSelectedDateChange () {
@@ -90,19 +63,37 @@ function onCalendarValueUpdated () {
   logger.verbose(`(DatePicker) calendar date updated: ctrlKey=${props.ctrlKey}, value=${selectedValue.value}`);
   controlValueSetting.value! = eraseTimeOfDay(selectedValue.value).toISOString();
   fireSelectedDateChange();
+  open.value = false;
   logger.verbose(`(DatePicker) selected date(s) updated: ctrlKey=${props.ctrlKey}`);
 }
 
 const $emit = defineEmits<{(event: 'update:selectedDate', date: Date): void}>();
 
 function onDateSelected (value: DatePickerDate) {
-  logger.verbose(`(SearchFlightsDatePicker) date selected: ctrlKey=${props.ctrlKey}, value=${JSON.stringify(value)}`);
-  hideDropdown();
+  logger.verbose(`(DatePicker) date selected: ctrlKey=${props.ctrlKey}, value=${JSON.stringify(value)}`);
   onCalendarValueUpdated();
 }
 
-function onEscape () {
-  hideDropdown();
+function setupInitialValue() {
+  if (dayjs(controlValueSetting.value).isBefore(today)) {
+    controlValueSetting.value = today.toISOString();
+  }
+
+  let initialValue = today;
+  if(modelRef.value) {
+    initialValue = modelRef.value;
+  } else if(modelRef.value === null) {
+    initialValue = defaultValue ?? today;
+  } else {
+    initialValue = eraseTimeOfDay(new Date(controlValueSetting.value!));
+  }  
+  if (dayjs(initialValue).isBefore(today)) {
+    initialValue = today;
+  }
+
+  controlValueSetting.value = initialValue.toISOString();
+  selectedValue.value = eraseTimeOfDay(new Date(controlValueSetting.value!));
+  modelRef.value = initialValue;
 }
 
 const datesDisplayText = computed(() => {
@@ -110,69 +101,57 @@ const datesDisplayText = computed(() => {
 });
 
 onBeforeMount(() => {
-  if (controlValueSetting.value) {
-    selectedValue.value = eraseTimeOfDay(new Date(controlValueSetting.value!));
-  }
+  setupInitialValue();
 });
 onMounted(() => {
   hasMounted.value = true;
   fireSelectedDateChange();
 });
 
-watch(() => props.selectedDate, () => {
-  selectedValue.value = props.selectedDate ?? defaultValue;
+watch(modelRef, () => {
+  selectedValue.value = modelRef.value ?? defaultValue;
 });
+
+defineShortcuts({
+  'ESCAPE': () => open.value = false
+});
+
+const calendarAttrs = computed(() => {
+  return {
+    transparent: true,
+    borderless: false,
+    color: 'primary',
+    minDate: props.minDate,
+    locale: locale.value,
+    'is-dark': { selector: 'html', darkClass: 'dark' },
+    timezone: 'utc',
+    mode: 'date'
+  };
+});
+
+const uiStyling = {
+  container: '!mt-14' // search offers input control's height 
+};
 
 </script>
 
 <template>
-  <div class="date-picker" @keyup.escape="onEscape">
-    <VDropdown
-      ref="dropdown"
-      v-floating-vue-hydration="{ tabIndex: 0 }"
-      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
-      :aria-id="`${ctrlKey}-DropDownWrapper`"
-      :distance="-6"
-      :hide-triggers="(triggers: any) => [...triggers, 'click']"
-      placement="bottom"
-      :flip="false"
-      :boundary="elBtn"
-      theme="control-dropdown"
-      @apply-show="onMenuShown"
-      @apply-hide="onMenuHide"
-    >
-      <FieldFrame :text-res-name="captionResName" class="date-picker-field-frame">
-        <div class="date-picker-field-div">
-          <button
-            :id="`date-picker-${props.ctrlKey}`"
-            ref="elBtn"
-            class="date-picker-field-btn brdr-1"
-            type="button"
-            @keyup.escape="hideDropdown"
-          >
-            {{ datesDisplayText }}
-          </button>
-          <div
-            v-if="icon"
-            :class="`date-picker-field-icon icon-calendar pl-xs-3 ml-xs-2`"
-            :alt="props.icon ? $t(getI18nResName1('calendarImgAlt')) : ''"
-          />
-        </div>
-      </FieldFrame>
-      <template #popper>
-        <ClientOnly>
-          <VDatePicker
-            v-model:model-value="selectedValue"
-            timezone="utc"
-            mode="date"
-            class="calendar"
-            color="golobe"
-            :min-date="minDate ?? today"
-            :locale="locale"
-            @update:model-value="onDateSelected"
-          />
-        </ClientOnly>
-      </template>
-    </VDropdown>
-  </div>
+  <UPopover v-model:open="open" :popper="{ placement: 'bottom' }" :class="ui?.wrapper" :ui="uiStyling">
+    <InputFieldFrame :text-res-name="captionResName" class="w-full">
+      <UButton icon="i-heroicons-calendar-days-20-solid" :class="`w-full dark:hover:bg-transparent pl-[12px] ${ui?.input ?? ''}`" variant="outline" color="gray">
+        {{ datesDisplayText }}
+      </UButton>
+    </InputFieldFrame>
+
+    <template #panel="{ close }">
+      <VCalendarDatePicker
+        v-model="selectedValue"
+        :columns="1"
+        is-required
+        v-bind="calendarAttrs"
+        @update:model-value="onDateSelected"
+        @close="close" 
+      />
+    </template>
+  </UPopover>  
 </template>

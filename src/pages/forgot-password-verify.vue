@@ -20,6 +20,7 @@ const navLinkBuilder = useNavLinkBuilder();
 
 <template>
   <div class="forgot-password-verify-page account-page no-hidden-parent-tabulation-check">
+    <!--
     <div class="forgot-password-verify-page-div">
       <NavLogo ctrl-key="forgotPasswordVerifyPageAppLogo" class="forgot-password-verify-page-logo" mode="inApp" />
       <div class="forgot-password-verify-page-content">
@@ -30,5 +31,7 @@ const navLinkBuilder = useNavLinkBuilder();
       </div>
     </div>
     <AccountFormPhotos ctrl-key="ForgotPasswordVerifyPhotos" class="forgot-password-verify-account-forms-photos" />
+    -->
+    PAGE CONTENT
   </div>
 </template>

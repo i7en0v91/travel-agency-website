@@ -21,10 +21,13 @@ if (import.meta.client) {
 
 <template>
   <div class="search-flights-page no-hidden-parent-tabulation-check">
+    <!--
     <h1 class="search-flights-page-title mb-xs-4">
       {{ $t(getI18nResName2('flightsPage', 'title')) }}
     </h1>
     <SearchOffers ctrl-key="FlightsListingPage-SearchOffers" :minimum-buttons="true" class="search-flights-offers-box" :take-initial-values-from-url-query="true" single-tab="flights" />
     <OffersListView ctrl-key="FlightsListingPage-OffersListView" offers-kind="flights" class="mt-xs-5" />
+    -->
+    PAGE CONTENT
   </div>
 </template>

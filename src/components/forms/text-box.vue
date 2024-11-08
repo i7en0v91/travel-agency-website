@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type I18nResName } from '@golobe-demo/shared';
-import FieldFrame from './field-frame.vue';
+import InputFieldFrame from './input-field-frame.vue';
 
 const { t } = useI18n();
 
@@ -26,7 +26,7 @@ const htmlId = useId();
 </script>
 
 <template>
-  <FieldFrame :text-res-name="captionResName" :input-html-id="htmlId">
+  <InputFieldFrame :text-res-name="captionResName" :input-html-id="htmlId">
     <input
       :id="htmlId"
       :type="type"
@@ -37,5 +37,5 @@ const htmlId = useId();
       :autocomplete="type === 'password' ? 'on' : 'off'"
       @input="(e: Event) => { $emit('update:modelValue', (e.target as HTMLInputElement).value); }"
     >
-  </FieldFrame>
+  </InputFieldFrame>
 </template>

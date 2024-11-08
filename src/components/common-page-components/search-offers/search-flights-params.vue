@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { DefaultFlightClass, FlightMinPassengers, FlightMaxPassengers, type FlightClass, getI18nResName1, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
-import type { Dropdown } from 'floating-vue';
 import DropdownList from './../../forms/dropdown-list.vue';
-import FieldFrame from './../../forms/field-frame.vue';
-import SimpleButton from './../../forms/simple-button.vue';
+import InputFieldFrame from '../../forms/input-field-frame.vue';
 import SearchOffersCounter from './search-offers-counter.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
@@ -15,50 +12,60 @@ interface IFlightParams {
 
 interface IProps {
   ctrlKey: string,
-  params?: IFlightParams | undefined,
-  initiallySelectedParams?: IFlightParams | null | undefined
+  ui?: {
+    wrapper?: string,
+    input?: string
+  }
 }
 
-const props = withDefaults(defineProps<IProps>(), {
-  params: undefined,
-  initiallySelectedParams: undefined
-});
+const props = defineProps<IProps>();
 
-const FlightClassDropdownClass = 'search-offers-dropdown-list-container';
-
-const elBtn = shallowRef<HTMLElement>();
-const elDropdownContainer = shallowRef<HTMLElement>();
-const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
+const modelRef = defineModel<IFlightParams | null | undefined>('params');
 const hasMounted = ref(false);
+const mainMenuOpen = ref(false);
 
 const logger = getCommonServices().getLogger();
 
 const controlSettingsStore = useControlSettingsStore();
-const passengerControlValueSetting = controlSettingsStore.getControlValueSetting<number>(`${props.ctrlKey}-NumPassengers`, FlightMinPassengers, true);
+const passengerControlValueSetting = controlSettingsStore.getControlValueSetting<string>(`${props.ctrlKey}-NumPassengers`, FlightMinPassengers.toString(), true);
 const classControlValueSetting = controlSettingsStore.getControlValueSetting<FlightClass>(`${props.ctrlKey}-FlightClass`, DefaultFlightClass, true);
-if (props.initiallySelectedParams) {
-  passengerControlValueSetting.value = props.initiallySelectedParams.passengers;
-  classControlValueSetting.value = props.initiallySelectedParams.class;
-} else if (props.initiallySelectedParams === null) {
-  passengerControlValueSetting.value = FlightMinPassengers;
-  classControlValueSetting.value = DefaultFlightClass;
-}
 
-const selectedClass = ref<FlightClass | undefined>();
-const numPassengers = ref<number | undefined>();
+const selectedClass = ref<FlightClass | null | undefined>();
+const numPassengers = ref<number | null | undefined>();
 
 const { t } = useI18n();
 
-function onMenuShown () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
+function saveInitialValuesToSettingsIfNotEmpty () {
+  const initiallySelectedParams = modelRef.value;
+  if (initiallySelectedParams) {
+    passengerControlValueSetting.value = initiallySelectedParams.passengers.toString();
+    classControlValueSetting.value = initiallySelectedParams.class;
+  } else if (initiallySelectedParams === null) {
+    passengerControlValueSetting.value = FlightMinPassengers.toString();
+    classControlValueSetting.value = DefaultFlightClass;
+  }
 }
 
-function onMenuHide () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
-function hideDropdown () {
-  dropdown.value?.hide();
+function readParamsFromSettings(): IFlightParams {
+  logger.debug(`(SearchFlightsParams) parsing flight params from settings, ctrlKey=${props.ctrlKey}`);
+  let numPassengers = FlightMinPassengers;
+  if(passengerControlValueSetting.value?.length) {
+    try {
+      numPassengers = parseInt(passengerControlValueSetting.value);
+      if(numPassengers === undefined || numPassengers === null) {
+        logger.warn(`(SearchFlightsParams) parsing num passenger from settings resulted into empty number, ctrlKey=${props.ctrlKey}, value=[${JSON.stringify(passengerControlValueSetting.value)}]`);
+        numPassengers = FlightMinPassengers;
+      }
+    } catch(err: any) {
+      logger.warn(`(SearchFlightsParams) failed to parse num passenger from settings, ctrlKey=${props.ctrlKey}, value=[${JSON.stringify(passengerControlValueSetting.value)}]`, err);
+    }    
+  }
+  const result = {
+    passengers: numPassengers,
+    class: classControlValueSetting.value ?? DefaultFlightClass
+  };
+  logger.debug(`(SearchFlightsParams) flight params parsed from settings, ctrlKey=${props.ctrlKey}, result=${JSON.stringify(result)}`);
+  return result;
 }
 
 const displayText = computed(() => {
@@ -67,147 +74,97 @@ const displayText = computed(() => {
   }
 
   const passengersText = `${numPassengers.value} ${t(getI18nResName2('searchFlights', 'passenger'), numPassengers.value!)}`;
-  const flightClassResName = getI18nResName3('searchFlights', 'class', props.params?.class ?? classControlValueSetting.value!);
+  const flightClassResName = getI18nResName3('searchFlights', 'class', modelRef.value?.class ?? classControlValueSetting.value!);
   const flightClass = t(flightClassResName);
 
   return `${passengersText}, ${flightClass}`;
 });
 
-const $emit = defineEmits<{(event: 'update:params', params?: IFlightParams | undefined): void}>();
-
 function updateParams (params: IFlightParams) {
   logger.verbose(`(SearchFlightsParams) updating params: ctrlKey=${props.ctrlKey}, params=${JSON.stringify(params)}`);
-  passengerControlValueSetting.value = params?.passengers ?? FlightMinPassengers;
-  classControlValueSetting.value = params?.class ?? DefaultFlightClass;
-  $emit('update:params', params);
+  passengerControlValueSetting.value = (params.passengers ?? FlightMinPassengers).toString();
+  classControlValueSetting.value = params.class ?? DefaultFlightClass;
+  modelRef.value = params;
   logger.verbose(`(SearchFlightsParams) selected params updated: ctrlKey=${props.ctrlKey}, params=${JSON.stringify(params)}`);
 }
 
 function onParamsChange () {
   updateParams({
-    class: selectedClass.value ?? props.params?.class ?? DefaultFlightClass,
-    passengers: numPassengers.value ?? props.params?.passengers ?? FlightMinPassengers
+    class: selectedClass.value ?? modelRef.value?.class ?? DefaultFlightClass,
+    passengers: numPassengers.value ?? modelRef.value?.passengers ?? FlightMinPassengers
   });
 }
 
-function isDropdownShown () {
-  return (dropdown.value?.$el.className as string).includes('v-popper--shown');
-}
-
-function handleDocumentEvent (evt: Event) {
-  if (!isDropdownShown()) {
-    return;
-  }
-
-  let isInsideDropdown = false;
-  let isInsideFlightClassDropdown = false;
-  evt.composedPath().forEach((e: EventTarget) => {
-    if (e === elDropdownContainer.value) {
-      isInsideDropdown = true;
-    }
-    if ((e instanceof HTMLElement) && (e as any).className.includes(FlightClassDropdownClass)) {
-      isInsideFlightClassDropdown = true;
-    }
-  });
-  if (!isInsideDropdown && !isInsideFlightClassDropdown) {
-    hideDropdown();
-  }
-}
+onBeforeMount(() => {
+  saveInitialValuesToSettingsIfNotEmpty();
+  const flightParams = readParamsFromSettings();
+  numPassengers.value = flightParams.passengers;
+  selectedClass.value = flightParams.class;
+  updateParams(flightParams);
+});
 
 onMounted(() => {
-  document.addEventListener('click', handleDocumentEvent);
-
-  hasMounted.value = true;
-  numPassengers.value = passengerControlValueSetting.value!;
-  selectedClass.value = classControlValueSetting.value!;
-
-  updateParams({
-    passengers: numPassengers.value,
-    class: selectedClass.value
-  });
+  hasMounted.value = true;  
 });
 
-onUnmounted(() => {
-  document.removeEventListener('click', handleDocumentEvent);
+defineShortcuts({
+  'ESCAPE': () => mainMenuOpen.value = false
 });
 
-function onEscape () {
-  hideDropdown();
-}
+const uiStyling = {
+  container: '!mt-14' // search offers input control's height 
+};
 
 </script>
 
 <template>
-  <div class="search-flights-params">
-    <VDropdown
-      ref="dropdown"
-      v-floating-vue-hydration="{ tabIndex: -1 }"
-      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
-      :aria-id="`${ctrlKey}-DropDownWrapper`"
-      :distance="-6"
-      :hide-triggers="[(triggers: any) => [...triggers, 'click']]"
-      :auto-hide="false"
-      :prevent-overflow="false"
-      placement="bottom-end"
-      :flip="false"
-      :boundary="elBtn"
-      theme="control-dropdown"
-      @apply-show="onMenuShown"
-      @apply-hide="onMenuHide"
-      @keyup.escape="onEscape"
-    >
-      <FieldFrame :text-res-name="getI18nResName2('searchFlights', 'flightParamsCaption')" class="dropdown-list-field-frame">
-        <button
-          :id="`flight-params-${ctrlKey}`"
-          ref="elBtn"
-          class="brdr-1"
-          type="button"
+  <UPopover v-model:open="mainMenuOpen" :class="ui?.wrapper" :popper="{ placement: 'bottom' }" :ui="uiStyling">
+    <InputFieldFrame class="w-full" :text-res-name="getI18nResName2('searchFlights', 'flightParamsCaption')">
+      <UButton size="md" :class="`justify-between flex-row-reverse cursor-pointer dark:hover:bg-transparent w-full pl-[16px] ${ui?.input ?? ''}`" variant="outline" color="gray">
+        <UIcon name="i-heroicons-chevron-right-20-solid" class="w-5 h-5 transition-transform text-gray-400 dark:text-gray-500 rotate-90"/>
+        {{ displayText }}       
+      </UButton>
+    </InputFieldFrame>
+
+    <template #panel="{ close }">
+      <div class="w-full p-4">
+        <DropdownList
+          v-model:selected-value="selectedClass"
+          :ctrl-key="`${ctrlKey}-FlightClass`"
+          :caption-res-name="getI18nResName2('searchFlights', 'fieldClass')"
+          :persistent="false"
+          :items="[{
+            value: 'economy',
+            resName: getI18nResName3('searchFlights', 'class', 'economy')
+          }, {
+            value: 'comfort',
+            resName: getI18nResName3('searchFlights', 'class', 'comfort')
+          }, {
+            value: 'business',
+            resName: getI18nResName3('searchFlights', 'class', 'business')
+          }]"
+          @update:selected-value="onParamsChange"
+        />
+        <SearchOffersCounter
+          v-model:value="numPassengers"
+          :ctrl-key="`${props.ctrlKey}-NumPassengers`"
+          :min-value="FlightMinPassengers"
+          :max-value="FlightMaxPassengers"
+          :defaul-value="FlightMinPassengers"
+          :label-res-name="getI18nResName2('searchFlights', 'fieldPassengers')"
+          class="mt-16"
+          @update:value="onParamsChange"
+        />
+        <UButton
+          class="mt-6 w-full justify-center"
+          size="md"
+          color="primary"
+          variant="solid"
+          @click="close"
         >
-          {{ displayText }}
-        </button>
-      </FieldFrame>
-      <template #popper>
-        <ClientOnly>
-          <div ref="elDropdownContainer" class="search-offers-dropdown-list-container flight-params-controls p-xs-2 p-s-3" :data-popper-anchor="`flight-params-${props.ctrlKey}`">
-            <SearchOffersCounter
-              v-model:value="numPassengers"
-              :ctrl-key="`${props.ctrlKey}-NumPassengers`"
-              :default-value="FlightMinPassengers"
-              :min-value="FlightMinPassengers"
-              :max-value="FlightMaxPassengers"
-              :label-res-name="getI18nResName2('searchFlights', 'fieldPassengers')"
-              @update:value="onParamsChange"
-            />
-            <DropdownList
-              v-model:selected-value="selectedClass"
-              :ctrl-key="`${ctrlKey}-FlightClass`"
-              :caption-res-name="getI18nResName2('searchFlights', 'fieldClass')"
-              :persistent="false"
-              class="flight-params-class mt-xs-4"
-              :list-container-class="FlightClassDropdownClass"
-              :default-value="classControlValueSetting.value ?? DefaultFlightClass"
-              :items="[{
-                value: 'economy',
-                resName: getI18nResName3('searchFlights', 'class', 'economy')
-              }, {
-                value: 'comfort',
-                resName: getI18nResName3('searchFlights', 'class', 'comfort')
-              }, {
-                value: 'business',
-                resName: getI18nResName3('searchFlights', 'class', 'business')
-              }]"
-              @update:selected-value="onParamsChange"
-            />
-            <SimpleButton
-              class="mr-xs-2 mt-xs-4 flight-params-close-dropdown-btn"
-              :ctrl-key="`${ctrlKey}-FlightPrmsClose`"
-              kind="accent"
-              :label-res-name="getI18nResName1('close')"
-              @click="hideDropdown"
-            />
-          </div>
-        </ClientOnly>
-      </template>
-    </VDropdown>
-  </div>
+          {{  $t(getI18nResName1('close')) }}
+        </UButton>
+      </div>
+    </template>
+  </UPopover>
 </template>

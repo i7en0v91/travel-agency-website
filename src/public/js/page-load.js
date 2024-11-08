@@ -9,3 +9,5 @@ if (mode === "system") {
   theme = mode;
 }
 document.documentElement.dataset.theme = theme;
+document.documentElement.classList.remove('dark', 'light');
+document.documentElement.classList.add(theme);

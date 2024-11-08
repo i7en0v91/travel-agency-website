@@ -73,7 +73,7 @@ const ApiRoutesWithCachingDisabled = [`${ApiAppEndpointPrefix}/stays/**`, `${Api
 
 export default defineNuxtConfig({
   devtools: { enabled: false },
-
+  
   ssr: true,
 
   sourcemap: {
@@ -140,12 +140,6 @@ export default defineNuxtConfig({
       src: '~/plugins/custom-fetch.ts'
     },
     {
-      name: 'floating-vue',
-      mode: 'all',
-      order: 60,
-      src: '~/plugins/floating-vue.ts'
-    },
-    {
       name: 'vue-yandex-maps.client',
       mode: 'client',
       order: 70,
@@ -168,6 +162,10 @@ export default defineNuxtConfig({
   components: [
     {
       path: '~/components',
+      pathPrefix: false
+    },
+    {
+      path: '~/content/prose',
       pathPrefix: false
     }
   ],
@@ -257,6 +255,20 @@ export default defineNuxtConfig({
     ]
   },
 
+  svgo: {
+    autoImportPath: false,
+  },
+
+  content: {
+    ignores: [
+      'content/prose'
+    ]
+  },
+
+  ui: {
+    safelistColors: ['mintgreen']
+  },
+
   tiptap: {
     prefix: 'Tiptap'
   },
@@ -318,15 +330,15 @@ export default defineNuxtConfig({
     ['dayjs-nuxt', {}],
     ['@nuxtjs/seo', {}],
     ['@pinia/nuxt', {}],
-    ['floating-vue/nuxt', {}],
-    ['nuxt-swiper', {}],
-    ['@samk-dev/nuxt-vcalendar', {}],
     ['@nuxt/test-utils/module', {}],
     ['nuxt-tiptap-editor', {}],
-    ['@nuxt/eslint', {}]
+    ['@nuxt/eslint', {}],
+    "@nuxt/ui",
+    "nuxt-svgo",
+    "@nuxt/content"
   ],
 
-  css: ['vue-final-modal/style.css'],
+  //css: ['vue-final-modal/style.css'],
 
   build: {
     transpile: ['jsonwebtoken']
@@ -364,7 +376,7 @@ export default defineNuxtConfig({
       }
     },
     build: {
-      transpile: ['lodash', 'vue-toastification', 'file-saver']
+      transpile: ['lodash', 'file-saver']
     },
     auth: {
       baseURL: `http://127.0.0.1:${TEST_SERVER_PORT}/${ApiEndpointAuthentication}`
@@ -396,7 +408,7 @@ export default defineNuxtConfig({
   /** Production overrides */
   $production: {
     build: {
-      transpile: ['lodash', 'vue-toastification', 'file-saver']
+      transpile: ['lodash', 'file-saver']
     },
     auth: {
       baseURL: isPublishEnv() ? `https://golobe.demo/${ApiEndpointAuthentication}` : `http://localhost:3000/${ApiEndpointAuthentication}`
@@ -431,7 +443,19 @@ export default defineNuxtConfig({
           }
         },
         onLog: rollupLogHandler
-      }
+      },
+      prerender: {
+        failOnError: true
+      },
+      hooks: {
+        'compiled':  async (ctx) => { 
+          // TODO: temporary workaround to be sure build process exits
+          const allCompleted = !!ctx._prerenderedRoutes?.length;
+          if(allCompleted) {
+            process.exit(0);
+          }
+        },
+      },
     },
     vite: {
       build: {

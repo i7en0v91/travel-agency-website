@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { UserNotificationLevel, maskLog, AppConfig, getI18nResName2, getI18nResName3, type I18nResName } from '@golobe-demo/shared';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import { ApiEndpointUserAccount, type IUpdateAccountDto, type IUpdateAccountResultDto, UpdateAccountResultCode } from '../../../server/api-definitions';
 import PropertyGrid from './../../forms/property-grid/property-grid.vue';
 import SimplePropertyEdit from './../../forms/property-grid/simple-property-edit.vue';
@@ -69,7 +68,6 @@ function onPropertyEnterEditMode (ctrlKey: string) {
       p.editStopperFn();
     }
   });
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 }
 
 async function validateAndSaveChanges (dto: IUpdateAccountDto, emailForVerification?: string): Promise<I18nResName | 'success' | 'cancel'> {

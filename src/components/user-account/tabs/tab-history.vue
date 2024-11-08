@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { AppConfig, type EntityId, type OfferKind, type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, eraseTimeOfDay, getValueForFlightDayFormatting, getI18nResName3, type I18nResName } from '@golobe-demo/shared';
-import { TabHistoryOptionButtonGroup, TabHistoryOptionButtonFlights, TabHistoryOptionButtonStays } from './../../../helpers/constants';
+import { HistoryTabGroup, HistoryTabFlights, HistoryTabStays } from './../../../helpers/constants';
+import TabsGroup from '../../forms/tabs-group.vue';
 import FlightTicketCard from './../../../components/user-account/ticket-card/ticket-flight-card.vue';
 import StayTicketCard from './../../../components/user-account/ticket-card/ticket-stay-card.vue';
 import { mapUserTicketsResult } from './../../../helpers/entity-mappers';
@@ -27,8 +28,8 @@ const timeRangeControlValueSetting = controlSettingsStore.getControlValueSetting
 const timeRangeFilter = ref<TimeRangeFilter>(timeRangeControlValueSetting.value ?? DefaultTimeRangeFilter);
 const timeRangeFilterDropdownItems: {value: TimeRangeFilter, resName: I18nResName}[] = (['upcoming', 'passed'] as TimeRangeFilter[]).map(f => { return { value: f, resName: getI18nResName3('accountPage', 'tabHistory', f) }; });
 
-const DefaultActiveTabKey = TabHistoryOptionButtonFlights;
-const activeOptionCtrl = ref<string | undefined>();
+const DefaultActiveTabKey = HistoryTabFlights;
+const activeTabKey = ref<string | undefined>();
 
 const $emit = defineEmits(['update:ready']);
 
@@ -100,24 +101,24 @@ onMounted(() => {
         kind="secondary"
         class="account-tab-history-dropdown"
         list-container-class="account-tab-history-dropdown-list"
-        :default-value="timeRangeControlValueSetting.value ?? DefaultTimeRangeFilter"
+        :default-value="DefaultTimeRangeFilter"
         :items="timeRangeFilterDropdownItems"
       />
     </div>
     <div class="account-tab-history pb-xs-2 pb-s-3 brdr-3" role="form">
       <ErrorHelm v-model:is-error="isError" :appearance="'error-stub'" :user-notification="true">
-        <OptionButtonGroup
-          v-model:active-option-ctrl="activeOptionCtrl"
-          :ctrl-key="TabHistoryOptionButtonGroup"
+        <TabsGroup
+          v-model:active-tab-key="activeTabKey"
+          :ctrl-key="HistoryTabGroup"
           role="tablist"
-          :options="[
-            { ctrlKey: TabHistoryOptionButtonFlights, labelResName: getI18nResName3('accountPage', 'tabHistory', 'flightsTab'), shortIcon: 'airplane', enabled: true, role: { role: 'tab', tabPanelId: flightsTabHtmlId } },
-            { ctrlKey: TabHistoryOptionButtonStays, labelResName: getI18nResName3('accountPage', 'tabHistory', 'staysTab'), shortIcon: 'bed', enabled: true, role: { role: 'tab', tabPanelId: staysTabHtmlId } }
+          :tabs="[
+            { ctrlKey: HistoryTabFlights, labelResName: getI18nResName3('accountPage', 'tabHistory', 'flightsTab'), shortIcon: 'i-material-symbols-flight', enabled: true },
+            { ctrlKey: HistoryTabStays, labelResName: getI18nResName3('accountPage', 'tabHistory', 'staysTab'), shortIcon: 'i-material-symbols-bed', enabled: true }
           ]"
         />
         <OfferTabbedView
           :ctrl-key="`${ctrlKey}-OfferTabView`" 
-          :selected-kind="(activeOptionCtrl ?? DefaultActiveTabKey) === TabHistoryOptionButtonFlights ? 'flights' : 'stays'" 
+          :selected-kind="(activeTabKey ?? DefaultActiveTabKey) === HistoryTabFlights ? 'flights' : 'stays'" 
           :tab-panel-ids="{ flights: flightsTabHtmlId, stays: staysTabHtmlId }" 
           :displayed-items="displayedItems"
           :no-offers-res-name="{

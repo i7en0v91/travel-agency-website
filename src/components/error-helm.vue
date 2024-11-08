@@ -5,12 +5,16 @@ import { defaultErrorHandler } from './../helpers/exceptions';
 interface IProps {
   isError: boolean,
   appearance?: AppExceptionAppearance,
-  userNotification?: boolean
+  userNotification?: boolean,
+  ui?: {
+    stub?: string
+  }
 }
 const props = withDefaults(defineProps<IProps>(), {
   isError: false,
   appearance: 'error-stub',
-  userNotification: false
+  userNotification: false,
+  ui: undefined
 });
 
 function onError (err: any) {
@@ -42,13 +46,13 @@ const $emit = defineEmits(['update:isError']);
 </script>
 
 <template>
-  <div class="error-helm">
+  <div class="w-full h-full min-w-full min-h-full overflow-hidden">
     <NuxtErrorBoundary v-if="!isError" @error="onError">
       <slot />
     </NuxtErrorBoundary>
-    <div v-else class="error-helm-stub">
-      <div class="error-helm-stub-icon" />
-      <div class="error-helm-stub-text">
+    <div v-else :class="`w-full h-full min-w-full min-h-full rounded-2xl p-2 flex flex-col flex-nowrap gap-[8px] justify-center items-center border-inherit bg-red-200 ${ui?.stub}`">
+      <UIcon name="i-gridicons-cross-circle" class="w-8 h-8 bg-red-500"/>
+      <div class="text-sm sm:text-base text-red-500 font-medium">
         {{ $t(getI18nResName2('appErrors','helm')) }}
       </div>
     </div>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { AppPage, getPagePath, type Locale, getLocalizeableValue, getScoreClassResName, getI18nResName2, getI18nResName3, type EntityDataAttrsOnly, type IStayOffer, type OfferKind, ImageCategory } from '@golobe-demo/shared';
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import range from 'lodash-es/range';
 import { useUserFavouritesStore } from './../../../stores/user-favourites-store';
 import { useOfferFavouriteStatus } from './../../../composables/offer-favourite-status';
@@ -60,8 +59,7 @@ async function favouriteBtnClick (): Promise<void> {
             :entity-src="props.offer.stay.photo"
             :category="ImageCategory.Hotel"
             sizes="xs:85vw sm:85vw md:85vw lg:75vw xl:30vw"
-            class="stay-photo"
-            img-class="stay-photo-img"
+            :ui="{ wrapper: 'stay-photo', img: 'stay-photo-img' }"
             :show-stub="true"
             :alt-res-name="getI18nResName2('searchStays', 'hotelPhotoAlt')"
           />

@@ -36,6 +36,7 @@ if (resultParam) {
 
 <template>
   <div class="complete-password-page account-page no-hidden-parent-tabulation-check">
+    <!--
     <AccountFormPhotos ctrl-key="CompletePasswordPhotos" class="complete-password-account-forms-photos" />
     <div class="complete-password-page-div">
       <NavLogo ctrl-key="completePasswordPageAppLogo" class="complete-password-page-logo" mode="inApp" />
@@ -66,5 +67,7 @@ if (resultParam) {
         </div>
       </div>
     </div>
+    -->
+    PAGE CONTENT
   </div>
 </template>

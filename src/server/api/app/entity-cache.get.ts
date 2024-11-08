@@ -1,10 +1,11 @@
-import { AppConfig, validateObject, type CacheEntityType, type EntityId, type IEntityCacheItem, type IEntityCacheSlugItem, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import { QueryPagePreviewModeParam, AppConfig, validateObject, type CacheEntityType, type EntityId, type IEntityCacheItem, type IEntityCacheSlugItem, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import { EntityCacheQuerySchema } from '../../api-definitions';
 import type { H3Event } from 'h3';
 import orderBy from 'lodash-es/orderBy';
 import startCase from 'lodash-es/startCase';
 import castArray from 'lodash-es/castArray';
+import omit from 'lodash-es/omit';
 import { getCommonServices, getServerServices } from '../../../helpers/service-accessors';
 
 function sortResultByRequestOrder <TItem extends IEntityCacheItem>(items: TItem[], idParamsOrder: EntityId[] | undefined, slugParamsOrder: string[] | undefined): TItem[] {
@@ -29,7 +30,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  const validationError = await validateObject(query, EntityCacheQuerySchema);
+  const validationError = await validateObject(omit(query, QueryPagePreviewModeParam), EntityCacheQuerySchema);
   if (validationError) {
     logger.warn(`(api:entity-cache) entity cache query does not match schema, url=${event.node.req.url}, msg=${validationError.message}, issues=${validationError.errors?.join('; ') ?? '[empty]'}]`, undefined, query);
     throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'entity cache query arguments has invalid format', 'error-stub');

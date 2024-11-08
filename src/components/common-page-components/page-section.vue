@@ -1,77 +1,61 @@
 <script setup lang="ts">
 import { type I18nResName, getI18nResName1, type Locale } from '@golobe-demo/shared';
-import type { Tooltip } from 'floating-vue';
 import { TooltipHideTimeout } from './../../helpers/constants';
-import SimpleButton from './../../components/forms/simple-button.vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 interface IProps {
   ctrlKey: string,
-  headerResName: I18nResName,
-  subtextResName?: I18nResName,
-  linkUrl?: string,
-  btnTextResName?: I18nResName,
+  isError?: boolean,
+  content?: {
+    headerResName: I18nResName,
+    subtextResName?: I18nResName,
+    btnTextResName?: I18nResName,
+    linkUrl?: string
+  },
   contentPadded?: boolean,
-  isError?: boolean
 };
-const props = withDefaults(defineProps<IProps>(), {
-  subtextResName: undefined,
-  btnTextResName: undefined,
+withDefaults(defineProps<IProps>(), {
   contentPadded: true,
-  linkUrl: undefined,
+  content: undefined,
   isError: false
 });
 
-const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
-const tooltipId = useId();
+const tooltipShown = ref(false);
 
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
 function scheduleTooltipAutoHide () {
-  setTimeout(() => { tooltip.value?.hide(); }, TooltipHideTimeout);
+  setTimeout(() => { tooltipShown.value = false; }, TooltipHideTimeout);
 }
 
 </script>
 
 <template>
-  <section class="page-section">
-    <div class="page-section-controls">
-      <div class="page-section-texting">
-        <h2 class="font-h3">
-          {{ $t(headerResName) }}
+  <section class="block mt-10 sm:mt-20">
+    <div v-if="content" class="w-full flex flex-col sm:flex-row flex-wrap sm:flex-nowrap justify-between gap-4 px-[14px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
+      <div class="flex-grow flex-shrink basis-auto break-words text-gray-500 dark:text-gray-400">
+        <h2 class="text-4xl font-semibold text-gray-600 dark:text-gray-300">
+          {{ $t(content.headerResName) }}
         </h2>
-        <p v-if="subtextResName" class="page-section-subtext mt-xs-3">
-          {{ $t(subtextResName) }}
+        <p v-if="content.subtextResName" class="text-sm sm:text-base font-normal mt-4">
+          {{ $t(content.subtextResName) }}
         </p>
       </div>
-      <NuxtLink v-if="linkUrl && btnTextResName" class="page-section-button btn btn-support brdr-1 tabbable" :to="navLinkBuilder.buildLink(linkUrl, locale as Locale)">
-        {{ $t(btnTextResName) }}
-      </NuxtLink>
-      <VTooltip
-        v-else-if="btnTextResName"
-        ref="tooltip"
-        :aria-id="tooltipId"
-        class="page-section-button-tooltip"
-        :distance="6"
-        :triggers="['click']"
-        placement="bottom"
-        :flip="false"
-        theme="default-tooltip"
-        :auto-hide="true"
-        no-auto-focus
-        @apply-show="scheduleTooltipAutoHide"
-      >
-        <SimpleButton :ctrl-key="`${props.ctrlKey}-Btn`" :label-res-name="btnTextResName" kind="support" class="page-section-button" />
-        <template #popper>
-          <div>
-            {{ $t(getI18nResName1('notAvailableInDemo')) }}
-          </div>
+      <UButton v-if="content.linkUrl && content.btnTextResName" size="lg" class="flex-grow-0 flex-shrink-0 basis-auto self-end" variant="outline" color="primary" :to="navLinkBuilder.buildLink(content.linkUrl, locale as Locale)">
+        <span class="text-gray-500 dark:text-gray-400">{{ $t(content.btnTextResName) }}</span>
+      </UButton>
+      <UPopover v-else-if="content.btnTextResName" v-model:open="tooltipShown" :popper="{ placement: 'bottom' }" class="flex-grow-0 flex-shrink-0 basis-auto self-end">
+        <UButton size="lg" variant="outline" color="primary" @click="scheduleTooltipAutoHide">
+          <span class="text-gray-500 dark:text-gray-400">{{ $t(content.btnTextResName) }}</span>
+        </UButton>
+        <template #panel="{ close }">
+          <span class="p-2 block" @click="close">{{ $t(getI18nResName1('notAvailableInDemo')) }}</span>
         </template>
-      </VTooltip>
+      </UPopover>  
     </div>
-    <div :class="`page-section-content ${contentPadded ? 'content-padded' : ''}`">
-      <ErrorHelm class="page-section-error-helm" :is-error="isError ?? false">
+    <div :class="`${content ? 'mt-6 sm:mt-10' : ''} ${contentPadded ? 'px-[14px] sm:px-[20px] md:px-[40px] xl:px-[104px]' : ''}`">
+      <ErrorHelm :is-error="isError ?? false">
         <slot />
       </ErrorHelm>
     </div>

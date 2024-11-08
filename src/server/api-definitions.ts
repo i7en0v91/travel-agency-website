@@ -14,6 +14,7 @@ const AllTestingPageCacheActions = Object.values(TestingPageCacheActionEnum).map
  * Endpoints
  */
 export const ApiEndpointPrefix = RestApiPrefix;
+export const ApiEndpointNuxtContentPrefix = `/${ApiEndpointPrefix}/_content`;
 export const ApiAppEndpointPrefix = RestAppPrefix;
 export const ApiEndpointLogging = RestApiLogging;
 export const ApiEndpointTestingInvlidatePage = `${ApiAppEndpointPrefix}/testing/invalidate-page`;

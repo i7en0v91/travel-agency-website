@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { DataKeyImageDetails, PreviewModeParamEnabledValue, QueryPagePreviewModeParam, type IAppLogger, type I18nResName, type ImageCategory, ImageAuthRequiredCategories, type IImageEntitySrc, type CssPropertyList } from '@golobe-demo/shared';
 import { getObject } from './../../helpers/rest-utils';
+import { type IStaticImageUiProps } from './../../types';
 import { addPayload, getPayload } from './../../helpers/payload';
 import { ApiEndpointImageDetails, ApiEndpointImage } from './../../server/api-definitions';
 import { type ComponentInstance, type GlobalComponents } from 'vue';
@@ -25,15 +26,14 @@ interface IProps {
   category?: ImageCategory,
   entitySrc?: IImageEntitySrc,
   sizes: string, // e.g. sm:100vw md:100vw lg:80vw xl:60vw xxl:40vw
-  imgClass?: string | undefined,
   stubStyle?: CssPropertyList | 'default' | 'custom-if-configured', // false - do not show custom stub (use default)
   requestExtraDisplayOptions?: boolean,
-  overlayClass?: string,
   altResName?: I18nResName | undefined,
   altResParams?: any | undefined,
   showStub?: boolean,
   imgIsClientOnly?: boolean,
-  isHighPriority?: boolean
+  isHighPriority?: boolean,
+  ui?: IStaticImageUiProps
 }
 
 declare interface IFetchedImageDetails {
@@ -45,15 +45,14 @@ const props = withDefaults(defineProps<IProps>(), {
   assetSrc: undefined,
   entitySrc: undefined,
   category: undefined,
-  imgClass: undefined,
   altResName: undefined,
   altResParams: undefined,
   requestExtraDisplayOptions: false,
   stubStyle: 'default',
-  overlayClass: undefined,
   showStub: true,
   imgIsClientOnly: false,
-  isHighPriority: false
+  isHighPriority: false,
+  ui: undefined
 });
 
 const { status, signIn, getSession } = useAuth();
@@ -97,7 +96,11 @@ const finalStubStyle = shallowRef<CssPropertyList | undefined>(!isString(props.s
 
 const imageDetails = ref<IFetchedImageDetails | undefined>();
 function updateImageStylingDetails () {
-  finalStubStyle.value = (!isString(props.stubStyle) ? (props.stubStyle as CssPropertyList) : undefined) ?? imageDetails.value?.stubCssStyle ?? undefined;
+  let style = (!isString(props.stubStyle) ? (props.stubStyle as CssPropertyList) : undefined) ?? imageDetails.value?.stubCssStyle ?? undefined;
+  if(!!style && JSON.stringify(style).length <= 3) {
+    style = undefined;
+  }
+  finalStubStyle.value = style;
   invertForDarkTheme.value = (props.requestExtraDisplayOptions ? (imageDetails.value?.invertForDarkTheme) : undefined) ?? false;
   logger.verbose(`(StaticImage) applying stub custom css style, ctrlKey=${props.ctrlKey}, style=[${finalStubStyle.value ? JSON.stringify(finalStubStyle.value) : 'empty'}], invertForDarkTheme=${invertForDarkTheme.value}`);
 }
@@ -117,12 +120,13 @@ if(props.entitySrc) {
 
 // no need to make it computed at the moment
 const stubCssClass = computed(() => {
-  const hasStaticStubData = finalStubStyle.value && JSON.stringify(finalStubStyle.value).length > 3;
-  return `${loaded.value ? 'img-loaded' : ''} ${hasStaticStubData ? '' : 'static-image-stub-animated'} ${!props.showStub ? 'static-image-stub-hidden' : ''}`;
+  //return `${loaded.value ? 'img-loaded' : ''} ${hasStaticStubData ? '' : 'static-image-stub-animated'} ${!props.showStub ? 'static-image-stub-hidden' : ''}`;
+  return `${loaded.value ? 'invisible' : ''} ${!props.showStub ? 'invisible' : ''}`;
+  
 });
 
 const imgCssClass = computed(() => {
-  return `static-image-img ${props.imgClass} ${(loaded.value && (!props.requestExtraDisplayOptions || imageDetails.value)) ? 'img-loaded' : ''} ${invertForDarkTheme.value ? 'dark-theme-invert' : ''}`;
+  return `row-start-1 row-end-2 col-start-1 col-end-2 block w-full h-auto object-cover text-[0] z-[2] bg-transparent ${props.ui?.img ?? ''} ${invertForDarkTheme.value ? 'invert' : ''}`;
 });
 
 async function fetchDisplayDetailsIfNeeded (): Promise<void> {
@@ -208,10 +212,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="static-image" role="img">
-    <ErrorHelm v-model:is-error="isError" :appearance="'error-stub'" :user-notification="false">
-      <div class="static-image-div">
-        <div :class="`static-image-stub ${stubCssClass}`" :style="finalStubStyle" />
+  <div role="img" :class="ui?.wrapper">
+    <ErrorHelm v-model:is-error="isError" appearance="error-stub" :user-notification="false">
+      <div class="w-full h-full grid grid-rows-1 grid-cols-1 overflow-hidden">
+        <USkeleton v-if="!loaded && showStub && !finalStubStyle" :class="`row-start-1 row-end-2 col-start-1 col-end-2 block w-full h-full ${ui?.stub ?? ''}`"/>
+        <div v-else :class="`row-start-1 row-end-2 col-start-1 col-end-2 block w-full h-full ${stubCssClass} ${ui?.stub ?? ''}`" :style="finalStubStyle"/>
         <ClientOnly v-if="imgIsClientOnly">
           <nuxt-img
             v-if="imgUrl"
@@ -246,7 +251,7 @@ onMounted(() => {
           @load="onLoad"
           @error="onError"
         />
-        <div v-if="overlayClass" :class="`static-image-overlay ${props.overlayClass}`" />
+        <div v-if="ui?.overlay" :class="`row-start-1 row-end-2 col-start-1 col-end-2 block w-full h-full rounded-none z-[3] ${props.ui?.overlay ?? ''}`" />
       </div>
     </ErrorHelm>
   </div>

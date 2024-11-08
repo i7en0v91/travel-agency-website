@@ -1,5 +1,4 @@
 import { UserNotificationLevel, AppException, AppExceptionCodeEnum, type I18nResName, getI18nResName2 } from '@golobe-demo/shared';
-import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../helpers/dom';
 import { useModal } from 'vue-final-modal';
 import { type ConfirmBoxButton } from './../types';
 import ConfirmBox from './../components/confirm-box.vue';
@@ -46,7 +45,6 @@ export function useConfirmBox (): {
         }
         isOpened = false;
         completeCallback!(resultButton);
-        setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
       }
     }
   });

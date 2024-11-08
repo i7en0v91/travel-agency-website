@@ -1,123 +1,88 @@
 <script setup lang="ts">
 import { type I18nResName } from '@golobe-demo/shared';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
-import SimpleButton from './../../forms/simple-button.vue';
-import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
-  value?: number,
-  defaultValue: number,
-  initiallySelectedValue?: number | null | undefined,
   minValue: number,
   maxValue: number,
   labelResName: I18nResName
 }
 
-const props = withDefaults(defineProps<IProps>(), {
-  value: undefined,
-  initiallySelectedValue: undefined
-});
+const props = defineProps<IProps>();
 
-const btnDecrement = shallowRef<ComponentInstance<typeof SimpleButton>>();
-const btnIncrement = shallowRef<ComponentInstance<typeof SimpleButton>>();
+const btnDecrement = shallowRef();
+const btnIncrement = shallowRef();
 const hasMounted = ref(false);
 
 const logger = getCommonServices().getLogger();
-
-const controlSettingsStore = useControlSettingsStore();
-const controlValueSetting = controlSettingsStore.getControlValueSetting<number>(props.ctrlKey, props.defaultValue, true);
-if (props.initiallySelectedValue) {
-  controlValueSetting.value = props.initiallySelectedValue;
-} else if (props.initiallySelectedValue === null) {
-  controlValueSetting.value = props.defaultValue;
-}
-const currentValue = ref<number | undefined>();
-
-const $emit = defineEmits<{(event: 'update:value', value: number): void}>();
+const modelRef = defineModel<number | null | undefined>('value');
 
 const displayText = computed(() => {
-  return hasMounted.value ? (props.value ?? props.defaultValue) : '';
+  return hasMounted.value ? modelRef.value : '';
 });
 
-function fireValueChanged () {
-  logger.debug(`(SearchOffersCounter) value changed: ctrlKey=${props.ctrlKey}, value=${currentValue.value}`);
-  controlValueSetting.value = currentValue.value;
-  $emit('update:value', currentValue.value!);
-}
-
 function onIncrementClick () {
-  const updatedValue = props.value! + 1;
+  logger.debug(`(SearchOffersCounter) increment clicked: ctrlKey=${props.ctrlKey}, value=${modelRef.value}`);
+  const updatedValue = modelRef.value! + 1;
   if (updatedValue > props.maxValue) {
     return;
   }
-  if ((updatedValue === props.maxValue) || (updatedValue === 2)) {
-    setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-  }
   if (updatedValue === props.maxValue) {
+    logger.debug(`(SearchOffersCounter) disabling increment btn: ctrlKey=${props.ctrlKey}, max=${props.maxValue}`);
     btnIncrement.value?.$el.blur();
   }
-  currentValue.value = updatedValue;
-  fireValueChanged();
+  modelRef.value = updatedValue;
 }
 
 function onDecrementClick () {
-  const updatedValue = props.value! - 1;
+  logger.debug(`(SearchOffersCounter) decrement clicked: ctrlKey=${props.ctrlKey}, value=${modelRef.value}`);
+  const updatedValue = modelRef.value! - 1;
   if (updatedValue < props.minValue) {
     return;
   }
-  if ((updatedValue === props.minValue) || (updatedValue === props.maxValue - 1)) {
-    setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-  }
   if (updatedValue === props.minValue) {
+    logger.debug(`(SearchOffersCounter) disabling decrement btn: ctrlKey=${props.ctrlKey}, min=${props.minValue}`);
     btnDecrement.value?.$el.blur();
   }
-  currentValue.value = updatedValue;
-  fireValueChanged();
+  modelRef.value = updatedValue;
 }
 
-onBeforeMount(() => {
-  if (controlValueSetting.value) {
-    currentValue.value = controlValueSetting.value!;
-  }
-});
 onMounted(() => {
   hasMounted.value = true;
-  fireValueChanged();
 });
 
 </script>
 
 <template>
-  <div class="search-offers-counter">
-    <ClientOnly>
-      <div class="search-offers-counter-caption">
-        {{ $t(props.labelResName) }}
+  <div class="text-sm sm:text-base w-full flex flex-row flex-nowrap items-center gap-[32px]">
+    <div class="w-full min-w-[100px] text-gray-500 dark:text-gray-400 font-medium">
+      {{ $t(props.labelResName) }}
+    </div>
+    <div class="flex flex-row flex-nowrap items-center">
+      <UButton
+        ref="btnDecrement"
+        icon="i-ion-remove-circle"
+        size="sm"
+        color="gray"
+        variant="soft"
+        class="ring-0 text-gray-500 dark:text-gray-400 focus-visible:ring-2 focus-visible:ring-gray-500 dark:focus-visible:ring-gray-400  bg-transparent hover:bg-gray-100 disabled:bg-transparent aria-disabled:bg-transparent dark:bg-transparent dark:hover:bg-gray-950 dark:disabled:!bg-transparent dark:aria-disabled:!bg-transparent"
+        :disabled="modelRef! <= props.minValue"
+        @click="onDecrementClick"
+      />
+      <div class="min-w-[20px] text-center">
+        {{ displayText }}
       </div>
-      <div class="search-offers-counter-controls">
-        <SimpleButton
-          ref="btnDecrement"
-          class="search-offers-counter-btn mr-xs-2"
-          :ctrl-key="`${ctrlKey}-BtnDecrement`"
-          kind="icon"
-          icon="decrement"
-          :enabled="(props.value ?? props.defaultValue) > props.minValue"
-          @click="onDecrementClick"
-        />
-        <div class="search-offers-counter-value">
-          {{ displayText }}
-        </div>
-        <SimpleButton
-          ref="btnIncrement"
-          class="search-offers-counter-btn ml-xs-2"
-          :ctrl-key="`${ctrlKey}-BtnIncrement`"
-          kind="icon"
-          icon="increment"
-          :enabled="(props.value ?? props.defaultValue) < props.maxValue"
-          @click="onIncrementClick"
-        />
-      </div>
-    </ClientOnly>
+      <UButton
+        ref="btnIncrement"
+        icon="i-ion-add-circle"
+        size="sm"
+        color="gray"
+        variant="soft"
+        class="ring-0 text-gray-500 dark:text-gray-400 focus-visible:ring-2 focus-visible:ring-gray-500 dark:focus-visible:ring-gray-400  bg-transparent hover:bg-gray-100 disabled:bg-transparent aria-disabled:bg-transparent dark:bg-transparent dark:hover:bg-gray-950 dark:disabled:!bg-transparent dark:aria-disabled:!bg-transparent"
+        :disabled="modelRef! >= props.maxValue"
+        @click="onIncrementClick"
+      />
+    </div>
   </div>
 </template>

@@ -81,11 +81,17 @@ onMounted(() => {
     v-model:entity-src="imageSrc"
     :category="ImageCategory.UserAvatar"
     ctrl-key="userAvatar"
-    :class="`avatar-box ${!(userAccount.avatar) ? 'avatar-default' : ''}`"
     sizes="xs:50vw sm:30vw md:20vw lg:10vw xl:10vw"
     :fill-alpha="false"
     :show-stub="false"
     :alt-res-name="getI18nResName2('accountPage', 'avatarAlt')"
-    :styling="{ containerClass: 'user-avatar-image-container', htmlImgClass: 'user-avatar-image-el', btnClass: 'user-avatar-upload-btn' }"
+    :ui="{ 
+      wrapper: `avatar-box ${!(userAccount.avatar) ? 'avatar-default' : ''}`, 
+      image: { 
+        wrapper: 'user-avatar-image-container', 
+        img: 'user-avatar-image-el' 
+        }, 
+      button: 'user-avatar-upload-btn' 
+    }"
   />
 </template>

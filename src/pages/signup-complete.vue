@@ -78,6 +78,7 @@ if (!tokenId || !tokenValue) {
 
 <template>
   <div class="signup-complete-page account-page no-hidden-parent-tabulation-check">
+    <!--
     <AccountFormPhotos ctrl-key="SignUpCompletedPhotos" class="signup-complete-account-forms-photos" />
     <div class="signup-complete-page-div">
       <NavLogo ctrl-key="signUpCompletePageAppLogo" class="signup-complete-page-logo" mode="inApp" />
@@ -108,5 +109,7 @@ if (!tokenId || !tokenValue) {
         </div>
       </div>
     </div>
+    -->
+    PAGE CONTENT
   </div>
 </template>

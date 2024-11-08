@@ -1,142 +1,97 @@
 <script setup lang="ts">
-import { type I18nResName } from '@golobe-demo/shared';
 import { type IDropdownListProps, type IDropdownListItemProps, type DropdownListValue } from './../../types';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
-import type { Dropdown } from 'floating-vue';
-import FieldFrame from './../forms/field-frame.vue';
+import InputFieldFrame from './input-field-frame.vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 const props = withDefaults(defineProps<IDropdownListProps>(), {
-  selectedValue: undefined,
   defaultValue: undefined,
   placeholderResName: undefined,
-  initiallySelectedValue: undefined,
-  listContainerClass: '',
   kind: 'primary'
 });
+const modelRef = defineModel<DropdownListValue | null | undefined>('selectedValue');
+const selectedMenuItem = ref<IDropdownListItemProps | undefined>();
 
-const elBtn = shallowRef<HTMLElement>();
-const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
-const hasMounted = ref(false);
+const { t } = useI18n();
 
 const logger = getCommonServices().getLogger();
 
 const controlSettingsStore = useControlSettingsStore();
 const controlValueSetting = controlSettingsStore.getControlValueSetting<DropdownListValue | undefined>(props.ctrlKey, props.defaultValue, props.persistent);
-const selectedItemResName = ref<I18nResName | undefined>();
-if (props.initiallySelectedValue) {
-  controlValueSetting.value = props.initiallySelectedValue;
-  selectedItemResName.value = lookupValueResName(controlValueSetting.value);
-} else if (props.initiallySelectedValue === null) {
-  controlValueSetting.value = props.defaultValue;
-  selectedItemResName.value = lookupValueResName(controlValueSetting.value);
+
+function lookupItemByValue (value: DropdownListValue) : IDropdownListItemProps | undefined {
+  const result = props.items.find(i => i.value === value);
+  if(!result) {
+    logger.warn(`(DropdownList) failed to lookup item by value: ctrlKey=${props.ctrlKey}, value=${value}`);
+  }
+  return result;
 }
 
-function onMenuShown () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
+function setSelectedValue (item?: IDropdownListItemProps | undefined) {
+  logger.verbose(`(DropdownList) setting selected value: ctrlKey=${props.ctrlKey}, value=${item?.value}`);
+  controlValueSetting.value = item?.value;
+  selectedMenuItem.value = item;
+  modelRef.value = item?.value;
+  logger.verbose(`(DropdownList) selected value was set: ctrlKey=${props.ctrlKey}, value=${item?.value}`);
 }
 
-function onMenuHide () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
-function hideDropdown () {
-  dropdown.value?.hide();
-}
-
-function lookupValueResName (value?: DropdownListValue | undefined) : I18nResName | undefined {
-  if (value) {
-    const itemProps = props.items.find(i => i.value === value);
-    return itemProps?.resName;
-  } else {
-    return undefined;
+function saveInitialValuesToSettings() {
+  if (modelRef.value) {
+    controlValueSetting.value = modelRef.value;
+  } else if (modelRef.value === null) {
+    controlValueSetting.value = props.defaultValue;
   }
 }
 
-const $emit = defineEmits<{(event: 'update:selectedValue', value?: DropdownListValue | undefined): void}>();
-
-function updateSelectedValue (value?: DropdownListValue | undefined) {
-  logger.verbose(`(DropdownList) updating selected value: ctrlKey=${props.ctrlKey}, value=${value}`);
-  controlValueSetting.value = value;
-  selectedItemResName.value = lookupValueResName(value);
-  $emit('update:selectedValue', value);
-  logger.verbose(`(DropdownList) selected value updated: ctrlKey=${props.ctrlKey}, value=${value}`);
-}
-
-function onActivate (item: IDropdownListItemProps) {
-  logger.verbose(`(DropdownList) list item activated: ctrlKey=${props.ctrlKey}, value=${item.value}`);
-  hideDropdown();
-  updateSelectedValue(item.value);
-}
-
-function onEscape () {
-  hideDropdown();
-}
-
-onBeforeMount(() => {
-  selectedItemResName.value = lookupValueResName(controlValueSetting.value);
-});
 onMounted(() => {
-  hasMounted.value = true;
-  if (controlValueSetting.value || (props.initiallySelectedValue !== undefined)) {
-    $emit('update:selectedValue', controlValueSetting.value);
+  saveInitialValuesToSettings();
+  
+  let lookedUpValue: IDropdownListItemProps | undefined;
+  if(controlValueSetting.value) {
+    lookedUpValue = lookupItemByValue(controlValueSetting.value);
   }
-  watch(() => props.selectedValue, () => {
-    updateSelectedValue(props.selectedValue);
+  if(lookedUpValue) {
+    selectedMenuItem.value = lookedUpValue;
+  }
+  
+  watch(selectedMenuItem, () => {
+    logger.debug(`(DropdownList) selected menu value change handler: ctrlKey=${props.ctrlKey}, value=${selectedMenuItem.value}`);
+    setSelectedValue(selectedMenuItem.value);
+  }, { immediate: true });
+
+  watch(modelRef, () => {
+    if((!!modelRef.value && modelRef.value === selectedMenuItem.value?.value) || (!modelRef.value && selectedMenuItem.value === undefined)) {
+      return;
+    }
+
+    const valueItem = modelRef.value ? lookupItemByValue(modelRef.value) : undefined;
+    logger.debug(`(DropdownList) selected value changed, setting selected menu item: ctrlKey=${props.ctrlKey}, value=${modelRef.value}, displayName=${valueItem ? t(valueItem.resName) : undefined}`);
+    setSelectedValue(valueItem);
   });
 });
 
 </script>
 
 <template>
-  <!-- not using role="list" as w3c audit may fail because of "listitem" elements are not direct children, but instead is rendered in a separate floating-vue container -->
-  <div class="dropdown-list" @keyup.escape="onEscape">
-    <VDropdown
-      ref="dropdown"
-      v-floating-vue-hydration="{ tabIndex: 0 }"
-      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
-      :aria-id="`${ctrlKey}-DropDownWrapper`"
-      :distance="-6"
-      :hide-triggers="(triggers: any) => [...triggers, 'click']"
-      placement="bottom-end"
-      :prevent-overflow="kind === 'primary' ? true : false"
-      :flip="false"
-      :boundary="elBtn"
-      :theme="kind === 'primary' ? 'control-dropdown' : 'secondary-dropdown'"
-      no-auto-focus
-      @apply-show="onMenuShown"
-      @apply-hide="onMenuHide"
+  <InputFieldFrame :text-res-name="captionResName" :class="ui?.wrapper">
+    <USelectMenu 
+      v-model="selectedMenuItem" 
+      :options="items" 
+      by="value" 
+      option-attribute="resName" 
+      :placeholder="props.placeholderResName ? t(props.placeholderResName) : undefined" 
+      class="w-full font-medium" 
+      variant="outline" 
+      color="gray"
+      :ui="{ base: props.ui?.input }"
     >
-      <FieldFrame :text-res-name="captionResName" class="dropdown-list-field-frame">
-        <button
-          :id="`dropdown-list-${props.ctrlKey}`"
-          ref="elBtn"
-          class="dropdown-list-btn brdr-1"
-          type="button"
-          @keyup.escape="hideDropdown"
-        >
-          {{ (hasMounted || !persistent) ? (selectedItemResName ? $t(selectedItemResName) : (placeholderResName ? $t(placeholderResName) : '')) : '' }}
-        </button>
-      </FieldFrame>
-      <template #popper>
-        <ClientOnly>
-          <ol :class="`dropdown-list ${listContainerClass}`" :data-popper-anchor="`dropdown-list-${props.ctrlKey}`">
-            <li
-              v-for="(item, idx) in items"
-              :key="`${ctrlKey}-v${idx}`"
-              role="listitem"
-              class="dropdown-list-item p-xs-1 brdr-1 tabbable"
-              @onActivate="() => onActivate(item)"
-              @click="() => { onActivate(item); }"
-              @keyup.space="() => { onActivate(item); }"
-              @keyup.enter="() => { onActivate(item); }"
-              @keyup.escape="onEscape"
-            >
-              {{ $t(item.resName) }}
-            </li>
-          </ol>
-        </ClientOnly>
+      <template #label>
+        <span v-if="selectedMenuItem !== undefined && selectedMenuItem !== null" class="truncate">{{ $t(selectedMenuItem.resName) }}</span>
+        <span v-else>{{ props.placeholderResName ? t(props.placeholderResName) : undefined }}</span>
       </template>
-    </VDropdown>
-  </div>
+
+      <template #option="{ option: item }">
+        <span class="truncate">{{ $t(item.resName) }}</span>
+      </template>
+    </USelectMenu>
+  </InputFieldFrame>
 </template>

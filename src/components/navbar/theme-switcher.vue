@@ -8,26 +8,28 @@ interface IProps {
 defineProps<IProps>();
 
 const themeSettings = useThemeSettings();
-const wasInteracted = ref(false);
+
+
 async function toggleTheme () {
   if (!import.meta.client) {
     return;
   }
   themeSettings.toggleTheme();
-  await nextTick(() => { wasInteracted.value = true; });
 }
 
 </script>
 
 <template>
-  <div :class="`nav-item theme-switcher ${wasInteracted ? 'interacted' : ''}`">
-    <button
-      type="button"
-      role="switch"
-      :aria-label="$t(getI18nResName2('ariaLabels', 'btnThemeSwitcher'))"
-      class="theme-switcher-btn"
-      :aria-checked="themeSettings.currentTheme.value === 'light'"
-      @click="toggleTheme"
-    />
-  </div>
+  <UButton
+    role="switch"
+    variant="ghost" 
+    color="gray"
+    size="sm" 
+    square 
+    class="*:w-5 *:h-5 *:sm:w-6 *:sm:h-6"
+    :icon="`${themeSettings.currentTheme.value === 'light' ? 'i-heroicons-sun' : 'i-heroicons-moon'}`"
+    :aria-label="$t(getI18nResName2('ariaLabels', 'btnThemeSwitcher'))"
+    :aria-checked="themeSettings.currentTheme.value === 'light'"
+    @click="toggleTheme"
+  />
 </template>

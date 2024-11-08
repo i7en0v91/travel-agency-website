@@ -1,27 +1,29 @@
 <script setup lang="ts">
-import { AppConfig, eraseTimeOfDay, type I18nResName } from '@golobe-demo/shared';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
-import type { Dropdown } from 'floating-vue';
+import { AppConfig, eraseTimeOfDay, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
 import dayjs from 'dayjs';
-import FieldFrame from './../../forms/field-frame.vue';
+import isEqual from 'lodash-es/isEqual';
+import InputFieldFrame from '../../forms/input-field-frame.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
+import { DatePicker as VCalendarDatePicker } from 'v-calendar';
+import './../../../node_modules/v-calendar/dist/style.css';
+import { useDeviceSize } from '../../../composables/device-size';
+import { DeviceSizeEnum } from '../../../helpers/constants';
 
 interface IProps {
   ctrlKey: string,
   captionResName: I18nResName,
-  selectedDates: Date[],
-  initiallySelectedDates?: Date[] | null | undefined,
-  mode: 'single' | 'range'
+  mode: 'single' | 'range',
+  ui?: {
+    wrapper?: string,
+    input?: string
+  }
 }
 
 const props = defineProps<IProps>();
-
-type DatePickerDate = number | string | Date | null | {
-  start?: number | string | Date | null,
-  end?: number | string | Date | null
-};
+const modelRef = defineModel<Date[] | null | undefined>('selectedDates');
 
 const { d, locale } = useI18n();
+const { current: deviceSize } = useDeviceSize();
 
 const dateFrom = eraseTimeOfDay(dayjs().utc(true).toDate());
 const dateTo = eraseTimeOfDay(dayjs().utc(true).add(AppConfig.autoInputDatesRangeDays, 'day').toDate());
@@ -32,28 +34,26 @@ const rangeValue = ref({
 });
 const singleValue = ref(today);
 const hasMounted = ref(false);
-
-const elBtn = shallowRef<HTMLElement>();
-const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
+const open = ref(false);
 
 const logger = getCommonServices().getLogger();
 
 const controlSettingsStore = useControlSettingsStore();
 const controlSingleValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(`${props.ctrlKey}-single`, today.toISOString(), true);
 const controlRangeValueSetting = controlSettingsStore.getControlValueSetting<string[]>(`${props.ctrlKey}-range`, [dateFrom.toISOString(), dateTo.toISOString()], true);
-initialValuesFromSettings();
 
-function initialValuesFromSettings () {
-  if (props.initiallySelectedDates) {
-    if (props.initiallySelectedDates.length === 1) {
-      const initialDateFrom = props.initiallySelectedDates[0];
+function saveInitialValuesToSettings () {
+  const initiallySelectedDates = modelRef.value;
+  if (initiallySelectedDates?.length) {
+    if (initiallySelectedDates!.length === 1) {
+      const initialDateFrom = initiallySelectedDates[0];
       controlSingleValueSetting.value = dayjs(initialDateFrom).isBefore(today) ? today.toISOString() : initialDateFrom.toISOString();
     } else {
-      const initialDateFrom = props.initiallySelectedDates[0];
-      const initialDateTo = props.initiallySelectedDates[1];
+      const initialDateFrom = initiallySelectedDates[0];
+      const initialDateTo = initiallySelectedDates[1];
       controlRangeValueSetting.value = dayjs(initialDateFrom).isBefore(today) ? [dateFrom.toISOString(), dateTo.toISOString()] : [initialDateFrom.toISOString(), initialDateTo.toISOString()];
     }
-  } else if (props.initiallySelectedDates === null) {
+  } else if (initiallySelectedDates === null) {
     controlSingleValueSetting.value = today.toISOString();
     controlRangeValueSetting.value = [dateFrom.toISOString(), dateTo.toISOString()];
   } else {
@@ -66,50 +66,52 @@ function initialValuesFromSettings () {
   }
 }
 
-function onMenuShown () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
-function onMenuHide () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
-function hideDropdown () {
-  dropdown.value?.hide();
-}
-
-function fireSelectedDatesChanged () {
+function updateModelValue() {
+  logger.debug(`(SearchFlightsDatePicker) starting model value update: ctrlKey=${props.ctrlKey}, current=${JSON.stringify(modelRef.value)}`);
+  
+  let isSameValue = false;
+  let newValue: Date[] | null;
   if (props.mode === 'single') {
-    logger.debug(`(SearchFlightsDatePicker) firing selected date change: ctrlKey=${props.ctrlKey}, value=${singleValue.value}`);
-    $emit('update:selectedDates', [eraseTimeOfDay(singleValue.value)]);
+    const newDate = singleValue.value ? eraseTimeOfDay(singleValue.value) : null;
+    isSameValue = ((modelRef.value?.length ?? 0) === 0 && !newDate) || (!!modelRef.value?.length && modelRef.value[0].getTime() === newDate?.getTime());
+    newValue = newDate ? [newDate!] : null;
   } else {
-    logger.debug(`(SearchFlightsDatePicker) firing selected dates change: ctrlKey=${props.ctrlKey}, value=${JSON.stringify(rangeValue.value)}`);
-    $emit('update:selectedDates', [eraseTimeOfDay(rangeValue.value.start), eraseTimeOfDay(rangeValue.value.end)]);
+    newValue = rangeValue.value ? ([eraseTimeOfDay(rangeValue.value.start), eraseTimeOfDay(rangeValue.value.end)]) : null;
+    isSameValue = ((modelRef.value?.length ?? 0) === 0 && (newValue?.length ?? 0) === 0) || isEqual(modelRef.value, newValue);
   }
+
+  if(isSameValue) {
+    logger.debug(`(SearchFlightsDatePicker) skipping model value update, value is the same: ctrlKey=${props.ctrlKey}, current=${JSON.stringify(modelRef.value)}, new=${JSON.stringify(newValue)}`);
+    return;
+  }
+
+  logger.verbose(`(SearchFlightsDatePicker) updating model value: ctrlKey=${props.ctrlKey}, current=${JSON.stringify(modelRef.value)}, new=${JSON.stringify(newValue)}`);
+  modelRef.value = newValue;
 }
 
-function onCalendarValueUpdated () {
+function onCalendarValueChanged () {
   if (props.mode === 'single') {
-    logger.verbose(`(SearchFlightsDatePicker) updating selected date: ctrlKey=${props.ctrlKey}, value=${singleValue.value}`);
-    controlSingleValueSetting.value! = eraseTimeOfDay(singleValue.value).toISOString();
+    logger.verbose(`(SearchFlightsDatePicker) updating selected date: ctrlKey=${props.ctrlKey}, newValue=${singleValue.value}, modelValue=${modelRef.value}`);
+    if(!singleValue.value) {
+      singleValue.value = modelRef.value![0];
+    }
+    const value = singleValue.value;
+    controlSingleValueSetting.value = eraseTimeOfDay(value).toISOString();
   } else {
-    logger.verbose(`(SearchFlightsDatePicker) updating selected dates: ctrlKey=${props.ctrlKey}, value=${JSON.stringify([rangeValue.value.start, rangeValue.value.end])}`);
-    controlRangeValueSetting.value! = [eraseTimeOfDay(rangeValue.value.start).toISOString(), eraseTimeOfDay(rangeValue.value.end).toISOString()];
+    logger.verbose(`(SearchFlightsDatePicker) updating selected dates: ctrlKey=${props.ctrlKey}, newValue=${JSON.stringify([rangeValue.value.start, rangeValue.value.end])}, modelValue=${JSON.stringify(modelRef.value)}`);
+    if(!rangeValue.value?.start || !rangeValue.value?.end) {
+      rangeValue.value = { start: modelRef.value![0], end: modelRef.value![1] };
+    }
+    const value = [rangeValue.value.start, rangeValue.value.end];
+    controlRangeValueSetting.value = [eraseTimeOfDay(value![0]).toISOString(), eraseTimeOfDay(value![1]).toISOString()];
   }
-  fireSelectedDatesChanged();
+  updateModelValue();
   logger.verbose(`(SearchFlightsDatePicker) selected date(s) updated: ctrlKey=${props.ctrlKey}`);
 }
 
-const $emit = defineEmits<{(event: 'update:selectedDates', dates: Date[]): void}>();
-
-function onDateSelected (value: DatePickerDate) {
-  logger.verbose(`(SearchFlightsDatePicker) date selected: ctrlKey=${props.ctrlKey}, value=${JSON.stringify(value)}`);
-  hideDropdown();
-  onCalendarValueUpdated();
-}
-
-function onEscape () {
-  hideDropdown();
+function onDateSelected () {
+  onCalendarValueChanged();
+  open.value = false;
 }
 
 const datesDisplayText = computed(() => {
@@ -118,6 +120,8 @@ const datesDisplayText = computed(() => {
 });
 
 onBeforeMount(() => {
+  saveInitialValuesToSettings();
+
   if (controlSingleValueSetting.value) {
     singleValue.value = eraseTimeOfDay(new Date(controlSingleValueSetting.value!));
   }
@@ -125,69 +129,103 @@ onBeforeMount(() => {
     rangeValue.value = { start: eraseTimeOfDay(new Date(controlRangeValueSetting.value![0])), end: eraseTimeOfDay(new Date(controlRangeValueSetting.value![1])) };
   }
 });
+
 onMounted(() => {
+  watch(() => props.mode, () => {
+    updateModelValue();
+  });
+
+  watch(singleValue, onDateSelected);
+  watch(rangeValue, onDateSelected);
+
+  updateModelValue();
+
   hasMounted.value = true;
-  fireSelectedDatesChanged();
 });
-watch(() => props.mode, () => {
-  fireSelectedDatesChanged();
+
+const numColumnsForDevice = computed(() => 
+  (deviceSize.value === DeviceSizeEnum.XS) || 
+  (deviceSize.value === DeviceSizeEnum.SM) || 
+  (deviceSize.value === DeviceSizeEnum.MD) ? 1 : 2
+);
+
+const calendarAttrs = computed(() => {
+  return {
+    transparent: true,
+    borderless: false,
+    color: 'primary',
+    minDate: today,
+    locale: locale.value,
+    'is-dark': { selector: 'html', darkClass: 'dark' },
+    timezone: 'utc',
+    mode: 'date'
+  };
 });
+
+defineShortcuts({
+  'ESCAPE': () => open.value = false
+});
+
+const uiStyling = {
+  container: '!mt-14' // search offers input control's height 
+};
 
 </script>
 
 <template>
-  <div class="search-flights-date-picker" @keyup.escape="onEscape">
-    <VDropdown
-      ref="dropdown"
-      v-floating-vue-hydration="{ tabIndex: 0 }"
-      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
-      :aria-id="`${ctrlKey}-DropDownWrapper`"
-      :distance="-6"
-      :hide-triggers="(triggers: any) => [...triggers, 'click']"
-      placement="bottom"
-      :flip="false"
-      :boundary="elBtn"
-      theme="control-dropdown"
-      @apply-show="onMenuShown"
-      @apply-hide="onMenuHide"
-    >
-      <FieldFrame :text-res-name="captionResName" class="date-picker-field-frame">
-        <button
-          :id="`search-flights-dates-${props.ctrlKey}`"
-          ref="elBtn"
-          class="date-picker-field-btn brdr-1"
-          type="button"
-          @keyup.escape="hideDropdown"
-        >
-          {{ datesDisplayText }}
-        </button>
-      </FieldFrame>
-      <template #popper>
-        <ClientOnly>
-          <VDatePicker
-            v-if="mode === 'single'"
-            v-model="singleValue"
-            timezone="utc"
-            mode="date"
-            class="calendar"
-            color="golobe"
-            :min-date="today"
-            :locale="locale"
-            @update:model-value="onDateSelected"
-          />
-          <VDatePicker
-            v-else
-            v-model.range="rangeValue"
-            timezone="utc"
-            mode="date"
-            :min-date="today"
-            class="calendar"
-            color="golobe"
-            :locale="locale"
-            @update:model-value="onDateSelected"
-          />
-        </ClientOnly>
-      </template>
-    </VDropdown>
-  </div>
+  <UPopover v-model:open="open" :popper="{ placement: 'bottom' }"  :class="ui?.wrapper" :ui="uiStyling">
+    <InputFieldFrame :text-res-name="getI18nResName2('searchFlights', 'destinationCaption')" class="w-full">
+      <UButton icon="i-heroicons-calendar-days-20-solid" :class="`w-full dark:hover:bg-transparent ${ui?.input ?? ''} pl-[12px]`" variant="outline" color="gray">
+        {{ datesDisplayText }}
+      </UButton>
+    </InputFieldFrame>
+
+    <template #panel="{ close }">
+      <VCalendarDatePicker
+        v-if="mode === 'single'"
+        v-model="singleValue"
+        :columns="1"
+        is-required
+        v-bind="calendarAttrs"
+        @close="close" 
+      />
+      <VCalendarDatePicker
+        v-else
+        v-model.range="rangeValue"
+        is-required
+        :columns="numColumnsForDevice"
+        v-bind="calendarAttrs" 
+        @close="close" 
+      />
+    </template>
+  </UPopover>
 </template>
+
+<style>
+:root {
+  --vc-gray-50: rgb(var(--color-gray-50));
+  --vc-gray-100: rgb(var(--color-gray-100));
+  --vc-gray-200: rgb(var(--color-gray-200));
+  --vc-gray-300: rgb(var(--color-gray-300));
+  --vc-gray-400: rgb(var(--color-gray-400));
+  --vc-gray-500: rgb(var(--color-gray-500));
+  --vc-gray-600: rgb(var(--color-gray-600));
+  --vc-gray-700: rgb(var(--color-gray-700));
+  --vc-gray-800: rgb(var(--color-gray-800));
+  --vc-gray-900: rgb(var(--color-gray-900));
+}
+
+.vc-primary {
+  --vc-accent-50: rgb(var(--color-primary-50));
+  --vc-accent-100: rgb(var(--color-primary-100));
+  --vc-accent-200: rgb(var(--color-primary-200));
+  --vc-accent-300: rgb(var(--color-primary-300));
+  --vc-accent-400: rgb(var(--color-primary-400));
+  --vc-accent-500: rgb(var(--color-primary-500));
+  --vc-accent-600: rgb(var(--color-primary-600));
+  --vc-accent-700: rgb(var(--color-primary-700));
+  --vc-accent-800: rgb(var(--color-primary-800));
+  --vc-accent-900: rgb(var(--color-primary-900));
+}
+
+</style>

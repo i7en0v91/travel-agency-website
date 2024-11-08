@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { mapLocalizeableValues, AppConfig, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
+import { ImageCategory, MainTitleSlug, mapLocalizeableValues, AppConfig, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
 import { ApiEndpointCompanyReviewsList, ApiEndpointPopularCitiesList, type IPopularCityDto, type ICompanyReviewDto } from '../server/api-definitions';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../helpers/dom';
-import { Navigation, Autoplay, Mousewheel } from 'swiper/modules';
 import range from 'lodash-es/range';
+import HeadingText from './../components/index/main-heading-text.vue';
 import PageSection from './../components/common-page-components/page-section.vue';
+import AppPageBody from '../components/app-page-body.vue';
 import SearchPageImageLink from './../components/index/search-page-image-link.vue';
-import PopularCityCard from './../components/index/popular-city-card.vue';
-import CompanyReviewCard from './../components/index/company-review-card.vue';
+import CityOffersLinks from '../components/index/city-offers-links.vue';
+import CompanyReviews from './../components/index/company-reviews.vue';
 import { usePreviewState } from './../composables/preview-state';
 import { getCommonServices } from '../helpers/service-accessors';
+import throttle from 'lodash-es/throttle';
 
 definePageMeta({
   title: { resName: getI18nResName2('indexPage', 'title'), resArgs: undefined }
@@ -55,90 +56,123 @@ const reviewsListFetch = await useFetch(`/${ApiEndpointCompanyReviewsList}`,
     $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-stub' })
   });
 
-function onActiveSlideChanged () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
+function updateLinksTabAvailability() {
+  logger.debug('(indexPage) updating links tab availability');
+
+  try {
+    const listItemsEl = document.querySelectorAll('li.city-offers-list-item');
+    let availableCount = 0;
+    for(const liEl of listItemsEl) {
+      const liRect = liEl.getBoundingClientRect();
+      const linksAvailable = liRect.height > 0;
+      if(linksAvailable) {
+        availableCount++;
+      }
+
+      liEl.querySelectorAll('a').forEach(aEl => {
+        if(linksAvailable) {
+          aEl.removeAttribute('disabled');
+          aEl.removeAttribute('tabIndex');          
+        } else {
+          aEl.setAttribute('disabled', 'true');
+          aEl.setAttribute('tabIndex', '-1');          
+        }
+      });
+    }
+
+    logger.debug(`(indexPage) links tab availability updated, total=${availableCount}, available=${availableCount}`);
+  } catch(err: any) {
+    logger.warn('(indexPage) failed to update links tab availability', err);
+  }
 }
+
+const onWindowResize = () => setTimeout(throttle(function () {
+  setTimeout(() => {
+    updateLinksTabAvailability();
+  }, 0);
+}), 100);
+
+onMounted(() => {
+  setTimeout(() => {
+    updateLinksTabAvailability();
+  }, 0);
+  window.addEventListener('resize', onWindowResize);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', onWindowResize);
+});
+
 
 </script>
 
 <template>
-  <div class="index-page-content no-hidden-parent-tabulation-check">
-    <PageSection
-      ctrl-key="PerfectTripSection"
-      :header-res-name="getI18nResName3('indexPage', 'perfectTripSection', 'title')"
-      :subtext-res-name="getI18nResName3('indexPage', 'perfectTripSection', 'subtext')"
-      :btn-text-res-name="getI18nResName3('indexPage', 'perfectTripSection', 'btn')"
-      :content-padded="true"
-      link-url="flights"
-      :is-error="!!citiesListFetch.error.value"
+  <div class="golobe-landing-page">
+    <SearchPageHead
+      ctrl-key="MainPageHead"
+      :image-entity-src="{ slug: MainTitleSlug }"
+      :category="ImageCategory.MainTitle"
+      :image-alt-res-name="getI18nResName2('searchPageCommon', 'mainImageAlt')"
+      :ui="{
+        content: 'h-[701px] max-h-[701px] md:h-[581px] md:max-h-[581px]',
+        image: {
+          wrapper: 'h-[701px] max-h-[701px] md:h-[581px] md:max-h-[581px]',
+          img: 'h-full max-h-[701px] md:max-h-[581px]',
+          overlay: 'bg-gradient-to-b from-gray-900 to-60% opacity-75'
+        }
+      }"
     >
-      <ul class="popular-city-grid p-xs-2 p-s-3  hidden-overflow-nontabbable">
-        <PopularCityCard
-          v-for="(city, idx) in citiesListFetch.data.value"
-          :key="`popular-city-${idx}`"
-          :ctrl-key="`PopularCityCard-${idx}`"
-          search-kind="flight"
-          :text="city ? mapLocalizeableValues((city: string, country: string) => `${city}, ${country}`, city.cityDisplayName, city.countryDisplayName) : undefined"
-          :img-src="city ? { slug: city.imgSlug, timestamp: city.timestamp } : undefined"
-          :city-slug="city ? city.slug : undefined"
-          :num-stays="city ? city.numStays : undefined"
-          class="popular-city-grid-item"
-        />
-      </ul>
-    </PageSection>
-    <div class="page-section search-page-image-link-section">
-      <div class="page-section-content content-padded search-image-links-section-content">
-        <div class="search-page-image-links">
+      <HeadingText ctrl-key="IndexPageMainHeading" />
+    </SearchPageHead>
+    <AppPageBody>
+      <PageSection
+        ctrl-key="PerfectTripSection"
+        :content="{
+          headerResName: getI18nResName3('indexPage', 'perfectTripSection', 'title'),
+          subtextResName: getI18nResName3('indexPage', 'perfectTripSection', 'subtext'),
+          btnTextResName: getI18nResName3('indexPage', 'perfectTripSection', 'btn'),
+          linkUrl: 'flights'
+        }"        
+        :content-padded="true"
+        :is-error="!!citiesListFetch.error.value"
+      >
+        <ul class="p-2 sm:p-4 grid grid-flow-row grid-cols-cityxs md:grid-cols-citymd grid-rows-5 md:grid-rows-3 auto-rows-[0px] overflow-clip -translate-y-[40px] justify-center">
+          <li v-for="(city, idx) in citiesListFetch.data.value" :key="`popular-city-${idx}`" class="w-full city-offers-list-item">
+            <CityOffersLinks
+              :ctrl-key="`CityOffersLinks-${idx}`"
+              search-kind="flight"
+              :text="city ? mapLocalizeableValues((city: string, country: string) => `${city}, ${country}`, city.cityDisplayName, city.countryDisplayName) : undefined"
+              :img-src="city ? { slug: city.imgSlug, timestamp: city.timestamp } : undefined"
+              :city-slug="city ? city.slug : undefined"
+              :num-stays="city ? city.numStays : undefined"
+            />
+          </li>
+        </ul>
+      </PageSection>
+      <PageSection
+        ctrl-key="SearchPageImageLinks"
+        class="sm:!mt-10"
+        :content-padded="true"
+        :is-error="false"
+      >
+        <div class="flex flex-col lg:flex-row flex-nowrap gap-[24px] items-center justify-center">
           <SearchPageImageLink ctrl-key="SearchFlightsImageLink" page="flights" />
           <SearchPageImageLink ctrl-key="SearchHotelsImageLink" page="stays" />
         </div>
-      </div>
-    </div>
-    <PageSection
-      ctrl-key="CompanyReviewSection"
-      class="company-reviews-section"
-      :header-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'title')"
-      :subtext-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'subtext')"
-      :btn-text-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'btn')"
-      :content-padded="true"
-      :is-error="!!reviewsListFetch.error.value"
-    >
-      <Swiper
-        class="company-reviews-swiper pb-xs-4"
-        :modules="[Navigation, Mousewheel, Autoplay]"
-        slides-per-view="auto"
-        :navigation="{
-          enabled: true,
-          nextEl: null,
-          prevEl: null
+      </PageSection>
+      <PageSection
+        ctrl-key="CompanyReviewSection"
+        class="company-reviews-section"
+        :content="{
+          headerResName: getI18nResName3('indexPage', 'companyReviewSection', 'title'),
+          subtextResName: getI18nResName3('indexPage', 'companyReviewSection', 'subtext'),
+          btnTextResName: getI18nResName3('indexPage', 'companyReviewSection', 'btn')
         }"
-        :loop="true"
-        :allow-touch-move="true"
-        :simulate-touch="true"
-        :autoplay="{
-          delay: AppConfig.sliderAutoplayPeriodMs
-        }"
-        :touch-start-prevent-default="false"
-        :mousewheel="{
-          forceToAxis: true
-        }"
-        @slide-change="onActiveSlideChanged"
+        :content-padded="true"
+        :is-error="!!reviewsListFetch.error.value"
       >
-        <SwiperSlide
-          v-for="(review, index) in reviewsListFetch.data.value"
-          :key="`CompanyReview-${index}`"
-          :style="{width: 'auto'}"
-        >
-          <CompanyReviewCard
-            :ctrl-key="`CompanyReviewCard-${index}`"
-            class="ml-xs-1 mr-xs-2 mr-s-4"
-            :header="review?.header ?? undefined"
-            :body="review?.body ?? undefined"
-            :user-name="review?.userName ?? undefined"
-            :img-src="review?.img?.slug ? { slug: review.img.slug, timestamp: review.img.timestamp } : undefined"
-          />
-        </SwiperSlide>
-      </Swiper>
-    </PageSection>
+        <CompanyReviews ctrl-key="CompanyReviews" :reviews="reviewsListFetch.data.value"/>
+      </PageSection>
+    </AppPageBody>
   </div>
 </template>

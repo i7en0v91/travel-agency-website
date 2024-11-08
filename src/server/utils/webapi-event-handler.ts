@@ -1,8 +1,9 @@
-import { AppConfig, type IAppLogger, AppException, AppExceptionCodeEnum, mapAppExceptionToHttpStatus, validateObject, isQuickStartEnv, HeaderAppVersion, testHeaderValue } from '@golobe-demo/shared';
+import { QueryPagePreviewModeParam, AppConfig, type IAppLogger, AppException, AppExceptionCodeEnum, mapAppExceptionToHttpStatus, validateObject, isQuickStartEnv, HeaderAppVersion, testHeaderValue } from '@golobe-demo/shared';
 import type { H3Event, EventHandler, EventHandlerRequest, EventHandlerResponse } from 'h3';
 import axios from 'axios';
 import { withQuery } from 'ufo';
 import { type ObjectSchema } from 'yup';
+import omit from 'lodash-es/omit';
 import { type IApiErrorDto, type ICaptchaVerificationDto } from '../api-definitions';
 import { getServerSession } from '#auth';
 import { getCommonServices } from '../../helpers/service-accessors';
@@ -58,7 +59,7 @@ function wrapHandler<Request extends EventHandlerRequest = EventHandlerRequest, 
       logger.info(`received request (appVer=${requestAppVersion}) - ${event.node.req.url} (auth=${isAuthorized})`, reqBody ?? '');
 
       if (contentType === 'json' && validationSchema) {
-        const validationError = await validateObject(reqBody, validationSchema);
+        const validationError = await validateObject(omit(reqBody, QueryPagePreviewModeParam), validationSchema);
         if (validationError) {
           logger.warn(`input data does not match schema, url=${event.node.req.url}, msg=${validationError.message}, issues=${validationError.errors.join('; ')}]`, undefined, reqBody);
           throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'input data does not match schema', 'error-stub');

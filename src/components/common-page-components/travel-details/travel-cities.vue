@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { AppConfig, getI18nResName2 } from '@golobe-demo/shared';
-import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../../../helpers/dom';
 import { type IPopularCityDto, ApiEndpointPopularCitiesList } from './../../../server/api-definitions';
-import { Navigation, Autoplay, Mousewheel } from 'swiper/modules';
 import range from 'lodash-es/range';
 import PageSection from './../page-section.vue';
 import TravelCityCard from './travel-city-card.vue';
@@ -38,26 +36,21 @@ const popularCitiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`
     $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-page' })
   });
 
-function onActiveSlideChanged () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
-watch(popularCitiesListFetch.status, () => {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-});
-
 </script>
 
 <template>
   <PageSection
     :ctrl-key="`${ctrlKey}-TravelCities`"
-    :header-res-name="getI18nResName2('travelCities', 'title')"
-    :subtext-res-name="getI18nResName2('travelCities', 'subtext')"
-    :btn-text-res-name="getI18nResName2('travelCities', 'btn')"
+    :content="{
+      headerResName: getI18nResName2('travelCities', 'title'),
+      subtextResName: getI18nResName2('travelCities', 'subtext'),
+      btnTextResName: getI18nResName2('travelCities', 'btn')
+    }"
     :content-padded="true"
     :is-error="!!popularCitiesListFetch.error.value"
   >
-    <Swiper
+  <!--
+  <Swiper
       class="travel-cities-swiper pb-xs-4"
       :modules="[Navigation, Mousewheel, Autoplay]"
       slides-per-view="auto"
@@ -76,7 +69,6 @@ watch(popularCitiesListFetch.status, () => {
       :mousewheel="{
         forceToAxis: true
       }"
-      @slide-change="onActiveSlideChanged"
     >
       <SwiperSlide
         v-for="(city, index) in popularCitiesListFetch.data.value"
@@ -94,5 +86,6 @@ watch(popularCitiesListFetch.status, () => {
         />
       </SwiperSlide>
     </Swiper>
+  -->
   </PageSection>
 </template>

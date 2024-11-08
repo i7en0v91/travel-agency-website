@@ -98,6 +98,7 @@ onMounted(() => {
 
 <template>
   <article class="flight-details-page no-hidden-parent-tabulation-check">
+    <!--
     <ErrorHelm :is-error="flightDetailsFetch.status.value === 'error'" class="flight-details-page-error-helm">
       <OfferDetailsBreadcrumbs
         :ctrl-key="`${CtrlKey}-Breadcrumbs`"
@@ -196,5 +197,7 @@ onMounted(() => {
         tag="h2"
       />
     </ErrorHelm>
+    -->
+    PAGE CONTENT
   </article>
 </template>

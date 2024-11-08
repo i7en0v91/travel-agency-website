@@ -65,6 +65,7 @@ onMounted(() => {
 
 <template>
   <div class="flights-page no-hidden-parent-tabulation-check">
+    <!--
     <SearchPageHead
       ctrl-key="SearchPageHeadFlights"
       class="flights-page-head"
@@ -87,5 +88,7 @@ onMounted(() => {
     </PageSection>
     <TravelCities ctrl-key="FlightsTravelCitiesSection" book-kind="flight" />
     <TravelDetails :id="TravelDetailsHtmlAnchor" ctrl-key="FlightsTravelDetailsSection" book-kind="flight" />
+    -->
+    PAGE CONTENT
   </div>
 </template>

@@ -28,24 +28,24 @@ export const CroppingImageFormat = MimeTypeWebp;
 export const TooltipHideTimeout = 2000;
 export const HashNavigationPageTimeout = 3000;
 
-export const UserAccountTabAccount = 'account';
-export const UserAccountTabHistory = 'history';
-export const UserAccountTabPayments = 'payments';
-export const UserAccountOptionButtonGroup = 'accountOptionButtonsGroup';
-export const UserAccountOptionButtonAccount = `${UserAccountOptionButtonGroup}-${UserAccountTabAccount}`;
-export const UserAccountOptionButtonHistory = `${UserAccountOptionButtonGroup}-${UserAccountTabHistory}`;
-export const UserAccountOptionButtonPayments = `${UserAccountOptionButtonGroup}-${UserAccountTabPayments}`;
+export const UserAccount = 'account';
+export const UserHistory = 'history';
+export const UserPayments = 'payments';
+export const UserAccountTabGroup = 'tabAccountGrp';
+export const UserAccountTabAccount = `${UserAccountTabGroup}-${UserAccount}`;
+export const UserAccountTabHistory = `${UserAccountTabGroup}-${UserHistory}`;
+export const UserAccountTabPayments = `${UserAccountTabGroup}-${UserPayments}`;
 
 export const SearchFlightOffersDisplayOptions = 'searchFlightOffers-DisplayOptions';
 export const SearchStayOffersDisplayOptions = 'searchStayOffers-DisplayOptions';
 
-export const FavouritesOptionButtonGroup = 'favouritesOptBtnGrp';
-export const FavouritesOptionButtonFlights = `${FavouritesOptionButtonGroup}-Flights`;
-export const FavouritesOptionButtonStays = `${FavouritesOptionButtonGroup}-Stays`;
+export const FavouritesTabGroup = 'tabFavouritesGrp';
+export const FavouritesTabFlights = `${FavouritesTabGroup}-Flights`;
+export const FavouritesTabStays = `${FavouritesTabGroup}-Stays`;
 
-export const TabHistoryOptionButtonGroup = 'tabHistoryOptBtnGrp';
-export const TabHistoryOptionButtonFlights = `${TabHistoryOptionButtonGroup}-Flights`;
-export const TabHistoryOptionButtonStays = `${TabHistoryOptionButtonGroup}-Stays`;
+export const HistoryTabGroup = 'tabHistoryGrp';
+export const HistoryTabFlights = `${HistoryTabGroup}-Flights`;
+export const HistoryTabStays = `${HistoryTabGroup}-Stays`;
 
 export const SearchOffersFilterTabGroupId = 'search-offers-filter-panel-gid';
 

@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { type EntityId, ImageCategory, type Locale, getLocalizeableValue, getScoreClassResName, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices, isPrefersReducedMotionEnabled } from './../../../helpers/dom';
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
-import { Grid, Navigation } from 'swiper/modules';
-import { type Swiper } from 'swiper';
+import { isPrefersReducedMotionEnabled } from './../../../helpers/dom';
 import ComponentWaitingIndicator from './../../../components/component-waiting-indicator.vue';
 import { type IStayReviewItem } from './../../../stores/stay-reviews-store';
 import { useConfirmBox } from './../../../composables/confirm-box';
@@ -25,7 +22,7 @@ const { requestUserAction } = usePreviewState();
 const props = defineProps<IProps>();
 const logger = getCommonServices().getLogger();
 
-const swiper = shallowRef<InstanceType<typeof Swiper>>();
+const swiper = shallowRef();
 const isSwiperReady = ref(false);
 const showNoReviewStub = computed(() => reviewStore.status === 'success' && reviewStore.items !== undefined && reviewStore.items.length === 0);
 const isNavButtonsVisible = computed(() => reviewStore.status === 'error' && reviewStore.items !== undefined && isSwiperReady.value && !showNoReviewStub.value);
@@ -122,21 +119,18 @@ async function onDeleteUserReviewBtnClick (): Promise<void> {
   }
 }
 
-function refreshTabIndices () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
 function onSwiperInit () {
+  /*
   logger.debug(`(ReviewList) swiper initialized, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
   swiper.value = (document.querySelector('.stay-reviews-swiper') as any).swiper as Swiper;
   isSwiperReady.value = true;
   nextTick(refreshPagingState);
+  */
 }
 
 function onSwiperSlideChanged () {
   logger.debug(`(ReviewList) swiper slide changed, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
   refreshPagingState();
-  refreshTabIndices();
 }
 
 function onNavNextBtnClick () {
@@ -158,6 +152,7 @@ function onNavPrevBtnClick () {
 <template>
   <div class="stay-reviews-list-div no-hidden-parent-tabulation-check">
     <ErrorHelm :is-error="isError">
+      <!--
       <Swiper
         v-if="reviewStore.status !== 'error' && reviewStore.items !== undefined"
         :class="`stay-reviews-list stay-reviews-swiper pb-xs-4 ${isSwiperReady ? 'initialized' : ''} ${showNoReviewStub ? 'hidden' : ''}`"
@@ -189,8 +184,7 @@ function onNavPrevBtnClick () {
                 v-if="review.user === 'current' ? !!(userAccount?.avatar) : !!(review.user.avatar)"
                 :ctrl-key="`${ctrlKey}-ReviewItem${review.id}-Avatar`"
                 :show-stub="false"
-                class="stay-reviews-card-avatar"
-                img-class="stay-reviews-card-avatar-img"
+                :ui="{ wrapper: 'stay-reviews-card-avatar', img: 'stay-reviews-card-avatar-img' }"
                 :entity-src="review.user === 'current' ? userAccount?.avatar : review.user.avatar"
                 :category="ImageCategory.UserAvatar"
                 sizes="xs:30vw sm:20vw md:20vw lg:10vw xl:10vw"
@@ -222,8 +216,7 @@ function onNavPrevBtnClick () {
                   <p v-if="isTestUserReview(review)" class="stay-reviews-card-text">
                     {{ getLocalizeableValue(review.text, locale as Locale) }}
                   </p>
-                  <!-- eslint-disable-next-line vue/no-v-html -->
-                  <p v-else v-html="review.text.en" /> <!-- to prevent attack additional sanitizing is applied on server -->
+                  <p v-else v-html="review.text.en" /> to prevent attack additional sanitizing is applied on server 
                 </div>
               </PerfectScrollbar>
             </div>
@@ -277,6 +270,8 @@ function onNavPrevBtnClick () {
         {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'noReviews')) }}
       </div>
       <ComponentWaitingIndicator v-if="reviewStore.status === 'pending' || !(reviewStore.status !== 'error' && reviewStore.items !== undefined) || !isSwiperReady" :ctrl-key="`${ctrlKey}-ReviewListWaiterFallback`" class="stay-reviews-waiting-indicator my-xs-5" />
+      -->
+      
     </ErrorHelm>
   </div>
 </template>

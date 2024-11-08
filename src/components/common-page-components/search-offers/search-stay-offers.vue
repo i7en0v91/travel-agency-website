@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { AppConfig, getI18nResName2, StaysMaxRoomsCount, StaysMaxGuestsCount } from '@golobe-demo/shared';
+import { AppConfig, getI18nResName2, StaysMinGuestsCount, StaysMinRoomsCount } from '@golobe-demo/shared';
 import type { ISearchListItem, ISearchStayOffersMainParams, ISearchStayOffersParams } from './../../../types';
 import { ApiEndpointCitiesSearch } from './../../../server/api-definitions';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
-import type { Dropdown } from 'floating-vue';
 import dayjs from 'dayjs';
 import SearchListInput from './../../../components/forms/search-list-input.vue';
+import InputFieldFrame from '../../forms/input-field-frame.vue';
 import DatePicker from './../../../components/forms/date-picker.vue';
-import SearchOffersCounter from './search-offers-counter.vue';
+import SearchStayParams from './search-stay-params.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
@@ -19,18 +18,11 @@ const props = withDefaults(defineProps<IProps>(), {
 });
 const logger = getCommonServices().getLogger();
 
-const { t } = useI18n();
+let destinationCity: Ref<ISearchListItem | null | undefined>;
+let checkInDate = ref<Date | null | undefined>();
+let checkOutDate = ref<Date | null | undefined>();
+let stayParams: Ref<{ numRooms: number, numGuests: number } | null | undefined>;
 
-const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
-
-const elBtn = shallowRef<HTMLElement>();
-const destinationCity = ref<ISearchListItem | undefined>();
-const checkInDate = ref<Date | undefined>();
-const checkOutDate = ref<Date | undefined>();
-const numRooms = ref<number | undefined>();
-const numGuests = ref<number | undefined>();
-
-const controlSettingsStore = useControlSettingsStore();
 const searchOffersStoreAccessor = useSearchOffersStore();
 
 let searchOffersStore: Awaited<ReturnType<typeof searchOffersStoreAccessor.getInstance<ISearchStayOffersParams>>> | undefined;
@@ -43,13 +35,27 @@ defineExpose({
 if (props.takeInitialValuesFromUrlQuery) {
   searchOffersStore = await searchOffersStoreAccessor.getInstance('stays', true, false);
   displayedSearchParams = computed<Partial<ISearchStayOffersMainParams>>(() => { return searchOffersStore!.viewState.currentSearchParams; });
-  watch([destinationCity, checkInDate, checkOutDate, numRooms, numGuests], () => {
+  destinationCity = ref(displayedSearchParams.value?.city ?? null);
+  checkInDate = ref(displayedSearchParams.value?.checkIn ?? null);
+  checkOutDate = ref(displayedSearchParams.value?.checkOut ?? null);
+  stayParams = ref((displayedSearchParams.value?.numGuests && displayedSearchParams.value?.numRooms) ? 
+    { 
+      numGuests: displayedSearchParams.value?.numGuests ?? StaysMinGuestsCount, 
+      numRooms: displayedSearchParams.value?.numRooms ?? StaysMinRoomsCount
+    } : null
+  );
+
+  watch([destinationCity, checkInDate, checkOutDate, stayParams], () => {
     logger.debug(`(SearchStayOffers) search params watch handler, ctrlKey=${props.ctrlKey}`);
     const inputParams = getSearchParamsFromInputControls();
     $emit('change', inputParams);
   });
 } else {
   searchOffersStore = await searchOffersStoreAccessor.getInstance('stays', false, false);
+  destinationCity = ref(undefined);
+  checkInDate = ref(undefined);
+  checkOutDate = ref(undefined);
+  stayParams = ref(undefined);
   displayedSearchParams = computed<Partial<ISearchStayOffersMainParams>>(getSearchParamsFromInputControls);
   watch(displayedSearchParams, () => {
     logger.debug(`(SearchStayOffers) search params change handler, ctrlKey=${props.ctrlKey}`);
@@ -63,8 +69,8 @@ function getSearchParamsFromInputControls (): Partial<ISearchStayOffersMainParam
     checkIn: checkInDate.value,
     checkOut: checkOutDate.value,
     city: destinationCity.value,
-    numGuests: numGuests.value,
-    numRooms: numRooms.value
+    numGuests: stayParams.value?.numGuests,
+    numRooms: stayParams.value?.numRooms
   } as Partial<ISearchStayOffersMainParams>;
 }
 
@@ -84,53 +90,8 @@ function onCalendarDataChanged () {
   }
 }
 
-const displayText = computed(() => {
-  if (!hasMounted.value) {
-    return '';
-  }
-
-  const numRoomsText = `${numRooms.value} ${t(getI18nResName2('searchStays', 'numRooms'), numRooms.value!)}`;
-  const numGuestsText = `${numGuests.value} ${t(getI18nResName2('searchStays', 'numGuests'), numGuests.value!)}`;
-
-  return `${numRoomsText}, ${numGuestsText}`;
-});
-
-function onMenuShown () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
-function onMenuHide () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
-
-function hideDropdown () {
-  dropdown.value?.hide();
-}
-
-function onEscape () {
-  hideDropdown();
-}
-
-onBeforeMount(() => {
-  if (props.takeInitialValuesFromUrlQuery) {
-    const roomValueSetting = controlSettingsStore.getControlValueSetting<number | undefined>(`${props.ctrlKey}-Rooms`, 1, true);
-    roomValueSetting.value = displayedSearchParams?.value?.numRooms ?? 1;
-    const guestsValueSetting = controlSettingsStore.getControlValueSetting<number | undefined>(`${props.ctrlKey}-Guests`, 1, true);
-    guestsValueSetting.value = displayedSearchParams?.value?.numGuests ?? 1;
-  }
-
-  const roomValueSetting = controlSettingsStore.getControlValueSetting<number | undefined>(`${props.ctrlKey}-Rooms`, 1, true);
-  if (roomValueSetting.value) {
-    numRooms.value = roomValueSetting.value;
-  }
-  const guestsValueSetting = controlSettingsStore.getControlValueSetting<number | undefined>(`${props.ctrlKey}-Guests`, 1, true);
-  if (guestsValueSetting.value) {
-    numGuests.value = guestsValueSetting.value;
-  }
-});
 onMounted(() => {
   hasMounted.value = true;
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 });
 
 watch(checkInDate, () => {
@@ -144,20 +105,15 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
 </script>
 
 <template>
-  <div class="search-offers-controls search-stay-offers">
-    <FieldFrame :text-res-name="getI18nResName2('searchStays', 'destinationCaption')" class="search-stays-destination-frame">
-      <div class="search-stays-destination-div">
-        <div
-          class="search-stays-destination-icon pr-xs-3 mr-xs-2"
-        />
+  <div class="flex flex-col xl:flex-row flex-nowrap gap-[16px] sm:gap-[24px] w-full h-full">
+    <InputFieldFrame :text-res-name="getI18nResName2('searchStays', 'destinationCaption')" class="flex-grow-[4] flex-shrink-[4] basis-auto w-full">
+      <div class="min-h-[3.25rem] max-h-[3.25rem] block w-full rounded ring-1 ring-inset ring-gray-500 dark:ring-gray-400 text-gray-500 dark:text-gray-400 font-medium pl-[16px]">
         <SearchListInput
           v-model:selected-value="destinationCity"
-          :initially-selected-value="takeInitialValuesFromUrlQuery ? (displayedSearchParams?.city ?? null) : undefined"
           :ctrl-key="`${props.ctrlKey}-DestinationCity`"
-          class="search-stays-destination"
+          class="w-full min-h-[3.25rem] max-h-[3.25rem]"
           :item-search-url="`/${ApiEndpointCitiesSearch}`"
           :additional-query-params="{ includeCountry: true }"
-          list-container-class="search-offers-dropdown-list-container"
           type="destination"
           :persistent="true"
           :placeholder-res-name="getI18nResName2('searchStays', 'destinationPlaceholder')"
@@ -165,79 +121,27 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
           :aria-label-res-name="getI18nResName2('ariaLabels', 'ariaLabelDestination')"
         />
       </div>
-    </FieldFrame>
-    <div class="search-stays-dates">
+    </InputFieldFrame>
+    <div class="flex-grow-[5] flex-shrink-[3] basis-auto w-full flex flex-col sm:flex-row flex-nowrap gap-[16px] sm:gap-[24px]">
       <DatePicker
         v-model:selected-date="checkInDate"
-        :initially-selected-date="takeInitialValuesFromUrlQuery ? (displayedSearchParams?.checkIn ?? null) : undefined"
         :ctrl-key="`${props.ctrlKey}-CheckIn`"
-        class="search-stays-checkin"
+        :ui="{ wrapper: 'w-full min-h-[3.25rem] max-h-[3.25rem]', input: 'min-h-[3.25rem] max-h-[3.25rem]' }"
         :caption-res-name="getI18nResName2('searchStays', 'checkInCaption')"
         :persistent="true"
         @update:selected-date="onCalendarDataChanged()"
       />
       <DatePicker
         v-model:selected-date="checkOutDate"
-        :initially-selected-date="takeInitialValuesFromUrlQuery ? (displayedSearchParams?.checkOut ?? null) : undefined"
         :ctrl-key="`${props.ctrlKey}-CheckOut`"
-        class="search-stays-checkout"
+        :ui="{ wrapper: 'w-full min-h-[3.25rem] max-h-[3.25rem]', input: 'min-h-[3.25rem] max-h-[3.25rem]' }"
         :caption-res-name="getI18nResName2('searchStays', 'checkOutCaption')"
         :persistent="true"
         :default-date="dayjs().utc(true).add(AppConfig.autoInputDatesRangeDays, 'day').toDate()"
-        :min-date="checkInDate"
+        :min-date="checkInDate ?? undefined"
         @update:selected-date="onCalendarDataChanged()"
       />
     </div>
-    <VDropdown
-      ref="dropdown"
-      v-floating-vue-hydration="{ tabIndex: 0 }"
-      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
-      :aria-id="`${ctrlKey}-DropDownWrapper`"
-      :distance="-6"
-      :hide-triggers="[(triggers: any) => [...triggers, 'click']]"
-      placement="bottom"
-      class="search-stays-bookparams"
-      :flip="false"
-      :no-auto-focus="true"
-      :boundary="elBtn"
-      theme="control-dropdown"
-      @apply-show="onMenuShown"
-      @apply-hide="onMenuHide"
-      @keyup.escape="onEscape"
-    >
-      <FieldFrame :text-res-name="getI18nResName2('searchStays', 'roomsGuestsCaption')" class="search-stays-bookparams-frame">
-        <button
-          :id="`stays-bookparams-${props.ctrlKey}`"
-          ref="elBtn"
-          class="search-stays-bookparams-btn brdr-1"
-          type="button"
-        >
-          {{ displayText }}
-        </button>
-      </FieldFrame>
-      <template #popper>
-        <ClientOnly>
-          <div class="search-stays-bookparams-content p-xs-2" :data-popper-anchor="`stays-bookparams-${props.ctrlKey}`">
-            <SearchOffersCounter
-              v-model:value="numRooms"
-              :ctrl-key="`${ctrlKey}-Rooms`"
-              :default-value="1"
-              :min-value="1"
-              :max-value="StaysMaxRoomsCount"
-              :label-res-name="getI18nResName2('searchStays', 'numberOfRooms')"
-            />
-            <SearchOffersCounter
-              v-model:value="numGuests"
-              :ctrl-key="`${ctrlKey}-Guests`"
-              class="mt-xs-4"
-              :default-value="1"
-              :min-value="1"
-              :max-value="StaysMaxGuestsCount"
-              :label-res-name="getI18nResName2('searchStays', 'numberOfGuests')"
-            />
-          </div>
-        </ClientOnly>
-      </template>
-    </VDropdown>
+    <SearchStayParams v-model:params="stayParams" :ui="{ wrapper: 'flex-grow-[2] flex-shrink-[4] basis-auto w-full min-h-[3.25rem] max-h-[3.25rem]', input: 'min-h-[3.25rem] max-h-[3.25rem]' }" :ctrl-key="`${ctrlKey}-StayParams`" />    
   </div>
 </template>

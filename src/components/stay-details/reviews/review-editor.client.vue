@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type EntityId, AppException, AppExceptionCodeEnum, MaxStayReviewLength, getI18nResName2, getI18nResName3, type I18nResName } from '@golobe-demo/shared';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import { type ReviewEditorButtonType } from './../../../types';
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { useModal } from 'vue-final-modal';
 import { TiptapUnderline, TiptapPlaceholder } from './../../../client/tiptapExt';
 import ReviewEditorButton from './review-editor-button.vue';
@@ -60,14 +58,9 @@ const { open } = useModal({
       const logger = getCommonServices().getLogger();
       logger.debug(`(ReviewEditor) closing score picker: ctrlKey=${props.ctrlKey}, result=${scorePickerResult.value}`);
       completeCallback!();
-      setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
     }
   }
 });
-
-function refreshTabIndices () {
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-}
 
 function onButtonClicked (type: ReviewEditorButtonType) {
   logger.debug(`(ReviewEditor) btn click handler, ctrlKey=${props.ctrlKey}, type=${type}`);
@@ -103,7 +96,6 @@ function onButtonClicked (type: ReviewEditorButtonType) {
   }
   try {
     editMethod();
-    refreshTabIndices();
     logger.debug(`(ReviewEditor) btn click handler - completed, ctrlKey=${props.ctrlKey}, type=${type}`);
   } catch (err: any) {
     logger.verbose(`(ReviewEditor) btn click handler failed, ctrlKey=${props.ctrlKey}, type=${type}`, err);
@@ -192,7 +184,6 @@ onMounted(() => {
   logger.verbose(`(ReviewEditor) mounted, ctrlKey=${props.ctrlKey}`);
   isMounted.value = true;
   sendButtonVisible.value = isSendButtonVisible();
-  refreshTabIndices();
 });
 
 </script>

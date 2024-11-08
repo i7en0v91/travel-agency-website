@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type Locale, getI18nResName3, getI18nResName2, type Timestamp, type StayServiceLevel, type EntityId, type Price, ImageCategory, AppPage, getPagePath } from '@golobe-demo/shared';
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import range from 'lodash-es/range';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
@@ -51,7 +50,7 @@ withDefaults(defineProps<IProps>(), {
               <StaticImage
                 :key="`${ctrlKey}-AvailableRoomImage-${idx}`"
                 :ctrl-key="`${ctrlKey}-AvailableRoomImage-${idx}`"
-                class="available-room-image"
+                :ui="{ wrapper: 'available-room-image' }"
                 :entity-src="room?.image"
                 :category="ImageCategory.HotelRoom"
                 sizes="xs:30vw sm:20vw md:20vw lg:10vw xl:10vw"

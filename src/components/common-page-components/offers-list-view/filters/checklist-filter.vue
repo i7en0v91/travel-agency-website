@@ -2,7 +2,6 @@
 import { getI18nResName3, type Locale, getLocalizeableValue } from '@golobe-demo/shared';
 import isString from 'lodash-es/isString';
 import FlowChecklistItem from './flow-checklist-item.vue';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../../helpers/dom';
 import { SearchOffersFilterTabGroupId } from './../../../../helpers/constants';
 import { type ISearchOffersChecklistFilterProps, type ISearchOffersFilterVariant, type SearchOffersFilterVariantId } from './../../../../types';
 import { getCommonServices } from '../../../../helpers/service-accessors';
@@ -66,7 +65,6 @@ const listExpanded = ref(false);
 
 function toggleList () {
   listExpanded.value = !listExpanded.value;
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 }
 
 </script>

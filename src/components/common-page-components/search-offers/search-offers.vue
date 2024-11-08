@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { AppConfig, type OfferKind, AppPage, getPagePath, getI18nResName1, getI18nResName2, type Locale, PreviewModeParamEnabledValue, QueryPagePreviewModeParam, CheckInOutDateUrlFormat } from '@golobe-demo/shared';
 import { type ISearchStayOffersMainParams, type ISearchFlightOffersMainParams, type ISearchFlightOffersParams, type ISearchListItem, type ISearchStayOffersParams } from './../../../types';
-import { type Tooltip } from 'floating-vue';
 import dayjs from 'dayjs';
 import isEqual from 'lodash-es/isEqual';
 import pick from 'lodash-es/pick';
-import OptionButtonGroup from './../../../components/option-buttons/option-button-group.vue';
+import TabsGroup from '../../forms/tabs-group.vue';
 import { TooltipHideTimeout } from './../../../helpers/constants';
-import SearchFlightOffers from './search-flight-offers.vue';
-import SearchStayOffers from './search-stay-offers.vue';
+import type SearchFlightOffers from './search-flight-offers.vue';
+import type SearchStayOffers from './search-stay-offers.vue';
 import { type RouteLocationRaw } from 'vue-router';
 import set from 'lodash-es/set';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
@@ -29,17 +28,16 @@ const props = withDefaults(defineProps<IProps>(), {
 
 const SearchTabFlights = `${props.ctrlKey}-TabFlights`;
 const SearchTabStays = `${props.ctrlKey}-TabStays`;
-const DefaultSearchTab = props.singleTab === 'stays' ? SearchTabStays : SearchTabFlights;
 
 const searchOffersStoreAccessor = useSearchOffersStore();
 const clientEntityCache = import.meta.client ? getClientServices().getEntityCache() : undefined;
 
-const controlSettingsStore = useControlSettingsStore();
-const activeSearchTab = controlSettingsStore.getControlValueSetting(`${props.ctrlKey}-TabControl`, DefaultSearchTab);
-if (props.singleTab) {
-  activeSearchTab.value = props.singleTab === 'flights' ? SearchTabFlights : SearchTabStays;
-}
-const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
+const searchFlightStore = await searchOffersStoreAccessor.getInstance<ISearchFlightOffersParams>('flights', false, false);
+const searchStayStore = await searchOffersStoreAccessor.getInstance<ISearchStayOffersParams>('stays', false, false);
+
+const selectedTab = ref<string | undefined>();
+
+const promoTooltipShown = ref(false);
 const searchFlights = shallowRef<InstanceType<typeof SearchFlightOffers> | undefined>();
 const searchStays = shallowRef<InstanceType<typeof SearchStayOffers> | undefined>();
 
@@ -47,7 +45,7 @@ const logger = getCommonServices().getLogger();
 const router = useRouter();
 const navLinkBuilder = useNavLinkBuilder();
 const { enabled } = usePreviewState();
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 
 async function resolveFlightCitiesSlugs (searchParams: Partial<ISearchFlightOffersParams>): Promise<{ fromCitySlug?: string | undefined, toCitySlug?: string | undefined }> {
   let fromCitySlug = searchParams.fromCity?.slug;
@@ -111,7 +109,7 @@ async function resolveDestinationCitySlug (searchParams: Partial<ISearchStayOffe
 }
 
 async function validateAndGetRouteParams (): Promise<RouteLocationRaw | undefined> {
-  const searchKind: OfferKind = activeSearchTab.value === SearchTabStays ? 'stays' : 'flights';
+  const searchKind: OfferKind = selectedTab.value === SearchTabStays ? 'stays' : 'flights';
   if (searchKind === 'flights') {
     const searchFlightStore = await searchOffersStoreAccessor.getInstance<ISearchFlightOffersParams>('flights', false, false);
     const userParams = searchFlightStore.viewState.currentSearchParams;
@@ -161,7 +159,7 @@ async function validateAndGetRouteParams (): Promise<RouteLocationRaw | undefine
 
 async function applyParamsAndFetchData (): Promise<void> {
   logger.verbose(`(SearchOffers) applying user params and fetching, ctrlKey=${props.ctrlKey}`);
-  const searchKind: OfferKind = activeSearchTab.value === SearchTabStays ? 'stays' : 'flights';
+  const searchKind: OfferKind = selectedTab.value === SearchTabStays ? 'stays' : 'flights';
   const store = await searchOffersStoreAccessor.getInstance(searchKind, false, false);
   if (searchKind === 'flights') {
     const searchParams = searchFlights.value!.getSearchParamsFromInputControls();
@@ -198,7 +196,7 @@ async function onSearchBtnClick () : Promise<void> {
 }
 
 async function refetchIfNotLatestSearchParams (): Promise<void> {
-  const searchKind: OfferKind = activeSearchTab.value === SearchTabStays ? 'stays' : 'flights';
+  const searchKind: OfferKind = selectedTab.value === SearchTabStays ? 'stays' : 'flights';
   logger.debug(`(SearchOffers) checking for refetch if not latest search params were used, ctrlKey=${props.ctrlKey}, type=${searchKind}`);
 
   let paramsAreActual = true;
@@ -239,12 +237,10 @@ async function refetchIfNotLatestSearchParams (): Promise<void> {
 }
 
 function scheduleTooltipAutoHide () {
-  setTimeout(() => { tooltip.value?.hide(); }, TooltipHideTimeout);
+  setTimeout(() => { promoTooltipShown.value = false; }, TooltipHideTimeout);
 }
 
 onMounted(async () => {
-  const searchFlightStore = await searchOffersStoreAccessor.getInstance<ISearchFlightOffersParams>('flights', false, false);
-  const searchStayStore = await searchOffersStoreAccessor.getInstance<ISearchStayOffersParams>('stays', false, false);
   watch(() => searchFlightStore.resultState.status, () => {
     refetchIfNotLatestSearchParams();
   });
@@ -255,23 +251,70 @@ onMounted(async () => {
 
 const flightsTabHtmlId = useId()!;
 const staysTabHtmlId = useId()!;
-const tooltipId = useId()!;
+
+const searchBtnLabel = computed(() => {
+  return t(getI18nResName2('searchOffers', (props.singleTab === 'stays' || selectedTab.value === SearchTabStays) ? 'showStays' : 'showFlights'));
+});
 
 </script>
 
 <template>
-  <section class="search-offers mx-xs-3 mx-m-5 px-xs-3 px-m-4 pt-xs-1 pb-xs-4" role="search">
-    <OptionButtonGroup
-      v-if="!singleTab && !minimumButtons"
-      v-model:active-option-ctrl="activeSearchTab.value"
-      class="search-offers-tab-control mt-xs-1"
-      role="tablist"
-      :ctrl-key="`${props.ctrlKey}-TabControl`"
-      :options="[
-        { ctrlKey: SearchTabFlights, labelResName: getI18nResName2('searchOffers', 'flightsTab'), shortIcon: 'airplane', enabled: true, role: { role: 'tab', tabPanelId: flightsTabHtmlId } },
-        { ctrlKey: SearchTabStays, labelResName: getI18nResName2('searchOffers', 'staysTab'), shortIcon: 'bed', enabled: true, role: { role: 'tab', tabPanelId: staysTabHtmlId } },
-      ]"
-    />
+  <section class="block w-[95%] max-w-[1700px] !overflow-visible bg-white dark:bg-gray-900 rounded-3xl shadow-lg dark:shadow-gray-700 mx-auto px-4 md:px-8 pt-1 pb-8 overflow-x-clip -translate-y-[10%] z-[2]" role="search">
+    <div v-if="!minimumButtons" class="block w-full h-auto">
+      <TabsGroup
+        v-model:activeTabKey="selectedTab"
+        class="w-full pt-1"
+        :ctrl-key="`${props.ctrlKey}-TabControl`"
+        :tabs="[
+          { ctrlKey: SearchTabFlights, labelResName: getI18nResName2('searchOffers', 'flightsTab'), shortIcon: 'i-material-symbols-flight', enabled: true },
+          { ctrlKey: SearchTabStays, labelResName: getI18nResName2('searchOffers', 'staysTab'), shortIcon: 'i-material-symbols-bed', enabled: true },
+        ]"
+        :ui="{ compactTabs: true }"
+      >
+        <KeepAlive>
+          <SearchFlightOffers v-if="(selectedTab ?? SearchTabFlights) === SearchTabFlights" :id="flightsTabHtmlId" ref="searchFlights" ctrl-key="SearchFlightOffersBox" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
+          <SearchStayOffers v-else :id="staysTabHtmlId" ref="searchStays" ctrl-key="SearchStayOffersBox" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
+        </KeepAlive>
+      </TabsGroup>
+      <div class="flex flex-col sm:flex-row justify-end items-center flex-nowrap gap-[8px] sm:gap-[24px] mt-[8px] sm:mt-[32px]">
+        <UPopover v-model:open="promoTooltipShown" :popper="{ placement: 'bottom' }" class="flex-grow-0 flex-shrink basis-auto">
+          <UButton icon="i-ion-add" size="lg" class="text-gray-500 dark:text-gray-400 focus-visible:ring-2 focus-visible:ring-gray-500 dark:focus-visible:ring-gray-400  bg-transparent hover:bg-gray-100 disabled:bg-transparent aria-disabled:bg-transparent dark:bg-transparent dark:hover:bg-gray-800 dark:disabled:!bg-transparent dark:aria-disabled:!bg-transparent" variant="soft" color="gray" @click="scheduleTooltipAutoHide">
+            {{ $t(getI18nResName2('searchOffers', 'addPromoCode')) }}
+          </UButton>
+          <template #panel="{ close }">
+            <span class="p-2 block" @click="close">{{ $t(getI18nResName1('notAvailableInDemo')) }}</span>
+          </template>
+        </UPopover>  
+        <UButton
+          class="flex-grow-0 flex-shrink basis-auto"
+          size="lg"
+          :ctrl-key="`${props.ctrlKey}-ShowMinimumBtn`"
+          :aria-label="t(getI18nResName2('ariaLabels', 'ariaLabelSearch'))"
+          icon="i-ion-paper-plane"
+          variant="solid"
+          color="primary"
+          @click="onSearchBtnClick"
+        >
+          {{ searchBtnLabel }}
+        </UButton>
+      </div>
+    </div>
+    <div v-else class="block w-full h-auto">
+      <UButton
+        class="w-full flex-grow flex-shrink basis-auto xl:w-auto xl:aspect-2/1"
+        :ctrl-key="`${props.ctrlKey}-ShowBtn`"
+        :aria-label="t(getI18nResName2('ariaLabels', 'ariaLabelSearch'))"
+        icon="i-heroicons-magnifying-glass-solid"
+        variant="solid"
+        color="primary"
+        size="lg"
+        @click="onSearchBtnClick"
+      >
+        {{ searchBtnLabel }}
+      </UButton>
+    </div>
+
+    <!--
     <h2 v-else-if="!minimumButtons" class="search-offers-single-header mt-xs-4 mt-s-5 mb-xs-5">
       {{ $t(getI18nResName2('searchOffers', 'whereToFly')) }}
     </h2>
@@ -324,6 +367,6 @@ const tooltipId = useId()!;
         kind="default"
         @click="onSearchBtnClick"
       />
-    </div>
+      -->
   </section>
 </template>

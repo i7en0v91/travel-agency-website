@@ -20,6 +20,7 @@ const navLinkBuilder = useNavLinkBuilder();
 
 <template>
   <div class="signup-verify-page account-page no-hidden-parent-tabulation-check">
+    <!--
     <AccountFormPhotos ctrl-key="SignUpVerifyPhotos" class="signup-verify-account-forms-photos" />
     <div class="signup-verify-page-div">
       <NavLogo ctrl-key="signupVerifyPageAppLogo" class="signup-verify-page-logo" mode="inApp" />
@@ -30,5 +31,7 @@ const navLinkBuilder = useNavLinkBuilder();
         </NuxtLink>
       </div>
     </div>
+    -->
+    PAGE CONTENT
   </div>
 </template>

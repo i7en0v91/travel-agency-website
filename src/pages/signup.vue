@@ -3,9 +3,11 @@ import { isPasswordSecure, AppPage, getPagePath, type Locale, UserNotificationLe
 import { ApiEndpointSignUp, type ISignUpDto, type ISignUpResultDto } from '../server/api-definitions';
 import { post } from './../helpers/rest-utils';
 import { formatAuthCallbackUrl } from './../helpers/dom';
+/*
 import { useVuelidate } from '@vuelidate/core';
 import * as validators from '@vuelidate/validators';
 import { email, required, minLength, sameAs } from '@vuelidate/validators';
+*/
 import NavLogo from './../components/navbar/nav-logo.vue';
 import TextBox from './../components/forms/text-box.vue';
 import CheckBox from './../components/forms/check-box.vue';
@@ -36,6 +38,7 @@ useOgImage();
 const themeSettings = useThemeSettings();
 const userNotificationStore = useUserNotificationStore();
 
+/*
 const firstname = ref('');
 const lastname = ref('');
 const usermail = ref('');
@@ -142,11 +145,13 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
       break;
   }
 }
+  */
 
 </script>
 
 <template>
   <div class="signup-page account-page no-hidden-parent-tabulation-check">
+    <!--
     <AccountFormPhotos ctrl-key="SignUpPhotos" class="signup-account-forms-photos" />
     <div class="signup-page-content">
       <NavLogo ctrl-key="signupPageAppLogo" mode="inApp" />
@@ -258,5 +263,7 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
       </div>
       <OAuthProviderList ctrl-key="SignUpProviders" :divisor-label-res-name="getI18nResName2('signUpPage', 'signUpWith')" @click="onOAuthProviderClick" />
     </div>
+    -->
+    PAGE CONTENT
   </div>
 </template>

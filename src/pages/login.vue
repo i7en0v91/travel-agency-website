@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { type Locale, CookieLoginOrigin, AppPage, getPagePath, AppException, getUsrMsgResName, AuthProvider, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import type { FormErrorEvent, FormSubmitEvent  } from './../node_modules/@nuxt/ui/dist/runtime/types/index.js';
 import { formatAuthCallbackUrl } from './../helpers/dom';
-import { useVuelidate } from '@vuelidate/core';
-import * as validators from '@vuelidate/validators';
-import { email, required } from '@vuelidate/validators';
+import { object, string } from 'yup';
 import NavLogo from './../components/navbar/nav-logo.vue';
-import TextBox from './../components/forms/text-box.vue';
-import SimpleButton from './../components/forms/simple-button.vue';
+import AppPageBody from '../components/app-page-body.vue';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
@@ -41,22 +39,13 @@ const { signIn } = useAuth();
 const { enabled } = usePreviewState();
 const logger = getCommonServices().getLogger();
 
-const username = ref('');
-const password = ref('');
-const loginErrorMsgResName = ref('');
-
-const { createI18nMessage } = validators;
-const withI18nMessage = createI18nMessage({ t });
-const rules = computed(() => ({
-  username: {
-    required: withI18nMessage(required, { messagePath: () => 'validations.required' }),
-    email: withI18nMessage(email)
-  },
-  password: {
-    required: withI18nMessage(required)
-  }
-}));
-const v$ = useVuelidate(rules, { username, password, $lazy: true });
+const loginErrorMsgResName = ref();
+const schema = computed(() => 
+  object({
+    email: string().email(t(getI18nResName2('validations', 'email'))).required(t(getI18nResName2('validations', 'required'))),
+    password: string().required(t(getI18nResName2('validations', 'required')))
+  })
+);
 
 function prepareCallbackUrl(originPathFromUrl: string | undefined): string {
   let callbackUrl: string;
@@ -101,15 +90,6 @@ const mySignInHandler = async (username: string, password: string) => {
   }
 };
 
-function loginClick () {
-  loginErrorMsgResName.value = '';
-  username.value = username.value.trim();
-  v$.value.$touch();
-  if (!v$.value.$error) {
-    mySignInHandler(username.value, password.value);
-  }
-}
-
 async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
   const route = useRoute();
   const callbackUrl = prepareCallbackUrl(route.query.originPath?.toString());
@@ -127,61 +107,66 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
   }
 }
 
+const state = reactive({
+  email: undefined,
+  password: undefined
+});
+
+async function onSubmit (_: FormSubmitEvent<any>) {
+  logger.verbose('(Login) submit handler triggered');
+  loginErrorMsgResName.value = '';
+  await mySignInHandler(state.email!, state.password!);
+}
+
+async function onError (event: FormErrorEvent) {
+  logger.verbose('(Login) failed validation handler triggered', event.errors);
+  const element = document.getElementById(event.errors[0].id);
+  element?.focus();
+  element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 </script>
 
 <template>
-  <div class="login-page account-page no-hidden-parent-tabulation-check">
-    <div class="login-page-content no-hidden-parent-tabulation-check">
-      <NavLogo ctrl-key="loginPageAppLogo" mode="inApp" />
-      <h1 class="login-title font-h2">
-        {{ t(getI18nResName2('loginPage', 'title')) }}
-      </h1>
-      <div class="login-subtitle mt-xs-3">
-        {{ t(getI18nResName2('loginPage', 'subTitle')) }}
-      </div>
-      <form class="no-hidden-parent-tabulation-check">
-        <TextBox
-          v-model="username"
-          ctrl-key="loginPgEmail"
-          class="form-field login-form-field login-email-field no-hidden-parent-tabulation-check"
-          type="email"
-          :caption-res-name="getI18nResName2('accountPageCommon', 'emailLabel')"
-          :placeholder-res-name="getI18nResName2('accountPageCommon', 'emailPlaceholder')"
-        />
-        <div v-if="v$.username.$errors.length" class="input-errors">
-          <div class="form-error-msg">
-            {{ v$.username.$errors[0].$message }}
+  <AppPageBody>
+    <div class="px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
+      <div class="md:flex md:flex-row md:flex-nowrap md:gap-[60px] xl:gap-[104px]">
+        <NavLogo ctrl-key="standaloneAppLogo" class="md:absolute md:mt-[77px] lg:mt-0 lg:!left-[-55px] xl:!left-[-55px]"/>
+        <div class="w-auto h-auto flex-1 basis-auto md:pt-[77px] md:pb-[104px] md:mb-[123px]">
+          <h1 class="text-gray-600 dark:text-gray-300 text-5xl font-normal mt-[36px] md:mt-[102px] lg:mt-[64px]">
+            {{ t(getI18nResName2('loginPage', 'title')) }}
+          </h1>
+          <div class="text-gray-600 dark:text-gray-300 text-sm sm:text-base font-normal mt-4">
+            {{ t(getI18nResName2('loginPage', 'subTitle')) }}
           </div>
-        </div>
-        <TextBox
-          v-model="password"
-          ctrl-key="loginPgPassword"
-          class="form-field login-form-field login-password-field mt-xs-4 no-hidden-parent-tabulation-check"
-          type="password"
-          :caption-res-name="getI18nResName2('accountPageCommon', 'passwordLabel')"
-          :placeholder-res-name="getI18nResName2('accountPageCommon', 'passwordPlaceholder')"
-        />
-        <div v-if="v$.password.$errors.length" class="input-errors">
-          <div class="form-error-msg">
-            {{ v$.password.$errors[0].$message }}
+          <UForm :schema="schema" :state="state" class="mt-12 space-y-4" @submit="onSubmit" @error="onError">
+            <UFormGroup name="email" :label="t(getI18nResName2('accountPageCommon', 'emailLabel'))">
+              <UInput v-model.trim="state.email" :placeholder="t(getI18nResName2('accountPageCommon', 'emailPlaceholder'))" />
+            </UFormGroup>
+
+            <UFormGroup name="password" :label="t(getI18nResName2('accountPageCommon', 'passwordLabel'))" class="pb-6">
+              <UInput v-model="state.password" type="password" :placeholder="t(getI18nResName2('accountPageCommon', 'passwordPlaceholder'))" />
+            </UFormGroup>
+
+            <ULink class="text-sm sm:text-base text-orange-500 dark:text-orange-400" :to="navLinkBuilder.buildPageLink(AppPage.ForgotPassword, locale as Locale)" color="orange">
+              {{ $t(getI18nResName3('loginPage', 'forms', 'forgotPassword')) }}
+            </ULink>
+            <div v-if="loginErrorMsgResName?.length" class="text-red-500 text-sm sm:text-base mt-3">
+              {{ $t(loginErrorMsgResName) }}
+            </div>
+
+            <UButton type="submit" class="w-full h-auto !mt-7 md:!mt-10 justify-center" size="xl">
+              {{ t(getI18nResName2('accountPageCommon', 'login')) }}
+            </UButton>
+          </UForm>
+          <div class="text-center text-sm sm:text-base mt-6">
+            {{ $t(getI18nResName2('loginPage', 'havingAccount')) }}
+            <ULink class="inline-block text-orange-500 dark:text-orange-400" :to="navLinkBuilder.buildPageLink(AppPage.Signup, locale as Locale)">{{ $t(getI18nResName2('accountPageCommon', 'signUp')) }}</ULink>
           </div>
+          <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" @click="onOAuthProviderClick" />
         </div>
-      </form>
-      <NuxtLink class="forgot-password-link mt-xs-4 brdr-1" :to="navLinkBuilder.buildPageLink(AppPage.ForgotPassword, locale as Locale)">
-        {{ $t(getI18nResName3('loginPage', 'forms', 'forgotPassword')) }}
-      </NuxtLink>
-      <div v-if="loginErrorMsgResName?.length" class="form-error-msg mt-xs-3 mt-xs-5">
-        {{ $t(loginErrorMsgResName) }}
-      </div>
-      <SimpleButton ctrl-key="loginBtn" class="login-btn mt-xs-2" :label-res-name="getI18nResName2('accountPageCommon', 'login')" @click="loginClick" />
-      <div class="having-account mt-xs-4">
-        {{ $t(getI18nResName2('loginPage', 'havingAccount')) }}
-        <span class="login-signup">
-          <NuxtLink class="brdr-1" :to="navLinkBuilder.buildPageLink(AppPage.Signup, locale as Locale)">{{ $t(getI18nResName2('accountPageCommon', 'signUp')) }}</NuxtLink>
-        </span>
-      </div>
-      <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" @click="onOAuthProviderClick" />
+        <AccountFormPhotos ctrl-key="LoginPhotos" :ui="{ wrapper: 'md:mt-[77px] !h-[812px]', image: { wrapper: '!h-[812px]', img: '!h-[812px]' } }"/>
+      </div>  
     </div>
-    <AccountFormPhotos ctrl-key="LoginPhotos" class="login-account-forms-photos" />
-  </div>
+  </AppPageBody>
 </template>

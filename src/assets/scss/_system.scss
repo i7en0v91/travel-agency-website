@@ -40,16 +40,16 @@ $font-weights: (
 );
 
 $font-size-l: (
-  'body-primary': 16px,
-  'body-secondary': 14px,
-  'input-control': 16px,
-  'button': 14px,
-  'nav-link': 14px,
-  'nav-control': 14px,
-  'category-caption': 16px,
-  'entity-card-primary': 12px,
+  'body-primary': 16px, // base
+  'body-secondary': 14px, // sm
+  'input-control': 16px, // base
+  'button': 14px, // sm
+  'nav-link': 14px, // sm
+  'nav-control': 14px, // sm
+  'category-caption': 16px, // base
+  'entity-card-primary': 12px, // xs
   'h1': 81px,
-  'h2': 45px,
+  'h2': 45px, // text-5xl
   'h3': 32px,
   'h4': 24px,
   'h5': 20px

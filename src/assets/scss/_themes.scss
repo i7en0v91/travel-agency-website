@@ -10,8 +10,8 @@ $ambient-base-light: #112211;
 $image-stub-indicator-light: #b1dea8;
 $theme-light: (
   'body-bg': 'white',
-  'primary': color.adjust(rgba($ambient-base-light, 1.0), $alpha: -0.25),
-  'secondary': color.adjust(rgba($ambient-base-light, 1.0), $alpha: -0.5),
+  'primary': color.adjust(rgba($ambient-base-light, 1.0), $alpha: -0.25), //text-gray-600 dark:text-gray-300
+  'secondary': color.adjust(rgba($ambient-base-light, 1.0), $alpha: -0.5), //text-gray-400
   'accent-bg': $ambient-base-light,
   'accent': white,
   'control-bg': #8DD3BB,

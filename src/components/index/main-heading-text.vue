@@ -9,12 +9,12 @@ defineProps<IProps>();
 </script>
 
 <template>
-  <header class="heading-text">
-    <p class="heading-text-pre font-h2">{{ $t(getI18nResName3('indexPage', 'heading', 'pre')) }}</p>
-    <h1 class="mb-xs-3 mt-xs-1 mx-xs-3 mx-s-4 px-l-4 mx-l-5">
+  <header class="text-white font-bold break-words text-center w-full min-w-minpgw h-auto min-h-lvh mt-[80px] absolute top-[50px] sm:[top-80px]  left-0 right-0 px-4">
+    <p class="text-5xl break-words">{{ $t(getI18nResName3('indexPage', 'heading', 'pre')) }}</p>
+    <h1 class="text-7xl break-words mt-6 mx-4 sm:mx-6 lg:px-6 lg:mx-8">
       {{ $t(getI18nResName3('indexPage', 'heading', 'main')) }}
     </h1>
-    <p class="mx-xs-3 mx-s-4">
+    <p class="font-semibold text-xl break-words mt-6 mx-4 sm:mx-6">
       {{ $t(getI18nResName3('indexPage', 'heading', 'sub')) }}
     </p>
   </header>
