@@ -303,6 +303,10 @@ export default defineNuxtConfig({
     {
       baseName: 'templates',
       dir: './../assets/templates'
+    },
+    {
+      baseName: 'locales',
+      dir: './../assets/locales'
     }]
   },
 

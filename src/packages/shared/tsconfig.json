@@ -8,6 +8,8 @@
     "moduleResolution": "Bundler",
     "lib": [
       "ESNext"
-    ]
+    ],
+    "composite": true,
+    "declaration": true
   }
 }

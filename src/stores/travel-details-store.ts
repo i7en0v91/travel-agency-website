@@ -529,7 +529,12 @@ export const useTravelDetailsStore = defineStore('travel-details-store', () => {
   };
 
   const startRunningOnClient = once(async (): Promise<void> => {
-    await initializeStateOnClient();
+    if(nuxtApp.isHydrating) {
+      await initializeStateOnClient();
+    } else {
+      // initialize asynchornously to prevent blocking wait for fetch when navigating to a page with the component
+      initializeStateOnClient();
+    }
   });
 
   const getInstance = async () : Promise<ITravelDetailsStoreState & ITravelDetailsStoreMethods> => {

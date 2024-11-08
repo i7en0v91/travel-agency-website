@@ -16,5 +16,9 @@
         "./packages/backend"
       ]
     }
-  }
+  },
+  "references": [
+    { "path": "./packages/shared" },
+    { "path": "./packages/backend" }
+  ]
 }

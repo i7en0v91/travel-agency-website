@@ -48,6 +48,8 @@ function getCropper (reset: boolean): Cropper | undefined {
         rotatable: false,
         scalable: false,
         minCropBoxWidth: 40,
+        zoomable: true,
+        dragMode: 'move',
         checkCrossOrigin: false
       };
       cropper = new Cropper(cropperImg.value!, options);

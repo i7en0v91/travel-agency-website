@@ -1,7 +1,9 @@
 import { type EntityId } from '@golobe-demo/shared';
 import isArray from 'lodash-es/isArray';
 import isString from 'lodash-es/isString';
+import isNumber from 'lodash-es/isNumber';
 import { getCommonServices } from '../helpers/service-accessors';
+
 
 export type ControlValueSettingType = EntityId | string;
 export interface IControlValueSetting<T = ControlValueSettingType | ControlValueSettingType[]> {
@@ -21,7 +23,8 @@ export const useControlSettingsStore = defineStore('controlSettingsStore', () =>
   const persistControlValueSetting = <T = ControlValueSettingType | ControlValueSettingType[]>(ctrlKey: string, value?: T | undefined) => {
     logger.debug(`(controlSettingsStore) persisting control value setting: ctrlKey=${ctrlKey}, value=${value ?? '[none]'}`);
     if (value) {
-      localStorage.setItem(getControlValueSettingStorageKey(ctrlKey), JSON.stringify(value));
+      const serializedValue = isNumber(value) ? value.toString() : JSON.stringify(value);
+      localStorage.setItem(getControlValueSettingStorageKey(ctrlKey), serializedValue);
       logger.debug(`(controlSettingsStore) control value setting persisted: ctrlKey=${ctrlKey}, value=${value}`);
     } else {
       localStorage.removeItem(getControlValueSettingStorageKey(ctrlKey));

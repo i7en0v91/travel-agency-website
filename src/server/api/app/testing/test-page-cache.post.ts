@@ -65,7 +65,7 @@ async function handleIndexPageActionRequest(action: TestingPageCacheActionEnum, 
       stubCssStyle: undefined,
       originalName: `tests-page-cache-clean-companyReview-${timestamp}-${companyReviewImage.fileId!}`,
       ownerId: undefined
-    }, undefined, event, event.context.preview.mode);
+    }, undefined, event.context.preview.mode);
     const imageId = image.id;
 
     const reviewId = await companyReviewsLogic.createReview({
@@ -119,7 +119,7 @@ async function handleAuthFormPageActionRequest(page: AppPage, action: TestingPag
     }
 
     const imageSlug = `testing-auth-forms-${page.valueOf()}-${testToken}`;
-    const authFormImageId = await authFormImageLogic.createImage({ bytes: imageData.bytes, mimeType: imageData.mimeType, slug: imageSlug, originalName: `${imageSlug}.png` }, 998, event, event.context.preview.mode);
+    const authFormImageId = await authFormImageLogic.createImage({ bytes: imageData.bytes, mimeType: imageData.mimeType, slug: imageSlug, originalName: `${imageSlug}.png` }, 998, event.context.preview.mode);
 
     return {
       testId: authFormImageId

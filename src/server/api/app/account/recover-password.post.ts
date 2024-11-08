@@ -14,7 +14,7 @@ export default defineWebApiEventHandler(async (event) => {
   const passwordRecoveryDto = await readBody(event) as IRecoverPasswordDto;
 
   const userLogic = getServerServices()!.getUserLogic();
-  const recoveryResult = await userLogic.recoverUserPassword(passwordRecoveryDto.email, passwordRecoveryDto.theme as Theme, passwordRecoveryDto.locale as Locale, event);
+  const recoveryResult = await userLogic.recoverUserPassword(passwordRecoveryDto.email, passwordRecoveryDto.theme as Theme, passwordRecoveryDto.locale as Locale);
   let responseDto: IRecoverPasswordResultDto | undefined;
   switch (recoveryResult) {
     case 'success':

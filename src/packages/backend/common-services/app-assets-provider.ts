@@ -2,18 +2,25 @@ import type { Storage, StorageValue } from 'unstorage';
 import { destr } from 'destr';
 import isString from 'lodash-es/isString';
 import isBuffer from 'lodash-es/isBuffer';
-import { type IAppLogger, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import { type Locale, type IAppLogger, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { type IAppAssetsProvider } from './../types';
 
 export class AppAssetsProvider implements IAppAssetsProvider {
   private readonly logger: IAppLogger;
   private readonly appAssetsStorage: Storage<StorageValue>;
+  private readonly localesAssetsStorage: Storage<StorageValue>;
   private readonly pdfFontsAssetsStorage: Storage<StorageValue>;
 
-  public static inject = ['appAssetsStorage', 'pdfFontsAssetsStorage', 'logger'] as const;
-  constructor (appAssetsStorage: Storage<StorageValue>, pdfFontsAssetsStorage: Storage<StorageValue>, logger: IAppLogger) {
+  public static inject = ['appAssetsStorage', 'pdfFontsAssetsStorage', 'localesAssetsStorage', 'logger'] as const;
+  constructor (
+      appAssetsStorage: Storage<StorageValue>, 
+      pdfFontsAssetsStorage: Storage<StorageValue>, 
+      localesAssetsStorage: Storage<StorageValue>, 
+      logger: IAppLogger
+  ) {
     this.logger = logger;
     this.appAssetsStorage = appAssetsStorage;
+    this.localesAssetsStorage = localesAssetsStorage;
     this.pdfFontsAssetsStorage = pdfFontsAssetsStorage;
   }
 
@@ -55,6 +62,17 @@ export class AppAssetsProvider implements IAppAssetsProvider {
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'cannot obtain app resource', 'error-stub');
     }
     this.logger.verbose(`(AppAssetsProvider) accessing app data, filename=${filename}, result=${result ? 'ok' : 'not found'}`);
+    return result;
+  };
+
+  getLocalization = async (locale: Locale): Promise<NonNullable<unknown>> => {
+    this.logger.verbose(`(AppAssetsProvider) accessing localization, locale=${locale}`);
+    const result = destr<any>(await this.localesAssetsStorage.getItem(`${locale.toLocaleLowerCase()}.json`));
+    if (!result) {
+      this.logger.warn(`(AppAssetsProvider) localization is not available, locale=${locale}`);
+      throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'cannot obtain localization', 'error-page');
+    }
+    this.logger.verbose(`(AppAssetsProvider) accessing localization, locale=${locale}, result=${result ? 'ok' : 'not found'}`);
     return result;
   };
 }

@@ -24,6 +24,7 @@ export interface IInitializableOnStartup {
  */
 export interface IAppAssetsProvider {
   getAppData(filename: string): Promise<NonNullable<unknown>>;
+  getLocalization(locale: Locale): Promise<NonNullable<unknown>>;
   getPdfFont(filename: string): Promise<Buffer>;
 }
 

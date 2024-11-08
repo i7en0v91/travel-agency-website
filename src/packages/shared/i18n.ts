@@ -1,7 +1,8 @@
 import { joinURL, parseURL, stringifyParsedURL } from 'ufo';
-import type en from './locales/en.json';
-import { AvailableLocaleCodes, DefaultLocale, OgImagePathSegment, RestApiAuth, RestApiLogging } from './constants';
-import type { Locale } from './types';
+import en from './locales/en.json' with { type: 'json' };
+import { LocaleEnum, AvailableLocaleCodes, DefaultLocale, OgImagePathSegment, RestApiAuth, RestApiLogging } from './constants';
+import fromPairs from 'lodash-es/fromPairs';
+import type { Locale, ILocalizableValue } from './types';
 
 export type I18nResName = string;
 export function getI18nResName1<P1 extends keyof NonNullable<typeof en>> (p1: P1): I18nResName {
@@ -113,3 +114,15 @@ export function localizePath(path: string, locale: Locale ): string {
   }
   return result;
 };
+
+export function mapLocalizeableValues (f: (...lv: string[]) => string, ...localizeableValues: ILocalizableValue[]): ILocalizableValue {
+  return fromPairs(
+    Object.keys(LocaleEnum).map(x => x.toLowerCase())
+      .map(l => [l, f(...localizeableValues.map(v => (v as any)[l] as string))])
+  ) as any;
+}
+
+
+export function getLocalizeableValue (localizeableValue: Pick<ILocalizableValue, Locale>, locale: Locale) {
+  return localizeableValue[locale];
+}

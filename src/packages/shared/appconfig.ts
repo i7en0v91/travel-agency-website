@@ -1,5 +1,5 @@
 import { FlexibleDatesRangeDays, RestApiLogging } from './constants';
-import { isDevEnv, isTestEnv, isPublishEnv, isQuickStartEnv } from './utils';
+import { isDevEnv, isTestEnv, isPublishEnv, isQuickStartEnv } from './environment';
 import type { LogLevel, Locale, I18nResName } from './types';
 import { type ILogSuppressionRule, type ILogVueSuppressionRule } from './applogger';
 import { type AppExceptionCode } from './exceptions';

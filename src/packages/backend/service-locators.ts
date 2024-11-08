@@ -30,7 +30,7 @@ import { DocumentCreator } from './common-services/document-creator';
 import { CompanyReviewLogic as CompanyReviewLogicWrapper } from './acsys/company-review-logic';
 import { EntityCacheLogic as EntityCacheLogicWrapper } from './acsys/entity-cache-logic';
 import { Scope, createInjector } from 'typed-inject';
-import { createCache, getPdfFontsAssetsStorage, getAppAssetsStorage, getNitroCache } from './helpers/nitro';
+import { createCache, getLocalesAssetsStorage, getPdfFontsAssetsStorage, getAppAssetsStorage, getNitroCache } from './helpers/nitro';
 import { AcsysClientProvider } from './acsys/client/acsys-client-provider';
 import { ViewsConfig, type IViewColumnSettings } from './acsys/client/views';
 import { type UserData, UserRoleEnum, type IAcsysClientAdministrator, type IAcsysClientBase } from './acsys/client/interfaces';
@@ -71,6 +71,7 @@ async function buildAcsysBackendServicesLocator(acsysModuleOptions: IAcsysOption
   const nitroCache = await getNitroCache(logger);
   const appAssetsStorage = await getAppAssetsStorage(logger);
   const pdfFontsAssetsStorage = await getPdfFontsAssetsStorage(logger);
+  const localesAssetsStorage = await getLocalesAssetsStorage(logger);
 
   const injector = createInjector();
   const provider = injector
@@ -80,6 +81,7 @@ async function buildAcsysBackendServicesLocator(acsysModuleOptions: IAcsysOption
     .provideValue('nitroCache', nitroCache)
     .provideValue('appAssetsStorage', appAssetsStorage)
     .provideValue('pdfFontsAssetsStorage', pdfFontsAssetsStorage)
+    .provideValue('localesAssetsStorage', localesAssetsStorage)
     .provideValue('imageCacheDir', await ensureImageCacheDir(logger))
     .provideClass('appAssetsProvider', AppAssetsProvider, Scope.Singleton)
     .provideClass('htmlPageModelMetadata', HtmlPageModelMetadata, Scope.Singleton)
@@ -170,6 +172,7 @@ async function buildPrismaBackendServicesLocator(logger: IAppLogger): Promise<IS
   const nitroCache = await getNitroCache(logger);
   const appAssetsStorage = await getAppAssetsStorage(logger);
   const pdfFontsAssetsStorage = await getPdfFontsAssetsStorage(logger);
+  const localesAssetsStorage = await getLocalesAssetsStorage(logger);
 
   const prismaClient = await createPrismaClient(logger);
   const injector = createInjector();
@@ -180,6 +183,7 @@ async function buildPrismaBackendServicesLocator(logger: IAppLogger): Promise<IS
     .provideValue('nitroCache', nitroCache)
     .provideValue('appAssetsStorage', appAssetsStorage)
     .provideValue('pdfFontsAssetsStorage', pdfFontsAssetsStorage)
+    .provideValue('localesAssetsStorage', localesAssetsStorage)
     .provideValue('imageCacheDir', await ensureImageCacheDir(logger))
     .provideClass('appAssetsProvider', AppAssetsProvider, Scope.Singleton)
     .provideClass('htmlPageModelMetadata', HtmlPageModelMetadata, Scope.Singleton)
@@ -279,23 +283,21 @@ export async function buildBackendServicesLocator(logger: IAppLogger): Promise<I
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, errMsg, 'error-page');
   }
 
-  const isPrerendering = !!import.meta.prerender;
-  if(!isPrerendering) {
-    logger.verbose('starting initializable services');
-    const initializables: IInitializableOnStartup[] = [
-      result.getEmailSender(),  
-      result.getServerI18n(),
-      result.getEntityChangeNotifications(),
-      result.getHtmlPageCacheCleaner(),
-      result.getImageCategoryLogic(),
-      result.getImageBytesProvider(),
-      result.getAirlineCompanyLogic(),
-      result.getAirplaneLogic()
-    ];
-    for(let i = 0; i < initializables.length; i++) {
-      await initializables[i].initialize();
-    }  
-  }
+  logger.verbose('starting initializable services');
+  const initializables: IInitializableOnStartup[] = [
+    result.getEmailSender(),  
+    result.getEntityChangeNotifications(),
+    result.getHtmlPageCacheCleaner(),
+    result.getServerI18n(),
+    result.getImageCategoryLogic(),
+    result.getImageBytesProvider(),
+    result.getAirlineCompanyLogic(),
+    result.getAirplaneLogic()
+  ];
+  
+  for(let i = 0; i < initializables.length; i++) {
+    await initializables[i].initialize();
+  }  
   
 
   logger.verbose('services container was built');
