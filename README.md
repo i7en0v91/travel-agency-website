@@ -12,6 +12,7 @@ https://github.com/user-attachments/assets/9ff4fafd-f0ba-4637-a08e-5bd162eb816c
 - OpenGraph images for SEO - prerendered or generated on-the-fly for dynamic entities
 - [Acsys CMS](https://github.com/acsysio/acsys) - out-of-the-box CMS integration with drafts/preview mode support
 - HTML pages & images caching, configurable cache refresh policies on changes (e.g. via CMS)
+- Toolbox for quick lookup & navigation to site pages matching search term
 - UI: adaptive layout, light/dark theme support, input/selected values validation & prompting
 - Personal account with email confirmation registration flow, reviews, photos uploading, favourites & booking history
 - PDF generation for ticket/booking documents
