@@ -271,7 +271,7 @@ const uiStyling = computed(() => {
     id="nav-main-h" 
     :links="horizontalNavLinks" 
     :aria-label="$t(getI18nResName2('ariaLabels', 'navMain'))"
-    :class="`min-h-[72px] shadow-md dark:shadow-gray-700 sticky top-0 z-[60] bg-white dark:bg-gray-900 px-[14px] lg:px-[24px] xl:px-[64px]
+    :class="`min-h-16 shadow-md dark:shadow-gray-700 sticky top-0 z-[60] bg-white dark:bg-gray-900 px-[14px] lg:px-[24px] xl:px-[64px]
 
       lg:[&_ul:first-of-type_li:first-of-type_button]:absolute
       lg:[&_ul:first-of-type_li:first-of-type_button]:w-0

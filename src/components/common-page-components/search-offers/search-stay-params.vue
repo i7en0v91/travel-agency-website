@@ -124,14 +124,10 @@ defineShortcuts({
   'ESCAPE': () => open.value = false
 });
 
-const uiStyling = {
-  container: '!mt-14' // search offers input control's height 
-};
-
 </script>
 
 <template>
-  <UPopover v-model:open="open" :popper="{ placement: 'bottom' }" :class="ui?.wrapper" :ui="uiStyling">
+  <UPopover v-model:open="open" :popper="{ placement: 'bottom' }" :class="ui?.wrapper">
     <InputFieldFrame :text-res-name="getI18nResName2('searchStays', 'roomsGuestsCaption')" class="w-full">
       <UButton size="md" :class="`justify-between flex-row-reverse cursor-pointer dark:hover:bg-transparent w-full pl-[16px] ${ui?.input ?? ''}`" variant="outline" color="gray">
         <UIcon name="i-heroicons-chevron-right-20-solid" class="w-5 h-5 transition-transform text-gray-400 dark:text-gray-500 rotate-90"/>

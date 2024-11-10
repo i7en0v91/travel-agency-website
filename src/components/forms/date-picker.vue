@@ -129,14 +129,10 @@ const calendarAttrs = computed(() => {
   };
 });
 
-const uiStyling = {
-  container: '!mt-14' // search offers input control's height 
-};
-
 </script>
 
 <template>
-  <UPopover v-model:open="open" :popper="{ placement: 'bottom' }" :class="ui?.wrapper" :ui="uiStyling">
+  <UPopover v-model:open="open" :popper="{ placement: 'bottom' }" :class="ui?.wrapper">
     <InputFieldFrame :text-res-name="captionResName" class="w-full">
       <UButton icon="i-heroicons-calendar-days-20-solid" :class="`w-full dark:hover:bg-transparent pl-[12px] ${ui?.input ?? ''}`" variant="outline" color="gray">
         {{ datesDisplayText }}
