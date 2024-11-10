@@ -21,7 +21,7 @@
     "generate": "nuxt generate",
     "preview": " npx copyfiles -E -f ./packages/shared/locales/* .output/locales && cross-env NEXTAUTH_URL=http://127.0.0.1:3000/api/auth env-cmd -f ./packages/backend/.env nuxt preview",
     "postinstall": "nuxt prepare",
-    "apptests": "cross-env VITE_VITEST=true NODE_OPTIONS='--max-old-space-size=4096 --disable-warning=DEP0166 --disable-warning=DEP0155' NEXTAUTH_URL=http://127.0.0.1:43321/api/auth env-cmd -f ./packages/backend/.env npx vitest run --dir=./tests",
+    "apptests": "npx copyfiles -E -f ./packages/shared/locales/* assets/locales && cross-env VITE_VITEST=true NODE_OPTIONS='--max-old-space-size=4096 --disable-warning=DEP0166 --disable-warning=DEP0155' NEXTAUTH_URL=http://127.0.0.1:43321/api/auth env-cmd -f ./packages/backend/.env npx vitest run --dir=./tests",
     "test": "npm run test:e2e",
     "test:e2e": "npm run apptests -- -t e2e:",
     "test:og-image-static": "npm run apptests -- -t og:image",
