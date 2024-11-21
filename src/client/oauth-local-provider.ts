@@ -1,7 +1,7 @@
 import { AppException, AppExceptionCodeEnum, AuthProvider, type EntityId } from '@golobe-demo/shared';
 import type { OAuthConfig } from 'next-auth/providers/oauth';
-import { type ITestLocalProfile, OAUTH_TESTUSER_PROFILE as testUserProfile } from './testing';
-import { getCommonServices, getServerServices } from './service-accessors';
+import { type ITestLocalProfile, OAUTH_TESTUSER_PROFILE as testUserProfile } from '../helpers/testing';
+import { getCommonServices, getServerServices } from '../helpers/service-accessors';
 
 async function getTestUserId () : Promise<EntityId> {
   const logger = getCommonServices().getLogger();

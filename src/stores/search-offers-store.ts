@@ -292,7 +292,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
         },
         primarySort: instance.viewState.displayOptions.primaryOptions.find(o => o.isActive)?.type ?? DefaultFlightOffersSorting,
         secondarySort: instance.viewState.displayOptions.additionalSorting ?? DefaultFlightOffersSorting,
-        airlineCompanyIds: (instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsAirlineCompanyFilterId) as ISearchOffersChecklistFilterProps)?.currentValue?.map(v => parseInt(v)) as number[] | undefined,
+        airlineCompanyIds: (instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsAirlineCompanyFilterId) as ISearchOffersChecklistFilterProps)?.currentValue as number[] | undefined,
         ratings: (instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsRatingFilterId) as ISearchOffersChecklistFilterProps)?.currentValue?.map(v => getRatingFromFilterVariantId(v)) as number[] | undefined,
         departureTimeOfDay: mapNumberRangeFilterValue((instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsDepartureTimeFilterId) as ISearchOffersRangeFilterProps)?.currentValue),
         price: mapNumberRangeFilterValue((instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsPriceFilterId) as ISearchOffersRangeFilterProps)?.currentValue) ?? { from: 1, to: SearchOffersPriceRange.max },
@@ -540,7 +540,9 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
             } else {
               searchStayOffersRequestBody.value = searchParamsDto as ISearchStayOffersParamsDto;
             }
-            await searchOffersFetch.refresh();
+            // KB: omitting await here to prevent client-side navigation blocking until receiving search offers response (REST Api) from server.
+            // With async loading search results page is mounted asap and waiting stubs are shown during HTTP request execution
+            searchOffersFetch.refresh();
           } else {
             logger.debug(`(search-offers-store) skipping fetch offers request, as it is currently in pending state, kind=${instance.offersKind}`);
           }

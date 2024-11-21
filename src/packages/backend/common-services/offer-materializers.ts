@@ -4,7 +4,6 @@ import flatten from 'lodash-es/flatten';
 import { MapStayOffer, StayOfferInfoQuery, MapFlight, FlightInfoQuery, FlightOfferInfoQuery, MapFlightOffer } from './../services/queries';
 import type { PrismaClient } from '@prisma/client';
 import { mapDate } from './../helpers/db';
-import keys from 'lodash-es/keys';
 import uniqBy from 'lodash-es/uniqBy';
 
 declare type FlightOfferWithSortFactor = EntityDataAttrsOnly<IFlightOffer> & { primarySortFactor: number, secondarySortFactor: number };
@@ -73,7 +72,7 @@ export class PrismaFlightOfferMaterializer implements IFlightOfferMaterializer {
       where: {
         isDeleted: false,
         dataHash: {
-          in: keys(memoryFlightsMap)
+          in: Array.from(memoryFlightsMap.keys())
         }
       },
       select: FlightInfoQuery.select
@@ -152,7 +151,7 @@ export class PrismaFlightOfferMaterializer implements IFlightOfferMaterializer {
       where: {
         isDeleted: false,
         dataHash: {
-          in: keys(memoryOffersMap)
+          in: Array.from(memoryOffersMap.keys())
         }
       },
       select: FlightOfferInfoQuery(userId).select

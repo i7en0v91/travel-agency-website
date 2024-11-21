@@ -15,8 +15,8 @@ export class AcsysClientStandard extends AcsysClientViewer implements IAcsysClie
 
     const fileData = new FormData();
 
-    const file = new File([bytes], fileId, { type: mimeType });
-    fileData.append('file', file);
+    const file = new Blob([bytes], { type: mimeType });
+    fileData.append('file',  file, fileId);
     fileData.append('destination', '');
 
     const fetchResult = await this.fetch<ApiResponseTypes.text, string>(RouteUploadFile, undefined, fileData, 'POST', UserRoleEnum.Standard, true, ApiResponseTypes.text, undefined);

@@ -6,5 +6,9 @@
   },
   "editor.quickSuggestions": {
       "strings": true
+  },
+  "files.watcherExclude": {
+    "**/externals/acsys/**": true,
+    "**/backend/.acsys/**": true
   }
 }
