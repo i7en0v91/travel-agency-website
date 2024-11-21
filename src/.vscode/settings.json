@@ -1,4 +1,11 @@
 {
   "typescript.tsserver.experimental.enableProjectDiagnostics": true,
-  "eslint.useFlatConfig": true
+  "eslint.useFlatConfig": true,
+  "editor.quickSuggestions": {
+      "strings": true
+  },
+  "files.watcherExclude": {
+    "**/externals/acsys/**": true,
+    "**/backend/.acsys/**": true
+  }
 }

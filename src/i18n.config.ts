@@ -51,7 +51,7 @@ export default defineI18nConfig(() => ({
         month: 'short', day: 'numeric', weekday: 'short'
       },
       daytime: {
-        year: undefined, month: undefined, day: undefined, hour12: true, hour: '2-digit', minute: '2-digit'
+        year: undefined, month: undefined, day: undefined, hour12: false, hour: '2-digit', minute: '2-digit'
       }
     },
     fr: {

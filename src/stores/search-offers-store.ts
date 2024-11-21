@@ -1,4 +1,4 @@
-import { getI18nResName2, getI18nResName3, type I18nResName, AppConfig, AppException, AppExceptionCodeEnum, QueryPagePreviewModeParam, StaysAmenitiesFilterItemId, StaysAmenitiesFilterId, StaysFreebiesFilterItemId, StaysFreebiesFilterId, NumMinutesInDay, StaysPriceFilterId, DefaultStayOffersSorting, StaysRatingFilterId, FlightsTripTypeFilterFlexibleDatesItemId, SearchOffersPriceRange, FlightsTripTypeFilterId, FlightsPriceFilterId, FlightsDepartureTimeFilterId, FlightsRatingFilterId, FlightsAirlineCompanyFilterId, DefaultFlightOffersSorting, DataKeyEntityCacheItems, FlightMinPassengers, UserNotificationLevel, AvailableLocaleCodes, DataKeySearchFlightOffers, DataKeySearchStayOffers, validateObject, eraseTimeOfDay, type OfferKind, type IEntityCacheCityItem, type IStayOffer, type IFlightOffer, type FlightOffersSortFactor, type StayOffersSortFactor, type ISearchFlightOffersResult, type ISearchStayOffersResult, type EntityDataAttrsOnly, type ILocalizableValue } from '@golobe-demo/shared';
+import { getI18nResName2, getI18nResName3, type I18nResName, AppConfig, AppException, AppExceptionCodeEnum, QueryPagePreviewModeParam, StaysAmenitiesFilterItemId, StaysAmenitiesFilterId, StaysFreebiesFilterItemId, StaysFreebiesFilterId, NumMinutesInDay, StaysPriceFilterId, DefaultStayOffersSorting, StaysRatingFilterId, FlightsTripTypeFilterFlexibleDatesItemId, SearchOffersPriceRange, FlightsTripTypeFilterId, FlightsPriceFilterId, FlightsDepartureTimeFilterId, FlightsRatingFilterId, FlightsAirlineCompanyFilterId, DefaultFlightOffersSorting, DataKeyEntityCacheItems, FlightMinPassengers, UserNotificationLevel, AvailableLocaleCodes, DataKeySearchFlightOffers, DataKeySearchStayOffers, validateObject, eraseTimeOfDay, type OfferKind, type IEntityCacheCityItem, type IStayOffer, type IFlightOffer, type FlightOffersSortFactor, type StayOffersSortFactor, type ISearchFlightOffersResult, type ISearchStayOffersResult, type EntityDataAttrsOnly, type ILocalizableValue, StaysMinGuestsCount, StaysMinRoomsCount } from '@golobe-demo/shared';
 import { mapSearchFlightOffersResult, mapSearchStayOffersResult, mapSearchedFlightOffer, createSearchFlightOfferResultLookup } from '../helpers/entity-mappers';
 import { type ISearchListItem, type ISearchOffersFilterVariant, type ISearchFlightOffersParams, type ISearchStayOffersParams, type ISearchStayOffersMainParams, type ISearchFlightOffersMainParams, type ISearchFlightOffersDisplayOptions, type ISearchStayOffersDisplayOptions, type ISearchOffersChecklistFilterProps, type ISearchOffersRangeFilterProps, type ISearchFlightOffersDisplayOption } from './../types';
 import { ApiEndpointFlightOffersSearch, ApiEndpointStayOffersSearch, type ISearchFlightOffersMainParamsDto, type ISearchStayOffersMainParamsDto, SearchFlightOffersMainParamsDtoSchema, SearchStayOffersMainParamsDtoSchema, type ISearchFlightOffersParamsDto, type ISearchStayOffersParamsDto, type ISearchFlightOffersResultDto, type ISearchStayOffersResultDto } from '../server/api-definitions';
@@ -202,10 +202,10 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
       let validationError : ValidationError | undefined;
       switch (kind) {
         case 'flights':
-          validationError = await validateObject(query, SearchFlightOffersMainParamsDtoSchema);
+          validationError = await validateObject(omit(query, QueryPagePreviewModeParam), SearchFlightOffersMainParamsDtoSchema);
           break;
         case 'stays':
-          validationError = await validateObject(query, SearchStayOffersMainParamsDtoSchema);
+          validationError = await validateObject(omit(query, QueryPagePreviewModeParam), SearchStayOffersMainParamsDtoSchema);
           break;
       }
       if (validationError) {
@@ -292,7 +292,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
         },
         primarySort: instance.viewState.displayOptions.primaryOptions.find(o => o.isActive)?.type ?? DefaultFlightOffersSorting,
         secondarySort: instance.viewState.displayOptions.additionalSorting ?? DefaultFlightOffersSorting,
-        airlineCompanyIds: (instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsAirlineCompanyFilterId) as ISearchOffersChecklistFilterProps)?.currentValue?.map(v => parseInt(v)) as number[] | undefined,
+        airlineCompanyIds: (instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsAirlineCompanyFilterId) as ISearchOffersChecklistFilterProps)?.currentValue as number[] | undefined,
         ratings: (instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsRatingFilterId) as ISearchOffersChecklistFilterProps)?.currentValue?.map(v => getRatingFromFilterVariantId(v)) as number[] | undefined,
         departureTimeOfDay: mapNumberRangeFilterValue((instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsDepartureTimeFilterId) as ISearchOffersRangeFilterProps)?.currentValue),
         price: mapNumberRangeFilterValue((instance.viewState.currentSearchParams.filters?.find(f => f.filterId === FlightsPriceFilterId) as ISearchOffersRangeFilterProps)?.currentValue) ?? { from: 1, to: SearchOffersPriceRange.max },
@@ -322,8 +322,8 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
         checkIn: instance.viewState.currentSearchParams.checkIn /* range of dates will be used on server */,
         checkOut: instance.viewState.currentSearchParams.checkOut /* range of dates will be used on server */,
         citySlug: instance.viewState.currentSearchParams.city?.slug,
-        numGuests: instance.viewState.currentSearchParams.numGuests ?? 1,
-        numRooms: instance.viewState.currentSearchParams.numRooms ?? 1
+        numGuests: instance.viewState.currentSearchParams.numGuests ?? StaysMinGuestsCount,
+        numRooms: instance.viewState.currentSearchParams.numRooms ?? StaysMinRoomsCount
       };
     }
   };
@@ -540,7 +540,9 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
             } else {
               searchStayOffersRequestBody.value = searchParamsDto as ISearchStayOffersParamsDto;
             }
-            await searchOffersFetch.refresh();
+            // KB: omitting await here to prevent client-side navigation blocking until receiving search offers response (REST Api) from server.
+            // With async loading search results page is mounted asap and waiting stubs are shown during HTTP request execution
+            searchOffersFetch.refresh();
           } else {
             logger.debug(`(search-offers-store) skipping fetch offers request, as it is currently in pending state, kind=${instance.offersKind}`);
           }

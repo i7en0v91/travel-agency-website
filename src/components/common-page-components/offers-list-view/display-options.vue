@@ -222,6 +222,8 @@ function onActivePrimaryOptionChanged (newActiveOptionCtrlKey: string, prevActiv
     if (searchOffersStore.offersKind === 'flights') {
       const storeDisplayOptions = (searchOffersStore.viewState.displayOptions as ISearchFlightOffersDisplayOptions);
       secondarySort.value = storeDisplayOptions.primaryOptions.find(o => o.isActive)!.type;
+    } else {
+      refreshDisplayedOptionButtons();
     }
   }, 0);
 

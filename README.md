@@ -41,7 +41,7 @@ You will need to download Acsys sources, enable CMS in project config and then p
 ```sh
 git clone https://github.com/acsysio/acsys.git ./externals/acsys
 cd ./externals/acsys
-npm install
+npm install --include dev
 cd ./../../src
 
 # Now edit src/packages/backend/.env file and uncomment #CMS=acsys first line

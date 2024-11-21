@@ -1,4 +1,4 @@
-import { I18LocalesDirName, lookupValueOrThrow, AppConfig, SystemPage, AppPage, EntityIdPages, getPagePath, LoadingStubFileName, AvailableLocaleCodes, CookieI18nLocale, DefaultLocale, isTestEnv, isPublishEnv } from '@golobe-demo/shared';
+import { I18LocalesDirName, lookupValueOrThrow, AppConfig, SystemPage, AppPage, EntityIdPages, getPagePath, LoadingStubFileName, AvailableLocaleCodes, CookieI18nLocale, DefaultLocale, isTestEnv, isPublishEnv, isDevEnv } from '@golobe-demo/shared';
 import { ApiEndpointPrefix, ApiEndpointAuthentication, ApiEndpointUserAccount, ApiAppEndpointPrefix, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets } from './server/api-definitions';
 import { resolveSharedPkgPath } from './helpers/resolvers';
 import { joinURL } from 'ufo';
@@ -8,7 +8,7 @@ import toPairs from 'lodash-es/toPairs';
 import fromPairs from 'lodash-es/fromPairs';
 import flatten from 'lodash-es/flatten';
 import { type NitroRouteConfig } from 'nitropack';
-import { join, resolve } from 'pathe';
+import { join, resolve, basename } from 'pathe';
 import { writeFile } from 'fs/promises';
 
 const listLocalizedPaths = (enPath: string) => [enPath.startsWith('/') ? enPath : `/${enPath}`, ...AvailableLocaleCodes.filter(l => l !== 'en').map(l => joinURL(`/${l}`, `${enPath}`))];
@@ -71,9 +71,12 @@ const HtmlPageCachingRules: { [P in AppPage]: NitroRouteConfig } & { [P in Syste
 };
 const ApiRoutesWithCachingDisabled = [`${ApiAppEndpointPrefix}/stays/**`, `${ApiAppEndpointPrefix}/booking/**`, ApiEndpointUserAccount, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets];
 
+const AcsysFilesGlobForWatchers = isDevEnv() ? 
+  [`**/${basename(AppConfig.acsys.execDir)}/**`, `**/externals/${basename(AppConfig.acsys.srcDir)}/**`] : undefined;
+
 export default defineNuxtConfig({
   devtools: { enabled: false },
-
+  
   ssr: true,
 
   sourcemap: {
@@ -271,7 +274,9 @@ export default defineNuxtConfig({
 
   router: {
     options: {
-      scrollBehaviorType: 'smooth'
+      scrollBehaviorType: 'auto',
+      hashMode: false,
+      strict: false
     }
   },
 
@@ -284,6 +289,9 @@ export default defineNuxtConfig({
     '/api/app/testing/**': !isTestEnv() ? { redirect: '/' } : {}
   },
 
+  ignore: AcsysFilesGlobForWatchers,
+  watch: AcsysFilesGlobForWatchers?.map(fg => `!${fg}`),
+  
   nitro: {
     publicAssets: [
       {

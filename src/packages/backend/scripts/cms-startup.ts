@@ -47,12 +47,12 @@ type DbInfo = {
 
 async function build(execDir: string): Promise<void> {
   consola.log(`[${ModuleName}] building...`);
-  execSync(`npm install`, {
-    cwd: execDir,
-    env: {} as NodeJS.ProcessEnv
+  //KB: to reduce chance of exception during build `npm install --include dev` should be run manually from acsys src folder
+  execSync(`npm install --include dev`, {
+    cwd: execDir
   });
 
-  execSync(`npm run build`, {
+  execSync(`npm run build -- --mode production`, {
     cwd: execDir
   });
   log(`build completed`);

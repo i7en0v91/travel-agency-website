@@ -65,13 +65,13 @@ export function extractAirportCode (displayName: string) {
 }
 
 export function getScoreClassResName (score: number): I18nResName {
-  if (score >= 4.0) {
+  if (score > 4.5) {
     return getI18nResName3('searchOffers', 'scoreClass', 'veryGood');
-  } else if (score >= 3.0) {
+  } else if (score >= 4.0) {
     return getI18nResName3('searchOffers', 'scoreClass', 'good');
-  } else if (score >= 2.0) {
+  } else if (score >= 3.0) {
     return getI18nResName3('searchOffers', 'scoreClass', 'medium');
-  } else if (score >= 1.0) {
+  } else if (score >= 2.0) {
     return getI18nResName3('searchOffers', 'scoreClass', 'low');
   } else {
     return getI18nResName3('searchOffers', 'scoreClass', 'veryLow');

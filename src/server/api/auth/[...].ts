@@ -2,7 +2,7 @@ import { DefaultLocale, CookieI18nLocale, type Locale, HeaderLocation, patchUrlW
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GitHubProvider from 'next-auth/providers/github';
 import GoogleProvider from 'next-auth/providers/google';
-import TestLocalProvider from './../../../helpers/oauth-local-provider';
+import TestLocalProvider from '../../../client/oauth-local-provider';
 import { type IAuthUserDto } from '../../api-definitions';
 import { NuxtAuthHandler } from '#auth';
 import { type EventHandler, type EventHandlerRequest, type EventHandlerResponse, getCookie } from 'h3';

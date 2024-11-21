@@ -1,9 +1,10 @@
-import { validateObject, AppException, AppExceptionCodeEnum, type DocumentCommonParams, type EntityId, type Locale, type Theme } from '@golobe-demo/shared';
+import { QueryPagePreviewModeParam, validateObject, AppException, AppExceptionCodeEnum, type DocumentCommonParams, type EntityId, type Locale, type Theme } from '@golobe-demo/shared';
 import { BookingDownloadQuerySchema } from '../../../../api-definitions';
 import { extractUserIdFromSession } from './../../../../../server/utils/auth';
 import { getBytes } from './../../../../../helpers/rest-utils';
 import { Readable } from 'stream';
 import type { H3Event } from 'h3';
+import omit from 'lodash-es/omit';
 import { defineWebApiEventHandler } from '../../../../utils/webapi-event-handler';
 import { getServerSession } from '#auth';
 import { getServerServices } from '../../../../../helpers/service-accessors';
@@ -26,7 +27,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
 
   const bookingId: EntityId | undefined = bookingParam;
   const query = getQuery(event);
-  const validationError = await validateObject(query, BookingDownloadQuerySchema);
+  const validationError = await validateObject(omit(query, QueryPagePreviewModeParam), BookingDownloadQuerySchema);
   if (validationError) {
     logger.warn(`(api:booking-download) booking download query does not match schema, url=${event.node.req.url}, msg=${validationError.message}, issues=${validationError.errors?.join('; ') ?? '[empty]'}]`, undefined, query);
     throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'booking download query arguments has invalid format', 'error-stub');
@@ -53,7 +54,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   
   const imageDownloadFn = (url: string, query: any): Promise<Buffer | undefined> => getBytes(url, query, undefined, 'no-store', true, event, 'throw');
   const docBytes = await documentCreator.getBookingTicket(booking, documentParams, imageDownloadFn, event);
-
+  
   handleCacheHeaders(event, {
     cacheControls: ['no-store']
   });
