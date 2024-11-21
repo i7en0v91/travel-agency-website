@@ -20,14 +20,9 @@ if (import.meta.client) {
 </script>
 
 <template>
-  <div class="search-flights-page no-hidden-parent-tabulation-check">
-    <!--
-    <h1 class="search-flights-page-title mb-xs-4">
-      {{ $t(getI18nResName2('flightsPage', 'title')) }}
-    </h1>
-    <SearchOffers ctrl-key="FlightsListingPage-SearchOffers" :minimum-buttons="true" class="search-flights-offers-box" :take-initial-values-from-url-query="true" single-tab="flights" />
-    <OffersListView ctrl-key="FlightsListingPage-OffersListView" offers-kind="flights" class="mt-xs-5" />
-    -->
-    PAGE CONTENT
+  <div class="px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
+    <h2 class="text-3xl font-semibold text-gray-600 dark:text-gray-300 break-words">{{ $t(getI18nResName2('flightsPage', 'title')) }}</h2>
+    <SearchOffers ctrl-key="FlightsListingPage-SearchOffers" :show-promo-btn="false" class="mt-4 w-full" :take-initial-values-from-url-query="true" single-tab="flights" />
+    <OffersListView ctrl-key="FlightsListingPage-OffersListView" offers-kind="flights" class="mt-8" />
   </div>
 </template>

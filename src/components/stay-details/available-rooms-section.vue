@@ -35,6 +35,7 @@ withDefaults(defineProps<IProps>(), {
       {{ $t(getI18nResName3('stayDetailsPage', 'availableRooms', 'title')) }}
     </h2>
     <div class="available-rooms-list-div">
+      <!--
       <PerfectScrollbar
         :options="{
           suppressScrollY: true,
@@ -75,6 +76,7 @@ withDefaults(defineProps<IProps>(), {
           </li>
         </ol>
       </PerfectScrollbar>
+      -->
     </div>
   </section>
 </template>

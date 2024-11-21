@@ -63,7 +63,7 @@ const uiStyling = {
       </div>
 
       <template #footer>
-        <UButton size="xl" class="w-full rounded mt-4 justify-center" variant="solid" color="green" :to="citySlug ? (bookKind === 'flight' ? navLinkBuilder.buildPageLink(AppPage.FindFlights, locale as Locale, { fromCitySlug: citySlug }) : navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug })) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
+        <UButton size="xl" class="w-full rounded mt-4 justify-center" variant="solid" color="green" :to="citySlug ? (bookKind === 'flight' ? navLinkBuilder.buildPageLink(AppPage.FindFlights, locale as Locale, { fromCitySlug: citySlug }) : navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug })) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)" :external="false">
           {{ $t(getI18nResName3('travelCities', 'bookBtn', bookKind)) }}
         </UButton>
       </template>

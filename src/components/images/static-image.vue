@@ -125,7 +125,7 @@ const stubStyleClass = computed(() => {
 });
 
 const imgStyleClass = computed(() => {
-  return `row-start-1 row-end-2 col-start-1 col-end-2 block w-full h-auto object-cover text-[0] z-[2] bg-transparent ${props.ui?.img ?? ''} ${invertForDarkTheme.value ? 'invert' : ''}`;
+  return `row-start-1 row-end-2 col-start-1 col-end-2 block w-full h-auto object-cover text-[0] z-[2] bg-transparent ${props.ui?.img ?? ''} ${invertForDarkTheme.value ? 'dark:invert' : ''}`;
 });
 
 async function fetchDisplayDetailsIfNeeded (): Promise<void> {

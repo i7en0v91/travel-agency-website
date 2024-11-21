@@ -54,6 +54,12 @@ async function handleSignOutClick (
   logger.verbose(`(NavLinkBuilder) sign out menu handler completed: locale=${locale}, isOgImageRequest=${isOgImageRequest}`);
 }
 
+function clickOnTab(tabSelector: string) {
+  const tabEl = (document.querySelector(tabSelector) as HTMLElement);
+  tabEl?.click();
+  tabEl?.blur();
+}
+
 async function handlePaymentsClick (
   navLinkBuilder: INavLinkBuilder, 
   route: ReturnType<typeof useRoute>, 
@@ -64,7 +70,7 @@ async function handlePaymentsClick (
   logger.verbose(`(NavLinkBuilder) handling payments menu click: locale=${locale}, isOgImageRequest=${isOgImageRequest}`);
   const onAccountPage = isCurrentlyOnAccountPage(route);
   if(onAccountPage) {
-    (document.querySelector(`[data-tab-name="${UserPayments}"]`) as HTMLElement)?.click();
+    clickOnTab('[role="tablist"] button:last-child');
   } else {
     // set payment tab to be automatically selected on mount
     const optionKey = getLastSelectedTabStorageKey(UserAccountTabGroup);
@@ -85,7 +91,7 @@ async function handleSettingsClick (
   const onAccountPage = isCurrentlyOnAccountPage(route);
 
   if(onAccountPage) {
-    (document.querySelector(`[data-tab-name="${UserAccount}"]`) as HTMLElement)?.click();
+    clickOnTab('[role="tablist"] button');
   } else {
     // set payment tab to be automatically selected on mount
     const optionKey = getLastSelectedTabStorageKey(UserAccountTabGroup);

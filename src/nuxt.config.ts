@@ -47,6 +47,9 @@ const getRouteCachingRule = (cachingEnabled: boolean, /*unauthenticatedOnly*/ _:
   return rule;
 };
 
+// align markdown caching to html page's cache duration
+const NuxtContentCachingRule: NitroRouteConfig = getRouteCachingRule(true, false);
+
 const HtmlPageCachingRules: { [P in AppPage]: NitroRouteConfig } & { [P in SystemPage]: NitroRouteConfig } = {
   'Index': getRouteCachingRule(true, false),
   'Signup': getRouteCachingRule(false, true),
@@ -281,7 +284,8 @@ export default defineNuxtConfig({
       'content/components'
     ],
     experimental: {
-      search: true
+      search: true,
+      cacheContents: true
     }
   },
 
@@ -312,6 +316,7 @@ export default defineNuxtConfig({
   routeRules: {
     ...(fromPairs(flatten(toPairs(HtmlPageCachingRules).map(rr => listLocalizedPaths(`/${getPagePath(lookupValueOrThrow({ ...AppPage, ...SystemPage }, rr[0]))}`).map(lp => [EntityIdPages.some(idp => lp.includes(getPagePath(idp))) ? `${lp}/**` : lp, rr[1]]))))),
     ...(fromPairs((ApiRoutesWithCachingDisabled.map(ur => [ur, { cache: false, headers: { 'cache-control': 'no-store' } }])))),
+    '/api/_content/query/**': NuxtContentCachingRule,
     '/api/app/img/**': { headers:  AppConfig.caching.intervalSeconds ? { 'cache-control': `public,max-age=${AppConfig.caching.intervalSeconds},s-maxage=${AppConfig.caching.intervalSeconds}` } : { 'cache-control': 'no-cache' } },
     '/_ipx/**': { headers:  AppConfig.caching.intervalSeconds ? { 'cache-control': `public,max-age=${AppConfig.caching.intervalSeconds},s-maxage=${AppConfig.caching.intervalSeconds}` } : { 'cache-control': 'no-cache' } },
     '/js/**': { headers:  AppConfig.caching.intervalSeconds ? { 'cache-control': `public,max-age=${AppConfig.caching.intervalSeconds},s-maxage=${AppConfig.caching.intervalSeconds}` } : { 'cache-control': 'no-cache' } },
@@ -362,8 +367,6 @@ export default defineNuxtConfig({
     ["nuxt-svgo", {}],
     ["@nuxt/content", {}]
   ],
-
-  //css: ['vue-final-modal/style.css'],
 
   build: {
     transpile: ['jsonwebtoken']

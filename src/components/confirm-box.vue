@@ -68,13 +68,13 @@ const uiStyling = {
         </h3>  
         <div class="flex flex-row flex-wrap justify-end mt-6 gap-2 confirm-box-buttons">
           <UButton v-if="props.buttons.includes('yes')" size="lg" icon="i-heroicons-check" variant="solid" color="primary" @click="() => onButtonClick('yes')">
-            {{ t(getI18nResName2('confirmBox', 'btnYes')) }}
+            {{ $t(getI18nResName2('confirmBox', 'btnYes')) }}
           </UButton>
           <UButton v-if="props.buttons.includes('no')" size="lg" icon="i-mdi-close" variant="outline" color="gray" @click="() => onButtonClick('no')">
-            {{ t(getI18nResName2('confirmBox', 'btnNo')) }}
+            {{ $t(getI18nResName2('confirmBox', 'btnNo')) }}
           </UButton>
           <UButton v-if="props.buttons.includes('cancel')" size="lg" icon="mdi-close-circle-outline" variant="outline" color="gray" @click="() => onButtonClick('cancel')">
-            {{ t(getI18nResName2('confirmBox', 'btnCancel')) }}
+            {{ $t(getI18nResName2('confirmBox', 'btnCancel')) }}
           </UButton>
         </div>
       </div>

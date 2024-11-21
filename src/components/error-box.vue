@@ -30,7 +30,7 @@ const httpCodeResName = props.httpCode === 404 ? '404' : '500';
           <p> {{ $t(msgResName, msgResParams) }} </p>
         </div>
       </div>
-      <UButton :to="navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)" :label="t(getI18nResName2('errorBox', 'homeLink'))" class="block w-fit" variant="solid" color="primary" size="xl"/>
+      <UButton :to="navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)" :label="t(getI18nResName2('errorBox', 'homeLink'))" class="block w-fit" variant="solid" color="primary" size="xl" :external="false"/>
     </div>
   </div>
 </template>

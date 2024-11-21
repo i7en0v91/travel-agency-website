@@ -1,7 +1,6 @@
 import { getCurrentDeviceSize } from './../helpers/dom';
 import { getCommonServices } from '../helpers/service-accessors';
 import { DeviceSizeEnum } from '../helpers/constants';
-import throttle from 'lodash-es/throttle';
 
 export interface IDeviceSize {
   current: ComputedRef<DeviceSizeEnum>
@@ -20,7 +19,7 @@ export function useDeviceSize (): IDeviceSize {
   const deviceSize = ref<DeviceSizeEnum>(getCurrentDeviceSize());
   logger.verbose(`(device-size) initializing with ${deviceSize.value}`);
 
-  const actualizeDeviceSize = () => setTimeout(throttle(function () {
+  const actualizeDeviceSize = () => 
     setTimeout(() => {
       const currentDeviceSize = getCurrentDeviceSize();
       if(deviceSize.value !== currentDeviceSize) {
@@ -28,7 +27,6 @@ export function useDeviceSize (): IDeviceSize {
         deviceSize.value = currentDeviceSize;
       }
     }, 0);
-  }), 100);
   
   onMounted(() => {
     window.addEventListener('resize', actualizeDeviceSize);

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type EntityId, AppConfig, SecretValueMask, HeaderAppVersion, type Locale, SignUpCompleteResultEnum, AppPage, getPagePath, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import { type ISignUpCompleteResultDto, ApiEndpointSignUpComplete } from './../server/api-definitions';
-import AccountFormPhotos from './../components/account/form-photos.vue';
+import AccountPageContainer from './../components/account/page-container.vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
 import { getCommonServices } from '../helpers/service-accessors';
@@ -74,42 +74,54 @@ if (!tokenId || !tokenValue) {
   });
 }
 
+const displayParams = (() => {
+  switch(completionResult.value) {
+    case SignUpCompleteResultEnum.SUCCESS:
+      return {
+        msgResName: getI18nResName3('signUpCompletePage', 'text', 'success'),
+        link: {
+          url: navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale),
+          labelResName: getI18nResName2('accountPageCommon', 'login')
+        }
+      };
+    case SignUpCompleteResultEnum.ALREADY_CONSUMED:
+      return {
+        msgResName: getI18nResName3('signUpCompletePage', 'text', 'alreadyConsumed'),
+        link: {
+          url: navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale),
+          labelResName: getI18nResName2('accountPageCommon', 'login')
+        }
+      };
+    case SignUpCompleteResultEnum.LINK_EXPIRED:
+      return {
+        msgResName: getI18nResName3('signUpCompletePage', 'text', 'linkExpired'),
+        link: {
+          url: navLinkBuilder.buildPageLink(AppPage.Signup, locale.value as Locale),
+          labelResName: getI18nResName2('accountPageCommon', 'signUp')
+        }
+      };
+    default:
+      return {
+        msgResName: getI18nResName3('signUpCompletePage', 'text', 'linkInvalid'),
+        link: {
+          url: navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale),
+          labelResName: getI18nResName2('accountPageCommon', 'toHome')
+        }
+      };
+  }
+})();
+
 </script>
 
 <template>
-  <div class="signup-complete-page account-page no-hidden-parent-tabulation-check">
-    <!--
-    <AccountFormPhotos ctrl-key="SignUpCompletedPhotos" class="signup-complete-account-forms-photos" />
-    <div class="signup-complete-page-div">
-      <NavLogo ctrl-key="signUpCompletePageAppLogo" class="signup-complete-page-logo" mode="inApp" />
-      <div class="signup-complete-page-content">
-        <div v-if="completionResult === SignUpCompleteResultEnum.SUCCESS">
-          {{ $t(getI18nResName3('signUpCompletePage', 'text', 'success')) }}
-          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
-            {{ $t(getI18nResName2('accountPageCommon', 'login')) }}
-          </NuxtLink>
-        </div>
-        <div v-else-if="completionResult === SignUpCompleteResultEnum.ALREADY_CONSUMED">
-          {{ $t(getI18nResName3('signUpCompletePage', 'text', 'alreadyConsumed')) }}
-          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
-            {{ $t(getI18nResName2('accountPageCommon', 'login')) }}
-          </NuxtLink>
-        </div>
-        <div v-else-if="completionResult === SignUpCompleteResultEnum.LINK_EXPIRED">
-          {{ $t(getI18nResName3('signUpCompletePage', 'text', 'linkExpired')) }}
-          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="navLinkBuilder.buildPageLink(AppPage.Signup, locale as Locale)">
-            {{ $t(getI18nResName2('accountPageCommon', 'signUp')) }}
-          </NuxtLink>
-        </div>
-        <div v-else>
-          {{ $t(getI18nResName3('signUpCompletePage', 'text', 'linkInvalid')) }}
-          <NuxtLink class="btn btn-signup-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
-            {{ $t(getI18nResName2('accountPageCommon', 'toHome')) }}
-          </NuxtLink>
-        </div>
-      </div>
+  <AccountPageContainer ctrl-key="SignUpCompleted" :ui="{ wrapper: 'md:flex-row-reverse',height: '!h-[1154px]' }">
+    <div class="w-full h-auto">
+      <div class="flex flex-col flex-nowrap gap-6 md:gap-8 items-start text-gray-600 dark:text-gray-400">
+        {{ $t(displayParams.msgResName) }}
+        <UButton size="lg" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :to="displayParams.link.url" :external="false">
+          {{ $t(displayParams.link.labelResName) }}
+        </UButton>
+      </div>     
     </div>
-    -->
-    PAGE CONTENT
-  </div>
+  </AccountPageContainer>
 </template>

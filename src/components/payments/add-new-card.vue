@@ -1,53 +1,26 @@
 <script setup lang="ts">
-import { getI18nResName1, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { getI18nResName1 } from '@golobe-demo/shared';
 import { TooltipHideTimeout } from './../../helpers/constants';
-import { type ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string
 };
 defineProps<IProps>();
 
-const tooltip = shallowRef<ComponentInstance<typeof Tooltip>>();
-
+const tooltipShown = ref(false);
 function scheduleTooltipAutoHide () {
-  setTimeout(() => { tooltip.value?.hide(); }, TooltipHideTimeout);
+  setTimeout(() => { tooltipShown.value = false; }, TooltipHideTimeout);
 }
-
-const tooltipId = useId();
 
 </script>
 
 <template>
-  <div class="payment-card-add-new">
-    <VTooltip
-      ref="tooltip"
-      :aria-id="tooltipId"
-      :distance="6"
-      :triggers="['click']"
-      placement="bottom"
-      :flip="false"
-      theme="default-tooltip"
-      :auto-hide="true"
-      no-auto-focus
-      @apply-show="scheduleTooltipAutoHide"
-    >
-      <SimpleButton
-        :ctrl-key="`${ctrlKey}-AddCardBtn`"
-        class="payment-card-add-btn"
-        kind="support"
-        icon="add-card"
-        :aria-label-res-name="getI18nResName2('ariaLabels', 'btnAddPaymentCard')"
-        :title-res-name="getI18nResName2('ariaLabels', 'btnAddPaymentCard')"
-      />
-      <template #popper>
-        <div>
-          {{ $t(getI18nResName1('notAvailableInDemo')) }}
-        </div>
+  <div class="w-full h-full max-w-[70vw] overflow-hidden min-h-56 flex flex-col flex-nowrap items-center justify-center gap-4 p-4 border-4 border-primary-300 dark:border-primary-500 border-dashed rounded-2xl bg-transparent dark:bg-transparent">  
+    <UPopover v-model:open="tooltipShown" :popper="{ placement: 'bottom' }" class="w-min">
+      <UIcon name="i-material-symbols-light-add-circle-outline-rounded" class="w-16 h-16 text-primary-300 dark:text-primary-500" @click="scheduleTooltipAutoHide"/>
+      <template #panel="{ close }">
+        <span class="p-2 block" @click="close">{{ $t(getI18nResName1('notAvailableInDemo')) }}</span>
       </template>
-    </VTooltip>
-    <div class="payment-card-add-label">
-      {{ $t(getI18nResName3('payments', 'cards', 'add')) }}
-    </div>
+    </UPopover>  
   </div>
 </template>

@@ -118,6 +118,7 @@
       "panelHeader": "Filtres",
       "price": "Prix",
       "rating": "Notation",
+      "from": "de",
       "noResultsStub": "Aucun résultat à filtrer",
       "checklistMoreItems": "+{count} plus",
       "checklistCollapseItems": "effondrement"

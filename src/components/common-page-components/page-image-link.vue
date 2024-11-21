@@ -19,10 +19,10 @@ defineProps<IProps>();
       :ui="{ wrapper: 'col-start-1 col-end-2 row-start-1 row-end-2 min-h-fit rounded-3xl', img: 'aspect-square h-full rounded-3xl brightness-[0.8]', stub: 'rounded-3xl' }"
     />
     <section class="z-[2] col-start-1 col-end-2 row-start-1 row-end-2 mb-8 self-end justify-self-center flex flex-col flex-nowrap items-center max-w-[80%]">
-      <div class="*:text-white *:text-5xl break-words text-center font-semibold">
+      <div class="*:!text-white *:text-5xl break-words text-center font-semibold">
         <slot name="title" />
       </div>
-      <div class="*:text-white *:font-semibold text-center mt-2">
+      <div class="*:!text-white *:font-semibold text-center mt-2">
         <slot name="sub" />
       </div>
       <UButton

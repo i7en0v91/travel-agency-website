@@ -1,64 +1,43 @@
 <script setup lang="ts">
-import { getI18nResName1, getI18nResName2, getI18nResName3, formatValidThruDate } from '@golobe-demo/shared';
+import { getI18nResName1, getI18nResName3, formatValidThruDate } from '@golobe-demo/shared';
 import { TooltipHideTimeout } from './../../helpers/constants';
-import { getCommonServices } from '../../helpers/service-accessors';
-import { type ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string,
   digits: string,
   dueDate: Date
 };
-const props = defineProps<IProps>();
+defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
-
-const tooltip = shallowRef<ComponentInstance<typeof Tooltip>>();
-
+const tooltipShown = ref(false);
 function scheduleTooltipAutoHide () {
-  setTimeout(() => { tooltip.value?.hide(); }, TooltipHideTimeout);
+  setTimeout(() => { tooltipShown.value = false; }, TooltipHideTimeout);
 }
-
-function onRemoveBtnClick () {
-  logger.debug(`(PaymentCard) remove btn clicked, ctrlKey=${props.ctrlKey}`);
-}
-
-const tooltipId = useId();
 
 </script>
 
 <template>
-  <div class="payment-card p-xs-3">
-    <div class="payment-card-header">
-      <div class="payment-card-digits">
-        <span>**** **** ****</span> <br> <span>{{ digits }}</span>
+  <div class="w-full h-auto max-w-[70vw] overflow-hidden min-h-56 flex flex-col flex-nowrap gap-4 p-4 shadow-md shadow-gray-200 dark:shadow-gray-700 rounded-2xl bg-primary-200 dark:bg-primary-700">
+    <div class="w-full h-auto self-start">
+      <div class="w-min inline-block">
+        <span class="text-3xl font-semibold whitespace-nowrap">**** **** ****</span> 
+        <br> 
+        <span class="text-2xl font-semibold whitespace-nowrap">{{ digits }}</span>
       </div>
-      <VTooltip
-        ref="tooltip"
-        :aria-id="tooltipId"
-        :distance="6"
-        :triggers="['click']"
-        placement="bottom"
-        class="remove-btn-tooltip-wrapper"
-        :flip="false"
-        theme="default-tooltip"
-        :auto-hide="true"
-        no-auto-focus
-        @apply-show="scheduleTooltipAutoHide"
-      >
-      <SimpleButton kind="default" class="payment-card-remove-btn" :ctrl-key="`${ctrlKey}-btnRemove`" icon="delete" :aria-label-res-name="getI18nResName2('ariaLabels', 'btnRemovePaymentCard')" @click="onRemoveBtnClick" />
-        <template #popper>
-          <div>
-            {{ $t(getI18nResName1('notAvailableInDemo')) }}
-          </div>
+      <UPopover v-model:open="tooltipShown" :popper="{ placement: 'bottom' }" class="inline-block float-right">
+        <UIcon name="i-heroicons-trash" class="w-6 h-6 text-gray-950 dark:text-white float-right" @click="scheduleTooltipAutoHide"/>
+        <template #panel="{ close }">
+          <span class="p-2 block" @click="close">{{ $t(getI18nResName1('notAvailableInDemo')) }}</span>
         </template>
-      </VTooltip>
+      </UPopover>  
     </div>
-    <div class="payment-card-footer">
-      <div class="payment-card-duedate">
-        <span>{{ $t(getI18nResName3('payments', 'cards', 'validThru')) }}</span> <br> <span>{{ formatValidThruDate(dueDate) }}</span>
+    <div class="w-full h-auto mt-auto">
+      <div class="w-min inline self-end">
+        <span class="whitespace-nowrap text-xs">{{ $t(getI18nResName3('payments', 'cards', 'validThru')) }}</span> 
+        <br> 
+        <span class="text-xl font-semibold">{{ formatValidThruDate(dueDate) }}</span>
       </div>
-      <div class="payment-card-operator-logo" />
+      <UIcon name="i-cib-cc-visa" class="w-8 h-8 text-gray-950 dark:text-white float-right"/>
     </div>
   </div>
 </template>

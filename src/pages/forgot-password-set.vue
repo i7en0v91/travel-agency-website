@@ -1,16 +1,9 @@
 <script setup lang="ts">
-import { type EntityId, isPasswordSecure, type Locale, SecretValueMask, RecoverPasswordCompleteResultEnum, AppPage, getPagePath, getI18nResName2 } from '@golobe-demo/shared';
+import { type EntityId, type Locale, SecretValueMask, RecoverPasswordCompleteResultEnum, AppPage, getPagePath, getI18nResName2, AppConfig } from '@golobe-demo/shared';
 import { ApiEndpointPasswordRecoveryComplete, type IRecoverPasswordCompleteDto, type IRecoverPasswordCompleteResultDto } from './../server/api-definitions';
+import AccountPageContainer from './../components/account/page-container.vue';
 import { post } from './../helpers/rest-utils';
-/*
-import { useVuelidate } from '@vuelidate/core';
-import * as validators from '@vuelidate/validators';
-import { minLength, required, sameAs } from '@vuelidate/validators';
-*/
-import NavLogo from './../components/navbar/nav-logo.vue';
-import TextBox from './../components/forms/text-box.vue';
-import SimpleButton from './../components/forms/simple-button.vue';
-import AccountFormPhotos from './../components/account/form-photos.vue';
+import { createPasswordSchema } from './../helpers/forms';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { getCommonServices } from '../helpers/service-accessors';
 
@@ -27,24 +20,18 @@ definePageMeta({
 });
 useOgImage();
 
-/*
-const password = ref('');
-const confirmPassword = ref('');
-
-const { createI18nMessage } = validators;
-const withI18nMessage = createI18nMessage({ t });
-const rules = computed(() => ({
-  password: {
-    required: withI18nMessage(required),
-    minLength: withI18nMessage(minLength(8)),
-    validator: withI18nMessage(isPasswordSecure, { messagePath: () => 'validations.password' })
-  },
-  confirmPassword: {
-    required: withI18nMessage(required),
-    sameAsPassword: withI18nMessage(sameAs(password))
-  }
-}));
-const v$ = useVuelidate(rules, { password, confirmPassword, $lazy: true });
+const schema = computed(() => {
+  return createPasswordSchema({
+    required: t(getI18nResName2('validations', 'required')),
+    minLength: t(getI18nResName2('validations', 'minLength'), { min: AppConfig.userPasswordPolicy.minLength }),
+    policy: t(getI18nResName2('validations', 'password'), { min: AppConfig.userPasswordPolicy.minLength }),
+    sameAs: t(getI18nResName2('validations', 'sameAsPassword'))
+  });
+});
+const state = reactive<any>({
+  password: undefined,
+  confirmPassword: undefined
+});
 
 const logger = getCommonServices().getLogger();
 const route = useRoute();
@@ -59,6 +46,7 @@ try {
 
 const callServerPasswordSet = async (password: string) => {
   if (tokenId && tokenValue) {
+    logger.verbose('(ForgotPasswordSet) sending set password request');
     const postBody: IRecoverPasswordCompleteDto = {
       id: tokenId,
       value: tokenValue,
@@ -71,63 +59,40 @@ const callServerPasswordSet = async (password: string) => {
       await navigateTo(navLinkBuilder.buildPageLink(AppPage.ForgotPasswordComplete, locale.value as Locale, { result: resultCode }));
     }
   } else {
+    logger.verbose('(ForgotPasswordSet) wont send set password request, token params are empty');
     await navigateTo(navLinkBuilder.buildPageLink(AppPage.ForgotPasswordComplete, locale.value as Locale, { result: RecoverPasswordCompleteResultEnum.LINK_INVALID }));
   }
 };
 
-function submitClick () {
-  v$.value.$touch();
-  if (!v$.value.$error) {
-    callServerPasswordSet(password.value);
-  }
+function onSubmit () {
+  callServerPasswordSet(state.password);
 }
-  */
 
 </script>
 
 <template>
-  <div class="set-password-page account-page no-hidden-parent-tabulation-check">
-    <!--
-    <div class="set-password-page-content">
-      <NavLogo ctrl-key="setPasswordPageAppLogo" mode="inApp" />
-      <h1 class="set-password-title font-h2">
-        {{ t(getI18nResName2('forgotPasswordSetPage', 'title')) }}
+  <AccountPageContainer ctrl-key="ForgotPasswordSet">
+    <div class="w-full h-auto">
+      <h1 class="text-gray-600 dark:text-gray-300 text-5xl max-w-[90vw] break-words font-normal mt-4">
+        {{ $t(getI18nResName2('forgotPasswordSetPage', 'title')) }}
       </h1>
-      <div class="set-password-subtitle mt-xs-3">
-        {{ t(getI18nResName2('forgotPasswordSetPage', 'subTitle')) }}
+      <div class="text-gray-600 dark:text-gray-300 text-sm sm:text-base font-normal mt-4">
+        {{ $t(getI18nResName2('forgotPasswordSetPage', 'subTitle')) }}
       </div>
-      <form>
-        <TextBox
-          v-model="password"
-          ctrl-key="setPasswordPgPassword"
-          class="form-field set-password-form-field set-password-password-field"
-          type="password"
-          :caption-res-name="getI18nResName2('accountPageCommon', 'passwordLabel')"
-          :placeholder-res-name="getI18nResName2('accountPageCommon', 'passwordPlaceholder')"
-        />
-        <div v-if="v$.password.$errors.length" class="input-errors">
-          <div class="form-error-msg">
-            {{ v$.password.$errors[0].$message }}
-          </div>
-        </div>
-        <TextBox
-          v-model="confirmPassword"
-          ctrl-key="setPasswordPgConfirmPassword"
-          class="form-field set-password-form-field set-password-confirm-password-field mt-xs-4"
-          type="password"
-          :caption-res-name="getI18nResName2('accountPageCommon', 'confirmPasswordLabel')"
-          :placeholder-res-name="getI18nResName2('accountPageCommon', 'confirmPasswordPlaceholder')"
-        />
-        <div v-if="v$.confirmPassword.$errors.length" class="input-errors">
-          <div class="form-error-msg">
-            {{ v$.confirmPassword.$errors[0].$message }}
-          </div>
-        </div>
-      </form>
-      <SimpleButton ctrl-key="setPasswordSubmitBtn" class="set-password-btn mt-xs-2" :label-res-name="getI18nResName2('forgotPasswordSetPage', 'setPassword')" @click="submitClick" />
     </div>
-    <AccountFormPhotos ctrl-key="SetPasswordPhotos" class="set-password-account-forms-photos" />
-    -->
-    PAGE CONTENT
-  </div>
+
+    <UForm :schema="schema" :state="state" class="mt-12 space-y-6" @submit="onSubmit" >
+      <UFormGroup name="password" :label="t(getI18nResName2('accountPageCommon', 'passwordLabel'))">
+        <UInput v-model="state.password" type="password" :placeholder="t(getI18nResName2('accountPageCommon', 'passwordPlaceholder'))" :max-length="256"/>
+      </UFormGroup>
+
+      <UFormGroup name="confirmPassword" :label="t(getI18nResName2('accountPageCommon', 'confirmPasswordLabel'))">
+        <UInput v-model="state.confirmPassword" type="password" :placeholder="t(getI18nResName2('accountPageCommon', 'confirmPasswordPlaceholder'))" :max-length="256"/>
+      </UFormGroup>
+
+      <UButton type="submit" class="w-full h-auto !mt-7 md:!mt-10 justify-center" size="xl">
+        {{ $t(getI18nResName2('forgotPasswordSetPage', 'setPassword')) }}
+      </UButton>
+    </UForm>
+  </AccountPageContainer>
 </template>

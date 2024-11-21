@@ -4,7 +4,7 @@ import { TooltipHideTimeout } from './../../../helpers/constants';
 import { type IStayReviewItem } from './../../../stores/stay-reviews-store';
 import ReviewEditor from './review-editor.client.vue';
 import ReviewList from './review-list.vue';
-import CollapsableSection from './../../collapsable-section.vue';
+//import CollapsableSection from './../../collapsable-section.vue';
 import ComponentWaitingIndicator from './../../../components/component-waiting-indicator.vue';
 import { type ComponentInstance } from 'vue';
 import { usePreviewState } from './../../../composables/preview-state';
@@ -32,7 +32,7 @@ const editorHidden = ref(true);
 
 const tooltip = shallowRef<ComponentInstance<typeof Tooltip>>();
 const reviewListComponent = shallowRef<ComponentInstance<typeof ReviewList>>();
-const editorSection = shallowRef<ComponentInstance<typeof CollapsableSection>>();
+//const editorSection = shallowRef<ComponentInstance<typeof CollapsableSection>>();
 const editor = shallowRef<ComponentInstance<typeof ReviewEditor>>();
 
 const reviewScore = ref<number | undefined>();
@@ -102,7 +102,7 @@ function onAddReviewBtnClick () {
   logger.verbose(`(StayReviews) add btn click handler: ctrlKey=${props.ctrlKey}`);
   const userReview = reviewStore.getUserReview()?.text.en ?? '';
   editor.value?.setEditedContent(userReview);
-  editorSection.value?.expand();
+  //editorSection.value?.expand();
 }
 
 async function onSubmitReview (reviewHtml: string, score: number): Promise<void> {
@@ -117,7 +117,7 @@ async function onSubmitReview (reviewHtml: string, score: number): Promise<void>
   try {
     adjustReviewSummaryValues(prevUserReviewScore, score);
     await reviewStore.createOrUpdateReview(reviewHtml, score);
-    editorSection.value?.collapse();
+    //editorSection.value?.collapse();
     reviewListComponent.value?.rewindToTop();  
   } catch(err: any) {
     logger.warn(`(StayReviews) failed to submit review, ctrlKey=${props.ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`, err);
@@ -129,7 +129,7 @@ async function onSubmitReview (reviewHtml: string, score: number): Promise<void>
 
 function onCancelEdit () {
   logger.debug(`(StayReviews) cancel review edit handler, ctrlKey=${props.ctrlKey}`);
-  editorSection.value?.collapse();
+  //editorSection.value?.collapse();
 }
 
 function scheduleTooltipAutoHide () {
@@ -207,6 +207,7 @@ const tooltipId = useId();
             <div v-else class="stay-reviews-count data-loading-stub text-data-loading" />
           </div>
         </div>
+        <!--
         <CollapsableSection
           v-if="status === 'authenticated'"
           ref="editorSection"
@@ -230,6 +231,8 @@ const tooltipId = useId();
             />
           </template>
         </CollapsableSection>
+        -->
+        
       </ClientOnly>
       <ReviewList ref="reviewListComponent" :ctrl-key="`${ctrlKey}-ReviewList`" :stay-id="stayId" @edit-btn-click="onAddReviewBtnClick" @user-review-deleted="onUserReviewDeleted"/>
     </section>

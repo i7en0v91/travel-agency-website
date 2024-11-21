@@ -172,7 +172,7 @@ defineShortcuts({
   <UPopover v-model:open="open" :popper="{ placement: 'bottom' }"  :class="ui?.wrapper">
     <InputFieldFrame :text-res-name="getI18nResName2('searchFlights', 'destinationCaption')" class="w-full">
       <UButton icon="i-heroicons-calendar-days-20-solid" :class="`w-full dark:hover:bg-transparent ${ui?.input ?? ''} pl-[12px]`" variant="outline" color="gray">
-        {{ datesDisplayText }}
+        <span class="overflow-hidden line-clamp-1 text-wrap text-start">{{ datesDisplayText }}</span>
       </UButton>
     </InputFieldFrame>
 

@@ -72,7 +72,7 @@ watch([searchHistoryFetch.status, popularCitiesFetch.status], () => {
   <ClientOnly>
     <ComponentWaitingIndicator v-if="showWaitingStub && !isError" :ctrl-key="`${ctrlKey}-WaiterIndicator`" />
     <ErrorHelm :is-error="!!searchHistoryFetch.error.value || !!popularCitiesFetch.error.value">
-      <ul v-if="!showWaitingStub && (searchHistoryFetch.data.value?.length ?? 0) > 0" class="p-2 sm:p-4 grid grid-flow-row grid-cols-citylinks grid-rows-5 md:grid-rows-3 auto-rows-[0px] overflow-clip -translate-y-[40px] justify-center">
+      <ul v-if="!showWaitingStub && (searchHistoryFetch.data.value?.length ?? 0) > 0" class="p-2 sm:p-4 grid grid-flow-row auto-rows-auto grid-cols-citylinks overflow-clip -translate-y-[40px] justify-center">
         <li v-for="(city, idx) in searchHistoryFetch.data.value" :key="`popular-city-${idx}`" class="w-full city-offers-list-item">
           <CityOffersLinks
             :ctrl-key="`CityOffersLinks-${idx}`"
@@ -84,7 +84,7 @@ watch([searchHistoryFetch.status, popularCitiesFetch.status], () => {
           />
         </li>
       </ul>
-      <div v-else-if="!showWaitingStub" class="search-history-empty-div mt-xs-2">
+      <div v-else-if="!showWaitingStub" class="search-history-empty-div mt-2">
         <i18n-t :keypath="getI18nResName2('staysPage', 'searchHistoryEmpty')" tag="div" scope="global" class="search-history-empty">
           <template #cityLink>
             <ULink 

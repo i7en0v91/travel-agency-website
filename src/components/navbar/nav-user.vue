@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { clampTextLine, type Locale, AppPage, getPagePath, AppConfig, getI18nResName3, ImageCategory } from '@golobe-demo/shared';
+import { type Locale, AppPage, getI18nResName3, ImageCategory } from '@golobe-demo/shared';
 import { DeviceSizeEnum } from './../../helpers/constants';
-import { formatAvatarLabel, getUserMenuLinksInfo, getCurrentDeviceSize, formatAuthCallbackUrl, getLastSelectedTabStorageKey } from './../../helpers/dom';
-import { stringifyParsedURL, parseURL, stringifyQuery } from 'ufo';
+import { formatAvatarLabel, getUserMenuLinksInfo, getCurrentDeviceSize } from './../../helpers/dom';
+import { stringifyParsedURL, stringifyQuery } from 'ufo';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
-import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
 import { ApiEndpointImage } from './../../server/api-definitions';
 import get from 'lodash-es/get';
@@ -56,7 +55,7 @@ const userMenuItems = computed(() => {
         default:
           return {
             label: li.labelResName ? t(li.labelResName) : undefined,
-            labelClass: li.labelResName ? 'w-full text-left after:content-[">"] after:float-right' : undefined,
+            labelClass: li.labelResName ? 'w-full text-left after:scale-y-150 after:scale-x-75 after:content-[">"] after:float-right' : undefined,
             icon: li.icon,
             click: get(navLinkBuilder.menuItemHandlers, li.kind),
             to: (li.toPage ? navLinkBuilder.buildPageLink(

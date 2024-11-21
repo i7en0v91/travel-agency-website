@@ -46,7 +46,7 @@ const $emit = defineEmits(['update:isError']);
 </script>
 
 <template>
-  <div class="w-full h-full min-w-full min-h-full overflow-hidden">
+  <div class="w-full h-full min-w-full min-h-full">
     <NuxtErrorBoundary v-if="!isError" @error="onError">
       <slot />
     </NuxtErrorBoundary>

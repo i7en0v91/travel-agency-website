@@ -135,7 +135,7 @@ const calendarAttrs = computed(() => {
   <UPopover v-model:open="open" :popper="{ placement: 'bottom' }" :class="ui?.wrapper">
     <InputFieldFrame :text-res-name="captionResName" class="w-full">
       <UButton icon="i-heroicons-calendar-days-20-solid" :class="`w-full dark:hover:bg-transparent pl-[12px] ${ui?.input ?? ''}`" variant="outline" color="gray">
-        {{ datesDisplayText }}
+        <span class="overflow-hidden line-clamp-1 text-wrap text-start">{{ datesDisplayText }}</span>
       </UButton>
     </InputFieldFrame>
 

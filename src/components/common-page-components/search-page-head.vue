@@ -40,6 +40,6 @@ defineProps<IProps>();
         <slot />
       </div>
     </div>
-    <SearchOffers :ctrl-key="`${ctrlKey}-SearchOffers`" :single-tab="singleTab" />
+    <SearchOffers :ctrl-key="`${ctrlKey}-SearchOffers`" :single-tab="singleTab" :show-promo-btn="true" class="-translate-y-[10%] w-[95%] max-w-[1700px]"/>
   </div>
 </template>

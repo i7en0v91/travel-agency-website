@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { type Locale, localizePath, getPagePath, AppConfig, getI18nResName2, AppPage } from '@golobe-demo/shared';
+import { type Locale, AppConfig, getI18nResName2 } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { joinURL } from 'ufo';
-import ProseStyling from './../content/prose/styling';
 
 definePageMeta({
   title: { resName: getI18nResName2('privacyPage', 'title'), resArgs: undefined }
@@ -22,21 +21,10 @@ const contentParams = computed(() => {
   };
 });
 
-//const contentQueryParams = computed(() => queryContent().locale(locale.value).params());
-const contentQueryParams = queryContent().params();
-
 </script>
 
 <template>
   <div class="px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
-    <ContentDoc tag="article" :path="localizePath(`/${getPagePath(AppPage.Privacy)}`, locale as Locale)" :query="contentQueryParams" >
-      <template #default="{ doc }">
-        <ContentRenderer 
-          :value="doc" 
-          :data="contentParams"
-          :components="ProseStyling"
-        />
-      </template>
-    </ContentDoc>
+    <AppPageMdc tag="article" :content-params="contentParams" />
   </div>
 </template>

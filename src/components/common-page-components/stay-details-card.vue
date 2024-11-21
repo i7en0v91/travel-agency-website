@@ -24,6 +24,7 @@ const { locale } = useI18n();
 
 <template>
   <article class="stay-details-card brdr-3 px-xs-3 pt-xs-4 px-s-4 pt-s-5">
+    <!--
     <PerfectScrollbar
       :options="{
         suppressScrollY: true,
@@ -99,5 +100,6 @@ const { locale } = useI18n();
         </PerfectScrollbar>
       </div>
     </PerfectScrollbar>
+    -->
   </article>
 </template>

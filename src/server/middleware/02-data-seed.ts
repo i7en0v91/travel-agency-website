@@ -87,7 +87,7 @@ export default defineEventHandler(async (event: H3Event) => {
 
   const isPageRequest = !url.includes(`/${ApiEndpointPrefix}`) && !!lookupPageByUrl(url);
   const isAppApiRequest = url.includes(`/${ApiEndpointPrefix}`) && 
-    !url.includes(ApiEndpointNuxtContentPrefix) && !url.includes(ApiEndpointLogging);
+    !url.includes(`/${ApiEndpointNuxtContentPrefix}`) && !url.includes(ApiEndpointLogging);
   const routeRequiresSampleData = isPageRequest || isAppApiRequest;
   if(!routeRequiresSampleData) {
     return;

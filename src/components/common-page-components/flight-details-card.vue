@@ -37,6 +37,7 @@ const featureIcons: string[] = ['airplane', 'wifi', 'stopwatch', 'fastfood', 'se
 
 <template>
   <article class="flight-details-card brdr-3 px-xs-3 pt-xs-4 px-s-4 pt-s-5">
+    <!--
     <PerfectScrollbar
       :options="{
         suppressScrollY: true,
@@ -133,5 +134,6 @@ const featureIcons: string[] = ['airplane', 'wifi', 'stopwatch', 'fastfood', 'se
         </div>
       </div>
     </PerfectScrollbar>
+    -->
   </article>
 </template>

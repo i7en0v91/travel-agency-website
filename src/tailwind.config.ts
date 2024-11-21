@@ -49,13 +49,28 @@ export default <Partial<Config>>{
         'travelsmd': 'minmax(250px, 2fr) 3fr',
         'travelmd': '1fr 1fr',
         'travelxl': '8fr 7fr 7fr',
-        'propertygrid': '1fr auto'
+        'propertygrid': '1fr auto',
+        'offerslistxs': '1fr',
+        'offerslistmd': 'minmax(290px, 1fr) 2fr',
+        'offerslistxl': 'minmax(290px, 1fr) 3fr',
+        'searchflights': 'auto 1fr',
+        'searchflightswide': '160px 1fr',
+        'searchflightsdates': 'repeat(4, max-content)',
+        'searchstaysportrait': '1fr auto',
+        'searchstayslandscape': '320px 1fr auto',
+        'paymentcards': 'repeat(auto-fill, minmax(24rem, max-content))'
       },
       gridTemplateRows: {
         'travelxs': 'repeat(5, auto)',
         'travelsmd': 'repeat(4, min-content)',
         'travelmd': 'repeat(3, auto)',
-        'travelxl': 'repeat(2, auto)'
+        'travelxl': 'repeat(2, auto)',
+        'offerslistxs': 'repeat(3, auto)',
+        'offerslistmd': '1fr auto',
+        'searchflights': 'repeat(2, auto)',
+        'searchflightswide': 'auto 1fr',
+        'searchstaysportrait': 'repeat(4, auto)',
+        'searchstayslandscape': 'auto 1fr auto',
       },
       borderRadius: {
         '4xl': '2rem'

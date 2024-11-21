@@ -20,6 +20,7 @@ withDefaults(defineProps<IBookingTicketProps>(), {
 
 <template>
   <div class="booking-ticket-container">
+    <!--
     <PerfectScrollbar
       :options="{
         suppressScrollY: true,
@@ -59,5 +60,6 @@ withDefaults(defineProps<IBookingTicketProps>(), {
         </div>
       </article>
     </PerfectScrollbar>
+    -->
   </div>
 </template>

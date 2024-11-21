@@ -258,6 +258,7 @@ onMounted(() => {
       </div>
     </div>
     <div class="tiptap-div">
+      <!--
       <PerfectScrollbar
         :options="{
           suppressScrollX: false,
@@ -270,6 +271,8 @@ onMounted(() => {
       >
         <TiptapEditorContent :editor="editor" />
       </PerfectScrollbar>
+      -->
+      
     </div>
     <div v-if="validationErrMsgResName" class="form-error-msg my-xs-2 my-s-3">
       {{ $t(validationErrMsgResName) }}

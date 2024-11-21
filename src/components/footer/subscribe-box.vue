@@ -69,16 +69,16 @@ onMounted(() => {
 
 <template>
   <section class="relative flex flex-row flex-nowrap items-end gap-[90px] bg-primary-200 dark:bg-gray-700 rounded-3xl shadow-md brdr-4">
-    <div class="flex-grow flex-shrink basis-auto w-full p-6 p-xs-4">
+    <div class="flex-grow flex-shrink basis-auto w-full p-4 sm:p-6">
       <h2 class="text-black dark:text-white text-5xl font-normal text-center lg:text-start overflow-hidden">
         {{ $t(getI18nResName2('subscribeBox', 'title')) }}
       </h2>
       <p class="mt-6 text-gray-600 dark:text-gray-200 text-lg sm:text-xl font-semibold leading-normal">
         {{ $t(getI18nResName2('subscribeBox', 'heading')) }}
       </p>
-      <UFormGroup name="email" :label="$t(getI18nResName2('subscribeBox', 'text'))" :error="!!validationErrorResName && $t(validationErrorResName)" class="text-gray-500 dark:text-gray-400 text-sm sm:text-base font-normal flex-grow flex-shrink basis-auto">
+      <UFormGroup name="email" :validate-on="['input', 'change', 'submit']" :label="$t(getI18nResName2('subscribeBox', 'text'))" :error="!!validationErrorResName && $t(validationErrorResName)" class="text-gray-500 dark:text-gray-400 text-sm sm:text-base font-normal flex-grow flex-shrink basis-auto">
         <div class="flex flex-col flex-nowrap gap-[8px] w-full md:flex-row md:items-stretch md:gap-[16px]">
-          <UInput v-model.trim="state.email" class="w-full flex-grow flex-shrink basis-auto" :placeholder="$t(getI18nResName2('subscribeBox', 'emailPlaceholder'))"/>
+          <UInput v-model.trim="state.email" class="w-full flex-grow flex-shrink basis-auto" :placeholder="$t(getI18nResName2('subscribeBox', 'emailPlaceholder'))" :max-length="256"/>
           <UButton size="xl" class="w-full h-[3.250rem] flex-grow-0 flex-shrink basis-auto md:w-auto justify-center" variant="solid" color="primary" @click="onSubscribeClick">
             {{ t(getI18nResName2('subscribeBox', 'subscribeBtn')) }}
           </UButton>

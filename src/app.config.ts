@@ -1,4 +1,3 @@
-// KB: temporary - not needed, but helps with IDE IntelliSense 
 import type * as config from './node_modules/@nuxt/ui/dist/runtime/ui.config/index.js';
 import type  { Strategy, DeepPartial } from './node_modules/@nuxt/ui/dist/runtime/types/index.js';
 
@@ -83,7 +82,7 @@ export default defineAppConfig({
         height: 'h-16',
         padding: '!pb-4 !pt-3',
         marker: {
-          wrapper: '!top-[unset] !bottom-[1px] !h-[4px]',
+          wrapper: '!top-[unset] !bottom-[0px] !h-[4px]',
           base: 'w-full !h-[4px]',
           background: 'bg-primary-500 dark:bg-primary-400',
           rounded: 'rounded-none',
@@ -146,6 +145,12 @@ export default defineAppConfig({
         color: 'dark:text-white',
         active: 'bg-primary-200 dark:bg-gray-700',
       }
+    },
+    radioGroup: {
+      fieldset: '*:mt-2'
+    },
+    radio: {
+      wrapper: 'first-of-type:mt-0'
     },
     popover: {
       //ring: 'ring-1 ring-gray-400 dark:ring-gray-400 shadow-none', 

@@ -86,7 +86,7 @@ const uiStyling = {
       </p>
 
       <template #footer>
-        <UButton size="lg" class="w-full justify-center" variant="solid" color="primary" :to="bookLinkUrl">
+        <UButton size="lg" class="w-full justify-center" variant="solid" color="primary" :to="bookLinkUrl" :external="false">
           {{ $t(getI18nResName3('travelCities', 'bookBtn', bookKind)) }}
         </UButton>
       </template>

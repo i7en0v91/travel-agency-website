@@ -68,7 +68,8 @@ onMounted(() => {
         img: 'rounded-xl h-full'
       }, 
       btn: {
-        wrapper: 'z-[2] max-w-[50vw] mb-2 mr-2 sm:mb-8 sm:mr-8'
+        wrapper: 'z-[2] max-w-[50vw] mb-2 mr-2 sm:mb-8 sm:mr-8',
+        base: 'w-full'
       }
     }"
   />

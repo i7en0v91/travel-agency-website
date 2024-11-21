@@ -12,11 +12,6 @@ useOgImage();
 
 const logger = getCommonServices().getLogger();
 
-const { locale } = useI18n();
-
-//const contentQueryParams = computed(() => queryContent().locale(locale.value).params());
-const contentQueryParams = queryContent().params();
-
 const travelDetailsStore = useTravelDetailsStore();
 function scrollToTravelDetailsSection () {
   const sectionElement = document.getElementById(TravelDetailsHtmlAnchor)!;
@@ -85,13 +80,6 @@ onMounted(() => {
       <HeadingText ctrl-key="FlightsPageHeading" />
     </SearchPageHead>
 
-    <ContentDoc :path="localizePath(`/${getPagePath(AppPage.Flights)}`, locale as Locale)" :query="contentQueryParams" >
-      <template #default="{ doc }">
-        <ContentRenderer 
-          :value="doc" 
-          :components="ProseStyling"
-        />
-      </template>
-    </ContentDoc>
+    <AppPageMdc />
   </div>
 </template>

@@ -1,12 +1,10 @@
 <script setup lang="ts">
-
 import { getI18nResName2 } from '@golobe-demo/shared';
-import SearchOffers from './../components/common-page-components/search-offers/search-offers.vue';
 import OffersListView from './../components/common-page-components/offers-list-view/list-view.vue';
 
 definePageMeta({
   title: { resName: getI18nResName2('staysPage', 'title'), resArgs: undefined },
-  middleware: ['redirect-with-search-stays-date-filled']
+  middleware: ['02-redirect-with-search-stays-date-filled']
 });
 useOgImage();
 
@@ -21,14 +19,9 @@ if (import.meta.client) {
 </script>
 
 <template>
-  <div class="search-stays-page no-hidden-parent-tabulation-check">
-    <!--
-    <h1 class="search-stays-page-title mb-xs-4">
-      {{ $t(getI18nResName2('staysPage', 'title')) }}
-    </h1>
-    <SearchOffers :ctrl-key="`StaysListingPage-SearchOffers`" :minimum-buttons="true" class="search-stays-offers-box" :take-initial-values-from-url-query="true" single-tab="stays" />
-    <OffersListView ctrl-key="StaysListingPage-OffersListView" offers-kind="stays" class="mt-xs-5" />
-    -->
-    PAGE CONTENT
+  <div class="px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
+    <h2 class="text-3xl font-semibold text-gray-600 dark:text-gray-300 break-words">{{ $t(getI18nResName2('staysPage', 'title')) }}</h2>
+    <SearchOffers ctrl-key="StaysListingPage-SearchOffers" :show-promo-btn="false" class="mt-4 w-full" :take-initial-values-from-url-query="true" single-tab="stays" />
+    <OffersListView ctrl-key="StaysListingPage-OffersListView" offers-kind="stays" class="mt-8" />
   </div>
 </template>

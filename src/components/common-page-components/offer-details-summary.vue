@@ -106,6 +106,7 @@ const tooltipId = useId();
 <template>
   <section class="offer-details-summary">
     <ErrorHelm v-model:is-error="isError">
+      <!--
       <PerfectScrollbar
         :options="{
           suppressScrollY: true,
@@ -213,6 +214,7 @@ const tooltipId = useId();
           </div>
         </div>
       </PerfectScrollbar>
+      -->
     </ErrorHelm>
   </section>
 </template>

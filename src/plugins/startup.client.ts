@@ -49,7 +49,10 @@ function buildServiceLocator () : IClientServicesLocator {
   return {
     getLogger: () => provider.resolve('logger'),
     getEntityCache: () => provider.resolve('entityCache'),
-    appMounted: false
+    state: {
+      mounted: false,
+      navigatedFromPage: undefined
+    }
   };
 }
 
@@ -76,7 +79,7 @@ const initApp = once(() => {
 
     const nuxtApp = useNuxtApp();
     nuxtApp.hook('app:mounted', () => {
-      clientServicesLocator.appMounted = true;
+      clientServicesLocator.state.mounted = true;
     });
   } catch (e) {
     logger.error('app initialization failed', e);

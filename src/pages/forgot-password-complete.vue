@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { AppPage, getPagePath, RecoverPasswordCompleteResultEnum, type Locale, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import AccountFormPhotos from './../components/account/form-photos.vue';
+import AccountPageContainer from './../components/account/page-container.vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { getCommonServices } from '../helpers/service-accessors';
 
@@ -32,42 +32,54 @@ if (resultParam) {
   logger.warn('(forgot-password-complete) result is empty');
 }
 
+const displayParams = (() => {
+  switch(completionResult.value) {
+    case RecoverPasswordCompleteResultEnum.SUCCESS:
+      return {
+        msgResName: getI18nResName3('forgotPasswordCompletePage', 'text', 'success'),
+        link: {
+          url: navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale),
+          labelResName: getI18nResName2('accountPageCommon', 'login')
+        }
+      };
+    case RecoverPasswordCompleteResultEnum.ALREADY_CONSUMED:
+      return {
+        msgResName: getI18nResName3('forgotPasswordCompletePage', 'text', 'alreadyConsumed'),
+        link: {
+          url: navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale),
+          labelResName: getI18nResName2('accountPageCommon', 'login')
+        }
+      };
+    case RecoverPasswordCompleteResultEnum.LINK_EXPIRED:
+    return {
+        msgResName: getI18nResName3('forgotPasswordCompletePage', 'text', 'linkExpired'),
+        link: {
+          url: navLinkBuilder.buildPageLink(AppPage.ForgotPassword, locale.value as Locale),
+          labelResName: getI18nResName2('forgotPasswordCompletePage', 'resetPassword')
+        }
+      };
+    default:
+      return {
+        msgResName: getI18nResName3('forgotPasswordCompletePage', 'text', 'linkInvalid'),
+        link: {
+          url: navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale),
+          labelResName: getI18nResName2('accountPageCommon', 'toHome')
+        }
+      };
+  }
+})();
+
 </script>
 
 <template>
-  <div class="complete-password-page account-page no-hidden-parent-tabulation-check">
-    <!--
-    <AccountFormPhotos ctrl-key="CompletePasswordPhotos" class="complete-password-account-forms-photos" />
-    <div class="complete-password-page-div">
-      <NavLogo ctrl-key="completePasswordPageAppLogo" class="complete-password-page-logo" mode="inApp" />
-      <div class="complete-password-page-content">
-        <div v-if="completionResult === RecoverPasswordCompleteResultEnum.SUCCESS">
-          {{ $t(getI18nResName3('forgotPasswordCompletePage', 'text', 'success')) }}
-          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
-            {{ $t(getI18nResName2('accountPageCommon', 'login')) }}
-          </NuxtLink>
-        </div>
-        <div v-else-if="completionResult === RecoverPasswordCompleteResultEnum.ALREADY_CONSUMED">
-          {{ $t(getI18nResName3('forgotPasswordCompletePage', 'text', 'alreadyConsumed')) }}
-          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
-            {{ $t(getI18nResName2('accountPageCommon', 'login')) }}
-          </NuxtLink>
-        </div>
-        <div v-else-if="completionResult === RecoverPasswordCompleteResultEnum.LINK_EXPIRED">
-          {{ $t(getI18nResName3('forgotPasswordCompletePage', 'text', 'linkExpired')) }}
-          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="navLinkBuilder.buildPageLink(AppPage.ForgotPassword, locale as Locale)">
-            {{ $t(getI18nResName2('forgotPasswordCompletePage', 'resetPassword')) }}
-          </NuxtLink>
-        </div>
-        <div v-else>
-          {{ $t(getI18nResName3('forgotPasswordCompletePage', 'text', 'linkInvalid')) }}
-          <NuxtLink class="btn btn-complete-password mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
-            {{ $t(getI18nResName2('accountPageCommon', 'toHome')) }}
-          </NuxtLink>
-        </div>
-      </div>
+  <AccountPageContainer ctrl-key="CompletePassword">
+    <div class="w-full h-auto">
+      <div class="flex flex-col flex-nowrap gap-6 md:gap-8 items-start text-gray-600 dark:text-gray-400">
+        {{ $t(displayParams.msgResName) }}
+        <UButton size="lg" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :to="displayParams.link.url" :external="false">
+          {{ $t(displayParams.link.labelResName) }}
+        </UButton>
+      </div>     
     </div>
-    -->
-    PAGE CONTENT
-  </div>
+  </AccountPageContainer>
 </template>

@@ -228,6 +228,6 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchFlightOffers
       />
       <SearchFlightDatePicker v-model:selected-dates="tripDates" :ui="{ wrapper: 'flex-grow-[2] flex-shrink-[2] basis-auto w-full min-h-[3.25rem] max-h-[3.25rem]', input: 'min-h-[3.25rem] max-h-[3.25rem]' }" :ctrl-key="`${ctrlKey}-Dates`" :caption-res-name="tripType === 'oneway' ? (getI18nResName2('searchFlights', 'dateSingle')) : (getI18nResName2('searchFlights', 'dateRange'))" :mode="tripType === 'oneway' ? 'single' : 'range'" />
     </div>
-    <SearchFlightsParams v-model:params="flightParams" :ui="{ wrapper: 'flex-grow flex-shrink-[7] basis-auto w-full min-h-[3.25rem] max-h-[3.25rem]', input: 'min-h-[3.25rem] max-h-[3.25rem]' }" :ctrl-key="`${ctrlKey}-FlightParams`" />
+    <SearchFlightsParams v-model:params="flightParams" :ui="{ wrapper: 'flex-grow flex-shrink-[6.5] basis-auto w-full min-h-[3.25rem] max-h-[3.25rem]', input: 'min-h-[3.25rem] max-h-[3.25rem]' }" :ctrl-key="`${ctrlKey}-FlightParams`" />
   </div>
 </template>

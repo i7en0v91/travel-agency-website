@@ -1,4 +1,6 @@
-import { type ICommonServicesLocator, type AppPage, type I18nResName, type GeoPoint, type Price, type StayOffersSortFactor, type FlightOffersSortFactor, type FlightClass, type TripType, type OfferKind, type Timestamp, type ILocalizableValue, type EntityId, type IImageEntitySrc, type CacheEntityType, type GetEntityCacheItem } from '@golobe-demo/shared';
+import type { TripType, CacheEntityType, ICommonServicesLocator, AppPage, I18nResName, GeoPoint, Price, StayOffersSortFactor, FlightOffersSortFactor, FlightClass, OfferKind, Timestamp, ILocalizableValue, EntityId, IImageEntitySrc, GetEntityCacheItem, SystemPage } from '@golobe-demo/shared';
+import type * as config from './node_modules/@nuxt/ui/dist/runtime/ui.config/index.js';
+import type  { DeepPartial } from './node_modules/@nuxt/ui/dist/runtime/types/index.js';
 
 export type SimplePropertyType = 'text' | 'email' | 'password';
 export type PropertyGridControlButtonType = 'change' | 'apply' | 'cancel' | 'delete' | 'add';
@@ -11,6 +13,12 @@ export type ButtonKind = 'default' | 'accent' | 'support' | 'icon';
 export type FloatingVueHydrationHints = {
   tabIndex: number | undefined
 };
+
+/** Client - app state */
+export interface IAppState {
+  mounted: boolean,
+  navigatedFromPage: AppPage | SystemPage | undefined
+}
 
 /** Client - entity cache */
 export interface IEntityCache {
@@ -28,24 +36,40 @@ export interface IStaticImageUiProps {
   errorStub?: string
 }
 
+/** Components - accordion */
+export interface IAccordionItemProps {
+  labelResName: string,
+  slotName: string,
+  icon?: string
+}
+
+export interface IAccordionProps {
+  ctrlKey: string,
+  // collapseEnabled: boolean,
+  // collapsed: boolean,
+  // showCollapsableButton?: boolean,
+  items: IAccordionItemProps[],
+  persistent?: boolean,
+}
+
 /** Components - tabs */
 export interface ITabProps {
   ctrlKey: string,
   enabled: boolean,
   isActive?: boolean,
-  labelResName: I18nResName,
-  subtextResName?: I18nResName | null | undefined,
-  subtextResArgs?: any,
-  shortIcon?: string,
+  label: {
+    resName: I18nResName,
+    shortIcon?: string
+  } | { slotName: string },
   tabName?: string
 }
 
-export type OtherOptionButtonVariant = Omit<ITabProps, 'subtextResName' | 'subtextResArgs' | 'shortIcon'>;
+export type TabGroupOtherOptions = Omit<ITabProps, 'label'> & { label: { resName: I18nResName } };
 
-export interface ITabGroupMenuProps extends Omit<ITabProps, 'isActive' | 'shortIcon' | 'labelResName'> {
+export interface ITabGroupMenuProps extends Omit<ITabProps, 'isActive' | 'label' | 'ctrlKey' | 'tabName'> {
   defaultResName: I18nResName,
   selectedResName: I18nResName,
-  variants: OtherOptionButtonVariant[]
+  variants: TabGroupOtherOptions[]
 }
 
 export interface ITabGroupProps {
@@ -53,8 +77,8 @@ export interface ITabGroupProps {
   tabs: ITabProps[],
   menu?: ITabGroupMenuProps,
   activeTabKey?: string,
-  useAdaptiveButtonWidth?: boolean,
-  ui?: { compactTabs?: boolean }
+  variant?: 'solid' | 'split',
+  ui?: DeepPartial<typeof config['tabs']>
 }
 
 /** Components - dropdown lists */
@@ -69,9 +93,8 @@ export interface IDropdownListProps {
   persistent: boolean,
   defaultValue?: DropdownListValue | undefined,
   placeholderResName?: I18nResName,
-  listContainerClass?: string,
   items: IDropdownListItemProps[],
-  kind?: 'primary' | 'secondary',
+  variant?: 'default' | 'none',
   ui?: {
     wrapper?: string,
     input?: string
@@ -103,7 +126,7 @@ export interface ISearchListItem {
 /** Components - search offers */
 
 // Filters
-export type FilterType = 'range' | 'checklist';
+export type FilterType = 'range' | 'checklist' | 'choice';
 export interface ISearchOffersFilterProps<TValue> {
   filterId: string,
   captionResName: I18nResName,
@@ -130,7 +153,12 @@ export interface ISearchOffersFilterVariant {
 
 export interface ISearchOffersChecklistFilterProps extends ISearchOffersFilterProps<SearchOffersFilterVariantId[]> {
   type: 'checklist',
-  display: 'list' | 'flow',
+  variants: ISearchOffersFilterVariant[],
+  applyNarrowing: (variants: ISearchOffersFilterVariant[]) => void
+}
+
+export interface ISearchOffersChoiceFilterProps extends ISearchOffersFilterProps<SearchOffersFilterVariantId> {
+  type: 'choice',
   variants: ISearchOffersFilterVariant[],
   applyNarrowing: (variants: ISearchOffersFilterVariant[]) => void
 }
@@ -140,7 +168,7 @@ export interface ISearchOffersCommonParams {
 }
 
 export interface ISearchOffersFilterParams {
-  filters: (ISearchOffersRangeFilterProps | ISearchOffersChecklistFilterProps)[]
+  filters: (ISearchOffersRangeFilterProps | ISearchOffersChecklistFilterProps | ISearchOffersChoiceFilterProps)[]
 }
 
 // Search parameters
@@ -254,6 +282,6 @@ export interface IBookingTicketProps {
 }
 
 export interface IClientServicesLocator extends ICommonServicesLocator {
-  appMounted: boolean,
+  state: IAppState,
   getEntityCache(): IEntityCache
 }

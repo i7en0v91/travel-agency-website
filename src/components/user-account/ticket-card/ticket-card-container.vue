@@ -39,6 +39,7 @@ async function onBtnClick(): Promise<void> {
 
 <template>
   <article class="ticket-card-container px-xs-3 py-xs-3 py-s-4 px-s-4 py-l-5 py-l-5">
+    <!--
     <div class="ticket-card-slot">
       <PerfectScrollbar
         :options="{
@@ -64,5 +65,6 @@ async function onBtnClick(): Promise<void> {
         <NuxtLink class="ticket-card-booking-link btn btn-icon icon-nav-link btn-support brdr-1 tabbable" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.BookingDetails)}/${bookingId}`, locale as Locale)"/>
       </div>
     </div>
+    -->
   </article>
 </template>

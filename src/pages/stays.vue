@@ -8,11 +8,6 @@ definePageMeta({
 });
 useOgImage();
 
-//const contentQueryParams = computed(() => queryContent().locale(locale.value).params());
-const contentQueryParams = queryContent().params();
-
-const { locale } = useI18n();
-
 </script>
 
 <template>
@@ -35,13 +30,6 @@ const { locale } = useI18n();
       <HeadingText ctrl-key="StaysPageHeading" />
     </SearchPageHead>
 
-    <ContentDoc :path="localizePath(`/${getPagePath(AppPage.Stays)}`, locale as Locale)" :query="contentQueryParams" >
-      <template #default="{ doc }">
-        <ContentRenderer 
-          :value="doc" 
-          :components="ProseStyling"
-        />
-      </template>
-    </ContentDoc>
+    <AppPageMdc />
   </div>
 </template>

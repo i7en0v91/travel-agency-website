@@ -1,79 +1,36 @@
 <script setup lang="ts">
 import { getI18nResName3, convertTimeOfDay } from '@golobe-demo/shared';
 import { type ISearchOffersRangeFilterProps } from './../../../../types';
-import Slider from '@vueform/slider';
 import dayjs from 'dayjs';
 import isNumber from 'lodash-es/isNumber';
 import isString from 'lodash-es/isString';
 import { getCommonServices } from '../../../../helpers/service-accessors';
+import { type ComponentInstance } from 'vue';
+import type { URange } from './../../../../.nuxt/components';
 
 interface IProps {
   ctrlKey: string,
-  filterParams: ISearchOffersRangeFilterProps,
-  value: { min: number, max: number }
+  filterParams: ISearchOffersRangeFilterProps
 }
 
 const props = defineProps<IProps>();
+const modelValue = defineModel<{ min: number, max: number }>('value', { required: true });  
 
+const editValue = ref<number>(modelValue.value.min);
+const rangeRef = shallowRef<ComponentInstance<typeof URange> | undefined>();
 const logger = getCommonServices().getLogger();
-const editValue = ref([props.value.min, props.value.max]);
-watch(() => props.value, () => {
-  logger.debug(`(RangeFilter) received value update, ctrlKey=${props.ctrlKey}, new value min=${props.value.min}, new value max=${props.value.max}, current value min=${editValue.value[0]}, current value max=${editValue.value[1]}`);
-  if (Math.abs(props.value.min - editValue.value[0]) > 0.01 || Math.abs(props.value.max - editValue.value[1]) > 0.01) {
-    editValue.value[0] = props.value.min;
-    editValue.value[1] = props.value.max;
-  }
-});
 
-const leftHandlePos = ref<number>(0.0);
-const rightHandlePos = ref<number>(1.0);
+const { d } = useI18n();
 
-const { d, t } = useI18n();
-
-const $emit = defineEmits<{(event: 'update:value', value: { min: number, max: number }): void}>();
-
-function fireValueChangeEvent (value: { min: number, max: number }) {
-  logger.verbose(`(RangeFilter) firing value change event, ctrlKey=${props.ctrlKey}, value min=${value.min}, value max=${value.max}`);
-  $emit('update:value', value);
+function fireValueChangeEvent (value: number) {
+  logger.debug(`(RangeFilter) firing value change event, ctrlKey=${props.ctrlKey}, value=${value}`);
+  modelValue.value = { min: value, max: props.filterParams.valueRange.max };
+  editValue.value = value;
 }
 
-function onSliderValueChanged (value: number[]) {
-  logger.debug(`(RangeFilter) slider value changed, ctrlKey=${props.ctrlKey}`);
-  if (value?.length === 2) {
-    fireValueChangeEvent({ min: value[0], max: value[1] });
-  }
-}
-
-function onSliderValueUpdated (value: number[]) {
-  logger.debug(`(RangeFilter) slider value updated, ctrlKey=${props.ctrlKey}`);
-  if (value && (value.length ?? 0) === 2) {
-    updateHandleTooltipPositions(value[0], value[1]);
-  } else {
-    updateHandleTooltipPositions(props.filterParams.valueRange.min, props.filterParams.valueRange.max);
-  }
-}
-
-function updateHandleTooltipPositions (fromValue: number, toValue: number) {
-  logger.debug(`(RangeFilter) updating handle tooltip positions, ctrlKey=${props.ctrlKey}, from=${fromValue}, to=${toValue}`);
-  const minValue = props.filterParams.valueRange.min;
-  const maxValue = props.filterParams.valueRange.max;
-
-  if (Math.abs(maxValue - minValue) < 0.1) {
-    leftHandlePos.value = 0.0;
-    rightHandlePos.value = 1.0;
-    return;
-  }
-
-  leftHandlePos.value = Math.min(1.0, Math.max(0.0, (fromValue - minValue) / (maxValue - minValue)));
-  rightHandlePos.value = Math.min(1.0, Math.max(0.0, (toValue - minValue) / (maxValue - minValue)));
-}
-
-function onHandleSlide (value: number[]) {
-  if (value && (value.length ?? 0) === 2) {
-    updateHandleTooltipPositions(value[0], value[1]);
-  } else {
-    updateHandleTooltipPositions(props.filterParams.valueRange.min, props.filterParams.valueRange.max);
-  }
+function onMeterValueChanged (value: number) {
+  logger.debug(`(RangeFilter) range value changed, ctrlKey=${props.ctrlKey}`);
+  fireValueChangeEvent(isNumber(value) ? value : parseInt(value));
 }
 
 function getValueForTimeOfDayFormatting (timeOfDayMinutes: number): Date {
@@ -81,7 +38,7 @@ function getValueForTimeOfDayFormatting (timeOfDayMinutes: number): Date {
   return dayjs().local().set('hour', timeOfDay.hour24).set('minute', timeOfDay.minutes).toDate();
 }
 
-function tooltipTextFormatter (value: any): string {
+function indicatorTextFormatter (value: any): string {
   if (value === null || value === undefined) {
     return '';
   }
@@ -105,36 +62,56 @@ function tooltipTextFormatter (value: any): string {
   }
 }
 
+onMounted(() => {
+  watch(modelValue, () => {
+    logger.debug(`(RangeFilter) model value update callback, ctrlKey=${props.ctrlKey}, new model value=${JSON.stringify(modelValue.value)}, edit value=${editValue.value}`);
+    if(modelValue.value.min !== editValue.value) {
+      editValue.value = modelValue.value.min;
+    }
+  }, { immediate: false });
+});
+
+
 </script>
 
 <template>
-  <div class="range-filter">
-    <Slider
-      v-model:value="editValue"
-      class="slider-control"
+  <div class="w-full h-auto px-3">
+    <div 
+      v-if="rangeRef" 
+      class="mb-2"
+      :style="{ 
+        marginLeft: rangeRef.progressStyle.width
+      }">
+      <UBadge 
+        :ui="{ 
+          base: 'text-center',
+          rounded: 'rounded-lg' 
+        }"
+        :style="{ 
+          transform: `translateX(-${rangeRef.progressStyle.width})` 
+        }"
+        size="xs"
+      >
+        <span class="text-nowrap">{{ $t(getI18nResName3('searchOffers', 'filters', 'from')) }} {{ indicatorTextFormatter(editValue) }}</span>
+      </UBadge>
+    </div>
+    
+    <URange 
+      ref="rangeRef"
+      v-model:modelValue="editValue"
       :min="filterParams.valueRange.min"
       :max="filterParams.valueRange.max"
-      :format="tooltipTextFormatter"
-      :tooltips="true"
-      :aria="{
-        'aria-label': t(getI18nResName3('ariaLabels', 'ariaLabelRangeHandler'))
-      }"
-      :style="{
-        '--glb-slider-left-handle-pos': leftHandlePos.toFixed(4),
-        '--glb-slider-right-handle-pos': rightHandlePos.toFixed(4)
-      }"
-      @change="onSliderValueChanged"
-      @slide="onHandleSlide"
-      @update="onSliderValueUpdated"
-    />
-    <div class="slider-trackline" />
-    <div v-if="filterParams.limitLabelFormatter === 'price'" class="range-limits mt-xs-2">
-      <span>{{ $n(Math.floor(filterParams.valueRange.min), 'currency') }}</span>
-      <span>{{ $n(Math.floor(filterParams.valueRange.max), 'currency') }}</span>
-    </div>
-    <div v-else-if="filterParams.limitLabelFormatter === 'daytime'" class="range-limits mt-xs-2">
-      <span>{{ $d(getValueForTimeOfDayFormatting(filterParams.valueRange.min), 'daytime') }}</span>
-      <span>{{ $d(getValueForTimeOfDayFormatting(filterParams.valueRange.max), 'daytime') }}</span>
+      @change="onMeterValueChanged"/>
+
+    <div class="w-full h-auto flex flex-row flex-nowrap justify-between mt-2">
+      <div v-if="filterParams.limitLabelFormatter === 'price'" class="contents *:text-nowrap">
+        <span>{{ $n(Math.floor(filterParams.valueRange.min), 'currency') }}</span>
+        <span class="justify-self-end">{{ $n(Math.floor(filterParams.valueRange.max), 'currency') }}</span>
+      </div>
+      <div v-else-if="filterParams.limitLabelFormatter === 'daytime'" class="contents *:text-nowrap">
+        <span>{{ $d(getValueForTimeOfDayFormatting(filterParams.valueRange.min), 'daytime') }}</span>
+        <span class="justify-self-end">{{ $d(getValueForTimeOfDayFormatting(filterParams.valueRange.max), 'daytime') }}</span>
+      </div>
     </div>
   </div>
 </template>

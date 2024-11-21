@@ -47,103 +47,125 @@ async function favouriteBtnClick (): Promise<void> {
   await toggleFavourite();
 }
 
+const uiStyling = {
+  base: 'w-full overflow-hidden h-full grid gap-x-6 grid-rows-searchstaysportrait xl:grid-rows-searchstayslandscape grid-cols-searchstaysportrait xl:grid-cols-searchstayslandscape',
+  background: 'bg-transparent dark:bg-transparent',
+  shadow: 'shadow-none',
+  rounded: 'rounded-none',
+  ring: '!ring-0',
+  header: {
+    base: 'contents',
+  },
+  body: {
+    base: 'contents',
+  },
+  footer: {
+    base: 'contents'
+  }
+};
+
 </script>
 
 <template>
-  <article class="search-stays-result-card">
-    <ErrorHelm v-model:is-error="isError">
-      <div class="search-stays-result-card-grid">
-        <div class="search-stays-card-stay-photo">
+  <ErrorHelm v-model:is-error="isError">
+    <div class="w-full max-w-[90vw] h-auto ring-1 ring-gray-200 dark:ring-gray-800 shadow-lg shadow-gray-200 dark:shadow-gray-700 rounded-xl">
+      <UCard as="article" :ui="uiStyling">
+        <template #header>
+          <div class="w-full h-auto text-gray-600 dark:text-gray-300 font-semibold text-xl row-start-2 row-end-3 col-start-1 col-end-2 xl:row-start-1 xl:row-end-2 xl:col-start-2 xl:col-end-3 pt-4 pl-4 xl:pl-0">
+            {{ getLocalizeableValue(offer.stay.name, locale as Locale) }}
+          </div>
+        </template>
+
+        <div class="w-full h-full row-start-1 row-end-2 col-start-1 col-end-3 xl:row-end-4 xl:col-end-2">
           <StaticImage
             :ctrl-key="`${ctrlKey}-StayPhoto`"
             :entity-src="props.offer.stay.photo"
             :category="ImageCategory.Hotel"
             sizes="xs:85vw sm:85vw md:85vw lg:75vw xl:30vw"
-            :ui="{ wrapper: 'stay-photo', img: 'stay-photo-img' }"
+            :ui="{ 
+              wrapper: 'w-full max-w-[90vw] h-full rounded-t-xl xl:rounded-t-none xl:rounded-l-xl', 
+              stub: 'rounded-t-xl max-w-[90vw] xl:rounded-t-none xl:rounded-l-xl',
+              img: 'w-full max-w-[90vw] h-full aspect-square object-cover rounded-t-xl xl:rounded-l-xl xl:rounded-tr-none' 
+            }"
             :show-stub="true"
             :alt-res-name="getI18nResName2('searchStays', 'hotelPhotoAlt')"
           />
         </div>
-        <div class="search-stays-card-main-div">
-          <PerfectScrollbar
-            :options="{
-              suppressScrollY: true,
-              wheelPropagation: true
-            }"
-            :watch-options="false"
-            tag="div"
-            class="search-stays-card-main-scroll"
-          >
-            <div class="search-stays-card-main-grid p-xs-3">
-              <div class="search-stays-card-stay-name">
-                {{ getLocalizeableValue(offer.stay.name, locale as Locale) }}
-              </div>
-              <div class="search-stays-card-pricing-div mb-xs-3 mb-s-0">
-                <div class="search-stays-card-price-caption">
-                  {{ $t(getI18nResName2('searchOffers', 'startingPrice')) }}
-                </div>
-                <div class="search-stays-card-price">
-                  <span>{{ $n(Math.floor(offer.totalPrice.toNumber()), 'currency') }}<wbr>&#47;<span class="stays-price-night">{{ $t(getI18nResName2('searchStays', 'night')) }}</span></span>
-                </div>
-                <div class="search-stays-card-tax">
-                  <span>{{ $t(getI18nResName2('searchStays', 'excludingTax')) }}</span>
-                </div>
-              </div>
-              <div class="search-stays-card-main">
-                <div class="search-stays-card-main-div">
-                  <div class="search-stays-card-info">
-                    <div class="search-stays-card-location mt-xs-3">
-                      <span class="search-stays-card-icon search-stays-location-icon mr-xs-2" />
-                      <span class="search-stays-card-location-text">
-                        {{ getLocalizeableValue(offer.stay.city.country.name, locale as Locale) }}, {{ getLocalizeableValue(offer.stay.city.name, locale as Locale) }}
-                      </span>
-                    </div>
-                    <div class="search-stays-card-features mt-xs-2">
-                      <div class="search-stays-card-stars mt-xs-1 mr-xs-2">
-                        <div v-for="i in range(0, 5)" :key="`${props.ctrlKey}-HotelStar-${i}`" class="stay-card-star" />
-                      </div>
-                      <div class="search-stays-card-rating-caption mt-xs-1 mr-xs-2">
-                        {{ $t(getI18nResName2('searchStays', 'stayRatingCaption')) }}
-                      </div>
-                      <div class="search-stays-card-amenities mt-xs-1">
-                        <span class="search-stays-card-icon search-stays-card-amenity-icon mr-xs-2" />
-                        <span class="search-stays-card-amenity-count">20+</span>
-                        <span class="search-stays-card-amenity-label">
-                          {{ $t(getI18nResName3('searchStays', 'filters', 'amenities')) }}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="search-stays-card-stats mb-xs-3 mb-s-0 mt-xs-3">
-                    <div class="search-stays-card-score p-xs-2 brdr-1">
-                      {{ offer.stay.reviewSummary!.score.toFixed(1) }}
-                    </div>
-                    <div class="search-stays-card-score-class">
-                      {{ $t(scoreClassResName) }}
-                    </div>
-                    <div class="search-stays-card-reviews">
-                      {{ reviewsCountText }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="search-stays-card-buttons mt-xs-3 pt-xs-3">
-                <SimpleButton
-                  v-if="status === 'authenticated'"
-                  class="search-stays-card-btn-like"
-                  :ctrl-key="`${props.ctrlKey}-LikeBtn`"
-                  :icon="`${favouriteStatusWatcher.isFavourite ? 'heart' : 'like'}`"
-                  kind="support"
-                  @click="favouriteBtnClick"
-                />
-                <NuxtLink class="btn btn-primary brdr-1 search-stays-card-btn-details" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.StayDetails)}/${props.offer.id}`, locale as Locale)">
-                  {{ $t(getI18nResName2('searchStays', 'viewPlace')) }}
-                </NuxtLink>
+                      
+        <div class="w-full truncate h-auto row-start-2 row-end-4 col-start-2 col-end-3 xl:row-start-1 xl:row-end-3 xl:col-start-3 xl:col-end-4 mb-4 sm:mb-0 pt-4 pr-4 flex flex-col flex-nowrap items-end ml-auto">
+          <div class="w-fit h-auto text-xs leading-none text-gray-500 dark:text-gray-400">
+            {{ $t(getI18nResName2('searchOffers', 'startingPrice')) }}
+          </div>
+          <div class="text-2xl leading-10 font-semibold text-end text-red-400">
+            <span>{{ $n(Math.floor(offer.totalPrice.toNumber()), 'currency') }}<wbr>&#47;<span>{{ $t(getI18nResName2('searchStays', 'night')) }}</span></span>
+          </div>
+          <div class="w-fit h-auto text-xs leading-none text-gray-500 dark:text-gray-400">
+            <span>{{ $t(getI18nResName2('searchStays', 'excludingTax')) }}</span>
+          </div>
+        </div>
+
+        <div class="w-full h-auto row-start-3 row-end-4 col-start-1 col-end-3 xl:row-start-2 xl:row-end-3 xl:col-start-2 xl:col-end-3 pl-4 xl:pl-0">
+          <div class="w-full mt-2">
+            <UIcon name="i-material-symbols-location-on-rounded" class="w-5 h-5 inline-block opacity-70 mr-2"/>
+            <div class="w-fit truncate inline-block text-xs text-gray-500 dark:text-gray-400">
+              {{ getLocalizeableValue(offer.stay.city.country.name, locale as Locale) }}, {{ getLocalizeableValue(offer.stay.city.name, locale as Locale) }}
+            </div>
+          </div>
+          <div class="w-full flex flex-row flex-wrap items-center gap-2 mt-2">
+            <div class="flex-initial flex flex-row flex-nowrap items-center gap-[2px]">
+              <UIcon v-for="i in range(0, 5)" :key="`${props.ctrlKey}-HotelStar-${i}`" name="i-material-symbols-star" class="w-5 h-5 bg-red-400 inline-block" />
+            </div>
+            <div class="flex-initial flex-shrink-0 basis-auto truncate text-xs text-gray-600 dark:text-gray-300 mr-2">
+              {{ $t(getI18nResName2('searchStays', 'stayRatingCaption')) }}
+            </div>
+            <div class="flex-initial flex flex-row flex-nowrap items-center gap-1 self-end">
+              <UIcon name="i-ri-cup-fill" class="w-5 h-5 inline-block opacity-90 mr-2" />
+              <div class="text-xs text-gray-600 dark:text-gray-300">20+</div>
+              <div class="w-full truncate text-xs text-gray-600 dark:text-gray-300">
+                {{ $t(getI18nResName3('searchStays', 'filters', 'amenities')) }}
               </div>
             </div>
-          </PerfectScrollbar>
+          </div>
+          <div class="w-fit flex flex-row flex-wrap items-center gap-2 mt-2">
+            <UBadge 
+              :ui="{ 
+                base: 'w-fit h-auto p-2 text-center',
+                rounded: 'rounded-md'
+              }"
+              size="sm"
+            >
+              {{ offer.stay.reviewSummary!.score.toFixed(1) }}
+            </UBadge>
+            <div class="w-fit h-auto text-xs font-semibold">
+              {{ $t(scoreClassResName) }}
+            </div>
+            <div class="w-fit h-auto text-xs text-gray-500 dark:text-gray-400">
+              {{ reviewsCountText }}
+            </div>
+          </div>
         </div>
-      </div>
-    </ErrorHelm>
-  </article>
+
+        <template #footer>
+          <div class="p-4 pt-0 xl:pl-0 w-full max-w-[90vw] h-auto row-start-4 row-end-5 col-start-1 col-end-3 xl:row-start-3 xl:row-end-4 xl:col-start-2 xl:col-end-4">
+            <UDivider color="gray" orientation="horizontal" class="w-full mt-4" size="xs"/>
+            <div class="flex flex-row flex-nowrap gap-4 mt-4 ">
+              <UButton
+                v-if="status === 'authenticated'"
+                :ui="{ base: 'aspect-square justify-center' }"
+                size="lg"
+                :icon="favouriteStatusWatcher.isFavourite ? 'i-heroicons-heart-solid' : 'i-heroicons-heart'"
+                variant="outline"
+                color="primary"
+                @click="favouriteBtnClick"
+              />
+
+              <UButton size="lg" class="w-full flex-1" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.StayDetails)}/${props.offer.id}`, locale as Locale)" :external="false">
+                {{ $t(getI18nResName2('searchStays', 'viewPlace')) }}
+              </UButton>
+            </div>
+          </div>
+        </template>
+      </UCard>
+    </div>
+  </ErrorHelm>
 </template>

@@ -118,6 +118,7 @@
       "panelHeader": "Filters",
       "price": "Price",
       "rating": "Rating",
+      "from": "from",
       "noResultsStub": "No results to filter",
       "checklistMoreItems": "+{count} more",
       "checklistCollapseItems": "collapse"

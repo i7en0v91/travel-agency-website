@@ -33,15 +33,15 @@ function scheduleTooltipAutoHide () {
 
 <template>
   <section :class="`relative block ${spaced ? 'mt-10 sm:mt-20' : ''}`">
-    <div class="w-full flex flex-col sm:flex-row flex-wrap sm:flex-nowrap justify-between gap-4 px-[14px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
-      <div class="flex-grow flex-shrink basis-auto break-words text-gray-500 dark:text-gray-400">
+    <div class="w-full flex flex-col sm:flex-row flex-wrap justify-between gap-4 px-[14px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
+      <div class="flex-1 break-words text-gray-500 dark:text-gray-400">
         <slot name="header"/>
         <slot name="subtext"/>
       </div>
-      <UButton v-if="linkUrl && btnLabel" size="lg" class="flex-grow-0 flex-shrink-0 basis-auto self-end" variant="outline" color="primary" :to="navLinkBuilder.buildLink(linkUrl, locale as Locale)">
+      <UButton v-if="linkUrl && btnLabel" size="lg" class="flex-grow-0 flex-shrink-0 basis-auto self-end ml-auto" variant="outline" color="primary" :to="navLinkBuilder.buildLink(linkUrl, locale as Locale)" :external="false">
         <span class="text-gray-500 dark:text-gray-400">{{ btnLabel }}</span>
       </UButton>
-      <UPopover v-else-if="btnLabel" v-model:open="tooltipShown" :popper="{ placement: 'bottom' }" class="flex-grow-0 flex-shrink-0 basis-auto self-end">
+      <UPopover v-else-if="btnLabel" v-model:open="tooltipShown" :popper="{ placement: 'bottom' }" class="flex-grow-0 flex-shrink-0 basis-auto self-end ml-auto">
         <UButton size="lg" variant="outline" color="primary" @click="scheduleTooltipAutoHide">
           <span class="text-gray-500 dark:text-gray-400">{{ btnLabel }}</span>
         </UButton>

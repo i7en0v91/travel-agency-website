@@ -1,26 +1,17 @@
 <script setup lang="ts">
-import { AppPage, getPagePath, type Locale, RecoverPasswordResultEnum, AuthProvider, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { AppPage, getPagePath, type Locale, RecoverPasswordResultEnum, AuthProvider, getI18nResName2, getI18nResName3, type I18nResName } from '@golobe-demo/shared';
+import * as config from './../node_modules/@nuxt/ui/dist/runtime/ui.config/index.js';
 import { ApiEndpointPasswordRecovery, type IRecoverPasswordDto, type IRecoverPasswordResultDto } from '../server/api-definitions';
 import { post } from './../helpers/rest-utils';
 import { formatAuthCallbackUrl } from './../helpers/dom';
-/*
-import { useVuelidate } from '@vuelidate/core';
-import * as validators from '@vuelidate/validators';
-import { email, required } from '@vuelidate/validators';
-*/
-import NavLogo from './../components/navbar/nav-logo.vue';
-import TextBox from './../components/forms/text-box.vue';
-import SimpleButton from './../components/forms/simple-button.vue';
-import AccountFormPhotos from './../components/account/form-photos.vue';
+import AccountPageContainer from './../components/account/page-container.vue';
+import { getCommonServices } from './../helpers/service-accessors';
+import { object, string } from 'yup';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
 import CaptchaProtection from './../components/forms/captcha-protection.vue';
 import { type ComponentInstance } from 'vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
-
-const { t, locale } = useI18n();
-const navLinkBuilder = useNavLinkBuilder();
-const captcha = shallowRef<ComponentInstance<typeof CaptchaProtection>>();
 
 definePageMeta({
   middleware: 'auth',
@@ -32,29 +23,30 @@ definePageMeta({
 });
 useOgImage();
 
-/*
 const { signIn } = useAuth();
 const localePath = useLocalePath();
 const { enabled } = usePreviewState();
 const themeSettings = useThemeSettings();
 
-const useremail = ref('');
-const useremailServerError = ref('');
+const logger = getCommonServices().getLogger();
 
-const { createI18nMessage } = validators;
-const withI18nMessage = createI18nMessage({ t });
-const rules = computed(() => ({
-  useremail: {
-    required: withI18nMessage(required, { messagePath: () => 'validations.required' }),
-    email: withI18nMessage(email),
-    validator: withI18nMessage(() => { return (useremailServerError.value?.length ?? 0) === 0; }, { messagePath: () => useremailServerError.value })
-  }
-}));
-const v$ = useVuelidate(rules, { useremail, $lazy: true });
+const { t, locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
+const captcha = shallowRef<ComponentInstance<typeof CaptchaProtection>>();
+
+const schema = computed(() => 
+  object({
+    email: string().email(t(getI18nResName2('validations', 'email'))).required(t(getI18nResName2('validations', 'required'))),
+  })
+);
+const state = reactive<any>({
+  email: undefined
+});
+const serverValidationErrorResName = ref<I18nResName>();
 
 async function callServerPasswordRecovery (email: string, captchaToken?: string) : Promise<void> {
   const postBody: IRecoverPasswordDto = {
-    email,
+    email: state.email,
     captchaToken,
     locale: locale.value,
     theme: themeSettings.currentTheme.value
@@ -67,28 +59,23 @@ async function callServerPasswordRecovery (email: string, captchaToken?: string)
         await navigateTo(navLinkBuilder.buildPageLink(AppPage.ForgotPasswordVerify, locale.value as Locale));
         break;
       case RecoverPasswordResultEnum.USER_NOT_FOUND:
-        useremailServerError.value = getI18nResName2('forgotPasswordPage', 'userNotFound');
-        await v$.value.useremail.$validate();
+        serverValidationErrorResName.value = getI18nResName2('forgotPasswordPage', 'userNotFound');
         break;
       case RecoverPasswordResultEnum.EMAIL_NOT_VERIFIED:
-        useremailServerError.value = getI18nResName2('forgotPasswordPage', 'emailNotVerified');
-        await v$.value.useremail.$validate();
+        serverValidationErrorResName.value = getI18nResName2('forgotPasswordPage', 'emailNotVerified');
         break;
     }
   }
 }
 
 function onCaptchaVerified (captchaToken: string) {
-  callServerPasswordRecovery(useremail.value, captchaToken);
+  callServerPasswordRecovery(state.email.value, captchaToken);
 }
 
-function submitClick () {
-  useremailServerError.value = '';
-  useremail.value = useremail.value.trim();
-  v$.value.$touch();
-  if (!v$.value.$error) {
-    captcha.value!.startVerification();
-  }
+function onSubmit () {
+  logger.verbose('(ForgotPassword) submit handler triggered');
+  serverValidationErrorResName.value = undefined;
+  captcha.value!.startVerification();
 }
 
 async function onOAuthProviderClick (provider: AuthProvider): Promise<void> { 
@@ -106,45 +93,49 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
       break;
   }
 }
-  */
+
+onMounted(() => {
+  watch(() => state.email, () => {
+    serverValidationErrorResName.value = undefined;
+  });
+});
+
+const uiStyling = {
+  padding: {
+    md: 'px-0'
+  }
+};
 
 </script>
 
 <template>
-  <div class="forgot-password-page account-page no-hidden-parent-tabulation-check">
-    <!--
-    <div class="forgot-password-page-content">
-      <NavLogo ctrl-key="forgotPasswordPageAppLogo" mode="inApp" />
-      <NuxtLink class="back-to-login-link brdr-1" :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
-        {{ t(getI18nResName2('accountPageCommon', 'backToLogin')) }}
-      </NuxtLink>
-      <h1 class="forgot-password-title mt-xs-3 font-h2">
-        {{ t(getI18nResName2('forgotPasswordPage', 'title')) }}
+  <AccountPageContainer ctrl-key="ForgotPassword">
+    <div class="w-full h-auto">
+      <UButton size="md" :ui="uiStyling" icon="i-heroicons-chevron-left-20-solid" class="w-fit flex flex-row flex-nowrap items-center border-none ring-0 dark:hover:bg-transparent" variant="outline" color="gray" :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)" :external="false">
+        {{ $t(getI18nResName2('accountPageCommon', 'backToLogin')) }}
+      </UButton>
+      <h1 class="text-gray-600 dark:text-gray-300 text-5xl max-w-[90vw] break-words font-normal mt-4">
+        {{ $t(getI18nResName2('forgotPasswordPage', 'title')) }}
       </h1>
-      <div class="forgot-password-subtitle mt-xs-3">
-        {{ t(getI18nResName2('forgotPasswordPage', 'subTitle')) }}
+      <div class="text-gray-600 dark:text-gray-300 text-sm sm:text-base font-normal mt-4">
+        {{ $t(getI18nResName2('forgotPasswordPage', 'subTitle')) }}
       </div>
-      <form>
-        <TextBox
-          v-model="useremail"
-          ctrl-key="forgotPasswordPgEmail"
-          class="form-field forgot-password-form-field forgot-password-email-field"
-          type="email"
-          :caption-res-name="getI18nResName2('accountPageCommon', 'emailLabel')"
-          :placeholder-res-name="getI18nResName2('accountPageCommon', 'emailPlaceholder')"
-        />
-        <div v-if="v$.useremail.$errors.length" class="input-errors">
-          <div class="form-error-msg">
-            {{ v$.useremail.$errors[0].$message }}
-          </div>
+
+      <UForm :schema="schema" :state="state" :validate-on="['input', 'change', 'submit']" class="mt-12 space-y-4" @submit="onSubmit" >
+        <UFormGroup name="email" :label="t(getI18nResName2('accountPageCommon', 'emailLabel'))">
+          <UInput v-model.trim="state.email" :placeholder="t(getI18nResName2('accountPageCommon', 'emailPlaceholder'))" :max-length="256"/>
+        </UFormGroup>
+        <div v-if="serverValidationErrorResName" :class="config.formGroup.error">
+          {{ $t(serverValidationErrorResName) }}
         </div>
-        <CaptchaProtection ref="captcha" ctrl-key="ForgotPasswordCaptchaProtection" @verified="onCaptchaVerified" />
-      </form>
-      <SimpleButton ctrl-key="forgotPaswordSubmitBtn" class="forgot-password-submit-btn mt-xs-2" :label-res-name="getI18nResName3('forgotPasswordPage', 'forms', 'submit')" @click="submitClick" />
-      <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('forgotPasswordPage', 'loginWith')" @click="onOAuthProviderClick" />
+
+        <UButton type="submit" class="w-full h-auto !mt-7 md:!mt-10 justify-center" size="xl">
+          {{ $t(getI18nResName3('forgotPasswordPage', 'forms', 'submit')) }}
+        </UButton>
+      </UForm>
+
+      <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" @click="onOAuthProviderClick" />
+      <CaptchaProtection ref="captcha" ctrl-key="ForgotPasswordCaptchaProtection" @verified="onCaptchaVerified" />
     </div>
-    <AccountFormPhotos ctrl-key="ForgotPasswordPhotos" class="forgot-password-account-forms-photos" />
-    -->
-    PAGE CONTENT
-  </div>
+  </AccountPageContainer>
 </template>

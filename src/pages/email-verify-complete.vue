@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { AppConfig, type EntityId, AppPage, type Locale, SecretValueMask, HeaderAppVersion, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import { ApiEndpointEmailVerifyComplete, EmailVerifyCompleteResultCode, type IEmailVerifyCompleteResultDto } from '../server/api-definitions';
-import AccountFormPhotos from './../components/account/form-photos.vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
 import { getCommonServices } from '../helpers/service-accessors';
+import AccountPageContainer from './../components/account/page-container.vue';
 
 definePageMeta({
   title: { resName: getI18nResName2('emailVerifyCompletePage', 'title'), resArgs: undefined }
@@ -70,42 +70,54 @@ if (!tokenId || !tokenValue) {
   });
 }
 
+const displayParams = (() => {
+  switch(completionResult.value) {
+    case EmailVerifyCompleteResultCode.SUCCESS:
+      return {
+        msgResName: getI18nResName3('emailVerifyCompletePage', 'text', 'success'),
+        link: {
+          url: status.value === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale),
+          labelResName: getI18nResName2('accountPageCommon', status.value === 'authenticated' ? 'toHome' : 'login')
+        }
+      };
+    case EmailVerifyCompleteResultCode.ALREADY_CONSUMED:
+      return {
+        msgResName: getI18nResName3('emailVerifyCompletePage', 'text', 'alreadyConsumed'),
+        link: {
+          url: status.value === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale),
+          labelResName: getI18nResName2('accountPageCommon', status.value === 'authenticated' ? 'toHome' : 'login')
+        }
+      };
+    case EmailVerifyCompleteResultCode.LINK_EXPIRED:
+      return {
+        msgResName: getI18nResName3('emailVerifyCompletePage', 'text', 'linkExpired'),
+        link: {
+          url: status.value === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Account, locale.value as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale),
+          labelResName: getI18nResName2('accountPageCommon', status.value === 'authenticated' ? 'toAccount' : 'login')
+        }
+      };
+    default:
+      return {
+        msgResName: getI18nResName3('emailVerifyCompletePage', 'text', 'linkInvalid'),
+        link: {
+          url: status.value === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Account, locale.value as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale),
+          labelResName: getI18nResName2('accountPageCommon', status.value === 'authenticated' ? 'toAccount' : 'login')
+        }
+      };
+  }
+})();
+
 </script>
 
 <template>
-  <div class="email-verify-complete-page account-page no-hidden-parent-tabulation-check">
-    <!--
-    <AccountFormPhotos ctrl-key="EmailVerifyCompletedPhotos" class="email-verify-complete-forms-photos" />
-    <div class="email-verify-complete-page-div">
-      <NavLogo ctrl-key="emailVerifyCompletePageAppLogo" class="email-verify-complete-page-logo" mode="inApp" />
-      <div class="email-verify-complete-page-content">
-        <div v-if="completionResult === EmailVerifyCompleteResultCode.SUCCESS">
-          {{ $t(getI18nResName3('emailVerifyCompletePage', 'text', 'success')) }}
-          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="status === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
-            {{ $t(getI18nResName2('accountPageCommon', status === 'authenticated' ? 'toHome' : 'login')) }}
-          </NuxtLink>
-        </div>
-        <div v-else-if="completionResult === EmailVerifyCompleteResultCode.ALREADY_CONSUMED">
-          {{ $t(getI18nResName3('emailVerifyCompletePage', 'text', 'alreadyConsumed')) }}
-          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="status === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
-            {{ $t(getI18nResName2('accountPageCommon', status === 'authenticated' ? 'toHome' : 'login')) }}
-          </NuxtLink>
-        </div>
-        <div v-else-if="completionResult === EmailVerifyCompleteResultCode.LINK_EXPIRED">
-          {{ $t(getI18nResName3('emailVerifyCompletePage', 'text', 'linkExpired')) }}
-          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="status === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Account, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
-            {{ $t(getI18nResName2('accountPageCommon', status === 'authenticated' ? 'toAccount' : 'login')) }}
-          </NuxtLink>
-        </div>
-        <div v-else>
-          {{ $t(getI18nResName3('emailVerifyCompletePage', 'text', 'linkInvalid')) }}
-          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="status === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Account, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
-            {{ $t(getI18nResName2('accountPageCommon', status === 'authenticated' ? 'toAccount' : 'login')) }}
-          </NuxtLink>
-        </div>
-      </div>
+  <AccountPageContainer ctrl-key="EmailVerifyCompleted" :ui="{ wrapper: 'md:flex-row-reverse' }">
+    <div class="w-full h-auto">
+      <div class="flex flex-col flex-nowrap gap-6 md:gap-8 items-start text-gray-600 dark:text-gray-400">
+        {{ $t(displayParams.msgResName) }}
+        <UButton size="lg" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :to="displayParams.link.url" :external="false">
+          {{ $t(displayParams.link.labelResName) }}
+        </UButton>
+      </div>     
     </div>
-    -->
-    PAGE CONTENT
-  </div>
+  </AccountPageContainer>
 </template>

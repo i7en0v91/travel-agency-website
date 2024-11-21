@@ -68,7 +68,7 @@ watch(() => imageSlugs.value, () => {
 
 <template>
   <div :class="`flex-grow-0 flex-shrink basis-auto hidden md:block w-[386px] lg:w-[486px] rounded-4xl ${ui?.wrapper ?? ''}`" role="figure">
-    <ErrorHelm :is-error="isError" class="rounded-4xl">
+    <ErrorHelm :is-error="isError" class="rounded-4xl overflow-hidden">
       <UCarousel
         v-if="imageSlugs?.length ?? 0 > 0" ref="carouselRef" v-slot="{ item: imgSlug }" 
         :items="imageSlugs" 

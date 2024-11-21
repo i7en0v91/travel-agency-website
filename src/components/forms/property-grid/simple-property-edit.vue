@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { validateObjectSync, maskLog, SecretValueMask, isPasswordSecure, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
+import { AppConfig, validateObjectSync, maskLog, SecretValueMask, isPasswordSecure, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
 import { type SimplePropertyType, type PropertyGridControlButtonType } from './../../../types';
 import { defaultErrorHandler } from './../../../helpers/exceptions';
 import { object, string } from 'yup';
@@ -85,7 +85,7 @@ const validationErrMsg = computed(() =>  {
     if (!isPasswordSecure(normalizedValue)) {
       const errMsgResName = getI18nResName2('validations', 'password');
       logger.verbose(`(SimplePropertyEdit) preliminary password validation failed, ctrlKey=${props.ctrlKey}`);
-      return t(errMsgResName);
+      return t(errMsgResName, { min: AppConfig.userPasswordPolicy.minLength });
     }
   }
 

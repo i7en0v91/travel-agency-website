@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getI18nResName1, getI18nResName2, getI18nResName3, StaysMinRoomsCount, StaysMaxRoomsCount, StaysMinGuestsCount, StaysMaxGuestsCount } from '@golobe-demo/shared';
+import { getI18nResName1, getI18nResName2, StaysMinRoomsCount, StaysMaxRoomsCount, StaysMinGuestsCount, StaysMaxGuestsCount } from '@golobe-demo/shared';
 import InputFieldFrame from '../../forms/input-field-frame.vue';
 import SearchOffersCounter from './search-offers-counter.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
@@ -130,8 +130,8 @@ defineShortcuts({
   <UPopover v-model:open="open" :popper="{ placement: 'bottom' }" :class="ui?.wrapper">
     <InputFieldFrame :text-res-name="getI18nResName2('searchStays', 'roomsGuestsCaption')" class="w-full">
       <UButton size="md" :class="`justify-between flex-row-reverse cursor-pointer dark:hover:bg-transparent w-full pl-[16px] ${ui?.input ?? ''}`" variant="outline" color="gray">
-        <UIcon name="i-heroicons-chevron-right-20-solid" class="w-5 h-5 transition-transform text-gray-400 dark:text-gray-500 rotate-90"/>
-        {{ displayText }}       
+        <UIcon name="i-heroicons-chevron-right-20-solid" class="w-5 h-5 text-gray-400 dark:text-gray-500 rotate-90"/>
+        <span class="overflow-hidden line-clamp-1 text-wrap text-start">{{ displayText }}</span>       
       </UButton>
     </InputFieldFrame>
     <template #panel="{ close }">

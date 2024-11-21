@@ -1,4 +1,4 @@
-import { MimeTypeWebp } from '@golobe-demo/shared';
+import { AppPage, MimeTypeWebp } from '@golobe-demo/shared';
 
 export enum DeviceSizeEnum {
   XS = 'XS',
@@ -33,7 +33,7 @@ export const HashNavigationPageTimeout = 3000;
 export const UserAccount = 'account';
 export const UserHistory = 'history';
 export const UserPayments = 'payments';
-export const UserAccountTabGroup = 'tabAccountGrp';
+export const UserAccountTabGroup = 'UserAccount-TabControl';
 export const UserAccountTabAccount = `${UserAccountTabGroup}-${UserAccount}`;
 export const UserAccountTabHistory = `${UserAccountTabGroup}-${UserHistory}`;
 export const UserAccountTabPayments = `${UserAccountTabGroup}-${UserPayments}`;
@@ -53,3 +53,8 @@ export const SearchOffersFilterTabGroupId = 'search-offers-filter-panel-gid';
 
 export const WorldMapCityLabelFlipX = 0.85;
 export const TravelDetailsHtmlAnchor = 'travelDetails';
+
+export const ContentPages = {
+  pagesWithMdc: [AppPage.Index, AppPage.Privacy, AppPage.Flights, AppPage.Stays],
+  fromRoutesRequiringMount: [AppPage.Login, AppPage.EmailVerifyComplete, AppPage.ForgotPassword, AppPage.ForgotPasswordComplete, AppPage.ForgotPasswordSet, AppPage.ForgotPasswordVerify, AppPage.Signup, AppPage.SignupComplete, AppPage.SignupVerify]
+};

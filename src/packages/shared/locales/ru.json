@@ -118,6 +118,7 @@
       "panelHeader": "Фильтры",
       "price": "Цена",
       "rating": "Рейтинг",
+      "from": "от",
       "noResultsStub": "Отсутствуют результаты поиска",
       "checklistMoreItems": "+{count} ещё",
       "checklistCollapseItems": "свернуть"

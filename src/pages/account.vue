@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { UserAccountTabAccount, UserAccountTabHistory, UserAccountTabPayments } from './../helpers/constants';
+import { UserAccountTabGroup, UserAccountTabAccount, UserAccountTabHistory, UserAccountTabPayments } from './../helpers/constants';
 import AvatarBox from './../components/user-account/avatar-box.vue';
 import UserCover from './../components/user-account/user-cover.vue';
 import TabsGroup from '../components/forms/tabs-group.vue';
@@ -66,18 +66,17 @@ const primaryEmail = computed(() => {
         <section class="mx-auto px-2 pt-1 pb-4 mt-8">
           <TabsGroup
             v-model:activeTabKey="selectedTab"
-            class="w-full block rounded-3xl bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-700 user-account-page-tabs-control"
-            ctrl-key="UserAccount-TabControl"
+            :ctrl-key="UserAccountTabGroup"
             :tabs="[
-              { ctrlKey: UserAccountTabAccount, labelResName: getI18nResName3('accountPage', 'tabAccount', 'title'), shortIcon: 'i-heroicons-user-20-solid', enabled: true, tabName: UserAccountTabAccount },
-              { ctrlKey: UserAccountTabHistory, labelResName: getI18nResName3('accountPage', 'tabHistory', 'title'), shortIcon: 'i-mdi-file-document', enabled: false, tabName: UserAccountTabHistory },
-              { ctrlKey: UserAccountTabPayments, labelResName: getI18nResName3('accountPage', 'tabPayments', 'title'), shortIcon: 'i-mdi-credit-card', enabled: false, tabName: UserAccountTabPayments }
+              { ctrlKey: UserAccountTabAccount, label: { resName: getI18nResName3('accountPage', 'tabAccount', 'title'), shortIcon: 'i-heroicons-user-20-solid' }, enabled: true, tabName: UserAccountTabAccount },
+              { ctrlKey: UserAccountTabHistory, label: { resName: getI18nResName3('accountPage', 'tabHistory', 'title'), shortIcon: 'i-mdi-file-document' }, enabled: false, tabName: UserAccountTabHistory },
+              { ctrlKey: UserAccountTabPayments, label: { resName: getI18nResName3('accountPage', 'tabPayments', 'title'), shortIcon: 'i-mdi-credit-card' }, enabled: true, tabName: UserAccountTabPayments }
             ]"
-            :ui="{ compactTabs: false }"
+            variant="split"
           >
             <ComponentWaitingIndicator v-if="!tabReady" ctrl-key="accountPageContentWaiter" />
             <KeepAlive>  
-              <div class="px-4 sm:px-6 pt-0 sm:pt-2 pb-4 account-page-tab" :style="{ display: tabReady ? 'block' : 'none' }">
+              <div class="p-4 sm:p-6 rounded-xl bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-700 mt-2 sm:mt-4" :style="{ display: tabReady ? 'block' : 'none' }">
                 <TabPayments v-if="selectedTab === UserAccountTabPayments" v-model:ready="paymentsTabReady" ctrl-key="userAccountTabPayments" />
                 <TabHistory v-else-if="selectedTab === UserAccountTabHistory" v-model:ready="historyTabReady" ctrl-key="userAccountTabHistory" />
                 <TabAccount v-else v-model:ready="accountTabReady" ctrl-key="userAccountTabAccount" />

@@ -62,6 +62,7 @@ const reviewsCountText = computed(() => props.numReviews ? `${props.numReviews} 
       </li>
     </ul>
     <div class="stay-details-overview-highlights-div mt-xs-5">
+      <!--
       <PerfectScrollbar
         :options="{
           suppressScrollY: true,
@@ -88,7 +89,7 @@ const reviewsCountText = computed(() => props.numReviews ? `${props.numReviews} 
                 </div>
                 <div v-else class="stay-highlight-reviews-count data-loading-stub text-data-loading mt-xs-1" />
               </div>
-              <!-- KB: fallback freezes in production...
+              {{ / TODO:  KB: fallback freezes in production... }}
               <template #fallback>
                 <div class="stay-details-highlight-score data-loading-stub text-data-loading" />
                 <div class="stay-details-highlight-summary">
@@ -96,7 +97,6 @@ const reviewsCountText = computed(() => props.numReviews ? `${props.numReviews} 
                   <div class="stay-highlight-reviews-count data-loading-stub text-data-loading mt-xs-1" />
                 </div>
               </template>
-              -->
             </ClientOnly>
           </li>
           <li v-for="(resName, idx) in highlightResNames" :key="`${ctrlKey}-Highlight-${idx}`" class="stay-details-highlight-item p-xs-3 brdr-3">
@@ -107,7 +107,7 @@ const reviewsCountText = computed(() => props.numReviews ? `${props.numReviews} 
             <div v-else class="stay-details-highlight-text data-loading-stub text-data-loading" />
           </li>
         </ul>
-      </PerfectScrollbar>
+      </PerfectScrollbar>-->
     </div>
   </section>
 </template>

@@ -55,17 +55,17 @@ onMounted(() => {
 </script>
 
 <template>
-  <div
-    class="list-paging"
-  >
-    <ComponentWaitingIndicator v-if="viewState === 'waiting-stub'" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="list-paging-waiter" />
-    <SimpleButton
+  <div class="px-2">
+    <ComponentWaitingIndicator v-if="viewState === 'waiting-stub'" :ctrl-key="`${ctrlKey}-WaiterIndicator`" />
+    <UButton
       v-if="viewState === 'visible'"
-      kind="accent"
-      class="list-paging-btn"
-      :ctrl-key="`${ctrlKey}-PagingBtn`"
-      :label-res-name="getI18nResName2('searchOffers', 'pagingBtn')"
+      size="md"
+      color="primary"
+      variant="solid"
+      :ui="{ base: 'w-full h-auto justify-center mt-2 sm:mt-4' }"
       @click="onPageBtnClick"
-    />
+    >
+      {{  $t(getI18nResName2('searchOffers', 'pagingBtn')) }}
+    </UButton>
   </div>
 </template>

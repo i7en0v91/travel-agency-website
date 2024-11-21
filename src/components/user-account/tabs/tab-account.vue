@@ -159,9 +159,6 @@ onMounted(() => {
 
 <template>
   <div class="w-full h-full" role="form">
-    <h2 class="block break-words text-3xl font-semibold text-black dark:text-white mb-2 sm:mb-4 account-page-tab-name">
-      {{ $t(getI18nResName3('accountPage', 'tabAccount', 'title')) }}
-    </h2>
     <UForm :state="{}" class="w-full h-auto account-tab-account">
       <ErrorHelm v-model:is-error="isError" :appearance="'error-stub'" :user-notification="true">
         <PropertyGrid ctrl-key="userAccountPropertyGrid">
