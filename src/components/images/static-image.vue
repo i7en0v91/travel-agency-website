@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { DataKeyImageDetails, PreviewModeParamEnabledValue, QueryPagePreviewModeParam, type IAppLogger, type I18nResName, type ImageCategory, ImageAuthRequiredCategories, type IImageEntitySrc, type CssPropertyList } from '@golobe-demo/shared';
+import { DataKeyImageDetails, type IAppLogger, type I18nResName, type ImageCategory, ImageAuthRequiredCategories, type IImageEntitySrc, type CssPropertyList } from '@golobe-demo/shared';
 import { getObject } from './../../helpers/rest-utils';
 import { type IStaticImageUiProps } from './../../types';
 import { addPayload, getPayload } from './../../helpers/payload';
-import { ApiEndpointImageDetails, ApiEndpointImage } from './../../server/api-definitions';
+import { ApiEndpointImageDetails } from './../../server/api-definitions';
 import { type ComponentInstance, type GlobalComponents } from 'vue';
 import fromPairs from 'lodash-es/fromPairs';
 import isString from 'lodash-es/isString';
 import ErrorHelm from './../error-helm.vue';
-import { stringifyParsedURL, stringifyQuery } from 'ufo';
-import set from 'lodash-es/set';
+import { stringifyParsedURL } from 'ufo';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
+import { formatImageEntityUrl } from '../../helpers/dom';
 type NuxtImg = GlobalComponents['NuxtImg'];
 
 interface IPublicAssetSrc {
@@ -73,15 +73,7 @@ const imgUrl = computed(() => {
   }
   if(props.entitySrc) {
     if (!props.requestExtraDisplayOptions || imageDetails.value) {
-      return stringifyParsedURL({
-        pathname: `/${ApiEndpointImage}`,
-        search: stringifyQuery({
-          ...(props.entitySrc!.timestamp ? { t: props.entitySrc!.timestamp } : {}),
-          ...(enabled ? set({}, QueryPagePreviewModeParam, PreviewModeParamEnabledValue) : {}),
-          slug: props.entitySrc!.slug,
-          category: props.category!.valueOf()
-        })
-      });
+     return formatImageEntityUrl(props.entitySrc, props.category!, undefined, enabled);
     }
   }
   return undefined;
@@ -125,7 +117,7 @@ const stubStyleClass = computed(() => {
 });
 
 const imgStyleClass = computed(() => {
-  return `row-start-1 row-end-2 col-start-1 col-end-2 block w-full h-auto object-cover text-[0] z-[2] bg-transparent ${props.ui?.img ?? ''} ${invertForDarkTheme.value ? 'dark:invert' : ''}`;
+  return `row-start-1 row-end-2 col-start-1 col-end-2 block w-full h-full object-cover text-[0] z-[2] bg-transparent ${props.ui?.img ?? ''} ${invertForDarkTheme.value ? 'dark:invert' : ''}`;
 });
 
 async function fetchDisplayDetailsIfNeeded (): Promise<void> {

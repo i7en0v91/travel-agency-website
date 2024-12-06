@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { AppExceptionCodeEnum, AppException, getI18nResName2, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, type Locale, DefaultLocale, getLocalizeableValue, getValueForFlightDayFormatting, type ImageCategory, type ILocalizableValue, type ICity, type EntityDataAttrsOnly, type IImageEntitySrc, type IImageCategoryInfo, type OfferKind } from '@golobe-demo/shared';
-import { ApiEndpointImage } from './../../server/api-definitions';
-import { withQuery } from 'ufo';
+import { AppExceptionCodeEnum, AppException, getI18nResName2, type Locale, DefaultLocale, getLocalizeableValue, getValueForFlightDayFormatting, type ImageCategory, type ILocalizableValue, type ICity, type EntityDataAttrsOnly, type IImageEntitySrc, type IImageCategoryInfo, type OfferKind } from '@golobe-demo/shared';
 import { usePreviewState } from './../../composables/preview-state';
-import set from 'lodash-es/set';
 import { getCommonServices } from '../../helpers/service-accessors';
+import { formatImageEntityUrl } from '../../helpers/dom';
 
 interface IProps {
   kind: OfferKind,
@@ -37,11 +35,7 @@ try {
 }
 
 const { enabled } = usePreviewState();
-const imgUrl = withQuery(`/${ApiEndpointImage}`, { 
-  slug: props.image.slug, 
-  category: props.image.category ,
-  ...(enabled ? set({}, QueryPagePreviewModeParam, PreviewModeParamEnabledValue) : {})
-});
+const imgUrl = formatImageEntityUrl(props.image, props.image.category, undefined, enabled);
 
 function onError (err: any) {
   logger.warn('(OgOfferSummary) render exception', err);
@@ -50,6 +44,7 @@ function onError (err: any) {
 
 </script>
 
+<!-- TODO: rewrite to Tailwind -->
 <template>
   <div class="container">
     <NuxtErrorBoundary @error="onError">

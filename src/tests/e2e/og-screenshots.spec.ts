@@ -95,7 +95,7 @@ class PageScreenshoter {
   private acceptCookies = async (): Promise<void> => {
     this.logger.debug(`accepting cookies, currentPage=${this.currentPage?.url()}`);
 
-    await this.currentPage!.locator('button.cookie-banner-accept-btn').click();
+    await this.currentPage!.locator('button.cookie-banner-accept').click();
     await delay(100);
 
     this.logger.debug(`cookies accepted, currentPage=${this.currentPage?.url()}`);
@@ -169,7 +169,8 @@ describe('og:image screenshots generation', async () => {
     browserOptions: {
       type: 'chromium'
     },
-    port: TEST_SERVER_PORT
+    port: TEST_SERVER_PORT,
+
   });
 
   test('og images generation (screenshots for pages with static og image)', TestRunOptions, async () => {

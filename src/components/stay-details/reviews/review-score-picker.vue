@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { VueFinalModal } from 'vue-final-modal';
 import range from 'lodash-es/range';
-import SimpleButton from './../../forms/simple-button.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
+import StarSvg from '~/public/img/star.svg';
 
 interface IProps {
-  ctrlKey: string,
-  setResultCallback: (result: number | 'cancel') => void
+  ctrlKey: string
 }
 
 const props = defineProps<IProps>();
@@ -15,26 +13,25 @@ const props = defineProps<IProps>();
 const logger = getCommonServices().getLogger();
 const hoveredScore = ref<number>();
 
-let resultSet = false;
+const result = defineModel<number | 'cancel'>('result');
+const open = defineModel<boolean>('open');
 
-const $emit = defineEmits(['update:modelValue']);
+defineShortcuts({
+  escape: {
+    usingInput: true,
+    handler: () => { 
+      setResultAndClose('cancel');
+    }
+  },
+});
 
-function setResultAndClose (result: number | 'cancel') {
-  logger.debug(`(ReviewScorePicker) setResultAndClose, ctrlKey=${props.ctrlKey}, resultSet=${resultSet}`);
-  if (!resultSet) {
-    resultSet = true;
-    props.setResultCallback(result);
+function setResultAndClose (value: number | 'cancel') {
+  logger.debug(`(ReviewScorePicker) setResultAndClose, ctrlKey=${props.ctrlKey}, resultSet=${value}`);
+  if (!value) {
+    value = 'cancel';
   }
-  $emit('update:modelValue', false);
-}
-
-function onClosed () {
-  logger.debug(`(ReviewScorePicker) onClosed, ctrlKey=${props.ctrlKey}, resultSet=${resultSet}`);
-  if (!resultSet) {
-    resultSet = true;
-    props.setResultCallback('cancel');
-    $emit('update:modelValue', false);
-  }
+  result.value = value;
+  open.value = false;
 }
 
 function onPickerItemHovered (score: number) {
@@ -52,41 +49,43 @@ function onPickerItemClicked (score: number) {
   setResultAndClose(score);
 }
 
+function onClosed () {
+  if (!result.value) {
+    result.value = 'cancel';
+  }
+}
+
+const uiStyling = { 
+  container: 'items-center',
+  width: 'w-fit',
+  height: 'h-auto' 
+};
+
 </script>
 
 <template>
-  <VueFinalModal
-    class="modal-window"
-    content-class="review-score-picker p-xs-3 p-s-4"
-    :lock-scroll="false"
-    :click-to-close="false"
-    :esc-to-close="true"
-    @closed="onClosed"
-    @update:model-value="(val: boolean) => $emit('update:modelValue', val)"
-  >
-    <ClientOnly>
-      <h2 class="review-score-picker-title mt-xs-3 mt-s-4">
+  <UModal v-model="open" :ui="uiStyling" @closed="onClosed">
+    <div class="w-full max-w-[80vw] overflow-x-hidden h-auto p-4 sm:p-6">
+      <h2 class="w-full h-auto text-center whitespace-normal font-semibold text-xl">
         {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'scorePickerTitle')) }}
       </h2>
-      <div class="review-score-picker-div my-xs-5">
-        <div
+      <div class="w-full h-auto flex flex-row flex-nowrap items-center justify-center gap-2 sm:gap-4 my-8">
+        <StarSvg
           v-for="(i) in range(0, 5)"
           :key="`${$props.ctrlKey}-ScorePickerItem-${i}`"
-          :class="`review-score-picker-item ${ hoveredScore ? (i < hoveredScore ? 'highlight' : '') : '' }`"
+          :class="`block !w-[50px] !h-[50px] sm:!w-[70px] sm:!h-[70px] flex-initial cursor-pointer ${ hoveredScore ? (i < hoveredScore ? '' : 'grayscale') : 'grayscale' }`"
           :data-score="i"
+          filled
           @mouseover="() => { onPickerItemHovered(i + 1); }"
           @mouseleave="() => { onPickerItemUnhovered(); }"
           @click="() => { onPickerItemClicked(i + 1); }"
         />
       </div>
-      <SimpleButton
-        :ctrl-key="`${props.ctrlKey}-btnCancel`"
-        :label-res-name="getI18nResName2('confirmBox', 'btnCancel')"
-        kind="support"
-        icon="cross"
-        class="review-score-picker-cancel-btn"
-        @click="() => setResultAndClose('cancel')"
-      />
-    </ClientOnly>
-  </VueFinalModal>
+      <div class="w-full h-auto flex flex-row justify-center mt-5">
+        <UButton size="lg" icon="i-mdi-close" variant="outline" color="gray" @click="() => setResultAndClose('cancel')">
+          {{ $t(getI18nResName2('confirmBox', 'btnCancel')) }}
+        </UButton>
+      </div>
+    </div>
+  </UModal>
 </template>

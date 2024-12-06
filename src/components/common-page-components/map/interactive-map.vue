@@ -40,10 +40,10 @@ const MapComponent = AppConfig.maps ? resolveComponent(AppConfig.maps.mapControl
 </script>
 
 <template>
-  <div class="interactive-map">
+  <div>
     <ClientOnly v-if="!!AppConfig.maps">
-      <ErrorHelm :is-error="isError">
-        <div class="interactive-map-container brdr-4">
+      <ErrorHelm v-model:is-error="isError">
+        <div class="rounded-2xl overflow-hidden">
           <component
             :is="MapComponent"
             :style-class="styleClass"
@@ -54,18 +54,18 @@ const MapComponent = AppConfig.maps ? resolveComponent(AppConfig.maps.mapControl
           />
         </div>
       </ErrorHelm>
-      <div class="interactive-map-location mt-xs-2">
-        <span class="interactive-map-location-icon mr-xs-2" />
-        <span v-if="city" class="interactive-map-location-text">
+      <div class="w-full h-auto mt-2 flex flex-row flex-nowrap gap-2 items-center">
+        <UIcon name="i-material-symbols-location-on-rounded" class="w-4 h-4 inline-block opacity-70"/>
+        <span v-if="city" class="text-xs text-gray-600 dark:text-gray-300 whitespace-normal">
           {{ getLocalizeableValue(city.country.name, locale as Locale) }}, {{ getLocalizeableValue(city.name, locale as Locale) }}
         </span>
-        <div v-else class="data-loading-stub text-data-loading" />
+        <USkeleton v-else class="w-10 h-3" />
       </div>
       <template #fallback>
-        <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-MapWaiterFallback`" class="interactive-map-waiting-indicator my-xs-5" />
+        <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-MapWaiterFallback`" class="mt-8" />
       </template>
     </ClientOnly>
-    <div v-else class="interactive-map-disabled">
+    <div v-else class="w-full h-auto whitespace-normal text-gray-600 dark:text-gray-300">
       {{ $t(getI18nResName2('maps', 'disabled')) }}
     </div>
   </div>

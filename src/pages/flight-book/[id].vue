@@ -97,9 +97,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flight-book-page">
-    <!--
-    <ErrorHelm :is-error="isError" class="flight-book-page-error-helm">
+  <article class="px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
+    <ErrorHelm v-model:is-error="isError">
       <OfferDetailsBreadcrumbs
         :ctrl-key="`${CtrlKey}-Breadcrumbs`"
         offer-kind="flights"
@@ -111,13 +110,12 @@ onMounted(() => {
         :offer-id="offerId!"
         offer-kind="flights"
         :service-level="undefined"
-        class="mt-xs-3 mt-s-4"
+        class="mt-4 sm:mt-6"
         :price-decompoisition="priceDecomposition"
       >
         <template #offer-card>
           <FlightDetailsCard
             :ctrl-key="`${CtrlKey}-DepartFlightCard`"
-            class="flight-card compact-layout"
             :depart-city="flightOffer?.departFlight?.departAirport.city"
             :arrive-city="flightOffer?.departFlight?.arriveAirport.city"
             :depart-time-utc="flightOffer?.departFlight?.departTimeUtc"
@@ -127,27 +125,32 @@ onMounted(() => {
             :utc-offset-minutes="flightOffer?.departFlight?.departAirport.city.utcOffsetMin"
             :additional-info="flightOffer ? { price: (flightOffer.arriveFlight ? flightOffer.totalPrice.div(2) : flightOffer.totalPrice) } : { price: undefined }"
             kind="depart"
-            tag="h1"
+            :ui="{
+              tag: 'h1',
+              layout: 'portrait'
+            }"
           />
-          <FlightDetailsCard
-            v-if="flightOffer && flightOffer.arriveFlight"
-            :ctrl-key="`${CtrlKey}-ArriveFlightCard`"
-            class="flight-card compact-layout mt-xs-4 mt-s-6"
-            :depart-city="flightOffer?.arriveFlight.departAirport.city"
-            :arrive-city="flightOffer?.arriveFlight.arriveAirport.city"
-            :depart-time-utc="flightOffer?.arriveFlight.departTimeUtc"
-            :arrive-time-utc="flightOffer?.arriveFlight.arriveTimeUtc"
-            :airline-company="flightOffer?.arriveFlight.airlineCompany"
-            :airplane-name="flightOffer?.arriveFlight.airplane.name"
-            :utc-offset-minutes="flightOffer?.arriveFlight.departAirport.city.utcOffsetMin"
-            :additional-info="flightOffer ? { price: flightOffer.totalPrice.div(2) } : { price: undefined }"
-            kind="arrive"
-            tag="div"
-          />
+          <div class="w-full h-auto mt-4 lg:mt-6">
+            <FlightDetailsCard
+              v-if="flightOffer && flightOffer.arriveFlight"
+              :ctrl-key="`${CtrlKey}-ArriveFlightCard`"
+              :depart-city="flightOffer?.arriveFlight.departAirport.city"
+              :arrive-city="flightOffer?.arriveFlight.arriveAirport.city"
+              :depart-time-utc="flightOffer?.arriveFlight.departTimeUtc"
+              :arrive-time-utc="flightOffer?.arriveFlight.arriveTimeUtc"
+              :airline-company="flightOffer?.arriveFlight.airlineCompany"
+              :airplane-name="flightOffer?.arriveFlight.airplane.name"
+              :utc-offset-minutes="flightOffer?.arriveFlight.departAirport.city.utcOffsetMin"
+              :additional-info="flightOffer ? { price: flightOffer.totalPrice.div(2) } : { price: undefined }"
+              kind="arrive"
+              :ui="{
+                tag: 'div',
+                layout: 'portrait'
+              }"
+            />
+          </div>
         </template>
       </OfferBooking>
     </ErrorHelm>
-    -->
-    PAGE CONTENT
-  </div>
+  </article>
 </template>

@@ -3,7 +3,6 @@ import { type PaymentMethodType, getI18nResName3, getI18nResName1 } from '@golob
 import { TooltipHideTimeout } from './../../helpers/constants';
 import PriceMethodVariant from './payment-method-variant.vue';
 import dayjs from 'dayjs';
-import { type ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string,
@@ -35,56 +34,58 @@ const paymentMethods = computed(() => [
   }
 ]);
 
-const tooltip = shallowRef<ComponentInstance<typeof Tooltip>>();
-
 const selectedPaymentMethod = ref<PaymentMethodType>('full');
 
+const tooltipShown = ref(false);
 function scheduleTooltipAutoHide () {
-  setTimeout(() => { tooltip.value?.hide(); }, TooltipHideTimeout);
+  setTimeout(() => { tooltipShown.value = false; }, TooltipHideTimeout);
 }
 
-const tooltipId = useId();
+
+const options = computed(() => {
+  return paymentMethods.value.map(v => {
+    return {
+      value: v.type,
+      props: v
+    };
+  });
+});
+
+const uiStyling = {
+  wrapper: 'cursor-pointer flex-row-reverse items-center pr-3 rounded-xl [&:has(input:checked)]:bg-primary-100 [&:has(input:checked)]:dark:bg-primary-800',
+  inner: 'w-full ms-3',
+  base: 'cursor-pointer'
+};
 
 </script>
 
 <template>
-  <div class="payment-method-picker brdr-3 p-xs-3">
-    <ul class="payment-method-picker-group" role="radiogroup">
-      <PriceMethodVariant
-        v-for="(item) in paymentMethods"
-        :key="`${ctrlKey}-Method-${item.type}`"
-        :ctrl-key="`${ctrlKey}-Method-${item.type}`"
-        :type="(item.type as PaymentMethodType)"
-        :selected="selectedPaymentMethod === item.type"
-        :header-res-name="item.headerResName"
-        :text-res-name="item.textResName"
-        :text-res-args="item.textResArgs"
-        @update:selected="() => selectedPaymentMethod = (item.type as PaymentMethodType)"
-      />
-    </ul>
-    <VTooltip
-      ref="tooltip"
-      :aria-id="tooltipId"
-      :distance="6"
-      :triggers="['click']"
-      placement="bottom-start"
-      :flip="false"
-      theme="default-tooltip"
-      :auto-hide="true"
-      no-auto-focus
-      @apply-show="scheduleTooltipAutoHide"
+  <div class="w-full h-auto p-4 rounded-2xl shadow-lg shadow-gray-200 dark:shadow-gray-700">
+    <URadioGroup
+      v-model:model-value="selectedPaymentMethod"
+      :options="options"
+      :ui="{ wrapper: '*:w-full' }"
+      :ui-radio="uiStyling"
     >
-      <SimpleButton
-        class="payment-method-moreinfo-btn mt-xs-3"
-        :ctrl-key="`${props.ctrlKey}-MoreInfoBtn`"
-        :label-res-name="getI18nResName3('payments', 'methods', 'moreInfo')"
-        kind="support"
-      />
-      <template #popper>
-        <div>
-          {{ $t(getI18nResName1('notAvailableInDemo')) }}
-        </div>
+      <template #label="{ option: item, selected }">
+        <PriceMethodVariant
+          :key="`${ctrlKey}-Method-${item.props.type}`"
+          :ctrl-key="`${ctrlKey}-Method-${item.props.type}`"
+          :type="(item.props.type as PaymentMethodType)"
+          :selected="selected"
+          :header-res-name="item.props.headerResName"
+          :text-res-name="item.props.textResName"
+          :text-res-args="item.props.textResArgs"
+        />
       </template>
-    </VTooltip>
+    </URadioGroup>
+    <UPopover v-model:open="tooltipShown" :popper="{ placement: 'bottom-start' }" class="mt-4" :ui="{ wrapper: 'w-fit' }">
+      <UButton size="2xs" variant="link" color="gray" class="ml-1" @click="scheduleTooltipAutoHide">
+        <span class="text-gray-500 dark:text-gray-400 underline">{{ $t(getI18nResName3('payments', 'methods', 'moreInfo')) }}</span>
+      </UButton>
+      <template #panel="{ close }">
+        <span class="p-2 block" @click="close">{{ $t(getI18nResName1('notAvailableInDemo')) }}</span>
+      </template>
+    </UPopover>  
   </div>
 </template>

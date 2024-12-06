@@ -45,7 +45,7 @@ onMounted(() => {
       :ui="{ 
         wrapper: 'aspect-square rounded size-[40px] min-w-[40px] min-h-[40px] lg:size-[50px] lg:min-w-[50px] lg:min-h-[50px]',
         stub: 'rounded',
-        img: 'w-full h-full rounded object-cover'
+        img: 'rounded object-cover'
       }"
       :alt-res-name="getI18nResName3('flightsPage', 'worldMap', 'cityImgAlt')"
       :show-stub="true"

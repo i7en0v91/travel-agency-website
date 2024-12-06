@@ -158,7 +158,7 @@ async function onError (event: FormErrorEvent) {
         {{ $t(getI18nResName2('loginPage', 'havingAccount')) }}
         <ULink class="inline-block text-orange-500 dark:text-orange-400" :to="navLinkBuilder.buildPageLink(AppPage.Signup, locale as Locale)">{{ $t(getI18nResName2('accountPageCommon', 'signUp')) }}</ULink>
       </div>
-      <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" @click="onOAuthProviderClick" />
+      <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" class="mt-7 md:mt-10" @click="onOAuthProviderClick" />
     </div>
   </AccountPageContainer>
 </template>

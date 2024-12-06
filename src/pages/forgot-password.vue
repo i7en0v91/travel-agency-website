@@ -134,7 +134,7 @@ const uiStyling = {
         </UButton>
       </UForm>
 
-      <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" @click="onOAuthProviderClick" />
+      <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" class="mt-7 md:mt-10" @click="onOAuthProviderClick" />
       <CaptchaProtection ref="captcha" ctrl-key="ForgotPasswordCaptchaProtection" @verified="onCaptchaVerified" />
     </div>
   </AccountPageContainer>

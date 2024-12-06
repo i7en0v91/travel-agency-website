@@ -181,7 +181,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchFlightOffers
 </script>
 
 <template>
-  <div class="flex flex-col flex-nowrap gap-[16px] sm:gap-[24px] xl:flex-row w-full">
+  <div class="flex flex-col flex-nowrap gap-x-[16px] gap-y-4 sm:gap-x-[24px] sm:gap-y-6 xl:flex-row w-full">
     <InputFieldFrame class="flex-grow flex-shrink-[6] basis-auto w-full" :text-res-name="getI18nResName2('searchFlights', 'destinationCaption')">
       <div class="flex flex-row flex-nowrap w-full min-h-[3.25rem] max-h-[3.25rem] align-middle items-center gap-[6px] rounded ring-1 ring-inset ring-gray-500 dark:ring-gray-400 px-[16px]">
         <div class="flex flex-row flex-grow flex-shrink basis-auto flex-nowrap items-center justify-center gap-[6px] text-gray-500 dark:text-gray-400 font-medium">
@@ -209,10 +209,10 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchFlightOffers
             :aria-label-res-name="getI18nResName2('ariaLabels', 'ariaLabelTo')"
           />
         </div>
-        <UButton size="xl" icon="ion-swap-horizontal" class="flex-grow-0 flex-shrink-0 basis-auto p-0 max-h-[3.25rem]" variant="link" color="gray" :aria-label="$t(getI18nResName2('ariaLabels', 'ariaLabelSwap'))"  @click="onSwapButtonClick"/>        
+        <UButton size="xl" icon="ion-swap-horizontal" class="flex-initial p-0 max-h-[3.25rem]" variant="link" color="gray" :aria-label="$t(getI18nResName2('ariaLabels', 'ariaLabelSwap'))"  @click="onSwapButtonClick"/>        
       </div>
     </InputFieldFrame>
-    <div class="flex flex-col sm:flex-row flex-nowrap flex-grow flex-shrink-[5] flex-basis-auto w-full gap-[16px] sm:gap-[24px]">
+    <div class="flex flex-col sm:flex-row flex-nowrap flex-grow flex-shrink-[5] flex-basis-auto w-full gap-x-[16px] gap-y-4 sm:gap-x-[24px] sm:gap-y-6">
       <DropdownList
         ref="tripTypeComponent"
         v-model:selected-value="tripType"

@@ -30,24 +30,26 @@ function onPayBtnClick () {
 </script>
 
 <template>
-  <section class="payment-controller">
-    <div class="payment-method-div">
+  <section class="w-full h-auto">
+    <div class="w-full h-auto">
       <PaymentMethodPicker :ctrl-key="`${ctrlKey}-PaymentMethod`" :amount="amount" />
     </div>
-    <div v-if="status !== 'authenticated'" class="login-for-pay-div">
+    <div v-if="status !== 'authenticated'" class="mt-4 lg:mt-6">
       <LoginForPay :ctrl-key="`${ctrlKey}-LoginForPay`" />
     </div>
-    <div v-if="status === 'authenticated'" class="payment-card-picker-div">
+    <div v-if="status === 'authenticated'" class="mt-4 lg:mt-6">
       <PaymentCardPicker :ctrl-key="`${ctrlKey}-CardPicker`" />
     </div>
-    <SimpleButton
+    <UButton
       v-if="status === 'authenticated' && !paymentProcessing"
-      :ctrl-key="`${ctrlKey}-PayBtn`"
-      class="pay-btn"
-      kind="accent"
-      :label-res-name="getI18nResName2('payments', 'payBtn')"
+      size="md"
+      color="primary"
+      variant="solid"
+      :ui="{ base: 'w-full justify-center mt-8 lg:mt-10' }"
       @click="onPayBtnClick"
-    />
-    <ComponentWaitingIndicator v-else-if="paymentProcessing" :ctrl-key="`${ctrlKey}-WaitingIndicator`" class="payment-processing-waiting-indicator" />
+    >
+      {{  $t(getI18nResName2('payments', 'payBtn')) }}
+    </UButton>
+    <ComponentWaitingIndicator v-else-if="paymentProcessing" :ctrl-key="`${ctrlKey}-WaitingIndicator`" class="mt-8 lg:mt-10" />
   </section>
 </template>

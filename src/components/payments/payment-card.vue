@@ -17,7 +17,7 @@ function scheduleTooltipAutoHide () {
 </script>
 
 <template>
-  <div class="w-full h-auto max-w-[70vw] overflow-hidden min-h-56 flex flex-col flex-nowrap gap-4 p-4 shadow-md shadow-gray-200 dark:shadow-gray-700 rounded-2xl bg-primary-200 dark:bg-primary-700">
+  <div class="w-full h-auto overflow-hidden min-h-56 flex flex-col flex-nowrap gap-4 p-4 shadow-md shadow-gray-200 dark:shadow-gray-700 rounded-2xl bg-primary-200 dark:bg-primary-700">
     <div class="w-full h-auto self-start">
       <div class="w-min inline-block">
         <span class="text-3xl font-semibold whitespace-nowrap">**** **** ****</span> 

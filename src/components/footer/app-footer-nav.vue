@@ -126,7 +126,7 @@ const navLinks = computed(() => {
 });
 
 const uiStyling = {
-  wrapper: 'w-full grid gap-6 flex-grow flex-shrink basis-auto grid-flow-row auto-rows-auto grid-cols-1 sm:grid-cols-footernav items-start md:gap-[50px]',
+  wrapper: 'w-full max-w-[90vw] overflow-x-hidden grid gap-6 flex-grow flex-shrink basis-auto grid-flow-row auto-rows-auto grid-cols-1 sm:grid-cols-footernav items-start md:gap-[50px]',
   container: 'flex-col items-center content-start sm:items-start sm:justify-center *:text-center sm:*:text-start last:*:last:*:last-of-type:pointer-events-auto', //*:first-of-type:mb-4
   inactive: 'hover:bg-transparent dark:hover:bg-transparent text-primary-600 dark:text-gray-400',
   base: 'pointer-default pointer-events-none py-1 font-normal max-w-[290px] sm:max-w-[270px] truncate hover:underline',

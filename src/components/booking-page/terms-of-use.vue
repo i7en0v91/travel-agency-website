@@ -7,35 +7,38 @@ interface IProps {
 };
 defineProps<IProps>();
 
+const LiBullet = 'before:content-["•"]';
+
 </script>
 
 <template>
-  <section class="booking-terms">
-    <h2 class="booking-terms-title">
+  <!--KB: not using MDC as localizations are also directly used in PDF document-->
+  <section class="w-full h-auto max-w-[90vw] mt-16 text-primary-900 dark:text-white whitespace-normal break-words">
+    <h2 class="text-2xl font-semibold">
       {{ $t(getI18nResName2('bookingTnC', 'title')) }}
     </h2>
-    <div class="booking-terms-section mt-xs-4 mt-s-5">
-      <h3 class="booking-terms-section-title">
+    <div class="mt-6 sm:mt-8">
+      <h3 class="text-xl font-semibold">
         {{ $t(getI18nResName3('bookingTnC', 'payments', 'title')) }}
       </h3>
-      <ul class="booking-terms-payment-terms">
-        <li v-for="(i) in range(0, 3)" :key="`${ctrlKey}-PaymentTerm${i}`" class="booking-terms-payment-term">
-          <div class="booking-terms-payment-terms-bullet pt-xs-3 px-xs-2" />
-          <div class="booking-terms-payment-terms-par pt-xs-3">
+      <ul class="table text-gray-600 dark:text-gray-300">
+        <li v-for="(i) in range(0, 3)" :key="`${ctrlKey}-PaymentTerm${i}`" class="table-row">
+          <div :class="`table-cell pt-4 px-2 before:inline-block ${LiBullet}`"/>
+          <div class="table-cell pt-4 w-fit">
             {{ $t(getI18nResName3('bookingTnC', 'payments', `paragraph${i + 1}` as any), { companyName: AppConfig.booking.companyName }) }}
           </div>
         </li>
       </ul>
     </div>
-    <div class="booking-terms-section mt-xs-4 mt-s-5">
-      <h3 class="booking-terms-section-title">
+    <div class="mt-6 sm:mt-8">
+      <h3 class="text-xl font-semibold">
         {{ $t(getI18nResName3('bookingTnC', 'contactUs', 'title')) }}
       </h3>
-      <i18n-t :keypath="getI18nResName3('bookingTnC', 'contactUs', 'directions')" tag="div" scope="global" class="booking-terms-contacts mt-xs-2 mt-s-3">
+      <i18n-t :keypath="getI18nResName3('bookingTnC', 'contactUs', 'directions')" tag="div" scope="global" class="text-gray-600 dark:text-gray-300 mt-2 sm:mt-4">
         <template #siteUrl>
-          <NuxtLink class="booking-terms-contacts-link brdr-1" :to="AppConfig.booking.siteUrl">
+          <ULink :to="AppConfig.booking.siteUrl" :external="true">
             {{ AppConfig.booking.siteUrl }}
-          </NuxtLink>
+          </ULink>
         </template>
       </i18n-t>
     </div>

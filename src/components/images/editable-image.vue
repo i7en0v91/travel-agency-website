@@ -4,7 +4,6 @@ import { type IImageUploadResultDto, ApiEndpointUserImageUpload } from '../../se
 import { CroppingImageDataKey } from './../../helpers/constants';
 import { post } from './../../helpers/rest-utils';
 import isString from 'lodash-es/isString';
-import { useModal } from 'vue-final-modal';
 import { basename, extname } from 'pathe';
 import StaticImage from './static-image.vue';
 import CroppingBox from './cropping-box.vue';
@@ -12,6 +11,7 @@ import ModalWaitingIndicator from './../modal-waiting-indicator.vue';
 import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 import type { IStaticImageUiProps } from '../../types';
+import { useModalWaiter, type IModalWaiter } from '../../composables/modal-waiter';
 
 globalThis.Buffer = globalThis.Buffer || Buffer;
 
@@ -57,16 +57,11 @@ const { status } = useAuth();
 
 const open = ref(false);
 
-const modalWaitingIndicator = useModal({
-  component: ModalWaitingIndicator,
-  attrs: {
-    ctrlKey: `${props.ctrlKey}-modalWaitingIndicator`,
-    labelResName: getI18nResName2('editableImage', 'uploading')
-  }
-});
 const fileInputEl = shallowRef<HTMLInputElement>();
 const selectedFile = ref<FileList | null>(null);
 const staticImageComponent = shallowRef<ComponentInstance<typeof StaticImage>>();
+const modalWaiterRef = shallowRef<ComponentInstance<typeof ModalWaitingIndicator>>() as Ref<ComponentInstance<typeof ModalWaitingIndicator>>;
+const modalWaiterOpen = ref<boolean>(false);
 
 const userNotificationStore = useUserNotificationStore();
 const logger = getCommonServices().getLogger();
@@ -91,10 +86,15 @@ async function uploadCroppedImageIfSpecified () : Promise<void> {
 
   const imageDataBase64 = readCurrentImageData();
   if (imageDataBase64 && imageDataBase64.length > 0) {
+    resetCurrentImageData();
+    
+    let modalWaiter: IModalWaiter | undefined;
     try {
       const imageBytes = Buffer.from(imageDataBase64, 'base64');
       logger.info(`(editable-image) starting to upload image data, ctrlKey=${props.ctrlKey}, size=${imageBytes.length}, fileName=${uploadingFileName}`);
-      await modalWaitingIndicator.open();
+
+      modalWaiter = useModalWaiter(modalWaiterRef, modalWaiterOpen);
+      modalWaiter.show(true);
 
       const query = uploadingFileName.length > 0 ? { fileName: uploadingFileName, category: props.category } : undefined;
       const uploadedImageInfo = await post<any, IImageUploadResultDto>(`/${ApiEndpointUserImageUpload}`, query, imageBytes, undefined, true, undefined, 'default');
@@ -107,7 +107,7 @@ async function uploadCroppedImageIfSpecified () : Promise<void> {
       throw err;
     } finally {
       resetCurrentImageData();
-      await modalWaitingIndicator.close();
+      modalWaiter?.show(false);
     }
   } else {
     resetCurrentImageData();
@@ -300,6 +300,8 @@ watch(open, () => {
           :fill-alpha="props.fillAlpha"
           @close="onClosed"/>
       </UModal>
+
+      <ModalWaitingIndicator ref="modalWaiterRef" v-model:open="modalWaiterOpen" :ctrl-key="`${ctrlKey}-Waiter`" />
     </div>
   </div>
 </template>

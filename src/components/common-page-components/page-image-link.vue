@@ -16,7 +16,7 @@ defineProps<IProps>();
       :ctrl-key="ctrlKey"
       :asset-src="{ filename: `image-link-${$props.imageName}.webp`, width: 590, height: 550 }"
       sizes="xs:40vw sm:40vw md:40vw lg:40vw xl:40vw"
-      :ui="{ wrapper: 'col-start-1 col-end-2 row-start-1 row-end-2 min-h-fit rounded-3xl', img: 'aspect-square h-full rounded-3xl brightness-[0.8]', stub: 'rounded-3xl' }"
+      :ui="{ wrapper: 'col-start-1 col-end-2 row-start-1 row-end-2 min-h-fit rounded-3xl', img: 'aspect-square rounded-3xl brightness-[0.8]', stub: 'rounded-3xl' }"
     />
     <section class="z-[2] col-start-1 col-end-2 row-start-1 row-end-2 mb-8 self-end justify-self-center flex flex-col flex-nowrap items-center max-w-[80%]">
       <div class="*:!text-white *:text-5xl break-words text-center font-semibold">

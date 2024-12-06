@@ -38,10 +38,10 @@ function scheduleTooltipAutoHide () {
         <slot name="header"/>
         <slot name="subtext"/>
       </div>
-      <UButton v-if="linkUrl && btnLabel" size="lg" class="flex-grow-0 flex-shrink-0 basis-auto self-end ml-auto" variant="outline" color="primary" :to="navLinkBuilder.buildLink(linkUrl, locale as Locale)" :external="false">
+      <UButton v-if="linkUrl && btnLabel" size="lg" class="flex-initial self-end ml-auto" variant="outline" color="primary" :to="navLinkBuilder.buildLink(linkUrl, locale as Locale)" :external="false">
         <span class="text-gray-500 dark:text-gray-400">{{ btnLabel }}</span>
       </UButton>
-      <UPopover v-else-if="btnLabel" v-model:open="tooltipShown" :popper="{ placement: 'bottom' }" class="flex-grow-0 flex-shrink-0 basis-auto self-end ml-auto">
+      <UPopover v-else-if="btnLabel" v-model:open="tooltipShown" :popper="{ placement: 'bottom' }" class="flex-initial self-end ml-auto">
         <UButton size="lg" variant="outline" color="primary" @click="scheduleTooltipAutoHide">
           <span class="text-gray-500 dark:text-gray-400">{{ btnLabel }}</span>
         </UButton>

@@ -24,7 +24,7 @@ const navLinkBuilder = useNavLinkBuilder();
         :ctrl-key="ctrlKey"
         :entity-src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
         :category="ImageCategory.CityCard"
-        :ui="{ wrapper: 'w-[90px] h-[90px] max-w-[90px] max-h-[90px] flex-grow flex-shrink-0 basis-auto rounded-xl', img: 'object-cover rounded-xl w-full h-full bg-cover' }"
+        :ui="{ wrapper: 'w-[90px] h-[90px] max-w-[90px] max-h-[90px] flex-grow flex-shrink-0 basis-auto rounded-xl', img: 'object-cover rounded-xl bg-cover' }"
         sizes="xs:40vw sm:20vw md:30vw lg:30vw xl:20vw"
         :alt-res-name="getI18nResName3('indexPage', 'popularCity', 'imgAlt')"
         :show-stub="true"
@@ -33,7 +33,7 @@ const navLinkBuilder = useNavLinkBuilder();
         <div v-if="text" class="ml-1 text-gray-400 dark:text-gray-500 w-fit h-auto overflow-hidden line-clamp-2 whitespace-pre-wrap font-semibold">
           {{ (props.text as any)[locale] }}
         </div>
-        <USkeleton v-else class="w-50 h-3" />
+        <USkeleton v-else class="w-full h-3" />
         <div class="text-gray-700 dark:text-gray-200 font-normal w-fit h-auto overflow-hidden flex flex-row flex-wrap items-center gap-[8px] mt-2 pr-2">
           <div v-if="searchKind === 'flight'" class="contents">
             <ULink class="ring-inset m-1" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindFlights, locale as Locale, { fromCitySlug: citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
@@ -47,7 +47,7 @@ const navLinkBuilder = useNavLinkBuilder();
             <ULink v-if="numStays !== undefined" class="ring-inset m-1" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
               {{ $t(getI18nResName2('staysPage', 'cityPlacesCount'), numStays) }}
             </ULink>
-            <USkeleton v-else class="w-50 h-3" />
+            <USkeleton v-else class="w-32 max-w-[30vw] h-3" />
           </div>
         </div>
       </div>

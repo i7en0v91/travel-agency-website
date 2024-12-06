@@ -5,7 +5,6 @@ import range from 'lodash-es/range';
 import { useUserFavouritesStore } from './../../stores/user-favourites-store';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
-import { type ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string,
@@ -36,12 +35,12 @@ const props = withDefaults(defineProps<IProps>(), {
 const logger = getCommonServices().getLogger();
 
 const isError = ref(false);
+const promoTooltipShown = ref(false);
 
 const { status } = useAuth();
 const { t, locale } = useI18n();
 const { requestUserAction } = usePreviewState();
 
-const tooltip = shallowRef<ComponentInstance<typeof Tooltip>>();
 const userFavouritesStoreFactory = useUserFavouritesStore();
 let favouriteStatusWatcher: ReturnType<typeof useOfferFavouriteStatus> | undefined;
 const isFavourite = ref(false);
@@ -68,7 +67,7 @@ async function favouriteBtnClick (): Promise<void> {
 }
 
 function scheduleTooltipAutoHide () {
-  setTimeout(() => { tooltip.value?.hide(); }, TooltipHideTimeout);
+  setTimeout(() => { promoTooltipShown.value = false; }, TooltipHideTimeout);
 }
 
 const $emit = defineEmits<{(event: 'btnClick'): void}>();
@@ -99,122 +98,98 @@ onMounted(() => {
   initializeFavouriteStatusWatcherIfNeeded();
 });
 
-const tooltipId = useId();
-
 </script>
 
 <template>
-  <section class="offer-details-summary">
+  <section class="w-auto h-auto overflow-x-hidden">
     <ErrorHelm v-model:is-error="isError">
-      <!--
-      <PerfectScrollbar
-        :options="{
-          suppressScrollY: true,
-          wheelPropagation: true
-        }"
-        :watch-options="false"
-        tag="div"
-        class="offer-details-summary-main-scroll"
-      >
-        <div :class="`offer-details-summary-grid ${showReviewDetails ? '' : 'no-review-details'} mb-xs-2`">
-          <div class="offer-details-summary-name">
-            <div v-if="title">
-              <h1 :class="`offer-details-summary-title ${(offerKind === 'stays' && showReviewDetails) ? 'mr-xs-2 mr-s-3' : ''}`">
-                {{ getLocalizeableValue(title, locale as Locale) }}
-              </h1>
-              <div v-if="offerKind === 'stays' && showReviewDetails" class="offer-details-hotel-rating mb-xs-2 mt-xs-1">
-                <div class="offer-details-hotel-card-stars">
-                  <div v-for="i in range(0, 5)" :key="`${props.ctrlKey}-HotelStar-${i}`" class="stay-card-star" />
-                </div>
-                <div class="offer-details-hotel-rating-caption">
-                  {{ $t(getI18nResName2('searchStays', 'stayRatingCaption')) }}
-                </div>
+      <div class="w-full pb-2 h-auto overflow-x-auto overflow-y-hidden grid gap-2 justify-start grid-rows-offersummaryxs sm:grid-rows-offersummarysm grid-cols-offersummary mb-2">
+        <div class="w-full whitespace-normal justify-center row-start-1 row-end-2 col-start-1 col-end-2">
+          <div v-if="title" class="contents">
+            <h1 :class="`inline w-fit whitespace-normal text-3xl font-semibold text-primary-900 dark:text-white ${!showReviewDetails ? 'sm:self-center' : ''} ${(offerKind === 'stays' && showReviewDetails) ? 'mr-2 sm:mr-4' : ''}`">
+              {{ getLocalizeableValue(title, locale as Locale) }}
+            </h1>
+            <div v-if="offerKind === 'stays' && showReviewDetails" class="flex-initial inline-flex flex-row flex-wrap items-center gap-4 translate-y-[0.1rem]">
+              <div class="inline-flex flex-row flex-nowrap items-center gap-[2px]">
+                <UIcon v-for="i in range(0, 5)" :key="`${props.ctrlKey}-HotelStar-${i}`" name="i-material-symbols-star" class="w-5 h-5 bg-red-400 inline-block" />
+              </div>
+              <div class="text-xs">
+                {{ $t(getI18nResName2('searchStays', 'stayRatingCaption')) }}
               </div>
             </div>
-            <div v-else class="data-loading-stub text-data-loading" />
           </div>
-          <div class="offer-details-summary-price pl-xs-2">
-            <span v-if="price && offerKind === 'flights'">{{ ($n(Math.floor(price.toNumber()), 'currency')) }}</span>
-            <span v-else-if="price && offerKind === 'stays'"><span>{{ $n(Math.floor(price.toNumber()), 'currency') }}<wbr>&#47;<span class="stays-price-night">{{ $t(getI18nResName2('searchStays', 'night')) }}</span></span></span>
-            <div v-else class="data-loading-stub text-data-loading" />
+          <USkeleton v-else class="w-1/2 h-6" />
+        </div>
+        <div class="w-auto text-red-400 group-[.booking-page-group]:text-primary-900 group-[.booking-page-group]:dark:text-white block row-start-1 row-end-2 col-start-2 col-end-3 justify-self-end">
+          <span v-if="price && offerKind === 'flights'" class="font-semibold text-3xl">{{ ($n(Math.floor(price.toNumber()), 'currency')) }}</span>
+          <span v-else-if="price && offerKind === 'stays'" class="font-semibold text-3xl"><span>{{ $n(Math.floor(price.toNumber()), 'currency') }}<wbr>&#47;<span class="text-sm sm:text-base">{{ $t(getI18nResName2('searchStays', 'night')) }}</span></span></span>
+          <USkeleton v-else class="w-full h-8" />
+        </div>
+        <div :class="`w-full block row-start-2 row-end-3 col-start-1 col-end-3 sm:col-end-2 ${!showReviewDetails ? 'sm:self-center' : ''}`">
+          <div class="flex flex-row flex-nowrap items-center">
+            <UIcon name="i-material-symbols-location-on-rounded" class="flex-initial w-3 h-3 inline-block float-left opacity-70 mr-2"/>
+            <span v-if="city" class="flex-1 w-fit break-all inline-block text-xs text-gray-500 dark:text-gray-400">
+              {{ getLocalizeableValue(city.country.name, locale as Locale) }}, {{ getLocalizeableValue(city.name, locale as Locale) }}
+            </span>
+            <USkeleton v-else class="w-1/3 h-4" />
           </div>
-          <div class="offer-details-summary-main">
-            <div class="offer-details-summary-info">
-              <div class="offer-details-summary-location">
-                <span class="offer-details-summary-icon offer-details-location-icon mr-xs-2" />
-                <span v-if="city" class="offer-details-summary-location-text">
-                  {{ getLocalizeableValue(city.country.name, locale as Locale) }}, {{ getLocalizeableValue(city.name, locale as Locale) }}
-                </span>
-                <div v-else class="data-loading-stub text-data-loading" />
+          <ClientOnly>    
+            <div v-if="scoreClassResName && showReviewDetails" class="w-auto flex flex-row flex-wrap items-center gap-2 mb-4 sm:mb-0 mt-4">
+              <UBadge 
+                :ui="{ 
+                  base: 'w-fit h-auto p-2 text-center',
+                  rounded: 'rounded-md'
+                }"
+                size="sm"
+              >
+              {{ reviewScore!.toFixed(1) }}
+              </UBadge>
+              <div class="w-fit h-auto text-xs font-semibold">
+                {{ $t(scoreClassResName) }}
+              </div>
+              <div class="w-fit h-auto text-xs text-gray-500 dark:text-gray-400">
+                {{ reviewsCountText }}
               </div>
             </div>
-            <ClientOnly>    
-              <div v-if="scoreClassResName && showReviewDetails" class="offer-details-summary-stats mb-xs-3 mb-s-0 mt-xs-3">
-                <div class="offer-details-summary-score p-xs-2 brdr-1">
-                  {{ reviewScore!.toFixed(1) }}
-                </div>
-                <div class="offer-details-summary-score-class">
-                  {{ $t(scoreClassResName) }}
-                </div>
-                <div class="offer-details-summary-reviews">
-                  {{ reviewsCountText }}
-                </div>
+            <USkeleton v-else-if="showReviewDetails" class="w-1/3 h-7 mt-4" />
+            <template #fallback>
+              <div v-if="showReviewDetails" class="w-full h-full flex flex-row justify-self-stretch items-center">
+                <USkeleton class="w-1/3 h-7 my-2" />
               </div>
-              <div v-else-if="showReviewDetails" class="data-loading-stub text-data-loading" />
-              <template #fallback>
-                <div class="data-loading-stub text-data-loading" />
-              </template>
-            </ClientOnly>
-          </div>
-          <div class="offer-details-summary-buttons mt-xs-3">
-            <NuxtLink v-if="btnLinkUrl" class="btn btn-primary brdr-1 offer-details-summary-btn-book" :to="btnLinkUrl">
-              {{ $t(btnResName) }}
-            </NuxtLink>
-            <SimpleButton
-              v-else
-              kind="default"
-              :ctrl-key="`${ctrlKey}-Btn`"
-              class="offer-details-summary-btn-book"
-              :label-res-name="btnResName"
-              @click="onBtnClick"
-            />
-            <VTooltip
-              ref="tooltip"
-              :aria-id="tooltipId"
-              :distance="6"
-              :triggers="['click']"
-              placement="bottom"
-              :flip="false"
-              theme="default-tooltip"
-              :auto-hide="true"
-              no-auto-focus
-              @apply-show="scheduleTooltipAutoHide"
-            >
-              <SimpleButton
-                class="offer-details-summary-btn-share"
-                :ctrl-key="`${props.ctrlKey}-ShareBtn`"
-                :aria-label-res-name="getI18nResName2('ariaLabels', 'btnShareSocial')"
-                icon="share"
-                kind="support"
-              />
-              <template #popper>
-                <div>
-                  {{ $t(getI18nResName1('notAvailableInDemo')) }}
-                </div>
-              </template>
-            </VTooltip>
-            <SimpleButton
+            </template>
+          </ClientOnly>
+        </div>
+        <div class="w-full h-min block row-start-3 row-end-4 col-start-1 col-end-3 sm:row-start-2 sm:row-end-3 sm:col-start-2 sm:col-end-3 self-end">
+          <div class="w-full flex flex-row flex-wrap gap-4 px-1">
+            <UButton
               v-if="status === 'authenticated' && showFavouriteBtn"
-              class="offer-details-summary-btn-like"
-              :ctrl-key="`${props.ctrlKey}-LikeBtn`"
-              :icon="`${isFavourite ? 'heart' : 'like'}`"
-              kind="support"
+              :ui="{ base: 'aspect-square justify-center' }"
+              size="lg"
+              :icon="isFavourite ? 'i-heroicons-heart-solid' : 'i-heroicons-heart'"
+              variant="outline"
+              color="primary"
               @click="favouriteBtnClick"
             />
+
+            <UPopover v-model:open="promoTooltipShown" :popper="{ placement: 'bottom' }" :ui="{ wrapper: 'self-stretch *:h-full' }">
+              <UButton 
+                :ui="{ base: 'aspect-square justify-center' }"
+                size="lg" 
+                icon="i-mdi-share" 
+                variant="outline" 
+                color="primary"
+                :aria-label="t(getI18nResName2('ariaLabels', 'btnShareSocial'))" @click="scheduleTooltipAutoHide" />
+              <template #panel="{ close }">
+                <span class="p-2 block" @click="close">{{ $t(getI18nResName1('notAvailableInDemo')) }}</span>
+              </template>
+            </UPopover>  
+
+            <UButton size="lg" class="w-full flex-1" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :to="btnLinkUrl ?? undefined" :external="btnLinkUrl ? false : undefined" @click="onBtnClick">
+              {{ $t(btnResName) }}
+            </UButton>
           </div>
         </div>
-      </PerfectScrollbar>
-      -->
+      </div>
     </ErrorHelm>
   </section>
 </template>

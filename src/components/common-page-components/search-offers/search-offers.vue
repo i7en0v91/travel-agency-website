@@ -283,7 +283,7 @@ const searchBtnLabel = computed(() => {
           </KeepAlive>
         </TabsGroup>
         <div v-else class="w-full h-auto">
-          <h2 v-if="showPromoBtn" class="text-xl font-semibold mt-6 sm:mt-8 mb-8 text-gray-900 dark:text-white">
+          <h2 v-if="showPromoBtn" class="text-xl font-semibold mt-6 sm:mt-8 mb-8 text-primary-900 dark:text-white">
             {{ $t(getI18nResName2('searchOffers', 'whereToFly')) }}
           </h2>
           <div class="flex flex-row flex-wrap xl:flex-nowrap gap-[16px] sm:gap-[24px]">
@@ -306,7 +306,7 @@ const searchBtnLabel = computed(() => {
           </div>
         </div>
       </div>
-      <div v-if="showPromoBtn" class="flex flex-col sm:flex-row justify-end items-center flex-nowrap gap-[8px] sm:gap-[24px] mt-[8px] sm:mt-[32px]">
+      <div v-if="showPromoBtn" class="flex flex-col sm:flex-row justify-end items-center flex-nowrap gap-2 sm:gap-6 mt-2 sm:mt-8">
         <UPopover v-model:open="promoTooltipShown" :popper="{ placement: 'bottom' }" class="flex-grow-0 flex-shrink basis-auto">
           <UButton icon="i-ion-add" size="lg" class="w-fit text-gray-500 dark:text-gray-400 focus-visible:ring-2 focus-visible:ring-gray-500 dark:focus-visible:ring-gray-400  bg-transparent hover:bg-gray-100 disabled:bg-transparent aria-disabled:bg-transparent dark:bg-transparent dark:hover:bg-gray-800 dark:disabled:!bg-transparent dark:aria-disabled:!bg-transparent" variant="soft" color="gray" @click="scheduleTooltipAutoHide">
             {{ $t(getI18nResName2('searchOffers', 'addPromoCode')) }}

@@ -60,3 +60,11 @@ const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.val
     </ClientOnly>
   </div>
 </template>
+
+<style global>
+  html {
+    /** for modal dialogs - all use overlays with background scrolling allowed */
+    overflow-y: auto !important;
+    padding-right: 0 !important
+  }
+</style>

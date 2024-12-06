@@ -5,9 +5,10 @@ interface IProps {
   ctrlKey: string,
   provider: AuthProvider,
   ariaLabelResName?: I18nResName,
+  ui?: string,
   enabled: boolean
 }
-const props = withDefaults(defineProps<IProps>(), { ariaLabelResName: undefined });
+const props = withDefaults(defineProps<IProps>(), { ariaLabelResName: undefined, ui: undefined });
 
 const $emit = defineEmits(['click']);
 function onClick () {
@@ -29,7 +30,7 @@ switch(props.provider) {
 }
 
 const uiStyling = {
-  base: `py-4 w-[100px] h-auto *:mx-auto ${props.provider === AuthProvider.GitHub ? 'dark:*:invert' : ''}`
+  base: `py-4 w-full h-auto *:mx-auto ${props.provider === AuthProvider.GitHub ? 'dark:*:invert' : ''} ${props.ui ?? ''}`
 };
 
 </script>

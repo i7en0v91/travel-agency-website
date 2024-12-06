@@ -67,20 +67,20 @@ watch(() => imageSlugs.value, () => {
 </script>
 
 <template>
-  <div :class="`flex-grow-0 flex-shrink basis-auto hidden md:block w-[386px] lg:w-[486px] rounded-4xl ${ui?.wrapper ?? ''}`" role="figure">
-    <ErrorHelm :is-error="isError" class="rounded-4xl overflow-hidden">
+  <div :class="`flex-initial hidden md:block w-[386px] min-w-[386px] lg:w-[486px] lg:min-w-[486px] rounded-4xl overflow-hidden ${ui?.wrapper ?? ''}`" role="figure">
+    <ErrorHelm v-model:is-error="isError">
       <UCarousel
         v-if="imageSlugs?.length ?? 0 > 0" ref="carouselRef" v-slot="{ item: imgSlug }" 
         :items="imageSlugs" 
         :ui="{ 
-          item: 'snap-end',
+          item: 'w-full snap-end',
           indicators: { 
             base: 'rounded-full h-2.5 w-2.5',
             wrapper: 'relative bottom-0 -translate-y-8 z-[2]', 
             active: 'w-8 bg-primary-300 dark:bg-primary-400', 
             inactive: 'bg-white dark:bg-white' 
           } 
-        }" class="w-[386px] lg:w-[486px]" indicators>
+        }" class="w-[386px] min-w-[386px] lg:w-[486px] lg:min-w-[486px]" indicators>
         <AuthFormsPhoto :ctrl-key="`${ctrlKey}-AuthPhoto-${imgSlug}`" :alt-res-name="getI18nResName1('authFormsPhotoAlt')" :img-slug="imgSlug" :ui=" { image: ui?.image, wrapper: `w-full h-full` }"/>
       </UCarousel>
     </ErrorHelm>

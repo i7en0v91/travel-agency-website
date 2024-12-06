@@ -481,7 +481,7 @@
     },
     "controlButtons": {
       "send": "Отправить",
-      "cancel": "Отмена"
+      "cancel": "@:searchFlights.filters.resetBtn"
     },
     "placeholder": "Напишите текст отзыва здесь..."
   },

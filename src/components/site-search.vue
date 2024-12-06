@@ -190,7 +190,7 @@ onUnmounted(() => {
 
 <template>
   <div :class="`flex flex-col flex-nowrap bg-white dark:bg-gray-900 rounded-md w-full h-full`">
-    <div class="block w-full flex-grow-0 flex-shrink-0 basis-auto">
+    <div class="block w-full flex-initial">
       <UInput 
         ref="inputRef"
         v-model.trim="searchUserInput" 

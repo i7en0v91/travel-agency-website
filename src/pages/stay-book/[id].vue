@@ -22,7 +22,7 @@ if (offerParam.length === 0) {
 const offerId: EntityId = offerParam;
 
 const reqEvent = import.meta.server ? useRequestEvent() : undefined;
-const stayBookOgImageQueryInfo = reqEvent?.context.cacheablePageParams as BookStayPageArgs;
+const stayBookOgImageQueryInfo = (reqEvent?.context.cacheablePageParams as any) as BookStayPageArgs;
 const serviceLevel = ((stayBookOgImageQueryInfo?.serviceLevel ?? route.query.serviceLevel)?.toString() ?? '').trim() as StayServiceLevel;
 if (!AvailableStayServiceLevel.includes(serviceLevel)) {
   logger.warn(`(StayOfferBooking) failed to parse service level argument: serviceLevel=${serviceLevel}, offerId=${offerParam}`);
@@ -111,9 +111,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="stay-book-page">
-    <!--
-    <ErrorHelm :is-error="isError" class="stay-book-page-error-helm">
+  <article class="px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
+    <ErrorHelm v-model:is-error="isError">
       <OfferDetailsBreadcrumbs
         :ctrl-key="`${CtrlKey}-Breadcrumbs`"
         offer-kind="stays"
@@ -125,7 +124,7 @@ onMounted(() => {
         :offer-id="offerId!"
         offer-kind="stays"
         :service-level="serviceLevel"
-        class="mt-xs-3 mt-s-4"
+        class="mt-4 sm:mt-6"
         :price-decompoisition="priceDecomposition"
       >
         <template #offer-card>
@@ -137,12 +136,9 @@ onMounted(() => {
             :city="stayOffer?.stay.city"
             :check-in="stayOffer?.checkIn"
             :check-out="stayOffer?.checkOut"
-            tag="h1"
           />
         </template>
       </OfferBooking>
     </ErrorHelm>
-    -->
-    PAGE CONTENT
-  </div>
+  </article>
 </template>

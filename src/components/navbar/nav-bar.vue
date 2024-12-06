@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ImageCategory, AppPage, type Locale, getI18nResName2 } from '@golobe-demo/shared';
-import { ApiEndpointImage } from './../../server/api-definitions';
 import { DeviceSizeEnum } from './../../helpers/constants';
-import { formatAvatarLabel, getUserMenuLinksInfo, getNavMenuLinksInfo, formatAuthCallbackUrl, getCurrentDeviceSize } from './../../helpers/dom';
+import { formatImageEntityUrl , formatAvatarLabel, getUserMenuLinksInfo, getNavMenuLinksInfo, formatAuthCallbackUrl, getCurrentDeviceSize} from './../../helpers/dom';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
@@ -15,7 +14,7 @@ import NavUser from './nav-user.vue';
 import orderBy from 'lodash-es/orderBy';
 import get from 'lodash-es/get';
 import throttle from 'lodash-es/throttle';
-import { withQuery, stringifyParsedURL, stringifyQuery } from 'ufo';
+import { withQuery } from 'ufo';
 
 interface IProps {
   ctrlKey: string
@@ -66,12 +65,7 @@ onMounted(async () => {
   const userAccount = await userAccountStore.getUserAccount();
   watch(userAccount, () => {
     vNavAvatarUrl.value = userAccount.avatar ?   
-    stringifyParsedURL({ 
-      pathname: `/${ApiEndpointImage}`, 
-      search: stringifyQuery({ 
-        t: userAccount.avatar.timestamp,  
-        slug: userAccount.avatar.slug, 
-        category: ImageCategory.UserAvatar.valueOf()}) }) : undefined;
+        formatImageEntityUrl(userAccount.avatar, ImageCategory.UserAvatar, 1) : undefined;
     vNavAvatarLabel.value = formatAvatarLabel(userAccount.firstName, userAccount.lastName);
   }, { immediate: true });
 });
@@ -155,7 +149,8 @@ const horizontalNavLinks = computed(() => {
             li.toPage, 
             locale.value as Locale
           ) : undefined)
-        )
+        ),
+        external: false
       };
     })
   );
@@ -186,6 +181,7 @@ const verticalNavLinks = computed(() => {
             locale.value as Locale
           ) : undefined)
         ),
+        external: li.kind !== 'site-search' ? false : undefined,
         click: li.kind === 'site-search' ? (() => {
           openSiteSearch();
           toggleVerticalNav();
@@ -205,10 +201,11 @@ const verticalNavLinks = computed(() => {
             label: vNavAvatarLabel.value,
             labelClass: 'text-nowrap',
             avatar: {
-              src: vNavAvatarUrl
+              src: vNavAvatarUrl.value
             },
             to: navLinkBuilder.buildPageLink(AppPage.Account, locale.value as Locale),
-            click: toggleVerticalNav
+            click: toggleVerticalNav,
+            external: false
           } : {
             kind: li.kind,
             label: vNavAvatarLabel.value,
@@ -216,7 +213,8 @@ const verticalNavLinks = computed(() => {
             icon: 'i-heroicons-user-20-solid',
             iconClass: 'w-[32px] h-[32px] sm:w-[48px] sm:h-[48px]',
             to: navLinkBuilder.buildPageLink(AppPage.Account, locale.value as Locale),
-            click: toggleVerticalNav
+            click: toggleVerticalNav,
+            external: false
           }
       ) : {
         kind: li.kind,
@@ -241,7 +239,8 @@ const verticalNavLinks = computed(() => {
         ) : (li.toPage ? navLinkBuilder.buildPageLink(
           li.toPage, 
           locale.value as Locale
-        ) : undefined)
+        ) : undefined),
+        external: false
       };
     });
   });

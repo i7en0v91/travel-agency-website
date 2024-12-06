@@ -16,23 +16,44 @@ const paymentCards = [
   }
 ];
 
-const selectedCardId = ref<number>(paymentCards[0].id);
+const options = computed(() => {
+  return paymentCards.map(v => {
+    return {
+      value: v.id.toString(),
+      props: v
+    };
+  });
+});
+
+const selectedCardId = ref<string>(paymentCards[0].id.toString());
+
+const uiStyling = {
+  wrapper: 'cursor-pointer flex-row-reverse items-center pr-3 rounded-xl [&:has(input:checked)]:bg-primary-100 [&:has(input:checked)]:dark:bg-primary-800',
+  inner: 'w-full ms-3',
+  base: 'cursor-pointer'
+};
 
 </script>
 
 <template>
-  <div class="payment-card-picker brdr-3 p-xs-3">
-    <ul class="payment-card-group" role="radiogroup">
-      <PaymentCardVariant
-        v-for="(card) in paymentCards"
-        :key="`${ctrlKey}-Card-${card.id}`"
-        :ctrl-key="`${ctrlKey}-Card-${card.id}`"
-        :selected="selectedCardId === card.id"
-        :digits="card.digits"
-        :due-date="card.dueDate"
-        @update:selected="() => selectedCardId = card.id"
-      />
-    </ul>
-    <AddNewCard :ctrl-key="`${ctrlKey}-AddNewCard`" class="payment-card-add-container mt-xs-3"/>
+  <div class="w-full h-auto p-4 rounded-2xl shadow-lg shadow-gray-200 dark:shadow-gray-700">
+    <URadioGroup
+      v-model:model-value="selectedCardId"
+      :options="options"
+      :ui="{ wrapper: '*:w-full *:max-w-[90vw]' }"
+      :ui-radio="uiStyling"
+    >
+      <template #label="{ option: item, selected }">
+        <PaymentCardVariant
+          :key="`${ctrlKey}-Card-${item.props.id}`"
+          :ctrl-key="`${ctrlKey}-Card-${item.props.id}`"
+          :selected="selected"
+          :digits="item.props.digits"
+          :due-date="item.props.dueDate"
+          class="max-w-[90vw]"
+        />
+      </template>
+    </URadioGroup>
+    <AddNewCard :ctrl-key="`${ctrlKey}-AddNewCard`" class="mt-4 h-48 max-w-[90vw]"/>
   </div>
 </template>

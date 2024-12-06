@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type PaymentMethodType, type I18nResName } from '@golobe-demo/shared';
-import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -12,31 +11,19 @@ interface IProps {
 };
 
 const props = defineProps<IProps>();
-const logger = getCommonServices().getLogger();
-
-const $emit = defineEmits<{(event: 'update:selected', value: boolean): void}>();
-
-function onClicked () {
-  logger.debug(`(PaymentMethodVariant) on click, ctrlKey=${props.ctrlKey}, selected=${props.selected}`);
-  if (props.selected) {
-    return;
-  }
-  $emit('update:selected', true);
-}
 
 </script>
 
 <template>
-  <li :class="`payment-method-variant ${$props.selected ? 'selected' : ''} tabbable brdr-3 p-xs-3`" role="radio" @click="onClicked" @keyup.space="onClicked" @keyup.enter="onClicked">
-    <div class="payment-method-variant-details">
-      <div class="payment-method-variant-header">
+  <div class="cursor-pointer w-full h-auto flex flex-row flex-nowrap items-between justify-start gap-4 p-4 pl-0 bg-transparent dark:bg-transparent rounded-xl">
+    <div class="block w-full h-auto align-middle">
+      <div class="text-sm sm:text-base break-all sm:break-words font-bold">
         {{ $t(props.headerResName) }}
       </div>
-      <div v-if="textResArgs !== undefined" class="payment-method-variant-text mt-xs-2">
+      <div v-if="textResArgs !== undefined" class="text-sm break-all sm:break-words font-normal mt-2">
         {{ $t(props.textResName, textResArgs ?? undefined) }}
       </div>
-      <div v-else class="payment-method-variant-text mt-xs-2 data-loading-stub text-data-loading" />
+      <USkeleton v-else class="w-1/2 h-3 mt-2" />
     </div>
-    <div class="payment-method-variant-mark" />
-  </li>
+  </div>
 </template>

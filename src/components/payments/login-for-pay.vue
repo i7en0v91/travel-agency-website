@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { type Locale, AppPage, AuthProvider, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { AuthProvider, getI18nResName3 } from '@golobe-demo/shared';
 import { formatAuthCallbackUrl } from './../../helpers/dom';
 import OAuthProviderList from './../../components/account/oauth-providers-list.vue';
-import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
 
 interface IProps {
@@ -10,15 +9,9 @@ interface IProps {
 };
 defineProps<IProps>();
 
-const { locale } = useI18n();
 const { signIn } = useAuth();
-const navLinkBuilder = useNavLinkBuilder();
 const route = useRoute();
 const { enabled } = usePreviewState();
-
-async function onEmailLoginClick (): Promise<void> {
-  await navigateTo(navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale, { originPath: formatAuthCallbackUrl(route.fullPath, enabled) }));
-}
 
 async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
   const oauthOptions = { callbackUrl: formatAuthCallbackUrl(route.fullPath, enabled), redirect: true };
@@ -38,19 +31,10 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
 </script>
 
 <template>
-  <div class="login-for-pay brdr-3 p-xs-3">
-    <h2 class="login-for-pay-caption">
+  <div class="w-full h-auto p-4 rounded-2xl shadow-lg shadow-gray-200 dark:shadow-gray-700">
+    <h2 class="w-full h-auto text-gray-600 dark:text-gray-300 font-semibold text-xl">
       {{ $t(getI18nResName3('payments', 'loginToPay', 'title')) }}
     </h2>
-    <OAuthProviderList :ctrl-key="`${ctrlKey}-OAuthLogin`" @click="onOAuthProviderClick" />
-    <SimpleButton
-      :ctrl-key="`${ctrlKey}-EmailLogin`"
-      kind="support"
-      icon="mail"
-      class="email-login-btn py-xs-3 brdr-1 mt-xs-3"
-      :label-res-name="getI18nResName3('payments', 'loginToPay', 'withEmail')"
-      :aria-label-res-name="getI18nResName2('ariaLabels', 'btnLoginViaEmail')"
-      @click="onEmailLoginClick"
-    />
+    <OAuthProviderList :ctrl-key="`${ctrlKey}-OAuthLogin`" email-option @click="onOAuthProviderClick"/>
   </div>
 </template>

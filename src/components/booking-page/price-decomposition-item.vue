@@ -13,13 +13,13 @@ withDefaults(defineProps<IProps>(), {
 </script>
 
 <template>
-  <li class="pricing-details-decomposition-item mt-xs-3">
-    <div class="pricing-details-decomposition-label">
+  <li class="w-full h-auto flex flex-row flex-nowrap items-baseline gap-2 justify-between mt-4">
+    <div class="flex-1 h-auto whitespace-normal">
       {{ $t(labelResName) }}
     </div>
-    <div v-if="amount" class="pricing-details-decomposition-amount">
+    <div v-if="amount" class="flex-initial h-auto font-bold whitespace-nowrap text-end">
       {{ $n(Math.floor(amount), 'currency') }}
     </div>
-    <div v-else class="pricing-details-decomposition-amount data-loading-stub text-data-loading" />
+    <USkeleton v-else class="flex-initial basis-1/3 h-4" />
   </li>
 </template>

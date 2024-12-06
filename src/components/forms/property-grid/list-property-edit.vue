@@ -5,7 +5,7 @@ import range from 'lodash-es/range';
 import SimplePropertyEdit from './../../forms/property-grid/simple-property-edit.vue';
 import PropertyGrid from './../../forms/property-grid/property-grid.vue';
 import ConfirmBox from './../../confirm-box.vue';
-import { useConfirmBoxResult } from './../../../composables/confirm-box-result';
+import { useModalDialogResult } from '../../../composables/modal-dialog-result';
 import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
@@ -40,7 +40,7 @@ if (props.maxElementsCount > MaxListPropertyElementsCount) {
 }
 const propList: Ref<ComponentInstance<typeof SimplePropertyEdit> | undefined>[] = range(0, props.maxElementsCount).map(() => { return shallowRef<ComponentInstance<typeof SimplePropertyEdit> | undefined>(); });
 const propAdd = shallowRef<ComponentInstance<typeof SimplePropertyEdit>>();
-const confirmBoxRef = shallowRef<ComponentInstance<typeof ConfirmBox>>()as Ref<ComponentInstance<typeof ConfirmBox>>;  
+const confirmBoxRef = shallowRef<ComponentInstance<typeof ConfirmBox>>() as Ref<ComponentInstance<typeof ConfirmBox>>;  
 const editValues = range(0, props.maxElementsCount).map((idx: number) => ref<string | undefined>(props.values[idx]));
 const addingNewValue = ref<string | undefined>('');
 const open = ref(false);
@@ -145,8 +145,8 @@ async function onControlButtonClick (button: PropertyGridControlButtonType, prop
     onPropertyEnterEditMode(propIdx);
     const itemText = editValues[propIdx].value;
     confirmMsgBoxParam.value = { itemText : itemText ?? '' };
-    const confirmBox = useConfirmBoxResult(confirmBoxRef, { open, result } );
-    const msgBoxResult = await confirmBox.confirm();
+    const confirmBox = useModalDialogResult<ConfirmBoxButton>(confirmBoxRef, { open, result }, 'cancel');
+    const msgBoxResult = await confirmBox.show();
     if (msgBoxResult === 'yes') {
       const result = await onValidateAndSave('delete', propIdx, undefined);
       if (result === 'success') {

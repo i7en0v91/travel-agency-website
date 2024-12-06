@@ -33,7 +33,7 @@ const socialLinks = [{
       </div>
     </div>
     <section class="flex flex-col sm:flex-row flex-nowrap items-center sm:items-start gap-4 px-[14px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
-      <section class="min-w-[200px] flex-grow-0 flex-shrink-0 basis-auto mb-4 sm:mb-0">
+      <section class="min-w-[200px] flex-initial mb-4 sm:mb-0">
         <ULink class="w-min block mx-auto sm:mx-0 focus-visible:outline-primary-500 dark:focus-visible:outline-primary-400" :to="navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
           <NavLogoFooter class="!w-32 !h-auto block dark:hidden" filled />
           <NavLogoLight class="!w-32 !h-auto hidden dark:block" filled />

@@ -53,6 +53,8 @@ export const SearchOffersFilterTabGroupId = 'search-offers-filter-panel-gid';
 
 export const WorldMapCityLabelFlipX = 0.85;
 export const TravelDetailsHtmlAnchor = 'travelDetails';
+export const StayReviewEditorHtmlAnchor = 'stayReviewEditor';
+export const StayReviewSectionHtmlAnchor = 'stayReviewSection';
 
 export const ContentPages = {
   pagesWithMdc: [AppPage.Index, AppPage.Privacy, AppPage.Flights, AppPage.Stays],

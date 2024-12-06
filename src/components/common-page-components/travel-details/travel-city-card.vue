@@ -76,7 +76,7 @@ const uiStyling = {
       sizes="xs:90vw sm:80vw md:60vw lg:50vw xl:50vw"
       :ui="{ 
         wrapper: 'rounded-xl w-auto h-full row-start-1 row-end-2 col-start-1 col-end-2 w-auto z-[1]',
-        img: 'rounded-xl h-full object-cover',
+        img: 'rounded-xl object-cover',
         stub: 'rounded-xl'
       }"
       :alt-res-name="getI18nResName2('travelDetails', 'travelImgAlt')"

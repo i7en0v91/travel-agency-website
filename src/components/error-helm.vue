@@ -46,11 +46,11 @@ const $emit = defineEmits(['update:isError']);
 </script>
 
 <template>
-  <div class="w-full h-full min-w-full min-h-full">
+  <div class="contents">
     <NuxtErrorBoundary v-if="!isError" @error="onError">
       <slot />
     </NuxtErrorBoundary>
-    <div v-else :class="`w-full h-full min-w-full min-h-full rounded-2xl p-2 flex flex-col flex-nowrap gap-[8px] justify-center items-center border-inherit bg-red-200 ${ui?.stub}`">
+    <div v-else :class="`w-full h-full rounded-2xl p-2 flex flex-col flex-nowrap gap-[8px] justify-center items-center border-inherit bg-red-200 ${ui?.stub}`">
       <UIcon name="i-gridicons-cross-circle" class="w-8 h-8 bg-red-500"/>
       <div class="text-sm sm:text-base text-red-500 font-medium">
         {{ $t(getI18nResName2('appErrors','helm')) }}

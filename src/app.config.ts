@@ -34,6 +34,9 @@ const inputUi: UI['input'] = {
     gray: {
       outline: 'text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 ring-1 focus-visible:ring-3 ring-gray-500 dark:ring-gray-400 focus-visible:ring-gray-500 dark:focus-visible:ring-gray-400'
     }
+  },
+  variant: {
+    outline: 'hover:bg-{color}-100'
   }
 };
 
@@ -100,7 +103,10 @@ export default defineAppConfig({
     },
     button: {
       base: 'text-sm sm:text-base',
-      rounded: 'rounded'
+      rounded: 'rounded',
+      variant: {
+        outline: 'hover:bg-{color}-100'
+      }
     },
     formGroup: {
       label: {
@@ -158,6 +164,18 @@ export default defineAppConfig({
     },
     divider: {
       label: 'text-sm sm:text-base font-normal'
+    },
+    breadcrumb: {
+      base: 'font-medium',
+      li: 'text-red-400 dark:text-red-400',
+      active: 'text-gray-500 dark:text-gray-400',
+      inactive: 'hover:text-red-500 dark:hover:text-gray-500',
+      divider: {
+        base: 'text-gray-500 dark:text-gray-400'
+      }
+    },
+    modal: {
+      wrapper: 'z-[70]'
     }
   }
 });

@@ -480,7 +480,7 @@
     },
     "controlButtons": {
       "send": "Envoyer",
-      "cancel": "Annuler"
+      "cancel": "@:searchFlights.filters.resetBtn"
     },
     "placeholder": "Écrivez votre avis ici..."
   },

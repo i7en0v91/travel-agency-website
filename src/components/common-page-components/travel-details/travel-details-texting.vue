@@ -119,7 +119,7 @@ xl:row-start-1 xl:row-end-3 xl:col-start-1 xl:col-end-2
 
 <template>
   <div :class="`w-full h-full ${GridLayoutClass} bg-primary-200 dark:bg-gray-700 rounded-xl`" role="article">
-    <ErrorHelm :is-error="isError">
+    <ErrorHelm v-model:is-error="isError">
       <TravelDetailsFrameContainer>
         <Transition v-bind="TravelDetails">
           <TravelDetailsTextingFrame

@@ -42,7 +42,7 @@ function onAcceptBtnClick () {
         </template>
       </i18n-t>
     </div>
-    <UButton size="xl" class="flex-grow flex-shrink-[4] basis-auto w-full min-w-[130px] justify-center" variant="solid" color="primary" @click="onAcceptBtnClick">
+    <UButton size="xl" class="flex-grow flex-shrink-[4] basis-auto w-full min-w-[130px] justify-center cookie-banner-accept" variant="solid" color="primary" @click="onAcceptBtnClick">
       {{ $t(getI18nResName2('cookieBanner', 'btnAccept')) }}
     </UButton>
   </section>

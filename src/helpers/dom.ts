@@ -1,7 +1,8 @@
-import { clampTextLine, AppPage, getI18nResName2, getI18nResName3, type Theme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue } from '@golobe-demo/shared';
+import { type Timestamp, type ImageCategory, clampTextLine, AppPage, getI18nResName2, getI18nResName3, type Theme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, type IImageEntitySrc } from '@golobe-demo/shared';
 import { DeviceSizeEnum, DeviceSizeBreakpointsMap } from './../helpers/constants';
+import { ApiEndpointImage } from './../server/api-definitions';
 import orderBy from 'lodash-es/orderBy';
-import { parseURL, stringifyParsedURL, stringifyQuery } from 'ufo';
+import { withQuery, parseURL, stringifyParsedURL, stringifyQuery } from 'ufo';
 import set from 'lodash-es/set';
 
 export function getLastSelectedTabStorageKey (tabCtrlKey: string) {
@@ -39,6 +40,21 @@ export function formatAuthCallbackUrl (url: string, preivewMode: boolean): strin
   }
   const urlWithoutHost = stringifyParsedURL(parsedUrl);
   return urlWithoutHost.startsWith('/') ? urlWithoutHost : `/${urlWithoutHost}`;
+}
+
+export function formatImageEntityUrl(imageEntity: IImageEntitySrc, category: ImageCategory, scale?: number, preview: boolean = false) {
+  return formatImageUrl(imageEntity.slug, category, imageEntity.timestamp, scale, preview);
+}
+
+export function formatImageUrl(slug: string, category: ImageCategory, timestamp?: Timestamp, scale?: number, preview: boolean = false) {
+  const query = {
+    ...(timestamp ? { t: timestamp } : {}),
+    ...(preview ? set({}, QueryPagePreviewModeParam, PreviewModeParamEnabledValue) : {}),
+    ...(scale ? { scale } : {}),
+    slug, 
+    category: category.valueOf(),
+  };
+  return withQuery(`/${ApiEndpointImage}`, query);
 }
 
 export function getPreferredTheme (): Theme | undefined {

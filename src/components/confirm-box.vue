@@ -27,7 +27,6 @@ defineShortcuts({
 const props = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
-const { t } = useI18n();
 
 const open = defineModel<boolean>('open');
 const result = defineModel<ConfirmBoxButton | undefined>('result');
@@ -66,7 +65,7 @@ const uiStyling = {
         <h3 class="font-semibold text-xl mb-2 sm:mb-6">
           {{ $t(props.msgResName, props.msgResArgs) }}
         </h3>  
-        <div class="flex flex-row flex-wrap justify-end mt-6 gap-2 confirm-box-buttons">
+        <div class="flex flex-row flex-wrap justify-end mt-6 gap-2">
           <UButton v-if="props.buttons.includes('yes')" size="lg" icon="i-heroicons-check" variant="solid" color="primary" @click="() => onButtonClick('yes')">
             {{ $t(getI18nResName2('confirmBox', 'btnYes')) }}
           </UButton>

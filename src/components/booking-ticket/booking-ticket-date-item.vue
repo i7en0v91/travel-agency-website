@@ -13,14 +13,14 @@ const { locale } = useI18n();
 </script>
 
 <template>
-  <div class="ticket-date-item">
-    <div v-if="label" class="ticket-date-item-label">
+  <div class="block w-full h-auto ticket-date-item">
+    <div v-if="label" class="block whitespace-nowrap text-3xl font-semibold text-primary-900 dark:text-white ticket-date-item-label">
       {{ label }}
     </div>
-    <div v-else class="ticket-date-item-label data-loading-stub text-data-loading" />
-    <div v-if="sub" class="ticket-date-item-sub mt-xs-1">
+    <USkeleton v-else class="w-16 h-9 mt-2" />
+    <div v-if="sub" class="text-xs text-gray-500 dark:text-gray-300 mt-1 ticket-date-item-sub">
       {{ isString(sub) ? $t(sub) : getLocalizeableValue(sub, locale as Locale) }}
     </div>
-    <div v-else class="ticket-date-item-sub mt-xs-1 data-loading-stub text-data-loading" />
+    <USkeleton v-else class="w-1/3 h-4 mt-1" />
   </div>
 </template>

@@ -114,7 +114,7 @@ const displayParams = (() => {
 </script>
 
 <template>
-  <AccountPageContainer ctrl-key="SignUpCompleted" :ui="{ wrapper: 'md:flex-row-reverse',height: '!h-[1154px]' }">
+  <AccountPageContainer ctrl-key="SignUpCompleted" :ui="{ wrapper: 'md:flex-row-reverse',height: '!h-[72rem]' }">
     <div class="w-full h-auto">
       <div class="flex flex-col flex-nowrap gap-6 md:gap-8 items-start text-gray-600 dark:text-gray-400">
         {{ $t(displayParams.msgResName) }}

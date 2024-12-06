@@ -159,12 +159,6 @@ export default defineNuxtConfig({
       mode: 'server',
       order: 80,
       src: '~/plugins/cacheable-page.ts'
-    },
-    {
-      name: 'vue-final-modal',
-      mode: 'all',
-      order: 90,
-      src: '~/plugins/vue-final-modal.ts'
     }
   ],
 

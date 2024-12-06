@@ -42,72 +42,62 @@ const reviewsCountText = computed(() => props.numReviews ? `${props.numReviews} 
 </script>
 
 <template>
-  <section class="stay-details-overview">
-    <h2 v-if="titleStr" class="stay-details-overview-heading">
+  <section class="w-fit max-w-[90vw] text-gray-600 dark:text-gray-300">
+    <h2 v-if="titleStr" class="text-3xl font-semibold break-words">
       {{ getLocalizeableValue(titleStr, locale as Locale) }}
     </h2>
-    <div v-else class="data-loading-stub text-data-loading" />
-    <p v-if="mainStr" class="stay-details-overview-main mt-xs-3">
+    <USkeleton v-else class="w-full h-7" />
+    <p v-if="mainStr" class="w-full text-sm sm:text-base font-normal break-words mt-4">
       {{ getLocalizeableValue(mainStr, locale as Locale) }}
     </p>
-    <ul v-if="featureStrs?.length ?? 0" class="stay-details-overview-features mt-xs-3">
-      <li v-for="(feature, idx) in featureStrs" :key="`${ctrlKey}-Feature-${idx}`" class="stay-details-overview-feature">
-        <div class="stay-feature-checkmark brdr-1" />
-        <div class="stay-feature-texting">
-          <span class="stay-feature-caption">
+    <ul v-if="featureStrs?.length ?? 0" class="flex flex-col flex-nowrap gap-3 mt-4">
+      <li v-for="(feature, idx) in featureStrs" :key="`${ctrlKey}-Feature-${idx}`" class="flex-auto flex flex-row flex-nowrap gap-2">
+        <UCheckbox :model-value="true" disabled :ui="{ wrapper: 'flex-initial', base: 'disabled:opacity-100 disabled:cursor-default' }"/>
+        <div class="flex-auto block w-fit h-auto whitespace-normal">
+          <span class="text-primary-900 dark:text-white font-semibold">
             {{ getLocalizeableValue(feature.caption, locale as Locale) }}:&nbsp;
           </span>
           {{ getLocalizeableValue(feature.text, locale as Locale) }}
         </div>
       </li>
     </ul>
-    <div class="stay-details-overview-highlights-div mt-xs-5">
-      <!--
-      <PerfectScrollbar
-        :options="{
-          suppressScrollY: true,
-          wheelPropagation: true
-        }"
-        :watch-options="false"
-        tag="div"
-        class="stay-details-overview-highlights-scroll"
-      >
-        <ul class="stay-details-overview-highlights pb-xs-3">
-          <li class="stay-details-highlight-item p-xs-3 brdr-3">
+    <div class="block w-full h-min mt-8">
+      <div class="w-full overflow-x-auto pr-2 h-auto text-primary-900 dark:text-white">
+        <ul class="w-max h-auto flex flex-row flex-nowrap gap-4 py-4">
+          <li class="w-full h-auto min-h-max min-w-[166px] aspect-[1_/_1] flex flex-col flex-nowrap items-start justify-between bg-primary-300 dark:bg-primary-600 p-4 rounded-xl">
             <ClientOnly>
-              <div v-if="props.reviewScore" class="stay-details-highlight-score">
+              <div v-if="props.reviewScore" class="block text-3xl font-semibold">
                 {{ props.reviewScore.toFixed(1) }}
               </div>
-              <div v-else class="stay-details-highlight-score data-loading-stub text-data-loading" />
-              <div class="stay-details-highlight-summary">
-                <div v-if="scoreClassResName" class="stay-highlight-review-class">
+              <USkeleton v-else class="w-1/3 h-8" />
+              <div class="w-full h-auto text-base font-semibold">
+                <div v-if="scoreClassResName">
                   {{ $t(scoreClassResName) }}
                 </div>
-                <div v-else class="stay-highlight-review-class data-loading-stub text-data-loading" />
-                <div v-if="numReviews !== undefined" class="stay-highlight-reviews-count mt-xs-1">
+                <USkeleton v-else class="w-1/3 h-4" />
+                <div v-if="numReviews !== undefined" class="font-normal mt-1">
                   {{ reviewsCountText }}
                 </div>
-                <div v-else class="stay-highlight-reviews-count data-loading-stub text-data-loading mt-xs-1" />
+                <USkeleton v-else class="w-1/2 h-4 mt-1" />
               </div>
-              {{ / TODO:  KB: fallback freezes in production... }}
               <template #fallback>
-                <div class="stay-details-highlight-score data-loading-stub text-data-loading" />
-                <div class="stay-details-highlight-summary">
-                  <div class="stay-highlight-review-class data-loading-stub text-data-loading" />
-                  <div class="stay-highlight-reviews-count data-loading-stub text-data-loading mt-xs-1" />
+                <USkeleton class="w-1/3 h-8" />
+                <div class="w-full h-auto">
+                  <USkeleton class="w-1/3 h-4" />
+                  <USkeleton class="w-1/2 h-4 mt-1" />
                 </div>
               </template>
             </ClientOnly>
           </li>
-          <li v-for="(resName, idx) in highlightResNames" :key="`${ctrlKey}-Highlight-${idx}`" class="stay-details-highlight-item p-xs-3 brdr-3">
-            <div class="stay-details-highlight-icon" />
-            <div v-if="reviewScore" class="stay-details-highlight-text">
+          <li v-for="(resName, idx) in highlightResNames" :key="`${ctrlKey}-Highlight-${idx}`" class="w-full h-auto min-h-max min-w-[166px] bg-transparent ring-primary-300 dark:ring-primary-600 ring-1 aspect-[1_/_1] flex flex-col flex-nowrap items-start justify-between p-4 rounded-xl">
+            <UIcon name="i-bi-stars" class="w-8 h-8 block bg-gray-900 dark:bg-white"/>
+            <div v-if="reviewScore">
               {{ $t(getI18nResName3('stayDetailsPage', 'overviewHightlights', resName as any)) }}
             </div>
-            <div v-else class="stay-details-highlight-text data-loading-stub text-data-loading" />
+            <USkeleton v-else class="w-1/2 h-3" />
           </li>
         </ul>
-      </PerfectScrollbar>-->
+      </div>
     </div>
   </section>
 </template>

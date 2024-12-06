@@ -30,10 +30,10 @@ const paymentCards = [
 <template>
   <div class="w-full h-full">
     <ErrorHelm v-model:is-error="isError" :appearance="'error-stub'">
-      <div class="overflow-x-auto pb-4 tab-payments-container">
-        <div class="w-full h-auto grid gap-6 grid-flow-row auto-rows-auto grid-cols-1 sm:grid-cols-paymentcards items-center sm:items-start payment-cards-grid">
-          <PaymentCard v-for="(card, idx) in paymentCards" :key="`PaymentCard-${idx}`" :ctrl-key="`${$props.ctrlKey}-PaymentCard-${idx}`" :digits="card.digits" :due-date="card.dueDate"/>
-          <AddNewCard :ctrl-key="`${$props.ctrlKey}-AddNewCard`" class="add-new-card"/>
+      <div class="overflow-x-auto pb-4">
+        <div class="w-full h-auto grid gap-6 grid-flow-row auto-rows-auto grid-cols-1 sm:grid-cols-paymentcards items-center sm:items-start">
+          <PaymentCard v-for="(card, idx) in paymentCards" :key="`PaymentCard-${idx}`" :ctrl-key="`${$props.ctrlKey}-PaymentCard-${idx}`" :digits="card.digits" :due-date="card.dueDate" class="max-w-[70vw]"/>
+          <AddNewCard :ctrl-key="`${$props.ctrlKey}-AddNewCard`" class="max-w-[70vw]"/>
         </div>
       </div>  
     </ErrorHelm>

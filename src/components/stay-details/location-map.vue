@@ -23,24 +23,24 @@ const webUrl = ref<string>();
 </script>
 
 <template>
-  <section class="stay-details-map">
-    <div class="stay-details-map-heading">
-      <h2 class="stay-details-map-title  mt-xs-1">
+  <section>
+    <div class="flex flex-row flex-wrap items-center justify-between gap-2">
+      <h2 class="flex-initial block w-fit max-w-[90vw] text-3xl font-semibold text-gray-600 dark:text-gray-300 break-words mt-1">
         {{ $t(getI18nResName3('stayDetailsPage', 'location', 'title')) }}
       </h2>
-      <NuxtLink v-if="!!AppConfig.maps" class="btn btn-primary stay-details-map-weblink brdr-1  mt-xs-1" :to="webUrl ?? navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)" :external="true" target="_blank">
+      <UButton v-if="!!AppConfig.maps" size="lg" class="block flex-initial text-center sm:float-right sm:w-auto" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :to="webUrl ?? navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)" :external="true" target="_blank">
         {{ $t(getI18nResName3('stayDetailsPage', 'location', 'viewOnWebsite'), { webLink: t(AppConfig.maps.providerDisplayResName) }) }}
-      </NuxtLink>
+      </UButton>
     </div>
-    <ComponentWaitingIndicator v-if="!location || visibility === 'wait'" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="interactive-map-waiting-indicator my-xs-5" />
+    <ComponentWaitingIndicator v-if="!location || visibility === 'wait'" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="my-8" />
     <InteractiveMap
       v-else
       v-model:web-url="webUrl"
       :ctrl-key="`${ctrlKey}-InteractiveMap`"
       :origin="location"
       :city="city"
-      styleClass="stay-details-map-class"
-      class="mt-xs-5 brdr-4"
+      style-class="w-full !h-[450px] rounded-2xl [&:has(.fullscreen)]:rounded-none"
+      class="mt-8 rounded-2xl [&:has(.fullscreen)]:rounded-none"
     />
   </section>
 </template>

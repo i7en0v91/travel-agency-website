@@ -22,7 +22,7 @@ useOgImage();
         content: 'h-[701px] max-h-[701px] md:h-[581px] md:max-h-[581px]',
         image: {
           wrapper: 'h-[701px] max-h-[701px] md:h-[581px] md:max-h-[581px]',
-          img: 'h-full max-h-[701px] md:max-h-[581px]',
+          img: 'max-h-[701px] md:max-h-[581px]',
           overlay: 'bg-gradient-to-b from-gray-700 to-60% opacity-75'
         }
       }"

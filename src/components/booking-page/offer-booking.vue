@@ -72,19 +72,19 @@ async function onPay (): Promise<void> {
 </script>
 
 <template>
-  <section class="offer-booking">
-    <div class="offer-booking-card-div">
+  <section class="w-full h-auto grid grid-rows-offerbookingxs grid-cols-offerbookingxs lg:grid-rows-offerbookinglg lg:grid-cols-offerbookinglg gap-4 lg:gap-6">
+    <div class="w-full h-auto row-start-1 row-end-2 col-start-1 col-end-2">
       <slot name="offer-card" />
     </div>
-    <div class="payment-controller-div">
+    <div class="w-full h-auto row-start-3 row-end-4 col-start-1 col-end-2 lg:row-start-2 lg:row-end-3">
       <ClientOnly>    
         <PaymentController :ctrl-key="`${ctrlKey}-Payments`" :payment-processing="paymentProcessing" :amount="offer?.totalPrice?.toNumber()" @pay="onPay" />
         <template #fallback>
-          <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-Payments-ClientFallback`"/>
+          <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-Payments-ClientFallback`" class="mt-4"/>
         </template>
       </ClientOnly>
     </div>
-    <div class="pricing-details-div">
+    <div class="w-full h-auto row-start-2 row-end-3 col-start-1 col-end-2 lg:row-start-1 lg:row-end-3 lg:col-start-2 lg:col-end-3">
       <PricingDetails
         :ctrl-key="`${ctrlKey}-PricingDetails`"
         :image-entity-src="offer ? (offerKind === 'flights' ?

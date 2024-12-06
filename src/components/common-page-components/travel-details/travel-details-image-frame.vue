@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue, ImageCategory, type Timestamp, getI18nResName2 } from '@golobe-demo/shared';
+import { ImageCategory, type Timestamp, getI18nResName2 } from '@golobe-demo/shared';
 import { type TravelDetailsImageStatus } from './../../../types';
-import { ApiEndpointImage } from './../../../server/api-definitions';
+import { formatImageUrl } from './../../../helpers/dom';
 import { type ComponentInstance, type GlobalComponents } from 'vue';
 import { usePreviewState } from './../../../composables/preview-state';
-import { withQuery } from 'ufo';
-import set from 'lodash-es/set';
 import { getCommonServices } from '../../../helpers/service-accessors';
 type NuxtImg = GlobalComponents['NuxtImg'];
 
@@ -42,15 +40,12 @@ function getImgUrl (slug?: string, timestamp?: Timestamp): string | undefined {
   if(!slug) {
     return undefined;
   }
-  const query = {
-    ...(timestamp ? { t: timestamp } : {}),
-    ...(enabled ? set({}, QueryPagePreviewModeParam, PreviewModeParamEnabledValue) : {}),
-    slug, 
-    category: ImageCategory.TravelBlock.valueOf(),
-  };
-  return withQuery(`/${ApiEndpointImage}`, query);
+  return formatImageUrl(slug!, ImageCategory.TravelBlock, timestamp, 1, enabled);
 };
-const imgUrl = computed(() => { return getImgUrl(props.slug, props.timestamp); });
+
+const imgUrl = computed(() => { 
+  return getImgUrl(props.slug, props.timestamp); 
+});
 
 const fadeIn = ref<boolean | undefined>(undefined);
 const styleClass = computed(() => {

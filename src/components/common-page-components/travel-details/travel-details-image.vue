@@ -233,7 +233,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="w-full aspect-traveldetails rounded-2xl">
-    <ErrorHelm :is-error="isError">
+    <ErrorHelm v-model:is-error="isError">
       <TravelDetailsFrameContainer>
         <StaticImage
           v-if="!staticImageHidden"
@@ -244,7 +244,7 @@ onBeforeUnmount(() => {
           :ui="{ 
             wrapper: 'block rounded-2xl w-full h-full row-start-1 row-end-2 col-start-1 col-end-2 z-[1]', 
             stub: 'rounded-2xl',
-            img: 'w-full h-full rounded-2xl object-cover' 
+            img: 'rounded-2xl object-cover' 
           }"
           :alt-res-name="getI18nResName2('travelDetails','travelImgAlt')"
           :show-stub="true"

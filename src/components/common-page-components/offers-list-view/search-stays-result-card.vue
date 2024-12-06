@@ -68,7 +68,7 @@ const uiStyling = {
 
 <template>
   <ErrorHelm v-model:is-error="isError">
-    <div class="w-full max-w-[90vw] h-auto ring-1 ring-gray-200 dark:ring-gray-800 shadow-lg shadow-gray-200 dark:shadow-gray-700 rounded-xl">
+    <div class="w-full h-auto ring-1 ring-gray-200 dark:ring-gray-800 shadow-lg shadow-gray-200 dark:shadow-gray-700 rounded-xl">
       <UCard as="article" :ui="uiStyling">
         <template #header>
           <div class="w-full h-auto text-gray-600 dark:text-gray-300 font-semibold text-xl row-start-2 row-end-3 col-start-1 col-end-2 xl:row-start-1 xl:row-end-2 xl:col-start-2 xl:col-end-3 pt-4 pl-4 xl:pl-0">
@@ -83,9 +83,9 @@ const uiStyling = {
             :category="ImageCategory.Hotel"
             sizes="xs:85vw sm:85vw md:85vw lg:75vw xl:30vw"
             :ui="{ 
-              wrapper: 'w-full max-w-[90vw] h-full rounded-t-xl xl:rounded-t-none xl:rounded-l-xl', 
-              stub: 'rounded-t-xl max-w-[90vw] xl:rounded-t-none xl:rounded-l-xl',
-              img: 'w-full max-w-[90vw] h-full aspect-square object-cover rounded-t-xl xl:rounded-l-xl xl:rounded-tr-none' 
+              wrapper: 'w-full h-full rounded-t-xl xl:rounded-t-none xl:rounded-l-xl', 
+              stub: 'rounded-t-xl xl:rounded-t-none xl:rounded-l-xl',
+              img: 'aspect-square object-cover rounded-t-xl xl:rounded-l-xl xl:rounded-tr-none' 
             }"
             :show-stub="true"
             :alt-res-name="getI18nResName2('searchStays', 'hotelPhotoAlt')"
@@ -146,7 +146,7 @@ const uiStyling = {
         </div>
 
         <template #footer>
-          <div class="p-4 pt-0 xl:pl-0 w-full max-w-[90vw] h-auto row-start-4 row-end-5 col-start-1 col-end-3 xl:row-start-3 xl:row-end-4 xl:col-start-2 xl:col-end-4">
+          <div class="p-4 pt-0 xl:pl-0 w-full h-auto row-start-4 row-end-5 col-start-1 col-end-3 xl:row-start-3 xl:row-end-4 xl:col-start-2 xl:col-end-4">
             <UDivider color="gray" orientation="horizontal" class="w-full mt-4" size="xs"/>
             <div class="flex flex-row flex-nowrap gap-4 mt-4 ">
               <UButton

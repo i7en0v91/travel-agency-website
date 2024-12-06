@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { type EntityId, ImageCategory, type Locale, getLocalizeableValue, getScoreClassResName, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
-import { isPrefersReducedMotionEnabled } from './../../../helpers/dom';
-import ComponentWaitingIndicator from './../../../components/component-waiting-indicator.vue';
+import { formatImageEntityUrl } from './../../../helpers/dom';
+import ConfirmBox from './../../confirm-box.vue';
 import { type IStayReviewItem } from './../../../stores/stay-reviews-store';
-//import { useConfirmBox } from './../../../composables/confirm-box';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
+import type { UCarousel } from '../../../.nuxt/components';
+import type { ComponentInstance } from 'vue';
+import type { ConfirmBoxButton } from './../../../types';
+import chunk from 'lodash-es/chunk';
 
 const { locale } = useI18n();
 
@@ -22,35 +25,13 @@ const { requestUserAction } = usePreviewState();
 const props = defineProps<IProps>();
 const logger = getCommonServices().getLogger();
 
-const swiper = shallowRef();
-const isSwiperReady = ref(false);
+const carouselRef = shallowRef<ComponentInstance<typeof UCarousel> | undefined>();
+const confirmBoxRef = shallowRef<ComponentInstance<typeof ConfirmBox>>() as Ref<ComponentInstance<typeof ConfirmBox>>;  
+const isCarouselReady = ref(false);
+
 const showNoReviewStub = computed(() => reviewStore.status === 'success' && reviewStore.items !== undefined && reviewStore.items.length === 0);
-const isNavButtonsVisible = computed(() => reviewStore.status !== 'error' && reviewStore.items !== undefined && isSwiperReady.value && !showNoReviewStub.value);
-const pagingState = ref<{ of: number, total: number } | undefined>();
-const slideAnimationEnabled = import.meta.client && !isPrefersReducedMotionEnabled();
-
-function refreshPagingState () {
-  logger.debug(`(ReviewList) refreshing paging state, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
-  const swiperInstance = swiper.value;
-  if (!isSwiperReady.value || !swiperInstance) {
-    logger.debug(`(ReviewList) refreshing paging state - swiper not initialized, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
-    return;
-  }
-
-  const of = swiperInstance.realIndex + 1;
-  const total = Math.ceil(swiperInstance.slides.length / ReviewsPerSlidePage);
-
-  logger.debug(`(ReviewList) refreshing paging state completed, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}, of=${of}, total=${total}`);
-  pagingState.value = { of, total };
-}
-
-function rewindToTop () {
-  logger.debug(`(ReviewList) rewind to top, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
-  if (isSwiperReady.value && swiper.value) {
-    swiper.value.slideTo(0);
-    refreshPagingState();
-  }
-}
+const isNavButtonsVisible = computed(() => reviewStore.status !== 'error' && reviewStore.items !== undefined && isCarouselReady.value && !showNoReviewStub.value);
+const pagingState = ref<{ current: number, total: number } | undefined>();
 
 const $emit = defineEmits<{
   (event: 'editBtnClick'): void,
@@ -66,7 +47,8 @@ const reviewStore = await reviewStoreFactory.getInstance(props.stayId);
 const userAccountStore = useUserAccountStore();
 const userAccount = ref<IUserAccount>();
 
-//const confirmBox = useConfirmBox();
+const open = ref(false);
+const result = ref<ConfirmBoxButton>();
 
 const isError = ref(reviewStore.status === 'error');
 
@@ -74,6 +56,29 @@ watch(() => reviewStore.status, () => {
   isError.value = reviewStore.status === 'error';
   nextTick(refreshPagingState);
 });
+
+function refreshPagingState () {
+  logger.debug(`(ReviewList) refreshing paging state, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  const carouselInstance = carouselRef.value;
+  if (!isCarouselReady.value || !carouselInstance) {
+    logger.debug(`(ReviewList) refreshing paging state - carousel not initialized, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+    return;
+  }
+
+  const current = carouselInstance.page;
+  const total = Math.max(Math.ceil((reviewStore.items?.length ?? 0) / ReviewsPerSlidePage), current);
+
+  logger.debug(`(ReviewList) refreshing paging state completed, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}, current=${current}, total=${total}`);
+  pagingState.value = { current, total };
+}
+
+function rewindToTop () {
+  logger.debug(`(ReviewList) rewind to top, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  if (isCarouselReady.value && carouselRef.value) {
+    carouselRef.value.select(0);
+    refreshPagingState();
+  }
+}
 
 async function refreshUserAccount (): Promise<void> {
   if (status.value === 'authenticated') {
@@ -102,7 +107,6 @@ function onEditUserReviewBtnClick () {
   $emit('editBtnClick');
 }
 
-/*
 async function onDeleteUserReviewBtnClick (): Promise<void> {
   logger.verbose(`(ReviewList) delete review btn click handler, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
 
@@ -111,169 +115,131 @@ async function onDeleteUserReviewBtnClick (): Promise<void> {
     return;
   }
 
-  const result = await confirmBox.confirm(`${props.ctrlKey}-UserReview-DeleteConfirm`, ['yes', 'no'], getI18nResName3('stayDetailsPage', 'reviews', 'confirmDelete'));
-  if (result === 'yes') {
+  if(reviewStore.status === 'pending') {
+    logger.verbose(`(ReviewList) cannot delete review while store is in pending state, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+    return;
+  }
+
+  const confirmBox = useModalDialogResult<ConfirmBoxButton>(confirmBoxRef, { open, result }, 'no');
+  const dialogResult = await confirmBox.show();
+  if (dialogResult === 'yes') {
     const deletingReview = await reviewStore.getUserReview()!;
     await reviewStore.deleteReview();
     nextTick(refreshPagingState);
     $emit('userReviewDeleted', deletingReview);
   }
 }
-  */
 
-function onSwiperInit () {
-  /*
-  logger.debug(`(ReviewList) swiper initialized, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
-  swiper.value = (document.querySelector('.stay-reviews-swiper') as any).swiper as Swiper;
-  isSwiperReady.value = true;
-  nextTick(refreshPagingState);
-  */
-}
-
-function onSwiperSlideChanged () {
-  logger.debug(`(ReviewList) swiper slide changed, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+function onSlideChanged () {
+  logger.debug(`(ReviewList) slide changed, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
   refreshPagingState();
 }
 
 function onNavNextBtnClick () {
   logger.debug(`(ReviewList) nav next btn clicked, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
-  if (isSwiperReady.value && swiper.value) {
-    swiper.value.slideNext();
+  if (isCarouselReady.value && carouselRef.value) {
+    carouselRef.value.next();
   }
 }
 
 function onNavPrevBtnClick () {
   logger.debug(`(ReviewList) nav next btn clicked, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
-  if (isSwiperReady.value && swiper.value) {
-    swiper.value.slidePrev();
+  if (isCarouselReady.value && carouselRef.value) {
+    carouselRef.value.prev();
   }
 }
+
+const carouselPages = computed(() => {
+  return (reviewStore.status !== 'error' && reviewStore.items?.length) ? 
+    chunk(reviewStore.items, Math.min(reviewStore.items.length, ReviewsPerSlidePage)) : [];
+});
+
+onMounted(() => {
+  isCarouselReady.value = true;
+  nextTick(refreshPagingState);
+  watch(() => carouselRef?.value?.page, refreshPagingState);
+});
 
 </script>
 
 <template>
-  <div class="stay-reviews-list-div no-hidden-parent-tabulation-check">
-    <ErrorHelm :is-error="isError">
-      <!--
-      <Swiper
+  <div class="block w-full h-auto">
+    <ErrorHelm v-model:is-error="isError">
+      <UCarousel
         v-if="reviewStore.status !== 'error' && reviewStore.items !== undefined"
-        :class="`stay-reviews-list stay-reviews-swiper pb-xs-4 ${isSwiperReady ? 'initialized' : ''} ${showNoReviewStub ? 'hidden' : ''}`"
-        :modules="[Navigation, Grid]"
-        :slides-per-view="1"
-        :allow-touch-move="true"
-        :simulate-touch="false"
-        :rewind="true"
-        :effect="slideAnimationEnabled ? 'slide' : 'fade'"
-        :speed="slideAnimationEnabled ? 300 : 0"
-        :grid="{ rows: Math.min(reviewStore.items.length, ReviewsPerSlidePage), fill: 'row' }"
-        :navigation="{
-          enabled: true,
-          nextEl: null,
-          prevEl: null,
-        }"
-        @init="onSwiperInit"
-        @slide-change-transition-end="onSwiperSlideChanged"
+        v-slot="{ item: reviewsPage }" 
+        ref="carouselRef"
+        :items="carouselPages" 
+        :ui="{ 
+          wrapper: `pb-6 ${isCarouselReady ? 'initialized' : 'invisible h-0'} ${showNoReviewStub ? 'invisible h-0 hidden' : ''}`, 
+          item: 'snap-end justify-around basis-full' }"
+        :indicators="false" 
+        @on-click="onSlideChanged"
       >
-        <SwiperSlide
-          v-for="(review) in reviewStore.items "
-          :key="`${ctrlKey}-Review-${review.id}`"
-          class="stay-reviews-list-item"
-        >
-          <hr class="stay-details-section-separator review-item-separator">
-          <article class="stay-reviews-card">
-            <div class="stay-reviews-card-avatar">
-              <StaticImage
-                v-if="review.user === 'current' ? !!(userAccount?.avatar) : !!(review.user.avatar)"
-                :ctrl-key="`${ctrlKey}-ReviewItem${review.id}-Avatar`"
-                :show-stub="false"
-                :ui="{ wrapper: 'stay-reviews-card-avatar', img: 'stay-reviews-card-avatar-img' }"
-                :entity-src="review.user === 'current' ? userAccount?.avatar : review.user.avatar"
-                :category="ImageCategory.UserAvatar"
-                sizes="xs:30vw sm:20vw md:20vw lg:10vw xl:10vw"
-                :alt-res-name="getI18nResName3('stayDetailsPage', 'reviews', 'avatarImgAlt')"
-              />
-              <div v-else class="stay-reviews-card-avatar stay-reviews-card-avatar-default" />
-            </div>
-            <div class="stay-reviews-card-content-div">
-              <PerfectScrollbar
-                :options="{
-                  suppressScrollX: false,
-                  suppressScrollY: false,
-                  wheelPropagation: true
-                }"
-                :watch-options="false"
-                tag="div"
-                class="stay-reviews-card-content-scroll"
-              >
-                <div :class="`stay-reviews-card-content ${isTestUserReview(review) ? 'test-user-review' : ''} pb-xs-2 mr-xs-1`">
-                  <h3 class="stay-reviews-card-scoring">
-                    <div class="stay-reviews-card-score-class">
-                      {{ `${review.score.toFixed(1)} ${$t(getScoreClassResName(review.score))}` }}
-                    </div>
-                    <span class="stay-reviews-card-scoring-separator" />
-                    <div class="stay-reviews-card-username">
-                      {{ `${review.user === 'current' ? (userAccount ? `${userAccount.firstName} ${userAccount.lastName}` : '...') : (`${review.user.firstName} ${review.user.lastName}`)}` }}
-                    </div>
-                  </h3>
-                  <p v-if="isTestUserReview(review)" class="stay-reviews-card-text">
-                    {{ getLocalizeableValue(review.text, locale as Locale) }}
-                  </p>
-                  <p v-else v-html="review.text.en" /> to prevent attack additional sanitizing is applied on server 
+        <div class="w-full h-auto flex flex-col flex-nowrap gap-3 sm:gap-6 items-stretch">
+          <div
+            v-for="(review) in reviewsPage"
+            :key="`${ctrlKey}-Review-${review.id}`"
+            class="w-full h-auto"
+          >
+            <UDivider color="gray" orientation="horizontal" class="w-full mb-3 sm:mb-6" size="sm"/>
+            <article class="w-full h-auto flex flex-row flex-nowrap items-start gap-4">
+              <div class="flex-initial">
+                <UAvatar 
+                  v-if="review.user === 'current' ? !!(userAccount?.avatar) : !!(review.user.avatar)"
+                  :src="formatImageEntityUrl(review.user === 'current' ? userAccount?.avatar : review.user.avatar, ImageCategory.UserAvatar, 1)"
+                  :alt="$t(getI18nResName3('stayDetailsPage', 'reviews', 'avatarImgAlt'))"
+                  :ui="{ rounded: 'rounded-full' }"
+                />
+                <div v-else class="w-8 h-8">
+                  <UIcon name="i-heroicons-user-20-solid" class="w-full h-full" :alt="$t(getI18nResName3('stayDetailsPage', 'reviews', 'avatarImgAlt'))"/>
                 </div>
-              </PerfectScrollbar>
-            </div>
-            <div class="stay-reviews-card-buttons-div mr-xs-2">
-              <div class="stay-reviews-card-flag" />
-              <div v-if="review.user === 'current' || review.user.id === userAccount?.userId" class="stay-reviews-card-control-buttons">
-                <SimpleButton
-                  class="stay-reviews-card-btn review-btn-delete no-hidden-parent-tabulation-check"
-                  :ctrl-key="`${props.ctrlKey}-UserReview-DeleteBtn`"
-                  :aria-label-res-name="getI18nResName2('ariaLabels', 'btnDeleteUserReview')"
-                  :title-res-name="getI18nResName2('ariaLabels', 'btnDeleteUserReview')"
-                  icon="delete"
-                  kind="support"
-                  @click="onDeleteUserReviewBtnClick"
-                />
-                <SimpleButton
-                  class="stay-reviews-card-btn review-btn-edit no-hidden-parent-tabulation-check"
-                  :ctrl-key="`${props.ctrlKey}-UserReview-EditBtn`"
-                  :aria-label-res-name="getI18nResName2('ariaLabels', 'btnEditUserReview')"
-                  :title-res-name="getI18nResName2('ariaLabels', 'btnEditUserReview')"
-                  icon="change"
-                  kind="support"
-                  @click="onEditUserReviewBtnClick"
-                />
               </div>
-            </div>
-          </article>
-        </SwiperSlide>
-      </Swiper>
-      <hr v-if="!showNoReviewStub" class="stay-details-section-separator review-item-separator">
-      <section v-if="isNavButtonsVisible" :class="`reviews-list-nav-buttons ${(pagingState?.total ?? 0) <= 1 ? 'one-page' : ''} mt-xs-2 mt-s-3`">
-        <SimpleButton
-          kind="support"
-          class="reviews-list-nav-btn btn-prev"
-          :ctrl-key="`${ctrlKey}-NavPrev`"
-          icon="nav-prev"
-          @click="onNavPrevBtnClick"
-        />
-        <div class="reviews-list-nav-paging mx-xs-2 mx-s-3">
-          {{ pagingState ? $t(getI18nResName3('stayDetailsPage', 'reviews', 'paging'), pagingState) : '' }}
+              <div class="flex-auto w-full h-fit contents">
+                <div class="w-full h-28 max-h-28 overflow-y-auto">
+                  <div :class="`w-full h-auto flex flex-col flex-nowrap items-start gap-3 text-sm ${isTestUserReview(review) ? 'w-fit' : ''} pb-xs-2 mr-xs-1`">
+                    <h3 class="w-fit h-auto flex flex-col flex-nowrap self-start sm:flex-row sm:flex-wrap sm:items-center gap-3 text-black dark:text-white font-semibold">
+                      <div class="whitespace-wrap">
+                        {{ `${review.score.toFixed(1)} ${$t(getScoreClassResName(review.score))}` }}
+                      </div>
+                      <span class="hidden sm:block">|</span>
+                      <div class="whitespace-wrap">
+                        {{ `${review.user === 'current' ? (!!userAccount ? `${userAccount!.firstName} ${userAccount!.lastName}` : '...') : (`${review.user.firstName} ${review.user.lastName}`)}` }}
+                      </div>
+                    </h3>
+                    <p v-if="isTestUserReview(review)" class="block w-full h-auto whitespace-normal">
+                      {{ getLocalizeableValue(review.text, locale as Locale) }}
+                    </p>
+                    <div v-else class="w-auto h-auto" data-review-editor-styling="1">
+                      <p v-html="review.text.en" /> <!-- to prevent attack additional sanitizing is applied on server  -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="w-max flex-initial flex flex-col flex-nowrap items-center gap-2 mr-2">
+                <UIcon name="heroicons-solid:flag" class="bg-primary-200 dark:bg-primary-700 m-1.5 mt-0" size="xs"/>
+                <div v-if="review.user === 'current' || review.user.id === userAccount?.userId" class="contents">
+                  <UButton icon="i-heroicons-solid-trash" size="xs" variant="outline" class="border-none ring-0" :title="$t(getI18nResName2('ariaLabels', 'btnDeleteUserReview'))" @click="onDeleteUserReviewBtnClick"/>
+                  <UButton icon="i-heroicons-solid-pencil" size="xs" variant="outline" class="border-none ring-0" :title="$t(getI18nResName2('ariaLabels', 'btnEditUserReview'))" @click="onEditUserReviewBtnClick"/>
+                </div>
+              </div>
+            </article>
+          </div>
         </div>
-        <SimpleButton
-          kind="support"
-          class="reviews-list-nav-btn btn-next"
-          :ctrl-key="`${ctrlKey}-NavNext`"
-          icon="nav-next"
-          @click="onNavNextBtnClick"
-        />
+      </UCarousel>
+      <UDivider v-if="!showNoReviewStub" color="gray" orientation="horizontal" class="w-full mb-3 sm:mb-6" size="sm"/>
+      <ComponentWaitingIndicator v-if="(reviewStore.status !== 'error' && reviewStore.items === undefined) || !isCarouselReady" :ctrl-key="`${ctrlKey}-ReviewListWaiterFallback`" class="my-6" />
+      <section v-if="isNavButtonsVisible" :class="`w-full h-auto flex flex-row flex-nowrap items-center justify-center gap-4 my-2 sm:my-4 ${(pagingState?.total ?? 0) <= 1 ? 'hidden' : ''}`">
+        <UButton icon="i-heroicons-chevron-left-20-solid" size="sm" color="gray" variant="outline" class="border-none ring-0" :disabled="(pagingState?.current ?? 0) <= 1" @click="onNavPrevBtnClick"/>
+        <div class="mx-2 sm:mx-4 text-sm text-gray-500 dark:text-gray-400">
+          {{ pagingState ? $t(getI18nResName3('stayDetailsPage', 'reviews', 'paging'), { of: pagingState.current, total: pagingState.total }) : '' }}
+        </div>
+        <UButton icon="i-heroicons-chevron-right-20-solid" size="sm" color="gray" variant="outline" class="border-none ring-0" :disabled="(pagingState?.current ?? 0) === (pagingState?.total ?? 0)" @click="onNavNextBtnClick"/>
       </section>
-      <div v-if="showNoReviewStub" class="reviews-list-noitems-stub my-xs-3 my-s-5 px-xs-3">
+      <div v-if="showNoReviewStub" class="w-full max-w-[60vw] text-center whitespace-normal mx-auto text-lg my-12 sm:my-8 px-4">
         {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'noReviews')) }}
       </div>
-      <ComponentWaitingIndicator v-if="reviewStore.status === 'pending' || !(reviewStore.status !== 'error' && reviewStore.items !== undefined) || !isSwiperReady" :ctrl-key="`${ctrlKey}-ReviewListWaiterFallback`" class="stay-reviews-waiting-indicator my-xs-5" />
-      -->
-      
     </ErrorHelm>
+    <ConfirmBox ref="confirmBoxRef" v-model:open="open" v-model:result="result" :ctrl-key="`${props.ctrlKey}-UserReview-DeleteConfirm`" :buttons="['yes', 'no']" :msg-res-name="getI18nResName3('stayDetailsPage', 'reviews', 'confirmDelete')"/>
   </div>
 </template>

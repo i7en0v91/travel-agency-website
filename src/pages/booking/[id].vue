@@ -10,9 +10,12 @@ import { getObject } from './../../helpers/rest-utils';
 import { type IOfferBookingStore } from './../../stores/offer-booking-store';
 import { mapFlightOfferDetails, mapStayOfferDetails, mapReviewSummary } from './../../helpers/entity-mappers';
 import { type IReviewSummaryDto } from '../../server/api-definitions';
-import { useDocumentDownloader } from './../../composables/document-downloader';
+import type ModalWaitingIndicator from './../../components/modal-waiting-indicator.vue';
+import { useDocumentDownloader, type IDocumentDownloader } from './../../composables/document-downloader';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { getCommonServices } from '../../helpers/service-accessors';
+import { useModalWaiter, type IModalWaiter } from '../../composables/modal-waiter';
+import { type ComponentInstance } from 'vue';
 
 const DisplayedUserNameMaxLength = 25;
 
@@ -48,7 +51,10 @@ const CtrlKey = `BookingDetails${bookingId}`;
 const isError = ref(false);
 const theme = useThemeSettings();
 
-const documentDownloader = import.meta.client ? useDocumentDownloader() : undefined;
+const modalWaiterRef = shallowRef<ComponentInstance<typeof ModalWaitingIndicator>>() as Ref<ComponentInstance<typeof ModalWaitingIndicator>>;
+const modalWaiterOpen = ref<boolean>(false);
+let modalWaiter: IModalWaiter | undefined;
+let documentDownloader: IDocumentDownloader | undefined;
 
 let offerDataAvailable: ComputedRef<boolean | undefined>;
 let offer: Ref<EntityDataAttrsOnly<IFlightOffer | IStayOfferDetails> | undefined>;
@@ -147,15 +153,15 @@ const ticketProps = computed<IBookingTicketProps>(() => (offerDataAvailable?.val
         ctrlKey: `${CtrlKey}-Ticket-Details`,
         items: offer.value.kind === 'flights'
           ? ([
-              { ctrlKey: `${CtrlKey}-Ticket-Details-Date`, caption: getI18nResName3('ticket', 'details', 'date'), icon: 'calendar', text: d(getValueForFlightDayFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.departAirport.city.utcOffsetMin), 'day') },
-              { ctrlKey: `${CtrlKey}-Ticket-Details-Duration`, caption: getI18nResName3('ticket', 'details', 'duration'), icon: 'timer', text: t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.arriveTimeUtc)) },
-              { ctrlKey: `${CtrlKey}-Ticket-Details-Gate`, caption: getI18nResName3('ticket', 'details', 'gate'), icon: 'door', text: 'A12' },
-              { ctrlKey: `${CtrlKey}-Ticket-Details-Seat`, caption: getI18nResName3('ticket', 'details', 'seat'), icon: 'seat', text: '128' }
+              { ctrlKey: `${CtrlKey}-Ticket-Details-Date`, caption: getI18nResName3('ticket', 'details', 'date'), icon: 'i-heroicons-calendar-days-20-solid', text: d(getValueForFlightDayFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.departAirport.city.utcOffsetMin), 'day') },
+              { ctrlKey: `${CtrlKey}-Ticket-Details-Duration`, caption: getI18nResName3('ticket', 'details', 'duration'), icon: 'i-ion-stopwatch', text: t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.arriveTimeUtc)) },
+              { ctrlKey: `${CtrlKey}-Ticket-Details-Gate`, caption: getI18nResName3('ticket', 'details', 'gate'), icon: 'i-material-symbols-door-front', text: 'A12' },
+              { ctrlKey: `${CtrlKey}-Ticket-Details-Seat`, caption: getI18nResName3('ticket', 'details', 'seat'), icon: 'i-material-symbols-airline-seat-recline-extra', text: '128' }
             ])
           : ([
-              { ctrlKey: `${CtrlKey}-Ticket-Details-CheckInTime`, caption: getI18nResName3('ticket', 'details', 'checkInTime'), icon: 'timer', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
-              { ctrlKey: `${CtrlKey}-Ticket-Details-CheckOutTime`, caption: getI18nResName3('ticket', 'details', 'checkOutTime'), icon: 'timer', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
-              { ctrlKey: `${CtrlKey}-Ticket-Details-Room`, caption: getI18nResName3('ticket', 'details', 'room'), icon: 'door', text: t(getI18nResName3('ticket', 'details', 'onArrival')) }
+              { ctrlKey: `${CtrlKey}-Ticket-Details-CheckInTime`, caption: getI18nResName3('ticket', 'details', 'checkInTime'), icon: 'i-ion-stopwatch', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
+              { ctrlKey: `${CtrlKey}-Ticket-Details-CheckOutTime`, caption: getI18nResName3('ticket', 'details', 'checkOutTime'), icon: 'i-ion-stopwatch', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
+              { ctrlKey: `${CtrlKey}-Ticket-Details-Room`, caption: getI18nResName3('ticket', 'details', 'room'), icon: 'i-material-symbols-door-front', text: t(getI18nResName3('ticket', 'details', 'onArrival')) }
             ])
       },
       titleOrGfx: offer.value.kind === 'flights'
@@ -200,10 +206,10 @@ const ticketReturnFlightProps = computed<IBookingTicketProps | undefined>(() => 
       details: {
         ctrlKey: `${CtrlKey}-TicketReturnFlight-Details`,
         items: ([
-          { ctrlKey: `${CtrlKey}-TicketReturnFlight-Details-Date`, caption: getI18nResName3('ticket', 'details', 'date'), icon: 'calendar', text: d(getValueForFlightDayFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.departAirport.city.utcOffsetMin), 'day') },
-          { ctrlKey: `${CtrlKey}-TicketReturnFlight-Details-Duration`, caption: getI18nResName3('ticket', 'details', 'duration'), icon: 'timer', text: t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.arriveTimeUtc)) },
-          { ctrlKey: `${CtrlKey}-TicketReturnFlight-Details-Gate`, caption: getI18nResName3('ticket', 'details', 'gate'), icon: 'door', text: 'A12' },
-          { ctrlKey: `${CtrlKey}-TicketReturnFlight-Details-Seat`, caption: getI18nResName3('ticket', 'details', 'seat'), icon: 'seat', text: '128' }
+          { ctrlKey: `${CtrlKey}-TicketReturnFlight-Details-Date`, caption: getI18nResName3('ticket', 'details', 'date'), icon: 'i-heroicons-calendar-days-20-solid', text: d(getValueForFlightDayFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.departAirport.city.utcOffsetMin), 'day') },
+          { ctrlKey: `${CtrlKey}-TicketReturnFlight-Details-Duration`, caption: getI18nResName3('ticket', 'details', 'duration'), icon: 'i-ion-stopwatch', text: t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.arriveTimeUtc)) },
+          { ctrlKey: `${CtrlKey}-TicketReturnFlight-Details-Gate`, caption: getI18nResName3('ticket', 'details', 'gate'), icon: 'i-material-symbols-door-front', text: 'A12' },
+          { ctrlKey: `${CtrlKey}-TicketReturnFlight-Details-Seat`, caption: getI18nResName3('ticket', 'details', 'seat'), icon: 'i-material-symbols-airline-seat-recline-extra', text: '128' }
         ])
       },
       titleOrGfx: ({
@@ -218,7 +224,7 @@ const displayedPrice = computed(() => offer?.value?.kind === 'flights' ? offer.v
 
 if (import.meta.server) {
   const offerKind = offer!.value!.kind;
-  const bookingOgImageQueryInfo = reqEvent!.context.cacheablePageParams as BookingPageArgs;
+  const bookingOgImageQueryInfo = (reqEvent!.context.cacheablePageParams as any) as BookingPageArgs;
   const isInternalRequest = bookingOgImageQueryInfo?.i === '1';
   if (isAuthenticated && !authUserForbidden && isInternalRequest) {
     const theme = bookingOgImageQueryInfo?.theme ?? DefaultTheme;
@@ -304,6 +310,9 @@ if (import.meta.server) {
 }
 
 onMounted(async () => {
+  modalWaiter = useModalWaiter(modalWaiterRef, modalWaiterOpen);
+  documentDownloader = useDocumentDownloader(modalWaiter);
+
   if (offerBookingStore) {
     logger.debug(`(BookingDetails) starting status watcher, bookingId=${bookingId}`);
     watch(() => offerBookingStore!.status, () => {
@@ -340,58 +349,61 @@ async function onDownloadBtnClick (): Promise<void> {
 </script>
 
 <template>
-  <ClientOnly>
-    <!--
-    <div class="booking-details-page">
-      <ErrorHelm :is-error="isError" class="booking-details-error-helm">
-        <OfferDetailsBreadcrumbs
-          :ctrl-key="`${CtrlKey}-Breadcrumbs`"
-          :offer-kind="offer?.kind"
-          :city="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.departAirport.city : (offer as IStayOfferDetails).stay.city) : undefined"
-          :place-name="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.departAirport.name : (offer as IStayOfferDetails).stay.name) : undefined"
-        />
-        <OfferDetailsSummary
-          :ctrl-key="CtrlKey"
-          class="mt-xs-4 mt-s-5"
-          :offer-kind="offer?.kind"
-          :offer-id="offer?.id"
-          :city="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.departAirport.city : (offer as IStayOfferDetails).stay.city) : undefined"
-          :title="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.airplane.name : (offer as IStayOfferDetails).stay.name) : undefined"
-          :price="displayedPrice"
-          :review-score="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.airlineCompany.reviewSummary.score : (offer as IStayOfferDetails).stay.reviewSummary?.score) : undefined"
-          :num-reviews="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.airlineCompany.reviewSummary.numReviews : (offer as IStayOfferDetails).stay.reviewSummary?.numReviews) : undefined"
-          :show-favourite-btn="false"
-          :show-review-details="false"
-          :btn-res-name="getI18nResName2('bookingPage', 'downloadBtn')"
-          :btn-link-url="null"
-          @btn-click="onDownloadBtnClick"
-        />
-        <BookingTicket
-          :ctrl-key="`${CtrlKey}-Ticket`"
-          :general-info="ticketProps?.generalInfo"
-          :dates="ticketProps?.dates"
-          :offer-kind="ticketProps?.offerKind"
-          :details="ticketProps?.details"
-          :title-or-gfx="ticketProps?.titleOrGfx"
-          class="mt-xs-5 mt-s-6"
-        />
-        <BookingTicket
-          v-if="ticketReturnFlightProps"
-          :ctrl-key="`${CtrlKey}-TicketReturnFlight`"
-          :general-info="ticketReturnFlightProps?.generalInfo"
-          :dates="ticketReturnFlightProps?.dates"
-          :offer-kind="ticketReturnFlightProps?.offerKind"
-          :details="ticketReturnFlightProps?.details"
-          :title-or-gfx="ticketReturnFlightProps?.titleOrGfx"
-          class="mt-xs-5 mt-s-6"
-        />
-        <TermsOfUse :ctrl-key="`${CtrlKey}-TermsOfUse`" />
-      </ErrorHelm>
-    </div>
-    <template #fallback>
-      <ComponentWaitingIndicator ctrl-key="BookingPageClientFallback" class="my-xs-5"/>
-    </template>
-    -->
-    <div>PAGE CONTENT</div>
-  </ClientOnly>
+  <div class="w-full h-auto">
+    <ClientOnly>
+      <article class="px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px] group booking-page-group">
+        <ErrorHelm v-model:is-error="isError">
+          <OfferDetailsBreadcrumbs
+            :ctrl-key="`${CtrlKey}-Breadcrumbs`"
+            :offer-kind="offer?.kind"
+            :city="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.departAirport.city : (offer as IStayOfferDetails).stay.city) : undefined"
+            :place-name="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.departAirport.name : (offer as IStayOfferDetails).stay.name) : undefined"
+          />
+          <OfferDetailsSummary
+            :ctrl-key="CtrlKey"
+            class="mt-6 sm:mt-8"
+            :offer-kind="offer?.kind"
+            :offer-id="offer?.id"
+            :city="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.departAirport.city : (offer as IStayOfferDetails).stay.city) : undefined"
+            :title="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.airplane.name : (offer as IStayOfferDetails).stay.name) : undefined"
+            :price="displayedPrice"
+            :review-score="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.airlineCompany.reviewSummary.score : (offer as IStayOfferDetails).stay.reviewSummary?.score) : undefined"
+            :num-reviews="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.airlineCompany.reviewSummary.numReviews : (offer as IStayOfferDetails).stay.reviewSummary?.numReviews) : undefined"
+            :show-favourite-btn="false"
+            :show-review-details="false"
+            :btn-res-name="getI18nResName2('bookingPage', 'downloadBtn')"
+            :btn-link-url="null"
+            @btn-click="onDownloadBtnClick"
+          />
+          <div class="w-full h-auto mt-6 sm:mt-8">
+            <BookingTicket
+              :ctrl-key="`${CtrlKey}-Ticket`"
+              :general-info="ticketProps?.generalInfo"
+              :dates="ticketProps?.dates"
+              :offer-kind="ticketProps?.offerKind"
+              :details="ticketProps?.details"
+              :title-or-gfx="ticketProps?.titleOrGfx"
+            />
+          </div>
+          <div class="w-full h-auto mt-6 sm:mt-8">
+            <BookingTicket
+              v-if="ticketReturnFlightProps"
+              :ctrl-key="`${CtrlKey}-TicketReturnFlight`"
+              :general-info="ticketReturnFlightProps?.generalInfo"
+              :dates="ticketReturnFlightProps?.dates"
+              :offer-kind="ticketReturnFlightProps?.offerKind"
+              :details="ticketReturnFlightProps?.details"
+              :title-or-gfx="ticketReturnFlightProps?.titleOrGfx"
+            />
+          </div>
+          <TermsOfUse :ctrl-key="`${CtrlKey}-TermsOfUse`" />
+        </ErrorHelm>
+      </article>
+      
+      <template #fallback>
+        <ComponentWaitingIndicator ctrl-key="BookingPageClientFallback" class="my-8"/>
+      </template>
+    </ClientOnly>
+    <ModalWaitingIndicator ref="modalWaiterRef" v-model:open="modalWaiterOpen" :ctrl-key="`${CtrlKey}-Waiter`" />
+  </div>
 </template>

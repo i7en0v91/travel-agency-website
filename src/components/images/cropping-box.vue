@@ -221,11 +221,11 @@ onBeforeUnmount(() => {
         {{ $t(getI18nResName2('editableImage', 'croppingBoxTitle')) }}
       </h3>
       <UDivider color="gray" orientation="horizontal" class="w-full h-auto my-2 sm:my-4" size="sm"/>
-      <div class="block w-full h-[50vh] bg-primary-300 dark:bg-primary-600 max-w-full overflow-hidden">
-        <ErrorHelm :is-error="isError" class="overflow-y-hidden">
-          <img ref="cropperImg" class="block max-w-full h-full" :alt="t(getI18nResName2('editableImage', 'editImgAlt'))" @error="onImgError" @load="onImgLoad">
-        </ErrorHelm>
-      </div>
+      <ErrorHelm v-model:is-error="isError">
+        <div class="block w-full h-[50vh] bg-primary-300 dark:bg-primary-600 max-w-full overflow-hidden">
+          <img ref="cropperImg" class="block max-w-full w-full h-full" :alt="t(getI18nResName2('editableImage', 'editImgAlt'))" @error="onImgError" @load="onImgLoad">
+        </div>
+      </ErrorHelm>
       <UDivider color="gray" orientation="horizontal" class="w-full h-auto my-2 sm:my-4" size="sm"/>
       <div class="flex flex-row flex-wrap gap-4 justify-between sm:justify-end">
         <UButton icon="i-mdi-close" variant="outline" color="gray" @click="onCancelClick">

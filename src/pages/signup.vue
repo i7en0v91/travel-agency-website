@@ -131,7 +131,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <AccountPageContainer ctrl-key="Signup" :ui="{ wrapper: 'md:flex-row-reverse', height: '!h-[1154px]' }">
+  <AccountPageContainer ctrl-key="Signup" :ui="{ wrapper: 'md:flex-row-reverse', height: '!h-[72rem]' }">
     <div class="w-full h-auto">
       <h1 class="text-gray-600 dark:text-gray-300 text-5xl font-normal mt-4 max-w-[90vw] break-words">
         {{ $t(getI18nResName2('signUpPage', 'title')) }}
@@ -190,7 +190,7 @@ onMounted(() => {
         <ULink class="text-orange-500 dark:text-orange-400" color="orange" :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)" :external="false">{{ $t(getI18nResName2('accountPageCommon', 'login')) }}</ULink>
       </div>
 
-      <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" @click="onOAuthProviderClick" />
+      <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" class="mt-7 md:mt-10" @click="onOAuthProviderClick" />
       <CaptchaProtection ref="captcha" ctrl-key="SignUpCaptchaProtection" @verified="onCaptchaVerified" />
     </div>
   </AccountPageContainer>

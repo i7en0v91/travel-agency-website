@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { formatValidThruDate } from '@golobe-demo/shared';
-import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
@@ -9,32 +8,18 @@ interface IProps {
   dueDate: Date
 };
 
-const props = defineProps<IProps>();
-const logger = getCommonServices().getLogger();
-
-const $emit = defineEmits<{(event: 'update:selected', value: boolean): void}>();
-
-function onClicked () {
-  logger.debug(`(PaymentMethodCard) on click, ctrlKey=${props.ctrlKey}, selected=${props.selected}`);
-  if (props.selected) {
-    return;
-  }
-  $emit('update:selected', true);
-}
+defineProps<IProps>();
 
 </script>
 
 <template>
-  <li :class="`payment-card-variant ${$props.selected ? 'selected' : ''} tabbable brdr-3 p-xs-3`" role="radio" @click="onClicked" @keyup.space="onClicked" @keyup.enter="onClicked">
-    <div class="payment-card-operator-logo" />
-    <div class="payment-card-details">
-      <div class="payment-card-details-digits">
-        **** {{ digits }}
-      </div>
-      <div class="payment-card-details-duedate">
-        {{ formatValidThruDate(dueDate) }}
-      </div>
+  <div class="cursor-pointer w-full h-auto flex flex-row flex-wrap items-center justify-start gap-2 p-4 pl-0 bg-transparent dark:bg-transparent rounded-xl">
+    <UIcon name="i-cib-cc-visa" class="flex-initial w-8 h-8 text-gray-950 dark:text-white mr-5"/>
+    <div class="flex-initial">
+      <span class="text-3xl font-semibold whitespace-normal">**** **** ****</span> 
+      &nbsp;
+      <span class="text-2xl font-semibold whitespace-nowrap">{{ digits }}</span>
     </div>
-    <div class="payment-card-variant-mark" />
-  </li>
+    <div class="flex-initial font-normal text-sm sm:text-base text-gray-600 dark:text-gray-300">{{ formatValidThruDate(dueDate) }}</div>
+  </div>
 </template>

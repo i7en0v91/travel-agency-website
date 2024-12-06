@@ -49,7 +49,7 @@ const uiStyling = {
           <h3 v-if="props.header" class="h-16 max-h-16 text-2xl font-bold w-fit overflow-hidden line-clamp-2 whitespace-pre-wrap review-card-header">
             {{ (props.header as any)[locale] }}
           </h3>
-          <USkeleton v-else as="h3" class="w-50 h-16 max-h-16"/>
+          <USkeleton v-else as="h3" class="w-full h-8 max-h-8"/>
         </div>
       </template>
 
@@ -57,7 +57,7 @@ const uiStyling = {
         <p v-if="props.body" :class="`flex-grow flex-shrink-0 basis-auto text-gray-400 dark:text-gray-500 leading-5 font-medium ${expanded ? 'h-auto' : 'h-[60px] overflow-hidden'} review-card-body`">
           {{ (props.body as any)[locale] }}
         </p>
-        <USkeleton v-else as="p" class="h-[60px] mt-4"/>
+        <USkeleton v-else as="p" class="w-full h-[60px] mt-4"/>
 
         <UButton class="border-none ring-0 w-fit self-end text-black dark:text-white font-semibold" variant="outline" color="gray" @click="toggleReviewText">
           {{ $t(getI18nResName3('indexPage', 'companyReviewSection', expanded ? 'collapseBtn' : 'expandBtn')) }}
@@ -70,26 +70,27 @@ const uiStyling = {
           <div v-if="props.userName" class="font-bold text-black dark:text-white review-card-user-name">
             {{ (props.userName as any)[locale] }}
           </div>
-          <USkeleton v-else class="w-50 h-4"/>
+          <USkeleton v-else class="w-1/2 h-4"/>
           <div class="text-gray-400 dark:text-gray-500 mt-1">
             {{ $t(getI18nResName3('indexPage', 'companyReviewSection', 'userCompany')) }}
           </div>
         </div>
 
         <StaticImage
-            :ctrl-key="ctrlKey"
-            :entity-src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
-            :category="ImageCategory.CompanyReview"
-            sizes="xs:80vw sm:50vw md:50vw lg:50vw xl:40vw"
-            :class="expanded ? 'mt-[40px]' : 'mt-2'"
-            :ui="{ 
-              wrapper: 'rounded-xl w-100 h-[200px] h-full justify-self-end review-card-img',
-              stub: 'h-[200px] h-full rounded-xl',
-              img: 'h-[200px] h-full rounded-xl'
-            }"
-            :alt-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'imgAlt')"
-            :show-stub="true"
-          />
+          :ctrl-key="ctrlKey"
+          :entity-src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
+          :category="ImageCategory.CompanyReview"
+          sizes="xs:80vw sm:50vw md:50vw lg:50vw xl:40vw"
+          :class="expanded ? 'mt-[40px]' : 'mt-2'"
+          :ui="{ 
+            wrapper: 'rounded-xl w-full h-full justify-self-end',
+            stub: 'w-full h-full rounded-xl',
+            img: 'rounded-xl',
+            errorStub: '!h-[200px]'
+          }"
+          :alt-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'imgAlt')"
+          :show-stub="true"
+        />
       </div>
     </UCard>
   </div>

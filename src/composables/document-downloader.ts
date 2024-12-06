@@ -1,10 +1,9 @@
 import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue, getValueForFlightDayFormatting, type Theme, type Locale, getI18nResName2, type EntityId, type EntityDataAttrsOnly, type IFlightOffer, type IStayOfferDetails, type IStayOffer, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { defaultErrorHandler } from './../helpers/exceptions';
 import { ApiEndpointBookingDownload } from './../server/api-definitions';
-import { useModal } from 'vue-final-modal';
+import { type IModalWaiter } from './../composables/modal-waiter';
 import { saveAs } from 'file-saver';
 import { getBytes } from './../helpers/rest-utils';
-import ModalWaitingIndicator from './../components/modal-waiting-indicator.vue';
 import { usePreviewState } from './../composables/preview-state';
 import set from 'lodash-es/set';
 import { getCommonServices } from '../helpers/service-accessors';
@@ -16,19 +15,12 @@ export interface IDocumentDownloader {
   download: (bookingId: EntityId, offer: EntityDataAttrsOnly<IFlightOffer | IStayOfferDetails | IStayOffer>, firstName: string | undefined, lastName: string | undefined, locale: Locale, theme: Theme) => Promise<void>
 }
 
-export function useDocumentDownloader (): IDocumentDownloader {
+export function useDocumentDownloader (modalWaiter: IModalWaiter): IDocumentDownloader {
   const logger = getCommonServices().getLogger();
 
   const { d, t } = useI18n();
   const { enabled } = usePreviewState();
 
-  const modalWaitingIndicator = useModal({
-    component: ModalWaitingIndicator,
-    attrs: {
-      ctrlKey: `DocumentDownloader-modalWaitingIndicator`,
-      labelResName: getI18nResName2('bookingCommon', 'generatingDoc')
-    }
-  });
 
   const getFileName = (offer: EntityDataAttrsOnly<IFlightOffer | IStayOfferDetails | IStayOffer>, firstName?: string, lastName?: string): string => {
     const removeSysChars = (file: string): string => file.replaceAll(/[\s]/g, '').replaceAll(/[./\\]/g, '-');
@@ -61,8 +53,7 @@ export function useDocumentDownloader (): IDocumentDownloader {
 
     logger.verbose(`(document-downloader) starting download, bookingId=${bookingId}, locale=${locale}, theme=${theme}`);
     try {
-      await modalWaitingIndicator.open();
-  
+      modalWaiter.show(true);
       
       const fileName = getFileName(offer, firstName, lastName);
       const path = `/${ApiEndpointBookingDownload(bookingId)}`;
@@ -84,7 +75,7 @@ export function useDocumentDownloader (): IDocumentDownloader {
       const e = AppException.isAppException(err) ? err : new AppException(AppExceptionCodeEnum.DOCUMENT_GENERATION_FAILED, 'failed to generate document', 'error-stub');
       defaultErrorHandler(e);
     } finally {
-      await modalWaitingIndicator.close();
+      await modalWaiter.show(false);
     }
   };
 

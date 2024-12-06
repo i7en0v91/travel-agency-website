@@ -18,6 +18,7 @@ import { type ComponentInstance } from 'vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
+import { type IStaticImageUiProps } from './../../types';
 
 const { d, locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
@@ -169,12 +170,19 @@ onMounted(() => {
   }
 });
 
+const imageStylings: IStaticImageUiProps[] = [
+  { wrapper: 'row-start-1 row-end-2 col-start-1 col-end-2 rounded-tl-xl rounded-tr-xl md:col-end-3 xl:row-end-3 xl:col-end-2 xl:rounded-tr-none xl:rounded-bl-xl', img: 'rounded-tl-xl rounded-tr-xl xl:rounded-tr-none xl:rounded-bl-xl' },
+  { wrapper: 'row-start-2 row-end-3 col-start-1 col-end-2 xl:row-start-1 xl:row-end-2 xl:col-start-2 xl:col-end-3' },
+  { wrapper: 'row-start-3 row-end-4 col-start-1 col-end-2 md:row-start-2 md:row-end-3 md:col-start-2 md:col-end-3 xl:row-start-1 xl:row-end-2 xl:col-start-3 xl:col-end-4', img: 'xl:rounded-tr-xl' },
+  { wrapper: 'row-start-4 row-end-5 col-start-1 col-end-2 md:row-start-3 md:row-end-4 md:rounded-bl-xl xl:row-start-2 xl:row-end-3 xl:col-start-2 xl:col-end-3 xl:rounded-bl-none', img: 'md:rounded-bl-xl xl:rounded-bl-none' },
+  { wrapper: 'row-start-5 row-end-6 col-start-1 col-end-2 rounded-bl-xl rounded-br-xl md:row-start-3 md:row-end-4 md:col-start-2 md:col-end-3 md:rounded-bl-none xl:row-start-2 xl:row-end-3 xl:col-start-3 xl:col-end-4', img: 'rounded-bl-xl rounded-br-xl md:rounded-bl-none' }
+].map(s => { return { ...s, img: s.img, stub: s.img, errorStub: `rounded-none ${s.img}` }; });
+
 </script>
 
-<template>
-  <article class="stay-details-page no-hidden-parent-tabulation-check">
-    <!--
-    <ErrorHelm :is-error="stayDetailsFetch.status.value === 'error'" class="stay-details-page-error-helm">
+<template>  
+  <article class="px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
+    <ErrorHelm :is-error="stayDetailsFetch.status.value === 'error'">
       <OfferDetailsBreadcrumbs
         :ctrl-key="`${CtrlKey}-Breadcrumbs`"
         offer-kind="stays"
@@ -183,7 +191,7 @@ onMounted(() => {
       />
       <OfferDetailsSummary
         :ctrl-key="CtrlKey"
-        class="mt-xs-4 mt-s-5"
+        class="mt-6 sm:mt-8"
         offer-kind="stays"
         :offer-id="offerId!"
         :city="stayOffer?.stay?.city"
@@ -194,12 +202,13 @@ onMounted(() => {
         :btn-res-name="getI18nResName2('offerDetailsPage', 'bookBtn')"
         :btn-link-url="stayOffer ? navLinkBuilder.buildLink(`/${getPagePath(AppPage.BookStay)}/${offerId}`, locale as Locale, { serviceLevel: 'Base' }) : navLinkBuilder.buildLink(route.fullPath, locale as Locale)"
       />
-      <section class="stay-images mt-xs-5">
+      <section class="w-full h-auto grid gap-[8px] grid-rows-stayphotosxs grid-cols-stayphotosxs md:grid-rows-stayphotosmd md:grid-cols-stayphotosmd xl:md:grid-rows-stayphotosxl xl:grid-cols-stayphotosxl mt-8">
         <StaticImage
           v-for="(image, idx) in (stayOffer?.stay?.images ?? range(0, 5).map(_ => undefined))"
           :key="`${CtrlKey}-StayImage-${idx}`"
           :ctrl-key="`${CtrlKey}-StayImage-${idx}`"
           :class="`stay-image stay-image-${idx}`"
+          :ui="imageStylings[idx]"
           :entity-src="image"
           :category="idx === 0 ? ImageCategory.Hotel : ImageCategory.HotelRoom"
           :is-high-priority="idx === 0"
@@ -207,14 +216,14 @@ onMounted(() => {
           :alt-res-name="idx === 0 ? getI18nResName2('stayDetailsPage', 'stayMainImageAlt') : getI18nResName2('stayDetailsPage', 'stayServiceImageAlt')"
         />
       </section>
-      <hr class="stay-details-section-separator">
+      <UDivider color="gray" orientation="horizontal" class="w-full my-16" size="sm"/>
       <OverviewSection
         ctrl-key="StayDetailsOverviewSection"
         :description="stayOffer?.stay?.description"
         :num-reviews="reviewSummary?.numReviews ?? undefined"
         :review-score="reviewSummary?.score ?? undefined"
       />
-      <hr class="stay-details-section-separator">
+      <UDivider color="gray" orientation="horizontal" class="w-full my-16" size="sm"/>      
       <AvailableRoomSection
         ctrl-key="StayDetailsAvailableRoomsSection"
         :offer-id="stayOffer?.id"
@@ -229,16 +238,15 @@ onMounted(() => {
           };
         }) ?? undefined"
       />
-      <hr class="stay-details-section-separator">
+      <UDivider color="gray" orientation="horizontal" class="w-full my-16" size="sm"/>
       <LocationMap :ctrl-key="`${CtrlKey}-Location`" :location="stayOffer?.stay?.geo" :city="stayOffer?.stay?.city" :visibility="mapComponentVisibility" />
-      <hr class="stay-details-section-separator">
+      <UDivider color="gray" orientation="horizontal" class="w-full my-16" size="sm"/>
       <AmenitiesSection :ctrl-key="`${CtrlKey}-Amenities`" />
-      <hr class="stay-details-section-separator">
+      <UDivider color="gray" orientation="horizontal" class="w-full my-16" size="sm"/>
+      
       <ReviewSection v-if="stayOffer" :ctrl-key="`${CtrlKey}-Reviews`" :stay-id="stayOffer?.stay.id" :preloaded-summary-info="reviewSummary" @review-summary-changed="onReviewSummaryChanged" />
-      <ComponentWaitingIndicator v-else :ctrl-key="`${CtrlKey}-ReviewsWaiterFallback`" class="stay-reviews-waiting-indicator my-xs-5" />
+      <ComponentWaitingIndicator v-else :ctrl-key="`${CtrlKey}-ReviewsWaiterFallback`" class="my-8" />
       <CaptchaProtection v-if="!!AppConfig.maps && !isRobotRequest" ref="captcha" ctrl-key="StayDetailsCaptchaProtection" @verified="onCaptchaVerified" @failed="onCaptchaFailed" />
     </ErrorHelm>
-  -->
-    PAGE CONTENT
-  </article>
+  </article>  
 </template>

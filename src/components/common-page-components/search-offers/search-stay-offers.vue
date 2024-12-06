@@ -105,7 +105,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
 </script>
 
 <template>
-  <div class="flex flex-col xl:flex-row flex-nowrap gap-[16px] sm:gap-[24px] w-full h-full">
+  <div class="flex flex-col xl:flex-row flex-nowrap gap-x-[16px] gap-y-4 sm:gap-x-[24px] sm:gap-y-6 w-full h-full">
     <InputFieldFrame :text-res-name="getI18nResName2('searchStays', 'destinationCaption')" class="flex-grow-[4] flex-shrink-[4] basis-auto w-full">
       <div class="min-h-[3.25rem] max-h-[3.25rem] block w-full rounded ring-1 ring-inset ring-gray-500 dark:ring-gray-400 text-gray-500 dark:text-gray-400 font-medium pl-[16px]">
         <SearchListInput
@@ -122,7 +122,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
         />
       </div>
     </InputFieldFrame>
-    <div class="flex-grow-[5] flex-shrink-[3] basis-auto w-full flex flex-col sm:flex-row flex-nowrap gap-[16px] sm:gap-[24px]">
+    <div class="flex-grow-[5] flex-shrink-[3] basis-auto w-full flex flex-col sm:flex-row flex-nowrap gap-x-[16px] gap-y-4 sm:gap-x-[24px] sm:gap-y-6">
       <DatePicker
         v-model:selected-date="checkInDate"
         :ctrl-key="`${props.ctrlKey}-CheckIn`"

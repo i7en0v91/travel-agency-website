@@ -194,7 +194,7 @@ const uiFilterSectionStyling = {
 <template>
   <section class="flex flex-row flex-nowrap pt-2 md:pt-8 md:pr-2 md:mb-0 md:min-h-[256px]">
     <div class="flex-1 md:mr-2">
-      <ErrorHelm v-model:is-error="isError">
+      <ErrorHelm v-model:is-error="isError" :ui="{ stub: 'max-h-[50vh]' }">
         <ClientOnly>
           <MyAccordion
             :ctrl-key="`${$props.ctrlKey}-FilterPanelSection`"
@@ -257,6 +257,6 @@ const uiFilterSectionStyling = {
       </ErrorHelm>
     </div>
     
-    <UDivider color="gray" orientation="vertical" class="flex-grow-0 flex-shrink-0 basis-auto hidden h-full md:inline" size="sm"/>
+    <UDivider color="gray" orientation="vertical" class="flex-initial hidden h-full md:inline" size="sm"/>
   </section>
 </template>

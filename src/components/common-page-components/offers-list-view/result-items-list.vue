@@ -475,18 +475,20 @@ onMounted(() => {
         </div>
       </div>
 
-      <ErrorHelm v-model:is-error="isError" class="mt-4">
-        <ol v-if="waitingStubMode === 'hide'" class="space-y-6 sm:space-y-8">
-          <li
-            v-for="(offer, idx) in (items)"
-            :key="`${props.ctrlKey}-Offer-${offer.id}`"
-          >
-            <FlightsListItemCard v-if="offersKind === 'flights'" :ctrl-key="`${ctrlKey}-FlightsCard-${idx}`" :offer="(offer as EntityDataAttrsOnly<IFlightOffer>)" />
-            <StaysListItemCard v-else :ctrl-key="`${ctrlKey}-StaysCard-${idx}`" :offer="(offer as EntityDataAttrsOnly<IStayOffer>)" />
-          </li>
-        </ol>
-        <ComponentWaitingIndicator v-else :ctrl-key="`${ctrlKey}-ListWaiter`" />
-      </ErrorHelm>
+      <div class="w-full h-auto mt-4">
+        <ErrorHelm v-model:is-error="isError">
+          <ol v-if="waitingStubMode === 'hide'" class="space-y-6 sm:space-y-8">
+            <li
+              v-for="(offer, idx) in (items)"
+              :key="`${props.ctrlKey}-Offer-${offer.id}`"
+            >
+              <FlightsListItemCard v-if="offersKind === 'flights'" :ctrl-key="`${ctrlKey}-FlightsCard-${idx}`" :offer="(offer as EntityDataAttrsOnly<IFlightOffer>)" />
+              <StaysListItemCard v-else :ctrl-key="`${ctrlKey}-StaysCard-${idx}`" :offer="(offer as EntityDataAttrsOnly<IStayOffer>)" />
+            </li>
+          </ol>
+          <ComponentWaitingIndicator v-else :ctrl-key="`${ctrlKey}-ListWaiter`" />
+        </ErrorHelm>
+      </div>
     </TabsGroup>    
     <ComponentWaitingIndicator v-else :ctrl-key="`${ctrlKey}-ResultsWaiter`" class="mt-8" />
   </section>

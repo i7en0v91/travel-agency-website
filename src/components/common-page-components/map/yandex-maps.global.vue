@@ -87,7 +87,7 @@ onMounted(() => {
 <template>
   <div class="yandex-maps" :style="{width: '100%', height: 'auto'}">
     <div v-if="!map">
-      <ComponentWaitingIndicator ctrl-key="YandexMap-InitializationWaiter" class="interactive-map-waiting-indicator" />
+      <ComponentWaitingIndicator ctrl-key="YandexMap-InitializationWaiter" />
     </div>
     <div :style="map ? {width: '100%', height: 'auto'} : {width: '100%', height: 0, maxHeight: 0, overflowY: 'hidden'}">
       <YandexMap v-model="map" :settings="{ location: { center: [props.origin.lon, props.origin.lat], zoom: DefaultZoomLevel }, showScaleInCopyrights: true, theme: theme.currentTheme.value, className: styleClass }">
@@ -107,8 +107,8 @@ onMounted(() => {
         <YandexMapDefaultMarker :settings="{ coordinates: [props.origin.lon, props.origin.lat], id: `${ctrlKey}-origin`, properties: { hint: t(getI18nResName3('stayDetailsPage', 'location', 'demoMarker')) }, color: theme.currentTheme.value === 'light' ? 'red' : '#A259FF', draggable: false }" />
         <YandexMapHint hint-property="hint">
           <template #default="{ content }">
-            <div class="v-popper--theme-default-tooltip" :style="{ position: 'absolute', borderRadius: '4px', width: '250px', maxWidth: '250px', transform: 'translate(7px, -100%)' }">
-              <span class="v-popper__inner" :style="{ display: 'block', borderRadius: '4px', width: 'auto', maxWidth: 'inherit', whiteSpace: 'normal', wordBreak: 'break-word' }">{{ content }}</span>
+            <div class="bg-white dark:bg-gray-900 p-2 text-sm w-fit h-auto" :style="{ position: 'absolute', borderRadius: '4px', width: '250px', maxWidth: '250px', transform: 'translate(7px, -100%)' }">
+              <span class="text-gray-600 dark:text-gray-300 whitespace-normal" :style="{ display: 'block', borderRadius: '4px', width: 'auto', maxWidth: 'inherit', whiteSpace: 'normal', wordBreak: 'break-word' }">{{ content }}</span>
             </div>
           </template>
         </YandexMapHint>

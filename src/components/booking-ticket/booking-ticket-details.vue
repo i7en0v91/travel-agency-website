@@ -7,8 +7,8 @@ defineProps<IBookingTicketDetailsProps>();
 </script>
 
 <template>
-  <div class="booking-ticket-details-container">
-    <ul class="booking-ticket-details mb-xs-4 ml-xs-4 mr-xs-4">
+  <div class="w-full h-full booking-ticket-details-container">
+    <ul class="m-6 mt-0 w-auto h-auto grid auto-rows-auto grid-cols-ticketdetails items-center gap-4 booking-ticket-details">
       <BookingTicketDetailsItem
         v-for="(item, idx) in items"
         :key="`${ctrlKey}-${idx}`"

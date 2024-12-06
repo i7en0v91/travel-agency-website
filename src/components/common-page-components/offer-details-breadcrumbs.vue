@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppPage, type Locale, getLocalizeableValue, getI18nResName2, type EntityDataAttrsOnly, type ICity, type ILocalizableValue, type OfferKind } from '@golobe-demo/shared';
+import { AppPage, type Locale, getLocalizeableValue, type EntityDataAttrsOnly, type ICity, type ILocalizableValue, type OfferKind } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 interface IProps {
@@ -8,7 +8,7 @@ interface IProps {
   city?: EntityDataAttrsOnly<ICity> | undefined,
   placeName?: ILocalizableValue | undefined
 };
-withDefaults(defineProps<IProps>(), {
+const props = withDefaults(defineProps<IProps>(), {
   offerKind: undefined,
   city: undefined,
   placeName: undefined
@@ -17,29 +17,24 @@ withDefaults(defineProps<IProps>(), {
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
+const links = computed(() => [{
+  label: props.city ? getLocalizeableValue(props.city.country.name, locale.value as Locale) : undefined,
+  to: props.city ? (props.offerKind === 'flights' ? navLinkBuilder.buildPageLink(AppPage.Flights, locale.value as Locale) : navLinkBuilder.buildPageLink(AppPage.Stays, locale.value as Locale)) : undefined,
+  external: false
+}, {
+  label: props.city ? getLocalizeableValue(props.city.name, locale.value as Locale) : undefined,
+  to: props.city ? (props.offerKind === 'flights' ? navLinkBuilder.buildPageLink(AppPage.FindFlights, locale.value as Locale, { fromCitySlug: props.city.slug }) : navLinkBuilder.buildPageLink(AppPage.FindStays, locale.value as Locale, { citySlug: props.city.slug })) : undefined,
+  external: false
+}, {
+  label: props.placeName ? getLocalizeableValue(props.placeName, locale.value as Locale) : undefined
+}]);
+
 </script>
 
 <template>
-  <nav id="nav-offer-breadcrumbs" :aria-label="$t(getI18nResName2('ariaLabels', 'navOfferBreadcrumbs'))" class="offer-details-breadcrumbs-nav">
-    <ol class="offer-details-breadcrumbs">
-      <li class="offer-details-breadcrumb">
-        <NuxtLink v-if="city" class="brdr-1 tabbable" :to="offerKind === 'flights' ? navLinkBuilder.buildPageLink(AppPage.Flights, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Stays, locale as Locale)">
-          {{ getLocalizeableValue(city.country.name, locale as Locale) }}
-        </NuxtLink>
-        <div v-else class="data-loading-stub text-data-loading" />
-      </li>
-      <li class="offer-details-breadcrumb">
-        <NuxtLink v-if="city" class="brdr-1 tabbable" :to="offerKind === 'flights' ? navLinkBuilder.buildPageLink(AppPage.FindFlights, locale as Locale, { fromCitySlug: city.slug }) : navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug: city.slug })">
-          {{ getLocalizeableValue(city.name, locale as Locale) }}
-        </NuxtLink>
-        <div v-else class="data-loading-stub text-data-loading" />
-      </li>
-      <li class="offer-details-breadcrumb">
-        <div v-if="placeName">
-          {{ getLocalizeableValue(placeName, locale as Locale) }}
-        </div>
-        <div v-else class="data-loading-stub text-data-loading" />
-      </li>
-    </ol>
-  </nav>
+  <UBreadcrumb :links="links">
+    <template v-if="links.some(l => !l.label?.length)" #default>
+      <USkeleton class="w-[10lvw] h-3" />
+    </template>
+  </UBreadcrumb>
 </template>

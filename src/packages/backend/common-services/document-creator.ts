@@ -65,7 +65,7 @@ export class DocumentCreator implements IDocumentCreator {
 
     const MoveDownStep = 0.5;
 
-    const backgroundColor = theme === 'light' ? 'white' : '#2B2B2B';
+    const backgroundColor = theme === 'light' ? 'white' : '#111827';
     const fontColor = theme === 'light' ? '#112211' : 'white';
     $pdf.rect(0, 0, PdfPaperWidth, PdfPaperHeight).fill(backgroundColor);
     $pdf.fontSize(PdfFontPrimarySize);
