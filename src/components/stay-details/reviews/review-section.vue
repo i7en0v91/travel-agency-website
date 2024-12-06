@@ -54,13 +54,13 @@ function refreshReviewSummaryValues(refreshFromStore: boolean = true) {
       cumulativeScore = undefined;
       reviewsCount = props.preloadedSummaryInfo?.numReviews;
     } else {
-      cumulativeScore = reviewStore.items.length > 0 ? reviewStore.items.map(r => r.score).reduce((sum, v) => sum + v, 0) : undefined;
+      cumulativeScore = reviewStore.items.length > 0 ? reviewStore.items.map(r => r.score).reduce((sum, v) => sum + v, 0) : DefaultStayReviewScore;
       reviewsCount = reviewStore.items.length;
     }
   }
   reviewScore.value = cumulativeScore !== undefined  ? (reviewsCount! > 0 ? cumulativeScore / reviewsCount! : DefaultStayReviewScore) : undefined; 
   reviewsCountText.value = reviewsCount !== undefined ? `${reviewsCount} ${t(getI18nResName3('stayDetailsPage', 'reviews', 'count'), reviewsCount)}` : '';
-  scoreClassResName.value = reviewScore.value ? getScoreClassResName(reviewScore.value) : undefined;
+  scoreClassResName.value = reviewScore.value !== undefined ? getScoreClassResName(reviewScore.value) : undefined;
   logger.debug(`(StayReviews) review summary values refreshed: ctrlKey=${props.ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, refreshFromStore=${refreshFromStore}`);
 }
 
@@ -110,6 +110,11 @@ async function onSubmitReview (reviewHtml: string, score: number): Promise<void>
 
   if(!await requestUserAction()) {
     logger.verbose(`(StayReviews) send review handler hasn't been run - not allowed in preview mode, ctrlKey=${props.ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`);
+    return;
+  }
+
+  if(reviewStore.status === 'pending') {
+    logger.verbose(`(StayReviews) cannot submit review while store is in pending state, ctrlKey=${props.ctrlKey}, reviewHtml=${reviewHtml}`);
     return;
   }
 

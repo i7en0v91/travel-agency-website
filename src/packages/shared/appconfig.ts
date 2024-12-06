@@ -286,7 +286,7 @@ const Config : IAppConfig = {
   siteUrl: SiteUrl,
   contactEmail: 'support@golobe.demo', // contact email for website users
   reCaptcha: {
-    enabled: !isQuickStartEnv(),
+    enabled: !isTestEnv() && !isQuickStartEnv(),
     language: 'en', // default language
     size: 'invisible' // also may be normal
   },

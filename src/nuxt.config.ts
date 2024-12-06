@@ -398,7 +398,8 @@ export default defineNuxtConfig({
     vite: {
       build: {
         rollupOptions: {
-          onLog: rollupLogHandler
+          onLog: rollupLogHandler,
+          external: ['sharp']
         },
         chunkSizeWarningLimit: 1000
       }
@@ -428,7 +429,8 @@ export default defineNuxtConfig({
             }
           }
         },
-        onLog: rollupLogHandler
+        onLog: rollupLogHandler,
+        external: ['sharp']
       }
     }
   },

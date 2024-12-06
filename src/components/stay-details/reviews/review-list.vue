@@ -25,7 +25,7 @@ const logger = getCommonServices().getLogger();
 const swiper = shallowRef();
 const isSwiperReady = ref(false);
 const showNoReviewStub = computed(() => reviewStore.status === 'success' && reviewStore.items !== undefined && reviewStore.items.length === 0);
-const isNavButtonsVisible = computed(() => reviewStore.status === 'error' && reviewStore.items !== undefined && isSwiperReady.value && !showNoReviewStub.value);
+const isNavButtonsVisible = computed(() => reviewStore.status !== 'error' && reviewStore.items !== undefined && isSwiperReady.value && !showNoReviewStub.value);
 const pagingState = ref<{ of: number, total: number } | undefined>();
 const slideAnimationEnabled = import.meta.client && !isPrefersReducedMotionEnabled();
 

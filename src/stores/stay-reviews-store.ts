@@ -30,7 +30,7 @@ interface IStayReviewItemInternal extends IStayReviewItem {
 export interface IStayReviewsStore {
   stayId: EntityId,
   status: 'pending' | 'success' | 'error',
-  items: IStayReviewItemInternal[],
+  items: IStayReviewItemInternal[] | undefined,
   fetchReviews: () => Promise<void>,
   createOrUpdateReview: (text: string, score: number) => Promise<void>,
   deleteReview: () => Promise<void>,
@@ -127,7 +127,7 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
     const result: StayReviewsStoreInternalRef = reactive({
       stayId,
       status: 'pending',
-      items: [],
+      items: undefined,
       fetchReviews: async (): Promise<void> => {
         logger.verbose(`(stay-reviews-store) obtaining reviews, stayId=${stayId}, userId=${userAccount?.userId}`);
         result.status = 'pending';
@@ -192,7 +192,7 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
           throw err;
         }
 
-        let reviewInStore = result.items.find(i => i.user === 'current');
+        let reviewInStore = result.items?.find(i => i.user === 'current');
         if (!reviewInStore) {
           logger.debug(`(stay-reviews-store) creating reviews in store, stayId=${stayId}, userId=${userAccount?.userId}`);
           reviewInStore = <IStayReviewItemInternal>{
@@ -201,7 +201,7 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
             text: { ru: text, en: text, fr: text },
             user: 'current'
           };
-          result.items = [reviewInStore, ...result.items];
+          result.items = [reviewInStore, ...(result.items ?? [])];
         } else {
           logger.debug(`(stay-reviews-store) review in store updated, stayId=${stayId}, userId=${userAccount?.userId}`);
           reviewInStore.text = { ru: text, en: text, fr: text };
@@ -231,25 +231,25 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
           throw err;
         }
 
-        result.items = result.items.filter(i => i.user !== 'current');
+        result.items = result.items?.filter(i => i.user !== 'current') ?? [];
         logger.verbose(`(stay-reviews-store) delete review succeeded, stayId=${stayId}`);
       },
       onAuth: (userId: EntityId): void => {
         logger.debug(`(stay-reviews-store) onAuth, stayId=${stayId}, userId=${userId}`);
         if (result.status === 'success') {
-          const userReview = result.items.find(i => !isString(i.user) && i.user.id === userId);
+          const userReview = result.items?.find(i => !isString(i.user) && i.user.id === userId);
           if (userReview) {
             logger.verbose(`(stay-reviews-store) setting user's current review, stayId=${stayId}, reviewId=${userReview.id}`);
             userReview.user = 'current';
-            result.items.splice(result.items.indexOf(userReview), 1);
-            result.items = [userReview, ...result.items];
+            result.items!.splice(result.items!.indexOf(userReview), 1);
+            result.items = [userReview, ...result.items!];
           }
         }
       },
       onSignOut: () => {
         logger.debug(`(stay-reviews-store) onSignOut, stayId=${stayId}`);
         if (result.status === 'success') {
-          const userReview = result.items.find(i => i.user === 'current');
+          const userReview = result.items?.find(i => i.user === 'current');
           if (userReview) {
             logger.verbose(`(stay-reviews-store) actualizing review user, stayId=${stayId}, reviewId=${userReview.id}`);
             if (!userAccount) {
@@ -275,7 +275,7 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
       },
       getUserReview: (): IStayReviewItem | undefined => {
         logger.debug(`(stay-reviews-store) get user review, stayId=${stayId}, userId=${userAccount?.userId}`);
-        const review = result.items.find(i => i.user === 'current');
+        const review = result.items?.find(i => i.user === 'current');
         logger.debug(`(stay-reviews-store) get user review, stayId=${stayId}, userId=${userAccount?.userId}, reviewId=${review?.id}`);
         return review;
       }

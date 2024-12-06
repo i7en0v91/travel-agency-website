@@ -112,6 +112,7 @@
     "scss-reset": "^1.4.2",
     "v-calendar": "^3.1.2",
     "vue-final-modal": "^4.5.4",
+    "sharp": "^0.32.6",
     "vue-yandex-maps": "^2.1.4",
     "vue3-recaptcha2": "^1.8.0",
     "yup": "^1.4.0"

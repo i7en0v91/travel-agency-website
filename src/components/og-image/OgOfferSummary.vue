@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { AppConfig, getI18nResName2, AppPage, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, type Locale, DefaultLocale, getLocalizeableValue, getOgImageFileName, getValueForFlightDayFormatting, type ImageCategory, type ILocalizableValue, type ICity, type EntityDataAttrsOnly, type IImageEntitySrc, type IImageCategoryInfo, type OfferKind } from '@golobe-demo/shared';
+import { AppExceptionCodeEnum, AppException, getI18nResName2, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, type Locale, DefaultLocale, getLocalizeableValue, getValueForFlightDayFormatting, type ImageCategory, type ILocalizableValue, type ICity, type EntityDataAttrsOnly, type IImageEntitySrc, type IImageCategoryInfo, type OfferKind } from '@golobe-demo/shared';
 import { ApiEndpointImage } from './../../server/api-definitions';
-import { withQuery, joinURL } from 'ufo';
+import { withQuery } from 'ufo';
 import { usePreviewState } from './../../composables/preview-state';
 import set from 'lodash-es/set';
 import { getCommonServices } from '../../helpers/service-accessors';
@@ -16,7 +16,6 @@ interface IProps {
   image: IImageEntitySrc & { category: ImageCategory }
 }
 
-const isError = ref(false);
 const props = defineProps<IProps>();
 
 const { d, locale } = useI18n();
@@ -28,15 +27,13 @@ logger.verbose('(OgOfferSummary) component setup', props.image);
 
 const dateStr = props.kind === 'flights' ? d(getValueForFlightDayFormatting(new Date(props.dateUnixUtc), props.utcOffsetMin!), 'day') : d(new Date(props.dateUnixUtc), 'day');
 
-const defaultImgUrl = joinURL('/img', 'og', getOgImageFileName(AppPage.Index, locale.value as Locale));
-
 let imageSize: IImageCategoryInfo;
 try {
   const systemConfigurationStore = useSystemConfigurationStore();
   imageSize = await systemConfigurationStore.getImageSrcSize(props.image.category);
 } catch (err: any) {
   logger.warn('(OgOfferSummary) failed to detect image category size', err, props.image);
-  isError.value = true;
+  throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to render offer summary image', 'error-page');
 }
 
 const { enabled } = usePreviewState();
@@ -48,14 +45,14 @@ const imgUrl = withQuery(`/${ApiEndpointImage}`, {
 
 function onError (err: any) {
   logger.warn('(OgOfferSummary) render exception', err);
-  isError.value = true;
+  throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to render offer summary image', 'error-page');
 }
 
 </script>
 
 <template>
-  <div class="error-helm">
-    <NuxtErrorBoundary v-if="!isError" @error="onError">
+  <div class="container">
+    <NuxtErrorBoundary @error="onError">
       <div class="og-app-page">
         <svg
           class="og-golobe-logo"
@@ -107,20 +104,11 @@ function onError (err: any) {
         />
       </div>
     </NuxtErrorBoundary>
-    <div v-else class="og-app-page-error-stub">
-      <img
-        :src="`${defaultImgUrl}&satori=1`"
-        fit="cover"
-        :width="AppConfig.ogImage.screenSize.width"
-        :height="AppConfig.ogImage.screenSize.height"
-        class="og-app-page-default-image"
-      >
-    </div>
   </div>
 </template>
 
 <style scoped>
-  .error-helm {
+  .container {
     width: 100%;
   }
 
