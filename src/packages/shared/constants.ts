@@ -178,7 +178,7 @@ export const DefaultEmailTheme = <Theme>'light';
 
 export const CurrentUserGeoLocation = { lon: 0.0, lat: 0.0 };
 
-export const DefaultStayReviewScore = 5;
+export const DefaultStayReviewScore = 0;
 
 export const SearchOffersPriceRange = { min: 0, max: 25000 };
 export const SearchOffersPrimeOfferIterator = 9721;

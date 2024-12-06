@@ -1,11 +1,11 @@
-import { assert, describe, test, type TestOptions } from 'vitest';
+import { assert, beforeAll, afterAll, describe, test, type TestOptions } from 'vitest';
 import { type Page } from 'playwright-core';
 import { setup, createPage } from '@nuxt/test-utils/e2e';
 import { join } from 'pathe';
 import { joinURL } from 'ufo';
 import isString from 'lodash-es/isString';
 import { lookupParentDirectory, AppConfig, type IAppLogger, AppPage, AllHtmlPages, EntityIdPages, getPagePath, type Locale, CookieI18nLocale, AvailableLocaleCodes, DefaultLocale, OgImageExt, delay, getOgImageFileName } from '@golobe-demo/shared';
-import { TEST_SERVER_PORT, createLogger } from '../../helpers/testing';
+import { TEST_SERVER_PORT, createLogger, startWatchingTestFiles, stopWatchingTestFiles } from '../../helpers/testing';
 import { access } from 'fs/promises';
 
 const TestTimeout = 300000;
@@ -159,6 +159,9 @@ class PageScreenshoter {
 describe('og:image screenshots generation', async () => {
   const logger = createLogger('(og-screenshots)');
   logger.info('>>>>>>>>>>>>> NEW TEST RUN <<<<<<<<<<<<<<<<<<');
+
+  beforeAll(() => startWatchingTestFiles(logger), TestTimeout);
+  afterAll(async () => await stopWatchingTestFiles(logger), TestTimeout);
 
   await setup({
     browser: true,

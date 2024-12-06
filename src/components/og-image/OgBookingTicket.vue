@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getI18nResName2, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, OgImageExt, type Locale, type Theme, DefaultLocale, AppConfig, AppPage, type IImageCategoryInfo, getLocalizeableValue, getOgImageFileName, ImageCategory } from '@golobe-demo/shared';
+import { AppExceptionCodeEnum, AppException, getI18nResName2, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, OgImageExt, type Locale, type Theme, DefaultLocale, type IImageCategoryInfo, getLocalizeableValue, ImageCategory } from '@golobe-demo/shared';
 import { type IBookingTicketStayTitleProps, type IBookingTicketProps, type IBookingTicketFlightGfxProps } from './../../types';
 import { ApiEndpointImage } from './../../server/api-definitions';
 import { withQuery, joinURL } from 'ufo';
@@ -32,7 +32,6 @@ const SvgColors: { [P in Theme]: Record<SvgColorType, string> } = {
   }
 };
 
-const isError = ref(false);
 const props = defineProps<Required<IBookingTicketProps & { theme: Theme }>>();
 
 const logger = getCommonServices().getLogger();
@@ -48,12 +47,11 @@ try {
   avatarImageSize = await systemConfigurationStore.getImageSrcSize(ImageCategory.UserAvatar);
 } catch (err: any) {
   logger.warn(`(OgBookingTicket) failed to detect avatar image category size, ctrlKey=${props.ctrlKey}`, err);
-  isError.value = true;
+  throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to render booking ticket image', 'error-page');
 }
 
 const { enabled } = usePreviewState();
 
-const defaultImgUrl = joinURL('/img', 'og', getOgImageFileName(AppPage.Index, locale.value as Locale));
 const avatarImgUrl = props.generalInfo.avatar ? 
   withQuery(`/${ApiEndpointImage}`, { 
     slug: props.generalInfo.avatar!.slug, 
@@ -91,7 +89,6 @@ const gfxHighlightStyles = [
   }
 ];
 
-//
 const gfxFlightRouteLabelStyleCommon = {
   boxShadow: `0px 4px 16px ${SvgColors[props.theme].shadow}`,
   position: 'absolute'
@@ -112,7 +109,7 @@ const gfxFlightRouteLabelStyles = [
 
 function onError (err: any) {
   logger.warn('(OgBookingTicket) render exception', err);
-  isError.value = true;
+  throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to render booking ticket image', 'error-page');
 }
 
 logger.verbose(`(OgBookingTicket) setup script completed, ctrlKey=${props.ctrlKey}, offerKind=${props.offerKind}`);
@@ -120,8 +117,8 @@ logger.verbose(`(OgBookingTicket) setup script completed, ctrlKey=${props.ctrlKe
 </script>
 
 <template>
-  <div class="error-helm">
-    <NuxtErrorBoundary v-if="!isError" @error="onError">
+  <div class="container">
+    <NuxtErrorBoundary @error="onError">
       <div :class="`og-app-page ${theme} body-bg`">
         <svg
           v-if="theme === 'light'"
@@ -581,20 +578,11 @@ logger.verbose(`(OgBookingTicket) setup script completed, ctrlKey=${props.ctrlKe
         </div>
       </div>
     </NuxtErrorBoundary>
-    <div v-else class="og-app-page-error-stub">
-      <img
-        :src="`${defaultImgUrl}&satori=1`"
-        fit="cover"
-        :width="AppConfig.ogImage.screenSize.width"
-        :height="AppConfig.ogImage.screenSize.height"
-        class="og-app-page-default-image"
-      >
-    </div>
   </div>
 </template>
 
 <style scoped>
-  .error-helm {
+  .container {
     width: 100%;
   }
 
@@ -995,7 +983,7 @@ logger.verbose(`(OgBookingTicket) setup script completed, ctrlKey=${props.ctrlKe
 
   .font-stay-title {
     font-family: 'Spectral SC';
-    line-height: 0.85rem;
+    line-height: 1.25rem;
     font-weight: 300;
   }
 

@@ -473,10 +473,13 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
   const imageCategoryLogic = serviceLocator.getImageCategoryLogic();
   let imageCategory: IImageCategoryInfo | undefined;
   logger.lowerWarnsWithoutErrorLevel(true);
+  const servicesLogger = serviceLocator.getLogger();
+  servicesLogger.lowerWarnsWithoutErrorLevel(true);
   try {
     imageCategory = await imageCategoryLogic.findCategory(SampleImageCategory);
   } finally {
     logger.lowerWarnsWithoutErrorLevel(false);
+    servicesLogger.lowerWarnsWithoutErrorLevel(false);
   }
   if (imageCategory) {
     logger.verbose(`(${LoggingPrefix}) view sample data ensured - already exist`);
