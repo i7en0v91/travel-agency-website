@@ -1625,13 +1625,21 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       }
     }) > 0);
     if(adminUserCreated) {
-      const pageTitlesAdded = (await dbRepository.image.count({
+      const pageTitlesAdded = (!SeedPreviewMode ? (await dbRepository.image.count({
         where: {
           category: {
             kind: ImageCategory.PageTitle.valueOf()
           }
         }
-      })) >= 2;
+      })) : (await dbRepository.acsysDraftsImage.count({
+        where: {
+          categoryId: (await dbRepository.imageCategory.findFirst({
+            where: {
+              kind: ImageCategory.PageTitle.valueOf()
+            }
+          }))!.id
+        }
+      }))) >= 2;
       result = pageTitlesAdded ? 'completed' : 'running';
     } else {
       result = 'required';
