@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getI18nResName2, AppException, type AppExceptionAppearance, AppExceptionCodeEnum } from '@golobe-demo/shared';
-import { defaultErrorHandler } from './../helpers/exceptions';
+import { defaultErrorHandler } from '../../helpers/exceptions';
 
 interface IProps {
   isError: boolean,

@@ -19,7 +19,7 @@ https://github.com/user-attachments/assets/9ff4fafd-f0ba-4637-a08e-5bd162eb816c
 - Advanced error handling: error page / popup notification / HTML error stub on problematic component depending on source and severity of error as well as additional logging on server-side and on client-side (via REST endpoint)
 
 ## Installation
-Project requires [Node.js](https://nodejs.org/) v20+ to be installed. 
+Project comes with quickstart npm script which assumes minimum amount of initial configuration.
 
 ### Without CMS (default)
 
@@ -53,6 +53,10 @@ npm run quickstart
 After server is started CMS will be available at `http://localhost:9000`. Admin login and password should be already pre-filled, if not - use this one `cms_admin / P@sSw0rD`. ***You'll need to wait until*** Nuxt app is initialized in your browser and ***landing page is fully loaded before visiting Acsys main page***. This is because the cms requires some domain configuration (entities, views, e.t.c) and this is done during the very first HTTP request reaching Nitro server.
 Almost any type of entities are available for editing, but some operations may be restricted or won't take any effect for a couple of auto-generated entities or fields whose modifications should trigger non-trivial app logic.
 **NOTE**: by default SSR caches rendered html page markup in Nitro cache, so changes made in CMS won't be immediately reflected in browser even when reloading with browser-side caching disabled. 10 minute-interval refresh task is running in background on server. Not to wait for 10 minutes you should either disable caching in `src/packages/shared/appconfig.ts` or call POST /api/purge-cache API endpoint
+
+### System requirements
+Project requires [Node.js](https://nodejs.org/) v20+ to be installed. 
+It targets Linux as primary development platform, compatibility with other OSes haven't been tested properly yet. Although, project is able to run on Windows in at least quickstart configuration with Acsys CMS (unfortunately, currently may log lots of warnings during build and produces display artifacts in PDF documents generated). Don't forget to remove package-lock.json before installing npm dependencies if not running on Linux
 
 ## Setting up development environment
 Development mode provides many useful things among which are hot module reload and rich and more meaningful stack traces. It also assumes reduced optimization and performance penalty for diagnostics overhead. This demo project is also configured differently when running in development environment. Here are required steps:

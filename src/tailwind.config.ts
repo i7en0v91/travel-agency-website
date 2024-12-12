@@ -78,7 +78,11 @@ export default <Partial<Config>>{
         'ticketxs': '1fr',
         'ticketsm': 'auto 1fr',
         'ticketxl': 'auto 3fr minmax(250px, 2fr)',
-        'ticketdetails': 'repeat(auto-fill, minmax(12rem, 1fr))'
+        'ticketdetails': 'repeat(auto-fill, minmax(11rem, 1fr))',
+        'userticketxs': '1fr',
+        'userticketlg': '1fr auto',
+        'userticketentriesxs': 'repeat(3, min-content) 1fr',
+        'userticketentries2xl': 'repeat(4, min-content) 1fr',
       },
       gridTemplateRows: {
         'travelxs': 'repeat(5, auto)',
@@ -104,7 +108,9 @@ export default <Partial<Config>>{
         'offerbookinglg': 'repeat(2, auto)',
         'ticketxs': 'repeat(5, auto)',
         'ticketsm': 'auto 1fr auto auto',
-        'ticketxl': 'auto 1fr auto'
+        'ticketxl': 'auto 1fr auto',
+        'userticketxs': 'repeat(2, auto)',
+        'userticketlg': 'auto',
       },
       borderRadius: {
         '4xl': '2rem'

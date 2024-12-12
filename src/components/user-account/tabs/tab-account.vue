@@ -159,7 +159,7 @@ onMounted(() => {
 
 <template>
   <div class="w-full h-full" role="form">
-    <UForm :state="{}" class="w-full h-auto account-tab-account">
+    <UForm :state="{}" class="w-full h-auto">
       <ErrorHelm v-model:is-error="isError" :appearance="'error-stub'" :user-notification="true">
         <PropertyGrid ctrl-key="userAccountPropertyGrid">
           <SimplePropertyEdit

@@ -253,10 +253,10 @@ const uiInputStyling = computed(() => {
       </UFormGroup>
     </div>
     <div class="flex flex-row flex-nowrap gap-2 sm:gap-4 justify-self-end">
-      <div class="flex-1 property-grid-cell property-grid-first-section">
+      <div class="flex-1">
         <PropertyGridControlSection :ctrl-key="`${props.ctrlKey}-firstControlSection`" :buttons="firstSectionButtons" @click="onControlButtonClick" />
       </div>
-      <div class="flex-1 property-grid-cell property-grid-last-section">
+      <div class="flex-1">
         <PropertyGridControlSection :ctrl-key="`${props.ctrlKey}-lastControlSection`" :buttons="lastSectionButtons" @click="onControlButtonClick" />
       </div>
     </div>

@@ -33,9 +33,6 @@ const SearchTabStays = `${props.ctrlKey}-TabStays`;
 const searchOffersStoreAccessor = useSearchOffersStore();
 const clientEntityCache = import.meta.client ? getClientServices().getEntityCache() : undefined;
 
-const searchFlightStore = await searchOffersStoreAccessor.getInstance<ISearchFlightOffersParams>('flights', false, false);
-const searchStayStore = await searchOffersStoreAccessor.getInstance<ISearchStayOffersParams>('stays', false, false);
-
 const selectedTab = ref<string | undefined>();
 if(props.singleTab) {
   selectedTab.value = props.singleTab === 'stays' ? SearchTabStays : SearchTabFlights;
@@ -50,6 +47,9 @@ const router = useRouter();
 const navLinkBuilder = useNavLinkBuilder();
 const { enabled } = usePreviewState();
 const { locale, t } = useI18n();
+
+const searchFlightStore = await searchOffersStoreAccessor.getInstance<ISearchFlightOffersParams>('flights', false, false);
+const searchStayStore = await searchOffersStoreAccessor.getInstance<ISearchStayOffersParams>('stays', false, false);
 
 async function resolveFlightCitiesSlugs (searchParams: Partial<ISearchFlightOffersParams>): Promise<{ fromCitySlug?: string | undefined, toCitySlug?: string | undefined }> {
   let fromCitySlug = searchParams.fromCity?.slug;
@@ -272,15 +272,22 @@ const searchBtnLabel = computed(() => {
           class="w-full pt-1"
           :ctrl-key="`${props.ctrlKey}-TabControl`"
           :tabs="[
-            { ctrlKey: SearchTabFlights, tabName: SearchTabFlights, label: { resName: getI18nResName2('searchOffers', 'flightsTab'), shortIcon: 'i-material-symbols-flight' }, enabled: true },
-            { ctrlKey: SearchTabStays, tabName: SearchTabStays, label: { resName: getI18nResName2('searchOffers', 'staysTab'), shortIcon: 'i-material-symbols-bed' }, enabled: true }
+            { ctrlKey: SearchTabFlights, tabName: SearchTabFlights, slotName: 'flights', label: { resName: getI18nResName2('searchOffers', 'flightsTab'), shortIcon: 'i-material-symbols-flight' }, enabled: true },
+            { ctrlKey: SearchTabStays, tabName: SearchTabStays, slotName: 'stays', label: { resName: getI18nResName2('searchOffers', 'staysTab'), shortIcon: 'i-material-symbols-bed' }, enabled: true }
           ]"
           variant="solid"
         >
-          <KeepAlive>
-            <SearchFlightOffers v-if="(selectedTab ?? SearchTabFlights) === SearchTabFlights" :id="flightsTabHtmlId" ref="searchFlights" ctrl-key="SearchFlightOffersBox" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
-            <SearchStayOffers v-else :id="staysTabHtmlId" ref="searchStays" ctrl-key="SearchStayOffersBox" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
-          </KeepAlive>
+          <template #flights>
+            <div class="w-full h-auto">
+              <SearchFlightOffers :id="flightsTabHtmlId" ref="searchFlights" ctrl-key="SearchFlightOffersBox" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
+            </div>
+          </template>
+
+          <template #stays>
+            <div class="w-full h-auto">
+              <SearchStayOffers :id="staysTabHtmlId" ref="searchStays" ctrl-key="SearchStayOffersBox" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
+            </div>
+          </template>
         </TabsGroup>
         <div v-else class="w-full h-auto">
           <h2 v-if="showPromoBtn" class="text-xl font-semibold mt-6 sm:mt-8 mb-8 text-primary-900 dark:text-white">

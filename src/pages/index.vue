@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ImageCategory, MainTitleSlug, getI18nResName2 } from '@golobe-demo/shared';
 import HeadingText from './../components/index/main-heading-text.vue';
-import AppPageMdc from '../components/app-page-mdc.vue';
+import AppPageMdc from './../components/common-page-components/app-page-mdc.vue';
 
 definePageMeta({
   title: { resName: getI18nResName2('indexPage', 'title'), resArgs: undefined }

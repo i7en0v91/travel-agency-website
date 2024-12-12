@@ -50,7 +50,7 @@ onMounted(() => {
       :alt-res-name="getI18nResName3('flightsPage', 'worldMap', 'cityImgAlt')"
       :show-stub="true"
     />
-    <div class="w-full h-fullworld-map-city-info">
+    <div class="w-full h-auto">
       <ULink :external="false" :replace="true" :to="cityUrl" class="text-gray-400 dark:text-gray-500 font-semibold" :aria-label="$t(getI18nResName3('flightsPage', 'worldMap', 'cityTravelInfoAria'))">
         {{ (props.cityName as any)[locale] }}
       </ULink>

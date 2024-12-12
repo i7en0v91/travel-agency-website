@@ -27,7 +27,15 @@ export const CroppingImageDataKey = 'current-cropping-image-data';
 export const CroppingImageFormat = MimeTypeWebp;
 export const CropperHeightViewportRatio = 0.4;
 export const TooltipHideTimeout = 2000;
-export const SiteSearchMaxMatchLength = 60;
+// TODO: currently it's a quick workaround to fit matched sentences into result box. Better should be dynamically computed based on viewport & font sizes
+export const SiteSearchMaxMatchLength: { [P in keyof typeof DeviceSizeEnum]: number } = {
+  XS: 35,
+  SM: 45,
+  MD: 45,
+  LG: 60,
+  XL: 60,
+  XXL: 60
+};
 export const HashNavigationPageTimeout = 3000;
 
 export const UserAccount = 'account';
@@ -55,6 +63,20 @@ export const WorldMapCityLabelFlipX = 0.85;
 export const TravelDetailsHtmlAnchor = 'travelDetails';
 export const StayReviewEditorHtmlAnchor = 'stayReviewEditor';
 export const StayReviewSectionHtmlAnchor = 'stayReviewSection';
+
+export const LocatorClasses = {
+  UserAccountPage: 'user-account-page',
+  CookieBannerBtn: 'cookie-banner-accept',
+  AuthUserMenu: 'nav-user-menu',
+  AuthUserMenuPopup: 'nav-user-menu-popup',
+  SignInEmail: 'form input[name=\'email\']',
+  SignInPassword: 'form input[name=\'password\']',
+  SubmitBtn: 'form button[type=\'submit\']',
+  TestLocalOAuthBtn: 'oauth-btn-testlocal',
+  SearchOffersFlightParams: 'searchoffers-flightparams',
+  LocaleToggler: 'locale-toggler',
+  NavLogo: 'nav-logo'
+};
 
 export const ContentPages = {
   pagesWithMdc: [AppPage.Index, AppPage.Privacy, AppPage.Flights, AppPage.Stays],

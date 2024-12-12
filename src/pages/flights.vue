@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { type Locale, localizePath, getPagePath, AppPage, FlightsTitleSlug, ImageCategory, type EntityId, getI18nResName2 } from '@golobe-demo/shared';
+import { FlightsTitleSlug, ImageCategory, type EntityId, getI18nResName2 } from '@golobe-demo/shared';
 import { TravelDetailsHtmlAnchor } from './../helpers/constants';
 import HeadingText from './../components/flights/flights-heading-text.vue';
 import { getCommonServices } from '../helpers/service-accessors';
-import ProseStyling from './../content/prose/styling';
 
 definePageMeta({
   title: { resName: getI18nResName2('flightsPage', 'title'), resArgs: undefined }

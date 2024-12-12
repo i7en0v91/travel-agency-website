@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { AppConfig, getI18nResName1, HeaderAppVersion } from '@golobe-demo/shared';
-import AuthFormsPhoto from './../../components/account/photo-slide.vue';
+import PhotoSlide from './../../components/account/photo-slide.vue';
 import { type IImageDetailsDto, ApiEndpointAuthFormPhotos } from './../../server/api-definitions';
 import { usePreviewState } from './../../composables/preview-state';
 import { type IStaticImageUiProps } from './../../types';
@@ -81,7 +81,7 @@ watch(() => imageSlugs.value, () => {
             inactive: 'bg-white dark:bg-white' 
           } 
         }" class="w-[386px] min-w-[386px] lg:w-[486px] lg:min-w-[486px]" indicators>
-        <AuthFormsPhoto :ctrl-key="`${ctrlKey}-AuthPhoto-${imgSlug}`" :alt-res-name="getI18nResName1('authFormsPhotoAlt')" :img-slug="imgSlug" :ui=" { image: ui?.image, wrapper: `w-full h-full` }"/>
+        <PhotoSlide :ctrl-key="`${ctrlKey}-AuthPhoto-${imgSlug}`" :alt-res-name="getI18nResName1('authFormsPhotoAlt')" :img-slug="imgSlug" :ui=" { image: ui?.image, wrapper: `w-full h-full` }"/>
       </UCarousel>
     </ErrorHelm>
   </div>

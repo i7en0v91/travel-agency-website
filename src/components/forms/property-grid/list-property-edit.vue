@@ -4,7 +4,7 @@ import { type SimplePropertyType, type PropertyGridControlButtonType, type Confi
 import range from 'lodash-es/range';
 import SimplePropertyEdit from './../../forms/property-grid/simple-property-edit.vue';
 import PropertyGrid from './../../forms/property-grid/property-grid.vue';
-import ConfirmBox from './../../confirm-box.vue';
+import ConfirmBox from '../confirm-box.vue';
 import { useModalDialogResult } from '../../../composables/modal-dialog-result';
 import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
@@ -180,7 +180,7 @@ defineExpose({
 
 <template>
   <div class="contents">
-    <PropertyGrid :ctrl-key="`${props.ctrlKey}-propGrid`" class="list-property-edit">
+    <PropertyGrid :ctrl-key="`${props.ctrlKey}-propGrid`">
       <SimplePropertyEdit
         v-for="(v, idx) in values"
         :key="`${props.ctrlKey}-v${idx}`"

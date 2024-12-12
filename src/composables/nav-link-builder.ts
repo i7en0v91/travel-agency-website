@@ -1,6 +1,6 @@
 import { type Locale, localizePath, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppPage, getPagePath, type IAppLogger } from '@golobe-demo/shared';
 import { formatAuthCallbackUrl, getLastSelectedTabStorageKey } from './../helpers/dom';
-import { UserPayments, UserAccountTabAccount, UserAccount, UserAccountTabGroup, UserAccountTabPayments } from './../helpers/constants';
+import { UserAccountTabAccount, UserAccountTabGroup, UserAccountTabPayments } from './../helpers/constants';
 import set from 'lodash-es/set';
 import { parseQuery, parseURL, stringifyParsedURL, withQuery } from 'ufo';
 import assign from 'lodash-es/assign';
@@ -145,7 +145,9 @@ export function useNavLinkBuilder (): INavLinkBuilder {
   );
 
   const buildPageLink = (htmlPage: AppPage, locale: Locale, query?: any): string => {
-    return withQuery(localizePath(htmlPage === AppPage.Index ? '/' : getPagePath(htmlPage), locale), enabled ? (set(query ?? {}, QueryPagePreviewModeParam, PreviewModeParamEnabledValue)) : (query ?? {}));
+    const result = withQuery(localizePath(htmlPage === AppPage.Index ? '/' : getPagePath(htmlPage), locale), enabled ? (set(query ?? {}, QueryPagePreviewModeParam, PreviewModeParamEnabledValue)) : (query ?? {}));
+    logger.debug(`(NavLinkBuilder) build page link, page=${htmlPage.valueOf()}, locale=${locale}, preview=${enabled}, query=[${JSON.stringify(query)}], result=${result}`);
+    return result;
   };
 
   const buildLink = (navLink: string, locale: Locale, query?: any): string => {

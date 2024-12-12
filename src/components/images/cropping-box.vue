@@ -217,7 +217,7 @@ onBeforeUnmount(() => {
 <template>
   <ClientOnly>
     <div class="w-full h-auto p-4 sm:p-6">
-      <h3 class="font-semibold text-3xl cropping-box-title mb-2 sm:mb-6">
+      <h3 class="font-semibold text-3xl mb-2 sm:mb-6">
         {{ $t(getI18nResName2('editableImage', 'croppingBoxTitle')) }}
       </h3>
       <UDivider color="gray" orientation="horizontal" class="w-full h-auto my-2 sm:my-4" size="sm"/>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue, SessionLocaleKey } from '@golobe-demo/shared';
 import { getCommonServices } from './../../helpers/service-accessors';
+import { LocatorClasses } from './../../helpers/constants';
 import isString from 'lodash-es/isString';
 import set from 'lodash-es/set';
 import { withQuery } from 'ufo';
@@ -63,6 +64,6 @@ function switchClicked () {
     :items="items"
     :popper="{ placement: 'bottom-start' }"
   >
-    <UButton :label="locale.toUpperCase()" square color="gray"/> 
+    <UButton :label="locale.toUpperCase()" square color="gray" :class="LocatorClasses.LocaleToggler"/> 
   </UDropdown>
 </template>

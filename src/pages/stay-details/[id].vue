@@ -11,7 +11,7 @@ import AvailableRoomSection from './../../components/stay-details/available-room
 import AmenitiesSection from './../../components/stay-details/amenities-section.vue';
 import LocationMap from './../../components/stay-details/location-map.vue';
 import ReviewSection from './../../components/stay-details/reviews/review-section.vue';
-import ComponentWaitingIndicator from './../../components/component-waiting-indicator.vue';
+import ComponentWaitingIndicator from '../../components/forms/component-waiting-indicator.vue';
 import { useCaptchaToken, type ICaptchaTokenComposable } from './../../composables/captcha-token';
 import { isRobot } from './../../composables/is-robot';
 import { type ComponentInstance } from 'vue';

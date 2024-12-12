@@ -19,9 +19,6 @@ useHead({
     { src: '/js/page-load.min.js' },
     { src: 'https://www.google.com/recaptcha/api.js' }
   ],
-  link: [
-    { rel: 'icon', href: '/img/waiter.gif' }
-  ],
   titleTemplate: computed(() => `%s %separator ${t(getI18nResName2('site', 'name'))}`),
   title
 });

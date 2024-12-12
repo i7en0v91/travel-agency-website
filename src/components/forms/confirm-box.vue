@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type I18nResName, getI18nResName2 } from '@golobe-demo/shared';
-import { type ConfirmBoxButton } from './../types';
-import { getCommonServices } from '../helpers/service-accessors';
+import { type ConfirmBoxButton } from '../../types';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,

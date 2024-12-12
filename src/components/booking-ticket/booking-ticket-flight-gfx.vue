@@ -144,10 +144,10 @@ const radialHighlightStyle = computed(() => {
 </script>
 
 <template>
-  <div ref="containerEl" class="block w-auto h-full booking-ticket-flight-gfx">
-    <div class="w-full h-full grid grid-rows-1 grid-cols-1 ticket-flight-gfx-container">
+  <div ref="containerEl" class="block w-auto h-full">
+    <div class="w-full h-full grid grid-rows-1 grid-cols-1">
       <canvas ref="canvasEl" class="block w-full h-full row-start-1 row-end-2 col-start-1 col-end-2 ticket-flight-gfx-canvas z-[3]" :width="canvasSize?.width ?? 1" :height="canvasSize?.height ?? 1" :style="{ width: `${canvasSize?.width ?? 1}px`, height: `${canvasSize?.height ?? 1}px` }" />
-      <div v-if="canvasSize" class="block w-full h-full row-start-1 row-end-2 col-start-1 col-end-2 overflow-hidden absolute ticket-flight-gfx-controls" :style="{ width: `${canvasSize.width}px`, height: `${canvasSize.height}px` }">
+      <div v-if="canvasSize" class="block w-full h-full row-start-1 row-end-2 col-start-1 col-end-2 overflow-hidden absolute" :style="{ width: `${canvasSize.width}px`, height: `${canvasSize.height}px` }">
         <BookingTicketFlightLabel
           v-if="canvasSize"
           :ctrl-key="`${ctrlKey}-FromLabel`"
@@ -157,7 +157,9 @@ const radialHighlightStyle = computed(() => {
             left: `${Math.round(0.07 * 100)}%`,
             translate: '0 50%'
           }"
-          arrow-class="arrow-top"
+          :ui="{
+            arrow: 'translate-x-[15%] translate-y-[-80%] left-[15%] top-0'
+          }"
         />
         <BookingTicketFlightLabel
           v-if="canvasSize"
@@ -168,7 +170,9 @@ const radialHighlightStyle = computed(() => {
             right: `${Math.round(0.1 * 100)}%`,
             translate: '0 -50%'
           }"
-          arrow-class="arrow-bottom"
+          :ui="{
+            arrow: '-scale-y-100 translate-y-[80%] bottom-0 right-[15%]'
+          }"
         />
         <div 
           class="block absolute size-[136px] scale-150" 

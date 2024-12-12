@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { UserAccountTabGroup, UserAccountTabAccount, UserAccountTabHistory, UserAccountTabPayments } from './../helpers/constants';
+import { UserAccountTabGroup, UserAccountTabAccount, UserAccountTabHistory, UserAccountTabPayments, LocatorClasses } from './../helpers/constants';
 import AvatarBox from './../components/user-account/avatar-box.vue';
 import UserCover from './../components/user-account/user-cover.vue';
 import TabsGroup from '../components/forms/tabs-group.vue';
-import ComponentWaitingIndicator from './../components/component-waiting-indicator.vue';
+import ComponentWaitingIndicator from '../components/forms/component-waiting-indicator.vue';
 
 definePageMeta({
   middleware: 'auth',
@@ -22,13 +22,6 @@ const paymentsTabReady = ref(false);
 const historyTabReady = ref(false);
 const accountTabReady = ref(false);
 
-const tabReady = computed(() =>
-  selectedTab.value && (
-    (selectedTab.value === UserAccountTabPayments && paymentsTabReady.value) ||
-    (selectedTab.value === UserAccountTabHistory && historyTabReady.value) ||
-    (selectedTab.value === UserAccountTabAccount && accountTabReady.value)
-  ));
-
 const primaryEmail = computed(() => {
   return ((userAccount.emails?.length ?? 0) > 0 && (userAccount.emails![0]?.length ?? 0) > 0)
     ? userAccount.emails![0]
@@ -40,7 +33,7 @@ const primaryEmail = computed(() => {
 <template>
   <ContentSection :spaced="false">
     <ClientOnly>
-      <div class="user-account-page">
+      <div :class="LocatorClasses.UserAccountPage">
         <div class="w-full grid grid-rows-1 grid-cols-1 profile-images pb-[40px] sm:pb-[60px]">
           <div class="w-full h-auto z-[1] row-start-1 row-end-2 col-start-1 col-end-2">
             <UserCover ctrl-key="userCover" />
@@ -68,20 +61,32 @@ const primaryEmail = computed(() => {
             v-model:activeTabKey="selectedTab"
             :ctrl-key="UserAccountTabGroup"
             :tabs="[
-              { ctrlKey: UserAccountTabAccount, label: { resName: getI18nResName3('accountPage', 'tabAccount', 'title'), shortIcon: 'i-heroicons-user-20-solid' }, enabled: true, tabName: UserAccountTabAccount },
-              { ctrlKey: UserAccountTabHistory, label: { resName: getI18nResName3('accountPage', 'tabHistory', 'title'), shortIcon: 'i-mdi-file-document' }, enabled: false, tabName: UserAccountTabHistory },
-              { ctrlKey: UserAccountTabPayments, label: { resName: getI18nResName3('accountPage', 'tabPayments', 'title'), shortIcon: 'i-mdi-credit-card' }, enabled: true, tabName: UserAccountTabPayments }
+              { ctrlKey: UserAccountTabAccount, slotName: 'account', label: { resName: getI18nResName3('accountPage', 'tabAccount', 'title'), shortIcon: 'i-heroicons-user-20-solid' }, enabled: true, tabName: UserAccountTabAccount },
+              { ctrlKey: UserAccountTabHistory, slotName: 'history', label: { resName: getI18nResName3('accountPage', 'tabHistory', 'title'), shortIcon: 'i-mdi-file-document' }, enabled: true, tabName: UserAccountTabHistory },
+              { ctrlKey: UserAccountTabPayments, slotName: 'payments', label: { resName: getI18nResName3('accountPage', 'tabPayments', 'title'), shortIcon: 'i-mdi-credit-card' }, enabled: true, tabName: UserAccountTabPayments }
             ]"
             variant="split"
           >
-            <ComponentWaitingIndicator v-if="!tabReady" ctrl-key="accountPageContentWaiter" />
-            <KeepAlive>  
-              <div class="p-4 sm:p-6 rounded-xl bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-700 mt-2 sm:mt-4" :style="{ display: tabReady ? 'block' : 'none' }">
-                <TabPayments v-if="selectedTab === UserAccountTabPayments" v-model:ready="paymentsTabReady" ctrl-key="userAccountTabPayments" />
-                <TabHistory v-else-if="selectedTab === UserAccountTabHistory" v-model:ready="historyTabReady" ctrl-key="userAccountTabHistory" />
-                <TabAccount v-else v-model:ready="accountTabReady" ctrl-key="userAccountTabAccount" />
+            <template #account>
+              <ComponentWaitingIndicator v-if="!accountTabReady" ctrl-key="accountPageContentWaiter" />
+              <div class="p-4 sm:p-6 rounded-xl bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-700 mt-2 sm:mt-4" :style="{ display: accountTabReady ? 'block' : 'none' }">
+                <TabAccount  v-model:ready="accountTabReady" ctrl-key="userAccountTabAccount" />
               </div>
-            </KeepAlive>
+            </template>
+
+            <template #history>
+              <ComponentWaitingIndicator v-if="!historyTabReady" ctrl-key="accountPageContentWaiter" />
+              <div class="w-full h-auto mt-2 sm:mt-4" :style="{ display: historyTabReady ? 'block' : 'none' }">
+                <TabHistory  v-model:ready="historyTabReady" ctrl-key="userAccountTabHistory" />
+              </div>
+            </template>
+
+            <template #payments>
+              <ComponentWaitingIndicator v-if="!paymentsTabReady" ctrl-key="accountPageContentWaiter" />
+              <div class="p-4 sm:p-6 rounded-xl bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-700 mt-2 sm:mt-4" :style="{ display: paymentsTabReady ? 'block' : 'none' }">
+                <TabPayments v-model:ready="paymentsTabReady" ctrl-key="userAccountTabPayments" />
+              </div>
+            </template>
           </TabsGroup>
         </section>
       </div>

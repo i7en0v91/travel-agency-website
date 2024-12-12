@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type EntityId, ImageCategory, type Locale, getLocalizeableValue, getScoreClassResName, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
 import { formatImageEntityUrl } from './../../../helpers/dom';
-import ConfirmBox from './../../confirm-box.vue';
+import ConfirmBox from '../../forms/confirm-box.vue';
 import { type IStayReviewItem } from './../../../stores/stay-reviews-store';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
@@ -171,7 +171,7 @@ onMounted(() => {
         ref="carouselRef"
         :items="carouselPages" 
         :ui="{ 
-          wrapper: `pb-6 ${isCarouselReady ? 'initialized' : 'invisible h-0'} ${showNoReviewStub ? 'invisible h-0 hidden' : ''}`, 
+          wrapper: `pb-6 ${isCarouselReady ? '' : 'invisible h-0'} ${showNoReviewStub ? 'invisible h-0 hidden' : ''}`, 
           item: 'snap-end justify-around basis-full' }"
         :indicators="false" 
         @on-click="onSlideChanged"

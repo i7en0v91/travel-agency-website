@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type OfferKind, getI18nResName2 } from '@golobe-demo/shared';
-import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
+import ComponentWaitingIndicator from '../../forms/component-waiting-indicator.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 declare type ViewState = 'visible' | 'hidden' | 'waiting-stub';

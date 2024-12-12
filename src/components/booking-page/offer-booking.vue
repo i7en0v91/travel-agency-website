@@ -3,7 +3,7 @@ import { type ILocalizableValue, ImageCategory, type StayServiceLevel, type Enti
 import fromPairs from 'lodash-es/fromPairs';
 import PaymentController from './../payments/payment-controller.vue';
 import PricingDetails from './pricing-details.vue';
-import ComponentWaitingIndicator from './../../components/component-waiting-indicator.vue';
+import ComponentWaitingIndicator from '../forms/component-waiting-indicator.vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';

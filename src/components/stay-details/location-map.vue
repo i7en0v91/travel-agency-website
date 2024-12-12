@@ -2,7 +2,7 @@
 
 import { AppPage, type Locale, getI18nResName3, AppConfig, type GeoPoint, type EntityDataAttrsOnly, type ICity } from '@golobe-demo/shared';
 import InteractiveMap from './../common-page-components/map/interactive-map.vue';
-import ComponentWaitingIndicator from './../component-waiting-indicator.vue';
+import ComponentWaitingIndicator from '../forms/component-waiting-indicator.vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 const { t, locale } = useI18n();

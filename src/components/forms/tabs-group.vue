@@ -46,7 +46,6 @@ function fireActiveTabChange (newActiveTabKey: string) {
     logger.debug(`(TabsGroup) firing selected tab change: ctrlKey=${props.ctrlKey}, newActiveTab=${newActiveTabKey}, prevActiveTab=${currentActiveTabKey}`);
     selectedTabIndex.value = props.tabs.findIndex(t => t.ctrlKey === newActiveTabKey) ?? (props.menu && props.menu.variants.some(x => x.ctrlKey === newActiveTabKey) ? props.tabs.length : undefined);
     
-    //$emit('update:activeTabKey', newActiveTabKey);
     tabModel.value = newActiveTabKey;
     saveLastSelectedTab(newActiveTabKey);
   }
@@ -105,6 +104,11 @@ function initActiveTab () {
 
 function modelValueUpdateHandler() {
   logger.debug(`(TabsGroup) model value update handler, ctrlKey=${props.ctrlKey}, value=${tabModel.value}`);
+  if(!hasMounted.value) {
+    logger.debug(`(TabsGroup) ignoring model value update handler, not mounted, ctrlKey=${props.ctrlKey}, value=${tabModel.value}`);
+    return;
+  }
+
   let index = props.tabs.findIndex((item) => item.ctrlKey === tabModel.value);
   if(index < 0) {
     if(props.menu?.variants?.some(v => v.ctrlKey === tabModel.value)) {
@@ -143,6 +147,7 @@ onMounted(() => {
 
 const solid = (props.variant ?? 'solid') === 'solid';
 const slotTabNames = props.tabs.some(ti => has(ti, 'label.slotName'));
+const slotTabs = props.tabs.some(ti => has(ti, 'slotName'));
 
 const hasOtherMenuItems = computed(() => !!props.menu?.variants?.length);
 
@@ -220,7 +225,7 @@ const otherMenuItems = computed(() => {
 </script>
 
 <template>
-  <UTabs v-model="selectedTabIndex" :ui="tabsStyling" :items="items" @change="onSelectedTabChanged">
+  <UTabs v-model:model-value="selectedTabIndex" :ui="tabsStyling" :items="items" @change="onSelectedTabChanged">
     <template v-if="slotTabNames || hasOtherMenuItems" #default="{ item: tabItem }">
       <slot v-if="tabItem.tab.label.slotName !== OtherSortOptionsTabNameSlot" :name="tabItem.tab.label.slotName" :tab="tabItem.tab" />
       <div v-else class="w-full h-auto">
@@ -232,7 +237,10 @@ const otherMenuItems = computed(() => {
       <h2 v-if="!solid && !slotTabNames" class="block break-words text-3xl font-semibold text-black dark:text-white">
         {{ tabItem.label }}
       </h2>
-      <div class="w-full h-auto">
+      <div v-if="slotTabs">
+        <slot :name="tabItem.tab.slotName" />
+      </div>
+      <div v-else class="w-full h-auto">
         <slot />
       </div>
     </template>

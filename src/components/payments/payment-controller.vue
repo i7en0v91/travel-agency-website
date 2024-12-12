@@ -3,7 +3,7 @@ import { getI18nResName2 } from '@golobe-demo/shared';
 import PaymentMethodPicker from './payment-method-picker.vue';
 import LoginForPay from './login-for-pay.vue';
 import PaymentCardPicker from './payment-card-picker.vue';
-import ComponentWaitingIndicator from './../../components/component-waiting-indicator.vue';
+import ComponentWaitingIndicator from '../forms/component-waiting-indicator.vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {

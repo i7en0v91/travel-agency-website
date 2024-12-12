@@ -13,21 +13,21 @@ const { d, t, locale } = useI18n();
 
 const displayItems = props.offer.arriveFlight ? [props.offer.departFlight, props.offer.arriveFlight] : [props.offer.departFlight];
 const detailsCommon = [
-  { ctrlKey: `${props.ctrlKey}-Details-Gate`, caption: getI18nResName3('ticket', 'details', 'gate'), icon: 'door', text: 'A12' },
-  { ctrlKey: `${props.ctrlKey}-Details-Seat`, caption: getI18nResName3('ticket', 'details', 'seat'), icon: 'seat', text: '128' }
+  { ctrlKey: `${props.ctrlKey}-Details-Gate`, caption: getI18nResName3('ticket', 'details', 'gate'), icon: 'i-material-symbols-door-front', text: 'A12' },
+  { ctrlKey: `${props.ctrlKey}-Details-Seat`, caption: getI18nResName3('ticket', 'details', 'seat'), icon: 'i-material-symbols-airline-seat-recline-extra', text: '128' }
 ];
 
 </script>
 
 <template>
-  <TicketCardContainer :ctrl-key="`${props.ctrlKey}-Container`" :booking-id="bookingId" :offer="offer"> 
-    <template #ticket-card>
-      <div class="ticket-card">
-        <div v-for="(item, i) in displayItems" :key="`${props.ctrlKey}-${item.id}Flight`" class="ticket-card-div">
-          <div class="ticket-card-general">
+  <div class="w-full h-auto">
+    <TicketCardContainer :ctrl-key="`${props.ctrlKey}-Container`" :booking-id="bookingId" :offer="offer"> 
+      <div class="w-full h-auto grid grid-flow-row auto-rows-auto grid-cols-userticketentriesxs 2xl:grid-cols-userticketentries2xl items-center gap-4">
+        <div v-for="(item, i) in displayItems" :key="`${props.ctrlKey}-${item.id}Flight`" class="contents w-max h-auto">
+          <div class="contents w-max h-auto">
             <StaticImage
               :ctrl-key="`${ctrlKey}-CompanyLogo-${i}`"
-              :ui="{ wrapper: 'ticket-card-image ticket-flight-card-company-logo brdr-3 p-xs-2', img: 'ticket-flight-card-company-logo-img' }"
+              :ui="{ wrapper: 'block col-start-1 col-end-2 ring-1 ring-primary-400 dark:ring-primary rounded-xl p-2 ml-2 mt-2 w-[80px] h-[80px]', stub: 'rounded-xl', img: 'w-[80px] h-[80px] rounded-xl object-cover' }"
               :entity-src="item.airlineCompany.logoImage"
               :category="ImageCategory.AirlineLogo"
               :show-stub="false"
@@ -35,32 +35,32 @@ const detailsCommon = [
               sizes="xs:30vw sm:30vw md:20vw lg:20vw xl:20vw"
               :alt-res-name="getI18nResName2('searchFlights', 'airlineCompanyLogoAlt')"
             />
-            <div class="ticket-card-timings from ml-xs-5">
-              <div class="ticket-card-caption">
+            <div class="block w-full h-auto col-start-2 col-end-3 ml-8">
+              <div class="block whitespace-nowrap text-sm sm:text-base font-normal text-gray-600 dark:text-gray-300">
                 {{ `${getLocalizeableValue(item.departAirport.city.name, locale as Locale)}(${extractAirportCode(getLocalizeableValue(item.departAirport.city.name, locale as Locale))})` }}
               </div>
-              <div class="ticket-card-sub">
+              <div class="block whitespace-nowrap text-xl font-semibold text-primary-900 dark:text-white">
                 {{ $d(getValueForTimeOfDayFormatting(item.departTimeUtc, item.departAirport.city.utcOffsetMin!), 'daytime') }}
               </div>
             </div>
-            <div class="ticket-card-timings-separator mx-xs-3"/>
-            <div class="ticket-card-timings to pr-xs-0 pr-xl-4">
-              <div class="ticket-card-caption">
+            <UDivider orientation="horizontal" class="w-8 h-auto col-start-3 col-end-4 self-center justify-self-center mx-4 my-4" size="2xs" :ui="{ border: { base: 'border-gray-600 dark:border-gray-300' } }"/>
+            <div class="block w-full h-auto col-start-4 col-end-5 pr-0 2xl:pr-6">
+              <div class="block whitespace-nowrap text-sm sm:text-base font-normal text-gray-600 dark:text-gray-300">
                 {{ `${getLocalizeableValue(item.arriveAirport.city.name, locale as Locale)}(${extractAirportCode(getLocalizeableValue(item.arriveAirport.city.name, locale as Locale))})` }}
               </div>
-              <div class="ticket-card-sub">
+              <div class="block whitespace-nowrap text-xl font-semibold text-primary-900 dark:text-white">
                 {{ $d(getValueForTimeOfDayFormatting(item.arriveTimeUtc, item.departAirport.city.utcOffsetMin!), 'daytime') }}
               </div>
             </div>
-            <BookingTicketDetails
+            <BookingTicketDetails 
               :ctrl-key="`${ctrlKey}-Details`" 
-              :items="[{ ctrlKey: `${props.ctrlKey}-Details-Date`, caption: getI18nResName3('ticket', 'details', 'date'), icon: 'calendar', text: d(getValueForFlightDayFormatting(item.departTimeUtc, item.departAirport.city.utcOffsetMin), 'day') },
-                        { ctrlKey: `${props.ctrlKey}-Details-Duration`, caption: getI18nResName3('ticket', 'details', 'duration'), icon: 'timer', text: t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting(item.departTimeUtc, item.arriveTimeUtc)) }, 
+              :items="[{ ctrlKey: `${props.ctrlKey}-Details-Date`, caption: getI18nResName3('ticket', 'details', 'date'), icon: 'i-heroicons-calendar-days-20-solid', text: d(getValueForFlightDayFormatting(item.departTimeUtc, item.departAirport.city.utcOffsetMin), 'day') },
+                        { ctrlKey: `${props.ctrlKey}-Details-Duration`, caption: getI18nResName3('ticket', 'details', 'duration'), icon: 'i-ion-stopwatch', text: t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting(item.departTimeUtc, item.arriveTimeUtc)) }, 
                         ...detailsCommon]" 
-              class="ticket-card-details"/>
+              class="w-full min-w-[25rem] h-auto col-start-1 col-end-5 2xl:col-start-5 2xl:col-end-6"/>
           </div>
         </div>
       </div>
-    </template>
-  </TicketCardContainer>
+    </TicketCardContainer>
+  </div>
 </template>

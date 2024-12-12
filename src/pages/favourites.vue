@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { AppException, AppExceptionCodeEnum, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { type OfferKind, AppException, AppExceptionCodeEnum, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import { FavouritesTabStays, FavouritesTabGroup, FavouritesTabFlights } from './../helpers/constants';
 import { defaultErrorHandler } from './../helpers/exceptions';
 import TabsGroup from '../components/forms/tabs-group.vue';
-import OfferTabbedView from './../components/common-page-components/offer-tabbed-view.vue';
 import FlightsListItemCard from './../components/common-page-components/offers-list-view/search-flights-result-card.vue';
 import StaysListItemCard from './../components/common-page-components/offers-list-view/search-stays-result-card.vue';
 import { useUserFavouritesStore } from './../stores/user-favourites-store';
-import ComponentWaitingIndicator from './../components/component-waiting-indicator.vue';
+import ComponentWaitingIndicator from '../components/forms/component-waiting-indicator.vue';
 import { getCommonServices } from '../helpers/service-accessors';
 
 definePageMeta({
@@ -16,8 +15,6 @@ definePageMeta({
   title: { resName: getI18nResName2('favouritesPage', 'title'), resArgs: undefined }
 });
 useOgImage();
-
-const DefaultActiveTabKey = FavouritesTabFlights;
 
 const logger = getCommonServices().getLogger();
 const isError = ref(false);
@@ -34,7 +31,7 @@ try {
 const flightsTabHtmlId = useId();
 const staysTabHtmlId = useId();
 
-const activeTabCtrl = ref<string | undefined>();
+const activeTabKey = ref<string | undefined>();
 
 const displayedItems = computed(() => {
   return userFavourites
@@ -47,6 +44,19 @@ const displayedItems = computed(() => {
         stays: undefined
       };
 });
+
+const OfferKinds: OfferKind[] = ['flights', 'stays'];
+const tabProps = computed(() => OfferKinds.map(offerKind => {
+  return {
+    ctrlKey: offerKind === 'flights' ? FavouritesTabFlights : FavouritesTabStays,
+    enabled: true,
+    label: {
+      slotName: offerKind
+    },
+    slotName: `${offerKind}List`,
+    items: displayedItems.value[offerKind]
+  };
+}));
 
 onMounted(() => {
   watch(() => userFavourites?.status, () => {
@@ -72,42 +82,61 @@ onMounted(() => {
 </script>
 
 <template>
-  <ClientOnly>
-    <!--
-    <section class="favourites-page">
-      <ErrorHelm v-model:is-error="isError" class="favourites-page-error-helm">
-        <h1 class="favourites-page-title">
-          {{ $t(getI18nResName2('favouritesPage', 'title')) }}
-        </h1>
-        <OptionButtonGroup
-          v-model:active-option-ctrl="activeOptionCtrl"
-          class="favourites-page-tabs-control mt-xs-4"
-          :ctrl-key="FavouritesOptionButtonGroup"
-          role="tablist"
-          :options="[
-            { ctrlKey: FavouritesOptionButtonFlights, labelResName: getI18nResName2('favouritesPage', 'flightsTab'), shortIcon: 'i-material-symbols-flight', enabled: true, role: { role: 'tab', tabPanelId: flightsTabHtmlId }, subtextResName: displayedItems.flights !== undefined ? getI18nResName2('favouritesPage', 'numMarked') : undefined, subtextResArgs: displayedItems.flights !== undefined ? { count: displayedItems.flights.length } : undefined},
-            { ctrlKey: FavouritesOptionButtonStays, labelResName: getI18nResName2('favouritesPage', 'staysTab'), shortIcon: 'i-material-symbols-bed', enabled: true, role: { role: 'tab', tabPanelId: staysTabHtmlId }, subtextResName: displayedItems.flights !== undefined ? getI18nResName2('favouritesPage', 'numMarked') : undefined, subtextResArgs: displayedItems.stays !== undefined ? { count: displayedItems.stays.length } : undefined }
-          ]"
-        />
-        <OfferTabbedView
-          ctrl-key="favouritesList" 
-          :selected-kind="(activeOptionCtrl ?? DefaultActiveTabKey) === FavouritesOptionButtonFlights ? 'flights' : 'stays'" 
-          :tab-panel-ids="{ flights: flightsTabHtmlId, stays: staysTabHtmlId }" 
-          :displayed-items="displayedItems"
-          :no-offers-res-name="{
-            flights: getI18nResName3('favouritesPage', 'noMarkedOffers', 'flights'),
-            stays: getI18nResName3('favouritesPage', 'noMarkedOffers', 'stays'),
+  <div class="px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
+    <h1 class="text-4xl font-semibold w-fit max-w-[90vw] break-words text-black dark:text-white mb-10">
+      {{ $t(getI18nResName2('favouritesPage', 'title')) }}
+    </h1>
+
+    <ClientOnly>
+      <ErrorHelm v-model:is-error="isError">
+        <TabsGroup
+          v-model:activeTabKey="activeTabKey"
+          :ctrl-key="FavouritesTabGroup"
+          :tabs="tabProps"
+          variant="split"
+          :ui="{
+            list: {
+              height: 'h-14 sm:h-20'
+            }
           }"
-          :card-component-types="{
-            flights: FlightsListItemCard,
-            stays: StaysListItemCard
-          }" />
+        >
+          <template v-for="(slotName) in OfferKinds" #[slotName]="{ tab }" :key="`FavouritesPage-TabLabel-${slotName}`">
+            <div class="w-full p-2 sm:py-3 flex flex-row flex-nowrap gap-2 items-center justify-center sm:justify-start">
+              <UIcon :name="slotName === 'flights' ? 'i-material-symbols-flight' : 'i-material-symbols-bed'" class="flex-initial min-w-5 h-5 block sm:hidden"/>
+              <div class="w-auto flex-1 flex flex-col flex-nowrap items-start truncate">
+                <div class="whitespace-nowrap font-semibold text-start">
+                  {{ $t(getI18nResName2('favouritesPage', slotName === 'flights' ? 'flightsTab' : 'staysTab')) }}
+                </div>
+                <div v-if="tab.items !== undefined" class="w-full h-auto hidden sm:block">
+                  <div class="text-gray-400 dark:text-gray-500 mt-2 font-normal text-start">
+                    {{ $t(getI18nResName2('favouritesPage', 'numMarked'), tab.items.length) }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <template v-for="(slotName) in OfferKinds" #[`${slotName}List`] :key="`FavouritesPage-TabContent-${slotName}`">
+            <OfferTabbedView
+              ctrl-key="favouritesList" 
+              :selected-kind="slotName" 
+              :tab-panel-ids="{ flights: flightsTabHtmlId, stays: staysTabHtmlId }" 
+              :displayed-items="displayedItems"
+              :no-offers-res-name="{
+                flights: getI18nResName3('favouritesPage', 'noMarkedOffers', 'flights'),
+                stays: getI18nResName3('favouritesPage', 'noMarkedOffers', 'stays'),
+              }"
+              :card-component-types="{
+                flights: FlightsListItemCard,
+                stays: StaysListItemCard
+              }" />
+          </template>
+        </TabsGroup>
       </ErrorHelm>
-    </section>
-    <template #fallback>
-      <ComponentWaitingIndicator ctrl-key="FavouritesPageClientFallback" class="my-xs-5"/>
-    </template>
-    -->
-    <div>PAGE CONTENT</div>
-  </ClientOnly>
+
+      <template #fallback>
+        <ComponentWaitingIndicator ctrl-key="FavouritesPageClientFallback" class="my-8"/>
+      </template>
+    </ClientOnly>
+  </div>
 </template>

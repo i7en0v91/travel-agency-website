@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { localizePath, getPagePath, type Locale, StaysTitleSlug, AppPage, ImageCategory, getI18nResName2 } from '@golobe-demo/shared';
+import { StaysTitleSlug, ImageCategory, getI18nResName2 } from '@golobe-demo/shared';
 import HeadingText from './../components/stays/stays-heading-text.vue';
-import ProseStyling from './../content/prose/styling';
 
 definePageMeta({
   title: { resName: getI18nResName2('staysPage', 'title'), resArgs: undefined }

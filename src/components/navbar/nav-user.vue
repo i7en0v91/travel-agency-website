@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Locale, AppPage, getI18nResName3, ImageCategory } from '@golobe-demo/shared';
-import { DeviceSizeEnum } from './../../helpers/constants';
+import { DeviceSizeEnum, LocatorClasses } from './../../helpers/constants';
 import { formatImageEntityUrl, formatAvatarLabel, getUserMenuLinksInfo, getCurrentDeviceSize } from './../../helpers/dom';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { getCommonServices } from '../../helpers/service-accessors';
@@ -90,8 +90,8 @@ function onUserMenuClick(e: InputEvent) {
       @click.capture="onUserMenuClick"
     />
     <Icon v-else name="i-heroicons-user-20-solid" class="w-8 h-8" :alt="t(getI18nResName3('nav', 'userBox', 'navAvatarAlt'))" @click.capture="onUserMenuClick"/>
-    <UDropdown :items="userMenuItems" :popper="{ placement: 'bottom-end' }" :ui="{ container: 'w-[320px] max-w-[320px]' }" class="*:hidden sm:*:block" @click.capture="onUserMenuClick">
-      <UButton color="gray" variant="link" class="max-w-[200px] font-semibold text-primary-900 hover:text-primary-900 *:overflow-hidden *:text-ellipsis *:text-nowrap" :label="formatAvatarLabel(userAccount.firstName, userAccount.lastName)" />
+    <UDropdown :items="userMenuItems" :popper="{ placement: 'bottom-end' }" :ui="{ container: `w-[320px] max-w-[320px] ${LocatorClasses.AuthUserMenuPopup}` }" class="*:hidden sm:*:block" @click.capture="onUserMenuClick">
+      <UButton color="gray" variant="link" :class="`max-w-[200px] font-semibold text-primary-900 hover:text-primary-900 *:overflow-hidden *:text-ellipsis *:text-nowrap ${LocatorClasses.AuthUserMenu}`" :label="formatAvatarLabel(userAccount.firstName, userAccount.lastName)" />
     </UDropdown>
   </div>
 </template>

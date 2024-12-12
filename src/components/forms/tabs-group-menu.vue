@@ -42,7 +42,7 @@ onMounted(() => {
     >
       <template #label>
         <div class="w-full h-auto flex flex-row flex-nowrap items-center justify-start">
-          <UIcon name="cil-hamburger-menu" class="w-5 h-5 z-50"/>
+          <UIcon name="cil-hamburger-menu" class="w-5 h-5"/>
           <span class="pl-2 truncate text-ellipsis">{{ label }}</span>
         </div>
       </template>

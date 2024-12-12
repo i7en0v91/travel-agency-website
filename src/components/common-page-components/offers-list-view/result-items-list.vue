@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="TItem extends EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>">
 import { StayOffersSortFactorEnum, DefaultStayOffersSorting, type StayOffersSortFactor, type FlightOffersSortFactor, convertTimeOfDay, getI18nResName3, DefaultFlightOffersSorting, type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, type OfferKind, type I18nResName } from '@golobe-demo/shared';
-import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
+import ComponentWaitingIndicator from '../../forms/component-waiting-indicator.vue';
 import ListSortInfo from './list-sort-info.vue';
 import FlightsListItemCard from './search-flights-result-card.vue';
 import StaysListItemCard from './search-stays-result-card.vue';

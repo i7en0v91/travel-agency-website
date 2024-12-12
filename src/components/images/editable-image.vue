@@ -7,7 +7,7 @@ import isString from 'lodash-es/isString';
 import { basename, extname } from 'pathe';
 import StaticImage from './static-image.vue';
 import CroppingBox from './cropping-box.vue';
-import ModalWaitingIndicator from './../modal-waiting-indicator.vue';
+import ModalWaitingIndicator from '../forms/modal-waiting-indicator.vue';
 import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 import type { IStaticImageUiProps } from '../../types';
@@ -19,7 +19,7 @@ interface IProps {
   ctrlKey: string,
   category: ImageCategory,
   entitySrc: IImageEntitySrc,
-  sizes: string, // e.g. sm:100vw md:100vw lg:80vw xl:60vw xxl:40vw
+  sizes: string, // e.g. sm:100vw md:100vw lg:80vw xl:60vw 2xl:40vw
   fillAlpha?: boolean, // substiture alpha-channel with solid color (from theme settings)
   btnResName?: I18nResName,
   altResName?: I18nResName | undefined,

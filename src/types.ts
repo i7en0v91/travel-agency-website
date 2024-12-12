@@ -57,6 +57,7 @@ export interface ITabProps {
   ctrlKey: string,
   enabled: boolean,
   isActive?: boolean,
+  slotName?: string,
   label: {
     resName: I18nResName,
     shortIcon?: string

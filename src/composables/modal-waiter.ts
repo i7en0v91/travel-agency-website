@@ -1,5 +1,5 @@
 import { getCommonServices } from '../helpers/service-accessors';
-import type ModalWaitingIndicator from '../components/modal-waiting-indicator.vue';
+import type ModalWaitingIndicator from '../components/forms/modal-waiting-indicator.vue';
 import type { ComponentInstance, Ref } from 'vue';
 
 export interface IModalWaiter {

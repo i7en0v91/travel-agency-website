@@ -201,7 +201,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="w-full min-h-worldmaph bg-primary-300 dark:bg-mintgreen-600 world-map">
+  <div class="w-full min-h-worldmaph bg-primary-300 dark:bg-mintgreen-600">
     <ErrorHelm :is-error="(worldMap ? (worldMap.status.value === 'error') : false) || worldMapRenderError" :ui="{ stub: 'min-h-worldmaph rounded-none' }">
       <div class="overflow-x-auto overflow-y-hidden w-full h-full">
         <div class="aspect-worldmap grid grid-rows-1 grid-cols-1 min-w-worldmapw max-w-worldmapw md:w-full md:max-w-full">

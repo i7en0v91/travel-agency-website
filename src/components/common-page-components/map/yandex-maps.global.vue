@@ -4,7 +4,7 @@ import { type IMapControlProps } from './../../../types';
 import type { YMap } from '@yandex/ymaps3-types';
 import { YandexMapHint, YandexMapControlButton, VueYandexMaps, YandexMapControls, YandexMapZoomControl, YandexMap, YandexMapDefaultMarker, YandexMapDefaultSchemeLayer, YandexMapDefaultFeaturesLayer } from 'vue-yandex-maps';
 import isString from 'lodash-es/isString';
-import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
+import ComponentWaitingIndicator from '../../forms/component-waiting-indicator.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 const DefaultZoomLevel = 14;

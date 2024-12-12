@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { AppPage, type Locale, CookiePolicyConsent, getI18nResName2 } from '@golobe-demo/shared';
-import { useNavLinkBuilder } from './../composables/nav-link-builder';
-import { getCommonServices } from '../helpers/service-accessors';
+import { useNavLinkBuilder } from './../../composables/nav-link-builder';
+import { getCommonServices } from './../../helpers/service-accessors';
+import { LocatorClasses } from './../../helpers/constants';
 
 interface IProps {
   ctrlKey: string
@@ -42,7 +43,7 @@ function onAcceptBtnClick () {
         </template>
       </i18n-t>
     </div>
-    <UButton size="xl" class="flex-grow flex-shrink-[4] basis-auto w-full min-w-[130px] justify-center cookie-banner-accept" variant="solid" color="primary" @click="onAcceptBtnClick">
+    <UButton size="xl" :class="`flex-grow flex-shrink-[4] basis-auto w-full min-w-[130px] justify-center ${LocatorClasses.CookieBannerBtn}`" variant="solid" color="primary" @click="onAcceptBtnClick">
       {{ $t(getI18nResName2('cookieBanner', 'btnAccept')) }}
     </UButton>
   </section>

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { mapLocalizeableValues, getLocalizeableValue, type Locale, MaxSearchHistorySize, AppConfig, AppPage, getI18nResName2 } from '@golobe-demo/shared';
+import { mapLocalizeableValues, getLocalizeableValue, type Locale, AppConfig, AppPage, getI18nResName2 } from '@golobe-demo/shared';
 import { type ISearchedCityHistoryDto, type IPopularCityDto, ApiEndpointStayOffersSearchHistory, ApiEndpointPopularCitiesList } from './../../server/api-definitions';
 import range from 'lodash-es/range';
-import ComponentWaitingIndicator from './../../components/component-waiting-indicator.vue';
+import ComponentWaitingIndicator from '../forms/component-waiting-indicator.vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from './../../helpers/service-accessors';
@@ -84,8 +84,8 @@ watch([searchHistoryFetch.status, popularCitiesFetch.status], () => {
           />
         </li>
       </ul>
-      <div v-else-if="!showWaitingStub" class="search-history-empty-div mt-2">
-        <i18n-t :keypath="getI18nResName2('staysPage', 'searchHistoryEmpty')" tag="div" scope="global" class="search-history-empty">
+      <div v-else-if="!showWaitingStub" class="mt-2">
+        <i18n-t :keypath="getI18nResName2('staysPage', 'searchHistoryEmpty')" tag="div" scope="global">
           <template #cityLink>
             <ULink 
               v-if="somePopularCity"

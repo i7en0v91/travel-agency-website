@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { AppPage, type Locale, type I18nResName, getI18nResName2 } from '@golobe-demo/shared';
-import { useNavLinkBuilder } from './../composables/nav-link-builder';
+import { useNavLinkBuilder } from '../../composables/nav-link-builder';
 
 interface IProps {
   httpCode: number,

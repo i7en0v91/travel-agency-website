@@ -20,8 +20,7 @@ export function useDocumentDownloader (modalWaiter: IModalWaiter): IDocumentDown
 
   const { d, t } = useI18n();
   const { enabled } = usePreviewState();
-
-
+  
   const getFileName = (offer: EntityDataAttrsOnly<IFlightOffer | IStayOfferDetails | IStayOffer>, firstName?: string, lastName?: string): string => {
     const removeSysChars = (file: string): string => file.replaceAll(/[\s]/g, '').replaceAll(/[./\\]/g, '-');
   

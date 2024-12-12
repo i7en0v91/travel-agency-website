@@ -9,9 +9,11 @@ import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
-  offer: EntityDataAttrsOnly<IStayOffer>
+  offer: EntityDataAttrsOnly<IStayOffer>,
+  variant?: 'landscape-xl' | 'landscape-lg'
 }
 const props = withDefaults(defineProps<IProps>(), {
+  variant: 'landscape-xl'
 });
 
 const { status } = useAuth();
@@ -48,7 +50,7 @@ async function favouriteBtnClick (): Promise<void> {
 }
 
 const uiStyling = {
-  base: 'w-full overflow-hidden h-full grid gap-x-6 grid-rows-searchstaysportrait xl:grid-rows-searchstayslandscape grid-cols-searchstaysportrait xl:grid-cols-searchstayslandscape',
+  base: `w-full overflow-hidden h-full grid gap-x-6 grid-rows-searchstaysportrait xl:grid-rows-searchstayslandscape grid-cols-searchstaysportrait xl:grid-cols-searchstayslandscape ${props.variant === 'landscape-lg' ? 'lg:grid-rows-searchstayslandscape lg:grid-cols-searchstayslandscape' : ''}`,
   background: 'bg-transparent dark:bg-transparent',
   shadow: 'shadow-none',
   rounded: 'rounded-none',
@@ -71,28 +73,28 @@ const uiStyling = {
     <div class="w-full h-auto ring-1 ring-gray-200 dark:ring-gray-800 shadow-lg shadow-gray-200 dark:shadow-gray-700 rounded-xl">
       <UCard as="article" :ui="uiStyling">
         <template #header>
-          <div class="w-full h-auto text-gray-600 dark:text-gray-300 font-semibold text-xl row-start-2 row-end-3 col-start-1 col-end-2 xl:row-start-1 xl:row-end-2 xl:col-start-2 xl:col-end-3 pt-4 pl-4 xl:pl-0">
+          <div :class="`w-full h-auto text-gray-600 dark:text-gray-300 font-semibold text-xl row-start-2 row-end-3 col-start-1 col-end-2 xl:row-start-1 xl:row-end-2 xl:col-start-2 xl:col-end-3 pt-4 pl-4 xl:pl-0 ${props.variant === 'landscape-lg' ? 'lg:row-start-1 lg:row-end-2 lg:col-start-2 lg:col-end-3 lg:pl-0' : ''}`">
             {{ getLocalizeableValue(offer.stay.name, locale as Locale) }}
           </div>
         </template>
 
-        <div class="w-full h-full row-start-1 row-end-2 col-start-1 col-end-3 xl:row-end-4 xl:col-end-2">
+        <div :class="`w-full h-full row-start-1 row-end-2 col-start-1 col-end-3 xl:row-end-4 xl:col-end-2 ${variant === 'landscape-lg' ? 'lg:row-end-4 lg:col-end-2' : ''}`">
           <StaticImage
             :ctrl-key="`${ctrlKey}-StayPhoto`"
             :entity-src="props.offer.stay.photo"
             :category="ImageCategory.Hotel"
             sizes="xs:85vw sm:85vw md:85vw lg:75vw xl:30vw"
             :ui="{ 
-              wrapper: 'w-full h-full rounded-t-xl xl:rounded-t-none xl:rounded-l-xl', 
-              stub: 'rounded-t-xl xl:rounded-t-none xl:rounded-l-xl',
-              img: 'aspect-square object-cover rounded-t-xl xl:rounded-l-xl xl:rounded-tr-none' 
+              wrapper: `w-full h-full rounded-t-xl xl:rounded-t-none xl:rounded-l-xl ${variant === 'landscape-lg' ? 'lg:rounded-t-none lg:rounded-l-xl' : '' }`, 
+              stub: `rounded-t-xl xl:rounded-t-none xl:rounded-l-xl ${ variant === 'landscape-lg' ? 'lg:rounded-t-none lg:rounded-l-xl' : '' } `,
+              img: `aspect-square object-cover rounded-t-xl xl:rounded-l-xl xl:rounded-tr-none ${ variant === 'landscape-lg'  ? 'lg:rounded-l-xl lg:rounded-tr-none' : ''}` 
             }"
             :show-stub="true"
             :alt-res-name="getI18nResName2('searchStays', 'hotelPhotoAlt')"
           />
         </div>
                       
-        <div class="w-full truncate h-auto row-start-2 row-end-4 col-start-2 col-end-3 xl:row-start-1 xl:row-end-3 xl:col-start-3 xl:col-end-4 mb-4 sm:mb-0 pt-4 pr-4 flex flex-col flex-nowrap items-end ml-auto">
+        <div :class="`w-full truncate h-auto row-start-2 row-end-4 col-start-2 col-end-3 xl:row-start-1 xl:row-end-3 xl:col-start-3 xl:col-end-4 mb-4 sm:mb-0 pt-4 pr-4 flex flex-col flex-nowrap items-end ml-auto ${ variant === 'landscape-lg' ? 'lg:row-start-1 lg:row-end-3 lg:col-start-3 lg:col-end-4' : '' }`">
           <div class="w-fit h-auto text-xs leading-none text-gray-500 dark:text-gray-400">
             {{ $t(getI18nResName2('searchOffers', 'startingPrice')) }}
           </div>
@@ -104,7 +106,7 @@ const uiStyling = {
           </div>
         </div>
 
-        <div class="w-full h-auto row-start-3 row-end-4 col-start-1 col-end-3 xl:row-start-2 xl:row-end-3 xl:col-start-2 xl:col-end-3 pl-4 xl:pl-0">
+        <div :class="`w-full h-auto row-start-3 row-end-4 col-start-1 col-end-3 xl:row-start-2 xl:row-end-3 xl:col-start-2 xl:col-end-3 pl-4 xl:pl-0 ${ variant === 'landscape-lg' ? 'lg:row-start-2 lg:row-end-3 lg:col-start-2 lg:col-end-3 pl-4 lg:pl-0' : '' }`">
           <div class="w-full mt-2">
             <UIcon name="i-material-symbols-location-on-rounded" class="w-5 h-5 inline-block opacity-70 mr-2"/>
             <div class="w-fit truncate inline-block text-xs text-gray-500 dark:text-gray-400">
@@ -113,7 +115,9 @@ const uiStyling = {
           </div>
           <div class="w-full flex flex-row flex-wrap items-center gap-2 mt-2">
             <div class="flex-initial flex flex-row flex-nowrap items-center gap-[2px]">
-              <UIcon v-for="i in range(0, 5)" :key="`${props.ctrlKey}-HotelStar-${i}`" name="i-material-symbols-star" class="w-5 h-5 bg-red-400 inline-block" />
+              <ClientOnly>
+                <UIcon v-for="i in range(0, 5)" :key="`${props.ctrlKey}-HotelStar-${i}`" name="i-material-symbols-star" class="w-5 h-5 bg-red-400 inline-block" />
+              </ClientOnly>
             </div>
             <div class="flex-initial flex-shrink-0 basis-auto truncate text-xs text-gray-600 dark:text-gray-300 mr-2">
               {{ $t(getI18nResName2('searchStays', 'stayRatingCaption')) }}
@@ -146,7 +150,7 @@ const uiStyling = {
         </div>
 
         <template #footer>
-          <div class="p-4 pt-0 xl:pl-0 w-full h-auto row-start-4 row-end-5 col-start-1 col-end-3 xl:row-start-3 xl:row-end-4 xl:col-start-2 xl:col-end-4">
+          <div :class="`p-4 pt-0 xl:pl-0 w-full h-auto row-start-4 row-end-5 col-start-1 col-end-3 xl:row-start-3 xl:row-end-4 xl:col-start-2 xl:col-end-4 ${ variant === 'landscape-lg' ? 'lg:row-start-3 lg:row-end-4 lg:col-start-2 lg:col-end-4 lg:pl-0' : '' }`">
             <UDivider color="gray" orientation="horizontal" class="w-full mt-4" size="xs"/>
             <div class="flex flex-row flex-nowrap gap-4 mt-4 ">
               <UButton

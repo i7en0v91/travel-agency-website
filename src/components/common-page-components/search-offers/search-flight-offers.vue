@@ -24,11 +24,11 @@ defineExpose({
 
 const logger = getCommonServices().getLogger();
 
-let fromCity: Ref<ISearchListItem | null | undefined>;
-let toCity: Ref<ISearchListItem | null | undefined>;
-let tripType: Ref<TripType | null | undefined>;
-let tripDates: Ref<Date[] | null | undefined>;
-let flightParams: Ref<{ passengers: number, class: FlightClass } | null | undefined>;
+const fromCity: Ref<ISearchListItem | null | undefined> = ref();
+const toCity: Ref<ISearchListItem | null | undefined> = ref();
+const tripType: Ref<TripType | null | undefined> = ref();
+const tripDates: Ref<Date[] | null | undefined> = ref();
+const flightParams: Ref<{ passengers: number, class: FlightClass } | null | undefined> = ref();
 
 const searchOffersStoreAccessor = useSearchOffersStore();
 
@@ -37,17 +37,16 @@ let displayedSearchParams: ComputedRef<Partial<ISearchFlightOffersMainParams>> |
 if (props.takeInitialValuesFromUrlQuery) {
   searchOffersStore = await searchOffersStoreAccessor.getInstance('flights', true, false);
   displayedSearchParams = computed<Partial<ISearchFlightOffersMainParams>>(() => { return searchOffersStore!.viewState.currentSearchParams; });
-  fromCity = ref(displayedSearchParams.value.fromCity ?? null);
-  toCity = ref(displayedSearchParams.value.toCity ?? null);
-  tripType = ref(displayedSearchParams.value.tripType ?? null);
-  tripDates = ref(displayedSearchParams.value ? (getInitiallySelectedDates(displayedSearchParams.value) ?? null) : null);
-  flightParams = ref((displayedSearchParams.value?.class && displayedSearchParams.value?.numPassengers) ? 
+  fromCity.value = displayedSearchParams.value.fromCity ?? null;
+  toCity.value = displayedSearchParams.value.toCity ?? null;
+  tripType.value = displayedSearchParams.value.tripType ?? null;
+  tripDates.value = displayedSearchParams.value ? (getInitiallySelectedDates(displayedSearchParams.value) ?? null) : null;
+  flightParams.value = (displayedSearchParams.value?.class && displayedSearchParams.value?.numPassengers) ? 
     { 
       class: displayedSearchParams.value?.class ?? 'economy', 
       passengers: displayedSearchParams.value?.numPassengers ?? FlightMinPassengers 
     } 
-    : null
-  );
+    : null;
   watch([fromCity, toCity, flightParams, tripType, tripDates], () => {
     logger.debug(`(SearchFlightOffers) search params watch handler, ctrlKey=${props.ctrlKey}`);
     const inputParams = getSearchParamsFromInputControls();
@@ -56,11 +55,6 @@ if (props.takeInitialValuesFromUrlQuery) {
 } else {
   searchOffersStore = await searchOffersStoreAccessor.getInstance('flights', false, false);
   displayedSearchParams = computed<Partial<ISearchFlightOffersMainParams>>(getSearchParamsFromInputControls);
-  fromCity = ref(undefined);
-  toCity = ref(undefined);
-  tripDates = ref(undefined);
-  tripType = ref(undefined);
-  flightParams = ref(undefined);
   watch(displayedSearchParams, () => {
     logger.debug(`(SearchFlightOffers) search params change handler, ctrlKey=${props.ctrlKey}`);
     $emit('change', displayedSearchParams!.value);

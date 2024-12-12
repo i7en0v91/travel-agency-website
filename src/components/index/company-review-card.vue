@@ -41,20 +41,20 @@ const uiStyling = {
 </script>
 
 <template>
-  <div class="pb-[32px] sm:pb-[32px] mr-[40px] grid grid-cols-1 grid-rows-1 rounded-3xl max-w-[500px] company-review-card">
+  <div class="pb-[32px] sm:pb-[32px] mr-[40px] grid grid-cols-1 grid-rows-1 rounded-3xl max-w-[500px]">
     <div class="col-start-1 col-end-2 row-start-1 row-end-2 z-[1] w-full h-full rounded-3xl bg-primary-200 dark:bg-primary-800 mt-[16px] ml-[16px] sm:mt-[26px] sm:ml-[26px]" />
     <UCard as="article" :ui="uiStyling">
       <template #header>
         <div class="w-full h-auto overflow-x-hidden">
-          <h3 v-if="props.header" class="h-16 max-h-16 text-2xl font-bold w-fit overflow-hidden line-clamp-2 whitespace-pre-wrap review-card-header">
+          <h3 v-if="props.header" class="h-16 max-h-16 text-2xl font-bold w-fit overflow-hidden line-clamp-2 whitespace-pre-wrap">
             {{ (props.header as any)[locale] }}
           </h3>
           <USkeleton v-else as="h3" class="w-full h-8 max-h-8"/>
         </div>
       </template>
 
-      <div ref="cardBody" :class="`w-full min-h-[calc(306px+4rem)] sm:min-h-[calc(378px+4rem)] flex flex-col flex-nowrap items-stretch ${expanded ? 'overflow-auto max-h-[calc(306px+4rem)] sm:max-h-[calc(378px+4rem)]' : 'overflow-hidden'} review-card-content`">
-        <p v-if="props.body" :class="`flex-grow flex-shrink-0 basis-auto text-gray-400 dark:text-gray-500 leading-5 font-medium ${expanded ? 'h-auto' : 'h-[60px] overflow-hidden'} review-card-body`">
+      <div ref="cardBody" :class="`w-full min-h-[calc(306px+4rem)] sm:min-h-[calc(378px+4rem)] flex flex-col flex-nowrap items-stretch ${expanded ? 'overflow-auto max-h-[calc(306px+4rem)] sm:max-h-[calc(378px+4rem)]' : 'overflow-hidden'}`">
+        <p v-if="props.body" :class="`flex-grow flex-shrink-0 basis-auto text-gray-400 dark:text-gray-500 leading-5 font-medium ${expanded ? 'h-auto' : 'h-[60px] overflow-hidden'}`">
           {{ (props.body as any)[locale] }}
         </p>
         <USkeleton v-else as="p" class="w-full h-[60px] mt-4"/>
@@ -67,7 +67,7 @@ const uiStyling = {
           <UIcon v-for="i in range(0, 5)" :key="`${props.ctrlKey}-ReviewStar-${i}`" name="i-material-symbols-star" class="w-6 h-6 max-w-[32px] bg-yellow-400" />
         </div>
         <div class="mt-[8px] sm:mt-[20px]">
-          <div v-if="props.userName" class="font-bold text-black dark:text-white review-card-user-name">
+          <div v-if="props.userName" class="font-bold text-black dark:text-white">
             {{ (props.userName as any)[locale] }}
           </div>
           <USkeleton v-else class="w-1/2 h-4"/>

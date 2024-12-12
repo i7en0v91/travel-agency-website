@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { getI18nResName2, getUsrMsgResName, mapAppExceptionToHttpStatus } from '@golobe-demo/shared';
 import { destr } from 'destr';
-import ErrorBox from './components/error-box.vue';
+import ErrorBox from './components/forms/error-box.vue';
 
 const errorInfo = useError().value;
 const appExceptionCode = ((errorInfo as any)?.data?.code) ?? (destr<any>((errorInfo as any).data)?.code);

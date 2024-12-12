@@ -6,6 +6,7 @@ import { joinURL } from 'ufo';
 import isString from 'lodash-es/isString';
 import { lookupParentDirectory, AppConfig, type IAppLogger, AppPage, AllHtmlPages, EntityIdPages, getPagePath, type Locale, CookieI18nLocale, AvailableLocaleCodes, DefaultLocale, OgImageExt, delay, getOgImageFileName } from '@golobe-demo/shared';
 import { TEST_SERVER_PORT, createLogger, startWatchingTestFiles, stopWatchingTestFiles } from '../../helpers/testing';
+import { LocatorClasses } from './../../helpers/constants';
 import { access } from 'fs/promises';
 
 const TestTimeout = 300000;
@@ -95,7 +96,7 @@ class PageScreenshoter {
   private acceptCookies = async (): Promise<void> => {
     this.logger.debug(`accepting cookies, currentPage=${this.currentPage?.url()}`);
 
-    await this.currentPage!.locator('button.cookie-banner-accept').click();
+    await this.currentPage!.locator(`button.${LocatorClasses.CookieBannerBtn}`).click();
     await delay(100);
 
     this.logger.debug(`cookies accepted, currentPage=${this.currentPage?.url()}`);

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import SiteSearch from './../site-search.vue';
+import SiteSearch from '../common-page-components/site-search.vue';
 
 const open = ref(false);
 
@@ -29,7 +29,6 @@ const { t } = useI18n();
       square 
       class="*:w-5 *:h-5 *:sm:w-6 *:sm:h-6"
       icon="i-heroicons-magnifying-glass"
-      :ui="{ icon: { base: 'bg-gray-900 dark:bg-gray-400' } }"
       :aria-label="$t(getI18nResName2('ariaLabels', 'btnSiteSearch'))"
       @click="nextTick(() => open = true)"
     />

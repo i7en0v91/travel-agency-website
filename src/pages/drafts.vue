@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { SystemPage, lookupPageByUrl, AppException, AppExceptionCodeEnum, QueryDraftRequestPathParam, getI18nResName2 } from '@golobe-demo/shared';
 import { defaultErrorHandler } from './../helpers/exceptions';
-import ComponentWaitingIndicator from './../components/component-waiting-indicator.vue';
+import ComponentWaitingIndicator from '../components/forms/component-waiting-indicator.vue';
 import { getCommonServices } from '../helpers/service-accessors';
 
 const { t } = useI18n();
@@ -14,9 +14,6 @@ definePageMeta({
 useHead({
   script: [
     { src: '/js/page-load.min.js' },
-  ],
-  link: [
-    { rel: 'icon', href: '/img/waiter.gif' }
   ],
   title: t(getI18nResName2('draftsPage', 'title'))
 });
@@ -67,15 +64,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="drafts-waiting-indicator-div">
-    <!--
-    <ComponentWaitingIndicator ctrl-key="DraftPageWaiter" class="drafts-waiting-indicator" />
-    -->
-    PAGE CONTENT
+  <div class="absolute left-0 top-0 bottom-0 right-0">
+    <div class="relative w-full h-full flex flex-col flex-nowrap items-center justify-center">
+      <ComponentWaitingIndicator ctrl-key="DraftPageWaiter"/>
+    </div>
   </div>
 </template>
-
-
-<style lang="scss">
-
-</style>

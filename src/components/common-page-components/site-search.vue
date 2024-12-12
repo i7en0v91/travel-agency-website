@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { type Locale, type AppPage, getI18nResName2, UserNotificationLevel, extractSurroundingText, type EntityId, getI18nResName3, lookupPageByUrl, getLocaleFromUrl, type I18nResName, localizePath, getPagePath, SystemPage } from '@golobe-demo/shared';
-import { getCommonServices } from '../helpers/service-accessors';
-import { SiteSearchMaxMatchLength as SiteSearchResultMaxContextLength } from '../helpers/constants';
+import { type Locale, type AppPage, getI18nResName2, UserNotificationLevel, extractSurroundingText, type EntityId, getI18nResName3, lookupPageByUrl, getLocaleFromUrl, type I18nResName, SystemPage } from '@golobe-demo/shared';
+import { getCommonServices } from '../../helpers/service-accessors';
+import { useDeviceSize } from '../../composables/device-size';
+import { SiteSearchMaxMatchLength } from '../../helpers/constants';
 import MiniSearch from 'minisearch';
 import isString from 'lodash-es/isString';
 import flatten from 'lodash-es/flatten';
 import groupBy from 'lodash-es/groupBy';
 import values from 'lodash-es/values';
 import keys from 'lodash-es/keys';
-import type { UInput } from './../.nuxt/components';
+import type { UInput } from '../../.nuxt/components';
 import uniqBy from 'lodash-es/uniqBy';
 import { type ComponentInstance } from 'vue';
+import { parseURL, withFragment } from 'ufo';
 
 interface IProps {
   ctrlKey: string
@@ -61,13 +63,20 @@ type ParsedSearchItem = {
   }
 };
 
+const { current: deviceSize } = useDeviceSize();
 const { t, locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
 
 const searchUserInput = ref<string>('');
 const searchTerm = computed(() => {
   return (searchUserInput.value?.trim()?.length > 0) ? searchUserInput.value : MiniSearch.wildcard;
 });
 const searchResultsRef = await searchContent(searchTerm);
+
+const searchResultsContextLength = computed(() => {
+  return SiteSearchMaxMatchLength[deviceSize.value];
+});
+
 const matchedPages = computed<ParsedSearchItem[]>(() => {
   const searchResponse = searchResultsRef.value;
   logger.debug(`(SiteSearch) updating search result items list, itemsCount=${searchResultsRef.value?.length ?? 0}, searchTerm=[${searchUserInput.value}]`);
@@ -83,16 +92,20 @@ const matchedPages = computed<ParsedSearchItem[]>(() => {
         return undefined;
       }
 
+      if(page === SystemPage.Drafts) {
+        return undefined;
+      }
+
       return {
         idx: 0,
         score: i.score,
         link: {
           page: lookupPageByUrl(i.id),
           id: undefined,
-          url: localizePath(getPagePath(page), locale.value as Locale)
+          url: navLinkBuilder.buildPageLink(page, locale.value as Locale)
         },
         text: {
-          before: i['content'].substring(0, SiteSearchResultMaxContextLength),
+          before: i['content'].substring(0, searchResultsContextLength.value),
           mark: '',
           after: ''        
         }
@@ -119,6 +132,7 @@ function formatSearchResultItem(resultItem: SearchResultItem): ParsedSearchItem[
       return [];
     }
 
+    const maxMatchLenght = searchResultsContextLength.value;
     const parsed = resultItem.terms.map((t, idx) => {
       const textFieldNames = resultItem.match[t].filter(f => ['title', 'content'].includes(f));
       if(!textFieldNames.length) {
@@ -129,13 +143,13 @@ function formatSearchResultItem(resultItem: SearchResultItem): ParsedSearchItem[
       const textFieldName = textFieldNames[0];
       const matchedFieldText = resultItem[textFieldName];
       let matchedTerm = t;
-      matchedTerm = matchedTerm.length > SiteSearchResultMaxContextLength ? matchedTerm.substring(0, SiteSearchResultMaxContextLength) : matchedTerm;
+      matchedTerm = matchedTerm.length > maxMatchLenght ? matchedTerm.substring(0, maxMatchLenght) : matchedTerm;
 
       let phrase: { text: string, phraseIdx: number } | undefined;
       try {
         if(isString(matchedFieldText) && matchedFieldText.trim().length) {
           logger.debug(`(SiteSearch) extracting surrounding text, id=${resultItem.id}, field=${textFieldName}, matchedTerm=${matchedTerm}, fieldTextLength=${matchedFieldText.length}`);
-          phrase = extractSurroundingText(matchedFieldText, matchedTerm, SiteSearchResultMaxContextLength);
+          phrase = extractSurroundingText(matchedFieldText, matchedTerm, maxMatchLenght);
         }
 
         if(!phrase?.text.length) {
@@ -156,7 +170,10 @@ function formatSearchResultItem(resultItem: SearchResultItem): ParsedSearchItem[
         link: {
           page,
           id: undefined,
-          url: resultItem.id
+          url: withFragment(
+            navLinkBuilder.buildPageLink(page, locale.value as Locale), 
+            (parseURL(resultItem.id).hash ?? '').replace('#', '')
+          )
         },
         text: {
           before: befores.length > 1 ? befores[befores.length - 1] : befores[0],
@@ -194,7 +211,7 @@ onUnmounted(() => {
       <UInput 
         ref="inputRef"
         v-model.trim="searchUserInput" 
-        :max-length="SiteSearchResultMaxContextLength" 
+        :max-length="SiteSearchMaxMatchLength.XXL" 
         :ui="{ wrapper: 'sm:ml-2 pr-2 sm:pr-4' }" 
         :placeholder="$t(getI18nResName3('nav', 'search', 'placeholder'))" 
         variant="none">

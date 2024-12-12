@@ -1,4 +1,4 @@
-import { UserNotificationLevel, AppException, AppExceptionCodeEnum, getI18nResName2 } from '@golobe-demo/shared';
+import { AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { getCommonServices } from '../helpers/service-accessors';
 import type { ComponentInstance, Ref } from 'vue';
 
@@ -14,12 +14,9 @@ export function useModalDialogResult<TResult> (
   },
   defaultResult: TResult
 ): IModalDialogResult<TResult> {
-  const userNotificationStore = useUserNotificationStore();
-
   const result = ref<TResult | undefined>();
 
   const ctrlKey = modalRef.value.$props.ctrlKey;
-  //const buttons = boxRef.value.$props.buttons;
   
   return {
     show: (): Promise<TResult> => {
@@ -40,15 +37,12 @@ export function useModalDialogResult<TResult> (
           if(!refs.open.value) {
             logger.verbose(`(modal-dialog-result) closed: ctrlKey=${ctrlKey}, open=${refs.open.value}, result=${refs.result.value}`);
             try {
-              const modalResult = refs.result.value;
+              let modalResult = refs.result.value;
               if(!modalResult) {
-                logger.warn(`(modal-dialog-result) result was not set: ctrlKey=${ctrlKey}, open=${refs.open.value}, result=${refs.result.value}`);
-                userNotificationStore.show({
-                  level: UserNotificationLevel.ERROR,
-                  resName: getI18nResName2('appErrors', 'unknown')
-                });
+                modalResult = defaultResult;
+                logger.debug(`(modal-dialog-result) result was not set, default will be used: ctrlKey=${ctrlKey}, open=${refs.open.value}, result=${refs.result.value}`);
               }
-              resolve(modalResult ?? defaultResult);
+              resolve(modalResult);
             } finally {
               disposeWatch();
             }

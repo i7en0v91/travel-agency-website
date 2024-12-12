@@ -52,7 +52,7 @@ const popularCitiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`
       :items="popularCitiesListFetch.data.value" 
       :ui="{ 
         container: 'gap-4',
-        item: 'snap-end justify-around basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5 xxl:basis-1/6' 
+        item: 'snap-end justify-around basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5 xl:basis-1/6' 
       }"
       :indicators="false" 
     >

@@ -7,7 +7,7 @@ import { ApiEndpointImageDetails } from './../../server/api-definitions';
 import { type ComponentInstance, type GlobalComponents } from 'vue';
 import fromPairs from 'lodash-es/fromPairs';
 import isString from 'lodash-es/isString';
-import ErrorHelm from './../error-helm.vue';
+import ErrorHelm from '../forms/error-helm.vue';
 import { stringifyParsedURL } from 'ufo';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
@@ -25,7 +25,7 @@ interface IProps {
   assetSrc?: IPublicAssetSrc,
   category?: ImageCategory,
   entitySrc?: IImageEntitySrc,
-  sizes: string, // e.g. sm:100vw md:100vw lg:80vw xl:60vw xxl:40vw
+  sizes: string, // e.g. sm:100vw md:100vw lg:80vw xl:60vw 2xl:40vw
   stubStyle?: CssPropertyList | 'default' | 'custom-if-configured', // false - do not show custom stub (use default)
   requestExtraDisplayOptions?: boolean,
   altResName?: I18nResName | undefined,

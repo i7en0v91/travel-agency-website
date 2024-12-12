@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppExceptionCodeEnum, AppException, getI18nResName2, OgImageExt, type Locale, type Theme, DefaultLocale, AppConfig, AppPage, type IImageCategoryInfo, getLocalizeableValue, ImageCategory } from '@golobe-demo/shared';
+import { AppExceptionCodeEnum, AppException, getI18nResName2, OgImageExt, type Locale, type Theme, DefaultLocale, type IImageCategoryInfo, getLocalizeableValue, ImageCategory } from '@golobe-demo/shared';
 import { type IBookingTicketStayTitleProps, type IBookingTicketProps, type IBookingTicketFlightGfxProps } from './../../types';
 import { joinURL } from 'ufo';
 import isString from 'lodash-es/isString';
@@ -1074,7 +1074,7 @@ logger.verbose(`(OgBookingTicket) setup script completed, ctrlKey=${props.ctrlKe
   }
 
   .og-app-page.dark .dates-bg {
-    background-color: #3B3B3B
+    background-color: #374151
   }
 
   .og-app-page.dark .input-ctrl-color {

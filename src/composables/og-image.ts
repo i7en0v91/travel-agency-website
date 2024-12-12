@@ -1,6 +1,5 @@
 import { AppConfig, getOgImageFileName, lookupPageByUrl, AppPage, EntityIdPages, SystemPage, type Locale } from '@golobe-demo/shared';
 import { joinURL } from 'ufo';
-import { defineOgImage, defineOgImageComponent } from '#imports';
 import { getCommonServices } from '../helpers/service-accessors';
 
 export function useOgImage (component?: { name: string, props: any}, skipCache: boolean = false) {

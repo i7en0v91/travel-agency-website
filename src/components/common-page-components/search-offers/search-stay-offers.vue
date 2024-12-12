@@ -18,10 +18,10 @@ const props = withDefaults(defineProps<IProps>(), {
 });
 const logger = getCommonServices().getLogger();
 
-let destinationCity: Ref<ISearchListItem | null | undefined>;
-let checkInDate = ref<Date | null | undefined>();
-let checkOutDate = ref<Date | null | undefined>();
-let stayParams: Ref<{ numRooms: number, numGuests: number } | null | undefined>;
+const destinationCity: Ref<ISearchListItem | null | undefined> = ref();
+const checkInDate = ref<Date | null | undefined>();
+const checkOutDate = ref<Date | null | undefined>();
+const stayParams: Ref<{ numRooms: number, numGuests: number } | null | undefined> = ref();
 
 const searchOffersStoreAccessor = useSearchOffersStore();
 
@@ -35,15 +35,15 @@ defineExpose({
 if (props.takeInitialValuesFromUrlQuery) {
   searchOffersStore = await searchOffersStoreAccessor.getInstance('stays', true, false);
   displayedSearchParams = computed<Partial<ISearchStayOffersMainParams>>(() => { return searchOffersStore!.viewState.currentSearchParams; });
-  destinationCity = ref(displayedSearchParams.value?.city ?? null);
-  checkInDate = ref(displayedSearchParams.value?.checkIn ?? null);
-  checkOutDate = ref(displayedSearchParams.value?.checkOut ?? null);
-  stayParams = ref((displayedSearchParams.value?.numGuests && displayedSearchParams.value?.numRooms) ? 
+  destinationCity.value = displayedSearchParams.value?.city ?? null;
+  checkInDate.value = displayedSearchParams.value?.checkIn ?? null;
+  checkOutDate.value = displayedSearchParams.value?.checkOut ?? null;
+  stayParams.value = (displayedSearchParams.value?.numGuests && displayedSearchParams.value?.numRooms) ? 
     { 
       numGuests: displayedSearchParams.value?.numGuests ?? StaysMinGuestsCount, 
       numRooms: displayedSearchParams.value?.numRooms ?? StaysMinRoomsCount
     } : null
-  );
+  ;
 
   watch([destinationCity, checkInDate, checkOutDate, stayParams], () => {
     logger.debug(`(SearchStayOffers) search params watch handler, ctrlKey=${props.ctrlKey}`);
@@ -52,10 +52,6 @@ if (props.takeInitialValuesFromUrlQuery) {
   });
 } else {
   searchOffersStore = await searchOffersStoreAccessor.getInstance('stays', false, false);
-  destinationCity = ref(undefined);
-  checkInDate = ref(undefined);
-  checkOutDate = ref(undefined);
-  stayParams = ref(undefined);
   displayedSearchParams = computed<Partial<ISearchStayOffersMainParams>>(getSearchParamsFromInputControls);
   watch(displayedSearchParams, () => {
     logger.debug(`(SearchStayOffers) search params change handler, ctrlKey=${props.ctrlKey}`);

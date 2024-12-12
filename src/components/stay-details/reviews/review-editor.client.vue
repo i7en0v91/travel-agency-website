@@ -4,7 +4,7 @@ import * as config from './../../../node_modules/@nuxt/ui/dist/runtime/ui.config
 import { type ReviewEditorButtonType } from './../../../types';
 import { TiptapUnderline, TiptapPlaceholder } from './../../../client/tiptapExt';
 import ReviewEditorButton from './review-editor-button.vue';
-import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
+import ComponentWaitingIndicator from '../../forms/component-waiting-indicator.vue';
 import ReviewScorePicker from './review-score-picker.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 import { useModalDialogResult } from '../../../composables/modal-dialog-result';

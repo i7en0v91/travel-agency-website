@@ -13,6 +13,7 @@ import dayjs from 'dayjs';
 import { murmurHash } from 'ohash';
 import { type ParsedURL, joinURL, parseQuery, parseURL, stringifyParsedURL, stringifyQuery, withQuery } from 'ufo';
 import { TEST_SERVER_PORT, createLogger } from '../../helpers/testing';
+import { LocatorClasses } from './../../helpers/constants';
 import pick from 'lodash-es/pick';
 import { defu } from 'defu';
 import { destr } from 'destr';
@@ -299,7 +300,7 @@ class PageTestHelper {
     const cookies = await context.cookies();
     let isAuthenticated = cookies.filter(c => [CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken].includes(c.name)).length === 3;
     if(isAuthenticated) {
-      isAuthenticated = (await page.locator('#nav-user-menu-anchor').innerText())?.length > 0;
+      isAuthenticated = (await page.locator(`.${LocatorClasses.AuthUserMenu}`).innerText())?.length > 0;
     }
 
     this.logger.debug(`user is ${isAuthenticated ? 'authenticated' : 'NOT authenticated'}, currentPage=${this.currentPage?.url()}, path=${page.url()}`);
@@ -331,10 +332,10 @@ class PageTestHelper {
 
     const page = this.currentPage!;
 
-    await page.locator('form input[type=\'email\']').fill(credentialsTestUserProfile.email);
-    await page.locator('form input[type=\'password\']').fill(TEST_USER_PASSWORD);
+    await page.locator(LocatorClasses.SignInEmail).fill(credentialsTestUserProfile.email);
+    await page.locator(LocatorClasses.SignInPassword).fill(TEST_USER_PASSWORD);
     await delay(UiIinteractionDelayMs);
-    await page.locator('button.login-btn').click();
+    await page.locator(LocatorClasses.SubmitBtn).click();
     this.logger.debug(`sign in button clicked, currentPage=${this.currentPage?.url()}`);
 
     await spinWait(async () => {
@@ -803,39 +804,15 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
       const testPage = Test2Pages[i];
       let pageUrl = localizePath(`/${getPagePath(testPage)}`, locale);
       if(testPage === AppPage.Login) {
-        /*
-        const callbackParamName = keys(loginPageAllowedParamsOptions).filter(x => x === 'callbackUrl');
-        if(!callbackParamName) {
-          throw new Error('expected callbackUrl param to be allowed for Login page');
-        };
-        */
         const callbackParamName = 'callbackUrl';
         pageUrl = withQuery(pageUrl, set({}, callbackParamName, localizePath(`/${getPagePath(AppPage.Index)}`, locale)));
       } else if(testPage === AppPage.ForgotPasswordSet || testPage === AppPage.SignupComplete || testPage === AppPage.EmailVerifyComplete) {
-        /*
-        const paramOptions = testPage === AppPage.ForgotPasswordSet ? forgotPasswordSetAllowedParamsOptions : 
-        (testPage === AppPage.SignupComplete ? signUpCompleteAllowedParamsOptions : emailVerifyCompleteAllowedParamsOptions);
-        const tokenIdParamName = keys(paramOptions).filter(x => x === 'token_id');
-        if(!tokenIdParamName) {
-          throw new Error(`expected token_id param to be allowed for ${testPage} page`);
-        }
-        const tokenValueParamName = keys(paramOptions).filter(x => x === 'token_value');
-        if(!tokenValueParamName) {
-          throw new Error(`expected token_value param to be allowed for ${testPage} page`);
-        }
-        */
         const tokenIdParamName = 'token_id';
         const tokenValueParamName = 'token_value';
         let pageQuery = set({}, tokenIdParamName, random(1000000).toString());
         pageQuery = set(pageQuery, tokenValueParamName, random(1000000).toString());
         pageUrl = withQuery(pageUrl, pageQuery);
       } else if(testPage === AppPage.ForgotPasswordComplete) {
-        /*
-        const resultParamName = keys(forgotPasswordCompleteCacheParamsOptions).filter(x => x === 'result');
-        if(!resultParamName) {
-          throw new Error(`expected result param to be allowed for ${testPage} page`);
-        }
-          */
         const resultParamName = 'result';
         pageUrl = withQuery(pageUrl, set({}, resultParamName, <RecoverPasswordCompleteResult>'SUCCESS'));
       }
@@ -983,10 +960,6 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
 
           let defaultQuery: any = undefined;
           if(testPage === AppPage.BookStay) {
-            /*
-            serviceLevelParamName = keys(stayBookAllowedParamsOptions).find(x => x === serviceLevelParamName);
-            assert(!!serviceLevelParamName, `expected serviceLevel param to be allowed for ${AppPage.BookStay} page`);
-            */
             defaultQuery = set({}, serviceLevelParamName, <StayServiceLevel>'CityView2');
           }
 
@@ -1168,12 +1141,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
 
           const existingCitySlug = 'paris';
           const citySlugParamName = 'citySlug';
-          /*
-          const pageParamsOptions = testPage === AppPage.Flights ? flightsAllowedParamsOptions : staysAllowedParamsOptions;
-          const citySlugParamName = keys(pageParamsOptions).filter(x => x === 'citySlug');
-          assert(!!citySlugParamName, `expected citySlug param to be allowed for ${testPage} page`);
-          */
-
+          
           logger.verbose(`${testPageName} - prepare page`);
           let testId: string | undefined;
           const prepareResult = await testHelper.performPageAction(testPage, TestingPageCacheActionEnum.Prepare, testId, undefined);
@@ -1353,10 +1321,6 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
 
         let defaultQuery: any = undefined;
         if(testPage === AppPage.BookStay) {
-          /*
-          serviceLevelParamName = keys(stayBookAllowedParamsOptions).find(x => x === serviceLevelParamName);
-          assert(!!serviceLevelParamName, `expected serviceLevel param to be allowed for ${AppPage.BookStay} page`);
-          */
           defaultQuery = set({}, serviceLevelParamName, <StayServiceLevel>'CityView2');
         }
          

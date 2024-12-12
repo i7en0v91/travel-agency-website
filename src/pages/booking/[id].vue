@@ -4,13 +4,13 @@ import fromPairs from 'lodash-es/fromPairs';
 import { type IBookingTicketFlightGfxProps, type IBookingTicketStayTitleProps, type IBookingTicketProps } from './../../types';
 import { ApiEndpointBookingOffer, ApiEndpointStayOfferReviewSummary } from './../../server/api-definitions';
 import BookingTicket from './../../components/booking-ticket/booking-ticket.vue';
-import ComponentWaitingIndicator from './../../components/component-waiting-indicator.vue';
+import ComponentWaitingIndicator from '../../components/forms/component-waiting-indicator.vue';
 import TermsOfUse from './../../components/booking-page/terms-of-use.vue';
 import { getObject } from './../../helpers/rest-utils';
 import { type IOfferBookingStore } from './../../stores/offer-booking-store';
 import { mapFlightOfferDetails, mapStayOfferDetails, mapReviewSummary } from './../../helpers/entity-mappers';
 import { type IReviewSummaryDto } from '../../server/api-definitions';
-import type ModalWaitingIndicator from './../../components/modal-waiting-indicator.vue';
+import type ModalWaitingIndicator from '../../components/forms/modal-waiting-indicator.vue';
 import { useDocumentDownloader, type IDocumentDownloader } from './../../composables/document-downloader';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { getCommonServices } from '../../helpers/service-accessors';
@@ -399,11 +399,10 @@ async function onDownloadBtnClick (): Promise<void> {
           <TermsOfUse :ctrl-key="`${CtrlKey}-TermsOfUse`" />
         </ErrorHelm>
       </article>
-      
       <template #fallback>
         <ComponentWaitingIndicator ctrl-key="BookingPageClientFallback" class="my-8"/>
       </template>
     </ClientOnly>
-    <ModalWaitingIndicator ref="modalWaiterRef" v-model:open="modalWaiterOpen" :ctrl-key="`${CtrlKey}-Waiter`" />
+    <ModalWaitingIndicator ref="modalWaiterRef" v-model:open="modalWaiterOpen" :ctrl-key="`${CtrlKey}-Waiter`" :label-res-name="getI18nResName2('bookingCommon', 'generatingDoc')"/>
   </div>
 </template>

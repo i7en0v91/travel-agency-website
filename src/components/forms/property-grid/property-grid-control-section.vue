@@ -42,7 +42,7 @@ const uiStyling = {
 </script>
 
 <template>
-  <div class="property-grid-control-section">
+  <div>
     <UButton v-for="b in buttons" :key="`${props.ctrlKey}-${b}`" size="xl" variant="outline" color="primary" :ui="uiStyling" :icon="ButtonIconTypeMap[b]" @click="() => onControlButtonClick(b)">
       {{ $t(getI18nResName3('propertyGrid', 'controlButtons', b)) }}
     </UButton>

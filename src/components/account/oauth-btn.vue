@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import  { AuthProvider, type I18nResName } from '@golobe-demo/shared';
+import { LocatorClasses } from '../../helpers/constants';
 
 interface IProps {
   ctrlKey: string,
@@ -30,7 +31,7 @@ switch(props.provider) {
 }
 
 const uiStyling = {
-  base: `py-4 w-full h-auto *:mx-auto ${props.provider === AuthProvider.GitHub ? 'dark:*:invert' : ''} ${props.ui ?? ''}`
+  base: `py-4 w-full h-auto *:mx-auto ${props.provider === AuthProvider.GitHub ? 'dark:*:invert' : ''} ${props.ui ?? ''} ${props.provider === AuthProvider.TestLocal ? LocatorClasses.TestLocalOAuthBtn : ''}`
 };
 
 </script>

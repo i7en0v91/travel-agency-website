@@ -6,8 +6,8 @@ import isEqual from 'lodash-es/isEqual';
 import RangeFilter from './filters/range-filter.vue';
 import ChecklistFilter from './filters/checklist-filter.vue';
 import ChoiceFilter from './filters/choice-filter.vue';
-import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
-import MyAccordion from './../../my-accordion.vue';
+import ComponentWaitingIndicator from '../../forms/component-waiting-indicator.vue';
+import MyAccordion from '../../forms/my-accordion.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {

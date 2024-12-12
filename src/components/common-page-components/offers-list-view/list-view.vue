@@ -3,7 +3,7 @@ import { type OfferKind } from '@golobe-demo/shared';
 import FilterPanel from './filter-panel.vue';
 import ResultItemsList from './result-items-list.vue';
 import ListPaging from './list-paging.vue';
-import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
+import ComponentWaitingIndicator from '../../forms/component-waiting-indicator.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {

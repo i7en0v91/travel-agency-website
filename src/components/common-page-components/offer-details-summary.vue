@@ -111,7 +111,9 @@ onMounted(() => {
             </h1>
             <div v-if="offerKind === 'stays' && showReviewDetails" class="flex-initial inline-flex flex-row flex-wrap items-center gap-4 translate-y-[0.1rem]">
               <div class="inline-flex flex-row flex-nowrap items-center gap-[2px]">
-                <UIcon v-for="i in range(0, 5)" :key="`${props.ctrlKey}-HotelStar-${i}`" name="i-material-symbols-star" class="w-5 h-5 bg-red-400 inline-block" />
+                <ClientOnly>
+                  <UIcon v-for="i in range(0, 5)" :key="`${props.ctrlKey}-HotelStar-${i}`" name="i-material-symbols-star" class="w-5 h-5 bg-red-400 inline-block" />
+                </ClientOnly>
               </div>
               <div class="text-xs">
                 {{ $t(getI18nResName2('searchStays', 'stayRatingCaption')) }}

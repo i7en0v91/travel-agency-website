@@ -4,9 +4,10 @@ interface IProps {
   ctrlKey: string,
   imageName: 'flights' | 'stays',
   linkUrl: string,
-  btnLabel: string
+  btnLabel: string,
+  external?: boolean
 }
-defineProps<IProps>();
+withDefaults(defineProps<IProps>(), { external: true });
 
 </script>
 
@@ -33,6 +34,7 @@ defineProps<IProps>();
         icon="i-ion-paper-plane"
         variant="solid"
         color="primary"
+        :external="external"
       >
         {{ btnLabel }}
       </UButton>

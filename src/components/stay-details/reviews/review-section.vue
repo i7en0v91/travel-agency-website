@@ -4,7 +4,7 @@ import { TooltipHideTimeout, StayReviewEditorHtmlAnchor, StayReviewSectionHtmlAn
 import { type IStayReviewItem } from './../../../stores/stay-reviews-store';
 import type ReviewEditor from './review-editor.client.vue';
 import ReviewList from './review-list.vue';
-import ComponentWaitingIndicator from './../../../components/component-waiting-indicator.vue';
+import ComponentWaitingIndicator from '../../forms/component-waiting-indicator.vue';
 import { type ComponentInstance } from 'vue';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
