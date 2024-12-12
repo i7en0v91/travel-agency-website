@@ -1,4 +1,4 @@
-import { getI18nResName1, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, UserNotificationLevel, AppException, AppExceptionCodeEnum, type IAppLogger } from "@golobe-demo/shared";
+import { lookupPageByUrl, getI18nResName1, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, UserNotificationLevel, AppException, AppExceptionCodeEnum, type IAppLogger, SystemPage } from "@golobe-demo/shared";
 import { type H3Event } from 'h3';
 import { parseURL, parseQuery } from 'ufo';
 import { type IUserNotificationStore } from './../stores/user-notification-store';
@@ -62,7 +62,13 @@ export function usePreviewState(event: H3Event | undefined = undefined): { enabl
     return { enabled: _Enabled, requestUserAction };
   }
   
-  _Enabled = !!query && query[QueryPagePreviewModeParam] === PreviewModeParamEnabledValue;
+  _Enabled = (!!query && query[QueryPagePreviewModeParam] === PreviewModeParamEnabledValue);
+  if(!_Enabled) {
+    const page = lookupPageByUrl(useRoute().path);
+    if(page === SystemPage.Drafts)  {
+      _Enabled = true;
+    }
+  }
   logger.debug(`(preview-state) updating preview state value, preview=${_Enabled}`);
   return { enabled: _Enabled, requestUserAction };
 }
