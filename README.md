@@ -2,7 +2,7 @@
 # Travel Agency website
 A sample SPA/SSR application built with reactive framework [Vue 3](https://github.com/vuejs) powered by [Nuxt](https://github.com/Nuxt) ecosystem. Figma [Golobe](https://www.figma.com/community/file/1182308758714734501) design was used as an example. This project may be useful for anyone who is interested in developing modern websites.
 
-https://github.com/user-attachments/assets/9ff4fafd-f0ba-4637-a08e-5bd162eb816c
+https://github.com/user-attachments/assets/36f57566-aca6-4771-a9cf-43636b5ba11b
 
 ## Features
 - Single-Page application with Server-Side Rendering
