@@ -32,7 +32,8 @@ npm run quickstart
 ```
 
 This will start the website with minimum external services configuration: emailing disabled, no CAPTCHA, only local OAuth provider e.t.c. SQLite database will be created locally. 
-Open browser and type `http://localhost:3000`.  First-time page visit will take a couple of minutes to start the server because of initial database data seeding
+Open browser and type `http://localhost:3000`.  First-time page visit will take a couple of minutes to start the server because of initial database data seeding.
+**NOTE**: script above will (re)create database and seed entities with new IDs. It's ok for first-time start but for subsequent runs you should use ```npm run quickstart:run``` script which only starts server without (re)initializing backend. This is needed to bypass 404 errors because app stores entity IDs (e.g. recently selected items from dropdowns) in browser's local storage. So as another option you can also clear local cache & cookies
 
 ### With Acsys CMS
 
