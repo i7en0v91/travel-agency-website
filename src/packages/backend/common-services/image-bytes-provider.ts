@@ -1,8 +1,7 @@
 import { CachedResultsInAppServicesEnabled, type PreviewMode, type EntityId, type ImageCategory, type IAppLogger, type IImageCategoryInfo, AppConfig, EntityChangeSubscribersOrder } from '@golobe-demo/shared';
 import { type IEntityChangeNotificationTask, type IImageCategoryLogic, type ImageBytesOptions, type IImageBytes, type IImageFileInfoUnresolved, type EntityChangeNotificationCallback, type EntityChangeNotificationCallbackArgs, type EntityChangeNotificationSubscriberId, type IImageBytesProvider, type IImageLogic } from './../types';
-import { access, mkdir, readdir, readFile, writeFile, rm } from 'fs/promises';
 import sharp from 'sharp';
-import { resolve, join } from 'pathe';
+import { convertRawToBuffer } from './../helpers/nitro';
 import { type Storage, type StorageValue } from 'unstorage';
 import { type H3Event } from 'h3';
 
@@ -11,37 +10,18 @@ interface IImageMetaCache {
   modifiedUtc: number
 }
 
-export async function ensureImageCacheDir (logger: IAppLogger): Promise<string> {
-  logger.info(`ensuring images cache directory: dir=${AppConfig.images.cacheFsDir}`);
-  const cacheDir = resolve(AppConfig.images.cacheFsDir);
-  try {
-    await access(cacheDir);
-  } catch (err: any) {
-    // presumably directory does not exist
-    logger.info(`cannot access images cache directory (msg=${err?.message ?? ''}), creating [${cacheDir}]`);
-    await mkdir(cacheDir, { recursive: true });
-  }
-  logger.verbose('image cache directory ensured');
-  return cacheDir;
-}
-
 export class ImageBytesProvider implements IImageBytesProvider {
-  private readonly MaxCacheClearAttempsCount = 3;
-  private readonly MaxCacheClearAttempsDelay = 500;
-
   private readonly logger: IAppLogger;
   private readonly imageLogic: IImageLogic;
-  private readonly imageCacheDir: string;
-  private readonly cache: Storage<StorageValue>;
+  private readonly srcsetCache: Storage<StorageValue>;
   private readonly imageCategoryLogic: IImageCategoryLogic;
   private readonly entityChangeNotifications: IEntityChangeNotificationTask;
 
-  public static inject = ['imageLogic', 'imageCategoryLogic', 'entityChangeNotifications', 'cache', 'imageCacheDir', 'logger'] as const;
-  constructor (imageLogic: IImageLogic, imageCategoryLogic: IImageCategoryLogic, entityChangeNotifications: IEntityChangeNotificationTask, cache: Storage<StorageValue>, imageCacheDir: string, logger: IAppLogger) {
+  public static inject = ['imageLogic', 'imageCategoryLogic', 'entityChangeNotifications', 'srcsetCache', 'logger'] as const;
+  constructor (imageLogic: IImageLogic, imageCategoryLogic: IImageCategoryLogic, entityChangeNotifications: IEntityChangeNotificationTask, srcsetCache: Storage<StorageValue>, logger: IAppLogger) {
     this.logger = logger;
     this.imageLogic = imageLogic;
-    this.cache = cache;
-    this.imageCacheDir = imageCacheDir;
+    this.srcsetCache = srcsetCache;
     this.imageCategoryLogic = imageCategoryLogic;
     this.entityChangeNotifications = entityChangeNotifications;
   }
@@ -148,30 +128,16 @@ export class ImageBytesProvider implements IImageBytesProvider {
 
   async clearAllCacheSafe(): Promise<void> {
     this.logger.info('(ImageBytesProvider) clearing entire image cache');
-
-    let dirFiles: string[];
+    
+    let count = -1;
     try {
-      dirFiles = await readdir(this.imageCacheDir);
+      count = (await this.srcsetCache.getKeys()).length;
+      await this.srcsetCache.clear();
     } catch(err: any) {
-      this.logger.warn(`(ImageBytesProvider) failed to read cache directory content, path=${this.imageCacheDir}`, err);
-      return;
-    }
-     
-    let succeeded = 0;
-    let failed = 0;
-    for(let i = 0; i < dirFiles.length; i++) {
-      const fileName = dirFiles[i];
-      const imgDir = join(this.imageCacheDir, fileName);
-      try {
-        await rm(imgDir, { force: true, recursive: true, maxRetries: 3, retryDelay: 250 });
-        succeeded++;
-      } catch(err: any) {
-        this.logger.warn(`(ImageBytesProvider) exception occured while clearing entire cache - failed to delete dir=[${imgDir}]`, err);
-        failed++;
-      }
+      this.logger.warn('(ImageBytesProvider) exception occured while clearing entire cache', err);
     }
 
-    this.logger.info(`(ImageBytesProvider) clearing entire image cache - completed, deleted count=${succeeded}, failed count=${failed}`);
+    this.logger.info(`(ImageBytesProvider) clearing entire image cache - completed, count=${count}`);
   };
 
   async getImageSize (imgData: Buffer): Promise<{width: number, height: number}> {
@@ -183,65 +149,56 @@ export class ImageBytesProvider implements IImageBytesProvider {
     return { width: metadata.width!, height: metadata.height! };
   }
 
-  async ensureImageCacheDir (dir: string): Promise<void> {
-    this.logger.debug(`(ImageBytesProvider) ensuring image cache dir=${dir}`);
-    try {
-      await access(dir);
-    } catch (err: any) {
-      // presumably directory does not exist
-      this.logger.verbose(`(ImageBytesProvider) cannot access images cache directory (msg=${err?.message ?? ''}), creating dir=[${dir}]`);
-      await mkdir(dir, { recursive: true });
-    }
-  }
+  getImageBytesMetaCacheKey = (idOrSlug: EntityId | string, category: ImageCategory, bytesOptions: ImageBytesOptions) => {
+    return `meta:${idOrSlug}-${category}-${bytesOptions}`;
+  };
 
-  async getImageBytesFromCache (idOrSlug: string | undefined, category: ImageCategory, bytesOptions: ImageBytesOptions): Promise<Buffer | undefined> {
-    this.logger.debug(`(ImageBytesProvider) checking image bytes cache: idOrSlug=${idOrSlug}, category=${category}, options=${bytesOptions}`);
+  getImageBytesDataCacheKey = (idOrSlug: EntityId | string, category: ImageCategory, bytesOptions: ImageBytesOptions) => {
+    return `data:${idOrSlug}-${category}-${bytesOptions}`;
+  };
 
-    const cacheFile = join(this.imageCacheDir, `${idOrSlug}-${category}`, `${idOrSlug}-${category}-${bytesOptions}`);
-    try {
-      await access(cacheFile);
-    } catch (err: any) {
-      this.logger.debug(`(ImageBytesProvider) cache miss for image bytes - cannot access cache file (msg=${err?.message ?? ''}), idOrSlug=${idOrSlug}, category=${category}, options=${bytesOptions}`);
+  async getImageBytesFromCache (dataCacheKey: string, category: ImageCategory, bytesOptions: ImageBytesOptions): Promise<Buffer | undefined> {
+    this.logger.debug(`(ImageBytesProvider) checking image bytes data cache: key=${dataCacheKey}, category=${category}, options=${bytesOptions}`);
+
+    const imageBytesRaw = await this.srcsetCache.getItemRaw(dataCacheKey);
+    if (!imageBytesRaw) {
+      this.logger.debug(`(ImageBytesProvider) cache miss for image bytes, key=${dataCacheKey}, category=${category}, options=${bytesOptions}`);
       return undefined;
     }
+    const result = convertRawToBuffer(imageBytesRaw, this.logger);
 
-    this.logger.debug(`(ImageBytesProvider) cache hit for image bytes, idOrSlug=${idOrSlug}, category=${category}, options=${bytesOptions}`);
-    return await readFile(cacheFile);
+    this.logger.debug(`(ImageBytesProvider) cache hit for image bytes, key=${dataCacheKey}, category=${category}, options=${bytesOptions}, size=${result.length}`);
+    return result;
   }
 
-  getImageCacheDir = (idOrSlug: EntityId | string, category: ImageCategory): string => {
-    return join(this.imageCacheDir, `${idOrSlug}-${category}`);
-  };
+  async setImageBytesToCache (dataCacheKey: string, category: ImageCategory, bytesOptions: ImageBytesOptions, data: Buffer): Promise<void> {
+    this.logger.verbose(`(ImageBytesProvider) setting image bytes to cache: key=${dataCacheKey}, category=${category}, options=${bytesOptions}, length=${data.length}`);
 
-  getImageBytesCacheKey = (idOrSlug: EntityId | string, category: ImageCategory, bytesOptions: ImageBytesOptions) => {
-    return `imgbytes:${idOrSlug}-${category}-${bytesOptions}`;
-  };
+    try {
+      await this.srcsetCache.setItemRaw(dataCacheKey, data);
+    } catch(err: any) {
+      this.logger.warn(`(ImageBytesProvider) failed to set image bytes to cache: key=${dataCacheKey}, category=${category}, options=${bytesOptions}, length=${data.length}`, err);
+      return;
+    }
 
-  async setImageBytesToCache (idOrSlug: EntityId | string, category: ImageCategory, bytesOptions: ImageBytesOptions, data: Buffer): Promise<void> {
-    this.logger.verbose(`(ImageBytesProvider) setting image bytes to cache: id=${idOrSlug}, category=${category}, options=${bytesOptions}, length=${data.length}`);
-
-    const cacheDir = this.getImageCacheDir(idOrSlug, category);
-    await this.ensureImageCacheDir(cacheDir);
-    const cacheFile = join(this.imageCacheDir, `${idOrSlug}-${category}`, `${idOrSlug}-${category}-${bytesOptions}`);
-    await writeFile(cacheFile, data);
-
-    this.logger.verbose(`(ImageBytesProvider) image bytes set to cache: id=${idOrSlug}, category=${category}, options=${bytesOptions}`);
+    this.logger.verbose(`(ImageBytesProvider) image bytes set to cache: key=${dataCacheKey}, category=${category}, options=${bytesOptions}`);
   }
 
   async getImageBytes (id: EntityId | undefined, slug: string | undefined, category: ImageCategory, bytesOptions: ImageBytesOptions, event: H3Event, previewMode: PreviewMode): Promise<IImageBytes | undefined> {
     this.logger.debug(`(ImageBytesProvider) accessing image bytes: id=${id}, slug=${slug}, category=${category}, options=${bytesOptions}, previewMode=${previewMode}`);
     
-    const cacheKey = this.getImageBytesCacheKey((id ?? slug)!, category, bytesOptions);
+    const metaCacheKey = this.getImageBytesMetaCacheKey((id ?? slug)!, category, bytesOptions);
+    const dataCacheKey = this.getImageBytesDataCacheKey((id ?? slug)!, category, bytesOptions);
     if(!previewMode) {
-      const cachedBytes = await this.getImageBytesFromCache((id ?? slug)!, category, bytesOptions);
+      const cachedBytes = await this.getImageBytesFromCache(dataCacheKey, category, bytesOptions);
       if (cachedBytes) {
         this.logger.debug(`(ImageBytesProvider) image bytes cache hit: id=${id}, slug=${slug}, category=${category}, options=${bytesOptions}, previewMode=${previewMode}`);
-        let meta = await this.cache.getItem(cacheKey) as IImageMetaCache | null;
+        let meta = await this.srcsetCache.getItem(metaCacheKey) as IImageMetaCache | null;
         if (!meta) {
           const imageInfo = await this.imageLogic.findImage(id, slug, category, event, previewMode);
           if (imageInfo) {
             meta = { mimeType: imageInfo.file.mime, modifiedUtc: imageInfo.file.modifiedUtc.getTime() };
-            await this.cache.setItem(cacheKey, meta);
+            await this.srcsetCache.setItem(metaCacheKey, meta);
           }
         }
         if (meta) {
@@ -271,8 +228,8 @@ export class ImageBytesProvider implements IImageBytesProvider {
           mimeType: imageBytes.mimeType,
           modifiedUtc: imageBytes.modifiedUtc.getTime()
         };
-        await this.cache.setItem(cacheKey, meta);
-        await this.setImageBytesToCache((id ?? slug)!, category, bytesOptions, result.bytes);
+        await this.srcsetCache.setItem(metaCacheKey, meta);
+        await this.setImageBytesToCache(dataCacheKey, category, bytesOptions, result.bytes);
         this.logger.debug(`(ImageBytesProvider) image bytes cached, id=${id}, slug=${slug}, category=${category}, options=${bytesOptions}, previewMode=${previewMode}`);
       }
     }
@@ -318,13 +275,13 @@ export class ImageBytesProvider implements IImageBytesProvider {
   async clearImageCache (idOrSlug: EntityId | string, category: ImageCategory): Promise<void> {
     this.logger.verbose(`(ImageBytesProvider) clearing image cache: id=${idOrSlug}, category=${category}`);
 
-    const cacheDir = this.getImageCacheDir(idOrSlug, category);
-    await rm(cacheDir, { recursive: true, force: true, maxRetries: this.MaxCacheClearAttempsCount, retryDelay: this.MaxCacheClearAttempsDelay });
-
     const bytesOptions = this.getAllPossibleImageBytesOptions();
     for (let i = 0; i < bytesOptions.length; i++) {
-      const cacheKey = this.getImageBytesCacheKey(idOrSlug, category, bytesOptions[i]);
-      await this.cache.removeItem(cacheKey);
+      const options = bytesOptions[i];
+      const metaCacheKey = this.getImageBytesMetaCacheKey(idOrSlug, category, options);
+      const dataCacheKey = this.getImageBytesDataCacheKey(idOrSlug, category, options);
+      await this.srcsetCache.removeItem(metaCacheKey);
+      await this.srcsetCache.removeItem(dataCacheKey);
     }
 
     this.logger.verbose(`(ImageBytesProvider) image cache cleared: id=${idOrSlug}, category=${category}`);

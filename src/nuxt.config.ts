@@ -293,6 +293,16 @@ export default defineNuxtConfig({
   watch: AcsysFilesGlobForWatchers?.map(fg => `!${fg}`),
   
   nitro: {
+    storage: {
+      'glb:images:srcset': isDevEnv() ? 
+        {
+          driver: 'fs',
+          base: AppConfig.images.cacheFsDir,
+        } : 
+        { 
+          driver: 'memory'
+        }
+      },
     publicAssets: [
       {
         baseURL: '/appdata',

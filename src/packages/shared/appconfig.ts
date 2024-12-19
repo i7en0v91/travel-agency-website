@@ -249,7 +249,7 @@ const Config : IAppConfig = {
     /** image scale degree step */
     scaleStep: 0.125,
     /** filesystem directory with cached versions of scaled images */
-    cacheFsDir: './.img.cache/'
+    cacheFsDir: './.srcset.cache/'
   },
   /** number of retries of db operations against entities in case concurrent update collisionis occur */
   maxDbConcurrentUpdateAttemps: 3,

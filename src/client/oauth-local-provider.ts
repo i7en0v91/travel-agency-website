@@ -8,7 +8,7 @@ async function getTestUserId () : Promise<EntityId> {
   logger.verbose('(OAuthLocalProvider) loading test user id from DB');
 
   const userLogic = getServerServices()!.getUserLogic();
-  const user = await userLogic.findUser(AuthProvider.TestLocal, testUserProfile.sub, 'minimal', undefined);
+  const user = await userLogic.findUser(AuthProvider.TestLocal, testUserProfile.sub, 'minimal');
   if (!user) {
     logger.warn('(OAuthLocalProvider) test user was not found in DB');
     throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'test user was not found', 'error-page');

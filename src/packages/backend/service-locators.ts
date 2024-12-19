@@ -11,7 +11,7 @@ import { FileLogic as FileLogicAcsys } from './acsys/file-logic';
 import { ImageCategoryLogic as ImageCategoryLogicWrapper } from './acsys/image-category-logic';
 import { ImageLogic as ImageLogicWrapper } from './acsys/image-logic';
 import { AuthFormImageLogic as AuthFormImageLogicWrapper } from './acsys/auth-form-image-logic';
-import { ImageBytesProvider, ensureImageCacheDir } from './common-services/image-bytes-provider';
+import { ImageBytesProvider } from './common-services/image-bytes-provider';
 import { HtmlPageCacheCleaner } from './common-services/html-page-cache-cleaner';
 import { MailTemplateLogic as MailTemplateLogicWrapper } from './acsys/mail-template-logic';
 import { EmailSender as EmailSenderWrapper } from './acsys/email-sender';
@@ -30,7 +30,7 @@ import { DocumentCreator } from './common-services/document-creator';
 import { CompanyReviewLogic as CompanyReviewLogicWrapper } from './acsys/company-review-logic';
 import { EntityCacheLogic as EntityCacheLogicWrapper } from './acsys/entity-cache-logic';
 import { Scope, createInjector } from 'typed-inject';
-import { createCache, getLocalesAssetsStorage, getPdfFontsAssetsStorage, getAppAssetsStorage, getNitroCache } from './helpers/nitro';
+import { createCache, getLocalesAssetsStorage, getPdfFontsAssetsStorage, getAppAssetsStorage, getNitroCache, getSrcsetCache } from './helpers/nitro';
 import { AcsysClientProvider } from './acsys/client/acsys-client-provider';
 import { ViewsConfig, type IViewColumnSettings } from './acsys/client/views';
 import { type UserData, UserRoleEnum, type IAcsysClientAdministrator, type IAcsysClientBase } from './acsys/client/interfaces';
@@ -69,6 +69,7 @@ import dayjsPluginUtc from 'dayjs/plugin/utc.js';
 
 async function buildAcsysBackendServicesLocator(acsysModuleOptions: IAcsysOptions, srcDir: string, logger: IAppLogger): Promise<IAcsysServerServicesLocator> {
   const nitroCache = await getNitroCache(logger);
+  const srcsetCache = await getSrcsetCache(logger);
   const appAssetsStorage = await getAppAssetsStorage(logger);
   const pdfFontsAssetsStorage = await getPdfFontsAssetsStorage(logger);
   const localesAssetsStorage = await getLocalesAssetsStorage(logger);
@@ -79,10 +80,10 @@ async function buildAcsysBackendServicesLocator(acsysModuleOptions: IAcsysOption
     .provideValue('dbRepository', await createPrismaClient(logger))
     .provideValue('cache', createCache())
     .provideValue('nitroCache', nitroCache)
+    .provideValue('srcsetCache', srcsetCache)
     .provideValue('appAssetsStorage', appAssetsStorage)
     .provideValue('pdfFontsAssetsStorage', pdfFontsAssetsStorage)
     .provideValue('localesAssetsStorage', localesAssetsStorage)
-    .provideValue('imageCacheDir', await ensureImageCacheDir(logger))
     .provideClass('appAssetsProvider', AppAssetsProvider, Scope.Singleton)
     .provideClass('htmlPageModelMetadata', HtmlPageModelMetadata, Scope.Singleton)
     .provideClass('changeDependencyTracker', ChangeDependencyTracker, Scope.Singleton)
@@ -170,6 +171,7 @@ async function buildAcsysBackendServicesLocator(acsysModuleOptions: IAcsysOption
 
 async function buildPrismaBackendServicesLocator(logger: IAppLogger): Promise<IServerServicesLocator> {
   const nitroCache = await getNitroCache(logger);
+  const srcsetCache = await getSrcsetCache(logger);
   const appAssetsStorage = await getAppAssetsStorage(logger);
   const pdfFontsAssetsStorage = await getPdfFontsAssetsStorage(logger);
   const localesAssetsStorage = await getLocalesAssetsStorage(logger);
@@ -181,10 +183,10 @@ async function buildPrismaBackendServicesLocator(logger: IAppLogger): Promise<IS
     .provideValue('dbRepository', prismaClient)
     .provideValue('cache', createCache())
     .provideValue('nitroCache', nitroCache)
+    .provideValue('srcsetCache', srcsetCache)
     .provideValue('appAssetsStorage', appAssetsStorage)
     .provideValue('pdfFontsAssetsStorage', pdfFontsAssetsStorage)
     .provideValue('localesAssetsStorage', localesAssetsStorage)
-    .provideValue('imageCacheDir', await ensureImageCacheDir(logger))
     .provideClass('appAssetsProvider', AppAssetsProvider, Scope.Singleton)
     .provideClass('htmlPageModelMetadata', HtmlPageModelMetadata, Scope.Singleton)
     .provideClass('changeDependencyTracker', ChangeDependencyTracker, Scope.Singleton)

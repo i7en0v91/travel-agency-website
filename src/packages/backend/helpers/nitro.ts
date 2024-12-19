@@ -1,4 +1,6 @@
 import { PdfFontMediumFile, type IAppLogger } from '@golobe-demo/shared';
+import isBuffer from 'lodash-es/isBuffer';
+import isString from 'lodash-es/isString';
 import { createStorage, type Storage, type StorageValue } from 'unstorage';
 
 export function createCache (): Storage<StorageValue> {
@@ -10,6 +12,16 @@ export async function getNitroCache (logger?: IAppLogger): Promise<Storage<Stora
   if (!result) {
     logger?.error('nitro cache is not available');
     throw new Error('nitro cache is not available');
+  }
+
+  return result;
+}
+
+export async function getSrcsetCache (logger?: IAppLogger): Promise<Storage<StorageValue>> {
+  const result = (globalThis as any).$srcsetCache as Storage<StorageValue>;
+  if (!result) {
+    logger?.error('images srcset cache is not available');
+    throw new Error('images srcset cache is not available');
   }
 
   return result;
@@ -59,3 +71,21 @@ export async function getPdfFontsAssetsStorage (logger?: IAppLogger): Promise<St
 
   return result;
 }
+
+export function convertRawToBuffer(rawData: any, logger?: IAppLogger): Buffer {
+  logger?.debug('(AppAssetsProvider) converting data to buffer');
+  let result: Buffer;
+  if (isBuffer(rawData)) {
+    result = rawData as Buffer;
+    logger?.debug('(AppAssetsProvider) data already has a buffer data type');
+  } else if (isString(rawData)) {
+    const strLen = (rawData as string).length;
+    logger?.debug(`(AppAssetsProvider) converting data from string, sample=${(rawData as string).substring(0, Math.min(strLen, 128))}`);
+    result = Buffer.from(rawData as string, 'binary');
+  } else {
+    logger?.debug('(AppAssetsProvider) converting data to buffer directly');
+    result = Buffer.from(rawData as any);
+  }
+  logger?.debug(`(AppAssetsProvider) data converted to buffer, size=${result.length}`);
+  return result;
+};
