@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppException, AppExceptionCodeEnum, isElectronBuild, QueryInternalRequestParam } from '@golobe-demo/shared';
+import { AppException, AppExceptionCodeEnum, isElectronBuild } from '@golobe-demo/shared';
 import { type IBookingTicketFlightGfxProps } from './../../types';
 import throttle from 'lodash-es/throttle';
 import { useThemeSettings } from './../../composables/theme-settings';
@@ -24,7 +24,7 @@ const containerEl = shallowRef<HTMLElement>();
 const themeSettings = useThemeSettings();
 
 const canvasSize = ref<{ width: number, height: number } | undefined>();
-const isOffscreenRendering = import.meta.client && isElectronBuild() && (useRoute().query ?? {})[QueryInternalRequestParam] === '1';
+const solidHighlight = import.meta.client && isElectronBuild();
 
 function renderFrameSafe () {
   try {
@@ -181,7 +181,7 @@ const radialHighlightStyle = computed(() => {
             bottom: `${Math.round(0.1 * 100)}%`,
             left: `${Math.round(0.07 * 100)}%`
           }">
-          <div v-if="!isOffscreenRendering" class="absolute left-0 right-0 top-0 bottom-0 z-[2]" :style="radialHighlightStyle" />
+          <div v-if="!solidHighlight" class="absolute left-0 right-0 top-0 bottom-0 z-[2]" :style="radialHighlightStyle" />
           <CheckpointHighlight class="!w-full !h-full z-[1] [&_*]:!fill-primary-300 dark:[&_*]:!fill-primary-500" />
         </div>
 
@@ -191,7 +191,7 @@ const radialHighlightStyle = computed(() => {
             top: `${Math.round(0.1 * 100)}%`,
             right: `${Math.round(0.1 * 100)}%`
           }">
-          <div v-if="!isOffscreenRendering" class="absolute left-0 right-0 top-0 bottom-0 z-[2] bg-white dark:bg-gray-900" :style="radialHighlightStyle" />
+          <div v-if="!solidHighlight" class="absolute left-0 right-0 top-0 bottom-0 z-[2] bg-white dark:bg-gray-900" :style="radialHighlightStyle" />
           <CheckpointHighlight class="!w-full !h-full z-[1] [&_*]:!fill-primary-300 dark:[&_*]:!fill-primary-500"/>
         </div>
       </div>
