@@ -47,6 +47,9 @@ function handleItemClick(role: ItemClickHandlerRole, win: BrowserWindow, bridge:
       case 'index':
         navigateTo(AppPage.Index, win, bridge, logger);
         break;
+      case 'search-site':
+        bridge.openSiteSearch();
+        break;
       case 'theme:dark':
         setRendererTheme('dark', bridge, logger);
         break;
@@ -145,10 +148,12 @@ function buildFileMenu(defaultAppMenu: Electron.Menu, userNav: NavProps, win: Br
   const flightsNavItem = userNav.find(i => i.role === 'file')?.subItems.find(i => i.role === 'flights');
   const staysNavItem = userNav.find(i => i.role === 'file')?.subItems.find(i => i.role === 'stays');
   const goMainNavItem = userNav.find(i => i.role === 'file')?.subItems.find(i => i.role === 'index');
+  const searchSiteNavItem = userNav.find(i => i.role === 'file')?.subItems.find(i => i.role === 'search-site');
   const navSubmenus: NavUserMenuItemOptions[] = ([
     flightsNavItem ? { id: 'flights' as const, label: flightsNavItem.label, click: () => handleItemClick('flights', win, bridge, app, logger) } : undefined,
     staysNavItem ? { id: 'stays' as const, label: staysNavItem.label, click: () => handleItemClick('stays', win, bridge, app, logger) } : undefined,
-    goMainNavItem ? { id: 'index' as const, label: goMainNavItem.label, click: () => handleItemClick('index', win, bridge, app, logger) } : undefined
+    goMainNavItem ? { id: 'index' as const, label: goMainNavItem.label, click: () => handleItemClick('index', win, bridge, app, logger) } : undefined,
+    searchSiteNavItem ? { id: 'search-site' as const, label: searchSiteNavItem.label, click: () => handleItemClick('search-site', win, bridge, app, logger) } : undefined
   ].filter(i => !!i));
   if(!navSubmenus.length && isDefaultMenuEmpty) {
     logger.warn('(AppMenu) file menu doesnt contain any items');  

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 
 import { QueryInternalRequestParam, AppPage, getPagePath, getI18nResName2, isElectronBuild } from '@golobe-demo/shared';
+import type { IMainWorldExports } from '../electron/interfaces';
 
 const route = useRoute();
 const { t, locale } = useI18n();
@@ -33,6 +34,16 @@ useServerSeoMeta({
 
 await usePageSetup();
 
+const siteSearchOpen = ref(false);
+if(isElectronBuild()) {
+  const electronApi = (window as any).electronApi as IMainWorldExports;
+  electronApi?.onRequestShowSiteSearch((_) => {
+    if(!siteSearchOpen.value) {
+      siteSearchOpen.value = true;
+    }
+  });
+}
+
 const error = useError();
 const isAuthFormsPage = computed(() => route.path.includes(`/${getPagePath(AppPage.Login)}`) || route.path.includes(`/${getPagePath(AppPage.Signup)}`) || route.path.includes(`/${getPagePath(AppPage.ForgotPassword)}`) || route.path.includes(`/${getPagePath(AppPage.EmailVerifyComplete)}`));
 const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.value);
@@ -64,6 +75,18 @@ const hideInElectron = isElectronBuild() ? {
     </div>
     <ClientOnly>
       <CookieBanner v-if="!hideInElectron?.cookies" ctrl-key="CookieBanner" />
+      <UModal
+        v-if="isElectronBuild()"
+        v-model="siteSearchOpen" 
+        :ui="{ 
+          container: 'items-bottom sm:items-center md:items-center',
+          width: 'w-[90vw] min-w-[300px] max-w-minpgw sm:max-w-lg lg:max-w-2xl',
+          height: 'h-[60vh] max-h-[60vh] sm:h-[50vh] sm:max-h-[50vh]' 
+        }">
+        <SiteSearch 
+          ctrl-key="siteSearch" 
+          @close="siteSearchOpen = false"/>
+      </UModal>
       <UNotifications />
     </ClientOnly>
   </div>

@@ -685,7 +685,8 @@
       "back": "Назад",
       "next": "Вперёд",
       "mainPage": "На главную страницу",
-      "contactUs": "@:footer.contactUs.title"
+      "contactUs": "@:footer.contactUs.title",
+      "searchSite": "@:nav.search.navItem"
     }
   }
 }

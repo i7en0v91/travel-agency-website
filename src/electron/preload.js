@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('electronApi', {
   **/ 
   onRequestNavigateToPage: (callback) => ipcRenderer.on('request:navigate-to-page', callback),
   onRequestShowExceptionDialog: (callback) => ipcRenderer.on('request:show-exception', callback),
+  onRequestShowSiteSearch: (callback) => ipcRenderer.on('request:site-search', callback),
   onRequestSetTheme: (callback) => ipcRenderer.on('request:set-theme', callback),
   onRequestSetLocale: (callback) => ipcRenderer.on('request:set-locale', callback),
   onRequestLogout: (callback) => ipcRenderer.on('request:logout', callback)

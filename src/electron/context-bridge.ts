@@ -61,6 +61,16 @@ export class RendererClientBridge implements IRendererClientBridge {
     }
   }
 
+  openSiteSearch(): void {
+    try {
+      this.logger.verbose('(RendererClientBridge) sending open site search');
+      this.mainWindow.webContents.send('request:site-search');
+      this.logger.debug('(RendererClientBridge) show open site search request sent');
+    } catch(err: any) {
+      this.logger.warn('(RendererClientBridge) show open site search request failed', err);
+    }
+  }
+
   setTheme(theme: Theme): void {
     try {
       this.logger.verbose(`(RendererClientBridge) sending set theme request, theme=${theme}`);

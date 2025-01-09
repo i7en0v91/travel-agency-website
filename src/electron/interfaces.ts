@@ -4,7 +4,7 @@ import type { Hookable } from 'hookable';
 
 export declare type NavGroupItemRole = 'file' | 'account' | 'view' | 'view:theme' | 'view:locale' | 'help';
 export declare type NavSubItemRole = 
-  'flights' | 'stays' | 'index' | // File
+  'flights' | 'stays' | 'index' | 'search-site' | // File
   'login' | 'signup' | 'profile' | 'favourites' | 'logout' | // Account
   'go-back' | 'go-next' |  // View
   'view:theme' | 'theme:dark' | 'theme:light' | // View - Theme
@@ -25,6 +25,7 @@ export type HookFnParameters<T extends (...args: any) => any> = T extends (...ar
 export interface IRendererClientBridge {
   navigateToPage: (page: AppPage) => void,
   showExceptionDialog(type: 'warning' | 'error'): void,
+  openSiteSearch(): void,
   setTheme(theme: Theme): void,
   setLocale(locale: Locale): void,
   logout(): void,
@@ -104,6 +105,7 @@ export interface IMainWorldRendererExports {
 export interface IMainWorldAppExports {
   onRequestNavigateToPage: (callback: (event: IpcRendererEvent, page: AppPage) => void) => void
   onRequestShowExceptionDialog: (callback: (event: IpcRendererEvent, type: 'warning' | 'error') => void) => void
+  onRequestShowSiteSearch: (callback: (event: IpcRendererEvent) => void) => void
   onRequestSetTheme: (callback: (event: IpcRendererEvent, theme: Theme) => void) => void
   onRequestSetLocale: (callback: (event: IpcRendererEvent, locale: Locale) => void) => void
   onRequestLogout: (callback: (event: IpcRendererEvent) => void) => void
@@ -129,6 +131,10 @@ export interface ElectronShellHooks {
    * Invoked when default exception dialog must be shown to user
    */
   'request:show-exception': (type: 'warning' | 'error') => void;
+  /**
+     * Invoked when site search was requested
+     */
+  'request:site-search': () => void;
   /**
    * Invoked when theme switch is requested
    */

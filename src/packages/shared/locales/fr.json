@@ -685,7 +685,8 @@
       "back": "Retourner",
       "next": "Aller ensuite",
       "mainPage": "Aller à la page principale",
-      "contactUs": "@:footer.contactUs.title"
+      "contactUs": "@:footer.contactUs.title",
+      "searchSite": "@:nav.search.navItem"
     }
   }
 }

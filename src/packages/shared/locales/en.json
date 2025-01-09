@@ -685,7 +685,8 @@
       "back": "Go back",
       "next": "Go next",
       "mainPage": "Go to main page",
-      "contactUs": "@:footer.contactUs.title"
+      "contactUs": "@:footer.contactUs.title",
+      "searchSite": "@:nav.search.navItem"
     }
   }
 }

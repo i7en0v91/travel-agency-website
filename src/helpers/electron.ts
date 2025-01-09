@@ -186,7 +186,8 @@ export function buildNavProps(isAuthenticated: boolean, t: (ReturnType<typeof us
         subItems: [
           { role: 'flights', label: tl(getI18nResName2('nav', 'findFlights')) },
           { role: 'stays', label: tl(getI18nResName2('nav', 'findStays')) },
-          { role: 'index', label: tl(getI18nResName3('electron', 'menu', 'mainPage')) }
+          { role: 'index', label: tl(getI18nResName3('electron', 'menu', 'mainPage')) },
+          { role: 'search-site', label: tl(getI18nResName3('electron', 'menu', 'searchSite')) },
         ]
       },
       {
