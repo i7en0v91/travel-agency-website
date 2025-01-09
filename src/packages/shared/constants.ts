@@ -121,7 +121,7 @@ export const CookieLoginOrigin = 'golobe.login_origin';
  */
 export enum EntityChangeSubscribersOrder {
   ImageCategoryLogic = 5,
-  ImageBytesProvider = 7,
+  ImageProvider = 7,
   AirlineCompanyLogic = 9,
   AirplaneLogic = 10,
   HtmlPageCleaner = 100
@@ -371,6 +371,7 @@ export enum ImageCategory {
 }
 export const ImageAuthRequiredCategories = [ImageCategory.UserCover];
 export const ImagePublicSlugs = [DefaultUserCoverSlug, DefaultUserAvatarSlug];
+export const AvailableImageCategories = Object.values(ImageCategory).map(x => x.valueOf());
 
 export enum AuthProvider {
   Email = 'EMAIL',

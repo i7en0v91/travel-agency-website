@@ -1,4 +1,4 @@
-import { CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD, detectMimeType, AppConfig, lookupParentDirectory, type IImageData, type IAirplaneData, type IStayData, type IStayDescriptionData, type IStayReviewData, type IStayImageData, type PreviewMode, type FlightClass, type AirplaneImageKind, type EntityId, type ILocalizableValue, AuthProvider, ImageCategory, EmailTemplateEnum, isQuickStartEnv, AdminUserEmail, DefaultUserAvatarSlug, DefaultUserCoverSlug, MainTitleSlug, FlightsTitleSlug, StaysTitleSlug, AvailableLocaleCodes, DefaultLocale, type Theme, MimeTypeWebp, type IAppLogger, type CssPropertyList, isPublishEnv } from '@golobe-demo/shared';
+import { CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD, detectMimeType, AppConfig, lookupParentDirectory, type IImageData, type IAirplaneData, type IStayData, type IStayDescriptionData, type IStayReviewData, type IStayImageData, type PreviewMode, type FlightClass, type AirplaneImageKind, type EntityId, type ILocalizableValue, AuthProvider, ImageCategory, EmailTemplateEnum, isQuickStartEnv, AdminUserEmail, DefaultUserAvatarSlug, DefaultUserCoverSlug, MainTitleSlug, FlightsTitleSlug, StaysTitleSlug, AvailableLocaleCodes, DefaultLocale, type Theme, MimeTypeWebp, type IAppLogger, type CssPropertyList, isPublishEnv, type IImageProcessor } from '@golobe-demo/shared';
 import type { InitialDataSeedingStatus, IAirlineCompanyLogic, IAirplaneLogic, IAirportLogic, IAuthFormImageLogic, ICitiesLogic, ICompanyReviewsLogic, IGeoLogic, IImageCategoryLogic, IImageLogic, IMailTemplateLogic, IStaysLogic, IUserLogic, IDataSeedingLogic } from '../types';
 import { getGlobalPrismaClient } from './../helpers/db';
 import { readFile, writeFile, readdir, access } from 'fs/promises';
@@ -13,7 +13,6 @@ import set from 'lodash-es/set';
 import template from 'lodash-es/template';
 import { murmurHash } from 'ohash';
 import { type H3Event } from 'h3';
-import sharp from 'sharp';
 
 interface ContextParams {
   logger: IAppLogger,
@@ -120,6 +119,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
 
   private readonly logger: IAppLogger;
   private readonly userLogic: IUserLogic;
+  private readonly imageProcessor: IImageProcessor;
   private readonly imageCategoryLogic: IImageCategoryLogic;
   private readonly imageLogic: IImageLogic;
   private readonly authFormImageLogic: IAuthFormImageLogic;
@@ -132,9 +132,10 @@ export class DataSeedingLogic implements IDataSeedingLogic {
   private readonly airplaneLogic: IAirplaneLogic;
   private readonly staysLogic: IStaysLogic;
 
-  public static inject = ['logger', 'userLogic', 'imageCategoryLogic', 'imageLogic', 'authFormImageLogic', 'mailTemplateLogic', 'geoLogic', 'airportLogic', 'citiesLogic', 'companyReviewsLogic', 'airlineCompanyLogic', 'airplaneLogic', 'staysLogic'] as const;
+  public static inject = ['logger', 'userLogic', 'imageProcessor', 'imageCategoryLogic', 'imageLogic', 'authFormImageLogic', 'mailTemplateLogic', 'geoLogic', 'airportLogic', 'citiesLogic', 'companyReviewsLogic', 'airlineCompanyLogic', 'airplaneLogic', 'staysLogic'] as const;
   constructor (logger: IAppLogger, 
     userLogic: IUserLogic, 
+    imageProcessor: IImageProcessor,
     imageCategoryLogic: IImageCategoryLogic,
     imageLogic: IImageLogic,
     authFormImageLogic: IAuthFormImageLogic,
@@ -149,6 +150,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
   ) {
     this.logger = logger;
     this.userLogic = userLogic;
+    this.imageProcessor = imageProcessor;
     this.imageCategoryLogic = imageCategoryLogic;
     this.imageLogic = imageLogic;
     this.authFormImageLogic = authFormImageLogic;
@@ -232,30 +234,6 @@ export class DataSeedingLogic implements IDataSeedingLogic {
     return categoryId;
   }
   
-  async extractImageRegion (ctx: ContextParams, bytes: Buffer, width: number, height: number, mimeType: 'webp' | 'jpeg'): Promise<Buffer> {
-    ctx.logger.info(`${this.LoggingPrefix} extracting image region: width=${width}, height=${height}`);
-    const sharpObj = sharp(bytes);
-    const metadata = await sharpObj.metadata();
-    if (!metadata.width || !metadata.height) {
-      throw new Error('failed to parse image');
-    }
-  
-    const widthToExtract = Math.min(width, metadata.width);
-    const heightToExtract = Math.min(height, metadata.height);
-    const extractedImageObj = sharpObj.extract({
-      left: Math.round((metadata.width - widthToExtract) / 2),
-      top: Math.round((metadata.height - heightToExtract) / 2),
-      height: heightToExtract,
-      width: widthToExtract
-    });
-  
-    if (mimeType === 'webp') {
-      return extractedImageObj.webp().toBuffer();
-    } else {
-      throw new Error('unsupported mime type');
-    }
-  }
-  
   async ensureImage (ctx: ContextParams, contentFile: string, imageData: Partial<IImageData> & Pick<IImageData, 'mimeType' | 'slug' | 'category'>, previewMode: PreviewMode, regionOfImage?: { width: number, height: number }, invertForDarkTheme?: boolean): Promise<EntityId> {
     ctx.logger.info(`${this.LoggingPrefix} >>> ensuring image, fileName=${contentFile}, slug=${imageData.slug}, previewMode=${previewMode}`);
     imageData.originalName ??= basename(contentFile);
@@ -271,7 +249,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
     let bytes = await readFile(srcFile);
     if (regionOfImage) {
       if (imageData.mimeType.includes('webp')) {
-        bytes = await this.extractImageRegion(ctx, bytes, regionOfImage.width, regionOfImage.height, 'webp');
+        bytes = await this.imageProcessor.extractImageRegion(bytes, regionOfImage.width, regionOfImage.height, 'webp');
       }
     }
   
@@ -855,12 +833,8 @@ export class DataSeedingLogic implements IDataSeedingLogic {
   }
   
   async getImageSize (filePath: string): Promise<{ width: number, height: number }> {
-    const sharpObj = sharp(filePath);
-    const metadata = await sharpObj.metadata();
-    if (!metadata.width || !metadata.height) {
-      throw new Error('failed to parse image');
-    }
-    return { width: metadata.width!, height: metadata.height! };
+    const imageBytes = await readFile(filePath);
+    return this.imageProcessor.getImageSize(imageBytes);
   }
   
   async computeImageCategorySize (files: string[]): Promise<{ width: number, height: number }> {

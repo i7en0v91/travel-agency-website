@@ -51,13 +51,13 @@ export class ImageCategoryLogic implements IImageCategoryLogic {
       (
         await this.dbRepository.imageCategory.findUnique({
           where: { id: category },
-          select: { id: true, width: true, height: true, kind: true }
+          select: { id: true, width: true, height: true, kind: true, createdUtc: true, modifiedUtc: true }
         })
       ) :
       (
         await this.dbRepository.imageCategory.findFirst({
           where: { kind: mapEnumDbValue(category) },
-          select: { id: true, width: true, height: true, kind: true }
+          select: { id: true, width: true, height: true, kind: true, createdUtc: true, modifiedUtc: true }
         })
       );
     
@@ -70,7 +70,9 @@ export class ImageCategoryLogic implements IImageCategoryLogic {
       id: categoryEntity.id,
       width: categoryEntity.width,
       height: categoryEntity.height,
-      kind: lookupKeyByValueOrThrow(ImageCategory, categoryEntity.kind)
+      kind: lookupKeyByValueOrThrow(ImageCategory, categoryEntity.kind),
+      createdUtc: categoryEntity.createdUtc,
+      modifiedUtc: categoryEntity.modifiedUtc
     };
     this.logger.debug(`(ImageCategoryLogic) category found, category=${result.kind}, id=${result.id}`);
     return result;
@@ -102,12 +104,12 @@ export class ImageCategoryLogic implements IImageCategoryLogic {
     if (!entries) {
       entries = [];
       this.logger.verbose('(ImageCategoryLogic) image category infos - cache miss, loading from db');
-      const categoryEntities = await this.dbRepository.imageCategory.findMany({ select: { id: true, kind: true, width: true, height: true } });
+      const categoryEntities = await this.dbRepository.imageCategory.findMany({ select: { id: true, kind: true, width: true, height: true, createdUtc: true, modifiedUtc: true } });
       for (let i = 0; i < categoryEntities.length; i++) {
         const entity = categoryEntities[i];
         const enumValue = tryLookupKeyByValue(ImageCategory, entity.kind) as ImageCategory; // ignoring e.g. unit test categories
         if(enumValue) {
-          entries.push([enumValue, { width: entity.width, height: entity.height, id: entity.id, kind: enumValue }]);  
+          entries.push([enumValue, { width: entity.width, height: entity.height, id: entity.id, kind: enumValue, createdUtc: entity.createdUtc, modifiedUtc: entity.modifiedUtc }]);  
         }
       }
       this.logger.debug(`(ImageCategoryLogic) image category infos - updating cache, count=${entries.length}, allowCachedValue=${allowCachedValue}`);

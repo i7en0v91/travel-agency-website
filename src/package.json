@@ -1,5 +1,6 @@
 {
   "name": "golobe-demo",
+  "version": "1.1.1",
   "private": true,
   "type": "module",
   "packageManager": "npm@10.7.0",
@@ -15,13 +16,14 @@
   },
   "scripts": {
     "prebuild": "npm run prisma:generate-migration-scripts --workspace=@golobe-demo/backend && npm run cms-startup --workspace=@golobe-demo/backend && npx uglifyjs public/js/page-load.js  --compress --mangle -o public/js/page-load.min.js && npx copyfiles -E -f ./packages/shared/locales/* assets/locales",
-    "build": "npm run build:checks && cross-env NODE_OPTIONS='--max-old-space-size=4096' nuxt build",
+    "build": "npx env-cmd -f .env npm run build:checks && cross-env NODE_OPTIONS='--max-old-space-size=4096' nuxt build",
     "build:checks": "npx jiti ./scripts/build-checks.ts",
-    "dev": "npm run prebuild && npx copyfiles -E -f ./packages/shared/locales/* .nuxt/locales && cross-env NEXTAUTH_URL=http://127.0.0.1:3000/api/auth nuxt dev",
+    "dev": "npm run prebuild && npx copyfiles -E -f ./packages/shared/locales/* .nuxt/locales && cross-env NEXTAUTH_URL=http://127.0.0.1:3000/api/auth ELECTRON_ENABLE_LOGGING=1 nuxt dev",
     "generate": "nuxt generate",
     "preview": " npx copyfiles -E -f ./packages/shared/locales/* .output/locales && cross-env NEXTAUTH_URL=http://127.0.0.1:3000/api/auth env-cmd -f ./packages/backend/.env nuxt preview",
+    "preview:electron": "npm run preview & npx electron . --no-sandbox --enable-logging dist-electron/main.js",
     "postinstall": "nuxt prepare",
-    "apptests": "npx copyfiles -E -f ./packages/shared/locales/* assets/locales && cross-env VITE_VITEST=true NODE_OPTIONS='--max-old-space-size=4096 --disable-warning=DEP0166 --disable-warning=DEP0155' NEXTAUTH_URL=http://127.0.0.1:43321/api/auth env-cmd -f ./packages/backend/.env npx vitest run --dir=./tests",
+    "apptests": "npx env-cmd -f .env cross-env VITE_VITEST=true npm run build:checks && npx copyfiles -E -f ./packages/shared/locales/* assets/locales && NODE_OPTIONS='--max-old-space-size=4096 --disable-warning=DEP0166 --disable-warning=DEP0155' NEXTAUTH_URL=http://127.0.0.1:43321/api/auth env-cmd -f ./packages/backend/.env cross-env VITE_VITEST=true npx vitest run --dir=./tests",
     "test": "npm run test:e2e",
     "test:e2e": "npm run apptests -- -t e2e:",
     "test:og-image-static": "npm run apptests -- -t og:image",
@@ -34,7 +36,9 @@
     "unlighthouse-authenticated": "cd ./tests/unlighthouse && cross-env UNLIGHTHOUSE_MODE=authenticated npx unlighthouse",
     "quickstart:build": "env-cmd -f ./packages/backend/.env cross-env NODE_ENV=production VITE_QUICKSTART=1 NODE_OPTIONS='--disable-warning=DEP0166 --disable-warning=DEP0155' npm run build",
     "quickstart:run": "cross-env NODE_ENV=production VITE_QUICKSTART=1 npm run preview",
-    "quickstart": "npm run quickstart:prepare --workspace=@golobe-demo/backend && npm run quickstart:build && npm run quickstart:run"
+    "quickstart:run:electron": "cross-env NODE_ENV=production VITE_QUICKSTART=1 npm run preview & cross-env VITE_QUICKSTART=1 npx electron . --no-sandbox --enable-logging dist-electron/main.js",
+    "quickstart": "npm run quickstart:prepare --workspace=@golobe-demo/backend && npm run quickstart:build && npm run quickstart:run",
+    "quickstart:electron": "npm run quickstart:prepare --workspace=@golobe-demo/backend && npm run quickstart:build && npm run quickstart:run:electron"
   },
   "optionalDependencies": {
     "vue": ">=2.7.0"
@@ -62,10 +66,13 @@
     "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
     "dayjs-nuxt": "^2.1.9",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
     "env-cmd": "^10.1.0",
     "happy-dom": "^13.2.1",
     "jsonwebtoken": "^9.0.2",
     "nuxt": "~3.12.4",
+    "nuxt-electron": "^0.7.0",
     "nuxt-og-image": "~3.0.0-rc.64",
     "nuxt-tiptap-editor": "^1.1.2",
     "playwright-core": "^1.45.3",
@@ -74,6 +81,8 @@
     "typescript": "^5.2.2",
     "uglify-js": "^3.18.0",
     "unlighthouse": "^0.13.1",
+    "vite-plugin-electron": "^0.29.0",
+    "vite-plugin-electron-renderer": "^0.14.6",
     "vitest": "^1.2.1"
   },
   "dependencies": {
@@ -90,6 +99,7 @@
     "cropperjs": "^1.6.2",
     "decimal.js": "^10.4.3",
     "destr": "^2.0.3",
+    "detect-libc": "^2.0.3",
     "file-saver": "^2.0.5",
     "floating-vue": "^5.2.2",
     "isbot": "^5.1.11",
@@ -99,9 +109,9 @@
     "on-headers": "^1.0.2",
     "pinia": "^2.1.7",
     "scss-reset": "^1.4.2",
+    "sharp": "^0.32.6",
     "vue-final-modal": "^4.5.4",
     "vue-toastification": "^2.0.0-rc.5",
-    "sharp": "^0.32.6",
     "vue-yandex-maps": "^2.1.4",
     "vue3-perfect-scrollbar": "^2.0.0",
     "vue3-recaptcha2": "^1.8.0",

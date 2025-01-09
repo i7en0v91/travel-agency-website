@@ -10,7 +10,8 @@
     "emailingDisabled": "L'opération ne peut pas être effectuée car elle nécessite l'activation de la fonction Emailing sur le site Web",
     "forbidden": "L'accès est interdit",
     "documentGenerationFailed": "Échec de la génération du document",
-    "acsysIntegrationError": "Erreur d'intégration du CMS"
+    "acsysIntegrationError": "Erreur d'intégration du CMS",
+    "electronIntegrationError": "Erreur d'intégration de la couche électronique"
   },
   "httpCodes": {
     "401": "Non authentifié",
@@ -807,5 +808,24 @@
   },
   "close": "fermer",
   "calendarImgAlt": "icône du calendrier",
-  "mapsProviderYandex": "Yandex.Maps"
+  "mapsProviderYandex": "Yandex.Maps",
+  "electron": {
+    "messageBox": {
+      "info": "Information",
+      "warning": "Avertissement",
+      "error": "Erreur",
+      "confirm": "Confirmer"
+    },
+    "menu": {
+      "theme": "Thème",
+      "themeDark": "Sombre",
+      "themeLight": "Lumière",
+      "locale": "Langue",
+      "account": "Compte",
+      "back": "Retourner",
+      "next": "Aller ensuite",
+      "mainPage": "Aller à la page principale",
+      "contactUs": "@:footer.contactUs.title"
+    }
+  }
 }

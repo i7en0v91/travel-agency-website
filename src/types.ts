@@ -1,4 +1,5 @@
 import { type ICommonServicesLocator, type AppPage, type I18nResName, type GeoPoint, type Price, type StayOffersSortFactor, type FlightOffersSortFactor, type FlightClass, type TripType, type OfferKind, type Timestamp, type ILocalizableValue, type EntityId, type IImageEntitySrc, type CacheEntityType, type GetEntityCacheItem } from '@golobe-demo/shared';
+import type { IElectronShell } from './electron/interfaces';
 
 export type SimplePropertyType = 'text' | 'email' | 'password';
 export type PropertyGridControlButtonType = 'change' | 'apply' | 'cancel' | 'delete' | 'add';
@@ -248,5 +249,6 @@ export interface IBookingTicketProps {
 
 export interface IClientServicesLocator extends ICommonServicesLocator {
   appMounted: boolean,
-  getEntityCache(): IEntityCache
+  getEntityCache(): IEntityCache,
+  getElectronShell(): IElectronShell
 }

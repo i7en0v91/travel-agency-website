@@ -5,7 +5,7 @@ import 'cropperjs/dist/cropper.css';
 import 'vue3-perfect-scrollbar/style.css';
 import '@vueform/slider/themes/default.css';
 
-import { AppPage, getPagePath, MainTitleSlug, lookupPageByUrl, getI18nResName2, ImageCategory } from '@golobe-demo/shared';
+import { QueryInternalRequestParam, AppPage, getPagePath, MainTitleSlug, lookupPageByUrl, getI18nResName2, ImageCategory, isElectronBuild } from '@golobe-demo/shared';
 import { type NavBarMode } from './../types';
 import { ModalsContainer } from 'vue-final-modal';
 import AppContainer from './../components/app-container.vue';
@@ -29,7 +29,7 @@ useHead({
     lang: locale
   },
   script: [
-    { src: '/js/page-load.min.js' },
+    { src: '/js/page-load.min.js', type: 'module' },
     // { src: 'https://www.google.com/recaptcha/api.js' }
   ],
   link: [
@@ -55,6 +55,11 @@ const navBarMode : ComputedRef<NavBarMode> = computed(
 const error = useError();
 const isAuthFormsPage = computed(() => route.path.includes(`/${getPagePath(AppPage.Login)}`) || route.path.includes(`/${getPagePath(AppPage.Signup)}`) || route.path.includes(`/${getPagePath(AppPage.ForgotPassword)}`) || route.path.includes(`/${getPagePath(AppPage.EmailVerifyComplete)}`));
 const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.value);
+const hideInElectron = isElectronBuild() ? {
+  navBar: true,
+  footer: import.meta.client && (route.query ?? {})[QueryInternalRequestParam] === '1',
+  cookies: import.meta.client && (route.query ?? {})[QueryInternalRequestParam] === '1'
+} : undefined;
 
 </script>
 
@@ -70,15 +75,15 @@ const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.val
         :image-alt-res-name="getI18nResName2('searchPageCommon', 'mainImageAlt')"
         overlay-class="search-page-head-landing-overlay"
       >
-        <NavBar ctrl-key="NavBar" :mode="navBarMode" />
+        <NavBar v-if="!hideInElectron?.navBar" ctrl-key="NavBar" :mode="navBarMode" />
         <HeadingText ctrl-key="IndexPageMainHeading" />
       </SearchPageHead>
-      <NavBar v-else-if="showDefaultComponents" ctrl-key="NavBar" :mode="navBarMode" />
+      <NavBar v-else-if="showDefaultComponents && !hideInElectron?.navBar" ctrl-key="NavBar" :mode="navBarMode" />
       <slot />
-      <AppFooter v-if="showDefaultComponents" ctrl-key="footer" />
+      <AppFooter v-if="showDefaultComponents && !hideInElectron?.footer" ctrl-key="footer" />
     </AppContainer>
     <ClientOnly>
-      <CookieBanner ctrl-key="CookieBanner" />
+      <CookieBanner v-if="!hideInElectron?.cookies" ctrl-key="CookieBanner" />
     </ClientOnly>
     <ModalsContainer />
   </div>

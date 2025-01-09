@@ -17,8 +17,7 @@ interface IProps {
   price?: Price,
   reviewScore?: number,
   numReviews?: number,
-  showFavouriteBtn?: boolean,
-  showReviewDetails?: boolean,
+  variant?: 'default' | 'booking' | 'booking-download',
   btnResName: I18nResName,
   btnLinkUrl: string | null
 };
@@ -30,8 +29,7 @@ const props = withDefaults(defineProps<IProps>(), {
   price: undefined,
   reviewScore: undefined,
   numReviews: undefined,
-  showFavouriteBtn: true,
-  showReviewDetails: true
+  variant: 'default'
 });
 
 const logger = getCommonServices().getLogger();
@@ -116,13 +114,13 @@ const tooltipId = useId();
         tag="div"
         class="offer-details-summary-main-scroll"
       >
-        <div :class="`offer-details-summary-grid ${showReviewDetails ? '' : 'no-review-details'} mb-xs-2`">
+        <div :class="`offer-details-summary-grid ${variant === 'default' ? '' : 'no-review-details'} mb-xs-2`">
           <div class="offer-details-summary-name">
             <div v-if="title">
-              <h1 :class="`offer-details-summary-title ${(offerKind === 'stays' && showReviewDetails) ? 'mr-xs-2 mr-s-3' : ''}`">
+              <h1 :class="`offer-details-summary-title ${(offerKind === 'stays' && variant === 'default') ? 'mr-xs-2 mr-s-3' : ''}`">
                 {{ getLocalizeableValue(title, locale as Locale) }}
               </h1>
-              <div v-if="offerKind === 'stays' && showReviewDetails" class="offer-details-hotel-rating mb-xs-2 mt-xs-1">
+              <div v-if="offerKind === 'stays' && variant === 'default'" class="offer-details-hotel-rating mb-xs-2 mt-xs-1">
                 <div class="offer-details-hotel-card-stars">
                   <div v-for="i in range(0, 5)" :key="`${props.ctrlKey}-HotelStar-${i}`" class="stay-card-star" />
                 </div>
@@ -149,7 +147,7 @@ const tooltipId = useId();
               </div>
             </div>
             <ClientOnly>    
-              <div v-if="scoreClassResName && showReviewDetails" class="offer-details-summary-stats mb-xs-3 mb-s-0 mt-xs-3">
+              <div v-if="scoreClassResName && variant === 'default'" class="offer-details-summary-stats mb-xs-3 mb-s-0 mt-xs-3">
                 <div class="offer-details-summary-score p-xs-2 brdr-1">
                   {{ reviewScore!.toFixed(1) }}
                 </div>
@@ -160,7 +158,7 @@ const tooltipId = useId();
                   {{ reviewsCountText }}
                 </div>
               </div>
-              <div v-else-if="showReviewDetails" class="data-loading-stub text-data-loading" />
+              <div v-else-if="variant === 'default'" class="data-loading-stub text-data-loading" />
               <template #fallback>
                 <div class="data-loading-stub text-data-loading" />
               </template>
@@ -175,6 +173,7 @@ const tooltipId = useId();
               kind="default"
               :ctrl-key="`${ctrlKey}-Btn`"
               class="offer-details-summary-btn-book"
+              :style="variant === 'booking-download' ? { visibility: 'hidden' } : undefined"
               :label-res-name="btnResName"
               @click="onBtnClick"
             />
@@ -186,12 +185,14 @@ const tooltipId = useId();
               placement="bottom"
               :flip="false"
               theme="default-tooltip"
+              :style="variant === 'booking-download' ? { visibility: 'hidden' } : undefined"
               :auto-hide="true"
               no-auto-focus
               @apply-show="scheduleTooltipAutoHide"
             >
               <SimpleButton
                 class="offer-details-summary-btn-share"
+                :style="variant === 'booking-download' ? { visibility: 'hidden' } : undefined"
                 :ctrl-key="`${props.ctrlKey}-ShareBtn`"
                 :aria-label-res-name="getI18nResName2('ariaLabels', 'btnShareSocial')"
                 icon="share"
@@ -204,7 +205,7 @@ const tooltipId = useId();
               </template>
             </VTooltip>
             <SimpleButton
-              v-if="status === 'authenticated' && showFavouriteBtn"
+              v-if="status === 'authenticated' && variant === 'default'"
               class="offer-details-summary-btn-like"
               :ctrl-key="`${props.ctrlKey}-LikeBtn`"
               :icon="`${isFavourite ? 'heart' : 'like'}`"

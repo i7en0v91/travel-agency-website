@@ -2,25 +2,16 @@ import { AppConfig, AppException, AppExceptionCodeEnum, ImageCategory } from '@g
 import { Readable } from 'stream';
 import type { H3Event } from 'h3';
 import { getQuery } from 'ufo';
-import sharp from 'sharp';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import { extractUserIdFromSession } from '../../utils/auth';
 import { getServerSession } from '#auth';
 import { getCommonServices, getServerServices } from '../../../helpers/service-accessors';
 
-async function convertToJpeg (bytes: Buffer): Promise<Buffer> {
-  const sharpObj = sharp(bytes);
-  const metadata = await sharpObj.metadata();
-  if (!metadata.width || !metadata.height) {
-    throw new Error('failed to parse image');
-  }
-  return sharpObj.jpeg().toBuffer();
-}
-
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const logger = getCommonServices().getLogger();
   const serverServices = getServerServices()!;
-  const imageBytesProvider = serverServices.getImageBytesProvider();
+  const imageProcessor = serverServices.getImageProcessor(); 
+  const imageProvider = serverServices.getImageProvider();
   const imageLogic = serverServices.getImageLogic();
 
   let url = event.node.req.url;
@@ -95,7 +86,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  const image = await imageBytesProvider.getImageBytes(undefined, slug, category, scale, event, event.context.preview.mode);
+  const image = await imageProvider.getImageBytes(undefined, slug, category, scale, event, event.context.preview.mode);
   if (!image) {
     throw new AppException(
       AppExceptionCodeEnum.OBJECT_NOT_FOUND,
@@ -108,7 +99,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     try {
       logger.info(`(api:img) converting image to satori acceptable format (JPEG), slug=${slug}, mime=${image.mimeType}`);
       image.mimeType = 'image/jpeg';
-      image.bytes = await convertToJpeg(image.bytes);
+      image.bytes = await imageProcessor.convert(image.bytes, 'jpeg');
     } catch (err: any) {
       logger.warn(`(api:img) failed to convert image to satori acceptable format (JPEG), slug=${slug}, mime=${image.mimeType}`, err);
       throw err;

@@ -66,4 +66,4 @@ export default defineWebApiEventHandler(async (event: H3Event) => {
       refreshToken
     }
   };
-}, { logResponseBody: true, authorizedOnly: false, allowedEnvironments: ['test', 'development', 'quickstart'] });
+}, { logResponseBody: true, authorizedOnly: false, allowedEnvironments: ['test', 'development', 'quickstart', 'electron'] });

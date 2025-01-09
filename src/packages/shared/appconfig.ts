@@ -1,14 +1,15 @@
 import { FlexibleDatesRangeDays, RestApiLogging } from './constants';
-import { isDevEnv, isTestEnv, isPublishEnv, isQuickStartEnv } from './environment';
+import { isDevEnv, isTestEnv, isPublishEnv, isQuickStartEnv, isElectronBuild } from './environment';
 import type { LogLevel, Locale, I18nResName } from './types';
 import { type ILogSuppressionRule, type ILogVueSuppressionRule } from './applogger';
 import { type AppExceptionCode } from './exceptions';
 
+export const AppName = 'Golobe';
 export const HostUrl = isPublishEnv() ? 'golobe.demo' : 'localhost:3000';
 // url used for showing users browser-navigateable links to the website
 export const SiteUrl = isPublishEnv() ? `https://${HostUrl}` : `http://${HostUrl}`;
 
-const HtmlPageCachingEnabled = isTestEnv() || isQuickStartEnv() || isPublishEnv();
+const HtmlPageCachingEnabled = !isElectronBuild() && (isTestEnv() || isQuickStartEnv() || isPublishEnv());
 const CachingIntervalSeconds = HtmlPageCachingEnabled ? 24 * 60 * 60 : 0;
 export const SQLiteDbName = 'dbase.db';
 
@@ -170,7 +171,17 @@ export interface IAppConfig {
       appData: string,
       publicRes: string
     }
-  }
+  },
+  electron: {
+    startup: {
+      timeoutMs: number,
+      resetClientData: boolean
+    },
+    logging: {
+      mainFile: string,
+      mailLogLevelOverride: LogLevel
+    },
+  } | undefined
 }
 
 const Config : IAppConfig = {
@@ -178,7 +189,7 @@ const Config : IAppConfig = {
     common: {
       name: 'golobe',
       /** error, warn, info, verbose, debug or never */
-      level: (isTestEnv() || isDevEnv()) ? 'debug' : 'warn',
+      level: (isTestEnv() || isDevEnv()) ? (isElectronBuild() ? 'info' : 'debug') : 'warn',
       /** fields in JSON data logged which are masked for security or large payload footprint reasons */
       redact: [
         'req.headers.cookie',
@@ -273,7 +284,7 @@ const Config : IAppConfig = {
         port: 587, // SMTP server port
         secure: true, // require SSL connection with SMTP server
         from: 'noreply@golobe.demo', // email address from which to send mails
-        appName: 'Golobe', // website app name to be used in email templates
+        appName: AppName, // website app name to be used in email templates
         siteUrl: SiteUrl
       }
      
@@ -282,7 +293,7 @@ const Config : IAppConfig = {
         port: 1025,
         secure: false,
         from: 'localhost',
-        appName: 'Golobe',
+        appName: AppName,
         siteUrl: 'http://localhost' // KB: dev Nuxt instance is running on :3000 port by default, but using 'http://localhost:3000' directly may result into e-mail rejects by SMTP server as spam
       } : undefined),
   maxUserEmailsCount: 5, // maximum number of specified emails per single user account
@@ -292,7 +303,7 @@ const Config : IAppConfig = {
   siteUrl: SiteUrl,
   contactEmail: 'support@golobe.demo', // contact email for website users
   reCaptcha: {
-    enabled: !isTestEnv() && !isQuickStartEnv(),
+    enabled: !isElectronBuild() && !isTestEnv() && !isQuickStartEnv(),
     language: 'en', // default language
     size: 'invisible' // also may be normal
   },
@@ -342,13 +353,13 @@ const Config : IAppConfig = {
   },
   enableHtmlTabIndex: true, // if enabled, system will automatically compute and fill tabIndex property for all interactive html elements (including dropdowns, menus e.t.c). If disabled, tabIndex="-1" will be used
   ogImage: {
-    enabled: true, // if enabled, system will add og:image metadata tag to pages and setup (pre-)rendering logic
+    enabled: !isElectronBuild(), // if enabled, system will add og:image metadata tag to pages and setup (pre-)rendering logic
     screenSize: { // ogImage size (device width/height); 1200x630 is optimal image size for most social networks
       width: 1200,
       height: 630
     }
   },
-  maps: (!isTestEnv() && !isQuickStartEnv())
+  maps: (!isTestEnv() && !isQuickStartEnv() && !isElectronBuild())
     ? {
         providerDisplayResName: 'mapsProviderYandex', // i18n resource name of map's service provider
         mapControlComponentName: 'YandexMaps' // name of Vue component used to display interactive map
@@ -367,7 +378,7 @@ const Config : IAppConfig = {
     storageDriver: 'local', // content storage driver, local filesystem is used
     port: 9000, // Acsys host TCP port
     startupTimeoutMs: 15000, // timeout waiting for Acsys startup ping
-    projectName: 'golobe', // project name
+    projectName: AppName, // project name
     users: { // Acsys user credentials for calling its REST API. Which account is chosen depends on access level required by method being invoked
       admin: { name: 'cms_admin', email: 'cms_admin@golobe.demo', password: process.env.ACSYS_ADMIN_USER_PASSWORD as string, autoFillCredsOnLoginPage: !isPublishEnv() },
       standard: { name: 'cms_standard', email: 'cms_standard@golobe.demo', password: process.env.ACSYS_STANDARD_USER_PASSWORD as string, autoFillCredsOnLoginPage: false },
@@ -375,13 +386,26 @@ const Config : IAppConfig = {
     }
   },
   dataSeeding: { // initial seeding with demo data settings 
-    customLoadingStub: isQuickStartEnv(), // whether to display loading page (from Nuxt templates) while seeding DB with data on first-time server app start
+    customLoadingStub: isQuickStartEnv() || (isElectronBuild() && !isDevEnv()), // whether to display loading page (from Nuxt templates) while seeding DB with data on first-time server app start
     dirs: { // directory names where to look for content
       content: 'sample-data', // sample data folder
       appData: 'appdata', // app logic data folder
       publicRes: 'public' // public assets
     }
-  }
+  },
+  electron: isElectronBuild() ? { // settings for electon build
+    startup: {
+      timeoutMs: 15000, // specifies amount of time for electron app to start in Production env
+      resetClientData: !isDevEnv() // clear local storage, cookies e.t.c at app startup
+    },
+    logging: {
+      mainFile: /** log (rolling) file path for Electron app events */
+        isDevEnv() ? 
+          './logs/golobe-electron-%DATE%.log' : 
+          './.output/logs/golobe-electron-%DATE%.log',
+      mailLogLevelOverride: 'debug', /** Overrides {@link IAppConfig.logging.common.level} for Electron app logger only */
+    }
+  } : undefined
 };
 
 export default Config;

@@ -12,7 +12,8 @@ declare module 'process' {
         OAUTH_GOOGLE_CLIENT_SECRET: string,
         GOOGLE_RECAPTCHA_SECRETKEY: string,
         VITE_GOOGLE_RECAPTCHA_PUBLICKEY: string,
-        VITE_YANDEX_MAPS_API_KEY: string
+        VITE_YANDEX_MAPS_API_KEY: string,
+        VITE_ELECTRON_BUILD: number
       }
     }
   }

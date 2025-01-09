@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type BookingPageArgs, AppException, AppExceptionCodeEnum, clampTextLine, getLocalizeableValue, getValueForFlightDurationFormatting, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, extractAirportCode, ImageCategory, type ICity, type EntityDataAttrsOnly, type ILocalizableValue, type IFlightOffer, type IStayOfferDetails, type EntityId, type ReviewSummary, getI18nResName2, getI18nResName3, AppPage, type Locale, AvailableLocaleCodes, DefaultTheme } from '@golobe-demo/shared';
+import { QueryInternalRequestParam, isElectronBuild, type BookingPageArgs, AppException, AppExceptionCodeEnum, clampTextLine, getLocalizeableValue, getValueForFlightDurationFormatting, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, extractAirportCode, ImageCategory, type ICity, type EntityDataAttrsOnly, type ILocalizableValue, type IFlightOffer, type IStayOfferDetails, type EntityId, type ReviewSummary, getI18nResName2, getI18nResName3, AppPage, type Locale, AvailableLocaleCodes, DefaultTheme } from '@golobe-demo/shared';
 import fromPairs from 'lodash-es/fromPairs';
 import { type IBookingTicketFlightGfxProps, type IBookingTicketStayTitleProps, type IBookingTicketProps } from './../../types';
 import { ApiEndpointBookingOffer, ApiEndpointStayOfferReviewSummary } from './../../server/api-definitions';
@@ -25,6 +25,7 @@ const logger = getCommonServices().getLogger();
 
 const reqEvent = import.meta.server ? useRequestEvent() : undefined;
 const isOgImageRequestMode = import.meta.server && !!reqEvent?.context.ogImageContext;
+const isDownloadFromElectron = import.meta.client && isElectronBuild() && (route.query ?? {})[QueryInternalRequestParam] === '1';
 
 let authUserForbidden = false;
 
@@ -344,6 +345,7 @@ async function onDownloadBtnClick (): Promise<void> {
     <div class="booking-details-page">
       <ErrorHelm :is-error="isError" class="booking-details-error-helm">
         <OfferDetailsBreadcrumbs
+          v-if="!isDownloadFromElectron"
           :ctrl-key="`${CtrlKey}-Breadcrumbs`"
           :offer-kind="offer?.kind"
           :city="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.departAirport.city : (offer as IStayOfferDetails).stay.city) : undefined"
@@ -359,8 +361,7 @@ async function onDownloadBtnClick (): Promise<void> {
           :price="displayedPrice"
           :review-score="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.airlineCompany.reviewSummary.score : (offer as IStayOfferDetails).stay.reviewSummary?.score) : undefined"
           :num-reviews="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.airlineCompany.reviewSummary.numReviews : (offer as IStayOfferDetails).stay.reviewSummary?.numReviews) : undefined"
-          :show-favourite-btn="false"
-          :show-review-details="false"
+          :variant="isDownloadFromElectron ? 'booking-download' : 'booking'"
           :btn-res-name="getI18nResName2('bookingPage', 'downloadBtn')"
           :btn-link-url="null"
           @btn-click="onDownloadBtnClick"

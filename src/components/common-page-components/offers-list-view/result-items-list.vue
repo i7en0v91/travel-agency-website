@@ -22,7 +22,7 @@ const logger = getCommonServices().getLogger();
 
 const isError = ref(false);
 
-const getWaitingStubMode = (): WaitingStubMode => !searchOffersStore ? 'hidden' : (searchOffersStore.resultState.status === 'sort-refetch' ? 'shown' : (searchOffersStore.resultState.status === 'full-refetch' || searchOffersStore.resultState.status === 'filter-refetch' ? 'hidden' : 'not-needed'));
+const getWaitingStubMode = (): WaitingStubMode => !searchOffersStore ? 'hidden' : (searchOffersStore.resultState.status === 'sort-refetch' ? 'shown' : ((searchOffersStore.resultState.status === 'full-refetch' || searchOffersStore.resultState.status === 'filter-refetch') ? 'hidden' : 'not-needed'));
 const waitingStubMode = ref<WaitingStubMode>(getWaitingStubMode());
 
 const updateWaitingStubValue = () => {

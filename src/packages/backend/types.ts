@@ -1,4 +1,4 @@
-import type { QueryInternalRequestParam, QueryPageTimestampParam, QueryPagePreviewModeParam, EmailTemplateEnum, TokenKind, AuthProvider, AppPage, ImageCategory, PageCacheVaryOptions, ISearchStayOffersResult, ISearchFlightOffersResult, UninitializedPageTimestamp, IOfferBookingData, IUserMinimalInfo, IUserProfileInfo, IStayOffersFilterParams, IFlightOffersFilterParams, DocumentCommonParams, IFileInfo, IImageInfo, IFileData, IImageData, IAirplaneData, IStayData, ICommonServicesLocator, StayOffersSortFactor, FlightOffersSortFactor, IBooking, IStayOfferDetails, IStayOffer, IStayShort, IStay, IStayReview, IFlightOffer, IAirplane, EntityDataAttrsOnly, IAirport, IAirlineCompany, ICountry, ICity, StayServiceLevel, IPagination, ISorting, Price, GeoPoint, ReviewSummary, IImageCategoryInfo, CacheEntityType, GetEntityCacheItem, DistanceUnitKm, PreviewMode, EntityId, IEditableEntity, ISoftDeleteEntity, ILocalizableValue, Timestamp, PreviewModeParamEnabledValue, EntityChangeSubscribersOrder, Locale, Theme } from '@golobe-demo/shared';
+import type { QueryInternalRequestParam, QueryPageTimestampParam, QueryPagePreviewModeParam, EmailTemplateEnum, TokenKind, AuthProvider, AppPage, ImageCategory, PageCacheVaryOptions, ISearchStayOffersResult, ISearchFlightOffersResult, UninitializedPageTimestamp, IOfferBookingData, IUserMinimalInfo, IUserProfileInfo, IStayOffersFilterParams, IFlightOffersFilterParams, DocumentCommonParams, IFileInfo, IImageInfo, IFileData, IImageData, IAirplaneData, IStayData, ICommonServicesLocator, StayOffersSortFactor, FlightOffersSortFactor, IBooking, IStayOfferDetails, IStayOffer, IStayShort, IStay, IStayReview, IFlightOffer, IAirplane, EntityDataAttrsOnly, IAirport, IAirlineCompany, ICountry, ICity, StayServiceLevel, IPagination, ISorting, Price, GeoPoint, ReviewSummary, IImageCategoryInfo, CacheEntityType, GetEntityCacheItem, DistanceUnitKm, PreviewMode, EntityId, IEditableEntity, ISoftDeleteEntity, ILocalizableValue, Timestamp, PreviewModeParamEnabledValue, EntityChangeSubscribersOrder, Locale, Theme, type IImageProcessor } from '@golobe-demo/shared';
 import { type H3Event } from 'h3';
 import { type IServerI18n } from './common-services/i18n';
 import { type IChangeDependencyTracker, type EntityModel } from './common-services/change-dependency-tracker';
@@ -217,7 +217,7 @@ export interface IImageBytes {
   modifiedUtc: Date
 }
 
-export interface IImageBytesProvider extends IInitializableOnStartup {
+export interface IImageProvider extends IInitializableOnStartup {
   getImageBytes(id: EntityId | undefined, slug: string | undefined, category: ImageCategory, bytesOptions: ImageBytesOptions, event: H3Event, previewMode: PreviewMode): Promise<IImageBytes | undefined>;
   clearImageCache(idOrSlug: EntityId | string, category: ImageCategory): Promise<void>;
 }
@@ -502,7 +502,8 @@ export interface IServerServicesLocator extends ICommonServicesLocator {
   getAssetsProvider(): IAppAssetsProvider,
   getHtmlPageCacheCleaner() : IHtmlPageCacheCleaner,
   getUserLogic(): IUserLogic,
-  getImageBytesProvider(): IImageBytesProvider,
+  getImageProcessor(): IImageProcessor,
+  getImageProvider(): IImageProvider,
   getImageLogic(): IImageLogic,
   getImageCategoryLogic(): IImageCategoryLogic,
   getAuthFormImageLogic(): IAuthFormImageLogic,

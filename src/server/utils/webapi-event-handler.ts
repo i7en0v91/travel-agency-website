@@ -1,4 +1,4 @@
-import { QueryPagePreviewModeParam, AppConfig, type IAppLogger, AppException, AppExceptionCodeEnum, mapAppExceptionToHttpStatus, validateObject, isQuickStartEnv, HeaderAppVersion, testHeaderValue } from '@golobe-demo/shared';
+import { QueryPagePreviewModeParam, AppConfig, type IAppLogger, AppException, AppExceptionCodeEnum, mapAppExceptionToHttpStatus, validateObject, isQuickStartEnv, HeaderAppVersion, testHeaderValue, isElectronBuild } from '@golobe-demo/shared';
 import type { H3Event, EventHandler, EventHandlerRequest, EventHandlerResponse } from 'h3';
 import axios from 'axios';
 import { withQuery } from 'ufo';
@@ -16,7 +16,7 @@ export interface IWebApiEventHandlerOptions<TBodySchema extends YupMaybe<YupAnyO
   authorizedOnly: boolean,
   validationSchema?: ObjectSchema<TBodySchema>,
   captchaProtected?: boolean,
-  allowedEnvironments?: ('development' | 'test' | 'production' | 'quickstart')[]
+  allowedEnvironments?: ('development' | 'test' | 'production' | 'quickstart' | 'electron')[]
 }
 
 function wrapHandler<Request extends EventHandlerRequest = EventHandlerRequest, Response = EventHandlerResponse, TBodySchema extends YupMaybe<YupAnyObject> = any> (
@@ -109,7 +109,7 @@ function handleErrorResponse (event: H3Event, err: any, requestAppVersion: strin
   return { errorDto, httpStatus };
 }
 
-function checkAllowedEnvironments (environments?: ('development' | 'test' | 'production' | 'quickstart')[]): boolean {
+function checkAllowedEnvironments (environments?: ('development' | 'test' | 'production' | 'quickstart' | 'electron')[]): boolean {
   if (!environments) {
     return true;
   }
@@ -119,6 +119,10 @@ function checkAllowedEnvironments (environments?: ('development' | 'test' | 'pro
   }
 
   if (environments.includes('quickstart') && isQuickStartEnv()) {
+    return true;
+  }
+
+  if (environments.includes('electron') && isElectronBuild()) {
     return true;
   }
 

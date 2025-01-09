@@ -1,15 +1,16 @@
-import { UserNotificationLevel, AppException, AppExceptionCodeEnum, type I18nResName, getI18nResName2 } from '@golobe-demo/shared';
+import { UserNotificationLevel, AppException, AppExceptionCodeEnum, type I18nResName, getI18nResName2, isElectronBuild } from '@golobe-demo/shared';
 import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../helpers/dom';
 import { useModal } from 'vue-final-modal';
 import { type ConfirmBoxButton } from './../types';
 import ConfirmBox from './../components/confirm-box.vue';
 import { getCommonServices } from '../helpers/service-accessors';
+import { getDialogsFacade } from '../helpers/electron';
 
-export function useConfirmBox (): {
+interface IConfirmBox {
   confirm: (ctrlKey: string, buttons: ConfirmBoxButton[], msgResName: I18nResName, msgResArgs?: any) => Promise<ConfirmBoxButton>
-  } {
-  const userNotificationStore = useUserNotificationStore();
+}
 
+function useConfirmBoxComponent(userNotificationStore: ReturnType<typeof useUserNotificationStore>): IConfirmBox {
   const attrCtrlKey = ref('');
   const attrButtons = ref<ConfirmBoxButton[]>([]);
   const attrMsgResName = ref<I18nResName>('');
@@ -72,4 +73,27 @@ export function useConfirmBox (): {
       });
     }
   };
+}
+
+function useConfirmBoxElectron(localizer: (ReturnType<typeof useI18n>)['t'] | undefined): IConfirmBox {
+  const dialogsFacade = getDialogsFacade(localizer);
+
+  return {
+    confirm: async (ctrlKey: string, buttons: ConfirmBoxButton[], msgResName: I18nResName, msgResArgs?: any): Promise<ConfirmBoxButton> => {
+      const logger = getCommonServices().getLogger();
+      logger.verbose(`(user-confirm-box) opening confirm box: ctrlKey=${ctrlKey}, buttons=${JSON.stringify(buttons)}, msgResName=${msgResName}`);
+      const msg = localizer(msgResName, msgResArgs);
+      return await dialogsFacade.showConfirmBox(msg, buttons);
+    }
+  };
+}
+
+export function useConfirmBox (): IConfirmBox {
+  if(!isElectronBuild()) {
+    const userNotificationStore = useUserNotificationStore();
+    return useConfirmBoxComponent(userNotificationStore);
+  } else {
+    const localizer = (useNuxtApp().$i18n as any).t;
+    return useConfirmBoxElectron(localizer);
+  }
 }

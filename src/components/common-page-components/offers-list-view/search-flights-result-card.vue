@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppPage, getPagePath, type Locale, getLocalizeableValue, getScoreClassResName, extractAirportCode, getValueForFlightDurationFormatting, getValueForTimeOfDayFormatting, getI18nResName2, getI18nResName3, type EntityDataAttrsOnly, type IFlightOffer, type OfferKind, ImageCategory } from '@golobe-demo/shared';
+import { AppPage, getPagePath, type Locale, getLocalizeableValue, getScoreClassResName, extractAirportCode, getValueForFlightDurationFormatting, getValueForTimeOfDayFormatting, getI18nResName2, getI18nResName3, type EntityDataAttrsOnly, type IFlightOffer, type OfferKind, ImageCategory, isElectronBuild } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { useUserFavouritesStore } from './../../../stores/user-favourites-store';
 import { useOfferFavouriteStatus } from './../../../composables/offer-favourite-status';
@@ -138,7 +138,7 @@ async function favouriteBtnClick (): Promise<void> {
               kind="support"
               @click="favouriteBtnClick"
             />
-            <NuxtLink class="btn btn-primary brdr-1 search-flights-card-btn-details" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.FlightDetails)}/${offer.id}`, locale as Locale)">
+            <NuxtLink class="btn btn-primary brdr-1 search-flights-card-btn-details" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.FlightDetails)}/${offer.id}`, locale as Locale)" :target="isElectronBuild() ? '_blank' : undefined">
               {{ $t(getI18nResName2('searchFlights', 'viewDetails')) }}
             </NuxtLink>
           </div>

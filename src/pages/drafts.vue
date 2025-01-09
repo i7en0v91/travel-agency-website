@@ -13,7 +13,7 @@ definePageMeta({
 
 useHead({
   script: [
-    { src: '/js/page-load.min.js' },
+    { src: '/js/page-load.min.js', type: 'module' },
   ],
   link: [
     { rel: 'icon', href: '/img/waiter.gif' }

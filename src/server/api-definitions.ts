@@ -1,5 +1,5 @@
 import { type InferType, string, number, object, array, boolean, date, lazy } from 'yup';
-import { NumMinutesInDay, SearchOffersPriceRange, AvailableLocaleCodes, AvailableThemeCodes, FlightMinPassengers, FlightMaxPassengers, StaysMaxRoomsCount, StaysMaxGuestsCount, MaxStayReviewLength, type SignUpResultEnum, type SignUpCompleteResultEnum, type RecoverPasswordResultEnum, type RecoverPasswordCompleteResultEnum, AllHtmlPages, type AppExceptionAppearance, RestApiPrefix, RestApiLogging, RestApiAuth, type StayDescriptionParagraphType, type AirplaneImageKind, type FlightOffersSortFactor, type CacheEntityType, type TripType, type FlightClass, AvailableFlightOffersSortFactor, AvailableStayOffersSortFactor, type StayServiceLevel, type OfferKind, type EntityId, RestAppPrefix } from '@golobe-demo/shared';
+import { AvailableImageCategories, type ImageCategory, NumMinutesInDay, SearchOffersPriceRange, AvailableLocaleCodes, AvailableThemeCodes, FlightMinPassengers, FlightMaxPassengers, StaysMaxRoomsCount, StaysMaxGuestsCount, MaxStayReviewLength, type SignUpResultEnum, type SignUpCompleteResultEnum, type RecoverPasswordResultEnum, type RecoverPasswordCompleteResultEnum, AllHtmlPages, type AppExceptionAppearance, RestApiPrefix, RestApiLogging, RestApiAuth, type StayDescriptionParagraphType, type AirplaneImageKind, type FlightOffersSortFactor, type CacheEntityType, type TripType, type FlightClass, AvailableFlightOffersSortFactor, AvailableStayOffersSortFactor, type StayServiceLevel, type OfferKind, type EntityId, RestAppPrefix } from '@golobe-demo/shared';
 
 const EntityIdMaxLength = 256;
 
@@ -22,6 +22,7 @@ export const ApiEndpointTestingCacheCleanup = `${ApiAppEndpointPrefix}/testing/c
 export const ApiEndpointPurgeCache = `${ApiAppEndpointPrefix}/purge-cache`;
 export const ApiEndpointAuthentication = RestApiAuth;
 export const ApiEndpointImage = `${ApiAppEndpointPrefix}/img`;
+export const ApiEndpointImageCategories = `${ApiAppEndpointPrefix}/img/categories`;
 export const ApiEndpointImageDetails = `${ApiAppEndpointPrefix}/img/details`;
 export const ApiEndpointImageList = `${ApiAppEndpointPrefix}/img/list`;
 export const ApiEndpointAuthFormPhotos = `${ApiAppEndpointPrefix}/img/auth-forms`;
@@ -59,6 +60,16 @@ export const ApiEndpointBookingDownload = (id: EntityId) => `${ApiAppEndpointPre
 /**
  * Dto Schemas
  */
+export const ImageCategoriesDtoSchema = object({
+  values: array().of(
+    object({
+      id: string().max(EntityIdMaxLength).required(),
+      width: number().required().min(1).max(8096),
+      height: number().required().min(1).max(8096),
+      kind: string().max(4).oneOf(AvailableImageCategories).required()
+    }).required()).min(1).required()
+});
+
 export const TestingInvalidateCacheDtoSchema = object({
   values: array().of(
     object({
@@ -258,6 +269,13 @@ export interface IWorldMapDataDto {
     },
     geo: IGeoPointDto
   }
+}
+
+export interface IImageCategoryDto {
+  id: string,
+  width: number,
+  height: number,
+  kind: ImageCategory
 }
 
 export interface IImageDetailsDto {

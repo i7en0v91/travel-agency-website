@@ -10,7 +10,8 @@
     "emailingDisabled": "Операцию невозможно выполнить, поскольку для этого на веб-сайте необходимо включить функцию отправки электронных писем",
     "forbidden": "Доступ запрещен",
     "documentGenerationFailed": "Ошибка формирования документа",
-    "acsysIntegrationError": "Ошибка интеграции с CMS"
+    "acsysIntegrationError": "Ошибка интеграции с CMS",
+    "electronIntegrationError": "Ошибка интеграции с Electron"
   },
   "httpCodes": {
     "401": "Отсутствует аутентификация",
@@ -807,5 +808,24 @@
   },
   "close": "Закрыть",
   "calendarImgAlt": "значок календаря",
-  "mapsProviderYandex": "Яндекс.Карты"
+  "mapsProviderYandex": "Яндекс.Карты",
+  "electron": {
+    "messageBox": {
+      "info": "Информация",
+      "warning": "Предупреждение",
+      "error": "Ошибка",
+      "confirm": "Подтверждение"
+    },
+    "menu": {
+      "theme": "Тема",
+      "themeDark": "Тёмная",
+      "themeLight": "Светлая",
+      "locale": "Язык",
+      "account": "Аккаунт",
+      "back": "Назад",
+      "next": "Вперёд",
+      "mainPage": "На главную страницу",
+      "contactUs": "@:footer.contactUs.title"
+    }
+  }
 }

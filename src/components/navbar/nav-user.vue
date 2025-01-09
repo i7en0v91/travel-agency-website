@@ -1,25 +1,22 @@
 <script setup lang="ts">
 import { clampTextLine, type Locale, AppPage, getPagePath, AppConfig, getI18nResName3, ImageCategory } from '@golobe-demo/shared';
 import { UserAccountTabAccount, UserAccountTabPayments, UserAccountOptionButtonGroup, UserAccountOptionButtonPayments, UserAccountOptionButtonAccount } from './../../helpers/constants';
-import { updateTabIndices, TabIndicesUpdateDefaultTimeout, formatAuthCallbackUrl, getLastSelectedOptionStorageKey } from './../../helpers/dom';
+import { updateTabIndices, TabIndicesUpdateDefaultTimeout, getLastSelectedOptionStorageKey } from './../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
-import { stringifyParsedURL, parseURL } from 'ufo';
 import StaticImage from './../images/static-image.vue';
 import NavUserMenuItem from './nav-user-menu-item.vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
-import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
+import { useSignOut } from '../../composables/sign-out';
 
 interface IProps {
   ctrlKey: string
 }
 const props = defineProps<IProps>();
 
-const { signOut } = useAuth();
+const signOutHelper = useSignOut();
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
-const nuxtApp = useNuxtApp();
-const { enabled } = usePreviewState();
 
 const logger = getCommonServices().getLogger();
 
@@ -40,40 +37,8 @@ function hideDropdown () {
   dropdown.value?.hide();
 }
 
-async function getBookingPageSignOutUrl (): Promise<string> {
-  logger.debug(`(NavUser) obtaining booking signout url: ctrlKey=${props.ctrlKey}`);
-  try {
-    const route = useRoute();
-
-    const bookingParam = route.params.id!.toString();
-    const bookingId = bookingParam;
-    const offerBookingStoreFactory = await useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
-    const offerBookingStore = await offerBookingStoreFactory.getUserBooking(bookingId, !!nuxtApp.ssrContext?.event.context.ogImageContext, nuxtApp.ssrContext?.event);
-    const offerId = offerBookingStore.offerId;
-    const offerKind = offerBookingStore.offerKind;
-    const urlPath = offerKind === 'flights' ? navLinkBuilder.buildLink(`/${getPagePath(AppPage.FlightDetails)}/${offerId}`, locale.value as Locale) : navLinkBuilder.buildLink(`/${getPagePath(AppPage.StayDetails)}/${offerId}`, locale.value as Locale);
-
-    const parsedRoute = parseURL(route.fullPath);
-    parsedRoute.pathname = urlPath;
-    const url = stringifyParsedURL(parsedRoute);
-    logger.debug(`(NavUser) using booking signout url: ctrlKey=${props.ctrlKey}, bookingId=${bookingId}, url=${url}`);
-    return url;
-  } catch (err: any) {
-    logger.warn(`(NavUser) failed to obtain booking signout url: ctrlKey=${props.ctrlKey}`, err);
-    return navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale);
-  }
-}
-
 async function onSignOutClick (): Promise<void> {
-  const route = useRoute();
-
-  let callbackUrl = route.fullPath;
-  if (callbackUrl.includes(getPagePath(AppPage.BookingDetails))) {
-    callbackUrl = await getBookingPageSignOutUrl();
-  }
-  callbackUrl = formatAuthCallbackUrl(callbackUrl, enabled);
-
-  signOut({ callbackUrl, redirect: true });
+  await signOutHelper.signOut();
   hideDropdown();
 }
 

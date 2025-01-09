@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { isDevOrTestEnv, isQuickStartEnv, type I18nResName, getI18nResName2, AuthProvider } from '@golobe-demo/shared';
+import { isElectronBuild, isDevOrTestEnv, isQuickStartEnv, type I18nResName, getI18nResName2, AuthProvider } from '@golobe-demo/shared';
 import OAuthBtn from './oauth-btn.vue';
 
 interface IProps {
@@ -11,8 +11,8 @@ withDefaults(defineProps<IProps>(), {
   divisorLabelResName: undefined
 });
 
-const showTestLocalProvider = isDevOrTestEnv() || isQuickStartEnv();
-const thirdPartyOAuthEnabled = !isQuickStartEnv();
+const showTestLocalProvider = isDevOrTestEnv() || isQuickStartEnv() || isElectronBuild();
+const thirdPartyOAuthEnabled = !isQuickStartEnv() && !isElectronBuild();
 
 const $emit = defineEmits(['click']);
 function onAuthBtnBlick (provider: AuthProvider) {

@@ -1,7 +1,7 @@
 /**
  * Performs various configuration checks
  */
-import { AppConfig, isQuickStartEnv } from '@golobe-demo/shared';
+import { AppConfig, isQuickStartEnv, isTestEnv, isElectronBuild } from '@golobe-demo/shared';
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { destr } from 'destr';
@@ -30,12 +30,17 @@ async function checkOgImageCachePrefix(): Promise<void> {
 }
 
 async function run () {
+  consola.log(`pre-build checks...`);
+
+  if(isElectronBuild() && isTestEnv()) {
+    consola.error('Running tests with Electron build is not supported');
+    throw new Error('Electron build failed');
+  }
+
   if(isQuickStartEnv()) {
     // ignore warnings of potential issues in quickstart
     return;
   }
-
-  consola.log(`pre-build checks...`);
   await checkOgImageCachePrefix();
 }
 

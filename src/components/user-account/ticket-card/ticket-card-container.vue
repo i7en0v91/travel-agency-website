@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppPage, getPagePath, type Locale, getI18nResName3, type EntityId, type IStayOffer, type IFlightOffer, type EntityDataAttrsOnly } from '@golobe-demo/shared';
+import { AppPage, getPagePath, type Locale, getI18nResName3, type EntityId, type IStayOffer, type IFlightOffer, type EntityDataAttrsOnly, isElectronBuild } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
@@ -62,7 +62,7 @@ async function onBtnClick(): Promise<void> {
           :label-res-name="getI18nResName3('accountPage', 'tabHistory', 'btnDownload')"
           @click="onBtnClick"
         />
-        <NuxtLink class="ticket-card-booking-link btn btn-icon icon-nav-link btn-support brdr-1 tabbable" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.BookingDetails)}/${bookingId}`, locale as Locale)"/>
+        <NuxtLink class="ticket-card-booking-link btn btn-icon icon-nav-link btn-support brdr-1 tabbable" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.BookingDetails)}/${bookingId}`, locale as Locale)" :target="isElectronBuild() ? '_blank' : undefined"/>
       </div>
     </div>
   </article>
