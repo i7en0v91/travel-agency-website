@@ -82,6 +82,8 @@ npm run dev
 
 ## Electron build
 It is possible to build and run this website as desktop application with [Electron](https://www.electronjs.org):
+
+
 ![electron_build_111_screenshot](https://github.com/user-attachments/assets/e78e5621-5da1-466c-ae28-c59d869d5ed9)
 
 You need to do the following:
@@ -93,7 +95,7 @@ You need to do the following:
 After these steps are done Electron build is set up, run one of the following implemented configurations:
 - PREVIEW (`npm run build` then `npm run preview:electron`)
 - QUICKSTART (`npm run quickstart:electron`)
-- DEV (`npm run dev`), currently experimental and requires development environment setup as described [above](https://github.com/i7en0v91/travel-agency-website/tree/sass#installation)
+- DEV (`npm run dev`), currently experimental and requires development environment setup as described [above](https://github.com/i7en0v91/travel-agency-website/tree/sass#setting-up-development-environment)
 
 To run e2e tests switch back to browser build.
 
