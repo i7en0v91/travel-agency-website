@@ -1,6 +1,7 @@
-import { AppConfig, AppException, AppExceptionCodeEnum, isDevOrTestEnv, UserNotificationLevel, type I18nResName } from '@golobe-demo/shared';
+import { isElectronBuild, AppConfig, AppException, AppExceptionCodeEnum, isDevOrTestEnv, UserNotificationLevel, type I18nResName } from '@golobe-demo/shared';
 import { getCommonServices } from '../helpers/service-accessors';
 import { murmurHash } from 'ohash';
+import { getDialogsFacade } from '../helpers/electron';
 
 export interface IUserNotificationParams {
   level: UserNotificationLevel;
@@ -21,42 +22,58 @@ export const useUserNotificationStore = defineStore('userNotificationStore', () 
   const pendingNotificationIds = new Set<NotificationId>();
   const doShowOnClient = (params: IUserNotificationParams) => {
     const msg = t(params.resName, params.resArgs);
-    const notificationId: NotificationId = murmurHash(msg, AppConfig.userNotifications.filterDuplicates ? 0 : new Date().getTime()).toString();
-    if(AppConfig.userNotifications.filterDuplicates) {
-      const isPending = pendingNotificationIds.has(notificationId);
-      if(isPending) {
-        logger.verbose(`(user-notification-store): notification is pending - refreshing timeout, notificationId=${notificationId}`, params);
-        toastManager!.update(notificationId, { timeout: AppConfig.userNotifications.timeoutMs });
+    const logger = getCommonServices().getLogger();
+    if(isElectronBuild()) {    
+      const dialogsFacade = getDialogsFacade(t);
+      switch (params.level) {
+        case UserNotificationLevel.INFO:
+          dialogsFacade!.showNotification('info', msg);
+          break;
+        case UserNotificationLevel.WARN:
+          dialogsFacade!.showNotification('warning', msg);
+          break;
+        case UserNotificationLevel.ERROR:
+          dialogsFacade!.showNotification('error', msg);
+          break;
+      }
+    } else {
+      const notificationId: NotificationId = murmurHash(msg, AppConfig.userNotifications.filterDuplicates ? 0 : new Date().getTime()).toString();
+      if(AppConfig.userNotifications.filterDuplicates) {
+        const isPending = pendingNotificationIds.has(notificationId);
+        if(isPending) {
+          logger.verbose(`(user-notification-store): notification is pending - refreshing timeout, notificationId=${notificationId}`, params);
+          toastManager!.update(notificationId, { timeout: AppConfig.userNotifications.timeoutMs });
+          return;
+        }
+      }
+
+      if(AppConfig.userNotifications.maxItems && pendingNotificationIds.size >= AppConfig.userNotifications.maxItems) {
+        logger.warn(`(user-notification-store): cannot show new notification - maximum pending notifications count limit reached, notificationId=${notificationId}, limit=${AppConfig.userNotifications.maxItems}`, params);
         return;
       }
-    }
 
-    if(AppConfig.userNotifications.maxItems && pendingNotificationIds.size >= AppConfig.userNotifications.maxItems) {
-      logger.warn(`(user-notification-store): cannot show new notification - maximum pending notifications count limit reached, notificationId=${notificationId}, limit=${AppConfig.userNotifications.maxItems}`, params);
-      return;
-    }
-
-    logger.verbose(`(user-notification-store): showing new notification, notificationId=${notificationId}`, params);
-    try {
-      toastManager!.add({
-        id: notificationId,
-        description: msg,
-        timeout: AppConfig.userNotifications.timeoutMs,
-        color: params.level === UserNotificationLevel.INFO ? 'primary' : 
-            (params.level === UserNotificationLevel.WARN) ? 'yellow' : 'red',
-        icon: params.level === UserNotificationLevel.INFO ? 'i-heroicons-check-circle' : 
-        (params.level === UserNotificationLevel.WARN) ? 'i-heroicons-exclamation-triangle' : 'i-heroicons-exclamation-circle-solid',
-        callback: () => {
-          logger.debug(`(user-notification-store): removing notification from pending list, notificationId=${notificationId}`, params);
-          if(!pendingNotificationIds.delete(notificationId)) {
-            logger.warn(`(user-notification-store): cannot remove notification from pending list - not found, notificationId=${notificationId}`, params);
-            return;
-          }   
-        }
-      });
-      pendingNotificationIds.add(notificationId);
-    } catch(err: any) {
-      logger.warn(`(user-notification-store): failed to showing new notification, notificationId=${notificationId}`, err, params);
+      logger.verbose(`(user-notification-store): showing new notification, notificationId=${notificationId}`, params);
+      try {
+        toastManager!.add({
+          id: notificationId,
+          description: msg,
+          timeout: AppConfig.userNotifications.timeoutMs,
+          color: params.level === UserNotificationLevel.INFO ? 'primary' : 
+              (params.level === UserNotificationLevel.WARN) ? 'yellow' : 'red',
+          icon: params.level === UserNotificationLevel.INFO ? 'i-heroicons-check-circle' : 
+          (params.level === UserNotificationLevel.WARN) ? 'i-heroicons-exclamation-triangle' : 'i-heroicons-exclamation-circle-solid',
+          callback: () => {
+            logger.debug(`(user-notification-store): removing notification from pending list, notificationId=${notificationId}`, params);
+            if(!pendingNotificationIds.delete(notificationId)) {
+              logger.warn(`(user-notification-store): cannot remove notification from pending list - not found, notificationId=${notificationId}`, params);
+              return;
+            }   
+          }
+        });
+        pendingNotificationIds.add(notificationId);
+      } catch(err: any) {
+        logger.warn(`(user-notification-store): failed to showing new notification, notificationId=${notificationId}`, err, params);
+      }
     }
   };
 

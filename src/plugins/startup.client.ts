@@ -10,6 +10,9 @@ import once from 'lodash-es/once';
 import { createStorage, type Storage, type StorageValue } from 'unstorage';
 import installLoggingHooks from './logging-hooks';
 import { getCommonServices } from '../helpers/service-accessors';
+import { getDialogsFacade, getAppMenuFacade, getNavigationFacade, getSystemPreferencesFacade } from '../helpers/electron';
+import { buildNavProps } from './../helpers/electron';
+import { useNuxtApp } from 'nuxt/app';
 
 function installGlobalExceptionHandler () {
   const logger = getCommonServices().getLogger();

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { AppPage, getPagePath, getI18nResName2 } from '@golobe-demo/shared';
+import { QueryInternalRequestParam, AppPage, getPagePath, getI18nResName2, isElectronBuild } from '@golobe-demo/shared';
 
 const route = useRoute();
 const { t, locale } = useI18n();
@@ -16,7 +16,7 @@ useHead({
     lang: locale
   },
   script: [
-    { src: '/js/page-load.min.js' },
+    { src: '/js/page-load.min.js', type: 'module' },
     { src: 'https://www.google.com/recaptcha/api.js' }
   ],
   titleTemplate: computed(() => `%s %separator ${t(getI18nResName2('site', 'name'))}`),
@@ -46,18 +46,24 @@ const hideInElectron = isElectronBuild() ? {
 
 <template>
   <div class="page-content bg-gray-50 dark:bg-gray-900 w-full min-h-lvh min-w-minpgw">
-    <NavBar v-if="showDefaultComponents" ctrl-key="NavBar">
+    <NavBar v-if="!hideInElectron?.navBar && showDefaultComponents" ctrl-key="NavBar">
       <div class="w-full h-auto relative z-0">
         <slot/>
-        <AppFooter ctrl-key="Footer" />
+        <AppFooter v-if="!hideInElectron?.footer" ctrl-key="Footer" />
       </div>
     </NavBar>
+    <div v-else-if="showDefaultComponents" class="w-full h-auto relative z-0">
+      <div class="w-full h-auto relative z-0">
+        <slot/>
+        <AppFooter v-if="!hideInElectron?.footer" ctrl-key="Footer" />
+      </div>
+    </div>
     <div v-else class="w-full h-auto relative z-0">
-      <NavLogo v-if="!isAuthFormsPage" ctrl-key="standaloneAppLogo" />
+      <NavLogo v-if="!isAuthFormsPage && !hideInElectron?.navBar" ctrl-key="standaloneAppLogo" />
       <slot/>
     </div>
     <ClientOnly>
-      <CookieBanner ctrl-key="CookieBanner" />
+      <CookieBanner v-if="!hideInElectron?.cookies" ctrl-key="CookieBanner" />
       <UNotifications />
     </ClientOnly>
   </div>

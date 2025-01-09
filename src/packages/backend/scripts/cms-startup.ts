@@ -1,4 +1,4 @@
-import { type IAcsysOptions, isQuickStartEnv, isPublishEnv, lookupParentDirectory, AppConfig, isDevEnv } from '@golobe-demo/shared';
+import { type IAcsysOptions, isQuickStartEnv, isPublishEnv, lookupParentDirectory, AppConfig } from '@golobe-demo/shared';
 import { type ChildProcess, execSync, spawn } from 'node:child_process';
 import { loadConfig } from 'c12';
 import { join, resolve } from 'pathe';

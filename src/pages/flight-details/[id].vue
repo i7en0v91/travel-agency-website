@@ -170,22 +170,24 @@ onMounted(() => {
           </div>
         </div>
       </section>
-      <FlightDetailsCard
-        :ctrl-key="`${CtrlKey}-DepartFlightCard`"
-        class="block w-full mt-10"
-        :depart-city="flightOffer?.departFlight?.departAirport.city"
-        :arrive-city="flightOffer?.departFlight?.arriveAirport.city"
-        :depart-time-utc="flightOffer?.departFlight?.departTimeUtc"
-        :arrive-time-utc="flightOffer?.departFlight?.arriveTimeUtc"
-        :airline-company="flightOffer?.departFlight?.airlineCompany"
-        :airplane-name="flightOffer?.departFlight?.airplane.name"
-        :utc-offset-minutes="flightOffer?.departFlight?.departAirport.city.utcOffsetMin"
-        kind="depart"
-        :ui="{
-          tag: 'h2',
-          layout: 'landscape'
-        }"
-      />
+      <div class="w-full h-auto mt-10">
+        <FlightDetailsCard
+          :ctrl-key="`${CtrlKey}-DepartFlightCard`"
+          class="block w-full"
+          :depart-city="flightOffer?.departFlight?.departAirport.city"
+          :arrive-city="flightOffer?.departFlight?.arriveAirport.city"
+          :depart-time-utc="flightOffer?.departFlight?.departTimeUtc"
+          :arrive-time-utc="flightOffer?.departFlight?.arriveTimeUtc"
+          :airline-company="flightOffer?.departFlight?.airlineCompany"
+          :airplane-name="flightOffer?.departFlight?.airplane.name"
+          :utc-offset-minutes="flightOffer?.departFlight?.departAirport.city.utcOffsetMin"
+          kind="depart"
+          :ui="{
+            tag: 'h2',
+            layout: 'landscape'
+          }"
+        />
+      </div>
       <div v-if="flightOffer && flightOffer.arriveFlight" class="w-full h-auto mt-10">
         <FlightDetailsCard
           :ctrl-key="`${CtrlKey}-ArriveFlightCard`"

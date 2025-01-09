@@ -117,6 +117,7 @@ Project uses a number of open source projects to work properly:
   - [Nuxt Content](https://content.nuxt.com) - for search across site pages and markups with large amount of text
   - [Nuxt I18n](https://github.com/nuxt-modules/i18n) - internationalization (i18n) for Nuxt 
   apps
+  - [Nuxt Electron](https://github.com/caoxiemeihao/nuxt-electron) - to integrate Nuxt and Electron
   - [Unlighthouse](https://github.com/harlan-zw/unlighthouse) - for performing site quality scan using Google Lighthouse
 - [Vue 3](https://github.com/vuejs) - progressive, incrementally-adoptable JavaScript framework for building UI on the web
 - [Vite](https://github.com/vitejs) - Next generation frontend tooling. It's fast!

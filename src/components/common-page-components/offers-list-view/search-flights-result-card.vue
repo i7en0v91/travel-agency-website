@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppPage, getPagePath, type Locale, getLocalizeableValue, getScoreClassResName, extractAirportCode, getValueForFlightDurationFormatting, getValueForTimeOfDayFormatting, getI18nResName2, getI18nResName3, type EntityDataAttrsOnly, type IFlightOffer, type OfferKind, ImageCategory } from '@golobe-demo/shared';
+import { AppPage, getPagePath, type Locale, getLocalizeableValue, getScoreClassResName, extractAirportCode, getValueForFlightDurationFormatting, getValueForTimeOfDayFormatting, getI18nResName2, getI18nResName3, type EntityDataAttrsOnly, type IFlightOffer, type OfferKind, ImageCategory, isElectronBuild } from '@golobe-demo/shared';
 import { useUserFavouritesStore } from './../../../stores/user-favourites-store';
 import { useOfferFavouriteStatus } from './../../../composables/offer-favourite-status';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
@@ -163,7 +163,7 @@ const uiStyling = {
                 @click="favouriteBtnClick"
               />
 
-              <UButton size="lg" class="w-full flex-1" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.FlightDetails)}/${offer.id}`, locale as Locale)" :external="false">
+              <UButton size="lg" class="w-full flex-1" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.FlightDetails)}/${offer.id}`, locale as Locale)" :external="false"  :target="isElectronBuild() ? '_blank' : undefined">
                 {{ $t(getI18nResName2('searchFlights', 'viewDetails')) }}
               </UButton>
             </div>

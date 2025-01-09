@@ -267,7 +267,7 @@ export default defineNuxtConfig({
         path: '/fonts/Spectral_SC-300.ttf' // nuxt-og-image^3.0.0-rc.52 - warn woff2 not supported
       }
     ]
-  },
+  } : { enabled: false },
 
   svgo: {
     autoImportPath: false,
@@ -291,6 +291,24 @@ export default defineNuxtConfig({
   ui: {
     safelistColors: ['mintgreen']
   },
+
+  // @ts-expect-error electron enabled optionally
+  electron: isElectronBuild() ? {
+    disableDefaultOptions: true,
+    build: [
+      {
+        // Main-Process entry file of the Electron App.
+        entry: 'electron/main.ts',
+        vite: {
+          build: {
+            rollupOptions: {
+              external: ['sharp']
+            }
+          }
+        }
+      },
+    ],
+  } : undefined,
 
   tiptap: {
     prefix: 'Tiptap'
@@ -384,7 +402,9 @@ export default defineNuxtConfig({
     ['@nuxt/eslint', {}],
     ["@nuxt/ui", {}],
     ["nuxt-svgo", {}],
-    ["@nuxt/content", {}]
+    ["@nuxt/content", {}],
+    ['@nuxt/image', {}],
+    ['@nuxtjs/seo', {}]
   ],
 
   build: {

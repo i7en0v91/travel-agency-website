@@ -1,6 +1,7 @@
 import type { TripType, CacheEntityType, ICommonServicesLocator, AppPage, I18nResName, GeoPoint, Price, StayOffersSortFactor, FlightOffersSortFactor, FlightClass, OfferKind, Timestamp, ILocalizableValue, EntityId, IImageEntitySrc, GetEntityCacheItem, SystemPage } from '@golobe-demo/shared';
 import type * as config from './node_modules/@nuxt/ui/dist/runtime/ui.config/index.js';
 import type  { DeepPartial } from './node_modules/@nuxt/ui/dist/runtime/types/index.js';
+import type { IElectronShell } from './electron/interfaces';
 
 export type SimplePropertyType = 'text' | 'email' | 'password';
 export type PropertyGridControlButtonType = 'change' | 'apply' | 'cancel' | 'delete' | 'add';
@@ -284,5 +285,6 @@ export interface IBookingTicketProps {
 
 export interface IClientServicesLocator extends ICommonServicesLocator {
   state: IAppState,
-  getEntityCache(): IEntityCache
+  getEntityCache(): IEntityCache,
+  getElectronShell(): IElectronShell
 }

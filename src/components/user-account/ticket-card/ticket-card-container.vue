@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppPage, getPagePath, type Locale, getI18nResName2, getI18nResName3, type EntityId, type IStayOffer, type IFlightOffer, type EntityDataAttrsOnly } from '@golobe-demo/shared';
+import { AppPage, getPagePath, type Locale, getI18nResName2, getI18nResName3, type EntityId, type IStayOffer, type IFlightOffer, type EntityDataAttrsOnly, isElectronBuild } from '@golobe-demo/shared';
 import { getCommonServices } from '../../../helpers/service-accessors';
 import type ModalWaitingIndicator from '../../forms/modal-waiting-indicator.vue';
 import { useDocumentDownloader, type IDocumentDownloader } from './../../../composables/document-downloader';
@@ -63,7 +63,7 @@ onMounted(() => {
         <UButton size="lg" class="w-fit flex-1" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" @click="onBtnClick">
           <span class="overflow-hidden line-clamp-1 text-wrap text-start">{{ $t(getI18nResName3('accountPage', 'tabHistory', 'btnDownload')) }}</span>
         </UButton>
-        <UButton size="lg" class="w-min flex-initial" icon="i-heroicons-chevron-right-20-solid" :ui="{ base: 'justify-center' }" variant="outline" color="gray" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.BookingDetails)}/${bookingId}`, locale as Locale)" :external="false"/>
+        <UButton size="lg" class="w-min flex-initial" icon="i-heroicons-chevron-right-20-solid" :ui="{ base: 'justify-center' }" variant="outline" color="gray" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.BookingDetails)}/${bookingId}`, locale as Locale)" :external="false"  :target="isElectronBuild() ? '_blank' : undefined"/>
       </div>
     </div>
     <ModalWaitingIndicator ref="modalWaiterRef" v-model:open="modalWaiterOpen" :ctrl-key="`${props.ctrlKey}-Waiter`" :label-res-name="getI18nResName2('bookingCommon', 'generatingDoc')"/>

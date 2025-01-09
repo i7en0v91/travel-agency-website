@@ -16,6 +16,7 @@ import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { getCommonServices } from '../../helpers/service-accessors';
 import { useModalWaiter, type IModalWaiter } from '../../composables/modal-waiter';
 import { type ComponentInstance } from 'vue';
+import { LocatorClasses } from '../../helpers/constants';
 
 const DisplayedUserNameMaxLength = 25;
 
@@ -352,9 +353,10 @@ async function onDownloadBtnClick (): Promise<void> {
 <template>
   <div class="w-full h-auto">
     <ClientOnly>
-      <article class="px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px] group booking-page-group">
+      <article :class="`px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px] group booking-page-group ${LocatorClasses.BookingDetails}`">
         <ErrorHelm v-model:is-error="isError">
           <OfferDetailsBreadcrumbs
+            v-if="!isDownloadFromElectron"
             :ctrl-key="`${CtrlKey}-Breadcrumbs`"
             :offer-kind="offer?.kind"
             :city="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.departAirport.city : (offer as IStayOfferDetails).stay.city) : undefined"
@@ -370,8 +372,7 @@ async function onDownloadBtnClick (): Promise<void> {
             :price="displayedPrice"
             :review-score="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.airlineCompany.reviewSummary.score : (offer as IStayOfferDetails).stay.reviewSummary?.score) : undefined"
             :num-reviews="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.airlineCompany.reviewSummary.numReviews : (offer as IStayOfferDetails).stay.reviewSummary?.numReviews) : undefined"
-            :show-favourite-btn="false"
-            :show-review-details="false"
+            :variant="isDownloadFromElectron ? 'booking-download' : 'booking'"
             :btn-res-name="getI18nResName2('bookingPage', 'downloadBtn')"
             :btn-link-url="null"
             @btn-click="onDownloadBtnClick"

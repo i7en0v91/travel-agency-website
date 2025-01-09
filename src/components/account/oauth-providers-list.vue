@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { type Locale, AppPage, getI18nResName3, isDevOrTestEnv, isQuickStartEnv, type I18nResName, getI18nResName2, AuthProvider } from '@golobe-demo/shared';
+import { isElectronBuild, type Locale, AppPage, getI18nResName3, isDevOrTestEnv, isQuickStartEnv, type I18nResName, getI18nResName2, AuthProvider } from '@golobe-demo/shared';
 import OAuthBtn from './oauth-btn.vue';
 import { formatAuthCallbackUrl } from './../../helpers/dom';
 

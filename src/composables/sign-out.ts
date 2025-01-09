@@ -34,10 +34,10 @@ async function getBookingPageSignOutUrl (logger: IAppLogger, navLinkBuilder: INa
 }
 
 
-export function useSignOut (): ISignOut {
+export function useSignOut (linkBuilder?: INavLinkBuilder): ISignOut {
   const logger = getCommonServices().getLogger();
   const { signOut: nuxtAuthSignOut, status } = useAuth();
-  const navLinkBuilder = useNavLinkBuilder();
+  const navLinkBuilder = linkBuilder ?? useNavLinkBuilder();
   const { enabled } = usePreviewState();
   
   async function signOut(): Promise<void> {

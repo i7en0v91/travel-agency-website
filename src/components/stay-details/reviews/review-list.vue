@@ -2,6 +2,7 @@
 import { type EntityId, ImageCategory, type Locale, getLocalizeableValue, getScoreClassResName, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
 import { formatImageEntityUrl } from './../../../helpers/dom';
 import ConfirmBox from '../../forms/confirm-box.vue';
+import { useConfirmDialogResult } from './../../../composables/modal-dialog-result';
 import { type IStayReviewItem } from './../../../stores/stay-reviews-store';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
@@ -27,6 +28,7 @@ const logger = getCommonServices().getLogger();
 
 const carouselRef = shallowRef<ComponentInstance<typeof UCarousel> | undefined>();
 const confirmBoxRef = shallowRef<ComponentInstance<typeof ConfirmBox>>() as Ref<ComponentInstance<typeof ConfirmBox>>;  
+const confirmBoxButtons: ConfirmBoxButton[] = ['yes', 'no'];
 const isCarouselReady = ref(false);
 
 const showNoReviewStub = computed(() => reviewStore.status === 'success' && reviewStore.items !== undefined && reviewStore.items.length === 0);
@@ -120,7 +122,7 @@ async function onDeleteUserReviewBtnClick (): Promise<void> {
     return;
   }
 
-  const confirmBox = useModalDialogResult<ConfirmBoxButton>(confirmBoxRef, { open, result }, 'no');
+  const confirmBox = useConfirmDialogResult(confirmBoxRef, { open, result }, confirmBoxButtons, 'no', getI18nResName3('stayDetailsPage', 'reviews', 'confirmDelete'));
   const dialogResult = await confirmBox.show();
   if (dialogResult === 'yes') {
     const deletingReview = await reviewStore.getUserReview()!;
@@ -240,6 +242,6 @@ onMounted(() => {
         {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'noReviews')) }}
       </div>
     </ErrorHelm>
-    <ConfirmBox ref="confirmBoxRef" v-model:open="open" v-model:result="result" :ctrl-key="`${props.ctrlKey}-UserReview-DeleteConfirm`" :buttons="['yes', 'no']" :msg-res-name="getI18nResName3('stayDetailsPage', 'reviews', 'confirmDelete')"/>
+    <ConfirmBox ref="confirmBoxRef" v-model:open="open" v-model:result="result" :ctrl-key="`${props.ctrlKey}-UserReview-DeleteConfirm`" :buttons="confirmBoxButtons" :msg-res-name="getI18nResName3('stayDetailsPage', 'reviews', 'confirmDelete')"/>
   </div>
 </template>

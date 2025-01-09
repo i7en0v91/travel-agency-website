@@ -1,57 +1,19 @@
 import { type Locale, localizePath, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppPage, getPagePath, type IAppLogger } from '@golobe-demo/shared';
-import { formatAuthCallbackUrl, getLastSelectedTabStorageKey } from './../helpers/dom';
+import { getLastSelectedTabStorageKey } from './../helpers/dom';
 import { UserAccountTabAccount, UserAccountTabGroup, UserAccountTabPayments } from './../helpers/constants';
 import set from 'lodash-es/set';
 import { parseQuery, parseURL, stringifyParsedURL, withQuery } from 'ufo';
 import assign from 'lodash-es/assign';
 import { usePreviewState } from './../composables/preview-state';
 import { getCommonServices } from '../helpers/service-accessors';
+import { type ISignOut, useSignOut } from './../composables/sign-out';
 
 function isCurrentlyOnAccountPage (route: ReturnType<typeof useRoute>) {
   return route.path.includes(`/${getPagePath(AppPage.Account)}`);
 };
 
-async function getBookingPageSignOutUrl (navLinkBuilder: INavLinkBuilder, locale: Locale, isOgImageRequest: boolean, route: ReturnType<typeof useRoute>, logger: IAppLogger): Promise<string> {
-  logger.debug(`(NavLinkBuilder) obtaining booking signout url, locale=${locale}, isOgImageRequest=${isOgImageRequest}`);
-  try {
-    const bookingParam = route.params.id!.toString();
-    const bookingId = bookingParam;
-    const offerBookingStoreFactory = await useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
-    const offerBookingStore = await offerBookingStoreFactory.getUserBooking(bookingId, isOgImageRequest);
-    const offerId = offerBookingStore.offerId;
-    const offerKind = offerBookingStore.offerKind;
-    const urlPath = offerKind === 'flights' ? 
-      navLinkBuilder.buildLink(`/${getPagePath(AppPage.FlightDetails)}/${offerId}`, locale) : 
-      navLinkBuilder.buildLink(`/${getPagePath(AppPage.StayDetails)}/${offerId}`, locale);
-
-    const parsedRoute = parseURL(route.fullPath);
-    parsedRoute.pathname = urlPath;
-    const url = stringifyParsedURL(parsedRoute);
-    logger.debug(`(NavLinkBuilder) using booking signout url, bookingId=${bookingId}, url=${url}, locale=${locale}, isOgImageRequest=${isOgImageRequest}`);
-    return url;
-  } catch (err: any) {
-    logger.warn(`(NavLinkBuilder) failed to obtain booking signout url: locale=${locale}, isOgImageRequest=${isOgImageRequest}`, err);
-    return navLinkBuilder.buildPageLink(AppPage.Index, locale);
-  }
-}
-
-async function handleSignOutClick (
-  navLinkBuilder: INavLinkBuilder, 
-  route: ReturnType<typeof useRoute>, 
-  locale: Locale, 
-  isOgImageRequest: boolean, 
-  previewMode: boolean, 
-  signOutFn: ReturnType<typeof useAuth>['signOut'],
-  logger: IAppLogger
-): Promise<void> {
-  logger.verbose(`(NavLinkBuilder) handling sign out menu click: locale=${locale}, isOgImageRequest=${isOgImageRequest}`);
-  let callbackUrl = route.fullPath;
-  if (callbackUrl.includes(getPagePath(AppPage.BookingDetails))) {
-    callbackUrl = await getBookingPageSignOutUrl(navLinkBuilder, locale, isOgImageRequest, route, logger);
-  }
-  callbackUrl = formatAuthCallbackUrl(callbackUrl, previewMode);
-  await signOutFn({ callbackUrl, redirect: true });
-  logger.verbose(`(NavLinkBuilder) sign out menu handler completed: locale=${locale}, isOgImageRequest=${isOgImageRequest}`);
+async function handleSignOutClick (signOutHelper: ISignOut): Promise<void> {
+  await signOutHelper.signOut();
 }
 
 function clickOnTab(tabSelector: string) {
@@ -116,17 +78,10 @@ export function useNavLinkBuilder (): INavLinkBuilder {
   const route = useRoute();
   const { locale } = useI18n();
   const nuxtApp = useNuxtApp();
-  const { signOut } = useAuth();
   const isOgImageRequest = !!nuxtApp.ssrContext?.event.context.ogImageContext;
 
-  const signOutMenuClickHandler = async () => await handleSignOutClick(
-      result!, 
-      route, 
-      locale.value as Locale, 
-      isOgImageRequest, 
-      enabled,
-      signOut,
-      logger);
+  let signOutHelper: ISignOut | undefined = undefined;
+  const signOutMenuClickHandler = async () => await handleSignOutClick(signOutHelper!);
   
   const paymentsMenuClickHandler = async () => await handlePaymentsClick(
     result!,
@@ -175,5 +130,7 @@ export function useNavLinkBuilder (): INavLinkBuilder {
       settings: settingsMenuClickHandler
     }
   };
+  signOutHelper = useSignOut(result);
+  
   return result;
 }

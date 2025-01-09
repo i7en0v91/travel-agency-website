@@ -104,10 +104,10 @@ onMounted(() => {
       <div class="w-full pb-2 h-auto overflow-x-auto overflow-y-hidden grid gap-2 justify-start grid-rows-offersummaryxs sm:grid-rows-offersummarysm grid-cols-offersummary mb-2">
         <div class="w-full whitespace-normal justify-center row-start-1 row-end-2 col-start-1 col-end-2">
           <div v-if="title" class="contents">
-            <h1 :class="`inline w-fit whitespace-normal text-3xl font-semibold text-primary-900 dark:text-white ${!showReviewDetails ? 'sm:self-center' : ''} ${(offerKind === 'stays' && showReviewDetails) ? 'mr-2 sm:mr-4' : ''}`">
+            <h1 :class="`inline w-fit whitespace-normal text-3xl font-semibold text-primary-900 dark:text-white ${variant !== 'default' ? 'sm:self-center' : ''} ${(offerKind === 'stays' && variant === 'default') ? 'mr-2 sm:mr-4' : ''}`">
               {{ getLocalizeableValue(title, locale as Locale) }}
             </h1>
-            <div v-if="offerKind === 'stays' && showReviewDetails" class="flex-initial inline-flex flex-row flex-wrap items-center gap-4 translate-y-[0.1rem]">
+            <div v-if="offerKind === 'stays' && variant === 'default'" class="flex-initial inline-flex flex-row flex-wrap items-center gap-4 translate-y-[0.1rem]">
               <div class="inline-flex flex-row flex-nowrap items-center gap-[2px]">
                 <ClientOnly>
                   <UIcon v-for="i in range(0, 5)" :key="`${props.ctrlKey}-HotelStar-${i}`" name="i-material-symbols-star" class="w-5 h-5 bg-red-400 inline-block" />
@@ -125,7 +125,7 @@ onMounted(() => {
           <span v-else-if="price && offerKind === 'stays'" class="font-semibold text-3xl"><span>{{ $n(Math.floor(price.toNumber()), 'currency') }}<wbr>&#47;<span class="text-sm sm:text-base">{{ $t(getI18nResName2('searchStays', 'night')) }}</span></span></span>
           <USkeleton v-else class="w-full h-8" />
         </div>
-        <div :class="`w-full block row-start-2 row-end-3 col-start-1 col-end-3 sm:col-end-2 ${!showReviewDetails ? 'sm:self-center' : ''}`">
+        <div :class="`w-full block row-start-2 row-end-3 col-start-1 col-end-3 sm:col-end-2 ${variant !== 'default' ? 'sm:self-center' : ''}`">
           <div class="flex flex-row flex-nowrap items-center">
             <UIcon name="i-material-symbols-location-on-rounded" class="flex-initial w-3 h-3 inline-block float-left opacity-70 mr-2"/>
             <span v-if="city" class="flex-1 w-fit break-all inline-block text-xs text-gray-500 dark:text-gray-400">
@@ -134,7 +134,7 @@ onMounted(() => {
             <USkeleton v-else class="w-1/3 h-4" />
           </div>
           <ClientOnly>    
-            <div v-if="scoreClassResName && showReviewDetails" class="w-auto flex flex-row flex-wrap items-center gap-2 mb-4 sm:mb-0 mt-4">
+            <div v-if="scoreClassResName && variant === 'default'" class="w-auto flex flex-row flex-wrap items-center gap-2 mb-4 sm:mb-0 mt-4">
               <UBadge 
                 :ui="{ 
                   base: 'w-fit h-auto p-2 text-center',
@@ -151,9 +151,9 @@ onMounted(() => {
                 {{ reviewsCountText }}
               </div>
             </div>
-            <USkeleton v-else-if="showReviewDetails" class="w-1/3 h-7 mt-4" />
+            <USkeleton v-else-if="variant === 'default'" class="w-1/3 h-7 mt-4" />
             <template #fallback>
-              <div v-if="showReviewDetails" class="w-full h-full flex flex-row justify-self-stretch items-center">
+              <div v-if="variant === 'default'" class="w-full h-full flex flex-row justify-self-stretch items-center">
                 <USkeleton class="w-1/3 h-7 my-2" />
               </div>
             </template>
@@ -162,7 +162,7 @@ onMounted(() => {
         <div class="w-full h-min block row-start-3 row-end-4 col-start-1 col-end-3 sm:row-start-2 sm:row-end-3 sm:col-start-2 sm:col-end-3 self-end">
           <div class="w-full flex flex-row flex-wrap gap-4 px-1">
             <UButton
-              v-if="status === 'authenticated' && showFavouriteBtn"
+              v-if="status === 'authenticated' && variant === 'default'"
               :ui="{ base: 'aspect-square justify-center' }"
               size="lg"
               :icon="isFavourite ? 'i-heroicons-heart-solid' : 'i-heroicons-heart'"
@@ -171,7 +171,7 @@ onMounted(() => {
               @click="favouriteBtnClick"
             />
 
-            <UPopover v-model:open="promoTooltipShown" :popper="{ placement: 'bottom' }" :ui="{ wrapper: 'self-stretch *:h-full' }">
+            <UPopover v-model:open="promoTooltipShown" :popper="{ placement: 'bottom' }" :ui="{ wrapper: `self-stretch *:h-full ${variant === 'booking-download' ? 'invisible' : ''}` }">
               <UButton 
                 :ui="{ base: 'aspect-square justify-center' }"
                 size="lg" 
@@ -184,7 +184,7 @@ onMounted(() => {
               </template>
             </UPopover>  
 
-            <UButton size="lg" class="w-full flex-1" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :to="btnLinkUrl ?? undefined" :external="btnLinkUrl ? false : undefined" @click="onBtnClick">
+            <UButton size="lg" :class="`w-full flex-1 ${variant === 'booking-download' ? 'invisible' : ''}`" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :to="btnLinkUrl ?? undefined" :external="btnLinkUrl ? false : undefined" @click="onBtnClick">
               {{ $t(btnResName) }}
             </UButton>
           </div>

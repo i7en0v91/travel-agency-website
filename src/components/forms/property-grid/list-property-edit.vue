@@ -5,7 +5,7 @@ import range from 'lodash-es/range';
 import SimplePropertyEdit from './../../forms/property-grid/simple-property-edit.vue';
 import PropertyGrid from './../../forms/property-grid/property-grid.vue';
 import ConfirmBox from '../confirm-box.vue';
-import { useModalDialogResult } from '../../../composables/modal-dialog-result';
+import { useConfirmDialogResult } from '../../../composables/modal-dialog-result';
 import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
@@ -41,6 +41,7 @@ if (props.maxElementsCount > MaxListPropertyElementsCount) {
 const propList: Ref<ComponentInstance<typeof SimplePropertyEdit> | undefined>[] = range(0, props.maxElementsCount).map(() => { return shallowRef<ComponentInstance<typeof SimplePropertyEdit> | undefined>(); });
 const propAdd = shallowRef<ComponentInstance<typeof SimplePropertyEdit>>();
 const confirmBoxRef = shallowRef<ComponentInstance<typeof ConfirmBox>>() as Ref<ComponentInstance<typeof ConfirmBox>>;  
+const confirmBoxButtons: ConfirmBoxButton[] = ['yes', 'no'];
 const editValues = range(0, props.maxElementsCount).map((idx: number) => ref<string | undefined>(props.values[idx]));
 const addingNewValue = ref<string | undefined>('');
 const open = ref(false);
@@ -145,7 +146,14 @@ async function onControlButtonClick (button: PropertyGridControlButtonType, prop
     onPropertyEnterEditMode(propIdx);
     const itemText = editValues[propIdx].value;
     confirmMsgBoxParam.value = { itemText : itemText ?? '' };
-    const confirmBox = useModalDialogResult<ConfirmBoxButton>(confirmBoxRef, { open, result }, 'cancel');
+    const confirmBox = useConfirmDialogResult(
+      confirmBoxRef, 
+      { open, result }, 
+      confirmBoxButtons, 
+      'cancel', 
+      getI18nResName2('propertyGrid', 'deleteConfirmMsg'), 
+      confirmMsgBoxParam.value
+    );
     const msgBoxResult = await confirmBox.show();
     if (msgBoxResult === 'yes') {
       const result = await onValidateAndSave('delete', propIdx, undefined);
@@ -224,6 +232,6 @@ defineExpose({
         @button-click="(button: PropertyGridControlButtonType) => onControlButtonClick(button, 'add')"
       />
     </PropertyGrid>
-    <ConfirmBox ref="confirmBoxRef" v-model:open="open" v-model:result="result" :ctrl-key="`${props.ctrlKey}-DeleteConfirm`" :buttons="['yes', 'no']" :msg-res-name="getI18nResName2('propertyGrid', 'deleteConfirmMsg')" :msg-res-args="confirmMsgBoxParam"/>
+    <ConfirmBox ref="confirmBoxRef" v-model:open="open" v-model:result="result" :ctrl-key="`${props.ctrlKey}-DeleteConfirm`" :buttons="confirmBoxButtons" :msg-res-name="getI18nResName2('propertyGrid', 'deleteConfirmMsg')" :msg-res-args="confirmMsgBoxParam"/>
   </div>
 </template>

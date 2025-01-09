@@ -75,7 +75,8 @@ export const LocatorClasses = {
   TestLocalOAuthBtn: 'oauth-btn-testlocal',
   SearchOffersFlightParams: 'searchoffers-flightparams',
   LocaleToggler: 'locale-toggler',
-  NavLogo: 'nav-logo'
+  NavLogo: 'nav-logo',
+  BookingDetails: 'booking-details-page' // see BookingDetailsDivSelector for electron
 };
 
 export const ContentPages = {

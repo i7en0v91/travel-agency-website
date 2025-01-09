@@ -1,19 +1,34 @@
-import { AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import { AppException, AppExceptionCodeEnum, isElectronBuild, type I18nResName } from '@golobe-demo/shared';
+import { type ConfirmBoxButton } from './../types';
 import { getCommonServices } from '../helpers/service-accessors';
 import type { ComponentInstance, Ref } from 'vue';
+import { getDialogsFacade } from '../helpers/electron';
 
 interface IModalDialogResult<TResult> {
   show: () => Promise<TResult>
 }
 
-export function useModalDialogResult<TResult> (
-  modalRef: Ref<ComponentInstance<any>>, 
+function useConfirmBoxElectron(localizer: (ReturnType<typeof useI18n>)['t'] | undefined, buttons: ConfirmBoxButton[], defaultResult: ConfirmBoxButton, msgResName: I18nResName, msgResArgs?: any): IModalDialogResult<ConfirmBoxButton> {
+  const dialogsFacade = getDialogsFacade(localizer);
+
+  return {
+    show: async (): Promise<ConfirmBoxButton> => {
+      const logger = getCommonServices().getLogger();
+      logger.verbose(`(user-confirm-box) opening confirm box: buttons=${JSON.stringify(buttons)}, msgResName=${msgResName}`);
+      const msg = localizer(msgResName, msgResArgs);
+      const result = await dialogsFacade.showConfirmBox(msg, buttons);
+      return result === 'cancel' ? defaultResult : result;
+    }
+  };
+}
+
+function useConfirmBoxComponent<TResult>(modalRef: Ref<ComponentInstance<any>>, 
   refs: { 
     open: Ref<boolean>, 
     result: Ref<TResult | undefined> 
   },
   defaultResult: TResult
-): IModalDialogResult<TResult> {
+) {
   const result = ref<TResult | undefined>();
 
   const ctrlKey = modalRef.value.$props.ctrlKey;
@@ -51,4 +66,34 @@ export function useModalDialogResult<TResult> (
       });
     }
   };
+}
+
+export function useModalDialogResult<TResult> (
+  modalRef: Ref<ComponentInstance<any>>, 
+  refs: { 
+    open: Ref<boolean>, 
+    result: Ref<TResult | undefined> 
+  },
+  defaultResult: TResult
+): IModalDialogResult<TResult> {
+  return useConfirmBoxComponent(modalRef, refs, defaultResult);
+}
+
+export function useConfirmDialogResult(
+  modalRef: Ref<ComponentInstance<any>>, 
+  refs: { 
+    open: Ref<boolean>, 
+    result: Ref<ConfirmBoxButton | undefined> 
+  },
+  buttons: ConfirmBoxButton[],
+  defaultResult: ConfirmBoxButton,
+  msgResName: I18nResName, 
+  msgResArgs?: any
+): IModalDialogResult<ConfirmBoxButton> {
+  if(!isElectronBuild()) {
+    return useConfirmBoxComponent(modalRef, refs, defaultResult);
+  } else {
+    const localizer = (useNuxtApp().$i18n as any).t;
+    return useConfirmBoxElectron(localizer, buttons, defaultResult, msgResName, msgResArgs);
+  }
 }
