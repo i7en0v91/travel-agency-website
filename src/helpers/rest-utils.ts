@@ -23,8 +23,8 @@ export type FetchErrorHandlingMode = 'default' | 'throw';
 
 type HTTPMethod = 'GET' | 'HEAD' | 'PATCH' | 'POST' | 'PUT' | 'DELETE' | 'CONNECT' | 'OPTIONS' | 'TRACE';
 
-function getCurrentAuthCookies (event: H3Event | undefined, logger: IAppLogger): string[] | null {
-  logger.debug(`(api-client) get current auth cookies, event=${!!event}`);
+function getCurrentAuthCookies (event: H3Event | undefined, logger?: IAppLogger): string[] | null {
+  logger?.debug(`(api-client) get current auth cookies, event=${!!event}`);
 
   const authCookieNames = [CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken];
 
@@ -33,14 +33,14 @@ function getCurrentAuthCookies (event: H3Event | undefined, logger: IAppLogger):
 
   if(event?.context?.authCookies) {
     inputAuthCookies = event?.context.authCookies;
-    logger.debug(`(api-client) returning current auth cookies for middleware, count=${inputAuthCookies!.length}`);
+    logger?.debug(`(api-client) returning current auth cookies for middleware, count=${inputAuthCookies!.length}`);
     return inputAuthCookies;
   }
 
   let errReadFromRequest: any;
   let errReadViaHeaders: any;
   try {
-    logger.debug('(api-client) reading cookies from request event');
+    logger?.debug('(api-client) reading cookies from request event');
     inputCookies = event ? (getRequestHeader(event, HeaderCookies) ?? (event.node.req.headers.cookie)) : undefined;
     if(!inputCookies) {
       event = useRequestEvent();
@@ -48,7 +48,7 @@ function getCurrentAuthCookies (event: H3Event | undefined, logger: IAppLogger):
     }
    
   } catch (err: any) {
-    logger.debug(`(api-client) exception while reading cookies from request event, msg=${err?.message}`);
+    logger?.debug(`(api-client) exception while reading cookies from request event, msg=${err?.message}`);
     errReadFromRequest = err;
   }
 
@@ -56,11 +56,11 @@ function getCurrentAuthCookies (event: H3Event | undefined, logger: IAppLogger):
     try {
       const requestHeaders = useRequestHeaders();
       if (requestHeaders) {
-        logger.debug('(api-client) reading cookies via headers');
+        logger?.debug('(api-client) reading cookies via headers');
         inputCookies = requestHeaders[HeaderCookies];
       }
     } catch (err: any) {
-      logger.debug(`(api-client) exception while reading cookies via headers, msg=${err?.message}`);
+      logger?.debug(`(api-client) exception while reading cookies via headers, msg=${err?.message}`);
       errReadViaHeaders = err;
     }
   }
@@ -69,8 +69,8 @@ function getCurrentAuthCookies (event: H3Event | undefined, logger: IAppLogger):
     const allCookies = flatten(inputCookies.split(';').map(c => c.trim()));
     inputAuthCookies = allCookies.filter(c => authCookieNames.some(ac => c.trim().startsWith(ac)));
   } else if (errReadFromRequest && errReadViaHeaders) {
-    logger.warn('(api-client) exception while trying to get current auth cookies', errReadFromRequest);
-    logger.warn('(api-client) exception while trying to get current auth cookies', errReadViaHeaders);
+    logger?.warn('(api-client) exception while trying to get current auth cookies', errReadFromRequest);
+    logger?.warn('(api-client) exception while trying to get current auth cookies', errReadViaHeaders);
     throw new AppException(
       AppExceptionCodeEnum.UNKNOWN,
       'cannot access request cookies',
@@ -78,16 +78,16 @@ function getCurrentAuthCookies (event: H3Event | undefined, logger: IAppLogger):
   }
 
   if ((inputAuthCookies?.length ?? 0) === 0) {
-    logger.debug('(api-client) get current auth cookies, count=0');
+    logger?.debug('(api-client) get current auth cookies, count=0');
     return null;
   }
 
-  logger.debug(`(api-client) get current auth cookies, count=${inputAuthCookies!.length}`);
+  logger?.debug(`(api-client) get current auth cookies, count=${inputAuthCookies!.length}`);
   return inputAuthCookies!;
 }
 
-function getCurrentPreviewMode(event: H3Event | undefined, logger: IAppLogger): PreviewMode {
-  logger.debug(`(api-client) get current auth preview mode, event=${!!event}`);
+function getCurrentPreviewMode(event: H3Event | undefined, logger?: IAppLogger): PreviewMode {
+  logger?.debug(`(api-client) get current auth preview mode, event=${!!event}`);
 
   let result: PreviewMode | undefined = undefined;
   if(event) {
@@ -109,7 +109,7 @@ function getCurrentPreviewMode(event: H3Event | undefined, logger: IAppLogger): 
         const urlQuery = parseQuery(window!.location.search);
         result = urlQuery && urlQuery[QueryPagePreviewModeParam] === PreviewModeParamEnabledValue;
       } catch(err: any) {
-        logger.warn(`(api-client) failed to detect current preview mode state - url parse exception, event=${!!event}`, err);  
+        logger?.warn(`(api-client) failed to detect current preview mode state - url parse exception, event=${!!event}`, err);  
       }
     } else {
       result = false;
@@ -117,14 +117,14 @@ function getCurrentPreviewMode(event: H3Event | undefined, logger: IAppLogger): 
   }
 
   if(result === undefined) {
-    logger.warn(`(api-client) failed to detect current preview mode state, event=${!!event}`);  
+    logger?.warn(`(api-client) failed to detect current preview mode state, event=${!!event}`);  
   }
-  logger.debug(`(api-client) get current auth preview mode, previewMode=${result}, event=${!!event}`);
+  logger?.debug(`(api-client) get current auth preview mode, previewMode=${result}, event=${!!event}`);
   return result ?? false;
 }
 
 async function doFetch<TReq, TResp> (method: HTTPMethod, route: string, query: any,  body: TReq | undefined, headers: HeadersInit | undefined, cache: RequestCache, addAuthCookies: boolean, event: H3Event | undefined, errorHandling: FetchErrorHandlingMode, isByteResponse: boolean): Promise<TResp | undefined> {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices()?.getLogger();
   errorHandling ??= 'default';
 
   let outgoingHeaders: HeadersInit = {
@@ -155,7 +155,7 @@ async function doFetch<TReq, TResp> (method: HTTPMethod, route: string, query: a
   }
 
   try {
-    logger.verbose(`(api-client) sending ${method}: route=${route}, query=${JSON.stringify(query)}, addAuthCookies=${addAuthCookies}, cache=${cache}, event=${!!event}`);
+    logger?.verbose(`(api-client) sending ${method}: route=${route}, query=${JSON.stringify(query)}, addAuthCookies=${addAuthCookies}, cache=${cache}, event=${!!event}`);
     const response = await $fetch(route,
       {
         method,
@@ -166,11 +166,11 @@ async function doFetch<TReq, TResp> (method: HTTPMethod, route: string, query: a
         responseType: isByteResponse ? 'blob' : undefined,
         parseResponse: isByteResponse ? undefined : destr
       }) as TResp;
-    logger.verbose(`(api-client) ${method} completed: route=${route}, query=${JSON.stringify(query)}, addAuthCookies=${addAuthCookies}, cache=${cache}`);
+    logger?.verbose(`(api-client) ${method} completed: route=${route}, query=${JSON.stringify(query)}, addAuthCookies=${addAuthCookies}, cache=${cache}`);
     return response;
   } catch (err: any) {
     await handleFetchError(err, errorHandling, (appErr) => {
-      logger.warn(`(api-client) failed to send ${method}: route=${route}, query=${JSON.stringify(query)}, addAuthCookies=${addAuthCookies}, cache=${cache}`, appErr);
+      logger?.warn(`(api-client) failed to send ${method}: route=${route}, query=${JSON.stringify(query)}, addAuthCookies=${addAuthCookies}, cache=${cache}`, appErr);
     });
   }
 }

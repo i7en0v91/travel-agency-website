@@ -17,6 +17,7 @@ https://github.com/user-attachments/assets/36f57566-aca6-4771-a9cf-43636b5ba11b
 - Personal account with email confirmation registration flow, reviews, photos uploading, favourites & booking history
 - PDF generation for ticket/booking documents
 - Advanced error handling: error page / popup notification / HTML error stub on problematic component depending on source and severity of error as well as additional logging on server-side and on client-side (via REST endpoint)
+- Possible to run as desktop app with [Electron](https://www.electronjs.org)
 
 ## Installation
 Project comes with quickstart npm script which assumes minimum amount of initial configuration.
@@ -84,6 +85,24 @@ npm run prisma:generate-client --workspace=@golobe-demo/backend
 npm run dev
 ```
 
+## Electron build
+It is possible to build and run this website as desktop application with [Electron](https://www.electronjs.org).
+
+You need to do the following:
+- Uncomment `#VITE_ELECTRON_BUILD=1` in `src/.env`
+- Uncomment `//['nuxt-electron', {}]` in `src/nuxt.config.ts`
+- Add `"main": "dist-electron/main.js"` to `src/package.json`
+- Execute any of installation instructions described above (with or without CMS), but without running the last command (npm run quickstart)
+
+After these steps are done Electron build is set up, run one of the following implemented configurations:
+- PREVIEW (`npm run build` then `npm run preview:electron`)
+- QUICKSTART (`npm run quickstart:electron`)
+- DEV (`npm run dev`), currently experimental and requires development environment setup as described above
+
+To run e2e tests switch back to browser build.
+
+**NOTE**: backend part is hosted by Nitro and will run in separate process outside desktop app. For simplicity the process starts in parallel, so subsequent launches may produce EADDRINUSE (port: 3000) errors in case of recent non-gracefull exit. You can safely ignore it, desktop app should still boot normally
+
 ## Architecture
 
 ![travel-agency-demo](https://github.com/user-attachments/assets/5605a97d-487f-4311-bc60-f75ea1fedd04)
@@ -109,6 +128,7 @@ Project uses a number of open source projects to work properly:
 - [Winston](https://github.com/winstonjs/winston) - for logging
 - [Vue Yandex Maps](https://github.com/yandex-maps-unofficial/vue-yandex-maps) - for marking hotel locations on interactive world map
 - [PDFKit](https://github.com/foliojs/pdfkit) - A JavaScript PDF generation library for Node and the browser
+- [sharp](https://github.com/lovell/sharp) - high performance Node.js image processing
 - Other third-party UI components:
   - [VCalendar](https://github.com/nathanreyes/v-calendar) - An elegant calendar and date picker plugin for Vuejs
   - [CropperJS](https://github.com/fengyuanchen/cropperjs) - for editing & uploading photos

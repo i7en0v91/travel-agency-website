@@ -14,10 +14,9 @@ export interface IUserNotificationStore {
 
 type NotificationId = string;
 export const useUserNotificationStore = defineStore('userNotificationStore', () => {
-  const logger = getCommonServices().getLogger();
   const { t } = useI18n();
 
-  const toastManager = import.meta.client ? useToast() : undefined;
+  const toastManager = (import.meta.client && !isElectronBuild()) ? useToast() : undefined;
 
   const pendingNotificationIds = new Set<NotificationId>();
   const doShowOnClient = (params: IUserNotificationParams) => {
@@ -62,6 +61,7 @@ export const useUserNotificationStore = defineStore('userNotificationStore', () 
   };
 
   const show = (params: IUserNotificationParams) => {
+    const logger = getCommonServices().getLogger();
     if (import.meta.client) {
       doShowOnClient(params);
     } else {

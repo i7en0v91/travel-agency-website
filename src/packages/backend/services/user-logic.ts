@@ -1,5 +1,5 @@
 import { type IUserProfileInfo, type IUserMinimalInfo, type IImageInfo, obtainFreeSlug, EmailTemplateEnum, getI18nResName3, ImageCategory, AppConfig, AppException, AppExceptionCodeEnum, maskLog, isPasswordSecure, DbVersionInitial, type Locale, type Theme, SecretValueMask, DefaultEmailTheme, DefaultLocale, newUniqueId, type IAppLogger, AuthProvider, TokenKind, type EntityId, type Timestamp } from '@golobe-demo/shared';
-import { type UpdateUserAccountResult, type IFileLogic, type IUserProfileFileInfoUnresolved, type IMailTemplateLogic, type IImageBytesProvider, type IEmailParams, type PasswordRecoveryResult, type IImageLogic, type ITokenLogic, type IEmailSender, type IUserLogic, type UserResponseDataSet, type RegisterVerificationFlow, type RegisterUserByEmailResponse } from './../types';
+import { type UpdateUserAccountResult, type IFileLogic, type IUserProfileFileInfoUnresolved, type IMailTemplateLogic, type IImageProvider, type IEmailParams, type PasswordRecoveryResult, type IImageLogic, type ITokenLogic, type IEmailSender, type IUserLogic, type UserResponseDataSet, type RegisterVerificationFlow, type RegisterUserByEmailResponse } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import groupBy from 'lodash-es/groupBy';
 import values from 'lodash-es/values';
@@ -19,10 +19,10 @@ export class UserLogic implements IUserLogic {
   private serverI18n: IServerI18n;
   private imageLogic: IImageLogic;
   private fileLogic: IFileLogic;
-  private imageBytesProvider: IImageBytesProvider;
+  private imageProvider: IImageProvider;
 
-  public static inject = ['logger', 'imageLogic', 'fileLogic', 'imageBytesProvider', 'tokenLogic', 'mailTemplateLogic', 'emailSender', 'serverI18n', 'dbRepository'] as const;
-  constructor (logger: IAppLogger, imageLogic: IImageLogic, fileLogic: IFileLogic, imageBytesProvider: IImageBytesProvider, tokenLogic: ITokenLogic, mailTemplateLogic: IMailTemplateLogic, emailSender: IEmailSender, serverI18n: IServerI18n, dbRepository: PrismaClient) {
+  public static inject = ['logger', 'imageLogic', 'fileLogic', 'imageProvider', 'tokenLogic', 'mailTemplateLogic', 'emailSender', 'serverI18n', 'dbRepository'] as const;
+  constructor (logger: IAppLogger, imageLogic: IImageLogic, fileLogic: IFileLogic, imageProvider: IImageProvider, tokenLogic: ITokenLogic, mailTemplateLogic: IMailTemplateLogic, emailSender: IEmailSender, serverI18n: IServerI18n, dbRepository: PrismaClient) {
     this.logger = logger;
     this.dbRepository = dbRepository;
     this.tokenLogic = tokenLogic;
@@ -31,7 +31,7 @@ export class UserLogic implements IUserLogic {
     this.serverI18n = serverI18n;
     this.imageLogic = imageLogic;
     this.fileLogic = fileLogic;
-    this.imageBytesProvider = imageBytesProvider;
+    this.imageProvider = imageProvider;
   }
 
   getMailTemplate = async(kind: EmailTemplateEnum, params: IEmailParams): Promise<string> => {
@@ -358,9 +358,9 @@ export class UserLogic implements IUserLogic {
       }, imageFileId, userId, event, false);
       timestamp = queryResult.timestamp;
 
-      await this.imageBytesProvider.clearImageCache(targetCategoryImageInfo!.imageId, category);
+      await this.imageProvider.clearImageCache(targetCategoryImageInfo!.imageId, category);
       if (slug) {
-        await this.imageBytesProvider.clearImageCache(slug, category);
+        await this.imageProvider.clearImageCache(slug, category);
       }
     } else {
       this.logger.verbose(`(UserLogic) creating new image file: slug=${slug}, userId=${userId}, category=${category}, length=${bytes.length}, fileName=${fileName}`);

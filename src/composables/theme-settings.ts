@@ -1,6 +1,7 @@
-import { SessionThemeKey, type Theme } from '@golobe-demo/shared';
+import { DefaultTheme, isElectronBuild, SessionThemeKey, type Theme } from '@golobe-demo/shared';
 import { getCurrentThemeSettings, setCurrentThemeSettings } from './../helpers/dom';
 import { getCommonServices } from '../helpers/service-accessors';
+import { getThemeFacade } from '../helpers/electron';
 
 export interface IThemeSettings {
   currentTheme: Ref<Theme>,
@@ -24,12 +25,16 @@ export function useThemeSettings (): IThemeSettings {
     localStorage.setItem(SessionThemeKey, targetValue.toString());
     setCurrentThemeSettings(targetValue);
     themeValue!.value = targetValue;
+    if(isElectronBuild()) {
+      const themeFacade = getThemeFacade();
+      themeFacade.notifyThemeChanged(targetValue);
+    }
   };
 
   if (!instance) {
     logger.verbose('(useThemeSettings) initializing theme settings');
     // this must be initialized in page-load.js script
-    const initialValue: Theme = import.meta.client ? getCurrentThemeSettings() : 'light';
+    const initialValue: Theme = import.meta.client ? (getCurrentThemeSettings() ?? DefaultTheme) : 'light'; // TODO: fix initialization with undefined in Electron build
     logger.verbose(`(useThemeSettings) theme settings initialized with: ${initialValue}`);
     themeValue = ref(initialValue);
     instance = {

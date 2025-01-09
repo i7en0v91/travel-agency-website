@@ -1,4 +1,6 @@
-import { flattenError, wrapExceptionIfNeeded, LogAlwaysLevel, LogLevelEnum, type LogLevel, isDevOrTestEnv, HeaderAppVersion, AppConfig, type IAppLogger, wrapLogDataArg, getAppExceptionCustomLogLevel, getErrorAppExceptionCode } from '@golobe-demo/shared';
+import { isElectronBuild, flattenError, wrapExceptionIfNeeded, LogAlwaysLevel, LogLevelEnum, type LogLevel, isDevOrTestEnv, HeaderAppVersion, AppConfig, type IAppLogger, wrapLogDataArg, getAppExceptionCustomLogLevel, getErrorAppExceptionCode } from '@golobe-demo/shared';
+import { getClientServices } from './../helpers/service-accessors';
+import { post } from './../helpers/rest-utils';
 import deepmerge from 'lodash-es/merge';
 import { consola } from 'consola';
 
@@ -44,9 +46,11 @@ export class ClientLogger implements IAppLogger {
       logData = deepmerge(wrapLogDataArg(data), logData);
     }
 
-    this.sendLogData(logData);
-
-    consola.log(`[${new Date().toISOString()}] ${msg} ${data ? ('data=[' + JSON.stringify(data) + ']') : ''}`);
+    if(!isElectronBuild()) {
+      this.sendLogData(logData);
+    } else {
+      consola.log(`[${new Date().toISOString()}] ${msg} ${data ? ('data=[' + JSON.stringify(data) + ']') : ''}`);
+    }
   }
 
   warn (msg: string, err?: any, data?: object): void {
@@ -97,10 +101,16 @@ export class ClientLogger implements IAppLogger {
 
     this.sendLogData(logData);
 
-    consola.log(`[${new Date().toISOString()}] ${msg} ${data ? ('data=[' + JSON.stringify(data) + ']') : ''}`);
+    if(!isElectronBuild()) {
+      consola.log(`[${new Date().toISOString()}] ${msg} ${data ? ('data=[' + JSON.stringify(data) + ']') : ''}`);
+    }
   }
 
   logProblemsToConsoleIfNeeded (logData: { level: LogLevel, msg: string }, err: any) {
+    if(isElectronBuild()) {
+      return;
+    }
+
     if (isDevOrTestEnv()) {
       if (logData.level === 'warn') {
         consola.warn(logData.msg, err);
@@ -120,17 +130,14 @@ export class ClientLogger implements IAppLogger {
     return level.valueOf() >= this.logLevel.valueOf();
   }
 
-  async sendLogData (logData: object) {
+  async sendLogData (logData: { level: LogLevel }) {
     try {
-      await $fetch(AppConfig.logging.client.path,
-        {
-          method: 'POST',
-          body: logData,
-          cache: 'no-store',
-          headers: [[HeaderAppVersion, AppConfig.versioning.appVersion.toString()]]
-        });
+      if(getClientServices()?.appMounted || logData.level === 'error') {
+        const headers = [[HeaderAppVersion, AppConfig.versioning.appVersion.toString()]] as [string, string][];
+        await post(AppConfig.logging.client.path, undefined, logData, headers, false, undefined, 'default');
+      }
     } catch(error: any) {
-      consola.error('error occured while sending logs to server', error);
+      consola.warn('error occured while sending logs to server', error);
     }
   }
 }

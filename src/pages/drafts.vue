@@ -13,7 +13,7 @@ definePageMeta({
 
 useHead({
   script: [
-    { src: '/js/page-load.min.js' },
+    { src: '/js/page-load.min.js', type: 'module' },
   ],
   title: t(getI18nResName2('draftsPage', 'title'))
 });

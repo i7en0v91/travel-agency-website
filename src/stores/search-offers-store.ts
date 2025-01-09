@@ -112,7 +112,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
       transform: (resultDto: ISearchStayOffersResultDto): ISearchStayOffersResult => {
         logger.debug('(search-offers-store) transforming search stay offers result dto');
         const transformedResult = mapSearchStayOffersResult(resultDto);
-        logger.debug('(search-offers-store) search stay offers result dto trasnformed');
+        logger.debug('(search-offers-store) search stay offers result dto transformed');
         return transformedResult;
       },
       key: DataKeySearchStayOffers,
@@ -416,42 +416,45 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
     }
   };
 
+  async function fetchOffersStatusChangeHandler<TResultDto extends ISearchFlightOffersResultDto | ISearchStayOffersResultDto>(offerKind: OfferKind, fetch: ReturnType<typeof useFetch<TResultDto | undefined>>): Promise<void> {
+    logger.verbose(`(search-offers-store) handling offers fetch status change, kind=${offerKind}, status=${fetch.status.value}`);
+    if (fetch.status.value === 'idle' || fetch.status.value === 'pending') {
+      return;
+    }
+
+    const instance = offerKind === 'flights' ? searchFlightOffersInstance : searchStayOffersInstance;
+    if (!instance) {
+      logger.warn(`(search-offers-store) cannot handle offers fetch status change, instance has not been initialized, kind=${offerKind}, status=${fetch.status.value}`);
+      throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'cannot fetch offers from server', 'error-stub');
+    }
+
+    if (fetch.status.value === 'error') {
+      logger.warn(`(search-offers-store) exception occured while fetching offers, kind=${instance.offersKind}, offersFetchMode=${instance.resultState.status}`, fetch.error.value, instance.resultState.usedSearchParams);
+      instance.resultState.items = [];
+      instance.resultState.status = 'error';
+      return;
+    }
+
+    const fetchResult = fetch.data.value;
+    if (!fetchResult) {
+      logger.warn(`(search-offers-store) failed to fetch offers (empty), kind=${instance.offersKind}, offersFetchMode=${instance.resultState.status}`, undefined, instance.resultState.usedSearchParams);
+      instance.resultState.items = [];
+      instance.resultState.status = 'error';
+      return;
+    }
+
+    if (instance.resultState.status === 'fetched') {
+      logger.debug(`(search-offers-store) skipping offers result processing, already processed, kind=${instance.offersKind}, offersFetchMode=${instance.resultState.status}`);
+      return;
+    }
+
+    await processFetchResult(instance, fetchResult as any);
+    logger.verbose(`(search-offers-store) fetching offers completed, kind=${instance.offersKind}, offersFetchMode=${instance.resultState.status}`);
+  }
+
   const startWatchingForFetchResults = <TResultDto extends ISearchFlightOffersResultDto | ISearchStayOffersResultDto>(offerKind: OfferKind, fetch: ReturnType<typeof useFetch<TResultDto | undefined>>) => {
-    watch(fetch.status, async () => {
-      logger.verbose(`(search-offers-store) handling offers fetch status change, kind=${offerKind}, status=${fetch.status.value}`);
-      if (fetch.status.value === 'idle' || fetch.status.value === 'pending') {
-        return;
-      }
-
-      const instance = offerKind === 'flights' ? searchFlightOffersInstance : searchStayOffersInstance;
-      if (!instance) {
-        logger.warn(`(search-offers-store) cannot handle offers fetch status change, instance has not been initialized, kind=${offerKind}, status=${fetch.status.value}`);
-        throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'cannot fetch offers from server', 'error-stub');
-      }
-
-      if (fetch.status.value === 'error') {
-        logger.warn(`(search-offers-store) exception occured while fetching offers, kind=${instance.offersKind}, offersFetchMode=${instance.resultState.status}`, fetch.error.value, instance.resultState.usedSearchParams);
-        instance.resultState.items = [];
-        instance.resultState.status = 'error';
-        return;
-      }
-
-      const fetchResult = fetch.data.value;
-      if (!fetchResult) {
-        logger.warn(`(search-offers-store) failed to fetch offers (empty), kind=${instance.offersKind}, offersFetchMode=${instance.resultState.status}`, undefined, instance.resultState.usedSearchParams);
-        instance.resultState.items = [];
-        instance.resultState.status = 'error';
-        return;
-      }
-
-      if (instance.resultState.status === 'fetched') {
-        logger.debug(`(search-offers-store) skipping offers result processing, already processed, kind=${instance.offersKind}, offersFetchMode=${instance.resultState.status}`);
-        return;
-      }
-
-      await processFetchResult(instance, fetchResult as any);
-      logger.verbose(`(search-offers-store) fetching offers completed, kind=${instance.offersKind}, offersFetchMode=${instance.resultState.status}`);
-    });
+    logger.verbose(`(search-offers-store) starting to watch for offers fetch status change, kind=${offerKind}`);
+    watch(fetch.status, () => fetchOffersStatusChangeHandler(offerKind, fetch));
   };
 
   const resetFetchState = <TStore extends ISearchOffersStoreInstance<ISearchFlightOffersParams> | ISearchOffersStoreInstance<ISearchStayOffersParams>>(instance: TStore) => {
@@ -533,16 +536,22 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
           const searchOffersFetch = isFlightOffersInstance(instance) ? searchFlightOffersFetch : searchStayOffersFetch;
           await searchOffersFetch;
           if (searchOffersFetch.status.value !== 'pending') {
-            logger.verbose(`(search-offers-store) sending fetch offers request, kind=${instance.offersKind}`);
             searchParamsDto = await getFetchRequestParams(instance, offersFetchMode);
             if(isFlightOffersInstance(instance)) {
               searchFlightOffersRequestBody.value = searchParamsDto as ISearchFlightOffersParamsDto;
             } else {
               searchStayOffersRequestBody.value = searchParamsDto as ISearchStayOffersParamsDto;
             }
+            logger.verbose(`(search-offers-store) sending fetch offers request, kind=${instance.offersKind}`);
             // KB: omitting await here to prevent client-side navigation blocking until receiving search offers response (REST Api) from server.
             // With async loading search results page is mounted asap and waiting stubs are shown during HTTP request execution
-            searchOffersFetch.refresh();
+            (async () => {
+              await searchOffersFetch.refresh();
+              logger.verbose(`(search-offers-store) fetch offers request refreshed, kind=${instance.offersKind}, status=${searchOffersFetch.status.value}`);
+              if(searchOffersFetch.status.value !== 'pending') {
+                await fetchOffersStatusChangeHandler(instance.offersKind, searchOffersFetch);
+              }
+            })(); 
           } else {
             logger.debug(`(search-offers-store) skipping fetch offers request, as it is currently in pending state, kind=${instance.offersKind}`);
           }
@@ -871,13 +880,18 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
   };
 
   const fillCityCacheFromPayload = async (): Promise<void> => {
-    const entityCache = getClientServices().getEntityCache();
-    const cachePayload = getPayload<EntityCacheItemsPayload>(nuxtApp, DataKeyEntityCacheItems);
-    if (cachePayload) {
-      logger.verbose(`(search-offers-store) filling city cache from payload, items=${JSON.stringify(cachePayload)}`);
-      for (let i = 0; i < cachePayload.length; i++) {
-        await entityCache.set(cachePayload[i], AppConfig.caching.clientRuntime.expirationsSeconds.default);
-      }
+    let cachePayload: EntityCacheItemsPayload | null | undefined;
+    try {
+      const entityCache = getClientServices().getEntityCache();
+      cachePayload = getPayload<EntityCacheItemsPayload>(nuxtApp, DataKeyEntityCacheItems);
+      if (cachePayload) {
+        logger.verbose(`(search-offers-store) filling city cache from payload, items=${JSON.stringify(cachePayload)}`);
+        for (let i = 0; i < cachePayload.length; i++) {
+          await entityCache.set(cachePayload[i], AppConfig.caching.clientRuntime.expirationsSeconds.default);
+        }
+      }  
+    } catch(err: any) {
+      logger.warn(`(search-offers-store) exception while filling city cache from payload, items=${JSON.stringify(cachePayload)}`);
     }
   };
 

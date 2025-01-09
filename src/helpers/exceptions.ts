@@ -1,4 +1,4 @@
-import { getUsrMsgResName, mapAppExceptionToHttpStatus, AppException, AppExceptionCodeEnum, UserNotificationLevel } from '@golobe-demo/shared';
+import { isElectronBuild, getUsrMsgResName, mapAppExceptionToHttpStatus, AppException, AppExceptionCodeEnum, UserNotificationLevel } from '@golobe-demo/shared';
 import { type IUserNotificationParams } from './../stores/user-notification-store';
 import { type NuxtError } from 'nuxt/app';
 import { consola } from 'consola';
@@ -78,7 +78,7 @@ function defaultAppExceptionHandler (appException: AppException, nuxtApp?: Retur
   if (import.meta.client) {
     // normally client code should't reach that point as AppException must be handled via ErrorHelm component,
     // so this is a "fallback" place
-    if (appException.appearance === 'error-page') {
+    if (appException.appearance === 'error-page' && !isElectronBuild()) {
       showError(createNuxtError(appException));
     } else {
       // showing stubs cannot be implemented here, so only notification is possible

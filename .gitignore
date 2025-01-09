@@ -8,6 +8,7 @@
 .tmp
 dist
 src/assets/locales
+dist-electron
 
 # acsys backend dist
 externals
@@ -22,6 +23,7 @@ logs
 
 # Cache
 .img.cache
+.srcset.cache
 
 # Misc
 .DS_Store

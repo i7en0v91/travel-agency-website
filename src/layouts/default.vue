@@ -36,6 +36,11 @@ await usePageSetup();
 const error = useError();
 const isAuthFormsPage = computed(() => route.path.includes(`/${getPagePath(AppPage.Login)}`) || route.path.includes(`/${getPagePath(AppPage.Signup)}`) || route.path.includes(`/${getPagePath(AppPage.ForgotPassword)}`) || route.path.includes(`/${getPagePath(AppPage.EmailVerifyComplete)}`));
 const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.value);
+const hideInElectron = isElectronBuild() ? {
+  navBar: true,
+  footer: import.meta.client && (route.query ?? {})[QueryInternalRequestParam] === '1',
+  cookies: import.meta.client && (route.query ?? {})[QueryInternalRequestParam] === '1'
+} : undefined;
 
 </script>
 

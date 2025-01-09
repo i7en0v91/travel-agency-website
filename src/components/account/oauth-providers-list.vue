@@ -19,8 +19,8 @@ const navLinkBuilder = useNavLinkBuilder();
 const route = useRoute();
 const { enabled } = usePreviewState();
 
-const showTestLocalProvider = isDevOrTestEnv() || isQuickStartEnv();
-const thirdPartyOAuthEnabled = !isQuickStartEnv();
+const showTestLocalProvider = isDevOrTestEnv() || isQuickStartEnv() || isElectronBuild();
+const thirdPartyOAuthEnabled = !isQuickStartEnv() && !isElectronBuild();
 
 const $emit = defineEmits(['click']);
 function onAuthBtnBlick (provider: AuthProvider) {

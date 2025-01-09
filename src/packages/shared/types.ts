@@ -73,6 +73,14 @@ export interface IEntityCacheCityItem extends IEntityCacheSlugItem {
 }
 export type GetEntityCacheItem<TEntity extends CacheEntityType> = TEntity extends 'City' ? (IEntityCacheCityItem & { type: TEntity }) : never;
 
+export interface IImageProcessor {
+  getImageSize (imgData: Buffer): Promise<{width: number, height: number}>;
+  scaleImage (bytes: Buffer, scale: number, expectedWidth?: number): Promise<Buffer>;
+  extractImageRegion (bytes: Buffer, width: number, height: number, mimeType: 'webp' | 'jpeg'): Promise<Buffer>;
+  createBlankImage(width: number, height: number, format: 'png'): Promise<Buffer>;
+  convert (bytes: Buffer, targetFormat: 'jpeg'): Promise<Buffer>;
+}
+
 /* Business logic types */
 export type GeoPoint = { lon: number, lat: number };
 export type Price = Decimal;
@@ -144,7 +152,7 @@ export type IFileInfo = Omit<IEditableEntity & ISoftDeleteEntity & {
   mime: string
 }, 'createdUtc'>;
 
-export interface IImageCategoryInfo {
+export interface IImageCategoryInfo extends IEditableEntity {
   id: EntityId,
   width: number,
   height: number,

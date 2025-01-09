@@ -1,4 +1,4 @@
-import { DefaultLocale, CookieI18nLocale, type Locale, HeaderLocation, patchUrlWithLocale, getLocaleFromUrl, isDevOrTestEnv, isQuickStartEnv, maskLog, AuthProvider, type IUserProfileInfo } from '@golobe-demo/shared';
+import { DefaultLocale, CookieI18nLocale, type Locale, HeaderLocation, patchUrlWithLocale, getLocaleFromUrl, isDevOrTestEnv, isQuickStartEnv, maskLog, AuthProvider, type IUserProfileInfo, isElectronBuild } from '@golobe-demo/shared';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GitHubProvider from 'next-auth/providers/github';
 import GoogleProvider from 'next-auth/providers/google';
@@ -96,7 +96,7 @@ export default wrapI18nRedirect(NuxtAuthHandler({
     }
   },
   providers: [
-    ...(isQuickStartEnv()
+    ...((isQuickStartEnv() || isElectronBuild())
       ? []
       : [
           // @ts-expect-error You need to use .default here for it to work during SSR. May be fixed via Vite at some point
@@ -153,7 +153,7 @@ export default wrapI18nRedirect(NuxtAuthHandler({
               return null;
             }
           })]),
-    ...((isDevOrTestEnv() || isQuickStartEnv()) ? [TestLocalProvider()] : []),
+    ...((isDevOrTestEnv() || isQuickStartEnv() || isElectronBuild()) ? [TestLocalProvider()] : []),
     // @ts-expect-error You need to use .default here for it to work during SSR. May be fixed via Vite at some point
     CredentialsProvider.default({
       name: 'Credentials',

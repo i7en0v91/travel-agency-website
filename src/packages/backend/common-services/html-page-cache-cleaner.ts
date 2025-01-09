@@ -1,6 +1,6 @@
 import { type PageCacheVaryOptions, type UninitializedPageTimestamp, OgImagePathSegment, type Locale, DefaultLocale, AvailableLocaleCodes, AppConfig, delay , AppException, AppExceptionCodeEnum, OgImageExt, spinWait, lookupValueOrThrow, DbVersionInitial, AppPage, type IAppLogger, type EntityId, type IAppConfig, getPagePath, AllHtmlPages, type Timestamp, EntityChangeSubscribersOrder } from '@golobe-demo/shared';
 import { type EntityChangeNotificationCallbackArgs, type EntityChangeNotificationSubscriberId, type IHtmlPageCacheCleaner, type IEntityChangeNotificationTask, type EntityChangeNotificationCallback } from './../types';
-import { type PrismaClient } from '@prisma/client';
+import { type PrismaClient, Prisma } from '@prisma/client';
 import { hash } from 'ohash';
 import type { Storage, StorageValue } from 'unstorage';
 import { AllEntityModels, type EntityModel, type IChangeDependencyTracker } from './change-dependency-tracker';
@@ -366,6 +366,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
         timestamp = await this.calculatePageTimestamp(page, id, pageMetadata);
         if(timestamp !== 0) {
           await this.updatePageTimestampsOneByOne([{ page, id, timestamp }], true);
+          timestamp = (await this.getPageTimestamp(page, id, false)) as Date;
         }
       } else {
         return 0;
@@ -466,6 +467,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
     for(let i = 0; i < timestamps.length; i++) {
       const pageUpdateData = timestamps[i];
       try {
+        // TODO: rewrite to upsert-like
         const exists = (await this.dbRepository.htmlPageTimestamp.count({
           where: {
             id: this.getPageTimestampDbId(pageUpdateData.page, pageUpdateData.id)
@@ -629,7 +631,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
           const queryVariant = this.removeFieldsWithEmptyValues(queryVariants[i]);
           const cacheObj = { ...queryVariant, locale: AvailableLocaleCodes[n] };
           const urls =  [
-            //this.formatKeyUrl(SiteUrl, page, undefined, cacheObj, false, false),
+            //this.formatKeyUrl(AppConfig.siteUrl, page, undefined, cacheObj, false, false),
             this.formatKeyUrl(undefined, page, id, cacheObj, false, false),
           ];
           for(let p = 0; p < urls.length; p++) {
@@ -642,7 +644,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
       for(let k = 0; k < AvailableLocaleCodes.length; k++) {
         const varyObj = { locale: AvailableLocaleCodes[k] };
         const urls =  [
-          //this.formatKeyUrl(SiteUrl, page, id, localeObj, false, false),
+          //this.formatKeyUrl(AppConfig.siteUrl, page, id, localeObj, false, false),
           this.formatKeyUrl(undefined, page, id, varyObj, false, false),
         ];
         for(let i = 0; i < urls.length; i++) {

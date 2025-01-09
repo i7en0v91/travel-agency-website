@@ -1,4 +1,4 @@
-import { I18LocalesDirName, lookupValueOrThrow, AppConfig, SystemPage, AppPage, EntityIdPages, getPagePath, LoadingStubFileName, AvailableLocaleCodes, CookieI18nLocale, DefaultLocale, isTestEnv, isPublishEnv, isDevEnv } from '@golobe-demo/shared';
+import { I18LocalesDirName, lookupValueOrThrow, AppConfig, SystemPage, AppPage, EntityIdPages, getPagePath, AvailableLocaleCodes, CookieI18nLocale, DefaultLocale, isTestEnv, isPublishEnv, isDevEnv, isElectronBuild, LoadingStubFileName } from '@golobe-demo/shared';
 import { ApiEndpointPrefix, ApiEndpointAuthentication, ApiEndpointUserAccount, ApiAppEndpointPrefix, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets } from './server/api-definitions';
 import { resolveSharedPkgPath } from './helpers/resolvers';
 import { joinURL } from 'ufo';
@@ -10,6 +10,7 @@ import flatten from 'lodash-es/flatten';
 import { type NitroRouteConfig } from 'nitropack';
 import { join, resolve, basename } from 'pathe';
 import { writeFile } from 'fs/promises';
+import { SharpDynamicLoaderPlugin } from './build-plugins';
 
 const listLocalizedPaths = (enPath: string) => [enPath.startsWith('/') ? enPath : `/${enPath}`, ...AvailableLocaleCodes.filter(l => l !== 'en').map(l => joinURL(`/${l}`, `${enPath}`))];
 const rollupLogHandler = (
@@ -78,19 +79,19 @@ const HtmlPageCachingRules: { [P in AppPage]: NitroRouteConfig } & { [P in Syste
 const ApiRoutesWithCachingDisabled = [`${ApiAppEndpointPrefix}/stays/**`, `${ApiAppEndpointPrefix}/booking/**`, ApiEndpointUserAccount, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets];
 
 const AcsysFilesGlobForWatchers = isDevEnv() ? 
-  [`**/${basename(AppConfig.acsys.execDir)}/**`, `**/externals/${basename(AppConfig.acsys.srcDir)}/**`] : undefined;
+  [`**/${basename(AppConfig.acsys.execDir)}/**`, `**/externals/${basename(AppConfig.acsys.srcDir)}/**`] : [];
 
 export default defineNuxtConfig({
   devtools: { enabled: false },
   
-  ssr: true,
+  ssr: !isElectronBuild(),
 
   sourcemap: {
     server: true,
     client: true
   },
 
-  sitemap: {
+  sitemap: !isElectronBuild() ? {
     autoLastmod: false,
     exclude: isPublishEnv() ?
      [
@@ -105,7 +106,7 @@ export default defineNuxtConfig({
       ...listLocalizedPaths(`/${getPagePath(AppPage.BookingDetails)}/**`),
       ...listLocalizedPaths(`/${getPagePath(SystemPage.Drafts)}`),
      ] : undefined
-  },
+  } : { enabled: false },
 
   features: {
     inlineStyles: (id?: string) => (id?.includes('components/og-image') ?? false),
@@ -187,7 +188,11 @@ export default defineNuxtConfig({
         { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
         { rel: 'manifest', href: '/manifest.webmanifest' }
       ]
-    }
+    },
+    ...(isElectronBuild() ? {
+      baseURL: '/', //  './' fails when loading chunks from non-index page, see "Fix path to make it works with Electron protocol `file://`" comment at see https://github.com/caoxiemeihao/nuxt-electron/blob/main/src/index.ts
+      buildAssetsDir: '/'
+    } : {}),
   },
 
   auth: {
@@ -244,7 +249,7 @@ export default defineNuxtConfig({
     defaultLocale: 'en'
   },
 
-  ogImage: {
+  ogImage: !isElectronBuild() ? {
     defaults: {
       width: AppConfig.ogImage.screenSize.width,
       height: AppConfig.ogImage.screenSize.height,
@@ -302,7 +307,7 @@ export default defineNuxtConfig({
   router: {
     options: {
       scrollBehaviorType: 'auto',
-      hashMode: false,
+      hashMode: false, // also should be set to false for Electron, otherwise will fail opening windows for non-index page urls
       strict: false
     }
   },
@@ -317,10 +322,31 @@ export default defineNuxtConfig({
     '/api/app/testing/**': !isTestEnv() ? { redirect: '/' } : {}
   },
 
-  ignore: AcsysFilesGlobForWatchers,
-  watch: AcsysFilesGlobForWatchers?.map(fg => `!${fg}`),
+  ignore: [...AcsysFilesGlobForWatchers, ...(!isElectronBuild() ? ['electron'] : [])],
+  watch: [...(AcsysFilesGlobForWatchers?.map(fg => `!${fg}`) ?? []), ...(!isElectronBuild() ? ['!electron'] : [])],
   
   nitro: {
+    runtimeConfig: (isElectronBuild() && !isDevEnv()) ? {
+      app: {
+        baseURL: '/'
+      }
+    } : undefined,
+    rollupConfig: (isDevEnv() || isElectronBuild()) ? {
+      // sharp@0.32.6 - switch to dynamic sharp bundling to prevent repeated initialization issues (during hmr, client/server builds  e.t.c)
+      // @ts-expect-error disable deep instantion warn
+      plugins: [SharpDynamicLoaderPlugin],
+      external: ['sharp']
+    } : undefined,
+    storage: {
+      'glb:images:srcset': (isDevEnv() && !isElectronBuild()) ? 
+        {
+          driver: 'fs',
+          base: AppConfig.images.cacheFsDir,
+        } : 
+        { 
+          driver: 'memory'
+        }
+      },
     publicAssets: [
       {
         baseURL: '/appdata',
@@ -347,12 +373,11 @@ export default defineNuxtConfig({
   },
 
   modules: [
+    //['nuxt-electron', {}],
     ['@nuxtjs/google-fonts', {}],
     ['@nuxtjs/i18n', {}],
     ['@sidebase/nuxt-auth', {}],
-    ['@nuxt/image', {}],
     ['dayjs-nuxt', {}],
-    ['@nuxtjs/seo', {}],
     ['@pinia/nuxt', {}],
     ['@nuxt/test-utils/module', {}],
     ['nuxt-tiptap-editor', {}],
@@ -373,6 +398,19 @@ export default defineNuxtConfig({
       await writeFile(templateFile, loadingTemplate);
     }
   } : undefined,
+  
+  vite: isElectronBuild() ? {
+      // TODO: fix errors with ws connection interruptions & enable HMR
+    server: { 
+      hmr: false,
+      ws: false
+    },
+    build: {
+      rollupOptions: {
+        external: ['sharp']
+      }
+    }
+  } : undefined,
 
   $development: {
     imports: {
@@ -381,7 +419,10 @@ export default defineNuxtConfig({
         { name: 'Blob', from: 'node:buffer' },
         { name: 'Buffer', from: 'node:buffer' }
       ]
-    }
+    },
+    build: {
+      transpile: isElectronBuild() ? ['lodash'] : undefined
+    },
   },
 
   $test: {
@@ -456,7 +497,7 @@ export default defineNuxtConfig({
     },
     nitro: {
       compressPublicAssets: {
-        gzip: !isPublishEnv()
+        gzip: !isPublishEnv() && !isElectronBuild()
       },
       rollupConfig: {
         output: {

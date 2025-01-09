@@ -23,3 +23,9 @@ export function isQuickStartEnv (): boolean {
 export function isPublishEnv (): boolean {
   return !!process.env.PUBLISH;
 }
+
+export function isElectronBuild (): boolean {
+  return (!!import.meta.env.VITE_ELECTRON_BUILD && 
+    (import.meta.env.VITE_ELECTRON_BUILD === true || import.meta.env.VITE_ELECTRON_BUILD==='true' || import.meta.env.VITE_ELECTRON_BUILD==='1')
+  );
+}

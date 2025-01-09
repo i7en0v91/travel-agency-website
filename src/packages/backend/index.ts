@@ -18,7 +18,7 @@ export type {
   IAppAssetsProvider,
   IHtmlPageCacheCleaner,
   IUserLogic,
-  IImageBytesProvider,
+  IImageProvider,
   IImageLogic,
   IImageCategoryLogic,
   IAuthFormImageLogic,

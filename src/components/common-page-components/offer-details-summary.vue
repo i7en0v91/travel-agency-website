@@ -15,8 +15,7 @@ interface IProps {
   price?: Price,
   reviewScore?: number,
   numReviews?: number,
-  showFavouriteBtn?: boolean,
-  showReviewDetails?: boolean,
+  variant?: 'default' | 'booking' | 'booking-download',
   btnResName: I18nResName,
   btnLinkUrl: string | null
 };
@@ -28,8 +27,7 @@ const props = withDefaults(defineProps<IProps>(), {
   price: undefined,
   reviewScore: undefined,
   numReviews: undefined,
-  showFavouriteBtn: true,
-  showReviewDetails: true
+  variant: 'default'
 });
 
 const logger = getCommonServices().getLogger();

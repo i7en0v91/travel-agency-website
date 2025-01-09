@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type BookingPageArgs, AppException, AppExceptionCodeEnum, clampTextLine, getLocalizeableValue, getValueForFlightDurationFormatting, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, extractAirportCode, ImageCategory, type ICity, type EntityDataAttrsOnly, type ILocalizableValue, type IFlightOffer, type IStayOfferDetails, type EntityId, type ReviewSummary, getI18nResName2, getI18nResName3, AppPage, type Locale, AvailableLocaleCodes, DefaultTheme } from '@golobe-demo/shared';
+import { QueryInternalRequestParam, isElectronBuild, type BookingPageArgs, AppException, AppExceptionCodeEnum, clampTextLine, getLocalizeableValue, getValueForFlightDurationFormatting, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, extractAirportCode, ImageCategory, type ICity, type EntityDataAttrsOnly, type ILocalizableValue, type IFlightOffer, type IStayOfferDetails, type EntityId, type ReviewSummary, getI18nResName2, getI18nResName3, AppPage, type Locale, AvailableLocaleCodes, DefaultTheme } from '@golobe-demo/shared';
 import fromPairs from 'lodash-es/fromPairs';
 import { type IBookingTicketFlightGfxProps, type IBookingTicketStayTitleProps, type IBookingTicketProps } from './../../types';
 import { ApiEndpointBookingOffer, ApiEndpointStayOfferReviewSummary } from './../../server/api-definitions';
@@ -28,6 +28,7 @@ const logger = getCommonServices().getLogger();
 
 const reqEvent = import.meta.server ? useRequestEvent() : undefined;
 const isOgImageRequestMode = import.meta.server && !!reqEvent?.context.ogImageContext;
+const isDownloadFromElectron = import.meta.client && isElectronBuild() && (route.query ?? {})[QueryInternalRequestParam] === '1';
 
 let authUserForbidden = false;
 

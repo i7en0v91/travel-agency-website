@@ -11,7 +11,8 @@ import { FileLogic as FileLogicAcsys } from './acsys/file-logic';
 import { ImageCategoryLogic as ImageCategoryLogicWrapper } from './acsys/image-category-logic';
 import { ImageLogic as ImageLogicWrapper } from './acsys/image-logic';
 import { AuthFormImageLogic as AuthFormImageLogicWrapper } from './acsys/auth-form-image-logic';
-import { ImageBytesProvider, ensureImageCacheDir } from './common-services/image-bytes-provider';
+import { ImageProcessor } from './common-services/sharp-image-processor';
+import { ImageProvider } from './common-services/image-provider';
 import { HtmlPageCacheCleaner } from './common-services/html-page-cache-cleaner';
 import { MailTemplateLogic as MailTemplateLogicWrapper } from './acsys/mail-template-logic';
 import { EmailSender as EmailSenderWrapper } from './acsys/email-sender';
@@ -30,7 +31,7 @@ import { DocumentCreator } from './common-services/document-creator';
 import { CompanyReviewLogic as CompanyReviewLogicWrapper } from './acsys/company-review-logic';
 import { EntityCacheLogic as EntityCacheLogicWrapper } from './acsys/entity-cache-logic';
 import { Scope, createInjector } from 'typed-inject';
-import { createCache, getLocalesAssetsStorage, getPdfFontsAssetsStorage, getAppAssetsStorage, getNitroCache } from './helpers/nitro';
+import { createCache, getLocalesAssetsStorage, getPdfFontsAssetsStorage, getAppAssetsStorage, getNitroCache, getSrcsetCache } from './helpers/nitro';
 import { AcsysClientProvider } from './acsys/client/acsys-client-provider';
 import { ViewsConfig, type IViewColumnSettings } from './acsys/client/views';
 import { type UserData, UserRoleEnum, type IAcsysClientAdministrator, type IAcsysClientBase } from './acsys/client/interfaces';
@@ -59,7 +60,6 @@ import { AcsysDraftEntitiesResolver } from './acsys/acsys-draft-entities-resolve
 import cloneDeep from 'lodash-es/cloneDeep';
 import random from 'lodash-es/random';
 import { murmurHash } from 'ohash';
-import sharp from 'sharp';
 import { PrismaFlightOfferMaterializer, PrismaStayOfferMaterializer } from './common-services/offer-materializers';
 import { AcsysFlightOfferMaterializer, AcsysStayOfferMaterializer } from './acsys/offer-materializers';
 import orderBy from 'lodash-es/orderBy';
@@ -67,22 +67,22 @@ import { type IInitializableOnStartup, type RegisterUserByEmailResponse, type IS
 import dayjs from 'dayjs';
 import dayjsPluginUtc from 'dayjs/plugin/utc.js';
 
-async function buildAcsysBackendServicesLocator(acsysModuleOptions: IAcsysOptions, srcDir: string, logger: IAppLogger): Promise<IAcsysServerServicesLocator> {
+async function buildAcsysBackendServicesLocator(acsysModuleOptions: IAcsysOptions, logger: IAppLogger): Promise<IAcsysServerServicesLocator> {
   const nitroCache = await getNitroCache(logger);
+  const srcsetCache = await getSrcsetCache(logger);
   const appAssetsStorage = await getAppAssetsStorage(logger);
   const pdfFontsAssetsStorage = await getPdfFontsAssetsStorage(logger);
   const localesAssetsStorage = await getLocalesAssetsStorage(logger);
 
-  const injector = createInjector();
-  const provider = injector
+  const provider = createInjector()
     .provideClass('logger', ServerLogger, Scope.Singleton)
     .provideValue('dbRepository', await createPrismaClient(logger))
     .provideValue('cache', createCache())
     .provideValue('nitroCache', nitroCache)
+    .provideValue('srcsetCache', srcsetCache)
     .provideValue('appAssetsStorage', appAssetsStorage)
     .provideValue('pdfFontsAssetsStorage', pdfFontsAssetsStorage)
     .provideValue('localesAssetsStorage', localesAssetsStorage)
-    .provideValue('imageCacheDir', await ensureImageCacheDir(logger))
     .provideClass('appAssetsProvider', AppAssetsProvider, Scope.Singleton)
     .provideClass('htmlPageModelMetadata', HtmlPageModelMetadata, Scope.Singleton)
     .provideClass('changeDependencyTracker', ChangeDependencyTracker, Scope.Singleton)
@@ -99,7 +99,8 @@ async function buildAcsysBackendServicesLocator(acsysModuleOptions: IAcsysOption
     .provideClass('imageLogic', ImageLogicWrapper, Scope.Singleton)
     .provideClass('authFormImageLogicPrisma', AuthFormImageLogic, Scope.Singleton)
     .provideClass('authFormImageLogic', AuthFormImageLogicWrapper, Scope.Singleton)
-    .provideClass('imageBytesProvider', ImageBytesProvider, Scope.Singleton)
+    .provideClass('imageProcessor', ImageProcessor, Scope.Singleton)
+    .provideClass('imageProvider', ImageProvider, Scope.Singleton)
     .provideClass('mailTemplateLogicPrisma', MailTemplateLogic, Scope.Singleton)
     .provideClass('mailTemplateLogic', MailTemplateLogicWrapper, Scope.Singleton)
     .provideClass('emailSenderPrisma', EmailSender, Scope.Singleton)
@@ -148,7 +149,8 @@ async function buildAcsysBackendServicesLocator(acsysModuleOptions: IAcsysOption
     getImageLogic: () => provider.resolve('imageLogic'),
     getImageCategoryLogic: () => provider.resolve('imageCategoryLogic'),
     getAuthFormImageLogic: () => provider.resolve('authFormImageLogic'),
-    getImageBytesProvider: () => provider.resolve('imageBytesProvider'),
+    getImageProcessor: () => provider.resolve('imageProcessor'),
+    getImageProvider: () => provider.resolve('imageProvider'),
     getMailTemplateLogic: () => provider.resolve('mailTemplateLogic'),
     getEmailSender: () => provider.resolve('emailSender'),
     getTokenLogic: () => provider.resolve('tokenLogic'),
@@ -170,21 +172,21 @@ async function buildAcsysBackendServicesLocator(acsysModuleOptions: IAcsysOption
 
 async function buildPrismaBackendServicesLocator(logger: IAppLogger): Promise<IServerServicesLocator> {
   const nitroCache = await getNitroCache(logger);
+  const srcsetCache = await getSrcsetCache(logger);
   const appAssetsStorage = await getAppAssetsStorage(logger);
   const pdfFontsAssetsStorage = await getPdfFontsAssetsStorage(logger);
   const localesAssetsStorage = await getLocalesAssetsStorage(logger);
 
   const prismaClient = await createPrismaClient(logger);
-  const injector = createInjector();
-  const provider = injector
+  const provider = createInjector()
     .provideClass('logger', ServerLogger, Scope.Singleton)
     .provideValue('dbRepository', prismaClient)
     .provideValue('cache', createCache())
     .provideValue('nitroCache', nitroCache)
+    .provideValue('srcsetCache', srcsetCache)
     .provideValue('appAssetsStorage', appAssetsStorage)
     .provideValue('pdfFontsAssetsStorage', pdfFontsAssetsStorage)
     .provideValue('localesAssetsStorage', localesAssetsStorage)
-    .provideValue('imageCacheDir', await ensureImageCacheDir(logger))
     .provideClass('appAssetsProvider', AppAssetsProvider, Scope.Singleton)
     .provideClass('htmlPageModelMetadata', HtmlPageModelMetadata, Scope.Singleton)
     .provideClass('changeDependencyTracker', ChangeDependencyTracker, Scope.Singleton)
@@ -194,7 +196,8 @@ async function buildPrismaBackendServicesLocator(logger: IAppLogger): Promise<IS
     .provideClass('imageCategoryLogic', ImageCategoryLogic, Scope.Singleton)
     .provideClass('imageLogic', ImageLogic, Scope.Singleton)
     .provideClass('authFormImageLogic', AuthFormImageLogic, Scope.Singleton)
-    .provideClass('imageBytesProvider', ImageBytesProvider, Scope.Singleton)
+    .provideClass('imageProcessor', ImageProcessor, Scope.Singleton)
+    .provideClass('imageProvider', ImageProvider, Scope.Singleton)
     .provideClass('mailTemplateLogic', MailTemplateLogic, Scope.Singleton)
     .provideClass('emailSender', EmailSender, Scope.Singleton)
     .provideClass('tokenLogic', TokenLogic, Scope.Singleton)
@@ -226,7 +229,8 @@ async function buildPrismaBackendServicesLocator(logger: IAppLogger): Promise<IS
     getImageLogic: () => provider.resolve('imageLogic'),
     getAuthFormImageLogic: () => provider.resolve('authFormImageLogic'),
     getImageCategoryLogic: () => provider.resolve('imageCategoryLogic'),
-    getImageBytesProvider: () => provider.resolve('imageBytesProvider'),
+    getImageProcessor: () => provider.resolve('imageProcessor'),
+    getImageProvider: () => provider.resolve('imageProvider'),
     getMailTemplateLogic: () => provider.resolve('mailTemplateLogic'),
     getEmailSender: () => provider.resolve('emailSender'),
     getTokenLogic: () => provider.resolve('tokenLogic'),
@@ -270,7 +274,7 @@ export async function buildBackendServicesLocator(logger: IAppLogger): Promise<I
     const cmsType = lookupValueOrThrow(CmsType, process.env.CMS) as CmsType;
     if(cmsType === CmsType.acsys) {
       logger.verbose('building Acsys services locator container');
-      const acsysServerServicesLocator = await buildAcsysBackendServicesLocator(AppConfig.acsys, srcDir, logger);
+      const acsysServerServicesLocator = await buildAcsysBackendServicesLocator(AppConfig.acsys, logger);
       logger.verbose('ensuring Acsys system objects');
       await ensureAcsysSystemObjects(acsysServerServicesLocator, AppConfig.acsys, logger);
       result = acsysServerServicesLocator;
@@ -290,7 +294,7 @@ export async function buildBackendServicesLocator(logger: IAppLogger): Promise<I
     result.getHtmlPageCacheCleaner(),
     result.getServerI18n(),
     result.getImageCategoryLogic(),
-    result.getImageBytesProvider(),
+    result.getImageProvider(),
     result.getAirlineCompanyLogic(),
     result.getAirplaneLogic()
   ];
@@ -432,9 +436,9 @@ async function deleteViewSampleData(sampleDataIds: SampleDataIds, serviceLocator
   if(sampleDataIds.imageId) {
     logger.debug(`(${LoggingPrefix}) deleting sample image, id=${sampleDataIds.userId}`);
     const imageLogic = serviceLocator.getImageLogic();
-    const imageBytesProvider = serviceLocator.getImageBytesProvider();
-    await imageBytesProvider.clearImageCache(sampleDataIds.imageId, SampleImageCategory);
-    await imageBytesProvider.clearImageCache(SampleImageSlug, SampleImageCategory);
+    const imageProvider = serviceLocator.getImageProvider();
+    await imageProvider.clearImageCache(sampleDataIds.imageId, SampleImageCategory);
+    await imageProvider.clearImageCache(SampleImageSlug, SampleImageCategory);
     await imageLogic.deleteImage(sampleDataIds.imageId);
   }
 
@@ -491,14 +495,9 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
   
   logger.debug(`(${LoggingPrefix}) creating sample image data`);
   const imageLogic = serviceLocator.getImageLogic();
-  const bytes = await sharp({ 
-    create: { 
-      width: SampleImageCategorySize.width, 
-      height: SampleImageCategorySize.height, 
-      channels: 3, 
-      background: 'white' 
-    } 
-  }).png().toBuffer();
+
+  const imageProcessor = serviceLocator.getImageProcessor();
+  const bytes = await imageProcessor.createBlankImage(SampleImageCategorySize.width, SampleImageCategorySize.height, 'png');
   const sampleImageData: IImageData = {
     bytes,
     category: SampleImageCategory,
