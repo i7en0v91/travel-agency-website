@@ -95,16 +95,15 @@ You need to do the following:
 - Uncomment `#VITE_ELECTRON_BUILD=1` in `src/.env`
 - Uncomment `//['nuxt-electron', {}]` in `src/nuxt.config.ts`
 - Add `"main": "dist-electron/main.js"` to `src/package.json`
-- Execute any of installation instructions described [above](https://github.com/i7en0v91/travel-agency-website/tree/main#installation) (with or without CMS), but without running the last command (npm run quickstart)
+- Execute any of installation instructions described [above](https://github.com/i7en0v91/travel-agency-website/tree/main#installation) (with or without CMS), but **without** running the last command (npm run quickstart)
 
-After these steps are done Electron build is set up, run one of the following implemented configurations:
-- PREVIEW (`npm run build` then `npm run preview:electron`)
-- QUICKSTART (`npm run quickstart:electron`)
-- DEV (`npm run dev`), currently experimental and requires development environment setup as described [above](https://github.com/i7en0v91/travel-agency-website/tree/main#setting-up-development-environment)
+After these steps are done, you may run Quickstart configuration with `npm run quickstart:electron` or proceed with setup of development environment as described [above](https://github.com/i7en0v91/travel-agency-website/tree/main#setting-up-development-environment) and then execute one of the following implemented configurations:
+- Preview - `npm run build` then `npm run preview:electron`
+- Development - `npm run dev`, currently experimental
 
 To run e2e tests switch back to browser build.
 
-**NOTE**: backend part is hosted by Nitro and will run in separate process outside desktop app. For simplicity the process starts in parallel, so subsequent launches may produce EADDRINUSE (port: 3000) errors in case of recent non-gracefull exit. You can safely ignore it, desktop app should still boot normally
+**NOTE**: backend part is hosted by Nitro and will run in separate process outside desktop app. For simplicity the process starts in parallel (on Linux), so subsequent launches may produce EADDRINUSE (port: 3000) errors in case of recent non-gracefull exit. You can safely ignore it, desktop app should still boot normally, if not - terminate backend process
 
 ## Architecture
 
