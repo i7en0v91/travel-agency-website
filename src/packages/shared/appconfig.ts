@@ -1,8 +1,8 @@
 import { FlexibleDatesRangeDays, RestApiLogging } from './constants';
 import { isDevEnv, isTestEnv, isPublishEnv, isQuickStartEnv, isElectronBuild } from './environment';
 import type { LogLevel, Locale, I18nResName } from './types';
-import { type ILogSuppressionRule, type ILogVueSuppressionRule } from './applogger';
-import { type AppExceptionCode } from './exceptions';
+import type { ILogSuppressionRule, ILogVueSuppressionRule } from './logging/common';
+import type { AppExceptionCode } from './exceptions';
 
 export const AppName = 'Golobe';
 export const HostUrl = isPublishEnv() ? 'golobe.demo' : 'localhost:3000';
@@ -45,16 +45,17 @@ export interface IAppConfig {
       level: LogLevel,
       redact: string[],
       maskedNumCharsVisible: number,
-      appExceptionLogLevels: { appExceptionCode: AppExceptionCode, logLevel: LogLevel }[]
-    },
-    server: {
-      destination: string,
-      maxFileSize: string,
+      appExceptionLogLevels: { appExceptionCode: AppExceptionCode, logLevel: LogLevel }[],
       region: string,
       timeZone: string
     },
+    server: {
+      destination: string,
+      maxFileSize: string
+    },
     client: {
-      path: string
+      path: string,
+      serverSend: LogLevel
     },
     suppress: {
       vue : ILogVueSuppressionRule[],
@@ -179,7 +180,7 @@ export interface IAppConfig {
     },
     logging: {
       mainFile: string,
-      mailLogLevelOverride: LogLevel
+      mainLogLevelOverride: LogLevel
     },
   } | undefined
 }
@@ -211,19 +212,21 @@ const Config : IAppConfig = {
         { appExceptionCode: 'CAPTCHA_VERIFICATION_FAILED', logLevel: 'info' },
         { appExceptionCode: 'FORBIDDEN', logLevel: 'info' },
         { appExceptionCode: 'EMAILING_DISABLED', logLevel: 'info' }
-      ]
-    },
-    server: {
-      /** log (rolling) file path */
-      destination: './logs/golobe-%DATE%.log',
-      maxFileSize: '1g',
+      ],
       /** time zone for log record timestamps */
       region: 'en-US',
       timeZone: 'Etc/UTC'
     },
+    server: {
+      /** log (rolling) file path */
+      destination: './logs/golobe-%DATE%.log',
+      maxFileSize: '1g'
+    },
     client: {
       /** server endpoint for accepting log records sent from browser */
-      path: `/${RestApiLogging}`
+      path: `/${RestApiLogging}`,
+      /** starting from this level in addition to console send log entries to server */
+      serverSend: 'info'
     },
     suppress: {
       vue: [
@@ -286,9 +289,9 @@ const Config : IAppConfig = {
         host: 'localhost',
         port: 1025,
         secure: false,
-        from: 'localhost',
+        from: 'noreply@localhost.test',
         appName: AppName,
-        siteUrl: 'http://localhost' // KB: dev Nuxt instance is running on :3000 port by default, but using 'http://localhost:3000' directly may result into e-mail rejects by SMTP server as spam
+        siteUrl: 'http://localhost:3000'
       } : undefined),
   maxUserEmailsCount: 5, // maximum number of specified emails per single user account
   verificationTokenExpirationHours: 24,
@@ -337,7 +340,7 @@ const Config : IAppConfig = {
         relatedEntitiesQueryBatch: isTestEnv() ? 50 : 1000, // maximum size of IDs list used in single request to DB for related entities
         pageTimestampsUpdateBatch: isTestEnv() ? 10 : 500 // // maximum size of records used in single request to DB for creating/updating page timestamps
       },
-      ogImageCachePrefix: 'cache:nuxt-og-image@3.0.0-rc.64' // prefix for og-image cache keys
+      ogImageCachePrefix: 'cache:nuxt-og-image@3.1.1' // prefix for og-image cache keys
     },
     httpDefaults: 'no-store, private' // default value for 'Cache-Control' response header if not filled by app server
   },
@@ -361,7 +364,7 @@ const Config : IAppConfig = {
     : false,
   versioning: {
     appVersion: 1_00_00, // application version passed from user's browser in HTTP request header when calling server API enpoints
-    nuxt: '3.12.4' // additional option to control backward compatibility
+    nuxt: '3.15.1' // additional option to control backward compatibility
   },
   acsys: {
     srcDir: './../externals/acsys', // directory containing Acsys sources 
@@ -397,7 +400,7 @@ const Config : IAppConfig = {
         isDevEnv() ? 
           './logs/golobe-electron-%DATE%.log' : 
           './.output/logs/golobe-electron-%DATE%.log',
-      mailLogLevelOverride: 'debug', /** Overrides {@link IAppConfig.logging.common.level} for Electron app logger only */
+      mainLogLevelOverride: 'debug', /** Overrides {@link IAppConfig.logging.common.level} for Electron app logger only */
     }
   } : undefined
 };

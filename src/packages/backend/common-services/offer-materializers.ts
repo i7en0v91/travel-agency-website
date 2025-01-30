@@ -3,7 +3,7 @@ import { buildStayOfferUniqueDataKey, buildFlightUniqueDataKey, buildFlightOffer
 import flatten from 'lodash-es/flatten';
 import { MapStayOffer, StayOfferInfoQuery, MapFlight, FlightInfoQuery, FlightOfferInfoQuery, MapFlightOffer } from './../services/queries';
 import type { PrismaClient } from '@prisma/client';
-import { mapDate } from './../helpers/db';
+import { mapDate, executeInTransaction } from './../helpers/db';
 import uniqBy from 'lodash-es/uniqBy';
 
 declare type FlightOfferWithSortFactor = EntityDataAttrsOnly<IFlightOffer> & { primarySortFactor: number, secondarySortFactor: number };
@@ -33,7 +33,7 @@ export class PrismaFlightOfferMaterializer implements IFlightOfferMaterializer {
   async createFlightsAndFillIds (flights: EntityDataAttrsOnly<IFlight>[]): Promise<void> {
     this.logger.verbose(`(FlightsLogic) PrismaFlightOfferMaterializer - creating memory flights and filling IDs, count=${flights.length}`);
 
-    await this.dbRepository.$transaction(async () => {
+    await executeInTransaction(async () => {
       for (let i = 0; i < flights.length; i++) {
         const flight = flights[i];
         const dataHash = buildFlightUniqueDataKey(flight);
@@ -57,7 +57,7 @@ export class PrismaFlightOfferMaterializer implements IFlightOfferMaterializer {
 
         flight.id = queryResult.id;
       }
-    });
+    }, this.dbRepository);
 
     this.logger.verbose(`(FlightsLogic) PrismaFlightOfferMaterializer - creating memory flights and filling IDs - completed, count=${flights.length}`);
   }
@@ -108,7 +108,7 @@ export class PrismaFlightOfferMaterializer implements IFlightOfferMaterializer {
     }
 
     this.logger.debug('(FlightsLogic) PrismaFlightOfferMaterializer - running offer\'s create transaction');
-    await this.dbRepository.$transaction(async () => {
+    await executeInTransaction(async () => {
       for (let i = 0; i < offers.length; i++) {
         const offer = offers[i];
         const dataHash = buildFlightOfferUniqueDataKey(offer);
@@ -131,7 +131,7 @@ export class PrismaFlightOfferMaterializer implements IFlightOfferMaterializer {
 
         offer.id = queryResult.id;
       }
-    });
+    }, this.dbRepository);
 
     this.logger.verbose(`(FlightsLogic) PrismaFlightOfferMaterializer - creating memory offers and filling IDs - completed, count=${offers.length}`);
   }
@@ -202,7 +202,7 @@ export class PrismaStayOfferMaterializer implements IStayOfferMaterializer {
     }
 
     this.logger.debug('(StaysLogic) PrismaStayOfferMaterializer running offer\'s create transaction');
-    await this.dbRepository.$transaction(async () => {
+    await executeInTransaction(async () => {
       for (let i = 0; i < offers.length; i++) {
         const offer = offers[i];
         const dataHash = buildStayOfferUniqueDataKey(offer);
@@ -227,7 +227,7 @@ export class PrismaStayOfferMaterializer implements IStayOfferMaterializer {
 
         offer.id = queryResult.id;
       }
-    });
+    }, this.dbRepository);
 
     this.logger.verbose(`(StaysLogic) PrismaStayOfferMaterializer creating memory offers and filling IDs - completed, count=${offers.length}`);
   }

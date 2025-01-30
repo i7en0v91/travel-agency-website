@@ -5,7 +5,7 @@ import groupBy from 'lodash-es/groupBy';
 import values from 'lodash-es/values';
 import { MapUserEntityMinimal, UserProfileQuery, MapUserEntityProfile, UserMinimalQuery } from './queries';
 import { type IServerI18n } from './../common-services/i18n';
-import { mapEnumDbValue } from '../helpers/db';
+import { mapEnumDbValue, executeInTransaction } from '../helpers/db';
 import { calculatePasswordHash, getSomeSalt, verifyPassword } from './../helpers/utils';
 import { isTokenActive } from './../helpers/tokens';
 import { type H3Event } from 'h3';
@@ -46,7 +46,7 @@ export class UserLogic implements IUserLogic {
 
   deleteUser = async (id: EntityId): Promise<void> => {
     this.logger.verbose(`(UserLogic) deleting user: userId=${id}`);
-    await this.dbRepository.$transaction(async () => {
+    await executeInTransaction(async () => {
       await this.dbRepository.userEmail.updateMany({
         where: {
           user: {
@@ -83,7 +83,7 @@ export class UserLogic implements IUserLogic {
           version: { increment: 1 }
         }
       });
-    });
+    }, this.dbRepository);
     this.logger.verbose(`(UserLogic) user deleted: userId=${id}`);
   };
 
@@ -185,7 +185,7 @@ export class UserLogic implements IUserLogic {
     }
 
     this.logger.verbose(`(UserLogic) updating user account data: ${logParams}`);
-    await this.dbRepository.$transaction(async () => {
+    await executeInTransaction(async () => {
       if ((emailIdsToDelete?.length ?? 0) > 0) {
         const deleteEmailWithEditChain = async (emailId: EntityId): Promise<void> => {
           let deletingId : EntityId | undefined = emailId;
@@ -253,7 +253,7 @@ export class UserLogic implements IUserLogic {
           }
         });
       }
-    });
+    }, this.dbRepository);
 
     this.logger.info(`(UserLogic) user account updated: ${logParams}`);
     return isAutoVerified ? 'email-autoverified' : 'success';
@@ -364,7 +364,7 @@ export class UserLogic implements IUserLogic {
       }
     } else {
       this.logger.verbose(`(UserLogic) creating new image file: slug=${slug}, userId=${userId}, category=${category}, length=${bytes.length}, fileName=${fileName}`);
-      await this.dbRepository.$transaction(async () => {
+      await executeInTransaction(async () => {
         const queryResult = await this.imageLogic.createImage({
           bytes,
           originalName: fileName,
@@ -398,7 +398,7 @@ export class UserLogic implements IUserLogic {
               : undefined
           }
         });
-      });
+      }, this.dbRepository);
     }
 
     this.logger.info(`(UserLogic) user image uploaded: imageId=${imageId}, slug=${slug}, userId=${userId}, length=${bytes.length}, fileName=${fileName}`);

@@ -1,6 +1,6 @@
 import { type PageCacheVaryOptions, type UninitializedPageTimestamp, OgImagePathSegment, type Locale, DefaultLocale, AvailableLocaleCodes, AppConfig, delay , AppException, AppExceptionCodeEnum, OgImageExt, spinWait, lookupValueOrThrow, DbVersionInitial, AppPage, type IAppLogger, type EntityId, type IAppConfig, getPagePath, AllHtmlPages, type Timestamp, EntityChangeSubscribersOrder } from '@golobe-demo/shared';
 import { type EntityChangeNotificationCallbackArgs, type EntityChangeNotificationSubscriberId, type IHtmlPageCacheCleaner, type IEntityChangeNotificationTask, type EntityChangeNotificationCallback } from './../types';
-import { type PrismaClient, Prisma } from '@prisma/client';
+import { type PrismaClient } from '@prisma/client';
 import { hash } from 'ohash';
 import type { Storage, StorageValue } from 'unstorage';
 import { AllEntityModels, type EntityModel, type IChangeDependencyTracker } from './change-dependency-tracker';
@@ -467,31 +467,20 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
     for(let i = 0; i < timestamps.length; i++) {
       const pageUpdateData = timestamps[i];
       try {
-        // TODO: rewrite to upsert-like
-        const exists = (await this.dbRepository.htmlPageTimestamp.count({
+        await this.dbRepository.htmlPageTimestamp.upsert({
+          create: {
+            id: this.getPageTimestampDbId(pageUpdateData.page, pageUpdateData.id),
+            timestamp: pageUpdateData.timestamp,
+            version: DbVersionInitial
+          },
+          update: {
+            timestamp: pageUpdateData.timestamp,
+            version: {  increment: 1 }
+          },
           where: {
             id: this.getPageTimestampDbId(pageUpdateData.page, pageUpdateData.id)
           }
-        })) > 0;
-        if(exists) {
-          await this.dbRepository.htmlPageTimestamp.update({
-            where: {
-              id: this.getPageTimestampDbId(pageUpdateData.page, pageUpdateData.id)
-            },
-            data: {
-              timestamp: pageUpdateData.timestamp,
-              version: {  increment: 1 }
-            }
-          });
-        } else {
-          await this.dbRepository.htmlPageTimestamp.create({
-            data: {
-              id: this.getPageTimestampDbId(pageUpdateData.page, pageUpdateData.id),
-              timestamp: pageUpdateData.timestamp,
-              version: DbVersionInitial
-            }
-          });
-        }
+        });
         succeeded++;
       } catch(err: any) {
         this.logger.warn(`(HtmlPageCacheCleaner) failed to update all page timestamps (one-by-one), page=${pageUpdateData.page}, id=${pageUpdateData.id}, timestamp=${pageUpdateData.timestamp.toISOString()}`, err);

@@ -86,7 +86,7 @@ export class FileLogic implements IFileLogic {
       mime: queryResult.mime,
       originalName: queryResult.originalName ?? undefined,
       isDeleted: false,
-      bytes: bytes,
+      bytes: Buffer.from(bytes),
     };
     return result;
   };

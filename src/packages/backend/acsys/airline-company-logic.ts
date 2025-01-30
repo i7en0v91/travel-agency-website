@@ -2,6 +2,7 @@ import { DbVersionInitial, newUniqueId, type IAppLogger, type IAirlineCompany, t
 import { type IAirlineCompanyLogic, type IAirlineCompanyData } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import type { AcsysDraftEntitiesResolver } from './acsys-draft-entities-resolver';
+import { executeInTransaction } from './../helpers/db';
 
 export class AirlineCompanyLogic implements IAirlineCompanyLogic {
   private readonly logger: IAppLogger;
@@ -61,7 +62,7 @@ export class AirlineCompanyLogic implements IAirlineCompanyLogic {
     this.logger.debug(`(AirlineCompanyLogic-Acsys) creating airline company, previewMode=${previewMode}`);
     let companyId: EntityId;
     if(previewMode) {
-      companyId = await this.dbRepository.$transaction(async () => {
+      companyId = await executeInTransaction(async () => {
         const nameStrId = (await this.dbRepository.acsysDraftsLocalizeableValue.create({
           data: {
             id: newUniqueId(),
@@ -87,7 +88,7 @@ export class AirlineCompanyLogic implements IAirlineCompanyLogic {
             id: true
           }
         })).id;
-      });
+      }, this.dbRepository);
     } else {
       companyId = await this.prismaImplementation.createAirlineCompany(companyData, previewMode);
     }

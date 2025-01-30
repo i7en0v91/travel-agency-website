@@ -197,6 +197,7 @@ function destroyCropperSafe () {
     try {
       cropper.destroy();
     } catch (err: any) {
+      console.warn(err);
       // surround with try-catch as img element may be hidden by ErrorHelm and
       // in this case cropper.destroy will fail to remove it
     }

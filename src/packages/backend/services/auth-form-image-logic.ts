@@ -4,6 +4,7 @@ import type { PrismaClient } from '@prisma/client';
 import { type H3Event } from 'h3';
 import isString from 'lodash-es/isString';
 import orderBy from 'lodash-es/orderBy';
+import { executeInTransaction } from './../helpers/db';
 
 export class AuthFormImageLogic implements IAuthFormImageLogic {
   private readonly logger: IAppLogger;
@@ -39,7 +40,7 @@ export class AuthFormImageLogic implements IAuthFormImageLogic {
         }
       });
     } else {
-      await this.dbRepository.$transaction(async () => {
+      await executeInTransaction(async () => {
         const imgParams: IImageData = {
           bytes: imageData.bytes,
           category: ImageCategory.AuthFormsImage,
@@ -67,7 +68,7 @@ export class AuthFormImageLogic implements IAuthFormImageLogic {
             }
           }
         });
-      });
+      }, this.dbRepository);
     }
     
     this.logger.verbose(`(AuthFormImageLogic) auth form image created, id=${resultId}, order=${order}, imageId=${imgId!}`);
@@ -122,7 +123,7 @@ export class AuthFormImageLogic implements IAuthFormImageLogic {
   async deleteImage(id: EntityId): Promise<void> {
     this.logger.verbose(`(AuthFormImageLogic) deleting auth form image, id=${id}`);
 
-    await this.dbRepository.$transaction(async () => {
+    await executeInTransaction(async () => {
       await this.dbRepository.image.updateMany({
         where: {
           authFormImage: {
@@ -145,7 +146,7 @@ export class AuthFormImageLogic implements IAuthFormImageLogic {
           version: { increment: 1 }
         }
       });
-    });
+    }, this.dbRepository);
 
     this.logger.verbose(`(AuthFormImageLogic) auth form image deleted, id=${id}`);
   }

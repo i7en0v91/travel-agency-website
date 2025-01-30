@@ -6,7 +6,6 @@ export default withNuxt(
     rules: {
       'no-console': 'off', // terser drop_console in production used
       semi: ['warn', 'always'],
-      '@typescript-eslint/semi': ['warn'],
       '@typescript-eslint/no-explicit-any': ['off'],
       '@typescript-eslint/unified-signatures': ['warn']
     }

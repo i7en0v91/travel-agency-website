@@ -1,6 +1,6 @@
 import { DbVersionInitial, newUniqueId, getLocalizeableValue, type PreviewMode, type Locale, type IAppLogger, type EmailTemplateEnum, type ILocalizableValue, type EntityId } from '@golobe-demo/shared';
 import { type IMailTemplateLogic } from './../types';
-import { mapEnumDbValue } from '../helpers/db';
+import { mapEnumDbValue, executeInTransaction } from '../helpers/db';
 import type { PrismaClient } from '@prisma/client';
 import type { AcsysDraftEntitiesResolver } from './acsys-draft-entities-resolver';
 
@@ -73,7 +73,7 @@ export class MailTemplateLogic implements IMailTemplateLogic {
     
     let mailTemplateId: EntityId;
     if(previewMode) {
-      mailTemplateId = await this.dbRepository.$transaction(async () => {
+      mailTemplateId = await executeInTransaction(async () => {
         const templateStrId = (await this.dbRepository.acsysDraftsLocalizeableValue.create({
           data: {
             id: newUniqueId(),
@@ -97,7 +97,7 @@ export class MailTemplateLogic implements IMailTemplateLogic {
             id: true
           }
         }))).id;  
-      });
+      }, this.dbRepository);
     } else {
       mailTemplateId = await this.prismaImplementation.createTemplate(kind, markup, previewMode);
     }

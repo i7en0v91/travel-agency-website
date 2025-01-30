@@ -2,7 +2,7 @@ import { CachedResultsInAppServicesEnabled, type IImageData, type IImageInfo, Ap
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { type IImageLogic, type IFileLogic, type IImageBytes, type IImageFileInfoUnresolved, type IImageCategoryLogic, type ImageCheckAccessResult } from './../types';
 import { ImageInfoQuery, MapImageInfo } from './queries';
-import { mapEnumDbValue } from '../helpers/db';
+import { mapEnumDbValue, executeInTransaction } from '../helpers/db';
 import { type H3Event } from 'h3';
 
 export class ImageLogic implements IImageLogic {
@@ -46,7 +46,7 @@ export class ImageLogic implements IImageLogic {
     this.logger.verbose(`(ImageLogic) creating image, slug=${data.slug}, category=${data.category}, ownerId=${data.ownerId}, userId=${userId}, fileName=${data.originalName}, length=${data.bytes.length}`);
 
     const categoryId = (await this.imageCategoryLogic.getImageCategoryInfos(CachedResultsInAppServicesEnabled)).get(data.category)!.id;
-    const result = await this.dbRepository.$transaction(async () => {
+    const result = await executeInTransaction(async () => {
       const fileCreationResult = await this.fileLogic.createFile(data, userId);
       const imageEntity = await this.dbRepository.image.create({
         data: {
@@ -64,7 +64,7 @@ export class ImageLogic implements IImageLogic {
         }
       });
       return { id: imageEntity.id, timestamp: fileCreationResult.timestamp };
-    });
+    }, this.dbRepository);
 
     this.logger.verbose(`(ImageLogic) image created, id=${result.id}, slug=${data.slug}, category=${data.category}, ownerId=${data.ownerId}, userId=${userId}, fileName=${data.originalName}, length=${data.bytes.length}`);
     return result;
@@ -101,7 +101,7 @@ export class ImageLogic implements IImageLogic {
 
     const categoryId = data.category ? (await this.imageCategoryLogic.getImageCategoryInfos(CachedResultsInAppServicesEnabled)).get(data.category)!.id : undefined;
     let timestamp: Timestamp = 0;
-    await this.dbRepository.$transaction(async () => {
+    await executeInTransaction(async () => {
       const updateResult = (await this.fileLogic.updateFile(imageFileId!, data, userId, true, event));
       timestamp = updateResult.timestamp;
       await this.dbRepository.image.updateMany({
@@ -119,7 +119,7 @@ export class ImageLogic implements IImageLogic {
           ...(data.invertForDarkTheme !== undefined ? { invertForDarkTheme: data.invertForDarkTheme } : {})
         }
       });
-    });
+    }, this.dbRepository);
 
     this.logger.verbose(`(ImageLogic) image updated, imageId=${imageId}, slug=${data.slug}, category=${data.category}, ownerId=${data.ownerId}, userId=${userId}, imageFileId=${imageFileId}, fileName=${data.originalName}, length=${data.bytes?.length?.toString() ?? '[empty]'}`);
     return { timestamp };

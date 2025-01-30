@@ -107,3 +107,14 @@ export async function getGlobalPrismaClient(logger?: IAppLogger): Promise<Prisma
   }
   return (globalThis as any).GlobalPrismaClient;
 }
+
+
+export async function executeInTransaction<TResult>(dbStatements: () => Promise<TResult>, dbRepository: PrismaClient): Promise<TResult> {
+  if(isSqlite()) {
+    // KB: Prisma 6.2.1 - only Serializable isolation level is supported for SQLite => need to release db object locks asap
+    // (https://www.prisma.io/docs/orm/prisma-client/queries/transactions#supported-isolation-levels)
+    return await dbStatements();
+  } else {
+    return await dbRepository.$transaction(dbStatements);
+  }
+}

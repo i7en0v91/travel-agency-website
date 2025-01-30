@@ -2,6 +2,7 @@ import { type IAirplaneData, DbVersionInitial, newUniqueId, type PreviewMode, ty
 import { type IAirplaneLogic } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import type { AcsysDraftEntitiesResolver } from './acsys-draft-entities-resolver';
+import { executeInTransaction } from './../helpers/db';
 
 export class AirplaneLogic implements IAirplaneLogic {
   private readonly logger: IAppLogger;
@@ -62,7 +63,7 @@ export class AirplaneLogic implements IAirplaneLogic {
 
     let airplaneId: EntityId;
     if(previewMode) {
-      airplaneId = await this.dbRepository.$transaction(async () => {
+      airplaneId = await executeInTransaction(async () => {
         const nameStrId = (await this.dbRepository.acsysDraftsLocalizeableValue.create({
           data: {
             id: newUniqueId(),
@@ -103,7 +104,7 @@ export class AirplaneLogic implements IAirplaneLogic {
         }
 
         return draftAirplaneId;
-      });
+      }, this.dbRepository);
     } else {
       airplaneId = await this.prismaImplementation.createAirplane(data, previewMode);
     }

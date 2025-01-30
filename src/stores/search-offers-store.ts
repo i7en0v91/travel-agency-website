@@ -891,7 +891,7 @@ export const useSearchOffersStore = defineStore('search-offers-store', () => {
         }
       }  
     } catch(err: any) {
-      logger.warn(`(search-offers-store) exception while filling city cache from payload, items=${JSON.stringify(cachePayload)}`);
+      logger.warn(`(search-offers-store) exception while filling city cache from payload, items=${JSON.stringify(cachePayload)}`, err);
     }
   };
 

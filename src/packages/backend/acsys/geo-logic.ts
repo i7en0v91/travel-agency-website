@@ -1,6 +1,6 @@
 import { newUniqueId, DbVersionInitial, type PreviewMode, type IAppLogger, type ICountry, type EntityId, type DistanceUnitKm } from '@golobe-demo/shared';
 import { type ICityShort, type ICityData, type ICountryData, type IGeoLogic } from './../types';
-import { mapGeoCoord } from './../helpers/db';
+import { mapGeoCoord, executeInTransaction } from './../helpers/db';
 import type { PrismaClient } from '@prisma/client';
 import type { AcsysDraftEntitiesResolver } from './acsys-draft-entities-resolver';
 
@@ -50,7 +50,7 @@ export class GeoLogic implements IGeoLogic {
 
     let cityId: EntityId | undefined;
     if(previewMode) {
-      cityId = await this.dbRepository.$transaction(async () => {
+      cityId = await executeInTransaction(async () => {
         const nameStrId = (await this.dbRepository.acsysDraftsLocalizeableValue.create({
           data: {
             id: newUniqueId(),
@@ -79,7 +79,7 @@ export class GeoLogic implements IGeoLogic {
             id: true
           }
         })).id;
-      });
+      }, this.dbRepository);
     } else {
       cityId = await this.prismaImplementation.createCity(data, previewMode);
     }

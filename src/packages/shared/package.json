@@ -4,9 +4,16 @@
   "type": "module",
   "license": "MIT",
   "description": "Common project logic shared by all modules (both client and server sides)",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "exports": {
-    ".": "./index.ts"
+    ".": {
+      "default": "./index.ts",
+      "import": "./index.ts"
+    },
+    "./winston": {
+      "default": "./logging/winston-logger.ts",
+      "import": "./logging/winston-logger.ts"
+    }
   },
   "files": [
     "locales"
@@ -25,6 +32,7 @@
     "typescript-eslint": "^8.6.0"
   },
   "dependencies": {
+    "winston": "^3.17.0",
     "consola": "^3.2.3",
     "dayjs": "^1.11.13",
     "decimal.js": "^10.4.3",

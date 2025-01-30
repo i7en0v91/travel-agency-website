@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+
 import { type InferType, string, number, object, array, boolean, date, lazy } from 'yup';
 import { AvailableImageCategories, type ImageCategory, NumMinutesInDay, SearchOffersPriceRange, AvailableLocaleCodes, AvailableThemeCodes, FlightMinPassengers, FlightMaxPassengers, StaysMaxRoomsCount, StaysMaxGuestsCount, MaxStayReviewLength, type SignUpResultEnum, type SignUpCompleteResultEnum, type RecoverPasswordResultEnum, type RecoverPasswordCompleteResultEnum, AllHtmlPages, type AppExceptionAppearance, RestApiPrefix, RestApiLogging, RestApiAuth, type StayDescriptionParagraphType, type AirplaneImageKind, type FlightOffersSortFactor, type CacheEntityType, type TripType, type FlightClass, AvailableFlightOffersSortFactor, AvailableStayOffersSortFactor, type StayServiceLevel, type OfferKind, type EntityId, RestAppPrefix } from '@golobe-demo/shared';
 

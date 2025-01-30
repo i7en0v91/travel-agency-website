@@ -71,8 +71,8 @@ async function run () {
     try {
       lineNumber = parseInt(tokens[0]);
       columnNumber = parseInt(tokens[1]);
-    } catch (err) {
-      consola.log(`line #${i + 1} has invalid numbers in symbol location part ${symbolLocation}, aborting`);
+    } catch (err: any) {
+      consola.error(`line #${i + 1} has invalid numbers in symbol location part ${symbolLocation}, aborting`, err);
       process.exit(1);
     }
 

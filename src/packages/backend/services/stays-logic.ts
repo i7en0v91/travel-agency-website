@@ -7,7 +7,7 @@ import isString from 'lodash-es/isString';
 import { murmurHash } from 'ohash';
 import { buildStayOfferUniqueDataKey } from './../helpers/utils';
 import { MapStayReview, StayReviewsQuery, MapStayOffer, MapStayShort, StayInfoQuery, MapStay, StayOfferInfoQuery, MapStayOfferDetails } from './queries';
-import { mapGeoCoord } from '../helpers/db';
+import { mapGeoCoord, executeInTransaction } from '../helpers/db';
 import { type IStayOfferMaterializer } from './../common-services/offer-materializers';
 import dayjs from 'dayjs';
 import sanitize from 'sanitize-html';
@@ -29,7 +29,7 @@ export class StaysLogic implements IStaysLogic {
 
   async deleteStayOffer(id: EntityId): Promise<void> {
     this.logger.verbose(`(StaysLogic) deleting stay offer: id=${id}`);
-    await this.dbRepository.$transaction(async () => {
+    await executeInTransaction(async () => {
       await this.dbRepository.booking.updateMany({
         where: {
           stayOffer: {
@@ -64,7 +64,7 @@ export class StaysLogic implements IStaysLogic {
           version: { increment: 1 }
         }
       });
-    });
+    }, this.dbRepository);
     this.logger.verbose(`(StaysLogic) stay offer deleted: id=${id}`);
   };
 
@@ -86,7 +86,7 @@ export class StaysLogic implements IStaysLogic {
   async createStay (data: IStayData): Promise<EntityId> {
     this.logger.verbose(`(StaysLogic) creating stay, slug=${data.slug}`);
 
-    const stayId = await this.dbRepository.$transaction(async () => {
+    const stayId = await executeInTransaction(async () => {
       const entityId = (await this.dbRepository.hotel.create({
         data: {
           id: newUniqueId(),
@@ -187,7 +187,7 @@ export class StaysLogic implements IStaysLogic {
       }
 
       return entityId;
-    });
+    }, this.dbRepository);
 
     this.logger.verbose(`(StaysLogic) stay created, slug=${data.slug}, id=${stayId}`);
     return stayId;

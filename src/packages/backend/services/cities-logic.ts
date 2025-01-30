@@ -2,7 +2,7 @@ import { type IAppLogger, type EntityId, type ICity, mapLocalizeableValues, AppE
 import { type CitiesSearchParams, type ICitiesLogic, type ICitySearchItem, type IPopularCityData, type IPopularCityItem, type ITravelDetails } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import { CityInfoQuery, MapCity } from './queries';
-import { mapDbGeoCoord, mapGeoCoord } from '../helpers/db';
+import { mapDbGeoCoord, mapGeoCoord, executeInTransaction } from '../helpers/db';
 
 export class CitiesLogic implements ICitiesLogic {
   private logger: IAppLogger;
@@ -56,7 +56,7 @@ export class CitiesLogic implements ICitiesLogic {
   async makeCityPopular (data: IPopularCityData): Promise<void> {
     this.logger.verbose(`(CitiesLogic) adding popular city data, cityId=${data.cityId}`);
 
-    await this.dbRepository.$transaction(async () => {
+    await executeInTransaction(async () => {
       await this.dbRepository.popularCity.create({
         data: {
           id: newUniqueId(),
@@ -106,7 +106,7 @@ export class CitiesLogic implements ICitiesLogic {
           }
         });
       }
-    });
+    }, this.dbRepository);
 
     this.logger.verbose(`(CitiesLogic) popular city data added, cityId=${data.cityId}`);
   }
@@ -166,7 +166,7 @@ export class CitiesLogic implements ICitiesLogic {
   async setPopularCityImages (id: EntityId, images: { id: EntityId, order: number }[]): Promise<void> {
     this.logger.verbose(`(CitiesLogic) setting popular city images, cityId=${id}, images=${JSON.stringify(images)}`);
 
-    await this.dbRepository.$transaction(async () => {
+    await executeInTransaction(async () => {
       const popularCityId = (await this.dbRepository.popularCity.findFirst({
         where: {
           city: {
@@ -212,7 +212,7 @@ export class CitiesLogic implements ICitiesLogic {
           }
         });
       }
-    });
+    }, this.dbRepository);
 
     this.logger.verbose(`(CitiesLogic) popular city images have been set, id=${id}, images=${JSON.stringify(images)}`);
   }

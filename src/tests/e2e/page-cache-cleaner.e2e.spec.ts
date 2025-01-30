@@ -1,6 +1,3 @@
-/**
- * @vitest-environment happy-dom
- */
 import { getLocaleFromUrl, localizePath, HeaderAppVersion, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, DefaultLocale, CookieI18nLocale, HeaderDate, HeaderLastModified, HeaderCacheControl, HeaderEtag, HeaderContentType, OgImagePathSegment, OgImageExt, HeaderCookies, DefaultTheme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppConfig, getPagePath, AppPage, type IAppLogger, type Locale, type RecoverPasswordCompleteResultEnum, spinWait, delay, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD, type EntityId, type PreviewMode, type StayServiceLevel } from '@golobe-demo/shared';
 import { createHtmlPageModelMetadata } from '@golobe-demo/backend';
 import { ApiEndpointPurgeCache, ApiEndpointTestingPageCacheAction, ApiEndpointBookingDownload, type ITestingPageCacheActionDto, type ITestingPageCacheActionResultDto, TestingPageCacheActionEnum, ApiEndpointTestingCacheCleanup } from '../../server/api-definitions';

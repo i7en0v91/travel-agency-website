@@ -4,6 +4,7 @@ import { type EventHandlerRequest, type H3Event } from 'h3';
 import type { AcsysDraftEntitiesResolver } from './acsys-draft-entities-resolver';
 import type { PrismaClient } from '@prisma/client';
 import isString from 'lodash-es/isString';
+import { executeInTransaction } from './../helpers/db';
 
 export class AuthFormImageLogic implements IAuthFormImageLogic {
   private readonly logger: IAppLogger;
@@ -46,7 +47,7 @@ export class AuthFormImageLogic implements IAuthFormImageLogic {
   private async createFromImageData(imageData: AuthFormImageData, order: number, previewMode: PreviewMode): Promise<string> {
     let resultId: EntityId;
     if(previewMode) {
-      resultId = await this.dbRepository.$transaction(async () => {
+      resultId = await executeInTransaction(async () => {
         const imgParams: IImageData = {
           bytes: imageData.bytes,
           category: ImageCategory.AuthFormsImage,
@@ -72,7 +73,7 @@ export class AuthFormImageLogic implements IAuthFormImageLogic {
         });
 
         return resultId;
-      });
+      }, this.dbRepository);
     } else {
       resultId = await this.prismaImplementation.createImage(imageData, order, previewMode);
     }
