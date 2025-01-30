@@ -275,8 +275,6 @@ export default defineNuxtConfig({
   },
 
   content: {
-    //locales: AvailableLocaleCodes,
-    //defaultLocale: DefaultLocale,
     contentHead: false,
     highlight: false,
     ignores: [
