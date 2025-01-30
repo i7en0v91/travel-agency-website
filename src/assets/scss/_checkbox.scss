@@ -2,7 +2,6 @@
 @use 'utils' as *; 
 @use 'themes' as *;
 @use 'system' as *;
-@use 'svg';
 
 .checkbox {
   $checkbox-size: markup-to-rem(16px);
@@ -47,8 +46,8 @@
         -webkit-mask-position: center center;
         mask-position: center center;
         vertical-align: middle;
-        -webkit-mask-image: escape-svg(svg.$icon-check);
-        mask-image: escape-svg(svg.$icon-check);
+        -webkit-mask-image: url('~/public/img/icon-check.svg?raw&inline');
+        mask-image: url('~/public/img/icon-check.svg?raw&inline');
         @include with-theme-color('input-ctrl-primary') using($css-var) {
           background-color: var($css-var);
         }

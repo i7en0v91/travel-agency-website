@@ -4,7 +4,6 @@
 @use 'buttons' as *;
 @use 'themes' as *;
 @use 'utils' as *;
-@use 'svg';
 
 .stay-book-page {
   padding-left: var(--#{$prefix}-page-padding-x);

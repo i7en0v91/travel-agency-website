@@ -2,8 +2,6 @@
 @use 'system' as *;
 @use 'themes' as *;
 @use 'utils' as *;
-@use 'svg';
-
 
 .favourites-page {
   padding-left: var(--#{$prefix}-page-padding-x);

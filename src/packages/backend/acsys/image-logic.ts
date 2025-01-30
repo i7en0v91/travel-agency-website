@@ -5,6 +5,7 @@ import { type EventHandlerRequest, type H3Event } from 'h3';
 import type { PrismaClient, Prisma } from '@prisma/client';
 import { type AcsysDraftEntitiesResolver, UnresolvedEntityThrowingCondition } from './acsys-draft-entities-resolver';
 import omit from 'lodash-es/omit';
+import { executeInTransaction } from './../helpers/db';
 
 export class ImageLogic implements IImageLogic {
   private readonly logger: IAppLogger;
@@ -60,7 +61,7 @@ export class ImageLogic implements IImageLogic {
     let result: { id: EntityId, timestamp: Timestamp };
     if(previewMode) {
       const categoryId = (await this.imageCategoryLogic.getImageCategoryInfos(CachedResultsInAppServicesEnabled)).get(data.category)!.id;
-      result = await this.dbRepository.$transaction(async () => {
+      result = await executeInTransaction(async () => {
         const fileCreationResult = await this.fileLogic.createFile(data, userId);
         const imageEntity = await this.dbRepository.acsysDraftsImage.create({
           data: {
@@ -78,7 +79,7 @@ export class ImageLogic implements IImageLogic {
           }
         });
         return { id: imageEntity.id, timestamp: fileCreationResult.timestamp };
-      });
+      }, this.dbRepository);
     } else {
       result = await this.prismaImplementation.createImage(data, userId, previewMode);
     }
@@ -111,7 +112,7 @@ export class ImageLogic implements IImageLogic {
 
       if(!result) {
         const categoryId = data.category ? (await this.imageCategoryLogic.getImageCategoryInfos(CachedResultsInAppServicesEnabled)).get(data.category)!.id : undefined;
-        const timestamp = await this.dbRepository.$transaction(async () => {
+        const timestamp = await executeInTransaction(async () => {
           const updateResult = (await this.fileLogic.updateFile(imageFileId!, data, userId, true, event));
           await this.dbRepository.acsysDraftsImage.updateMany({
             where: {
@@ -129,7 +130,7 @@ export class ImageLogic implements IImageLogic {
             }
           });
           return updateResult.timestamp;
-        });
+        }, this.dbRepository);
         result = { timestamp };
       }
     } else {

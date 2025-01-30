@@ -2,6 +2,7 @@ import { type IOfferBookingData, AppException, AppExceptionCodeEnum, DbVersionIn
 import { type IStaysLogic, type IBookingLogic } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import { BookingInfoQuery, MapBooking } from './queries';
+import { executeInTransaction } from './../helpers/db';
 
 export class BookingLogic implements IBookingLogic {
   private logger: IAppLogger;
@@ -17,7 +18,7 @@ export class BookingLogic implements IBookingLogic {
 
   async deleteBooking(id: EntityId): Promise<void> {
     this.logger.verbose(`(BookingLogic) deleting booking: id=${id}`);
-    await this.dbRepository.$transaction(async () => {
+    await executeInTransaction(async () => {
       await this.dbRepository.userStayOffer.updateMany({
         where: {
           booking: {
@@ -54,7 +55,7 @@ export class BookingLogic implements IBookingLogic {
           version: { increment: 1 }
         }
       });
-    });
+    }, this.dbRepository);
     
     this.logger.verbose(`(BookingLogic) booking deleted: id=${id}`);
   };
@@ -62,7 +63,7 @@ export class BookingLogic implements IBookingLogic {
   async createBooking (data: IOfferBookingData): Promise<EntityId> {
     this.logger.verbose(`(BookingLogic) create booking, offerId=${data.offerId}, kind=${data.kind}, userId=${data.bookedUserId}`);
 
-    const entityId = await this.dbRepository.$transaction(async () => {
+    const entityId = await executeInTransaction(async () => {
       let userOfferId: EntityId | undefined;
       this.logger.debug(`(BookingLogic) checking user offer record, offerId=${data.offerId}, kind=${data.kind}, userId=${data.bookedUserId}`);
       if (data.kind === 'flights') {
@@ -151,7 +152,7 @@ export class BookingLogic implements IBookingLogic {
           id: true
         }
       })).id;
-    });
+    }, this.dbRepository);
 
     this.logger.verbose(`(BookingLogic) booking created, id=${entityId}`);
     return entityId;

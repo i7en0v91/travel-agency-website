@@ -2,7 +2,6 @@
 @use 'system' as *;
 @use 'themes' as *;
 @use 'utils' as *;
-@use 'svg';
 
 .privacy-page {
   padding-left: var(--#{$prefix}-page-padding-x);

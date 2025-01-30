@@ -44,7 +44,7 @@ function addExceptionToErrorPageHandler(appException: AppException, nuxtApp?: Re
     try {
       nuxtApp = useNuxtApp();
     } catch(err: any) {
-      consola.error('failed to access nuxt app (in addExceptionToErrorPageHandler)', appException);
+      consola.error('failed to access nuxt app (in addExceptionToErrorPageHandler)', appException, err);
       return;
     }
   }

@@ -3,7 +3,6 @@
 @use 'buttons' as *;
 @use 'themes' as *;
 @use 'utils' as *;
-@use 'svg';
 
 $payment-variant-mark-size: 24px;
 $payment-card-border-radius: map.get($spacings, '3');

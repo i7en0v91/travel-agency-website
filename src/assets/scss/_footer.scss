@@ -3,7 +3,6 @@
 @use 'buttons' as *;
 @use 'themes' as *;
 @use 'utils' as *;
-@use 'svg';
 
 $app-footer-centering-breakpoint: map.get($breakpoints, 's');
 
@@ -108,13 +107,13 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
       }
 
       .footer-social-icon-twitter::after {
-        -webkit-mask-image: escape-svg(svg.$icon-twitter);
-        mask-image: escape-svg(svg.$icon-twitter);
+        -webkit-mask-image: url('~/public/img/icon-twitter.svg?raw&inline');
+        mask-image: url('~/public/img/icon-twitter.svg?raw&inline');
       }
 
       .footer-social-icon-youtube::after {
-        -webkit-mask-image: escape-svg(svg.$icon-youtube);
-        mask-image: escape-svg(svg.$icon-youtube);
+        -webkit-mask-image: url('~/public/img/icon-youtube.svg?raw&inline');
+        mask-image: url('~/public/img/icon-youtube.svg?raw&inline');
       }
     }
   }
@@ -303,7 +302,7 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
     height: 100%;
     aspect-ratio: 4 / 3;
 
-    background-image: escape-svg(svg.$subscribe-mailbox);
+    background-image: url('~/public/img/subscribe-mailbox.svg?raw&inline');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center bottom;

@@ -60,7 +60,7 @@ export function navigateTo(page: AppPage, win: BrowserWindow, bridge: IRendererC
     bridge.navigateToPage(page);
     logger.debug(`(Navigation) navigation request called, page=${page.valueOf()}, win=[${win.title}]`);
   } catch(err: any) {
-    logger.warn(`(Navigation) navigation failed, page=${page.valueOf()}, win=[${win.title}]`);
+    logger.warn(`(Navigation) navigation failed, page=${page.valueOf()}, win=[${win.title}]`, err);
     showExceptionDialog('warning', bridge, logger);
   }
 }

@@ -2,7 +2,6 @@
 @use 'system' as *;
 @use 'themes' as *;
 @use 'utils' as *;
-@use 'svg';
 
 $user-cover-border-radius: map.get($borders-radius, '3');
 $user-avatar-xsmall-size: 100px;
@@ -438,8 +437,8 @@ $user-avatar-box-margin-top: 60px;
           height: 100%;
     
           &.icon-nav-link::before {
-            -webkit-mask-image: escape-svg(svg.$icon-right-chevron);
-            mask-image: escape-svg(svg.$icon-right-chevron);
+            -webkit-mask-image: url('~/public/img/icon-right-chevron.svg?raw&inline');
+            mask-image: url('~/public/img/icon-right-chevron.svg?raw&inline');
             margin: 0;
           }
 
@@ -642,13 +641,13 @@ $user-avatar-box-margin-top: 60px;
 }
 
 .icon-check::before {
-  -webkit-mask-image: escape-svg(svg.$icon-check);
-  mask-image: escape-svg(svg.$icon-check);
+  -webkit-mask-image: url('~/public/img/icon-check.svg?raw&inline');
+  mask-image: url('~/public/img/icon-check.svg?raw&inline');
 }
 
 .icon-cross::before {
-  -webkit-mask-image: escape-svg(svg.$icon-cross);
-  mask-image: escape-svg(svg.$icon-cross);
+  -webkit-mask-image: url('~/public/img/icon-cross.svg?raw&inline');
+  mask-image: url('~/public/img/icon-cross.svg?raw&inline');
   margin-bottom: 0.05rem;
 }
 
@@ -663,8 +662,8 @@ $user-avatar-box-margin-top: 60px;
 }
 
 .option-button-icon-user {
-  -webkit-mask-image: escape-svg(svg.$icon-user);
-  mask-image: escape-svg(svg.$icon-user);
+  -webkit-mask-image: url('~/public/img/icon-user.svg?raw&inline');
+  mask-image: url('~/public/img/icon-user.svg?raw&inline');
 }
 
 .option-button-icon-history {

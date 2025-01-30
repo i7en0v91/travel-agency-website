@@ -1,4 +1,4 @@
-import { type Plugin as RollupPlugin } from 'rollup';
+import type { Plugin as RollupPlugin} from 'rollup';
 import { readFile } from 'fs/promises';
 import { createResolver } from '@nuxt/kit';
 import { consola } from 'consola';
@@ -9,7 +9,7 @@ const SharpDynamicLoaderPluginName = 'sharp-dynamic-loader';
 const SharpDynamicLoaderWrapperId = 'sharp-dynamic-loader.ts';
 const SharpDynamicLoaderPlugin: RollupPlugin = {
   name: SharpDynamicLoaderPluginName,
-
+  
   resolveId: async (source) => {
     if(source.includes('sharp-image-processor') && !source.endsWith('.ts')) {
       return SharpDynamicLoaderWrapperId;
@@ -17,8 +17,8 @@ const SharpDynamicLoaderPlugin: RollupPlugin = {
   },
   load: async(id) => {
     if(id === SharpDynamicLoaderWrapperId) {
-      const sharpProcessorSrcPath = await nuxtResolve.resolve('packages/backend/common-services/sharp-image-processor.ts');
-      const sharpLibSrcPath = await nuxtResolve.resolve('node_modules/sharp/lib/index.js'); // sharp@0.32.6
+      const sharpProcessorSrcPath = await nuxtResolve.resolve('./../packages/backend/common-services/sharp-image-processor.ts');
+      const sharpLibSrcPath = await nuxtResolve.resolve('./../node_modules/sharp/lib/index.js'); // sharp@0.32.6
 
       const imageProcessorSrc = await readFile(sharpProcessorSrcPath, 'utf8');
       const bundledAccessorTemplate = 'async getSharp() { return sharp; }';
@@ -34,4 +34,4 @@ const SharpDynamicLoaderPlugin: RollupPlugin = {
   }
 };
 
-export { SharpDynamicLoaderPlugin };
+export { SharpDynamicLoaderPlugin }; 

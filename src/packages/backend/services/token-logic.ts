@@ -1,7 +1,7 @@
 import { MaxTokenConsumeAttempts, TokenKind, type IAppLogger, type EntityId, lookupValueOrThrow, DbVersionInitial, AppException, AppExceptionCodeEnum, newUniqueId } from '@golobe-demo/shared';
 import type { PrismaClient } from '@prisma/client';
 import { type TokenConsumeResult, type ITokenLogic, type ITokenIssueResult } from './../types';
-import { mapEnumDbValue } from '../helpers/db';
+import { mapEnumDbValue, executeInTransaction } from '../helpers/db';
 import { generateNewTokenValue, verifyTokenValue, isTokenActive } from './../helpers/tokens';
 
 export class TokenLogic implements ITokenLogic {
@@ -47,7 +47,7 @@ export class TokenLogic implements ITokenLogic {
       }
     } else if (kind === TokenKind.EmailVerify) {
       this.logger.info(`(TokenLogic) marking user email for token as verified: kind=${kind}, tokenId=${tokenId}, userId=${userId}`);
-      await this.dbRepository.$transaction(async () => {
+      await executeInTransaction(async () => {
         let updateResult = (await this.dbRepository.userEmail.update({
           where: { verificationTokenId: tokenId, isDeleted: false },
           data: { 
@@ -81,7 +81,7 @@ export class TokenLogic implements ITokenLogic {
           }));
           changedEmailId = updateResult?.changedEmailId ?? undefined;
         }
-      });
+      }, this.dbRepository);
     } else if (kind === TokenKind.PasswordRecovery) {
       // nothing special for this
     } else {

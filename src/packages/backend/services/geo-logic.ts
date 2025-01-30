@@ -3,6 +3,7 @@ import { type ICityShort, type ICityData, type ICountryData, type IGeoLogic } fr
 import { type Storage, type StorageValue } from 'unstorage';
 import type { PrismaClient } from '@prisma/client';
 import { mapDbGeoCoord, mapGeoCoord } from '../helpers/db';
+import isNumber from 'lodash-es/isNumber';
 
 export class GeoLogic implements IGeoLogic {
   private logger: IAppLogger;
@@ -39,8 +40,8 @@ export class GeoLogic implements IGeoLogic {
     this.logger.debug(`(GeoLogic) get average distance, cityId=${cityId}`);
 
     const cacheKey = this.getAverageDistanceCacheKey(cityId);
-    let result: number | null = (await this.cache.getItem(cacheKey));
-    if (result === null) {
+    let result: StorageValue | null = (await this.cache.getItem(cacheKey));
+    if (result === null || !isNumber(result)) {
       this.logger.verbose(`(GeoLogic) average distance, cache miss, cityId=${cityId}`);
       const entity = await this.dbRepository.city.findFirst({
         where: {

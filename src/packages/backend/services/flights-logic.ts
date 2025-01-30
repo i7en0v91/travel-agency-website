@@ -10,6 +10,7 @@ import uniqBy from 'lodash-es/uniqBy';
 import { murmurHash } from 'ohash';
 import { FlightOfferInfoQuery, MapFlightOffer } from './queries';
 import { type IFlightOfferMaterializer } from './../common-services/offer-materializers';
+import { executeInTransaction } from './../helpers/db';
 
 declare type OfferWithSortFactors<TOffer extends IFlightOffer> = EntityDataAttrsOnly<TOffer> & { primarySortFactor: number, secondarySortFactor: number };
 
@@ -37,7 +38,7 @@ export class FlightsLogic implements IFlightsLogic {
 
   async deleteFlightOffer(id: EntityId): Promise<void> {
     this.logger.verbose(`(FlightsLogic) deleting flight offer: id=${id}`);
-    await this.dbRepository.$transaction(async () => {
+    await executeInTransaction(async () => {
       await this.dbRepository.booking.updateMany({
         where: {
           flightOffer: {
@@ -72,7 +73,7 @@ export class FlightsLogic implements IFlightsLogic {
           version: { increment: 1 }
         }
       });
-    });
+    }, this.dbRepository);
     this.logger.verbose(`(FlightsLogic) flight offer deleted: id=${id}`);
   };
 

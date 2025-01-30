@@ -1,6 +1,6 @@
 import { DbVersionInitial, newUniqueId, AppException, AppExceptionCodeEnum, type PreviewMode, type IAppLogger, type EntityId, type ICity } from '@golobe-demo/shared';
 import { type CitiesSearchParams, type IPopularCityData, type IPopularCityItem, type ITravelDetails, type ICitiesLogic, type ICitySearchItem } from './../types';
-import { mapGeoCoord } from './../helpers/db';
+import { mapGeoCoord, executeInTransaction } from './../helpers/db';
 import type { CitiesLogic as CitiesLogicPrisma } from './../services/cities-logic';
 import type { PrismaClient } from '@prisma/client';
 import { type AcsysDraftEntitiesResolver, UnresolvedEntityThrowingCondition } from './acsys-draft-entities-resolver';
@@ -102,7 +102,7 @@ export class CitiesLogic implements ICitiesLogic {
     this.logger.debug(`(CitiesLogic-Acsys) adding popular city data, cityId=${data.cityId}, previewMode=${previewMode}`);
 
     if(previewMode) {
-      await this.dbRepository.$transaction(async () => {
+      await executeInTransaction(async () => {
         const promoLineStrId = (await this.dbRepository.acsysDraftsLocalizeableValue.create({
           data: {
             id: newUniqueId(),
@@ -172,7 +172,7 @@ export class CitiesLogic implements ICitiesLogic {
               'error-stub');
           }
         }
-      });
+      }, this.dbRepository);
     } else {
       await this.prismaImplementation.makeCityPopular(data);
     }
@@ -253,7 +253,7 @@ export class CitiesLogic implements ICitiesLogic {
     this.logger.debug(`(CitiesLogic-Acsys) setting popular city images, cityId=${id}, images=${JSON.stringify(images)}, previewMode=${previewMode}`);
 
     if(previewMode) {
-      await this.dbRepository.$transaction(async () => {
+      await executeInTransaction(async () => {
         const popularCityId = (await this.dbRepository.acsysDraftsPopularCity.findFirst({
           where: {
             cityId: id
@@ -289,7 +289,7 @@ export class CitiesLogic implements ICitiesLogic {
           this.logger.debug(`(CitiesLogic-Acsys) city hasn't been found in drafts table, proceeding to the main table: id=${id}`);
           await this.prismaImplementation.setPopularCityImages(id, images);
         }
-      });  
+      }, this.dbRepository);  
     } else {
       await this.prismaImplementation.setPopularCityImages(id, images);
     }

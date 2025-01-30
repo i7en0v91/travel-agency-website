@@ -147,7 +147,7 @@ export default defineEventHandler(async (event) => {
       }
     }
   } catch(err: any) {
-    logger.warn(`(cacheable-page) failed to obtain page current timestamp, url=${event.node.req.url}, currentPage=${currentPage}`);
+    logger.warn(`(cacheable-page) failed to obtain page current timestamp, url=${event.node.req.url}, currentPage=${currentPage}`, err);
   }
   
   logger.debug(`(cacheable-page) extracting and parsing cacheable page query info, url=${event.node.req.url}, currentPage=${currentPage}, pageTimestamp=${pageTimestamp ?? ''}`);

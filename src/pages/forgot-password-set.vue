@@ -52,6 +52,7 @@ try {
   tokenValue = route.query.token_value?.toString() ?? '';
 } catch (err: any) {
   logger.info(`(ForgotPasswordSet) failed to parse token data: id=${tokenId}, value=${tokenValue ? SecretValueMask : '[empty]'}`);
+  console.warn(err);
 }
 
 const callServerPasswordSet = async (password: string) => {

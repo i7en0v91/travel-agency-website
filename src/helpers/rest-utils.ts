@@ -100,6 +100,7 @@ function getCurrentPreviewMode(event: H3Event | undefined, logger?: IAppLogger):
       result = enabled;
     } catch(err: any) {
       // probably nuxt instance access required
+      console.warn(err);
     }
   }
 

@@ -2,7 +2,7 @@ import { newUniqueId, DbVersionInitial, type IStayOffer, type IAppLogger, type E
 import { buildStayOfferUniqueDataKey, buildFlightUniqueDataKey, buildFlightOfferUniqueDataKey } from './../helpers/utils';
 import flatten from 'lodash-es/flatten';
 import type { PrismaClient } from '@prisma/client';
-import { mapDate } from './../helpers/db';
+import { mapDate, executeInTransaction } from './../helpers/db';
 import keys from 'lodash-es/keys';
 import uniqBy from 'lodash-es/uniqBy';
 import { type IFlightOfferMaterializer, type IStayOfferMaterializer } from './../common-services/offer-materializers';
@@ -25,7 +25,7 @@ export class AcsysFlightOfferMaterializer implements IFlightOfferMaterializer {
   async createFlightsAndFillIds (flights: EntityDataAttrsOnly<IFlight>[]): Promise<void> {
     this.logger.verbose(`(FlightsLogic-Acsys) AcsysFlightOfferMaterializer - creating memory flights and filling IDs, count=${flights.length}`);
 
-    await this.dbRepository.$transaction(async () => {
+    await executeInTransaction(async () => {
       for (let i = 0; i < flights.length; i++) {
         const flight = flights[i];
         const dataHash = buildFlightUniqueDataKey(flight);
@@ -49,7 +49,7 @@ export class AcsysFlightOfferMaterializer implements IFlightOfferMaterializer {
 
         flight.id = queryResult.id;
       }
-    });
+    }, this.dbRepository);
 
     this.logger.verbose(`(FlightsLogic-Acsys) AcsysFlightOfferMaterializer - creating memory flights and filling IDs - completed, count=${flights.length}`);
   }
@@ -112,7 +112,7 @@ export class AcsysFlightOfferMaterializer implements IFlightOfferMaterializer {
     }
 
     this.logger.debug('(FlightsLogic-Acsys) AcsysFlightOfferMaterializer - running offer\'s create transaction');
-    await this.dbRepository.$transaction(async () => {
+    await executeInTransaction(async () => {
       for (let i = 0; i < offers.length; i++) {
         const offer = offers[i];
         const dataHash = buildFlightOfferUniqueDataKey(offer);
@@ -135,7 +135,7 @@ export class AcsysFlightOfferMaterializer implements IFlightOfferMaterializer {
 
         offer.id = queryResult.id;
       }
-    });
+    }, this.dbRepository);
 
     this.logger.verbose(`(FlightsLogic-Acsys) AcsysFlightOfferMaterializer - creating memory offers and filling IDs - completed, count=${offers.length}`);
   }
@@ -241,7 +241,7 @@ export class AcsysStayOfferMaterializer implements IStayOfferMaterializer {
     }
 
     this.logger.debug('(StaysLogic-Acsys) AcsysStayOfferMaterializer running offer\'s create transaction');
-    await this.dbRepository.$transaction(async () => {
+    await executeInTransaction(async () => {
       for (let i = 0; i < offers.length; i++) {
         const offer = offers[i];
         const dataHash = buildStayOfferUniqueDataKey(offer);
@@ -266,7 +266,7 @@ export class AcsysStayOfferMaterializer implements IStayOfferMaterializer {
 
         offer.id = queryResult.id;
       }
-    });
+    }, this.dbRepository);
 
     this.logger.verbose(`(StaysLogic-Acsys) AcsysStayOfferMaterializer creating memory offers and filling IDs - completed, count=${offers.length}`);
   }

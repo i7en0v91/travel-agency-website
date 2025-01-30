@@ -4,7 +4,6 @@
 @use 'buttons' as *;
 @use 'themes' as *;
 @use 'utils' as *;
-@use 'svg';
 
 .flight-details-page {
   $flight-details-page-icon-size: 24px;
@@ -119,8 +118,8 @@
               -webkit-mask-position: center center;
               mask-position: center center;
               vertical-align: middle;
-              -webkit-mask-image: escape-svg(svg.$icon-check);
-              mask-image: escape-svg(svg.$icon-check);
+              -webkit-mask-image: url('~/public/img/icon-check.svg?raw&inline');
+              mask-image: url('~/public/img/icon-check.svg?raw&inline');
               content: '';
               @include with-theme-color('choice-ctrl') using($css-var) {
                 background-color: var($css-var);

@@ -2,7 +2,6 @@
 @use 'utils' as *; 
 @use 'themes' as *;
 @use 'system' as *;
-@use 'svg';
 
 $options-button-dropdown-icon-size: 20px;
 
@@ -153,8 +152,8 @@ $options-button-dropdown-icon-size: 20px;
 
       &.option-button-icon-menu {
         display: block;
-        -webkit-mask-image: escape-svg(svg.$icon-navbar-toggler-light);
-        mask-image: escape-svg(svg.$icon-navbar-toggler-light);
+        -webkit-mask-image: url('~/public/img/navbar-toggler-light.svg?raw&inline');
+        mask-image: url('~/public/img/navbar-toggler-light.svg?raw&inline');
       }
     }
 
@@ -214,8 +213,8 @@ $options-button-dropdown-icon-size: 20px;
         mask-position: center center;
         vertical-align: middle;
   
-        -webkit-mask-image: escape-svg(svg.$icon-check);
-        mask-image: escape-svg(svg.$icon-check);
+        -webkit-mask-image: url('~/public/img/icon-check.svg?raw&inline');
+        mask-image: url('~/public/img/icon-check.svg?raw&inline');
         @include with-theme-color('input-ctrl-primary') using($css-var) {
           background-color: var($css-var);
         }

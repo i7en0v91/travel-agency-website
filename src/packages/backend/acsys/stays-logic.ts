@@ -1,6 +1,6 @@
 import { type ISearchStayOffersResult, type IStayData, type IStayOffersFilterParams, DbVersionInitial, newUniqueId, type ReviewSummary, type PreviewMode, type IAppLogger, type IStayOfferDetails, type IStayReview, type StayServiceLevel, type StayOffersSortFactor, type IPagination, type ISorting, type EntityId, type IStayShort, type EntityDataAttrsOnly, type IStayOffer, type IStay, DefaultStayReviewScore } from '@golobe-demo/shared';
 import { type IStaysLogic } from './../types';
-import { mapGeoCoord } from './../helpers/db';
+import { mapGeoCoord, executeInTransaction } from './../helpers/db';
 import type Decimal from 'decimal.js';
 import type { PrismaClient } from '@prisma/client';
 import { type AcsysDraftEntitiesResolver, UnresolvedEntityThrowingCondition } from './acsys-draft-entities-resolver';
@@ -70,7 +70,7 @@ export class StaysLogic implements IStaysLogic {
 
     let stayId: EntityId;
     if(previewMode) {
-      stayId = await this.dbRepository.$transaction(async () => {
+      stayId = await executeInTransaction(async () => {
         const nameStrId = (await this.dbRepository.acsysDraftsLocalizeableValue.create({
           data: {
             id: newUniqueId(),
@@ -138,7 +138,7 @@ export class StaysLogic implements IStaysLogic {
         }
 
         return entityId;
-      });
+      }, this.dbRepository);
     } else {
       stayId = await this.prismaImplementation.createStay(data, previewMode);
     }

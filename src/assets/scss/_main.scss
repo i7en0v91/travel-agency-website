@@ -6,7 +6,6 @@
 @use 'buttons' as *;
 @use 'themes' as *;
 @use 'utils' as *;
-@use 'svg';
 
 $field-frame-y-padding: markup-to-rem(14px);
 
@@ -123,7 +122,7 @@ a {
       height: 100%;
       max-width: 64px;
       max-height: 64px;
-      background-image: escape-svg(svg.$icon-error-helm-stub);
+      background-image: url('~/public/img/error-helm-stub.svg?raw&inline');
       background-repeat: no-repeat;
       background-position: center;
   
@@ -306,8 +305,8 @@ a {
       vertical-align: inherit;
       
 
-      -webkit-mask-image: escape-svg(svg.$icon-dropdown-toggler);
-      mask-image: escape-svg(svg.$icon-dropdown-toggler);
+      -webkit-mask-image: url('~/public/img/icon-dropdown-toggler.svg?raw&inline');
+      mask-image: url('~/public/img/icon-dropdown-toggler.svg?raw&inline');
       
       -webkit-mask-size: contain;
       mask-size: contain;
@@ -655,8 +654,8 @@ a {
       content: '';
       transform: rotate(-90deg);
 
-      -webkit-mask-image: escape-svg(svg.$icon-right-chevron);
-      mask-image: escape-svg(svg.$icon-right-chevron);
+      -webkit-mask-image: url('~/public/img/icon-right-chevron.svg?raw&inline');
+      mask-image: url('~/public/img/icon-right-chevron.svg?raw&inline');
       
       -webkit-mask-size: contain;
       mask-size: contain;

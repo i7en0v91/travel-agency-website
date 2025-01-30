@@ -3,7 +3,6 @@
 @use 'buttons' as *;
 @use 'themes' as *;
 @use 'utils' as *;
-@use 'svg';
 
 .search-flights-page {
   padding-left: var(--#{$prefix}-page-padding-x);

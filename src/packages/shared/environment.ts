@@ -1,5 +1,11 @@
 import { DEV_ENV_MODE } from './constants';
 
+/**
+ * Log via winston transport instead of direct REST Api endpoint POST.
+ * See comments to {@link WinstonEsmClientPlugin}
+ */
+export const UseWinstonOnClient = isPublishEnv();
+
 export function isTestEnv (): boolean {
   return (!!import.meta.env.VITE_VITEST && 
     (import.meta.env.VITE_VITEST === true || import.meta.env.VITE_VITEST === 'true')

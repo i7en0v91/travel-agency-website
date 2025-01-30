@@ -1,9 +1,7 @@
 import type { StayOffersSortFactorEnum, FlightOffersSortFactorEnum, StayDescriptionParagraphEnum, StayServiceLevelEnum, AirplaneImageEnum, ImageCategory, FlightClassEnum, CacheEntityTypeEnum } from './index';
 import type { PageCacheVaryOptionsEnum, UninitializedPageTimestampValue, ThemeEnum, LocaleEnum, LogLevelEnum, AuthProvider } from './constants';
 import type { Decimal } from 'decimal.js';
-import type { IAppLogger } from './applogger';
-
-export { type IAppLogger } from './applogger';
+import type { IAppLogger } from './logging/common';
 export { type IAppConfig } from './appconfig';
 export { type I18nResName } from './i18n';
 

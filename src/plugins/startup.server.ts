@@ -33,7 +33,7 @@ async function checkOgImageConfiguration (logger: IAppLogger): Promise<void> {
       try {
         await access(imgPath);
       } catch (err: any) {
-        logger.error(`og image was not found, page=${imgPath}`);
+        logger.error(`og image was not found, page=${imgPath}`, err);
         throw new Error('OG image check failed');
       }
     }

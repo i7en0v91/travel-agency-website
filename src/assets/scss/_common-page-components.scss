@@ -3,7 +3,6 @@
 @use 'buttons' as *;
 @use 'themes' as *;
 @use 'utils' as *;
-@use 'svg';
 
 $search-offers-input-controls-size: 24px;
 $calendar-icon-size: 24px;
@@ -536,8 +535,8 @@ $stay-interval-image-height: 48;
         }
   
         content: '';
-        -webkit-mask-image: escape-svg(svg.$icon-bed);
-        mask-image: escape-svg(svg.$icon-bed);
+        -webkit-mask-image: url('~/public/img/icon-bed.svg?raw&inline');
+        mask-image: url('~/public/img/icon-bed.svg?raw&inline');
       }
     }
   }
@@ -1589,8 +1588,8 @@ $stay-interval-image-height: 48;
           margin-left: map.get($spacings, '2');
           content: '';
   
-          -webkit-mask-image: escape-svg(svg.$icon-right-chevron);
-          mask-image: escape-svg(svg.$icon-right-chevron);
+          -webkit-mask-image: url('~/public/img/icon-right-chevron.svg?raw&inline');
+          mask-image: url('~/public/img/icon-right-chevron.svg?raw&inline');
           
           -webkit-mask-size: contain;
           mask-size: contain;
@@ -3080,13 +3079,13 @@ $stay-interval-image-height: 48;
 }
 
 .option-button-icon-airplane {
-  -webkit-mask-image: escape-svg(svg.$icon-airplane);
-  mask-image: escape-svg(svg.$icon-airplane);
+  -webkit-mask-image: url('~/public/img/icon-airplane.svg?raw&inline');
+  mask-image: url('~/public/img/icon-airplane.svg?raw&inline');
 }
 
 .option-button-icon-bed {
-  -webkit-mask-image: escape-svg(svg.$icon-bed);
-  mask-image: escape-svg(svg.$icon-bed);
+  -webkit-mask-image: url('~/public/img/icon-bed.svg?raw&inline');
+  mask-image: url('~/public/img/icon-bed.svg?raw&inline');
 }
 
 .offer-tab {

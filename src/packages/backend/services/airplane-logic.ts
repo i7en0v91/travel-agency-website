@@ -4,6 +4,7 @@ import type { PrismaClient } from '@prisma/client';
 import { AllAirplanesCacheKey } from './../helpers/utils';
 import { type Storage, type StorageValue } from 'unstorage';
 import { AirplaneInfoQuery, MapAirplane } from './queries';
+import { executeInTransaction } from './../helpers/db';
 
 export class AirplaneLogic implements IAirplaneLogic {
   private readonly logger: IAppLogger;
@@ -47,7 +48,7 @@ export class AirplaneLogic implements IAirplaneLogic {
 
   async deleteAirplane(id: EntityId): Promise<void> {
     this.logger.verbose(`(AirplaneLogic) deleting airplane: id=${id}`);
-    await this.dbRepository.$transaction(async () => {
+    await executeInTransaction(async () => {
       await this.dbRepository.airplaneImage.updateMany({
         where: {
           airplane: {
@@ -70,7 +71,7 @@ export class AirplaneLogic implements IAirplaneLogic {
           version: { increment: 1 }
         }
       });
-    });
+    }, this.dbRepository);
     await this.clearAirplanesCache();
     this.logger.verbose(`(AirplaneLogic) airplane deleted: id=${id}`);
   };
@@ -98,7 +99,7 @@ export class AirplaneLogic implements IAirplaneLogic {
   async createAirplane (data: IAirplaneData): Promise<EntityId> {
     this.logger.verbose('(AirplaneLogic) creating airplane');
 
-    const airplaneId = await this.dbRepository.$transaction(async () => {
+    const airplaneId = await executeInTransaction(async () => {
       const entityId = (await this.dbRepository.airplane.create({
         data: {
           id: newUniqueId(),
@@ -133,7 +134,7 @@ export class AirplaneLogic implements IAirplaneLogic {
       }
 
       return entityId;
-    });
+    }, this.dbRepository);
     await this.clearAirplanesCache();
 
     this.logger.verbose(`(AirplaneLogic) creating airplane - completed, id=${airplaneId}`);

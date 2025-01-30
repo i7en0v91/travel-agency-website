@@ -2,7 +2,6 @@
 @use 'utils' as *; 
 @use 'themes' as *;
 @use 'system' as *;
-@use 'svg';
 
 $landing-color: white;
 
@@ -347,8 +346,8 @@ $nav-logo-inapp-l-offset: -1.3rem;
           }
   
           &.nav-user-avatar-default {
-            mask-image: escape-svg(svg.$icon-user);
-            -webkit-mask-image: escape-svg(svg.$icon-user);
+            mask-image: url('~/public/img/icon-user.svg?raw&inline');
+            -webkit-mask-image: url('~/public/img/icon-user.svg?raw&inline');
             -webkit-mask-size: contain;
             mask-size: contain;
             -webkit-mask-repeat: no-repeat;
@@ -458,17 +457,17 @@ $nav-logo-inapp-l-offset: -1.3rem;
 
   @include with-dark-theme() {
     .nav-toggler {
-      background-image: escape-svg(svg.$icon-navbar-toggler-dark);
+      background-image: url('~/public/img/navbar-toggler-dark.svg?raw&inline');
     }
   }
   
   @include with-light-theme() {
     .nav-toggler {
-      background-image: escape-svg(svg.$icon-navbar-toggler-light);
+      background-image: url('~/public/img/navbar-toggler-light.svg?raw&inline');
     }
     &.nav-bar-landing {
       .nav-toggler {
-        background-image: escape-svg(svg.$icon-navbar-toggler-dark);
+        background-image: url('~/public/img/navbar-toggler-dark.svg?raw&inline');
       }
     }
   
@@ -585,8 +584,8 @@ $nav-logo-inapp-l-offset: -1.3rem;
       position: absolute;
       content: "";
 
-      -webkit-mask-image: escape-svg(svg.$icon-moon);
-      mask-image: escape-svg(svg.$icon-moon);
+      -webkit-mask-image: url('~/public/img/icon-moon.svg?raw&inline');
+      mask-image: url('~/public/img/icon-moon.svg?raw&inline');
       -webkit-mask-size: contain;
       mask-size: contain;
 
@@ -606,8 +605,8 @@ $nav-logo-inapp-l-offset: -1.3rem;
       left: calc(($theme-switcher-aspect-ratio - 1) * $theme-switcher-button-size);
       margin-left: calc($theme-switcher-button-pad - $theme-switcher-stopper-adj);
       
-      -webkit-mask-image: escape-svg(svg.$icon-sun);
-      mask-image: escape-svg(svg.$icon-sun);
+      -webkit-mask-image: url('~/public/img/icon-sun.svg?raw&inline');
+      mask-image: url('~/public/img/icon-sun.svg?raw&inline');
       -webkit-mask-size: contain;
       mask-size: contain;
     }
@@ -629,8 +628,8 @@ $nav-logo-inapp-l-offset: -1.3rem;
 
   @keyframes theme-switcher-on {
     0% {
-      -webkit-mask-image: escape-svg(svg.$icon-moon);
-      mask-image: escape-svg(svg.$icon-moon);
+      -webkit-mask-image: url('~/public/img/icon-moon.svg?raw&inline');
+      mask-image: url('~/public/img/icon-moon.svg?raw&inline');
       -webkit-mask-size: contain;
       mask-size: contain;
 
@@ -639,8 +638,8 @@ $nav-logo-inapp-l-offset: -1.3rem;
     }
 
     100% {
-      -webkit-mask-image: escape-svg(svg.$icon-sun);
-      mask-image: escape-svg(svg.$icon-sun);
+      -webkit-mask-image: url('~/public/img/icon-sun.svg?raw&inline');
+      mask-image: url('~/public/img/icon-sun.svg?raw&inline');
       -webkit-mask-size: contain;
       mask-size: contain;
 
@@ -651,8 +650,8 @@ $nav-logo-inapp-l-offset: -1.3rem;
 
   @keyframes theme-switcher-off {
     0% {
-      -webkit-mask-image: escape-svg(svg.$icon-sun);
-      mask-image: escape-svg(svg.$icon-sun);
+      -webkit-mask-image: url('~/public/img/icon-sun.svg?raw&inline');
+      mask-image: url('~/public/img/icon-sun.svg?raw&inline');
       -webkit-mask-size: contain;
       mask-size: contain;
 
@@ -661,8 +660,8 @@ $nav-logo-inapp-l-offset: -1.3rem;
     }
 
     100% {
-      -webkit-mask-image: escape-svg(svg.$icon-moon);
-      mask-image: escape-svg(svg.$icon-moon);
+      -webkit-mask-image: url('~/public/img/icon-moon.svg?raw&inline');
+      mask-image: url('~/public/img/icon-moon.svg?raw&inline');
       -webkit-mask-size: contain;
       mask-size: contain;
 
@@ -714,8 +713,8 @@ $nav-logo-inapp-l-offset: -1.3rem;
       }
 
       &.nav-user-menu-avatar-default {
-        mask-image: escape-svg(svg.$icon-user);
-        -webkit-mask-image: escape-svg(svg.$icon-user);
+        mask-image: url('~/public/img/icon-user.svg?raw&inline');
+        -webkit-mask-image: url('~/public/img/icon-user.svg?raw&inline');
         -webkit-mask-size: contain;
         mask-size: contain;
         -webkit-mask-repeat: no-repeat;
@@ -791,8 +790,8 @@ $nav-logo-inapp-l-offset: -1.3rem;
           padding-right: markup-to-rem(map.get($spacings, '1'));
           content: '';
 
-          -webkit-mask-image: escape-svg(svg.$icon-right-chevron);
-          mask-image: escape-svg(svg.$icon-right-chevron);
+          -webkit-mask-image: url('~/public/img/icon-right-chevron.svg?raw&inline');
+          mask-image: url('~/public/img/icon-right-chevron.svg?raw&inline');
           
           -webkit-mask-size: contain;
           mask-size: contain;
@@ -870,18 +869,18 @@ $nav-logo-inapp-l-offset: -1.3rem;
 }
 
 .nav-link-icon-airplane::before {
-  -webkit-mask-image: escape-svg(svg.$icon-airplane);
-  mask-image: escape-svg(svg.$icon-airplane);
+  -webkit-mask-image: url('~/public/img/icon-airplane.svg?raw&inline');
+  mask-image: url('~/public/img/icon-airplane.svg?raw&inline');
 }
 
 .nav-link-icon-bed::before {
-  -webkit-mask-image: escape-svg(svg.$icon-bed);
-  mask-image: escape-svg(svg.$icon-bed);
+  -webkit-mask-image: url('~/public/img/icon-bed.svg?raw&inline');
+  mask-image: url('~/public/img/icon-bed.svg?raw&inline');
 }
 
 .nav-link-icon-favourite::before {
-  -webkit-mask-image: escape-svg(svg.$icon-heart);
-  mask-image: escape-svg(svg.$icon-heart);
+  -webkit-mask-image: url('~/public/img/icon-heart.svg?raw&inline');
+  mask-image: url('~/public/img/icon-heart.svg?raw&inline');
 }
 
 .nav-link-icon-heart {
@@ -890,8 +889,8 @@ $nav-logo-inapp-l-offset: -1.3rem;
 }
 
 .nav-link-icon-user {
-  -webkit-mask-image: escape-svg(svg.$icon-user);
-  mask-image: escape-svg(svg.$icon-user);
+  -webkit-mask-image: url('~/public/img/icon-user.svg?raw&inline');
+  mask-image: url('~/public/img/icon-user.svg?raw&inline');
 }
 
 .nav-link-icon-credit-card {
@@ -910,8 +909,8 @@ $nav-logo-inapp-l-offset: -1.3rem;
 }
 
 .nav-link-icon-user {
-  -webkit-mask-image: escape-svg(svg.$icon-user);
-  mask-image: escape-svg(svg.$icon-user);
+  -webkit-mask-image: url('~/public/img/icon-user.svg?raw&inline');
+  mask-image: url('~/public/img/icon-user.svg?raw&inline');
 }
 
 .nav-link-icon-logout {

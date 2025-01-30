@@ -2,13 +2,9 @@ import repeat from 'lodash-es/repeat';
 import zip from 'lodash-es/zip';
 import range from 'lodash-es/range';
 import fromPairs from 'lodash-es/fromPairs';
-import isString from 'lodash-es/isString';
-import isNumber from 'lodash-es/isNumber';
-import { stringifyClone } from './utils';
 import type { LogObject } from 'consola';
-import AppConfig from './appconfig';
-import { type AppExceptionCode } from './exceptions';
-import type { LogLevel } from './types';
+import AppConfig from './../appconfig';
+import { type LogLevel } from './../types';
 
 /** Log message will be suppressed only if all specified filters combined by AND mathches their input strings */
 export interface ILogSuppressionRule {
@@ -58,24 +54,6 @@ export function buildParamsLogData (...params: any[]): any {
   return fromPairs(numberedArguments);
 }
 
-export function wrapLogDataArg (data?: any): object {
-  if (!data) {
-    return {};
-  }
-
-  if (isString(data) || isNumber(data)) {
-    return { val: data };
-  }
-  return stringifyClone(data || {});
-}
-
-export function getAppExceptionCustomLogLevel (appExceptionCode: AppExceptionCode | undefined): LogLevel | undefined {
-  if (!appExceptionCode) {
-    return undefined;
-  }
-  return (AppConfig.logging.common.appExceptionLogLevels.find(r => r.appExceptionCode === appExceptionCode))?.logLevel;
-}
-
 export function parseLevelFromNuxtLog (logItem: LogObject): LogLevel {
   switch (logItem.level) {
     case 0:
@@ -118,24 +96,6 @@ export function parseLevelFromNuxtLog (logItem: LogObject): LogLevel {
   }
 }
 
-function testLogSuppressionRule(rule: ILogSuppressionRule, msg?: string, err?: any): boolean {
-  if (rule.messageFitler) {
-    let matchesMsg = false;
-    if (msg) {
-      matchesMsg = (msg.match(rule.messageFitler)?.length ?? 0) > 0;
-    }
-    if (!matchesMsg && err) {
-      matchesMsg = (JSON.stringify(err).match(rule.messageFitler)?.length ?? 0) > 0;
-    }
-    if (!matchesMsg) {
-      return false;
-    }
-  } else {
-    return false;
-  }
-  return true;
-}
-
 export function checkNeedSuppressServerMsg (msg?: string, err?: any): boolean {
   const serverSuppressRules = AppConfig.logging.suppress.server;
   for (let i = 0; i < serverSuppressRules.length; i++) {
@@ -172,4 +132,22 @@ export function checkNeedSuppressVueMsg (msg?: string, trace?: string, err?: any
   }
 
   return false;
+}
+
+function testLogSuppressionRule(rule: ILogSuppressionRule, msg?: string, err?: any): boolean {
+  if (rule.messageFitler) {
+    let matchesMsg = false;
+    if (msg) {
+      matchesMsg = (msg.match(rule.messageFitler)?.length ?? 0) > 0;
+    }
+    if (!matchesMsg && err) {
+      matchesMsg = (JSON.stringify(err).match(rule.messageFitler)?.length ?? 0) > 0;
+    }
+    if (!matchesMsg) {
+      return false;
+    }
+  } else {
+    return false;
+  }
+  return true;
 }

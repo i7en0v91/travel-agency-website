@@ -2,7 +2,7 @@ import { AppException, AppExceptionCodeEnum, DbVersionInitial, newUniqueId, type
 import { type ICitiesLogic, type IAirportLogic, type IAirportShort, type IAirportData,  } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import type { AcsysDraftEntitiesResolver } from './acsys-draft-entities-resolver';
-import { mapGeoCoord } from './../helpers/db';
+import { mapGeoCoord, executeInTransaction } from './../helpers/db';
 import uniq from 'lodash-es/uniq';
 import groupBy from 'lodash-es/groupBy';
 import values from 'lodash-es/values';
@@ -157,7 +157,7 @@ export class AirportLogic implements IAirportLogic {
 
     let airportId: EntityId;
     if(previewMode) {
-      airportId = await this.dbRepository.$transaction(async () => {
+      airportId = await executeInTransaction(async () => {
         const nameStrId = (await this.dbRepository.acsysDraftsLocalizeableValue.create({
           data: {
             id: newUniqueId(),
@@ -184,7 +184,7 @@ export class AirportLogic implements IAirportLogic {
         })).id;
 
         return draftAirportId;
-      });
+      }, this.dbRepository);
     } else {
       airportId = await this.prismaImplementation.createAirport(data, previewMode);
     }

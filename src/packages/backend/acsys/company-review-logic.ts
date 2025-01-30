@@ -2,6 +2,7 @@ import { DbVersionInitial, newUniqueId, type PreviewMode, type IAppLogger, type 
 import { type CompanyReviewData, type ICompanyReview, type ICompanyReviewsLogic }  from './../types';
 import type { PrismaClient } from '@prisma/client';
 import type { AcsysDraftEntitiesResolver } from './acsys-draft-entities-resolver';
+import { executeInTransaction } from './../helpers/db';
 
 export class CompanyReviewLogic implements ICompanyReviewsLogic {
   private readonly logger: IAppLogger;
@@ -28,7 +29,7 @@ export class CompanyReviewLogic implements ICompanyReviewsLogic {
 
     let reviewId: EntityId;
     if(previewMode) {
-      reviewId = await this.dbRepository.$transaction(async () => {
+      reviewId = await executeInTransaction(async () => {
         const headerStrId = (await this.dbRepository.acsysDraftsLocalizeableValue.create({
           data: {
             id: newUniqueId(),
@@ -78,7 +79,7 @@ export class CompanyReviewLogic implements ICompanyReviewsLogic {
         })).id;
 
         return reviewId;
-      });
+      }, this.dbRepository);
     } else {
       reviewId = await this.prismaImplementation.createReview(data, previewMode);
     }

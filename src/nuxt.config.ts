@@ -1,16 +1,17 @@
-import { I18LocalesDirName, lookupValueOrThrow, AppConfig, SystemPage, AppPage, EntityIdPages, getPagePath, AvailableLocaleCodes, CookieI18nLocale, DefaultLocale, isTestEnv, isPublishEnv, isDevEnv, isElectronBuild, LoadingStubFileName } from '@golobe-demo/shared';
+import { UseWinstonOnClient, I18LocalesDirName, lookupValueOrThrow, AppConfig, SystemPage, AppPage, EntityIdPages, getPagePath, AvailableLocaleCodes, CookieI18nLocale, DefaultLocale, isTestEnv, isPublishEnv, isDevEnv, isElectronBuild, LoadingStubFileName } from '@golobe-demo/shared';
 import { ApiEndpointPrefix, ApiEndpointAuthentication, ApiEndpointUserAccount, ApiAppEndpointPrefix, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets } from './server/api-definitions';
 import { resolveSharedPkgPath } from './helpers/resolvers';
 import { joinURL } from 'ufo';
-import { type RollupLog, type LogLevel, type LogOrStringHandler } from 'rollup';
+import type { RollupLog, LogLevel, LogOrStringHandler } from 'rollup';
 import { TEST_SERVER_PORT } from './helpers/testing';
 import toPairs from 'lodash-es/toPairs';
 import fromPairs from 'lodash-es/fromPairs';
 import flatten from 'lodash-es/flatten';
-import { type NitroRouteConfig } from 'nitropack';
+import type { NitroRouteConfig } from 'nitropack';
 import { join, resolve, basename } from 'pathe';
 import { writeFile } from 'fs/promises';
-import { SharpDynamicLoaderPlugin } from './build-plugins';
+import { SharpDynamicLoaderPlugin } from './build-utils/sharp-dynamic-loader';
+import { BuildConfig as WinstonClientBuildConfig } from './build-utils/winston-esm-client';
 
 const listLocalizedPaths = (enPath: string) => [enPath.startsWith('/') ? enPath : `/${enPath}`, ...AvailableLocaleCodes.filter(l => l !== 'en').map(l => joinURL(`/${l}`, `${enPath}`))];
 const rollupLogHandler = (
@@ -199,9 +200,9 @@ export default defineNuxtConfig({
     vueI18n: './i18n.config.ts',
     langDir: I18LocalesDirName,
     locales: [
-      { code: 'en', name: 'English', iso: 'en-US', language: 'en-US', file: resolveSharedPkgPath('locales/en.json') },
-      { code: 'fr', name: 'Français', iso: 'fr-FR', language: 'fr-FR', file: resolveSharedPkgPath('locales/fr.json') },
-      { code: 'ru', name: 'Русский', iso: 'ru-RU', language: 'ru-RU', file: resolveSharedPkgPath('locales/ru.json') }
+      { code: 'en', name: 'English', language: 'en-US', file: resolveSharedPkgPath('locales/en.json') },
+      { code: 'fr', name: 'Français', language: 'fr-FR', file: resolveSharedPkgPath('locales/fr.json') },
+      { code: 'ru', name: 'Русский', language: 'ru-RU', file: resolveSharedPkgPath('locales/ru.json') }
     ],
     defaultLocale: 'en',
     strategy: 'prefix_except_default',
@@ -393,36 +394,53 @@ export default defineNuxtConfig({
     }
   } : undefined,
   
-  vite: isElectronBuild() ? {
-      // TODO: fix errors with ws connection interruptions & enable HMR
-    server: { 
-      hmr: false,
-      ws: false
-    },
-    build: {
-      rollupOptions: {
-        external: ['sharp']
+  vite: {
+    // Electron
+    ...(isElectronBuild() ? {
+        // TODO: fix errors with ws connection interruptions & enable HMR
+      server: { 
+        hmr: false,
+        ws: false
+      },
+      build: {
+        rollupOptions: {
+          external: ['sharp']
+        }
       }
-    }
-  } : undefined,
+    } : {}),
+
+    // Winston client
+    ...(UseWinstonOnClient ? WinstonClientBuildConfig.vite : 
+      // Don't compile winston sources when not used
+      {
+        $client: {
+          resolve: {
+            alias: {
+              './../client/winston-logger': './../client/simple-http-logger'
+            }
+          }
+        }
+      })
+  },
 
   $development: {
     imports: {
       imports: [
+        ...(UseWinstonOnClient ? WinstonClientBuildConfig.imports!.imports! : []),
         // needed for pdfkit
         { name: 'Blob', from: 'node:buffer' },
-        { name: 'Buffer', from: 'node:buffer' }
+        { name: 'Buffer', from: 'node:buffer' },
       ]
     },
     build: {
-      transpile: isElectronBuild() ? ['lodash'] : undefined
+      transpile: isElectronBuild() ? ['lodash'] : undefined,
     },
   },
 
   $test: {
     experimental: {
       renderJsonPayloads: false,
-      clientNodeCompat: false // disable in Nuxt 3.11.2 - test run hangs on startup
+      clientNodeCompat: false
     },
     vite: {
       build: {

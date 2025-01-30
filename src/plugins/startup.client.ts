@@ -1,8 +1,9 @@
-import { AppException, AppExceptionCodeEnum, isDevEnv, isElectronBuild, lookupPageByUrl, SystemPage, type IAppLogger } from '@golobe-demo/shared';
-import { ClientLogger } from './../client/logging';
+import { UseWinstonOnClient, AppException, AppExceptionCodeEnum, isDevEnv, isElectronBuild, lookupPageByUrl, SystemPage, type IAppLogger } from '@golobe-demo/shared';
+import { Logger as ClientSimpleHttpLogger } from './../client/simple-http-logger';
+import { Logger as ClientWinstonLogger } from './../client/winston-logger';
 import { ElectronShell } from '../client/electron-shell';
 import { EntityCache } from '../client/entity-cache';
-import { type IClientServicesLocator } from '../types';
+import type { IClientServicesLocator } from '../types';
 import { SearchFlightOffersDisplayOptions, SearchStayOffersDisplayOptions, FavouritesOptionButtonGroup } from '../helpers/constants';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices, getLastSelectedOptionStorageKey } from './../helpers/dom';
 import { Scope, createInjector } from 'typed-inject';
@@ -19,7 +20,9 @@ function installGlobalExceptionHandler () {
   const prevHandler = window.onerror;
   window.onerror = function (event: Event | string, source?: string, lineno?: number, colno?: number, error?: Error) {
     try {
-      prevHandler && prevHandler(event, source, lineno, colno, error);
+      if(prevHandler) {
+        prevHandler(event, source, lineno, colno, error);
+      }
     } finally {
       const err = error ?? { source, lineno, colno };
       logger.error('low-level error occured', err);
@@ -125,16 +128,23 @@ function createCache (): Storage<StorageValue> {
   return createStorage();
 }
 
+/**
+ * To use {@link winston} see comments in {@link WinstonEsmClientPlugin}
+ */
+function getLoggerClass() {
+  return UseWinstonOnClient ? ClientWinstonLogger : ClientSimpleHttpLogger;
+}
+
 function buildServiceLocator () : IClientServicesLocator {
   const injector = createInjector();
   const provider = (
     isElectronBuild() ?
       (injector
-        .provideClass('logger', ClientLogger, Scope.Singleton)
+        .provideClass('logger', getLoggerClass(), Scope.Singleton)
         .provideValue('localizer', (useNuxtApp().$i18n as any).t)
         .provideClass('electronShell', ElectronShell, Scope.Singleton)) :
       (injector
-        .provideClass('logger', ClientLogger, Scope.Singleton)
+        .provideClass('logger', getLoggerClass(), Scope.Singleton)
         .provideValue('localizer', undefined as any)
         .provideValue('electronShell', undefined as any))
     )
@@ -161,7 +171,7 @@ function resetFavouritesTabSettings (logger: IAppLogger) {
 }
 
 const initApp = once(() => {
-  const logger = new ClientLogger(); // container has not built yet
+  const logger = new ClientSimpleHttpLogger(); // container has not built yet
   try {
     logger.info(`PAGE INITIALIZING... (${import.meta.env.MODE})`);
     const clientServicesLocator = (globalThis as any).CommonServicesLocator = (globalThis as any).ClientServicesLocator = buildServiceLocator();

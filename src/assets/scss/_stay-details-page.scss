@@ -4,8 +4,6 @@
 @use 'buttons' as *;
 @use 'themes' as *;
 @use 'utils' as *;
-@use 'svg';
-
 
 $stay-image-border-radius: map.get($borders-radius, '3');
 @mixin reset-border-radius() {
@@ -402,8 +400,8 @@ $stay-image-border-radius: map.get($borders-radius, '3');
             mask-size: $stay-feature-checkmark-size $stay-feature-checkmark-size;
             -webkit-mask-repeat: no-repeat;
             mask-repeat: no-repeat;
-            -webkit-mask-image: escape-svg(svg.$icon-check);
-            mask-image: escape-svg(svg.$icon-check);
+            -webkit-mask-image: url('~/public/img/icon-check.svg?raw&inline');
+            mask-image: url('~/public/img/icon-check.svg?raw&inline');
             content: '';
             @include with-theme-color('input-ctrl-primary') using($css-var) {
               background-color: var($css-var);
@@ -959,8 +957,8 @@ $stay-image-border-radius: map.get($borders-radius, '3');
             }
     
             &.stay-reviews-card-avatar-default {
-              mask-image: escape-svg(svg.$icon-user);
-              -webkit-mask-image: escape-svg(svg.$icon-user);
+              mask-image: url('~/public/img/icon-user.svg?raw&inline');
+              -webkit-mask-image: url('~/public/img/icon-user.svg?raw&inline');
               -webkit-mask-size: contain;
               mask-size: contain;
               -webkit-mask-repeat: no-repeat;
@@ -1525,14 +1523,14 @@ $stay-image-border-radius: map.get($borders-radius, '3');
 }
 
 .icon-nav-prev::before {
-  -webkit-mask-image: escape-svg(svg.$icon-right-chevron);
-  mask-image: escape-svg(svg.$icon-right-chevron);
+  -webkit-mask-image: url('~/public/img/icon-right-chevron.svg?raw&inline');
+  mask-image: url('~/public/img/icon-right-chevron.svg?raw&inline');
   transform: scaleX(-1);
 }
 
 .icon-nav-next::before {
-  -webkit-mask-image: escape-svg(svg.$icon-right-chevron);
-  mask-image: escape-svg(svg.$icon-right-chevron);
+  -webkit-mask-image: url('~/public/img/icon-right-chevron.svg?raw&inline');
+  mask-image: url('~/public/img/icon-right-chevron.svg?raw&inline');
 }
 
 .icon-delete::before {

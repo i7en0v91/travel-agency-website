@@ -1,77 +1,69 @@
-import { flattenError, AppConfig, wrapLogDataArg } from '@golobe-demo/shared';
+import { type LogLevel, LogLevelEnum, AppConfig } from '@golobe-demo/shared';
+import { AppWinstonLoggerBase } from '@golobe-demo/shared/winston';
 import { existsSync, mkdirSync } from 'fs';
 import { resolve, dirname } from 'pathe';
-import deepmerge from 'lodash-es/merge';
-import { type Logger as WinstonLogger, createLogger as createWinstonLogger, format as WinstonFormat } from 'winston';
-import traverse from 'traverse';
-import DailyRotateFile from 'winston-daily-rotate-file';
 import { consola } from 'consola';
+import deepmerge from 'lodash-es/merge';
+import DailyRotateFile from 'winston-daily-rotate-file';
 
-const { combine, timestamp, json } = WinstonFormat;
+const MailFileLoggingOptions = deepmerge(
+  {},
+  AppConfig.logging.common,
+  AppConfig.logging.server,
+  { 
+    destination: AppConfig.electron!.logging.mainFile,
+    level: AppConfig.electron!.logging.mainLogLevelOverride
+  }
+);
 
-export class ElectronMainLogger {
-  winstonLogger: WinstonLogger;
+export class ElectronMainLogger extends AppWinstonLoggerBase<typeof MailFileLoggingOptions> {
+  logLevel: LogLevelEnum;
+  fileLogLevel: LogLevelEnum;
 
-  constructor () {
-    this.winstonLogger = createLoggerSync(AppConfig.electron!.logging.mainFile);
+  constructor() {
+    super(MailFileLoggingOptions);
+    this.logLevel = LogLevelEnum[AppConfig.logging.common.level as LogLevel];
+    this.fileLogLevel = LogLevelEnum[AppConfig.electron!.logging.mainLogLevelOverride as LogLevel];
   }
 
   getLogDir() {
     return dirname(resolve(AppConfig.electron!.logging.mainFile));
   }
 
-  debug (msg: string, data?: any) {
-    if (data) {
-      this.winstonLogger.debug(deepmerge(wrapLogDataArg(data), { debug: msg }));
-    } else {
-      this.winstonLogger.debug(msg);
-    }
+  override getLogDestinations(level: LogLevelEnum): { local: boolean; outside: boolean; } {
+    return {
+      local: this.checkPassLogLevel(level),
+      outside: this.checkNeedFileLogging(level)
+    };
   }
 
-  verbose (msg: string, data?: any) {
-    if (data) {
-      this.winstonLogger.verbose(deepmerge(wrapLogDataArg(data), { verbose: msg }));
-    } else {
-      this.winstonLogger.verbose(msg);
-    }
+  checkPassLogLevel (level: LogLevelEnum) : boolean {
+    return level.valueOf() >= this.logLevel.valueOf();
   }
 
-  info (msg: string, data?: any) {
-    if (data) {
-      this.winstonLogger.info(deepmerge(wrapLogDataArg(data), { info: msg }));
-    } else {
-      this.winstonLogger.info(msg);
+  checkNeedFileLogging (level: LogLevelEnum) : boolean {
+    return level.valueOf() >= this.fileLogLevel.valueOf();
+  }
+  
+  override getTransports() {
+    return [new (DailyRotateFile)({
+      filename: MailFileLoggingOptions.destination,
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: MailFileLoggingOptions.maxFileSize
+    })];
+  };
+
+  ensureLogDir (filePath: string) {
+    const fileDir = dirname(filePath);
+    if (!existsSync(fileDir)) {
+      mkdirSync(fileDir, { recursive: true });
     }
   }
-
-  warn (msg: string, err?: any, data?: any) {
-    if (!err && !data) {
-      this.winstonLogger.warn(msg);
-    } else {
-      const errPoco = (err && err instanceof Error) ? flattenError(err) : err;
-      const msgObj = { warn: msg };
-      const logData = deepmerge(wrapLogDataArg(data), msgObj, errPoco || {});
-      this.winstonLogger.warn(logData);
-    }
-  }
-
-  error (msg: string, err?: any, data?: any) {
-    if (!err && !data) {
-      this.winstonLogger.error(msg);
-    } else {
-      const errPoco = (err && err instanceof Error) ? flattenError(err) : err;
-      const msgObj = { error: msg };
-      const logData = deepmerge(wrapLogDataArg(data), msgObj, errPoco || {});
-      this.winstonLogger.error(logData);
-    }
-  }
-
-  always (msg: string, data?: any): void {
-    if (data) {
-      this.winstonLogger.log('always', deepmerge(wrapLogDataArg(data), { info: msg }));
-    } else {
-      this.winstonLogger.log('always', msg);
-    }
+  
+  override createLogger() {
+    this.ensureLogDir(MailFileLoggingOptions.destination);
+    return super.createLogger();
   }
 }
 
@@ -101,6 +93,7 @@ export function installLoggingHooks(app: Electron.App, logger: ElectronMainLogge
       consola.error(msg, err);
       logger.error(`(Logging) ${msg}`, err);
     } catch(err: any) {
+      consola.warn(err);
       //
     } finally {
       // process.exit(1); // don't force shutdown (optionally)
@@ -112,79 +105,4 @@ export function installLoggingHooks(app: Electron.App, logger: ElectronMainLogge
   });
 
   logger.debug('(Logging) logging hooks installed');
-}
-
-function ensureLogDirSync (filePath: string) {
-  const fileDir = dirname(filePath);
-  if (!existsSync(fileDir)) {
-    mkdirSync(fileDir, { recursive: true });
-  }
-}
-
-function getRedactFormat (sensitiveKeys: string[]) {
-  return WinstonFormat((info) => {
-    const result = traverse(info).forEach(function redactor (this: any) {
-      if (this.key && sensitiveKeys.includes(this.key)) {
-        this.update('[REDACTED]');
-      }
-    });
-
-    const levelSym = Symbol.for('level');
-    const splatSym = Symbol.for('splat');
-
-    result[levelSym] = info[(levelSym as unknown) as string];
-    result[splatSym] = info[(splatSym as unknown) as string];
-
-    return result;
-  });
-}
-
-function createLoggerSync (file: string) {
-  const loggingOptions = deepmerge(
-    {},
-    AppConfig.logging.common,
-    AppConfig.logging.server,
-    { 
-      level: AppConfig.electron!.logging.mailLogLevelOverride, 
-      destination: file 
-    }
-  );
-  ensureLogDirSync(loggingOptions.destination);
-
-  const redactFormat = getRedactFormat(loggingOptions.redact)();
-
-  const timezoned = () => {
-    return new Date().toLocaleString(loggingOptions.region, {
-      timeZone: loggingOptions.timeZone,
-      hour12: false
-    });
-  };
-
-  const result: WinstonLogger = createWinstonLogger({
-    level: loggingOptions.level,
-    levels: {
-      always: 0,
-      error: 1,
-      warn: 2,
-      info: 3,
-      http: 4,
-      verbose: 5,
-      debug: 6,
-      silly: 7
-    },
-    format: combine(
-      timestamp({ format: timezoned }),
-      redactFormat,
-      json()
-    ),
-    transports: [
-      new (DailyRotateFile)({
-        filename: loggingOptions.destination,
-        datePattern: 'YYYY-MM-DD',
-        zippedArchive: true,
-        maxSize: loggingOptions.maxFileSize
-      })
-    ]
-  });
-  return result;
 }

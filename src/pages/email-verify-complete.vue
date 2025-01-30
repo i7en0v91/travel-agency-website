@@ -27,6 +27,7 @@ try {
   tokenValue = route.query.token_value?.toString() ?? '';
 } catch (err: any) {
   logger.info(`(EmailVerifyComplete) failed to parse token data: id=${tokenId}, value=${tokenValue ? SecretValueMask : '[empty]'}`);
+  console.warn(err);
 }
 
 if (!tokenId || !tokenValue) {

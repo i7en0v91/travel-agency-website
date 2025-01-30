@@ -4,7 +4,6 @@
 @use 'buttons' as *;
 @use 'themes' as *;
 @use 'utils' as *;
-@use 'svg';
 
 .booking-details-page {
   padding-left: var(--#{$prefix}-page-padding-x);
@@ -390,8 +389,8 @@
         }
 
         &.booking-ticket-general-avatar-default {
-          mask-image: escape-svg(svg.$icon-user);
-          -webkit-mask-image: escape-svg(svg.$icon-user);
+          mask-image: url('~/public/img/icon-user.svg?raw&inline');
+          -webkit-mask-image: url('~/public/img/icon-user.svg?raw&inline');
           -webkit-mask-size: contain;
           mask-size: contain;
           -webkit-mask-repeat: no-repeat;
