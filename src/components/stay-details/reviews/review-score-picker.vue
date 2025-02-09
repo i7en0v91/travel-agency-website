@@ -8,7 +8,7 @@ interface IProps {
   ctrlKey: string
 }
 
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 const hoveredScore = ref<number>();
@@ -26,7 +26,7 @@ defineShortcuts({
 });
 
 function setResultAndClose (value: number | 'cancel') {
-  logger.debug(`(ReviewScorePicker) setResultAndClose, ctrlKey=${props.ctrlKey}, resultSet=${value}`);
+  logger.debug(`(ReviewScorePicker) setResultAndClose, ctrlKey=${ctrlKey}, resultSet=${value}`);
   if (!value) {
     value = 'cancel';
   }
@@ -35,17 +35,17 @@ function setResultAndClose (value: number | 'cancel') {
 }
 
 function onPickerItemHovered (score: number) {
-  logger.debug(`(ReviewScorePicker) picker item hovered, ctrlKey=${props.ctrlKey}, score=${score}`);
+  logger.debug(`(ReviewScorePicker) picker item hovered, ctrlKey=${ctrlKey}, score=${score}`);
   hoveredScore.value = score;
 }
 
 function onPickerItemUnhovered () {
-  logger.debug(`(ReviewScorePicker) picker item unhovered, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(ReviewScorePicker) picker item unhovered, ctrlKey=${ctrlKey}`);
   hoveredScore.value = 0;
 }
 
 function onPickerItemClicked (score: number) {
-  logger.debug(`(ReviewScorePicker) picker item clicked, ctrlKey=${props.ctrlKey}, score=${score}`);
+  logger.debug(`(ReviewScorePicker) picker item clicked, ctrlKey=${ctrlKey}, score=${score}`);
   setResultAndClose(score);
 }
 
@@ -72,7 +72,7 @@ const uiStyling = {
       <div class="w-full h-auto flex flex-row flex-nowrap items-center justify-center gap-2 sm:gap-4 my-8">
         <StarSvg
           v-for="(i) in range(0, 5)"
-          :key="`${$props.ctrlKey}-ScorePickerItem-${i}`"
+          :key="`${ctrlKey}-ScorePickerItem-${i}`"
           :class="`block !w-[50px] !h-[50px] sm:!w-[70px] sm:!h-[70px] flex-initial cursor-pointer ${ hoveredScore ? (i < hoveredScore ? '' : 'grayscale') : 'grayscale' }`"
           :data-score="i"
           filled

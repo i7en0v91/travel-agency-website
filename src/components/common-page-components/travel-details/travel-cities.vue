@@ -3,7 +3,6 @@ import { AppConfig } from '@golobe-demo/shared';
 import { type IPopularCityDto, ApiEndpointPopularCitiesList } from './../../../server/api-definitions';
 import range from 'lodash-es/range';
 import TravelCityCard from './travel-city-card.vue';
-import { type ComponentInstance } from 'vue';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
 import { useCarouselPlayer } from '../../../composables/carousel-player';
@@ -14,15 +13,15 @@ interface IProps {
   ctrlKey: string,
   bookKind: 'flight' | 'stay'
 };
-const props = defineProps<IProps>();
+const { ctrlKey, bookKind } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 
 const nuxtApp = useNuxtApp();
 const { enabled } = usePreviewState();
 
-const carouselRef = shallowRef<ComponentInstance<typeof UCarousel> | undefined>();
-useCarouselPlayer(carouselRef);
+const carouselRef = useTemplateRef('carousel');
+useCarouselPlayer(carouselRef as any);
 
 const popularCitiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`,
   {
@@ -32,9 +31,9 @@ const popularCitiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`
     query: { drafts: enabled },
     default: () => { return range(0, 20, 1).map(_ => null); },
     transform: (response: IPopularCityDto[]) => {
-      logger.verbose(`(TravelCities) received popular cities list response: ctrlKey=${props.ctrlKey}`);
+      logger.verbose(`(TravelCities) received popular cities list response: ctrlKey=${ctrlKey}`);
       if (!response) {
-        logger.warn(`(TravelCities) popular cities list response is empty, ctrlKey=${props.ctrlKey}`);
+        logger.warn(`(TravelCities) popular cities list response is empty, ctrlKey=${ctrlKey}`);
         return range(0, 20, 1).map(_ => null); // error should be logged by fetchEx
       }
       return response;
@@ -48,7 +47,7 @@ const popularCitiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`
   <ErrorHelm :is-error="!!popularCitiesListFetch.error.value">
     <UCarousel
       v-slot="{ item: city }" 
-      ref="carouselRef"
+      ref="carousel"
       :items="popularCitiesListFetch.data.value" 
       :ui="{ 
         container: 'gap-4',

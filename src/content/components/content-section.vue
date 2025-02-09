@@ -9,17 +9,11 @@ interface IProps {
   spaced?: boolean,
   centered?: boolean
 };
-const props = withDefaults(defineProps<IProps>(), {
-  padded: true,
-  spaced: true,
-  centered: false,
-  btnLabel: undefined,
-  linkUrl: undefined
-});
+const { btnLabel, padded = true, spaced = true, centered = false } = defineProps<IProps>();
 
 const route = useRoute();
 const currentPage = lookupPageByUrl(route.path)!;
-const ctrlKey = `${currentPage.valueOf()}-${(props.btnLabel ?? '').replace(/\s/g,'')}Section`;
+const ctrlKey = `${currentPage.valueOf()}-${(btnLabel ?? '').replace(/\s/g,'')}Section`;
 
 </script>
 

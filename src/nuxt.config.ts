@@ -32,7 +32,7 @@ const rollupLogHandler = (
 const SwrCachingRouteRule: NitroRouteConfig = { 
   cache: AppConfig.caching.intervalSeconds ? 
     { 
-      maxAge:  !isTestEnv() ? AppConfig.caching.intervalSeconds : 0, /** only SWR is tested in e2e */
+      maxAge:  !isTestEnv() ? AppConfig.caching.intervalSeconds : 0, /** testing server-side caching in e2e */
       staleMaxAge: -1
     } : false
 } as any;
@@ -265,7 +265,7 @@ export default defineNuxtConfig({
       {
         name: 'Spectral SC',
         weight: 300,
-        path: '/fonts/Spectral_SC-300.ttf' // nuxt-og-image^3.0.0-rc.52 - warn woff2 not supported
+        path: '/fonts/Spectral_SC-300.ttf'
       }
     ]
   } : { enabled: false },
@@ -421,11 +421,6 @@ export default defineNuxtConfig({
   vite: {
     // Electron
     ...(isElectronBuild() ? {
-        // TODO: fix errors with ws connection interruptions & enable HMR
-      server: { 
-        hmr: false,
-        ws: false
-      },
       build: {
         rollupOptions: {
           external: ['sharp']

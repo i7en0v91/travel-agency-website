@@ -19,7 +19,7 @@ interface IProps {
   }
 }
 
-const props = defineProps<IProps>();
+const { ctrlKey, mode } = defineProps<IProps>();
 const modelRef = defineModel<Date[] | null | undefined>('selectedDates');
 
 const { d, locale } = useI18n();
@@ -39,8 +39,8 @@ const open = ref(false);
 const logger = getCommonServices().getLogger();
 
 const controlSettingsStore = useControlSettingsStore();
-const controlSingleValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(`${props.ctrlKey}-single`, today.toISOString(), true);
-const controlRangeValueSetting = controlSettingsStore.getControlValueSetting<string[]>(`${props.ctrlKey}-range`, [dateFrom.toISOString(), dateTo.toISOString()], true);
+const controlSingleValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(`${ctrlKey}-single`, today.toISOString(), true);
+const controlRangeValueSetting = controlSettingsStore.getControlValueSetting<string[]>(`${ctrlKey}-range`, [dateFrom.toISOString(), dateTo.toISOString()], true);
 
 function saveInitialValuesToSettings () {
   const initiallySelectedDates = modelRef.value;
@@ -67,11 +67,11 @@ function saveInitialValuesToSettings () {
 }
 
 function updateModelValue() {
-  logger.debug(`(SearchFlightsDatePicker) starting model value update: ctrlKey=${props.ctrlKey}, current=${JSON.stringify(modelRef.value)}`);
+  logger.debug(`(SearchFlightsDatePicker) starting model value update: ctrlKey=${ctrlKey}, current=${JSON.stringify(modelRef.value)}`);
   
   let isSameValue = false;
   let newValue: Date[] | null;
-  if (props.mode === 'single') {
+  if (mode === 'single') {
     const newDate = singleValue.value ? eraseTimeOfDay(singleValue.value) : null;
     isSameValue = ((modelRef.value?.length ?? 0) === 0 && !newDate) || (!!modelRef.value?.length && modelRef.value[0].getTime() === newDate?.getTime());
     newValue = newDate ? [newDate!] : null;
@@ -81,24 +81,24 @@ function updateModelValue() {
   }
 
   if(isSameValue) {
-    logger.debug(`(SearchFlightsDatePicker) skipping model value update, value is the same: ctrlKey=${props.ctrlKey}, current=${JSON.stringify(modelRef.value)}, new=${JSON.stringify(newValue)}`);
+    logger.debug(`(SearchFlightsDatePicker) skipping model value update, value is the same: ctrlKey=${ctrlKey}, current=${JSON.stringify(modelRef.value)}, new=${JSON.stringify(newValue)}`);
     return;
   }
 
-  logger.verbose(`(SearchFlightsDatePicker) updating model value: ctrlKey=${props.ctrlKey}, current=${JSON.stringify(modelRef.value)}, new=${JSON.stringify(newValue)}`);
+  logger.verbose(`(SearchFlightsDatePicker) updating model value: ctrlKey=${ctrlKey}, current=${JSON.stringify(modelRef.value)}, new=${JSON.stringify(newValue)}`);
   modelRef.value = newValue;
 }
 
 function onCalendarValueChanged () {
-  if (props.mode === 'single') {
-    logger.verbose(`(SearchFlightsDatePicker) updating selected date: ctrlKey=${props.ctrlKey}, newValue=${singleValue.value}, modelValue=${modelRef.value}`);
+  if (mode === 'single') {
+    logger.verbose(`(SearchFlightsDatePicker) updating selected date: ctrlKey=${ctrlKey}, newValue=${singleValue.value}, modelValue=${modelRef.value}`);
     if(!singleValue.value) {
       singleValue.value = modelRef.value![0];
     }
     const value = singleValue.value;
     controlSingleValueSetting.value = eraseTimeOfDay(value).toISOString();
   } else {
-    logger.verbose(`(SearchFlightsDatePicker) updating selected dates: ctrlKey=${props.ctrlKey}, newValue=${JSON.stringify([rangeValue.value.start, rangeValue.value.end])}, modelValue=${JSON.stringify(modelRef.value)}`);
+    logger.verbose(`(SearchFlightsDatePicker) updating selected dates: ctrlKey=${ctrlKey}, newValue=${JSON.stringify([rangeValue.value.start, rangeValue.value.end])}, modelValue=${JSON.stringify(modelRef.value)}`);
     if(!rangeValue.value?.start || !rangeValue.value?.end) {
       rangeValue.value = { start: modelRef.value![0], end: modelRef.value![1] };
     }
@@ -106,7 +106,7 @@ function onCalendarValueChanged () {
     controlRangeValueSetting.value = [eraseTimeOfDay(value![0]).toISOString(), eraseTimeOfDay(value![1]).toISOString()];
   }
   updateModelValue();
-  logger.verbose(`(SearchFlightsDatePicker) selected date(s) updated: ctrlKey=${props.ctrlKey}`);
+  logger.verbose(`(SearchFlightsDatePicker) selected date(s) updated: ctrlKey=${ctrlKey}`);
 }
 
 function onDateSelected () {
@@ -116,7 +116,7 @@ function onDateSelected () {
 
 const datesDisplayText = computed(() => {
   const displayFormat = 'numeric';
-  return hasMounted.value ? (props.mode === 'single' ? d(singleValue.value, displayFormat) : (`${d(rangeValue.value.start, displayFormat)} - ${d(rangeValue.value.end, displayFormat)}`)) : undefined;
+  return hasMounted.value ? (mode === 'single' ? d(singleValue.value, displayFormat) : (`${d(rangeValue.value.start, displayFormat)} - ${d(rangeValue.value.end, displayFormat)}`)) : undefined;
 });
 
 onBeforeMount(() => {
@@ -131,7 +131,7 @@ onBeforeMount(() => {
 });
 
 onMounted(() => {
-  watch(() => props.mode, () => {
+  watch(() => mode, () => {
     updateModelValue();
   });
 

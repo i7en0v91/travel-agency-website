@@ -3,7 +3,7 @@ import { Logger as ClientSimpleHttpLogger } from './../client/simple-http-logger
 import { Logger as ClientWinstonLogger } from './../client/winston-logger';
 import { ElectronShell } from '../client/electron-shell';
 import { EntityCache } from '../client/entity-cache';
-import { type IClientServicesLocator } from '../types';
+import type { IClientServicesLocator } from '../types';
 import { SearchFlightOffersDisplayOptions, SearchStayOffersDisplayOptions, FavouritesTabGroup } from '../helpers/constants';
 import { getLastSelectedTabStorageKey } from './../helpers/dom';
 import { Scope, createInjector } from 'typed-inject';

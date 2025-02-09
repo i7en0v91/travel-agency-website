@@ -10,14 +10,14 @@ interface IProps {
   imgSrc: IImageEntitySrc,
   relativeCoord: { x: number, y: number }
 };
-const props = defineProps<IProps>();
+const { cityName, countryName, relativeCoord, slug } = defineProps<IProps>();
 
 const { locale } = useI18n();
 const travelDetailsStore = useTravelDetailsStore();
 
-const cityUrl = ref<string>(travelDetailsStore.buildTravelCityUrl(props.slug));
+const cityUrl = ref<string>(travelDetailsStore.buildTravelCityUrl(slug));
 function updateCityUrl () {
-  cityUrl.value = travelDetailsStore.buildTravelCityUrl(props.slug);
+  cityUrl.value = travelDetailsStore.buildTravelCityUrl(slug);
 }
 
 onMounted(() => {
@@ -32,9 +32,9 @@ onMounted(() => {
     class="flex flex-row flex-nowrap items-center gap-[8px] h-min w-fit max-w-[190px] md:max-w-[240px] p-2 rounded-md shadow-md bg-white dark:bg-gray-900 text-xs sm:text-sm"
     :style="{
       position: 'relative',
-      top: `${Math.round(props.relativeCoord.y * 100)}%`,
-      left: `${Math.round(props.relativeCoord.x * 100)}%`,
-      transform: `translate(${props.relativeCoord.x > WorldMapCityLabelFlipX ? '-110' : '10'}%, -105%)`
+      top: `${Math.round(relativeCoord.y * 100)}%`,
+      left: `${Math.round(relativeCoord.x * 100)}%`,
+      transform: `translate(${relativeCoord.x > WorldMapCityLabelFlipX ? '-110' : '10'}%, -105%)`
     }"
   >
     <StaticImage
@@ -52,10 +52,10 @@ onMounted(() => {
     />
     <div class="w-full h-auto">
       <ULink :external="false" :replace="true" :to="cityUrl" class="text-gray-400 dark:text-gray-500 font-semibold" :aria-label="$t(getI18nResName3('flightsPage', 'worldMap', 'cityTravelInfoAria'))">
-        {{ (props.cityName as any)[locale] }}
+        {{ (cityName as any)[locale] }}
       </ULink>
       <div class="text-gray-600 dark:text-gray-300 font-normal">
-        {{ (props.countryName as any)[locale] }}
+        {{ (countryName as any)[locale] }}
       </div>
     </div>
   </div>

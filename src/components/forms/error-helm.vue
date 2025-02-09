@@ -10,12 +10,11 @@ interface IProps {
     stub?: string
   }
 }
-const props = withDefaults(defineProps<IProps>(), {
-  isError: false,
-  appearance: 'error-stub',
-  userNotification: false,
-  ui: undefined
-});
+const {
+  isError = false, 
+  appearance = 'error-stub', 
+  userNotification = false 
+} = defineProps<IProps>();
 
 function onError (err: any) {
   if (err) {
@@ -23,7 +22,7 @@ function onError (err: any) {
   }
 
   $emit('update:isError', true);
-  if (props.appearance === 'error-stub' && !props.userNotification) {
+  if (appearance === 'error-stub' && !userNotification) {
     // error should have been logged in global error hooks
     return;
   }
@@ -35,7 +34,7 @@ function onError (err: any) {
     appException = new AppException(
       AppExceptionCodeEnum.UNKNOWN,
       'unhandled exception occured',
-      props.appearance);
+      appearance);
   }
 
   defaultErrorHandler(appException);

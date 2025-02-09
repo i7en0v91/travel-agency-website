@@ -33,7 +33,7 @@ export default defineNitroPlugin((nitroApp) => {
     if (filteredOutAuthCookies.length !== allCookies.length) {
       try {
         logger?.debug(`(nitro:auth-cookies-response-filter) patching response cookies, path=${event.path}, count=${filteredOutAuthCookies.length}/${allCookies.length}]`);
-        setHeader(event, HeaderSetCookie, filteredOutAuthCookies);
+        setResponseHeader(event, HeaderSetCookie, filteredOutAuthCookies);
       } catch (err: any) {
         logger?.warn(`(nitro:auth-cookies-response-filter) failed to patch response cookies, path=${event.path}, count=${filteredOutAuthCookies.length}/${allCookies.length}]`, err);
       }

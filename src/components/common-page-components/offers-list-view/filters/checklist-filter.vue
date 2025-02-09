@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { getI18nResName3, type Locale, getLocalizeableValue } from '@golobe-demo/shared';
 import isString from 'lodash-es/isString';
-import { type ISearchOffersChecklistFilterProps, type ISearchOffersFilterVariant, type SearchOffersFilterVariantId } from './../../../../types';
+import type { ISearchOffersChecklistFilterProps, ISearchOffersFilterVariant, SearchOffersFilterVariantId } from './../../../../types';
 import { getCommonServices } from '../../../../helpers/service-accessors';
 
 interface IProps {
@@ -10,9 +10,7 @@ interface IProps {
   maxCollapsedListItemsCount?: number
 }
 
-const props = withDefaults(defineProps<IProps>(), {
-  maxCollapsedListItemsCount: undefined
-});
+const { ctrlKey, filterParams, maxCollapsedListItemsCount } = defineProps<IProps>();
 
 const modelValue = defineModel<SearchOffersFilterVariantId[]>('value', { required: true });
 
@@ -21,7 +19,7 @@ const { locale } = useI18n();
 
 
 function fireValueChangeEvent (value: SearchOffersFilterVariantId[]) {
-  logger.verbose(`(ChecklistFilter) firing value change event, ctrlKey=${props.ctrlKey}, values=[${value.join('; ')}]`);
+  logger.verbose(`(ChecklistFilter) firing value change event, ctrlKey=${ctrlKey}, values=[${value.join('; ')}]`);
   modelValue.value = value;
 }
 
@@ -38,7 +36,7 @@ function getVariantDisplayText (variant: ISearchOffersFilterVariant, locale: Loc
 }
 
 function onVariantToggled (variantId: SearchOffersFilterVariantId) {
-  logger.verbose(`(ChecklistFilter) variant toggled, ctrlKey=${props.ctrlKey}, id=${variantId}, currentValue=[${modelValue.value.join(', ')}]`);
+  logger.verbose(`(ChecklistFilter) variant toggled, ctrlKey=${ctrlKey}, id=${variantId}, currentValue=[${modelValue.value.join(', ')}]`);
   const newValue = [...modelValue.value];
   if (newValue.includes(variantId)) {
     newValue.splice(newValue.indexOf(variantId), 1);
@@ -50,13 +48,13 @@ function onVariantToggled (variantId: SearchOffersFilterVariantId) {
 }
 
 const variantsToDisplay = computed(() => {
-  return (props.maxCollapsedListItemsCount !== undefined)
-    ? props.filterParams.variants.slice(0, Math.min(props.maxCollapsedListItemsCount, props.filterParams.variants.length))
-    : props.filterParams.variants;
+  return (maxCollapsedListItemsCount !== undefined)
+    ? filterParams.variants.slice(0, Math.min(maxCollapsedListItemsCount, filterParams.variants.length))
+    : filterParams.variants;
 });
 
 const numMoreVariantsToDisplay = computed(() => {
-  return (props.maxCollapsedListItemsCount !== undefined) ? Math.max(0, props.filterParams.variants.length - props.maxCollapsedListItemsCount) : 0;
+  return (maxCollapsedListItemsCount !== undefined) ? Math.max(0, filterParams.variants.length - maxCollapsedListItemsCount) : 0;
 });
 
 const listExpanded = ref(false);
@@ -77,7 +75,7 @@ const uiStyling = {
 <template>
   <div class="px-2">
     <ol class="space-y-2">
-      <li v-for="(variant) in (listExpanded ? props.filterParams.variants : variantsToDisplay)" :key="`${ctrlKey}-${variant.id}`">
+      <li v-for="(variant) in (listExpanded ? filterParams.variants : variantsToDisplay)" :key="`${ctrlKey}-${variant.id}`">
         <UCheckbox
           :model-value="modelValue.includes(variant.id)"
           :label="getVariantDisplayText(variant, locale as Locale)"
@@ -86,7 +84,6 @@ const uiStyling = {
         />
       </li>
     </ol>
-
     <UButton v-if="numMoreVariantsToDisplay" color="orange" variant="link" :ui="uiStyling" @click="toggleList">
       {{ listExpanded ? 
           $t(getI18nResName3('searchOffers', 'filters', 'checklistCollapseItems')) : 

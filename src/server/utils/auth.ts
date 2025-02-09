@@ -1,4 +1,4 @@
-import { type EntityId } from '@golobe-demo/shared';
+import type { EntityId } from '@golobe-demo/shared';
 import type { getServerSession } from '#auth';
 import isNumber from 'lodash-es/isNumber';
 

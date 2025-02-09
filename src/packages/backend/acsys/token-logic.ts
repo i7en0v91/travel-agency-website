@@ -1,5 +1,5 @@
-import { type TokenKind, type IAppLogger, type EntityId } from '@golobe-demo/shared';
-import { type ITokenLogic, type ITokenIssueResult, type TokenConsumeResult } from './../types';
+import type { TokenKind, IAppLogger, EntityId } from '@golobe-demo/shared';
+import type { ITokenLogic, ITokenIssueResult, TokenConsumeResult } from './../types';
 
 export class TokenLogic implements ITokenLogic {
   private readonly logger: IAppLogger;

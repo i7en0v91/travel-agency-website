@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type I18nResName } from '@golobe-demo/shared';
+import type { I18nResName } from '@golobe-demo/shared';
 
 interface IProps {
   ctrlKey: string

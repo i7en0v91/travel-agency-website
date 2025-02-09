@@ -258,7 +258,7 @@ export class ElectronShell implements IElectronShell {
     vueNextTick(async () => {
       try {
         this.logger.verbose('(ElectronShell) on request to logout');
-        const signOutHelper = useSignOut();
+        const signOutHelper = useSignOut((globalThis as any).$navLinkBuilder);
         this.logger.verbose('(ElectronShell) logging out');
         await signOutHelper.signOut();
       } catch(err: any) {

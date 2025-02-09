@@ -8,7 +8,6 @@ import { basename, extname } from 'pathe';
 import StaticImage from './static-image.vue';
 import CroppingBox from './cropping-box.vue';
 import ModalWaitingIndicator from '../forms/modal-waiting-indicator.vue';
-import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 import type { IStaticImageUiProps } from '../../types';
 import { useModalWaiter, type IModalWaiter } from '../../composables/modal-waiter';
@@ -22,8 +21,8 @@ interface IProps {
   sizes: string, // e.g. sm:100vw md:100vw lg:80vw xl:60vw 2xl:40vw
   fillAlpha?: boolean, // substiture alpha-channel with solid color (from theme settings)
   btnResName?: I18nResName,
-  altResName?: I18nResName | undefined,
-  altResParams?: any | undefined,
+  altResName?: I18nResName,
+  altResParams?: any,
   showStub?: boolean,
   isHighPriority?: boolean,
   ui?: {
@@ -41,26 +40,22 @@ interface IProps {
   }
 }
 
-const props = withDefaults(defineProps<IProps>(), {
-  btnIcon: undefined,
-  altResName: undefined,
-  altResParams: undefined,
-  btnResName: undefined,
-  showStub: true,
-  fillAlpha: true,
-  styling: undefined,
-  isHighPriority: false,
-  ui: undefined
-});
+const { 
+  ctrlKey, 
+  category, 
+  ui,
+  fillAlpha = true, 
+  showStub = true, 
+  isHighPriority = false 
+} = defineProps<IProps>();
 
 const { status } = useAuth();
 
 const open = ref(false);
 
-const fileInputEl = shallowRef<HTMLInputElement>();
+const fileInput = useTemplateRef<HTMLInputElement>('file-input');
 const selectedFile = ref<FileList | null>(null);
-const staticImageComponent = shallowRef<ComponentInstance<typeof StaticImage>>();
-const modalWaiterRef = shallowRef<ComponentInstance<typeof ModalWaitingIndicator>>() as Ref<ComponentInstance<typeof ModalWaitingIndicator>>;
+const modalWaiterRef = useTemplateRef('modal-waiter');
 const modalWaiterOpen = ref<boolean>(false);
 
 const userNotificationStore = useUserNotificationStore();
@@ -71,7 +66,7 @@ let uploadingFileName: string = '';
 const $emit = defineEmits(['update:entitySrc']);
 
 function onClosed () {
-  logger.debug(`(editable-image) cropper window closed, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(editable-image) cropper window closed, ctrlKey=${ctrlKey}`);
   open.value = false;
   uploadCroppedImageIfSpecified();
 }
@@ -91,19 +86,19 @@ async function uploadCroppedImageIfSpecified () : Promise<void> {
     let modalWaiter: IModalWaiter | undefined;
     try {
       const imageBytes = Buffer.from(imageDataBase64, 'base64');
-      logger.info(`(editable-image) starting to upload image data, ctrlKey=${props.ctrlKey}, size=${imageBytes.length}, fileName=${uploadingFileName}`);
+      logger.info(`(editable-image) starting to upload image data, ctrlKey=${ctrlKey}, size=${imageBytes.length}, fileName=${uploadingFileName}`);
 
-      modalWaiter = useModalWaiter(modalWaiterRef, modalWaiterOpen);
+      modalWaiter = useModalWaiter(modalWaiterRef as any, modalWaiterOpen);
       modalWaiter.show(true);
 
-      const query = uploadingFileName.length > 0 ? { fileName: uploadingFileName, category: props.category } : undefined;
+      const query = uploadingFileName.length > 0 ? { fileName: uploadingFileName, category } : undefined;
       const uploadedImageInfo = await post<any, IImageUploadResultDto>(`/${ApiEndpointUserImageUpload}`, query, imageBytes, undefined, true, undefined, 'default');
       if (uploadedImageInfo) {
-        logger.info(`(editable-image) image uploaded, ctrlKey=${props.ctrlKey}, size=${imageBytes.length}, fileName=${uploadingFileName}`);
+        logger.info(`(editable-image) image uploaded, ctrlKey=${ctrlKey}, size=${imageBytes.length}, fileName=${uploadingFileName}`);
         $emit('update:entitySrc', uploadedImageInfo);
       }
     } catch (err: any) {
-      logger.warn(`(editable-image) failed to upload image data, ctrlKey=${props.ctrlKey}, size=${imageDataBase64.length}, fileName=${uploadingFileName}`, err);
+      logger.warn(`(editable-image) failed to upload image data, ctrlKey=${ctrlKey}, size=${imageDataBase64.length}, fileName=${uploadingFileName}`, err);
       throw err;
     } finally {
       resetCurrentImageData();
@@ -134,7 +129,7 @@ function setImageForEdit (file: File) {
 
     reader.onload = (event) => {
       if (!event.target?.result) {
-        logger.warn(`(editable-image) failed to load image - empty file, ctrlKey=${props.ctrlKey}`);
+        logger.warn(`(editable-image) failed to load image - empty file, ctrlKey=${ctrlKey}`);
         userNotificationStore.show({
           level: UserNotificationLevel.ERROR,
           resName: getI18nResName3('editableImage', 'issues', 'imageLoadFailed')
@@ -187,7 +182,7 @@ function setImageForEdit (file: File) {
 function onFileSelected (e: Event) {
   const htmlInputElement = (e.target as HTMLInputElement);
   const files = htmlInputElement.files;
-  logger.verbose(`(editable-image) selected files changed handler, ctrlKey=${props.ctrlKey}, count=${files?.length}`);
+  logger.verbose(`(editable-image) selected files changed handler, ctrlKey=${ctrlKey}, count=${files?.length}`);
   if ((files?.length ?? 0) === 0) {
     logger.info('(editable-image) no files were selected');
     resetCurrentImageData();
@@ -211,7 +206,7 @@ function onFileSelected (e: Event) {
   }
 
   if (!file.type.includes('image/')) {
-    logger.info(`(editable-image) file is not an image, ctrlKey=${props.ctrlKey}, type = ${file.type}`);
+    logger.info(`(editable-image) file is not an image, ctrlKey=${ctrlKey}, type = ${file.type}`);
     resetCurrentImageData();
     userNotificationStore.show({
       level: UserNotificationLevel.WARN,
@@ -221,7 +216,7 @@ function onFileSelected (e: Event) {
   }
 
   setImageForEdit(file);
-  logger.debug(`(editable-image) selected files changed handler completed, ctrlKey=${props.ctrlKey}, count=${files?.length}`);
+  logger.debug(`(editable-image) selected files changed handler completed, ctrlKey=${ctrlKey}, count=${files?.length}`);
 }
 
 function setImage (image: IImageEntitySrc) {
@@ -229,9 +224,9 @@ function setImage (image: IImageEntitySrc) {
 }
 
 function openFileDialog () {
-  const inputEl = fileInputEl.value;
+  const inputEl = fileInput.value;
   if(!inputEl) {
-    logger.warn(`(editable-image) file dialog not button not found, ctrlKey=${props.ctrlKey}`);
+    logger.warn(`(editable-image) file dialog not button not found, ctrlKey=${ctrlKey}`);
     return;
   }
   inputEl.value = inputEl.innerText = '';
@@ -244,11 +239,11 @@ defineExpose({
   setImage
 });
 
-const uiStyling = props.ui?.btn ? { 
-  base: props.ui.btn.base,
-  rounded: props.ui.btn.rounded,
+const uiStyling = ui?.btn ? { 
+  base: ui.btn.base,
+  rounded: ui.btn.rounded,
   icon: { 
-    base: props.ui.btn.icon?.base
+    base: ui.btn.icon?.base
   }
 } : undefined;
 
@@ -261,9 +256,9 @@ watch(open, () => {
 </script>
 
 <template>
-  <div :class="`${props.ui?.wrapper ?? ''}`" role="img">
+  <div :class="`${ui?.wrapper ?? ''}`" role="img">
     <StaticImage
-      ref="staticImageComponent"
+      ref="static-image"
       :ctrl-key="`editableImage-${ctrlKey}`"
       :ui="ui?.image"
       :show-stub="showStub"
@@ -273,10 +268,10 @@ watch(open, () => {
       :is-high-priority="isHighPriority"
       :alt-res-name="altResName"
     />
-    <div :class="`relative ${props.ui?.btn?.wrapper ?? ''}`">
+    <div :class="`relative ${ui?.btn?.wrapper ?? ''}`">
       <input
         :id="fileInputHtmlId"
-        ref="fileInputEl"
+        ref="file-input"
         class="hidden"
         type="file"
         name="image"
@@ -295,13 +290,13 @@ watch(open, () => {
           height: 'h-auto' 
         }">
         <CroppingBox 
-          :ctrl-key="`${props.ctrlKey}-croppingBox`"
-          :category="props.category"
-          :fill-alpha="props.fillAlpha"
+          :ctrl-key="`${ctrlKey}-croppingBox`"
+          :category="category"
+          :fill-alpha="fillAlpha"
           @close="onClosed"/>
       </UModal>
 
-      <ModalWaitingIndicator ref="modalWaiterRef" v-model:open="modalWaiterOpen" :ctrl-key="`${ctrlKey}-Waiter`" />
+      <ModalWaitingIndicator ref="modal-waiter" v-model:open="modalWaiterOpen" :ctrl-key="`${ctrlKey}-Waiter`" />
     </div>
   </div>
 </template>

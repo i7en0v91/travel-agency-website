@@ -1,5 +1,5 @@
 import { DbVersionInitial, newUniqueId, AppException, AppExceptionCodeEnum, type PreviewMode, type IAppLogger, type EntityId, type ICity } from '@golobe-demo/shared';
-import { type CitiesSearchParams, type IPopularCityData, type IPopularCityItem, type ITravelDetails, type ICitiesLogic, type ICitySearchItem } from './../types';
+import type { CitiesSearchParams, IPopularCityData, IPopularCityItem, ITravelDetails, ICitiesLogic, ICitySearchItem } from './../types';
 import { mapGeoCoord, executeInTransaction } from './../helpers/db';
 import type { CitiesLogic as CitiesLogicPrisma } from './../services/cities-logic';
 import type { PrismaClient } from '@prisma/client';

@@ -1,14 +1,10 @@
 <script setup lang="ts">
-import { type IBookingTicketDatesProps } from './../../types';
+import type { IBookingTicketDatesProps } from './../../types';
 import BookingTicketDateItem from './booking-ticket-date-item.vue';
 import FlightTransition from '~/public/img/ticket-flight-transition.svg';
 import StayTransition from '~/public/img/ticket-stay-transition.svg';
 
-withDefaults(defineProps<IBookingTicketDatesProps>(), {
-  from: undefined,
-  to: undefined,
-  offerKind: undefined
-});
+defineProps<IBookingTicketDatesProps>();
 
 </script>
 

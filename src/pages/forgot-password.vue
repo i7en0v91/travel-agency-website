@@ -9,7 +9,6 @@ import { getCommonServices } from './../helpers/service-accessors';
 import { object, string } from 'yup';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
 import CaptchaProtection from './../components/forms/captcha-protection.vue';
-import { type ComponentInstance } from 'vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
 
@@ -32,7 +31,7 @@ const logger = getCommonServices().getLogger();
 
 const { t, locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
-const captcha = shallowRef<ComponentInstance<typeof CaptchaProtection>>();
+const captcha = useTemplateRef('captcha');
 
 const schema = computed(() => 
   object({

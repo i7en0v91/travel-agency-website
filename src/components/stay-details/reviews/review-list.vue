@@ -3,7 +3,7 @@ import { type EntityId, ImageCategory, type Locale, getLocalizeableValue, getSco
 import { formatImageEntityUrl } from './../../../helpers/dom';
 import ConfirmBox from '../../forms/confirm-box.vue';
 import { useConfirmDialogResult } from './../../../composables/modal-dialog-result';
-import { type IStayReviewItem } from './../../../stores/stay-reviews-store';
+import type { IStayReviewItem } from './../../../stores/stay-reviews-store';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
 import type { UCarousel } from '../../../.nuxt/components';
@@ -23,11 +23,11 @@ const ReviewsPerSlidePage = 5;
 const { status } = useAuth();
 const { requestUserAction } = usePreviewState();
 
-const props = defineProps<IProps>();
+const { ctrlKey, stayId } = defineProps<IProps>();
 const logger = getCommonServices().getLogger();
 
-const carouselRef = shallowRef<ComponentInstance<typeof UCarousel> | undefined>();
-const confirmBoxRef = shallowRef<ComponentInstance<typeof ConfirmBox>>() as Ref<ComponentInstance<typeof ConfirmBox>>;  
+const carouselRef = useTemplateRef<ComponentInstance<any>>('carousel');
+const confirmBoxRef = useTemplateRef('confirm-box');  
 const confirmBoxButtons: ConfirmBoxButton[] = ['yes', 'no'];
 const isCarouselReady = ref(false);
 
@@ -45,7 +45,7 @@ defineExpose({
 });
 
 const reviewStoreFactory = useStayReviewsStoreFactory();
-const reviewStore = await reviewStoreFactory.getInstance(props.stayId);
+const reviewStore = await reviewStoreFactory.getInstance(stayId);
 const userAccountStore = useUserAccountStore();
 const userAccount = ref<IUserAccount>();
 
@@ -60,22 +60,22 @@ watch(() => reviewStore.status, () => {
 });
 
 function refreshPagingState () {
-  logger.debug(`(ReviewList) refreshing paging state, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  logger.debug(`(ReviewList) refreshing paging state, ctrlKey=${ctrlKey}, stayId=${stayId}`);
   const carouselInstance = carouselRef.value;
   if (!isCarouselReady.value || !carouselInstance) {
-    logger.debug(`(ReviewList) refreshing paging state - carousel not initialized, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+    logger.debug(`(ReviewList) refreshing paging state - carousel not initialized, ctrlKey=${ctrlKey}, stayId=${stayId}`);
     return;
   }
 
   const current = carouselInstance.page;
   const total = Math.max(Math.ceil((reviewStore.items?.length ?? 0) / ReviewsPerSlidePage), current);
 
-  logger.debug(`(ReviewList) refreshing paging state completed, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}, current=${current}, total=${total}`);
+  logger.debug(`(ReviewList) refreshing paging state completed, ctrlKey=${ctrlKey}, stayId=${stayId}, current=${current}, total=${total}`);
   pagingState.value = { current, total };
 }
 
 function rewindToTop () {
-  logger.debug(`(ReviewList) rewind to top, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  logger.debug(`(ReviewList) rewind to top, ctrlKey=${ctrlKey}, stayId=${stayId}`);
   if (isCarouselReady.value && carouselRef.value) {
     carouselRef.value.select(0);
     refreshPagingState();
@@ -87,7 +87,7 @@ async function refreshUserAccount (): Promise<void> {
     try {
       userAccount.value = await userAccountStore.getUserAccount();
     } catch (err: any) {
-      logger.warn(`(ReviewList) failed to initialize user account info, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`, err);
+      logger.warn(`(ReviewList) failed to initialize user account info, ctrlKey=${ctrlKey}, stayId=${stayId}`, err);
       userAccount.value = undefined;
     }
   } else {
@@ -105,20 +105,20 @@ function isTestUserReview (review: IStayReviewItem): boolean {
 }
 
 function onEditUserReviewBtnClick () {
-  logger.verbose(`(ReviewList) edit review btn click handler, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  logger.verbose(`(ReviewList) edit review btn click handler, ctrlKey=${ctrlKey}, stayId=${stayId}`);
   $emit('editBtnClick');
 }
 
 async function onDeleteUserReviewBtnClick (): Promise<void> {
-  logger.verbose(`(ReviewList) delete review btn click handler, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  logger.verbose(`(ReviewList) delete review btn click handler, ctrlKey=${ctrlKey}, stayId=${stayId}`);
 
   if(!await requestUserAction()) {
-    logger.verbose(`(ReviewList) delete review btn click handler hasn't been run - not allowed in preview mode, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+    logger.verbose(`(ReviewList) delete review btn click handler hasn't been run - not allowed in preview mode, ctrlKey=${ctrlKey}, stayId=${stayId}`);
     return;
   }
 
   if(reviewStore.status === 'pending') {
-    logger.verbose(`(ReviewList) cannot delete review while store is in pending state, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+    logger.verbose(`(ReviewList) cannot delete review while store is in pending state, ctrlKey=${ctrlKey}, stayId=${stayId}`);
     return;
   }
 
@@ -133,19 +133,19 @@ async function onDeleteUserReviewBtnClick (): Promise<void> {
 }
 
 function onSlideChanged () {
-  logger.debug(`(ReviewList) slide changed, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  logger.debug(`(ReviewList) slide changed, ctrlKey=${ctrlKey}, stayId=${stayId}`);
   refreshPagingState();
 }
 
 function onNavNextBtnClick () {
-  logger.debug(`(ReviewList) nav next btn clicked, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  logger.debug(`(ReviewList) nav next btn clicked, ctrlKey=${ctrlKey}, stayId=${stayId}`);
   if (isCarouselReady.value && carouselRef.value) {
     carouselRef.value.next();
   }
 }
 
 function onNavPrevBtnClick () {
-  logger.debug(`(ReviewList) nav next btn clicked, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  logger.debug(`(ReviewList) nav next btn clicked, ctrlKey=${ctrlKey}, stayId=${stayId}`);
   if (isCarouselReady.value && carouselRef.value) {
     carouselRef.value.prev();
   }
@@ -170,7 +170,7 @@ onMounted(() => {
       <UCarousel
         v-if="reviewStore.status !== 'error' && reviewStore.items !== undefined"
         v-slot="{ item: reviewsPage }" 
-        ref="carouselRef"
+        ref="carousel"
         :items="carouselPages" 
         :ui="{ 
           wrapper: `pb-6 ${isCarouselReady ? '' : 'invisible h-0'} ${showNoReviewStub ? 'invisible h-0 hidden' : ''}`, 
@@ -242,6 +242,6 @@ onMounted(() => {
         {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'noReviews')) }}
       </div>
     </ErrorHelm>
-    <ConfirmBox ref="confirmBoxRef" v-model:open="open" v-model:result="result" :ctrl-key="`${props.ctrlKey}-UserReview-DeleteConfirm`" :buttons="confirmBoxButtons" :msg-res-name="getI18nResName3('stayDetailsPage', 'reviews', 'confirmDelete')"/>
+    <ConfirmBox ref="confirm-box" v-model:open="open" v-model:result="result" :ctrl-key="`${ctrlKey}-UserReview-DeleteConfirm`" :buttons="confirmBoxButtons" :msg-res-name="getI18nResName3('stayDetailsPage', 'reviews', 'confirmDelete')"/>
   </div>
 </template>

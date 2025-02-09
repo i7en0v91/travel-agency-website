@@ -1,6 +1,6 @@
 import { type IStayImage, type IImageInfo, type IFileInfo, AppException, AppExceptionCodeEnum, lookupValueOrThrow, type IStayOfferDetails, type IStayDescription, type IStay, type IFlight, type IAirport, type AirplaneImageKind, type ICity, type IAppLogger, type IEntity, type ILocalizableValue, type EntityId, type IAirlineCompany, type IImageCategoryInfo, ImageCategory, type ICountry, type IAirplane, type IAirplaneImage, type IFlightOffer, type FlightClass, type EntityDataAttrsOnly, type StayServiceLevel, type IStayImageShort, type StayDescriptionParagraphType, DefaultStayReviewScore } from '@golobe-demo/shared';
 import { CityInfoQuery, ImageInfoQuery, MapImageInfo } from '../services/queries'; 
-import { type IFileLogic, type ICompanyReview, type IAuthFormImageInfo } from './../types';
+import type { IFileLogic, ICompanyReview, IAuthFormImageInfo } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import uniq from 'lodash-es/uniq';
 import omit from 'lodash-es/omit';

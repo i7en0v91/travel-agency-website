@@ -1,5 +1,5 @@
 import { type ISearchStayOffersResult, type IStayData, type IStayOffersFilterParams, DbVersionInitial, newUniqueId, type ReviewSummary, type PreviewMode, type IAppLogger, type IStayOfferDetails, type IStayReview, type StayServiceLevel, type StayOffersSortFactor, type IPagination, type ISorting, type EntityId, type IStayShort, type EntityDataAttrsOnly, type IStayOffer, type IStay, DefaultStayReviewScore } from '@golobe-demo/shared';
-import { type IStaysLogic } from './../types';
+import type { IStaysLogic } from './../types';
 import { mapGeoCoord, executeInTransaction } from './../helpers/db';
 import type Decimal from 'decimal.js';
 import type { PrismaClient } from '@prisma/client';

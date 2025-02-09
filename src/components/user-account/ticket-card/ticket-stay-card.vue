@@ -8,25 +8,25 @@ interface IProps {
   bookingId: EntityId,
   offer: EntityDataAttrsOnly<IStayOffer>
 };
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
 const { d, t } = useI18n();
 
 const details = [
-  { ctrlKey: `${props.ctrlKey}-Details-CheckInTime`, caption: getI18nResName3('ticket', 'details', 'checkInTime'), icon: 'i-ion-stopwatch', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
-  { ctrlKey: `${props.ctrlKey}-Details-CheckOutTime`, caption: getI18nResName3('ticket', 'details', 'checkOutTime'), icon: 'i-ion-stopwatch', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
-  { ctrlKey: `${props.ctrlKey}-Details-Room`, caption: getI18nResName3('ticket', 'details', 'room'), icon: 'i-material-symbols-door-front', text: t(getI18nResName3('ticket', 'details', 'onArrival')) }
+  { ctrlKey: `${ctrlKey}-Details-CheckInTime`, caption: getI18nResName3('ticket', 'details', 'checkInTime'), icon: 'i-ion-stopwatch', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
+  { ctrlKey: `${ctrlKey}-Details-CheckOutTime`, caption: getI18nResName3('ticket', 'details', 'checkOutTime'), icon: 'i-ion-stopwatch', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
+  { ctrlKey: `${ctrlKey}-Details-Room`, caption: getI18nResName3('ticket', 'details', 'room'), icon: 'i-material-symbols-door-front', text: t(getI18nResName3('ticket', 'details', 'onArrival')) }
 ];
 
 </script>
 
 <template>
   <div class="w-full h-auto">
-    <TicketCardContainer :ctrl-key="`${props.ctrlKey}-Container`" :booking-id="bookingId" :offer="offer"> 
+    <TicketCardContainer :ctrl-key="`${ctrlKey}-Container`" :booking-id="bookingId" :offer="offer"> 
       <div class="w-full h-auto grid grid-flow-row auto-rows-auto grid-cols-userticketentriesxs 2xl:grid-cols-userticketentries2xl items-center gap-4">
         <div class="contents w-max h-auto">
           <div class="block w-full aspect-[1_/_1] ring-1 ring-primary-400 dark:ring-primary rounded-xl m-2 col-start-1 col-end-2 [&_*]:text-xs [&_*]:leading-2">
-            <TicketStayTitle :ctrl-key="`${props.ctrlKey}-StayTitle`" :city-name="offer.stay.city.name" :stay-name="offer.stay.name"/>
+            <TicketStayTitle :ctrl-key="`${ctrlKey}-StayTitle`" :city-name="offer.stay.city.name" :stay-name="offer.stay.name"/>
           </div>
           <div class="block w-full h-auto col-start-2 col-end-3 ml-8">
             <div class="block whitespace-nowrap text-sm sm:text-base font-normal text-gray-600 dark:text-gray-300">

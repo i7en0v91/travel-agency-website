@@ -10,8 +10,7 @@ interface IProps {
   ctrlKey: string,
   offer: EntityDataAttrsOnly<IFlightOffer>
 }
-const props = withDefaults(defineProps<IProps>(), {
-});
+const { ctrlKey, offer } = defineProps<IProps>();
 
 const { status } = useAuth();
 const { locale, t } = useI18n();
@@ -23,28 +22,28 @@ const userFavouritesStore = useUserFavouritesStore();
 
 const isError = ref(false);
 
-const airlineCompany = props.offer.departFlight.airlineCompany;
+const airlineCompany = offer.departFlight.airlineCompany;
 const airlineCompanyLogoTooltip = computed(() => getLocalizeableValue(airlineCompany.name, locale.value as Locale));
 const scoreClassResName = getScoreClassResName(airlineCompany.reviewSummary.score);
 const reviewsCountText = `${airlineCompany.reviewSummary.numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), airlineCompany.reviewSummary.numReviews)}`;
 
-const offerFlights = props.offer.arriveFlight ? [props.offer.departFlight, props.offer.arriveFlight] : [props.offer.departFlight];
-const favouriteStatusWatcher = useOfferFavouriteStatus(props.offer.id, props.offer.kind);
+const offerFlights = offer.arriveFlight ? [offer.departFlight, offer.arriveFlight] : [offer.departFlight];
+const favouriteStatusWatcher = useOfferFavouriteStatus(offer.id, offer.kind);
 
 async function toggleFavourite (): Promise<void> {
-  const offerId = props.offer.id;
+  const offerId = offer.id;
   logger.verbose(`(SearchFlightsResultCard) toggling favourite, offerId=${offerId}, current=${favouriteStatusWatcher.isFavourite}`);
   if(!await requestUserAction()) {
     logger.verbose(`(SearchFlightsResultCard) favourite hasn't been toggled - not allowed in preview mode, offerId=${offerId}`);
     return;  
   }
   const store = await userFavouritesStore.getInstance();
-  const result = await store.toggleFavourite(offerId, 'flights' as OfferKind, props.offer);
+  const result = await store.toggleFavourite(offerId, 'flights' as OfferKind, offer);
   logger.verbose(`(SearchFlightsResultCard) favourite toggled, offerId=${offerId}, isFavourite=${result}`);
 }
 
 async function favouriteBtnClick (): Promise<void> {
-  logger.debug(`(SearchFlightsResultCard) favourite button clicked, ctrlKey=${props.ctrlKey}, current=${favouriteStatusWatcher.isFavourite}`);
+  logger.debug(`(SearchFlightsResultCard) favourite button clicked, ctrlKey=${ctrlKey}, current=${favouriteStatusWatcher.isFavourite}`);
   await toggleFavourite();
 }
 
@@ -105,7 +104,7 @@ const uiStyling = {
         <div class="flex-initial w-fit h-min order-1 sm:order-2 float-right row-start-1 row-end-2 col-start-1 col-end-2 sm:row-end-4 md:row-end-3 lg:row-end-4">
           <StaticImage
             :ctrl-key="`${ctrlKey}-CompanyLogo`"
-            :entity-src="props.offer.departFlight.airlineCompany.logoImage"
+            :entity-src="offer.departFlight.airlineCompany.logoImage"
             :category="ImageCategory.AirlineLogo"
             sizes="xs:60vw sm:40vw md:40vw lg:30vw xl:30vw"
             :ui="{ wrapper: 'w-[160px] h-auto', img: 'object-cover' }"

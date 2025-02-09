@@ -1,5 +1,5 @@
 import { AppException, AppExceptionCodeEnum, isElectronBuild, type I18nResName } from '@golobe-demo/shared';
-import { type ConfirmBoxButton } from './../types';
+import type { ConfirmBoxButton } from './../types';
 import { getCommonServices } from '../helpers/service-accessors';
 import type { ComponentInstance, Ref } from 'vue';
 import { getDialogsFacade } from '../helpers/electron';

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type BookStayPageArgs, AppException, AppExceptionCodeEnum, getLocalizeableValue, type StayServiceLevel, ImageCategory, type EntityDataAttrsOnly, type IStayOfferDetails, type ILocalizableValue, type EntityId, AvailableStayServiceLevel, AppPage, type Locale, getI18nResName3, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
 import OfferBooking from './../../components/booking-page/offer-booking.vue';
-import { type IOfferBookingStoreFactory } from './../../stores/offer-booking-store';
+import type { IOfferBookingStoreFactory } from './../../stores/offer-booking-store';
 import OfferDetailsBreadcrumbs from './../../components/common-page-components/offer-details-breadcrumbs.vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import dayjs from 'dayjs';

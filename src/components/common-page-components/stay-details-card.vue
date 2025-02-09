@@ -11,13 +11,7 @@ interface IProps {
   checkIn?: Date,
   checkOut?: Date
 }
-withDefaults(defineProps<IProps>(), {
-  name: undefined,
-  price: undefined,
-  city: undefined,
-  checkIn: undefined,
-  checkOut: undefined
-});
+defineProps<IProps>();
 
 const { locale } = useI18n();
 const isError = ref(false);

@@ -1,5 +1,5 @@
 import { PreviewModeParamEnabledValue, type RecoverPasswordCompleteResultEnum, type BookStayPageArgs, type BookingPageArgs, type TripType, type StayServiceLevel, type FlightClass, type AppPage, type Theme } from '@golobe-demo/shared';
-import { type PreviewSystemParamOptions, type TimestampSystemParamOptions, type InternalSystemParamOptions, type CacheParamsVariedByValueRanges, type CacheParamsVariedBySystemParamsOnly, type CacheByPageTimestamp, type AnyParamValue, type BoolFalse, type BoolTrue, type EmptyParamListOptions, type CacheablePageParamsBase } from './types';
+import type { PreviewSystemParamOptions, TimestampSystemParamOptions, InternalSystemParamOptions, CacheParamsVariedByValueRanges, CacheParamsVariedBySystemParamsOnly, CacheByPageTimestamp, AnyParamValue, BoolFalse, BoolTrue, EmptyParamListOptions, CacheablePageParamsBase } from './types';
 
 export const internalSystemParamOptions: InternalSystemParamOptions = { 
   i: { isRequired: false, isSystem: true, acceptableValues: ['0', '1'] }

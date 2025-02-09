@@ -41,7 +41,7 @@ export class Logger extends AppWinstonLoggerBase<typeof ClientLoggingOptions> {
     return {
       local,
       outside: local && this.checkNeedServerLogging(level)
-    }
+    };
   }
 
   override getTransports() {
@@ -68,13 +68,13 @@ export class Logger extends AppWinstonLoggerBase<typeof ClientLoggingOptions> {
           callback(err);
         }
       }
-    })
+    });
 
     return [
       new transports.Stream({
         stream: logEntiresEmitStream
       })
-    ]
+    ];
   }
 
   checkPassLogLevel (level: LogLevelEnum) : boolean {

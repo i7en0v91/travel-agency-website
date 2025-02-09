@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type IBookingTicketFlightGfxProps, type IBookingTicketStayTitleProps, type IBookingTicketProps } from './../../types';
+import type { IBookingTicketFlightGfxProps, IBookingTicketStayTitleProps, IBookingTicketProps } from './../../types';
 import BookingTicketDates from './booking-ticket-dates.vue';
 import BookingTicketGeneral from './booking-ticket-general.vue';
 import BookingTicketDetails from './booking-ticket-details.vue';
@@ -8,13 +8,7 @@ import BookingTicketFlightGfx from './booking-ticket-flight-gfx.vue';
 import BookingTicketStayTitle from './booking-ticket-stay-title.vue';
 import ComponentWaitingIndicator from '../forms/component-waiting-indicator.vue';
 
-withDefaults(defineProps<IBookingTicketProps>(), {
-  generalInfo: undefined,
-  dates: undefined,
-  details: undefined,
-  offerKind: undefined,
-  titleOrGfx: undefined
-});
+defineProps<IBookingTicketProps>();
 
 const isError = ref(false);
 

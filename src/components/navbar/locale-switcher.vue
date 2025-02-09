@@ -14,7 +14,7 @@ const { enabled } = usePreviewState();
 interface IProps {
   ctrlKey: string
 }
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 const dropdownOpen = ref(false);
 
 const logger = getCommonServices().getLogger();
@@ -46,7 +46,7 @@ if (import.meta.client) {
   });
 
   watch(dropdownOpen, () => {
-    logger.debug(`(LocaleSwitcher) dropdown opened state changed, ctrlKey=${props.ctrlKey}, open=${dropdownOpen.value}`);
+    logger.debug(`(LocaleSwitcher) dropdown opened state changed, ctrlKey=${ctrlKey}, open=${dropdownOpen.value}`);
     switchClicked();
   });
 }

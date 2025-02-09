@@ -1,9 +1,9 @@
 import { CachedResultsInAppServicesEnabled, type IImageData, type IImageInfo, AppException, AppExceptionCodeEnum, ImageAuthRequiredCategories, ImagePublicSlugs, newUniqueId, DbVersionInitial, type IAppLogger, type ImageCategory, type EntityId, type Timestamp, type PreviewMode } from '@golobe-demo/shared';
 import type { Prisma, PrismaClient } from '@prisma/client';
-import { type IImageLogic, type IFileLogic, type IImageBytes, type IImageFileInfoUnresolved, type IImageCategoryLogic, type ImageCheckAccessResult } from './../types';
+import type { IImageLogic, IFileLogic, IImageBytes, IImageFileInfoUnresolved, IImageCategoryLogic, ImageCheckAccessResult } from './../types';
 import { ImageInfoQuery, MapImageInfo } from './queries';
 import { mapEnumDbValue, executeInTransaction } from '../helpers/db';
-import { type H3Event } from 'h3';
+import type { H3Event } from 'h3';
 
 export class ImageLogic implements IImageLogic {
   private readonly logger: IAppLogger;

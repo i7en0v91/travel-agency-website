@@ -2,7 +2,7 @@ import { type Locale, type IAppLogger, AppException, AppExceptionCodeEnum } from
 import type { Storage, StorageValue } from 'unstorage';
 import { destr } from 'destr';
 import { convertRawToBuffer } from './../helpers/nitro';
-import { type IAppAssetsProvider } from './../types';
+import type { IAppAssetsProvider } from './../types';
 
 export class AppAssetsProvider implements IAppAssetsProvider {
   private readonly logger: IAppLogger;

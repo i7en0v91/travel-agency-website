@@ -4,29 +4,25 @@ import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 interface IProps {
   ctrlKey: string,
-  offerKind?: OfferKind | undefined,
-  city?: EntityDataAttrsOnly<ICity> | undefined,
-  placeName?: ILocalizableValue | undefined
+  offerKind?: OfferKind,
+  city?: EntityDataAttrsOnly<ICity>,
+  placeName?: ILocalizableValue
 };
-const props = withDefaults(defineProps<IProps>(), {
-  offerKind: undefined,
-  city: undefined,
-  placeName: undefined
-});
+const { city, offerKind, placeName } = defineProps<IProps>();
 
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
 const links = computed(() => [{
-  label: props.city ? getLocalizeableValue(props.city.country.name, locale.value as Locale) : undefined,
-  to: props.city ? (props.offerKind === 'flights' ? navLinkBuilder.buildPageLink(AppPage.Flights, locale.value as Locale) : navLinkBuilder.buildPageLink(AppPage.Stays, locale.value as Locale)) : undefined,
+  label: city ? getLocalizeableValue(city.country.name, locale.value as Locale) : '',
+  to: city ? (offerKind === 'flights' ? navLinkBuilder.buildPageLink(AppPage.Flights, locale.value as Locale) : navLinkBuilder.buildPageLink(AppPage.Stays, locale.value as Locale)) : undefined,
   external: false
 }, {
-  label: props.city ? getLocalizeableValue(props.city.name, locale.value as Locale) : undefined,
-  to: props.city ? (props.offerKind === 'flights' ? navLinkBuilder.buildPageLink(AppPage.FindFlights, locale.value as Locale, { fromCitySlug: props.city.slug }) : navLinkBuilder.buildPageLink(AppPage.FindStays, locale.value as Locale, { citySlug: props.city.slug })) : undefined,
+  label: city ? getLocalizeableValue(city.name, locale.value as Locale) : '',
+  to: city ? (offerKind === 'flights' ? navLinkBuilder.buildPageLink(AppPage.FindFlights, locale.value as Locale, { fromCitySlug: city.slug }) : navLinkBuilder.buildPageLink(AppPage.FindStays, locale.value as Locale, { citySlug: city.slug })) : undefined,
   external: false
 }, {
-  label: props.placeName ? getLocalizeableValue(props.placeName, locale.value as Locale) : undefined
+  label: placeName ? getLocalizeableValue(placeName, locale.value as Locale) : '',
 }]);
 
 </script>

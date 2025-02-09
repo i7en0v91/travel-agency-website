@@ -4,7 +4,7 @@ import range from 'lodash-es/range';
 import fromPairs from 'lodash-es/fromPairs';
 import type { LogObject } from 'consola';
 import AppConfig from './../appconfig';
-import { type LogLevel } from './../types';
+import type { LogLevel } from './../types';
 
 /** Log message will be suppressed only if all specified filters combined by AND mathches their input strings */
 export interface ILogSuppressionRule {
@@ -123,11 +123,13 @@ export function checkNeedSuppressVueMsg (msg?: string, trace?: string, err?: any
         matchesComponent = (trace.match(rule.componentNameFilter)?.length ?? 0) > 0;
       }
       if (!matchesComponent && err) {
-        matchesComponent = (JSON.stringify(err).match(rule.componentNameFilter)?.length ?? 0) > 0;
+        matchesComponent = (getTestSuppressionStringFromErr(err).match(rule.componentNameFilter)?.length ?? 0) > 0;
       }
       if (matchesComponent) {
         return true;
       }
+    } else {
+      return true;
     }
   }
 
@@ -141,7 +143,7 @@ function testLogSuppressionRule(rule: ILogSuppressionRule, msg?: string, err?: a
       matchesMsg = (msg.match(rule.messageFitler)?.length ?? 0) > 0;
     }
     if (!matchesMsg && err) {
-      matchesMsg = (JSON.stringify(err).match(rule.messageFitler)?.length ?? 0) > 0;
+      matchesMsg = (getTestSuppressionStringFromErr(err).match(rule.messageFitler)?.length ?? 0) > 0;
     }
     if (!matchesMsg) {
       return false;
@@ -150,4 +152,13 @@ function testLogSuppressionRule(rule: ILogSuppressionRule, msg?: string, err?: a
     return false;
   }
   return true;
+}
+
+function getTestSuppressionStringFromErr(err?: any): string {
+  if(!err) {
+    return '';
+  }
+  return err.name === 'TypeError' ? 
+    `${(err as TypeError).message} ${(err as TypeError).stack}` : 
+    JSON.stringify(err);  
 }

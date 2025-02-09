@@ -16,7 +16,7 @@
   </UFormGroup> 
  * 
  */
-import { type I18nResName } from '@golobe-demo/shared';
+import type { I18nResName } from '@golobe-demo/shared';
 
 const { t } = useI18n();
 

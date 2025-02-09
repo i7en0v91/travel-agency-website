@@ -9,7 +9,7 @@ import get from 'lodash-es/get';
 interface IProps {
   ctrlKey: string
 }
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 const { locale, t } = useI18n();
@@ -47,7 +47,7 @@ const userMenuItems = computed(() => {
           };
         default:
           return {
-            label: li.labelResName ? t(li.labelResName) : undefined,
+            label: li.labelResName ? t(li.labelResName) : '',
             labelClass: li.labelResName ? 'w-full text-left after:scale-y-150 after:scale-x-75 after:content-[">"] after:float-right' : undefined,
             icon: li.icon,
             click: get(navLinkBuilder.menuItemHandlers, li.kind),
@@ -63,7 +63,7 @@ const userMenuItems = computed(() => {
 
 function onUserMenuClick(e: InputEvent) {
   const deviceSize = getCurrentDeviceSize();
-  logger.debug(`(NavUser) user menu click handler: ctrlKey=${props.ctrlKey}, deviceSize=${deviceSize}`);
+  logger.debug(`(NavUser) user menu click handler: ctrlKey=${ctrlKey}, deviceSize=${deviceSize}`);
 
   switch(deviceSize) {
     case DeviceSizeEnum.XS:

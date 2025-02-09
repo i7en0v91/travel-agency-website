@@ -1,5 +1,5 @@
 import { DbVersionInitial, newUniqueId, getLocalizeableValue, type PreviewMode, type Locale, type IAppLogger, type EmailTemplateEnum, type ILocalizableValue, type EntityId } from '@golobe-demo/shared';
-import { type IMailTemplateLogic } from './../types';
+import type { IMailTemplateLogic } from './../types';
 import { mapEnumDbValue, executeInTransaction } from '../helpers/db';
 import type { PrismaClient } from '@prisma/client';
 import type { AcsysDraftEntitiesResolver } from './acsys-draft-entities-resolver';

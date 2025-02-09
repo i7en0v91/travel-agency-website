@@ -11,7 +11,6 @@ import values from 'lodash-es/values';
 import keys from 'lodash-es/keys';
 import type { UInput } from '../../.nuxt/components';
 import uniqBy from 'lodash-es/uniqBy';
-import { type ComponentInstance } from 'vue';
 import { parseURL, withFragment } from 'ufo';
 
 interface IProps {
@@ -20,7 +19,7 @@ interface IProps {
 defineProps<IProps>();
 const $emit = defineEmits(['close']);
 
-const inputRef = shallowRef<ComponentInstance<typeof UInput> | undefined>();
+const inputRef = useTemplateRef('input-field');
 
 const PageLinksDisplayParams: { [P in keyof typeof AppPage]: { icon: string, titleResName: I18nResName } } = {
   Account: { icon: 'i-heroicons-user-20-solid', titleResName: getI18nResName2('accountPage', 'title') },
@@ -196,7 +195,7 @@ function formatSearchResultItem(resultItem: SearchResultItem): ParsedSearchItem[
 
 onMounted(() => {
   logger.debug('(SiteSearch) mounted');
-  inputRef.value.$el?.querySelector('input')?.focus();
+  inputRef.value?.$el?.querySelector('input')?.focus();
 });
 
 onUnmounted(() => {
@@ -209,7 +208,7 @@ onUnmounted(() => {
   <div :class="`flex flex-col flex-nowrap bg-white dark:bg-gray-900 rounded-md w-full h-full`">
     <div class="block w-full flex-initial">
       <UInput 
-        ref="inputRef"
+        ref="input-field"
         v-model.trim="searchUserInput" 
         :max-length="SiteSearchMaxMatchLength.XXL" 
         :ui="{ wrapper: 'sm:ml-2 pr-2 sm:pr-4' }" 

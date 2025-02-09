@@ -17,7 +17,7 @@ interface IProps {
   }
 }
 
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
 const modelRef = defineModel<IStayParams | null | undefined>('params');
 const hasMounted = ref(false);
@@ -26,8 +26,8 @@ const open = ref(false);
 const logger = getCommonServices().getLogger();
 
 const controlSettingsStore = useControlSettingsStore();
-const roomsValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(`${props.ctrlKey}-Rooms`, StaysMinRoomsCount.toString(), true);
-const guestsValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(`${props.ctrlKey}-Guests`, StaysMinGuestsCount.toString(), true);
+const roomsValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(`${ctrlKey}-Rooms`, StaysMinRoomsCount.toString(), true);
+const guestsValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(`${ctrlKey}-Guests`, StaysMinGuestsCount.toString(), true);
 
 const numRooms = ref<number | undefined>();
 const numGuests = ref<number | undefined>();
@@ -46,17 +46,17 @@ function saveInitialValuesToSettingsIfNotEmpty () {
 }
 
 function readParamsFromSettings(): IStayParams {
-  logger.debug(`(SearchStayParams) parsing params from settings, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(SearchStayParams) parsing params from settings, ctrlKey=${ctrlKey}`);
   let numRooms = StaysMinRoomsCount;
   if(roomsValueSetting.value?.length) {
     try {
       numRooms = parseInt(roomsValueSetting.value);
       if(numRooms === undefined || numRooms === null) {
-        logger.warn(`(SearchStayParams) parsing num rooms from settings resulted into empty number, ctrlKey=${props.ctrlKey}, value=[${JSON.stringify(roomsValueSetting.value)}]`);
+        logger.warn(`(SearchStayParams) parsing num rooms from settings resulted into empty number, ctrlKey=${ctrlKey}, value=[${JSON.stringify(roomsValueSetting.value)}]`);
         numRooms = StaysMinRoomsCount;
       }
     } catch(err: any) {
-      logger.warn(`(SearchStayParams) failed to parse num rooms from settings, ctrlKey=${props.ctrlKey}, value=[${JSON.stringify(roomsValueSetting.value)}]`, err);
+      logger.warn(`(SearchStayParams) failed to parse num rooms from settings, ctrlKey=${ctrlKey}, value=[${JSON.stringify(roomsValueSetting.value)}]`, err);
     }    
   }
 
@@ -65,11 +65,11 @@ function readParamsFromSettings(): IStayParams {
     try {
       numGuests = parseInt(guestsValueSetting.value);
       if(numGuests === undefined || numGuests === null) {
-        logger.warn(`(SearchStayParams) parsing num guests from settings resulted into empty number, ctrlKey=${props.ctrlKey}, value=[${JSON.stringify(guestsValueSetting.value)}]`);
+        logger.warn(`(SearchStayParams) parsing num guests from settings resulted into empty number, ctrlKey=${ctrlKey}, value=[${JSON.stringify(guestsValueSetting.value)}]`);
         numGuests = StaysMinGuestsCount;
       }
     } catch(err: any) {
-      logger.warn(`(SearchStayParams) failed to parse num guests from settings, ctrlKey=${props.ctrlKey}, value=[${JSON.stringify(guestsValueSetting.value)}]`, err);
+      logger.warn(`(SearchStayParams) failed to parse num guests from settings, ctrlKey=${ctrlKey}, value=[${JSON.stringify(guestsValueSetting.value)}]`, err);
     }    
   }
 
@@ -77,7 +77,7 @@ function readParamsFromSettings(): IStayParams {
     numRooms,
     numGuests
   };
-  logger.debug(`(SearchStayParams) params parsed from settings, ctrlKey=${props.ctrlKey}, result=${JSON.stringify(result)}`);
+  logger.debug(`(SearchStayParams) params parsed from settings, ctrlKey=${ctrlKey}, result=${JSON.stringify(result)}`);
   return result;
 }
 
@@ -94,11 +94,11 @@ const displayText = computed(() => {
 
 
 function updateParams (params: IStayParams) {
-  logger.verbose(`(SearchStayParams) updating params: ctrlKey=${props.ctrlKey}, params=${JSON.stringify(params)}`);
+  logger.verbose(`(SearchStayParams) updating params: ctrlKey=${ctrlKey}, params=${JSON.stringify(params)}`);
   roomsValueSetting.value = (params.numRooms ?? StaysMinRoomsCount).toString();
   guestsValueSetting.value = (params.numGuests ?? StaysMinGuestsCount).toString();
   modelRef.value = params;
-  logger.verbose(`(SearchStayParams) selected params updated: ctrlKey=${props.ctrlKey}, params=${JSON.stringify(params)}`);
+  logger.verbose(`(SearchStayParams) selected params updated: ctrlKey=${ctrlKey}, params=${JSON.stringify(params)}`);
 }
 
 function onParamsChange () {

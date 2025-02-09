@@ -1,6 +1,6 @@
 import { type IUserMinimalInfo, type IUserProfileInfo, type ImageCategory, maskLog, type Locale, type Theme, SecretValueMask, type AuthProvider, type IAppLogger, type EntityId, type Timestamp } from '@golobe-demo/shared';
-import { type UserResponseDataSet, type RegisterVerificationFlow, type RegisterUserByEmailResponse, type IUserLogic, type PasswordRecoveryResult, type UpdateUserAccountResult } from './../types';
-import { type H3Event } from 'h3';
+import type { UserResponseDataSet, RegisterVerificationFlow, RegisterUserByEmailResponse, IUserLogic, PasswordRecoveryResult, UpdateUserAccountResult } from './../types';
+import type { H3Event } from 'h3';
 
 export class UserLogic implements IUserLogic {
   private readonly logger: IAppLogger;

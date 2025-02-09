@@ -1,7 +1,7 @@
 import { AppConfig } from '@golobe-demo/shared';
 import type { H3Event } from 'h3';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type IImageDetailsDto } from '../../../api-definitions';
+import type { IImageDetailsDto } from '../../../api-definitions';
 import max from 'lodash-es/max';
 import { getServerServices } from '../../../../helpers/service-accessors';
 

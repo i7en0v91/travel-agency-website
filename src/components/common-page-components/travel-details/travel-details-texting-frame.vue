@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Locale, AppPage, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
-import { type ITravelDetailsTextingData } from './../../../types';
+import type { ITravelDetailsTextingData } from './../../../types';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 
 interface IProps {
@@ -10,34 +10,31 @@ interface IProps {
   isInitial?: boolean
 };
 
-const props = withDefaults(defineProps<IProps>(), {
-  texting: undefined,
-  tabbable: undefined
-});
+const { bookKind, texting, isInitial } = defineProps<IProps>();
 
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
 const styleClass = computed(() => {
-  if (!props.texting) {
-    return props.isInitial ? 'z-[2]' : 'invisible';
+  if (!texting) {
+    return isInitial ? 'z-[2]' : 'invisible';
   }
   return 'z-[3]';
 });
 
 const bookLinkUrl = computed(() => {
-  const citySlug = props.texting?.slug;
+  const citySlug = texting?.slug;
   if (!citySlug) {
-    return navLinkBuilder.buildPageLink(props.bookKind === 'flight' ? AppPage.Flights : AppPage.Stays, locale.value as Locale);
+    return navLinkBuilder.buildPageLink(bookKind === 'flight' ? AppPage.Flights : AppPage.Stays, locale.value as Locale);
   }
   return navLinkBuilder.buildPageLink(
-    props.bookKind === 'flight' ? AppPage.FindFlights : AppPage.FindStays,
+    bookKind === 'flight' ? AppPage.FindFlights : AppPage.FindStays,
     locale.value as Locale,
-    props.bookKind === 'flight' ? { fromCitySlug: citySlug } : { citySlug }
+    bookKind === 'flight' ? { fromCitySlug: citySlug } : { citySlug }
   );
 });
 
-const price = computed(() => props.texting?.price ? props.texting.price.toFixed(0) : undefined);
+const price = computed(() => texting?.price ? texting.price.toFixed(0) : undefined);
 
 const uiStyling = {
   base: 'w-full h-full flex flex-col flex-nowrap gap-0 items-stretch',
@@ -60,7 +57,7 @@ const uiStyling = {
 </script>
 
 <template>
-  <div :class="`flex flex-col gap-[12px] w-full h-[31.625rem] travelsmd:h-full md:h-[20.375rem] xl:h-full row-start-1 row-end-2 col-start-1 col-end-2 z-[1] rounded-2xl ${styleClass}`">
+  <div :class="`w-full h-[31.625rem] travelsmd:h-full md:h-[20.375rem] xl:h-full row-start-1 row-end-2 col-start-1 col-end-2 z-[1] rounded-2xl ${styleClass}`">
     <UCard as="div" :ui="uiStyling">
       <template #header>
         <UBadge 

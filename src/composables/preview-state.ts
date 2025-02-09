@@ -1,7 +1,7 @@
 import { lookupPageByUrl, getI18nResName1, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, UserNotificationLevel, AppException, AppExceptionCodeEnum, type IAppLogger, SystemPage } from "@golobe-demo/shared";
-import { type H3Event } from 'h3';
+import type { H3Event } from 'h3';
 import { parseURL, parseQuery } from 'ufo';
-import { type IUserNotificationStore } from './../stores/user-notification-store';
+import type { IUserNotificationStore } from './../stores/user-notification-store';
 import { getCommonServices } from "../helpers/service-accessors";
 
 let _Enabled: boolean | undefined = undefined;

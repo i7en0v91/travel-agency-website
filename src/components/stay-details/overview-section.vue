@@ -13,16 +13,12 @@ interface IProps {
   reviewScore?: number
 }
 
-const props = withDefaults(defineProps<IProps>(), {
-  description: undefined,
-  numReviews: undefined,
-  reviewScore: undefined
-});
+const { ctrlKey, description, reviewScore, numReviews } = defineProps<IProps>();
 
-const titleStr = computed(() => props.description?.find(d => d.paragraphKind === 'Title')?.textStr);
-const mainStr = computed(() => props.description?.find(d => d.paragraphKind === 'Main')?.textStr);
+const titleStr = computed(() => description?.find(d => d.paragraphKind === 'Title')?.textStr);
+const mainStr = computed(() => description?.find(d => d.paragraphKind === 'Main')?.textStr);
 const featureStrs = computed(() => {
-  const featureStrs = props.description?.filter(d => d.paragraphKind === 'FeatureCaption' || d.paragraphKind === 'FeatureText');
+  const featureStrs = description?.filter(d => d.paragraphKind === 'FeatureCaption' || d.paragraphKind === 'FeatureText');
   if (!featureStrs) {
     return undefined;
   }
@@ -36,8 +32,8 @@ const featureStrs = computed(() => {
 });
 
 const highlightResNames = ['newPark', 'nightlife', 'theater', 'clean'];
-const scoreClassResName = computed(() => props.reviewScore ? getScoreClassResName(props.reviewScore) : undefined);
-const reviewsCountText = computed(() => props.numReviews ? `${props.numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), props.numReviews)}` : undefined);
+const scoreClassResName = computed(() => reviewScore ? getScoreClassResName(reviewScore) : undefined);
+const reviewsCountText = computed(() => numReviews ? `${numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), numReviews)}` : undefined);
 
 </script>
 
@@ -66,8 +62,8 @@ const reviewsCountText = computed(() => props.numReviews ? `${props.numReviews} 
         <ul class="w-max h-auto flex flex-row flex-nowrap gap-4 py-4">
           <li class="w-full h-auto min-h-max min-w-[166px] aspect-[1_/_1] flex flex-col flex-nowrap items-start justify-between bg-primary-300 dark:bg-primary-600 p-4 rounded-xl">
             <ClientOnly>
-              <div v-if="props.reviewScore" class="block text-3xl font-semibold">
-                {{ props.reviewScore.toFixed(1) }}
+              <div v-if="reviewScore" class="block text-3xl font-semibold">
+                {{ reviewScore.toFixed(1) }}
               </div>
               <USkeleton v-else class="w-1/3 h-8" />
               <div class="w-full h-auto text-base font-semibold">

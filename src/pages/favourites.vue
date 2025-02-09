@@ -90,7 +90,7 @@ onMounted(() => {
     <ClientOnly>
       <ErrorHelm v-model:is-error="isError">
         <TabsGroup
-          v-model:activeTabKey="activeTabKey"
+          v-model:active-tab-key="activeTabKey"
           :ctrl-key="FavouritesTabGroup"
           :tabs="tabProps"
           variant="split"

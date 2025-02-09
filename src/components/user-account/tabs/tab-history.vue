@@ -18,13 +18,13 @@ interface IProps {
   ctrlKey: string,
   ready: boolean
 }
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 const isError = ref(false);
 
 const controlSettingsStore = useControlSettingsStore();
-const timeRangeControlValueSetting = controlSettingsStore.getControlValueSetting<TimeRangeFilter>(`${props.ctrlKey}-TimeRangeFilter`, DefaultTimeRangeFilter, true);
+const timeRangeControlValueSetting = controlSettingsStore.getControlValueSetting<TimeRangeFilter>(`${ctrlKey}-TimeRangeFilter`, DefaultTimeRangeFilter, true);
 const timeRangeFilter = ref<TimeRangeFilter>(timeRangeControlValueSetting.value ?? DefaultTimeRangeFilter);
 const timeRangeFilterDropdownItems: {value: TimeRangeFilter, resName: I18nResName}[] = (['upcoming', 'passed'] as TimeRangeFilter[]).map(f => { return { value: f, resName: getI18nResName3('accountPage', 'tabHistory', f) }; });
 
@@ -47,9 +47,9 @@ const userTicketsFetch = await useFetch(`/${ApiEndpointUserTickets}`,
   },
   cache: (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
   transform: (response: IUserTicketsResultDto) => {
-    logger.verbose(`(TabHistory) received user tickets response, ctrlKey=${props.ctrlKey}`);
+    logger.verbose(`(TabHistory) received user tickets response, ctrlKey=${ctrlKey}`);
     if (!response) {
-      logger.warn(`(TabHistory) user tickets response is empty, ctrlKey=${props.ctrlKey}`);
+      logger.warn(`(TabHistory) user tickets response is empty, ctrlKey=${ctrlKey}`);
       return []; // error should be logged by fetchEx
     }
     return mapUserTicketsResult(response);
@@ -84,13 +84,13 @@ const tabProps = computed(() => OfferKinds.map(offerKind => {
 }));
 
 onMounted(() => {
-  logger.verbose(`(TabHistory) mounted, fetching tickets: ctrlKey=${props.ctrlKey}`);
+  logger.verbose(`(TabHistory) mounted, fetching tickets: ctrlKey=${ctrlKey}`);
 
   watch([userTicketsFetch.status, timeRangeFilter], () => { 
-    logger.debug(`(TabHistory) tickets fetch status changed: ctrlKey=${props.ctrlKey}, status=${userTicketsFetch.status.value}`);
+    logger.debug(`(TabHistory) tickets fetch status changed: ctrlKey=${ctrlKey}, status=${userTicketsFetch.status.value}`);
     displayedItems.value = getDisplayedItems();
     if(userTicketsFetch.status.value === 'error') {
-      logger.warn(`(TabHistory) got failed tickets fetch status: ctrlKey=${props.ctrlKey}`);
+      logger.warn(`(TabHistory) got failed tickets fetch status: ctrlKey=${ctrlKey}`);
       isError.value = true;
     } else if(userTicketsFetch.status.value === 'success') {
       isError.value = false;
@@ -107,7 +107,7 @@ onMounted(() => {
   <div class="w-full h-auto">
     <ErrorHelm v-model:is-error="isError" :appearance="'error-stub'">
       <TabsGroup
-        v-model:activeTabKey="activeTabKey"
+        v-model:active-tab-key="activeTabKey"
         :ctrl-key="HistoryTabGroup" 
         :tabs="tabProps"
         variant="split"
@@ -118,7 +118,7 @@ onMounted(() => {
         <template v-for="(slotName) in OfferKinds" #[slotName] :key="`FavouritesPage-TabContent-${slotName}`">
           <DropdownList
             v-model:selected-value="timeRangeFilter"
-            :ctrl-key="`${props.ctrlKey}-TimeRangeFilter`"
+            :ctrl-key="`${ctrlKey}-TimeRangeFilter`"
             variant="none"
             class="ml-auto w-fit"
             :ui="{ input: 'w-auto' }"

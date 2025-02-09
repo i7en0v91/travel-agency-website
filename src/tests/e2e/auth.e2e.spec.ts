@@ -1,9 +1,9 @@
 /* eslint-disable no-case-declarations */
-import { AppConfig, localizePath, type IAppLogger, AllHtmlPages, EntityIdPages, HeaderContentType, DefaultLocale, CookieI18nLocale, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, type Locale, AvailableLocaleCodes, spinWait, delay, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD } from '@golobe-demo/shared';
+import { HeaderLocation, AppConfig, localizePath, type IAppLogger, AllHtmlPages, EntityIdPages, HeaderContentType, DefaultLocale, CookieI18nLocale, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, type Locale, AvailableLocaleCodes, spinWait, delay, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD, RestApiAuth } from '@golobe-demo/shared';
 import { ApiAppEndpointPrefix, ApiEndpointTestingInvlidatePage, type ITestingInvalidateCacheDto } from '../../server/api-definitions';
 import { TEST_SERVER_PORT, createLogger, ScreenshotDir, startWatchingTestFiles, stopWatchingTestFiles } from '../../helpers/testing';
 import { beforeAll, afterAll, describe, test, type TestOptions } from 'vitest';
-import { type Page, type Request } from 'playwright-core';
+import type { Page, Request, Response } from 'playwright-core';
 import { setup, createPage, createBrowser } from '@nuxt/test-utils/e2e';
 import { join } from 'pathe';
 import dayjs from 'dayjs';
@@ -76,10 +76,13 @@ class AuthTestCaseRunner {
   currentPage: Page | undefined;
   outstandingRequestsCount: number;
 
+  isAuthUser: boolean;
+
   constructor (testCase: IAuthTestCase, logger: IAppLogger) {
     this.testCase = testCase;
     this.logger = logger;
     this.outstandingRequestsCount = 0;
+    this.isAuthUser = false;
   }
 
   invalidatePageCache = async (): Promise<void> => {
@@ -119,6 +122,23 @@ class AuthTestCaseRunner {
     }
   };
 
+  onResponse = async (response: Response) => {
+    const url = response.url();
+    if(response.status() >= 400) {
+      return;
+    }
+
+    const signoutCallbackPath = `${RestApiAuth}/signout`;
+    const signinCallbackPath = `${RestApiAuth}/callback`;
+    if(url.includes(signinCallbackPath) || (await response.headerValue(HeaderLocation))?.includes(signinCallbackPath)) {
+      this.logger.verbose('user signed in');
+      this.isAuthUser = true;
+    } else if(url.includes(signoutCallbackPath)) {
+      this.logger.verbose('user signed out');
+      this.isAuthUser = false;
+    }
+  };
+
   getCurrentPageType = (): AuthTestNavigationPage | undefined => {
     if (!this.currentPage) {
       this.logger.warn('type of page is undefined');
@@ -147,21 +167,14 @@ class AuthTestCaseRunner {
   };
 
   isAuthenticated = async (): Promise<boolean> => {
+    let result = this.isAuthUser;
     if (!this.currentPage) {
       this.logger.debug('page is undefined, user unauthenticated');
-      return false;
+      result = false;
     }
 
-    const page = this.currentPage;
-    const context = page.context();
-    const cookies = await context.cookies();
-    let isAuthenticated = cookies.filter(c => [CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken].includes(c.name)).length === 3;
-    if(isAuthenticated) {
-      isAuthenticated = (await page.locator(`.${LocatorClasses.AuthUserMenu}`).innerText())?.length > 0;
-    }
-
-    this.logger.debug(`user is ${isAuthenticated ? 'authenticated' : 'NOT authenticated'}, currentPage=${this.currentPage?.url()}, path=${page.url()}`);
-    return isAuthenticated;
+    this.logger.debug(`user is ${result ? 'authenticated' : 'NOT authenticated'}, currentPage=${this.currentPage?.url()}`);
+    return result;
   };
 
   private signInWithCredentials = async (): Promise<void> => {
@@ -546,6 +559,7 @@ class AuthTestCaseRunner {
           break;
         case 'authCookieRemoved':
           await this.removeCookies([CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken]);
+          this.isAuthUser = false;
           break;
         case 'i18nCookieRemoved':
           await this.removeCookies([CookieI18nLocale]);
@@ -598,6 +612,7 @@ class AuthTestCaseRunner {
       this.currentPage.on('response', async (response) => {
         const respHeaders = await response.allHeaders();
         this.logger.debug(`got page response, url=${response.url()}, respHeaders=[${JSON.stringify(respHeaders)}]`);
+        this.onResponse(response);
       }).on('request', async (request) => {
         const reqHeaders = await request.allHeaders();
         this.onRequestStart(request);

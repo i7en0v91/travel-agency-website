@@ -19,7 +19,7 @@ interface IProps {
   }
 }
 
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
 const modelRef = defineModel<IFlightParams | null | undefined>('params');
 const hasMounted = ref(false);
@@ -28,8 +28,8 @@ const mainMenuOpen = ref(false);
 const logger = getCommonServices().getLogger();
 
 const controlSettingsStore = useControlSettingsStore();
-const passengerControlValueSetting = controlSettingsStore.getControlValueSetting<string>(`${props.ctrlKey}-NumPassengers`, FlightMinPassengers.toString(), true);
-const classControlValueSetting = controlSettingsStore.getControlValueSetting<FlightClass>(`${props.ctrlKey}-FlightClass`, DefaultFlightClass, true);
+const passengerControlValueSetting = controlSettingsStore.getControlValueSetting<string>(`${ctrlKey}-NumPassengers`, FlightMinPassengers.toString(), true);
+const classControlValueSetting = controlSettingsStore.getControlValueSetting<FlightClass>(`${ctrlKey}-FlightClass`, DefaultFlightClass, true);
 
 const selectedClass = ref<FlightClass | null | undefined>();
 const numPassengers = ref<number | null | undefined>();
@@ -48,24 +48,24 @@ function saveInitialValuesToSettingsIfNotEmpty () {
 }
 
 function readParamsFromSettings(): IFlightParams {
-  logger.debug(`(SearchFlightsParams) parsing flight params from settings, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(SearchFlightsParams) parsing flight params from settings, ctrlKey=${ctrlKey}`);
   let numPassengers = FlightMinPassengers;
   if(passengerControlValueSetting.value?.length) {
     try {
       numPassengers = parseInt(passengerControlValueSetting.value);
       if(numPassengers === undefined || numPassengers === null) {
-        logger.warn(`(SearchFlightsParams) parsing num passenger from settings resulted into empty number, ctrlKey=${props.ctrlKey}, value=[${JSON.stringify(passengerControlValueSetting.value)}]`);
+        logger.warn(`(SearchFlightsParams) parsing num passenger from settings resulted into empty number, ctrlKey=${ctrlKey}, value=[${JSON.stringify(passengerControlValueSetting.value)}]`);
         numPassengers = FlightMinPassengers;
       }
     } catch(err: any) {
-      logger.warn(`(SearchFlightsParams) failed to parse num passenger from settings, ctrlKey=${props.ctrlKey}, value=[${JSON.stringify(passengerControlValueSetting.value)}]`, err);
+      logger.warn(`(SearchFlightsParams) failed to parse num passenger from settings, ctrlKey=${ctrlKey}, value=[${JSON.stringify(passengerControlValueSetting.value)}]`, err);
     }    
   }
   const result = {
     passengers: numPassengers,
     class: classControlValueSetting.value ?? DefaultFlightClass
   };
-  logger.debug(`(SearchFlightsParams) flight params parsed from settings, ctrlKey=${props.ctrlKey}, result=${JSON.stringify(result)}`);
+  logger.debug(`(SearchFlightsParams) flight params parsed from settings, ctrlKey=${ctrlKey}, result=${JSON.stringify(result)}`);
   return result;
 }
 
@@ -82,11 +82,11 @@ const displayText = computed(() => {
 });
 
 function updateParams (params: IFlightParams) {
-  logger.verbose(`(SearchFlightsParams) updating params: ctrlKey=${props.ctrlKey}, params=${JSON.stringify(params)}`);
+  logger.verbose(`(SearchFlightsParams) updating params: ctrlKey=${ctrlKey}, params=${JSON.stringify(params)}`);
   passengerControlValueSetting.value = (params.passengers ?? FlightMinPassengers).toString();
   classControlValueSetting.value = params.class ?? DefaultFlightClass;
   modelRef.value = params;
-  logger.verbose(`(SearchFlightsParams) selected params updated: ctrlKey=${props.ctrlKey}, params=${JSON.stringify(params)}`);
+  logger.verbose(`(SearchFlightsParams) selected params updated: ctrlKey=${ctrlKey}, params=${JSON.stringify(params)}`);
 }
 
 function onParamsChange () {
@@ -144,7 +144,7 @@ defineShortcuts({
         />
         <SearchOffersCounter
           v-model:value="numPassengers"
-          :ctrl-key="`${props.ctrlKey}-NumPassengers`"
+          :ctrl-key="`${ctrlKey}-NumPassengers`"
           :min-value="FlightMinPassengers"
           :max-value="FlightMaxPassengers"
           :defaul-value="FlightMinPassengers"

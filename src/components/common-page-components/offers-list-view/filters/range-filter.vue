@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { getI18nResName3, convertTimeOfDay } from '@golobe-demo/shared';
-import { type ISearchOffersRangeFilterProps } from './../../../../types';
+import type { ISearchOffersRangeFilterProps } from './../../../../types';
 import dayjs from 'dayjs';
 import isNumber from 'lodash-es/isNumber';
 import isString from 'lodash-es/isString';
 import { getCommonServices } from '../../../../helpers/service-accessors';
-import { type ComponentInstance } from 'vue';
 import type { URange } from './../../../../.nuxt/components';
 
 interface IProps {
@@ -13,23 +12,23 @@ interface IProps {
   filterParams: ISearchOffersRangeFilterProps
 }
 
-const props = defineProps<IProps>();
+const { ctrlKey, filterParams } = defineProps<IProps>();
 const modelValue = defineModel<{ min: number, max: number }>('value', { required: true });  
 
 const editValue = ref<number>(modelValue.value.min);
-const rangeRef = shallowRef<ComponentInstance<typeof URange> | undefined>();
+const rangeRef = useTemplateRef('range');
 const logger = getCommonServices().getLogger();
 
 const { d } = useI18n();
 
 function fireValueChangeEvent (value: number) {
-  logger.debug(`(RangeFilter) firing value change event, ctrlKey=${props.ctrlKey}, value=${value}`);
-  modelValue.value = { min: value, max: props.filterParams.valueRange.max };
+  logger.debug(`(RangeFilter) firing value change event, ctrlKey=${ctrlKey}, value=${value}`);
+  modelValue.value = { min: value, max: filterParams.valueRange.max };
   editValue.value = value;
 }
 
 function onMeterValueChanged (value: number) {
-  logger.debug(`(RangeFilter) range value changed, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(RangeFilter) range value changed, ctrlKey=${ctrlKey}`);
   fireValueChangeEvent(isNumber(value) ? value : parseInt(value));
 }
 
@@ -53,9 +52,9 @@ function indicatorTextFormatter (value: any): string {
     return value;
   }
 
-  if (props.filterParams.limitLabelFormatter === 'price') {
+  if (filterParams.limitLabelFormatter === 'price') {
     return `$${(Math.floor(numericValue!))}`;
-  } else if (props.filterParams.limitLabelFormatter === 'daytime') {
+  } else if (filterParams.limitLabelFormatter === 'daytime') {
     return d(getValueForTimeOfDayFormatting(numericValue), 'daytime');
   } else {
     return value.toString();
@@ -64,7 +63,7 @@ function indicatorTextFormatter (value: any): string {
 
 onMounted(() => {
   watch(modelValue, () => {
-    logger.debug(`(RangeFilter) model value update callback, ctrlKey=${props.ctrlKey}, new model value=${JSON.stringify(modelValue.value)}, edit value=${editValue.value}`);
+    logger.debug(`(RangeFilter) model value update callback, ctrlKey=${ctrlKey}, new model value=${JSON.stringify(modelValue.value)}, edit value=${editValue.value}`);
     if(modelValue.value.min !== editValue.value) {
       editValue.value = modelValue.value.min;
     }
@@ -80,7 +79,7 @@ onMounted(() => {
       v-if="rangeRef" 
       class="mb-2"
       :style="{ 
-        marginLeft: rangeRef.progressStyle.width
+        marginLeft: rangeRef?.progressStyle.width ?? 0
       }">
       <UBadge 
         :ui="{ 
@@ -88,7 +87,7 @@ onMounted(() => {
           rounded: 'rounded-lg' 
         }"
         :style="{ 
-          transform: `translateX(-${rangeRef.progressStyle.width})` 
+          transform: !!rangeRef ? `translateX(-${rangeRef!.progressStyle.width})` : undefined
         }"
         size="xs"
       >
@@ -97,8 +96,8 @@ onMounted(() => {
     </div>
     
     <URange 
-      ref="rangeRef"
-      v-model:modelValue="editValue"
+      ref="range"
+      v-model:model-value="editValue"
       :min="filterParams.valueRange.min"
       :max="filterParams.valueRange.max"
       @change="onMeterValueChanged"/>

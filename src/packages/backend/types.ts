@@ -1,9 +1,9 @@
 import type { QueryInternalRequestParam, QueryPageTimestampParam, QueryPagePreviewModeParam, EmailTemplateEnum, TokenKind, AuthProvider, AppPage, ImageCategory, PageCacheVaryOptions, ISearchStayOffersResult, ISearchFlightOffersResult, UninitializedPageTimestamp, IOfferBookingData, IUserMinimalInfo, IUserProfileInfo, IStayOffersFilterParams, IFlightOffersFilterParams, DocumentCommonParams, IFileInfo, IImageInfo, IFileData, IImageData, IAirplaneData, IStayData, ICommonServicesLocator, StayOffersSortFactor, FlightOffersSortFactor, IBooking, IStayOfferDetails, IStayOffer, IStayShort, IStay, IStayReview, IFlightOffer, IAirplane, EntityDataAttrsOnly, IAirport, IAirlineCompany, ICountry, ICity, StayServiceLevel, IPagination, ISorting, Price, GeoPoint, ReviewSummary, IImageCategoryInfo, CacheEntityType, GetEntityCacheItem, DistanceUnitKm, PreviewMode, EntityId, IEditableEntity, ISoftDeleteEntity, ILocalizableValue, Timestamp, PreviewModeParamEnabledValue, EntityChangeSubscribersOrder, Locale, Theme, type IImageProcessor } from '@golobe-demo/shared';
-import { type H3Event } from 'h3';
-import { type IServerI18n } from './common-services/i18n';
-import { type IChangeDependencyTracker, type EntityModel } from './common-services/change-dependency-tracker';
-import { type IHtmlPageModelMetadata }  from './common-services/html-page-model-metadata';
-import { type IAcsysClientProvider } from './acsys/client/interfaces';
+import type { H3Event } from 'h3';
+import type { IServerI18n } from './common-services/i18n';
+import type { IChangeDependencyTracker, EntityModel } from './common-services/change-dependency-tracker';
+import type { IHtmlPageModelMetadata }  from './common-services/html-page-model-metadata';
+import type { IAcsysClientProvider } from './acsys/client/interfaces';
 
 export enum EmptyParams {};
 export { type IServerI18n } from './common-services/i18n';

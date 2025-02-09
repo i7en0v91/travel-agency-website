@@ -1,10 +1,10 @@
 import { type PageCacheVaryOptions, type UninitializedPageTimestamp, OgImagePathSegment, type Locale, DefaultLocale, AvailableLocaleCodes, AppConfig, delay , AppException, AppExceptionCodeEnum, OgImageExt, spinWait, lookupValueOrThrow, DbVersionInitial, AppPage, type IAppLogger, type EntityId, type IAppConfig, getPagePath, AllHtmlPages, type Timestamp, EntityChangeSubscribersOrder } from '@golobe-demo/shared';
-import { type EntityChangeNotificationCallbackArgs, type EntityChangeNotificationSubscriberId, type IHtmlPageCacheCleaner, type IEntityChangeNotificationTask, type EntityChangeNotificationCallback } from './../types';
-import { type PrismaClient } from '@prisma/client';
+import type { EntityChangeNotificationCallbackArgs, EntityChangeNotificationSubscriberId, IHtmlPageCacheCleaner, IEntityChangeNotificationTask, EntityChangeNotificationCallback } from './../types';
+import type { PrismaClient } from '@prisma/client';
 import { hash } from 'ohash';
 import type { Storage, StorageValue } from 'unstorage';
 import { AllEntityModels, type EntityModel, type IChangeDependencyTracker } from './change-dependency-tracker';
-import { type HtmlPageModel, type IHtmlPageModelMetadata } from './html-page-model-metadata';
+import type { HtmlPageModel, IHtmlPageModelMetadata } from './html-page-model-metadata';
 import { parseURL, joinURL, stringifyParsedURL, stringifyQuery } from 'ufo';
 import flattenDeep from 'lodash-es/flattenDeep';
 import uniq from 'lodash-es/uniq';

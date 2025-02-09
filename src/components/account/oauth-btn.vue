@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import  { AuthProvider, type I18nResName } from '@golobe-demo/shared';
+
+import { AuthProvider, type I18nResName } from '@golobe-demo/shared';
 import { LocatorClasses } from '../../helpers/constants';
 
 interface IProps {
@@ -9,11 +10,11 @@ interface IProps {
   ui?: string,
   enabled: boolean
 }
-const props = withDefaults(defineProps<IProps>(), { ariaLabelResName: undefined, ui: undefined });
+const { enabled, provider, ui } = defineProps<IProps>();
 
 const $emit = defineEmits(['click']);
 function onClick () {
-  if (!props.enabled) {
+  if (!enabled) {
     return;
   }
 
@@ -21,7 +22,7 @@ function onClick () {
 }
 
 let iconName = 'grommet-icons-settings-option';
-switch(props.provider) {
+switch(provider) {
   case AuthProvider.GitHub:
     iconName = 'logos-github-icon';
     break;    
@@ -31,7 +32,7 @@ switch(props.provider) {
 }
 
 const uiStyling = {
-  base: `py-4 w-full h-auto *:mx-auto ${props.provider === AuthProvider.GitHub ? 'dark:*:invert' : ''} ${props.ui ?? ''} ${props.provider === AuthProvider.TestLocal ? LocatorClasses.TestLocalOAuthBtn : ''}`
+  base: `py-4 w-full h-auto *:mx-auto ${provider === AuthProvider.GitHub ? 'dark:*:invert' : ''} ${ui ?? ''} ${provider === AuthProvider.TestLocal ? LocatorClasses.TestLocalOAuthBtn : ''}`
 };
 
 </script>

@@ -16,16 +16,17 @@ interface IProps {
     reviewSummary?: ReviewSummary
   }
 };
-const props = withDefaults(defineProps<IProps>(), {
-  imageEntitySrc: undefined,
-  heading: undefined,
-  priceDecompoisition: undefined
-});
+
+const { 
+  heading,
+  imageEntitySrc,
+  priceDecompoisition
+} = defineProps<IProps>();
 
 const { t, locale } = useI18n();
 
-const scoreClassResName = computed(() => props.heading?.reviewSummary?.score ? getScoreClassResName(props.heading?.reviewSummary.score) : undefined);
-const reviewsCountText = computed(() => props.heading?.reviewSummary?.numReviews !== undefined ? `${props.heading?.reviewSummary.numReviews} ${t(getI18nResName3('stayDetailsPage', 'reviews', 'count'), props.heading?.reviewSummary.numReviews)}` : '');
+const scoreClassResName = computed(() => heading?.reviewSummary?.score ? getScoreClassResName(heading?.reviewSummary.score) : undefined);
+const reviewsCountText = computed(() => heading?.reviewSummary?.numReviews !== undefined ? `${heading?.reviewSummary.numReviews} ${t(getI18nResName3('stayDetailsPage', 'reviews', 'count'), heading?.reviewSummary.numReviews)}` : '');
 
 const isError = ref(false);
 
@@ -131,7 +132,7 @@ const uiStyling = {
           <PriceDecompositionItem v-for="(item, idx) in priceDecompoisition" :key="`${ctrlKey}-${idx}`" :ctrl-key="`${ctrlKey}-${idx}`" :label-res-name="item.labelResName" :amount="item.amount" />
         </ul>
         <UDivider orientation="horizontal" class="w-full my-4" size="2xs" :ui="{ border: { base: 'border-primary-200 dark:border-primary-700' } }"/>
-        <PriceDecompositionItem :ctrl-key="`${ctrlKey}-Total`" :label-res-name="getI18nResName3('bookingCommon', 'pricingDecomposition', 'total')" :amount="props.priceDecompoisition[0].amount ? sum(props.priceDecompoisition.map(i => i.amount!)) : undefined" />
+        <PriceDecompositionItem :ctrl-key="`${ctrlKey}-Total`" :label-res-name="getI18nResName3('bookingCommon', 'pricingDecomposition', 'total')" :amount="priceDecompoisition[0].amount ? sum(priceDecompoisition.map(i => i.amount!)) : undefined" />
       </div>
     </section>
   </ErrorHelm>

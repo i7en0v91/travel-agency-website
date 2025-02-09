@@ -15,7 +15,7 @@ interface IProps {
   serviceLevel: TOffer extends IStayOfferDetails ? StayServiceLevel : undefined,
   priceDecompoisition: { labelResName: I18nResName, amount?: number }[]
 };
-const props = defineProps<IProps>();
+const { ctrlKey, offerId, offerKind, serviceLevel } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 
@@ -25,7 +25,7 @@ const navLinkBuilder = useNavLinkBuilder();
 const { requestUserAction } = usePreviewState();
 const userNotificationStore = useUserNotificationStore();
 const offerBookingStoreFactory = await useOfferBookingStoreFactory();
-const offerBookingStore = await offerBookingStoreFactory.createNewBooking<TOffer>(props.offerId, props.offerKind, props.serviceLevel);
+const offerBookingStore = await offerBookingStoreFactory.createNewBooking<TOffer>(offerId, offerKind, serviceLevel);
 
 const offer = ref<EntityDataAttrsOnly<IFlightOffer | IStayOfferDetails> | undefined>(offerBookingStore.booking?.offer as EntityDataAttrsOnly<TOffer>);
 const offerDataAvailable = computed(() => offerBookingStore.status === 'success' && offerBookingStore.booking?.offer);
@@ -46,10 +46,10 @@ function getI18ResAsLocalizableValue (resName: I18nResName): ILocalizableValue {
 }
 
 async function onPay (): Promise<void> {
-  logger.debug(`(OfferBooking) pay handler, ctrlKey=${props.ctrlKey}, offerId=${props.offerId}, kind=${props.offerKind}`);
+  logger.debug(`(OfferBooking) pay handler, ctrlKey=${ctrlKey}, offerId=${offerId}, kind=${offerKind}`);
   
   if(!await requestUserAction()) {
-    logger.verbose(`(OfferBooking) pay handler hasn't run - not allowed in preview mode, ctrlKey=${props.ctrlKey}, offerId=${props.offerId}, kind=${props.offerKind}`);
+    logger.verbose(`(OfferBooking) pay handler hasn't run - not allowed in preview mode, ctrlKey=${ctrlKey}, offerId=${offerId}, kind=${offerKind}`);
     return;
   }
 
@@ -57,9 +57,9 @@ async function onPay (): Promise<void> {
   try {
     const bookingId = await offerBookingStore.store();
     await navigateTo(navLinkBuilder.buildLink(`/${getPagePath(AppPage.BookingDetails)}/${bookingId}`, locale.value as Locale));
-    logger.debug(`(OfferBooking) pay handler completed, ctrlKey=${props.ctrlKey}, offerId=${props.offerId}, kind=${props.offerKind}`);
+    logger.debug(`(OfferBooking) pay handler completed, ctrlKey=${ctrlKey}, offerId=${offerId}, kind=${offerKind}`);
   } catch (err: any) {
-    logger.warn(`(OfferBooking) exception occured while executing book HTTP request, ctrlKey=${props.ctrlKey}, offerId=${props.offerId}, kind=${props.offerKind}`, err);
+    logger.warn(`(OfferBooking) exception occured while executing book HTTP request, ctrlKey=${ctrlKey}, offerId=${offerId}, kind=${offerKind}`, err);
     userNotificationStore.show({
       level: UserNotificationLevel.ERROR,
       resName: getI18nResName2('appErrors', 'unknown')
@@ -100,7 +100,7 @@ async function onPay (): Promise<void> {
             reviewSummary: (offer as EntityDataAttrsOnly<IFlightOffer>).departFlight.airlineCompany.reviewSummary
           } : {
             sub: (offer as EntityDataAttrsOnly<IStayOfferDetails>).stay.name,
-            main: getI18ResAsLocalizableValue(getI18nResName3('stayDetailsPage', 'availableRooms', props.serviceLevel === 'Base' ? 'base' : 'city')),
+            main: getI18ResAsLocalizableValue(getI18nResName3('stayDetailsPage', 'availableRooms', serviceLevel === 'Base' ? 'base' : 'city')),
             reviewSummary: (offer as EntityDataAttrsOnly<IStayOfferDetails>).stay.reviewSummary
           }) : undefined"
         :price-decompoisition="priceDecompoisition"

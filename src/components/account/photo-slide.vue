@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import { type I18nResName, ImageCategory } from '@golobe-demo/shared';
-import { type IStaticImageUiProps } from './../../types';
+import type { IStaticImageUiProps } from './../../types';
 
 interface IProps {
   ctrlKey: string,

@@ -5,7 +5,7 @@ import { mapStayOfferDetails, mapReviewSummary } from './../../helpers/entity-ma
 import range from 'lodash-es/range';
 import CaptchaProtection from './../../components/forms/captcha-protection.vue';
 import OfferDetailsSummary from './../../components/common-page-components/offer-details-summary.vue';
-import { type IStayOfferDetailsDto, type IReviewSummaryDto } from '../../server/api-definitions';
+import type { IStayOfferDetailsDto, IReviewSummaryDto } from '../../server/api-definitions';
 import OverviewSection from './../../components/stay-details/overview-section.vue';
 import AvailableRoomSection from './../../components/stay-details/available-rooms-section.vue';
 import AmenitiesSection from './../../components/stay-details/amenities-section.vue';
@@ -14,11 +14,10 @@ import ReviewSection from './../../components/stay-details/reviews/review-sectio
 import ComponentWaitingIndicator from '../../components/forms/component-waiting-indicator.vue';
 import { useCaptchaToken, type ICaptchaTokenComposable } from './../../composables/captcha-token';
 import { isRobot } from './../../composables/is-robot';
-import { type ComponentInstance } from 'vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
-import { type IStaticImageUiProps } from './../../types';
+import type { IStaticImageUiProps } from './../../types';
 
 const { d, locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
@@ -42,7 +41,7 @@ const nuxtApp = useNuxtApp();
 const { enabled } = usePreviewState();
 const isRobotRequest = isRobot();
 
-const captcha = (import.meta.client && !!AppConfig.maps && !isRobotRequest) ? shallowRef<ComponentInstance<typeof CaptchaProtection>>() as Ref<ComponentInstance<typeof CaptchaProtection>> : undefined;
+const captcha = (import.meta.client && !!AppConfig.maps && !isRobotRequest) ? useTemplateRef('captcha') : undefined;
 const captchaToken = ref<ICaptchaTokenComposable>();
 
 const isSsr = import.meta.server && !!nuxtApp.ssrContext;
@@ -150,7 +149,7 @@ function onCaptchaFailed (reason?: any) {
 
 function startCaptchaVerification () {
   logger.verbose(`(StayDetails) starting captcha verification, ctrlKey=${CtrlKey}`);
-  captchaToken.value = useCaptchaToken(captcha!);
+  captchaToken.value = useCaptchaToken(captcha as any);
   captchaToken.value.requestToken();
 }
 

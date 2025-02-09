@@ -13,7 +13,7 @@ export function useCarouselPlayer (carouselRef: ShallowRef<ComponentInstance<typ
 
   let timerHandle: ReturnType<typeof startTimer> | undefined;
 
-  function startTimer(instance: ComponentInstance<typeof UCarousel>, intervalMs: number) {
+  function startTimer(instance: ComponentInstance<any>, intervalMs: number) {
     logger.verbose(`(carousel-player) starting player`);
 
     const handle = setInterval(() => {

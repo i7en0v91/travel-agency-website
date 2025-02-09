@@ -11,7 +11,7 @@ interface IProps {
   citySlug?: string,
   imgSrc?: IImageEntitySrc
 };
-const props = defineProps<IProps>();
+const { cityName, promoLine, promoPrice } = defineProps<IProps>();
 
 const navLinkBuilder = useNavLinkBuilder();
 const { locale } = useI18n();
@@ -42,22 +42,22 @@ const uiStyling = {
   <div class="text-white grid grid-rows-1 grid-cols-1 rounded-2xl w-full min-w-[296px] h-auto min-h-[420px]">
     <UCard as="div" :ui="uiStyling">
       <template #header>
-        <h3 v-if="props.cityName" class="font-semibold text-2xl">
-          {{ (props.cityName as any)[locale] }}            
+        <h3 v-if="cityName" class="font-semibold text-2xl">
+          {{ (cityName as any)[locale] }}            
         </h3>
         <USkeleton v-else class="w-full h-6 mb-[100%]" />
       </template>
       
       <div class="flex flex-row flex-nowrap items-end gap-[16px]">
         <div class="flex-1 w-min h-auto">          
-          <div v-if="props.cityName" class="h-auto font-medium text-sm sm:text-base">
-            {{ (props.promoLine as any)[locale] }}            
+          <div v-if="cityName" class="h-auto font-medium text-sm sm:text-base">
+            {{ (promoLine as any)[locale] }}            
           </div>
           <USkeleton v-else class="w-1/2 h-3" />
         </div>
 
-        <div v-if="props.promoPrice" class="flex-grow-0 flex-shrink basis-auto whitespace-nowrap w-auto h-auto min-w-[60px] font-semibold text-2xl">
-          {{ `$ ${props.promoPrice}` }}            
+        <div v-if="promoPrice" class="flex-grow-0 flex-shrink basis-auto whitespace-nowrap w-auto h-auto min-w-[60px] font-semibold text-2xl">
+          {{ `$ ${promoPrice}` }}            
         </div>
         <USkeleton v-else class="w-1/4 h-6" />
       </div>

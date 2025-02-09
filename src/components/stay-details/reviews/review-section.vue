@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { type EntityId, type ReviewSummary, getI18nResName2, getI18nResName3, type I18nResName, DefaultStayReviewScore, getScoreClassResName } from '@golobe-demo/shared';
 import { TooltipHideTimeout, StayReviewEditorHtmlAnchor, StayReviewSectionHtmlAnchor } from './../../../helpers/constants';
-import { type IStayReviewItem } from './../../../stores/stay-reviews-store';
+import type { IStayReviewItem } from './../../../stores/stay-reviews-store';
 import type ReviewEditor from './review-editor.client.vue';
 import ReviewList from './review-list.vue';
 import ComponentWaitingIndicator from '../../forms/component-waiting-indicator.vue';
-import { type ComponentInstance } from 'vue';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
@@ -17,7 +16,7 @@ interface IProps {
   preloadedSummaryInfo?: ReviewSummary
 }
 
-const props = defineProps<IProps>();
+const { ctrlKey, preloadedSummaryInfo, stayId } = defineProps<IProps>();
 
 const { status } = useAuth();
 const { enabled, requestUserAction } = usePreviewState();
@@ -25,11 +24,11 @@ const { enabled, requestUserAction } = usePreviewState();
 const logger = getCommonServices().getLogger();
 
 const reviewStoreFactory = useStayReviewsStoreFactory();
-const reviewStore = await reviewStoreFactory.getInstance(props.stayId);
+const reviewStore = await reviewStoreFactory.getInstance(stayId);
 
 const promoTooltipShown = ref(false);
-const reviewListComponent = shallowRef<ComponentInstance<typeof ReviewList>>();
-const editor = shallowRef<ComponentInstance<typeof ReviewEditor>>();
+const reviewListComponent = useTemplateRef('review-list');
+const editor = useTemplateRef('editor');
 
 const reviewScore = ref<number | undefined>();
 const scoreClassResName = ref<I18nResName | undefined>();
@@ -42,14 +41,14 @@ let reviewsCount: number | undefined;
 const $emit = defineEmits<{(event: 'reviewSummaryChanged', value: ReviewSummary): void}>();
 
 function refreshReviewSummaryValues(refreshFromStore: boolean = true) {
-  logger.debug(`(StayReviewsSection) refreshing review summary values: ctrlKey=${props.ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, refreshFromStore=${refreshFromStore}`);
+  logger.debug(`(StayReviewsSection) refreshing review summary values: ctrlKey=${ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, refreshFromStore=${refreshFromStore}`);
   if(enabled) {
     cumulativeScore = DefaultStayReviewScore;
     reviewsCount = 0;
   } else if(refreshFromStore) {
     if(reviewStore.items === undefined || reviewStore.status !== 'success') {
       cumulativeScore = undefined;
-      reviewsCount = props.preloadedSummaryInfo?.numReviews;
+      reviewsCount = preloadedSummaryInfo?.numReviews;
     } else {
       cumulativeScore = reviewStore.items.length > 0 ? reviewStore.items.map(r => r.score).reduce((sum, v) => sum + v, 0) : DefaultStayReviewScore;
       reviewsCount = reviewStore.items.length;
@@ -58,18 +57,18 @@ function refreshReviewSummaryValues(refreshFromStore: boolean = true) {
   reviewScore.value = cumulativeScore !== undefined  ? (reviewsCount! > 0 ? cumulativeScore / reviewsCount! : DefaultStayReviewScore) : undefined; 
   reviewsCountText.value = reviewsCount !== undefined ? `${reviewsCount} ${t(getI18nResName3('stayDetailsPage', 'reviews', 'count'), reviewsCount)}` : '';
   scoreClassResName.value = reviewScore.value !== undefined ? getScoreClassResName(reviewScore.value) : undefined;
-  logger.debug(`(StayReviewsSection) review summary values refreshed: ctrlKey=${props.ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, refreshFromStore=${refreshFromStore}`);
+  logger.debug(`(StayReviewsSection) review summary values refreshed: ctrlKey=${ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, refreshFromStore=${refreshFromStore}`);
 }
 
 function adjustReviewSummaryValues(currentReviewScore: number | undefined, newReviewScore: number | undefined) {
-  logger.debug(`(StayReviewsSection) adjusting review summary values: ctrlKey=${props.ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, currentReviewScore=${currentReviewScore ?? ''}, newReviewScore=${newReviewScore ?? ''}`);
+  logger.debug(`(StayReviewsSection) adjusting review summary values: ctrlKey=${ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, currentReviewScore=${currentReviewScore ?? ''}, newReviewScore=${newReviewScore ?? ''}`);
   if(cumulativeScore === undefined || reviewsCount === undefined) {
-    logger.warn(`(StayReviewsSection) cannot adjust uninitialized review summary values: ctrlKey=${props.ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, cumulativeScore=${cumulativeScore}, reviewsCount=${reviewsCount},  currentReviewScore=${currentReviewScore ?? ''}, newReviewScore=${newReviewScore ?? ''}`);
+    logger.warn(`(StayReviewsSection) cannot adjust uninitialized review summary values: ctrlKey=${ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, cumulativeScore=${cumulativeScore}, reviewsCount=${reviewsCount},  currentReviewScore=${currentReviewScore ?? ''}, newReviewScore=${newReviewScore ?? ''}`);
     return;
   }
 
   if(currentReviewScore !== undefined && reviewsCount === 0) {
-    logger.warn(`(StayReviewsSection) failed to adjust empty review summary values: ctrlKey=${props.ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, cumulativeScore=${cumulativeScore}, reviewsCount=${reviewsCount},  currentReviewScore=${currentReviewScore ?? ''}, newReviewScore=${newReviewScore ?? ''}`);
+    logger.warn(`(StayReviewsSection) failed to adjust empty review summary values: ctrlKey=${ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, cumulativeScore=${cumulativeScore}, reviewsCount=${reviewsCount},  currentReviewScore=${currentReviewScore ?? ''}, newReviewScore=${newReviewScore ?? ''}`);
     return;
   }
 
@@ -87,11 +86,11 @@ function adjustReviewSummaryValues(currentReviewScore: number | undefined, newRe
     refreshReviewSummaryValues(false);
     $emit('reviewSummaryChanged', { numReviews: reviewsCount, score: reviewsCount > 0 ? (cumulativeScore / reviewsCount) : DefaultStayReviewScore });
   }
-  logger.debug(`(StayReviewsSection) review summary values adjusted: ctrlKey=${props.ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, currentReviewScore=${currentReviewScore ?? ''}, newReviewScore=${newReviewScore ?? ''}`);
+  logger.debug(`(StayReviewsSection) review summary values adjusted: ctrlKey=${ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, currentReviewScore=${currentReviewScore ?? ''}, newReviewScore=${newReviewScore ?? ''}`);
 }
 
 function onUserReviewDeleted (deletedReview: IStayReviewItem) {
-  logger.verbose(`(StayReviewsSection) user review deleted handler: ctrlKey=${props.ctrlKey}`);
+  logger.verbose(`(StayReviewsSection) user review deleted handler: ctrlKey=${ctrlKey}`);
   resetUserReviewText();
   adjustReviewSummaryValues(deletedReview.score, undefined);
 }
@@ -113,27 +112,27 @@ function scrollToSectionHeading () {
 }
 
 function onUserEditBtnClick() {
-  logger.debug(`(StayReviewsSection) user edit btn click handler: ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(StayReviewsSection) user edit btn click handler: ctrlKey=${ctrlKey}`);
   resetUserReviewText();
   scrollToReviewEditor();
 }
 
 function resetUserReviewText () {
-  logger.verbose(`(StayReviewsSection) resetting user review text: ctrlKey=${props.ctrlKey}`);
+  logger.verbose(`(StayReviewsSection) resetting user review text: ctrlKey=${ctrlKey}`);
   const userReview = reviewStore.getUserReview()?.text.en ?? '';
   editor.value?.setEditedContent(userReview);
 }
 
 async function onSubmitReview (reviewHtml: string, score: number): Promise<void> {
-  logger.debug(`(StayReviewsSection) send review handler, ctrlKey=${props.ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`);
+  logger.debug(`(StayReviewsSection) send review handler, ctrlKey=${ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`);
 
   if(!await requestUserAction()) {
-    logger.verbose(`(StayReviewsSection) send review handler hasn't been run - not allowed in preview mode, ctrlKey=${props.ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`);
+    logger.verbose(`(StayReviewsSection) send review handler hasn't been run - not allowed in preview mode, ctrlKey=${ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`);
     return;
   }
 
   if(reviewStore.status === 'pending') {
-    logger.verbose(`(StayReviewsSection) cannot submit review while store is in pending state, ctrlKey=${props.ctrlKey}, reviewHtml=${reviewHtml}`);
+    logger.verbose(`(StayReviewsSection) cannot submit review while store is in pending state, ctrlKey=${ctrlKey}, reviewHtml=${reviewHtml}`);
     return;
   }
 
@@ -144,11 +143,11 @@ async function onSubmitReview (reviewHtml: string, score: number): Promise<void>
     reviewListComponent.value?.rewindToTop();  
     scrollToSectionHeading();
   } catch(err: any) {
-    logger.warn(`(StayReviewsSection) failed to submit review, ctrlKey=${props.ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`, err);
+    logger.warn(`(StayReviewsSection) failed to submit review, ctrlKey=${ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`, err);
     adjustReviewSummaryValues(score, prevUserReviewScore);
   }
 
-  logger.debug(`(StayReviewsSection) send review handler completed, ctrlKey=${props.ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`);
+  logger.debug(`(StayReviewsSection) send review handler completed, ctrlKey=${ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`);
 }
 
 function scheduleTooltipAutoHide () {
@@ -205,7 +204,7 @@ watch([() => reviewStore.items, () => reviewStore.status], () => {
           </div>
         </div>
         <div class="w-full h-auto mt-3 sm:mt-6">
-          <ReviewList ref="reviewListComponent" :ctrl-key="`${ctrlKey}-ReviewList`" :stay-id="stayId" @edit-btn-click="onUserEditBtnClick" @user-review-deleted="onUserReviewDeleted"/>
+          <ReviewList ref="review-list" :ctrl-key="`${ctrlKey}-ReviewList`" :stay-id="stayId" @edit-btn-click="onUserEditBtnClick" @user-review-deleted="onUserReviewDeleted"/>
         </div>
         <ReviewEditor
           v-if="status === 'authenticated'"

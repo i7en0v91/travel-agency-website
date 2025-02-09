@@ -5,7 +5,7 @@ import type { PrismaClient } from '@prisma/client';
 import { mapDate, executeInTransaction } from './../helpers/db';
 import keys from 'lodash-es/keys';
 import uniqBy from 'lodash-es/uniqBy';
-import { type IFlightOfferMaterializer, type IStayOfferMaterializer } from './../common-services/offer-materializers';
+import type { IFlightOfferMaterializer, IStayOfferMaterializer } from './../common-services/offer-materializers';
 
 declare type FlightOfferWithSortFactor = EntityDataAttrsOnly<IFlightOffer> & { primarySortFactor: number, secondarySortFactor: number };
 declare type StayOfferWithSortFactor = EntityDataAttrsOnly<IStayOffer> & { sortFactor: number };

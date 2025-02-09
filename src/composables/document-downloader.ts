@@ -1,7 +1,7 @@
 import { getPagePath, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, getValueForFlightDayFormatting, type Theme, type Locale, getI18nResName2, type EntityId, type EntityDataAttrsOnly, type IFlightOffer, type IStayOfferDetails, type IStayOffer, AppException, AppExceptionCodeEnum, isElectronBuild, QueryInternalRequestParam, AppPage } from '@golobe-demo/shared';
 import { defaultErrorHandler } from './../helpers/exceptions';
 import { ApiEndpointBookingDownload } from './../server/api-definitions';
-import { type IModalWaiter } from './../composables/modal-waiter';
+import type { IModalWaiter } from './../composables/modal-waiter';
 import { saveAs } from 'file-saver';
 import { getBytes } from './../helpers/rest-utils';
 import { usePreviewState } from './../composables/preview-state';

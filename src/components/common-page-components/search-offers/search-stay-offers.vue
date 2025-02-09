@@ -13,9 +13,7 @@ interface IProps {
   ctrlKey: string,
   takeInitialValuesFromUrlQuery?: boolean
 }
-const props = withDefaults(defineProps<IProps>(), {
-  takeInitialValuesFromUrlQuery: false
-});
+const { ctrlKey, takeInitialValuesFromUrlQuery = false } = defineProps<IProps>();
 const logger = getCommonServices().getLogger();
 
 const destinationCity: Ref<ISearchListItem | null | undefined> = ref();
@@ -32,7 +30,7 @@ defineExpose({
   getSearchParamsFromInputControls
 });
 
-if (props.takeInitialValuesFromUrlQuery) {
+if (takeInitialValuesFromUrlQuery) {
   searchOffersStore = await searchOffersStoreAccessor.getInstance('stays', true, false);
   displayedSearchParams = computed<Partial<ISearchStayOffersMainParams>>(() => { return searchOffersStore!.viewState.currentSearchParams; });
   destinationCity.value = displayedSearchParams.value?.city ?? null;
@@ -46,7 +44,7 @@ if (props.takeInitialValuesFromUrlQuery) {
   ;
 
   watch([destinationCity, checkInDate, checkOutDate, stayParams], () => {
-    logger.debug(`(SearchStayOffers) search params watch handler, ctrlKey=${props.ctrlKey}`);
+    logger.debug(`(SearchStayOffers) search params watch handler, ctrlKey=${ctrlKey}`);
     const inputParams = getSearchParamsFromInputControls();
     $emit('change', inputParams);
   });
@@ -54,7 +52,7 @@ if (props.takeInitialValuesFromUrlQuery) {
   searchOffersStore = await searchOffersStoreAccessor.getInstance('stays', false, false);
   displayedSearchParams = computed<Partial<ISearchStayOffersMainParams>>(getSearchParamsFromInputControls);
   watch(displayedSearchParams, () => {
-    logger.debug(`(SearchStayOffers) search params change handler, ctrlKey=${props.ctrlKey}`);
+    logger.debug(`(SearchStayOffers) search params change handler, ctrlKey=${ctrlKey}`);
     $emit('change', displayedSearchParams!.value);
   });
 }
@@ -106,7 +104,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
       <div class="min-h-[3.25rem] max-h-[3.25rem] block w-full rounded ring-1 ring-inset ring-gray-500 dark:ring-gray-400 text-gray-500 dark:text-gray-400 font-medium pl-[16px]">
         <SearchListInput
           v-model:selected-value="destinationCity"
-          :ctrl-key="`${props.ctrlKey}-DestinationCity`"
+          :ctrl-key="`${ctrlKey}-DestinationCity`"
           class="w-full min-h-[3.25rem] max-h-[3.25rem]"
           :item-search-url="`/${ApiEndpointCitiesSearch}`"
           :additional-query-params="{ includeCountry: true }"
@@ -121,7 +119,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
     <div class="flex-grow-[5] flex-shrink-[3] basis-auto w-full flex flex-col sm:flex-row flex-nowrap gap-x-[16px] gap-y-4 sm:gap-x-[24px] sm:gap-y-6">
       <DatePicker
         v-model:selected-date="checkInDate"
-        :ctrl-key="`${props.ctrlKey}-CheckIn`"
+        :ctrl-key="`${ctrlKey}-CheckIn`"
         :ui="{ wrapper: 'w-full min-h-[3.25rem] max-h-[3.25rem]', input: 'min-h-[3.25rem] max-h-[3.25rem]' }"
         :caption-res-name="getI18nResName2('searchStays', 'checkInCaption')"
         :persistent="true"
@@ -129,7 +127,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
       />
       <DatePicker
         v-model:selected-date="checkOutDate"
-        :ctrl-key="`${props.ctrlKey}-CheckOut`"
+        :ctrl-key="`${ctrlKey}-CheckOut`"
         :ui="{ wrapper: 'w-full min-h-[3.25rem] max-h-[3.25rem]', input: 'min-h-[3.25rem] max-h-[3.25rem]' }"
         :caption-res-name="getI18nResName2('searchStays', 'checkOutCaption')"
         :persistent="true"

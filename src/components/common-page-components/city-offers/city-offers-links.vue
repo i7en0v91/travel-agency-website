@@ -10,7 +10,7 @@ interface IProps {
   citySlug?: string,
   numStays?: number
 };
-const props = defineProps<IProps>();
+defineProps<IProps>();
 
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
@@ -31,7 +31,7 @@ const navLinkBuilder = useNavLinkBuilder();
       />
       <div class="w-fit h-max flex-grow-0 flex-shrink basis-auto">
         <div v-if="text" class="ml-1 text-gray-400 dark:text-gray-500 w-fit h-auto overflow-hidden line-clamp-2 whitespace-pre-wrap font-semibold">
-          {{ (props.text as any)[locale] }}
+          {{ (text as any)[locale] }}
         </div>
         <USkeleton v-else class="w-full h-3" />
         <div class="text-gray-700 dark:text-gray-200 font-normal w-fit h-auto overflow-hidden flex flex-row flex-wrap items-center gap-[8px] mt-2 pr-2">

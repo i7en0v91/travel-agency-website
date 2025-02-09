@@ -1,6 +1,6 @@
 import { type PreviewMode, PreviewModeParamEnabledValue, QueryPagePreviewModeParam, HeaderAppVersion, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, HeaderCookies, type IAppLogger, HostUrl, AppConfig, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { defaultErrorHandler } from './../helpers/exceptions';
-import { type IApiErrorDto } from '../server/api-definitions';
+import type { IApiErrorDto } from '../server/api-definitions';
 import { type H3Event, getRequestHeader } from 'h3';
 import isString from 'lodash-es/isString';
 import { FetchError } from 'ofetch';

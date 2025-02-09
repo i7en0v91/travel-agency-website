@@ -1,5 +1,5 @@
 import { DbVersionInitial, newUniqueId, type IAppLogger, type IAirlineCompany, type EntityId, type PreviewMode } from '@golobe-demo/shared';
-import { type IAirlineCompanyLogic, type IAirlineCompanyData } from './../types';
+import type { IAirlineCompanyLogic, IAirlineCompanyData } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import type { AcsysDraftEntitiesResolver } from './acsys-draft-entities-resolver';
 import { executeInTransaction } from './../helpers/db';

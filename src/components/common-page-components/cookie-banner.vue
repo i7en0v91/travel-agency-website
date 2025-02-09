@@ -27,7 +27,7 @@ function onAcceptBtnClick () {
 </script>
 
 <template>
-  <section v-if="consentCookie !== ConsentCookieValue" class="w-full h-auto max-w-lvw px-4 sm:px-6 py-6 bottom-0 fixed z-[100] flex flex-col items-center gap-4 text-sm bg-primary-200 dark:bg-gray-700 sm:flex-row sm:gap-6 sm:items-end sm:text-base" role="contentinfo">
+  <section v-if="consentCookie !== ConsentCookieValue" class="w-full h-auto max-w-lvw px-4 sm:px-6 py-6 bottom-0 fixed z-cookies flex flex-col items-center gap-4 text-sm bg-primary-200 dark:bg-gray-700 sm:flex-row sm:gap-6 sm:items-end sm:text-base" role="contentinfo">
     <div class="text-primary-600 dark:text-gray-400 font-normal flex-grow-[4] flex-shrink basis-auto w-full text-center sm:text-left">
       <h3 class="text-4xl font-semibold break-all">
         {{ $t(getI18nResName2('cookieBanner', 'title')) }}

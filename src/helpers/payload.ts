@@ -1,4 +1,4 @@
-import { type IAppLogger } from '@golobe-demo/shared';
+import type { IAppLogger } from '@golobe-demo/shared';
 import keys from 'lodash-es/keys';
 import { destr } from 'destr';
 import type { NuxtApp } from 'nuxt/app';

@@ -5,7 +5,6 @@ import { formatImageEntityUrl , formatAvatarLabel, getUserMenuLinksInfo, getNavM
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
-import { type ComponentInstance } from 'vue';
 import ThemeSwitcher from './theme-switcher.vue';
 import LocaleSwitcher from './locale-switcher.vue';
 import SiteSearchTool from './site-search-tool.vue';
@@ -19,11 +18,10 @@ import { withQuery } from 'ufo';
 interface IProps {
   ctrlKey: string
 }
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
-const localeSwitcher = shallowRef<ComponentInstance<typeof LocaleSwitcher>>();
-const themeSwitcher = shallowRef<ComponentInstance<typeof ThemeSwitcher>>();
-const siteSearchTool = shallowRef<ComponentInstance<typeof SiteSearchTool>>();
+const themeSwitcher = useTemplateRef('theme-switcher');
+const siteSearchTool = useTemplateRef('site-search');
 
 const verticalNavCollapsed = ref(true);
 
@@ -53,7 +51,7 @@ const onWindowResize = () => setTimeout(throttle(function () {
         return;
     }
 
-    logger.verbose(`(NavBar) window resized to ${deviceSize.valueOf()} size, collapsing vertical navbar, ctrlKey=${props.ctrlKey}`);
+    logger.verbose(`(NavBar) window resized to ${deviceSize.valueOf()} size, collapsing vertical navbar, ctrlKey=${ctrlKey}`);
     verticalNavCollapsed.value = true;
   }
 }), 100);
@@ -79,7 +77,7 @@ defineShortcuts({
     usingInput: true,
     handler: () => {
       if(!verticalNavCollapsed.value) {
-        logger.debug(`(NavBar) closing vertical nav by [ESC] press, ctrlKey=${props.ctrlKey}`);
+        logger.debug(`(NavBar) closing vertical nav by [ESC] press, ctrlKey=${ctrlKey}`);
         verticalNavCollapsed.value = true;
       }
     }
@@ -105,7 +103,7 @@ function toggleVerticalNav () {
         return;
     }
 
-    logger.debug(`(NavBar) toggling vertical nav, ctrlKey=${props.ctrlKey}, new state collapsed=${!verticalNavCollapsed.value}`);
+    logger.debug(`(NavBar) toggling vertical nav, ctrlKey=${ctrlKey}, new state collapsed=${!verticalNavCollapsed.value}`);
     verticalNavCollapsed.value = !verticalNavCollapsed.value;
   });
 }
@@ -114,11 +112,11 @@ function themeSwitchClickHandler (e: InputEvent) {
   const themeSwitcherEl = (themeSwitcher.value?.$el as HTMLElement);
   if(themeSwitcherEl) {
     if((e.target as HTMLElement)?.tagName?.toLowerCase() === 'button') {
-      logger.debug(`(NavBar) passing click evt down to theme switcher, ctrlKey=${props.ctrlKey}, route=${route.path}`);
+      logger.debug(`(NavBar) passing click evt down to theme switcher, ctrlKey=${ctrlKey}, route=${route.path}`);
       themeSwitcherEl.click();
     }
   } else {
-    logger.warn(`(NavBar) nested theme switcher not initialized, ctrlKey=${props.ctrlKey}, route=${route.path}`);
+    logger.warn(`(NavBar) nested theme switcher not initialized, ctrlKey=${ctrlKey}, route=${route.path}`);
   }
 }
 
@@ -132,7 +130,7 @@ const horizontalNavLinks = computed(() => {
     .map(li => {
       return {
         kind: li.kind,
-        label: li.labelResName ? t(li.labelResName) : undefined,
+        label: li.labelResName ? t(li.labelResName) : '',
         labelClass: `focus-visible:outline-primary-500 dark:focus-visible:outline-primary-400`,
         icon: li.icon,
         iconClass: li.iconClass,
@@ -165,7 +163,7 @@ const verticalNavLinks = computed(() => {
     ).map(li => {
       return {
         kind: li.kind,
-        label: li.labelResName ? t(li.labelResName) : undefined,
+        label: li.labelResName ? t(li.labelResName) : '',
         labelClass: 'focus-visible:outline-primary-500 dark:focus-visible:outline-primary-400',
         icon: li.icon,
         iconClass: li.iconClass,
@@ -198,7 +196,7 @@ const verticalNavLinks = computed(() => {
       return li.kind === 'avatar' ? (
         vNavAvatarUrl.value ? {
             kind: li.kind,
-            label: vNavAvatarLabel.value,
+            label: vNavAvatarLabel.value ?? '',
             labelClass: 'text-nowrap',
             avatar: {
               src: vNavAvatarUrl.value
@@ -208,7 +206,7 @@ const verticalNavLinks = computed(() => {
             external: false
           } : {
             kind: li.kind,
-            label: vNavAvatarLabel.value,
+            label: vNavAvatarLabel.value ?? '',
             labelClass: 'text-nowrap',
             icon: 'i-heroicons-user-20-solid',
             iconClass: 'w-[32px] h-[32px] sm:w-[48px] sm:h-[48px]',
@@ -218,7 +216,7 @@ const verticalNavLinks = computed(() => {
           }
       ) : {
         kind: li.kind,
-        label: li.labelResName ? t(li.labelResName) : undefined,
+        label: li.labelResName ? t(li.labelResName) : '',
         labelClass: 'focus-visible:outline-primary-500 dark:focus-visible:outline-primary-400',
         icon: li.icon,
         //iconClass: li.iconClass,
@@ -270,7 +268,7 @@ const uiStyling = computed(() => {
     id="nav-main-h" 
     :links="horizontalNavLinks" 
     :aria-label="$t(getI18nResName2('ariaLabels', 'navMain'))"
-    :class="`min-h-16 shadow-md dark:shadow-gray-700 sticky top-0 z-[60] bg-white dark:bg-gray-900 px-[14px] lg:px-[24px] xl:px-[64px]
+    :class="`min-h-16 shadow-md dark:shadow-gray-700 sticky top-0 z-navbar bg-white dark:bg-gray-900 px-[14px] lg:px-[24px] xl:px-[64px]
 
       lg:[&_ul:first-of-type_li:first-of-type_button]:absolute
       lg:[&_ul:first-of-type_li:first-of-type_button]:w-0
@@ -294,25 +292,26 @@ const uiStyling = computed(() => {
   >   
     <!-- KB: z-10 used below are to capture click event & fix label dissapearing when hovered in light theme  -->
     <template #default="{ link }">
-      <NavLogo v-if="link.kind === 'nav-logo'"  ctrl-key="navLogo"/>
+      <NavLogo v-if="link.kind === 'nav-logo'" ctrl-key="navLogo" class="lg:absolute lg:translate-x-[50vw] lg:left-[-4.37rem] xl:left-[-6.87rem] translate-y-1 lg:-translate-y-1/3"/>
       <ClientOnly v-else-if="link.kind === 'nav-toggler'" >
         <UButton size="md" :ui="uiStyling" :icon="`${verticalNavCollapsed ? 'cil-hamburger-menu' : 'i-ph-x'}`" variant="link" color="gray" @click="toggleVerticalNav"/>
       </ClientOnly>
       <ClientOnly v-else-if="link.kind === 'locale-switcher' && navButtonsVisible">
-        <LocaleSwitcher  ref="localeSwitcher" ctrl-key="navLocaleSwitcher" class="z-70"/>
+        <LocaleSwitcher ctrl-key="navLocaleSwitcher" />
       </ClientOnly>
       <ClientOnly v-else-if="link.kind === 'theme-switcher'">
-        <ThemeSwitcher ref="themeSwitcher" ctrl-key="navThemeSwitcher" :class="`${navButtonsVisible ? 'visible' : 'invisible'}`" />
+        <ThemeSwitcher ref="theme-switcher" ctrl-key="navThemeSwitcher" :class="`${navButtonsVisible ? 'visible' : 'invisible'}`" />
       </ClientOnly>
       <ClientOnly v-else-if="link.kind === 'site-search'">
-        <SiteSearchTool ref="siteSearchTool" :class="`${navButtonsVisible ? 'visible' : 'invisible'}`" />
+        <SiteSearchTool ref="site-search" :class="`${navButtonsVisible ? 'visible' : 'invisible'}`" />
       </ClientOnly>
       <NavUser v-else-if="link.kind === 'nav-user' && navButtonsVisible" ctrl-key="navUser" @vertical-nav-toggled="toggleVerticalNav"/>
       <span v-else :class="`text-sm sm:text-base text-nowrap z-10 ${link.kind === 'signup' ? 'auth-link bg-black text-white hover:bg-white-100/80 dark:bg-white dark:text-black dark:hover:bg-gray-100/80 rounded-lg px-3.5 py-2 sm:py-3.5 font-semibold' : (link.kind === 'login' ? 'auth-link' : (link.kind === 'favourites' ? 'favourites-link' : 'search-page-link'))}`" >{{ link.label }}</span>
     </template>
   </UHorizontalNavigation>
   <UContainer class="pt-4">
-    <div :class="!verticalNavCollapsed ? `absolute z-0 hidden` : ''">
+    <div v-if="verticalNavCollapsed" class="absolute w-full max-w-[inherit] top-0 bottom-0 bg-primary-300 dark:bg-gray-800" />
+    <div :class="!verticalNavCollapsed ? `absolute z-[-1] hidden` : 'contents'">
       <slot />
     </div>
     <UVerticalNavigation v-if="!verticalNavCollapsed" id="nav-main-v" :links="verticalNavLinks" class="mt-2 relative z-[1]" :aria-label="$t(getI18nResName2('ariaLabels', 'navMain'))"/>   

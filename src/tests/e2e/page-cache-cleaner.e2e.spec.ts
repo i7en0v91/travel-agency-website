@@ -1,9 +1,9 @@
-import { getLocaleFromUrl, localizePath, HeaderAppVersion, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, DefaultLocale, CookieI18nLocale, HeaderDate, HeaderLastModified, HeaderCacheControl, HeaderEtag, HeaderContentType, OgImagePathSegment, OgImageExt, HeaderCookies, DefaultTheme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppConfig, getPagePath, AppPage, type IAppLogger, type Locale, type RecoverPasswordCompleteResultEnum, spinWait, delay, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD, type EntityId, type PreviewMode, type StayServiceLevel } from '@golobe-demo/shared';
+import { RestApiAuth, HeaderLocation, getLocaleFromUrl, localizePath, HeaderAppVersion, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, DefaultLocale, CookieI18nLocale, HeaderDate, HeaderLastModified, HeaderCacheControl, HeaderEtag, HeaderContentType, OgImagePathSegment, OgImageExt, HeaderCookies, DefaultTheme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppConfig, getPagePath, AppPage, type IAppLogger, type Locale, type RecoverPasswordCompleteResultEnum, spinWait, delay, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD, type EntityId, type PreviewMode, type StayServiceLevel } from '@golobe-demo/shared';
 import { createHtmlPageModelMetadata } from '@golobe-demo/backend';
 import { ApiEndpointPurgeCache, ApiEndpointTestingPageCacheAction, ApiEndpointBookingDownload, type ITestingPageCacheActionDto, type ITestingPageCacheActionResultDto, TestingPageCacheActionEnum, ApiEndpointTestingCacheCleanup } from '../../server/api-definitions';
 import { describe, test, assert, type TestOptions } from 'vitest';
 import { $fetch } from 'ofetch';
-import { type Page, type Cookie } from 'playwright-core';
+import type { Page, Cookie } from 'playwright-core';
 import { serialize as serializeCookie } from 'cookie-es';
 import { setup, createPage, createBrowser, getBrowser } from '@nuxt/test-utils/e2e';
 import dayjs from 'dayjs';
@@ -44,7 +44,7 @@ declare type PageResponseTestResult = {
     etag: string | undefined,
     date: Date | undefined,
     cacheControl: string | undefined,
-    isHtml: boolean
+    html: string | false
   };
 };
 
@@ -102,13 +102,14 @@ async function pingServer(logger: IAppLogger): Promise<boolean> {
     await $fetch(joinURL(TestHostUrlWithProtocol, AppConfig.logging.client.path),
       {
         method: 'POST',
-        body: { testPing: true },
+        body: { level: 'info', msg: 'testPing', testPing: true },
         cache: 'no-store',
         headers: [
           [HeaderAppVersion, AppConfig.versioning.appVersion.toString()], 
           [HeaderContentType, 'application/json']
         ]
       });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch(err: any) {
     logger.info('pinging server - FAIL');
     return false;
@@ -140,6 +141,7 @@ class PageTestHelper {
   private readonly requireAuth: boolean;
   private authCookies: Cookie[] | undefined;
   private readonly locale: Locale;
+  private isAuthUser: boolean;
 
   private readonly outstandingRequestUrls: Set<string>;
   private loadingPageResponseState: Partial<PageResponseTestResult>;
@@ -149,6 +151,7 @@ class PageTestHelper {
     this.logger = logger;
     this.testName = testName;
     this.requireAuth = requireAuth;
+    this.isAuthUser = false;
     this.locale = locale;
     this.url = this.normalizeUrl(url, undefined);
     this.outstandingRequestUrls = new Set<string>();
@@ -222,8 +225,21 @@ class PageTestHelper {
     return serializeCookie(cookie.name,  cookie.value);
   };
 
-  responseHandler = async (url: string, httpCode: number, headers: {[key: string]: string} | undefined): Promise<void> => {
+  responseHandler = async (url: string, httpCode: number, headers: {[key: string]: string} | undefined, html: string | false): Promise<void> => {
     await this.captureAuthCookies();
+
+    if(httpCode < 400) {
+      const signoutCallbackPath = `${RestApiAuth}/signout`;
+      const signinCallbackPath = `${RestApiAuth}/callback`;
+      if(url.includes(signinCallbackPath) || (headers as any)[HeaderLocation]?.includes(signinCallbackPath)) {
+        this.logger.verbose('user signed in');
+        this.isAuthUser = true;
+      } else if(url.includes(signoutCallbackPath)) {
+        this.logger.verbose('user signed out');
+        this.isAuthUser = false;
+      }
+    }
+
     if(!this.testIsCurrentUrl(url)) {
       return;
     }
@@ -235,13 +251,12 @@ class PageTestHelper {
       const lastModifiedStr = headers[HeaderLastModified.toLowerCase()] ?? dateStr;
       const cacheControlStr = headers[HeaderCacheControl.toLowerCase()];
       const etagStr = headers[HeaderEtag.toLowerCase()];
-      const contentTypeStr = headers[HeaderContentType.toLowerCase()];      
       this.loadingPageResponseState = defu(
         {
           lastChanged: lastModifiedStr ? (dayjs(lastModifiedStr).toDate().getTime()) : undefined,
           httpResponseDetails: {
             etag: etagStr,
-            isHtml: contentTypeStr ? contentTypeStr.includes('text/html') : false,
+            html,
             cacheControl: cacheControlStr,
             date: dateStr ? dayjs(dateStr).toDate() : undefined,
             statusCode: httpCode
@@ -286,22 +301,24 @@ class PageTestHelper {
 
   isPageActive = () => this.currentPage && !this.currentPage.isClosed();
 
-  isAuthenticated = async (): Promise<boolean> => {
+  isAuthenticated = async (relyOnCookies: boolean): Promise<boolean> => {
+    let result = this.isAuthUser;
     if (!this.currentPage) {
       this.logger.debug('page is undefined, user unauthenticated');
-      return false;
+      result = false;
     }
 
-    const page = this.currentPage;
-    const context = page.context();
-    const cookies = await context.cookies();
-    let isAuthenticated = cookies.filter(c => [CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken].includes(c.name)).length === 3;
-    if(isAuthenticated) {
-      isAuthenticated = (await page.locator(`.${LocatorClasses.AuthUserMenu}`).innerText())?.length > 0;
+    if(!result && this.currentPage && relyOnCookies) {
+      const context = this.currentPage.context();
+      const cookies = await context.cookies();
+      result = cookies.filter(c => [CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken].includes(c.name)).length === 3;
+      if(result) {
+        result = (await this.currentPage.locator(`.${LocatorClasses.AuthUserMenu}`).innerText())?.length > 0;
+      }
     }
 
-    this.logger.debug(`user is ${isAuthenticated ? 'authenticated' : 'NOT authenticated'}, currentPage=${this.currentPage?.url()}, path=${page.url()}`);
-    return isAuthenticated;
+    this.logger.debug(`user is ${result ? 'authenticated' : 'NOT authenticated'}, currentPage=${this.currentPage?.url()}`);
+    return result;
   };
 
   /**
@@ -336,7 +353,7 @@ class PageTestHelper {
     this.logger.debug(`sign in button clicked, currentPage=${this.currentPage?.url()}`);
 
     await spinWait(async () => {
-      return await this.isAuthenticated();
+      return await this.isAuthenticated(true);
     }, TestTimeout);
 
     this.logger.verbose(`log-in completed, url=${this.url}, current url=${await this.currentPage!.url()}`);
@@ -404,7 +421,9 @@ class PageTestHelper {
         const respHeaders = await response.allHeaders();
         const url = response.url();
         this.logger.debug(`on response, url=${url}, page url=${this.url}`);
-        await this.responseHandler(url, response.status(), respHeaders);
+        const contentTypeStr = respHeaders[HeaderContentType.toLowerCase()];      
+        const html = (response.status() < 300 && contentTypeStr.includes('text/html')) ? await response.text() : false;
+        await this.responseHandler(url, response.status(), respHeaders, html);
       });
     }).on('request', async (request) => {
       await runOnlyIfBrowserContextIsActive(async () => {
@@ -507,7 +526,7 @@ class PageTestHelper {
           this.logger.verbose(`page response test completed with error code (as expected), url=${this.url}, testToken=${testToken}, query=${JSON.stringify(query)}, addRedundantParam=${addRedundantParam}, statusCode=${statusCode}, expectedErrorCode=${expectedErrorCode ?? ''}`);
           return defu({ 
             httpResponseDetails: { 
-              statusCode, isHtml: true, 
+              statusCode, html: this.loadingPageResponseState.httpResponseDetails?.html ?? false, 
               cacheControl: this.loadingPageResponseState.httpResponseDetails?.cacheControl
             }, 
             tokenPresent: false,
@@ -537,14 +556,14 @@ class PageTestHelper {
       }
     }
 
-    const isHtml = this.loadingPageResponseState.httpResponseDetails?.isHtml ?? false;
-    if(!isHtml) {
+    const html = this.loadingPageResponseState.httpResponseDetails?.html;
+    if(!html) {
       const msg = `got non-HTML response, url=${newUrl}, current url=${await this.currentPage!.url()}`;
       this.logger.warn(msg);
       throw new Error(msg);
     }
 
-    this.loadingPageResponseState.tokenPresent = (await this.currentPage?.innerHTML('body'))?.includes(testToken);
+    this.loadingPageResponseState.tokenPresent = html.includes(testToken);
     const result = this.loadingPageResponseState as PageResponseTestResult;
     this.logger.verbose(`page response test completed, url=${this.url} ${result.redirect?.fromUrl ? `(redirected from ${result.redirect.fromUrl})` : ''}, tokenPresent=${result.tokenPresent}, timestamp=${result.lastChanged ? this.timestamp2Str(result.lastChanged!) : ''}, testToken=${testToken}, query=${JSON.stringify(query)}, addRedundantParam=${addRedundantParam}, expectedErrorCode=${expectedErrorCode ?? ''}`);
     return result;
@@ -941,7 +960,6 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
     for(let i = 0; i < Test5Pages.length; i++) {
       const testPage = Test5Pages[i];
       const testPageName = `[/${getPagePath(testPage)}] (${locale}) - flight offer changes`;
-      const serviceLevelParamName: string = 'serviceLevel';
       test(testPageName, DefaultTestOptions, async () => {
         let testHelper: PageTestHelper | undefined;
         try {
@@ -956,9 +974,6 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           testHelper = new PageTestHelper(testPageName, pageUrl, locale, false, htmlPageMetadata, logger);
 
           let defaultQuery: any = undefined;
-          if(testPage === AppPage.BookStay) {
-            defaultQuery = set({}, serviceLevelParamName, <StayServiceLevel>'CityView2');
-          }
 
           await testHelper.start();
           await testHelper.purgeCache();
@@ -968,15 +983,6 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           assert(!pageTestResult.tokenPresent, 'expected token to be absent');
           const initialChangeTimestamp = pageTestResult.lastChanged;
           await delay(LastModifiedTimeHeaderPrecision);
-
-          if(testPage === AppPage.BookStay) {
-            logger.verbose(`${testPageName} - try open page with incorrect parameter`);
-            const incorrectServiceLevelQuery = set({}, serviceLevelParamName!, random(10000).toString());
-            const incorrectServiceLevelPageTestResult = await testHelper.testPageResponse(testToken, incorrectServiceLevelQuery, false, undefined, 400);
-            assert(incorrectServiceLevelPageTestResult.httpResponseDetails.statusCode === 400, 'expected bad request response');  
-            assert(incorrectServiceLevelPageTestResult.httpResponseDetails.cacheControl === 'no-cache', `error page must not be cached (got ${incorrectServiceLevelPageTestResult.httpResponseDetails.cacheControl})`);  
-            await delay(LastModifiedTimeHeaderPrecision);
-          }
 
           let ogImageTestResult = await testHelper.testOgImageResponse();
           assert(ogImageTestResult.statusCode < 400);

@@ -231,7 +231,9 @@ const Config : IAppConfig = {
     suppress: {
       vue: [
         /** suppressing passing inherited properties values */
-        { messageFitler: /Extraneous non-props attributes .* were passed to component but could not be automatically inherited/gi, componentNameFilter: /.*/ }
+        { messageFitler: /Extraneous non-props attributes .* were passed to component but could not be automatically inherited/gi, componentNameFilter: /.*/ },
+        /** date picker issue on hiding popover (see https://github.com/nathanreyes/v-calendar/issues/1498) */
+        { messageFitler: /Cannot read properties of undefined \(reading 'dayIndex'\)/gi, componentNameFilter: isDevEnv() ? /v-calendar/gi : undefined }
       ],
       server: [
         // not yet

@@ -1,5 +1,5 @@
 import { SecretValueMask, type EmailTemplateEnum, type IAppLogger } from '@golobe-demo/shared';
-import { type IEmailParams, type IEmailSender } from './../types';
+import type { IEmailParams, IEmailSender } from './../types';
 
 export class EmailSender implements IEmailSender {
   private readonly logger: IAppLogger;

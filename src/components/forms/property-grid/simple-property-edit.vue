@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { AppConfig, validateObjectSync, maskLog, SecretValueMask, isPasswordSecure, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
-import { type SimplePropertyType, type PropertyGridControlButtonType } from './../../../types';
+import type { SimplePropertyType, PropertyGridControlButtonType } from './../../../types';
 import { defaultErrorHandler } from './../../../helpers/exceptions';
 import { object, string } from 'yup';
-import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 import type { UFormGroup } from '../../../.nuxt/components';
 
@@ -44,7 +43,7 @@ const EmailValidationSchema = object({
 
 const logger = getCommonServices().getLogger();
 
-const inputFormGroup = shallowRef<ComponentInstance<typeof UFormGroup>>();
+const inputFormGroup = useTemplateRef('root-component');
 const isEditMode = ref(false);
 const editValue = ref(props.value);
 const showValidationError = ref(false);
@@ -234,7 +233,7 @@ const uiInputStyling = computed(() => {
 <template>
   <div class="contents">
     <div class="w-full h-auto overflow-auto">
-      <UFormGroup ref="inputFormGroup" :name="props.type" :label="props.captionResName ? t(props.captionResName) : undefined" :ui="uiGroupStyling" :error="showValidationError && validationErrMsg">
+      <UFormGroup ref="root-component" :name="props.type" :label="props.captionResName ? t(props.captionResName) : undefined" :ui="uiGroupStyling" :error="showValidationError && validationErrMsg">
         <UInput 
           v-model:="editValue" 
           :type="type" 

@@ -1,5 +1,5 @@
 import { type ISearchFlightOffersResult, type IFlightOffersFilterParams, AppException, AppExceptionCodeEnum, type IAppLogger, type FlightOffersSortFactor, type IPagination, type ISorting, type Price, type EntityId, type IFlightOffer } from '@golobe-demo/shared';
-import { type IFlightsLogic } from './../types';
+import type { IFlightsLogic } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import type { AcsysDraftEntitiesResolver } from './acsys-draft-entities-resolver';
 import Decimal from 'decimal.js';

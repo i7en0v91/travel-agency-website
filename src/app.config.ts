@@ -175,7 +175,7 @@ export default defineAppConfig({
       }
     },
     modal: {
-      wrapper: 'z-[70]'
+      wrapper: 'z-modalform'
     }
   }
 });

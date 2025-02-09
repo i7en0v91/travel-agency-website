@@ -6,15 +6,14 @@ import { useOfferFavouriteStatus } from './../../../composables/offer-favourite-
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
+import { IconSvgCustomizers } from './../../../helpers/components';
 
 interface IProps {
   ctrlKey: string,
   offer: EntityDataAttrsOnly<IStayOffer>,
   variant?: 'landscape-xl' | 'landscape-lg'
 }
-const props = withDefaults(defineProps<IProps>(), {
-  variant: 'landscape-xl'
-});
+const { ctrlKey, offer, variant = 'landscape-xl' } = defineProps<IProps>();
 
 const { status } = useAuth();
 const { locale, t } = useI18n();
@@ -25,32 +24,32 @@ const logger = getCommonServices().getLogger();
 
 const isError = ref(false);
 
-const stay = props.offer.stay;
+const stay = offer.stay;
 const scoreClassResName = getScoreClassResName(stay.reviewSummary!.score);
 const reviewsCountText = `${stay.reviewSummary!.numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), stay.reviewSummary!.numReviews)}`;
 
 const userFavouritesStore = useUserFavouritesStore();
-const favouriteStatusWatcher = useOfferFavouriteStatus(props.offer.id, props.offer.kind);
+const favouriteStatusWatcher = useOfferFavouriteStatus(offer.id, offer.kind);
 
 async function toggleFavourite (): Promise<void> {
-  const offerId = props.offer.id;
+  const offerId = offer.id;
   logger.verbose(`(SearchStayResultCard) toggling favourite, offerId=${offerId}, current=${favouriteStatusWatcher.isFavourite}`);
   if(!await requestUserAction()) {
     logger.verbose(`(SearchStayResultCard) favourite hasn't been toggled - not available in preview mode, offerId=${offerId}, current=${favouriteStatusWatcher.isFavourite}`);
     return;
   }
   const store = await userFavouritesStore.getInstance();
-  const result = await store.toggleFavourite(offerId, 'stays' as OfferKind, props.offer);
+  const result = await store.toggleFavourite(offerId, 'stays' as OfferKind, offer);
   logger.verbose(`(SearchStayResultCard) favourite toggled, offerId=${offerId}, isFavourite=${result}`);
 }
 
 async function favouriteBtnClick (): Promise<void> {
-  logger.debug(`(SearchStayResultCard) favourite button clicked, ctrlKey=${props.ctrlKey}, current=${favouriteStatusWatcher.isFavourite}`);
+  logger.debug(`(SearchStayResultCard) favourite button clicked, ctrlKey=${ctrlKey}, current=${favouriteStatusWatcher.isFavourite}`);
   await toggleFavourite();
 }
 
 const uiStyling = {
-  base: `w-full overflow-hidden h-full grid gap-x-6 grid-rows-searchstaysportrait xl:grid-rows-searchstayslandscape grid-cols-searchstaysportrait xl:grid-cols-searchstayslandscape ${props.variant === 'landscape-lg' ? 'lg:grid-rows-searchstayslandscape lg:grid-cols-searchstayslandscape' : ''}`,
+  base: `w-full overflow-hidden h-full grid gap-x-6 grid-rows-searchstaysportrait xl:grid-rows-searchstayslandscape grid-cols-searchstaysportrait xl:grid-cols-searchstayslandscape ${variant === 'landscape-lg' ? 'lg:grid-rows-searchstayslandscape lg:grid-cols-searchstayslandscape' : ''}`,
   background: 'bg-transparent dark:bg-transparent',
   shadow: 'shadow-none',
   rounded: 'rounded-none',
@@ -64,7 +63,7 @@ const uiStyling = {
   footer: {
     base: 'contents'
   }
-};
+};      
 
 </script>
 
@@ -73,7 +72,7 @@ const uiStyling = {
     <div class="w-full h-auto ring-1 ring-gray-200 dark:ring-gray-800 shadow-lg shadow-gray-200 dark:shadow-gray-700 rounded-xl">
       <UCard as="article" :ui="uiStyling">
         <template #header>
-          <div :class="`w-full h-auto text-gray-600 dark:text-gray-300 font-semibold text-xl row-start-2 row-end-3 col-start-1 col-end-2 xl:row-start-1 xl:row-end-2 xl:col-start-2 xl:col-end-3 pt-4 pl-4 xl:pl-0 ${props.variant === 'landscape-lg' ? 'lg:row-start-1 lg:row-end-2 lg:col-start-2 lg:col-end-3 lg:pl-0' : ''}`">
+          <div :class="`w-full h-auto text-gray-600 dark:text-gray-300 font-semibold text-xl row-start-2 row-end-3 col-start-1 col-end-2 xl:row-start-1 xl:row-end-2 xl:col-start-2 xl:col-end-3 pt-4 pl-4 xl:pl-0 ${variant === 'landscape-lg' ? 'lg:row-start-1 lg:row-end-2 lg:col-start-2 lg:col-end-3 lg:pl-0' : ''}`">
             {{ getLocalizeableValue(offer.stay.name, locale as Locale) }}
           </div>
         </template>
@@ -81,7 +80,7 @@ const uiStyling = {
         <div :class="`w-full h-full row-start-1 row-end-2 col-start-1 col-end-3 xl:row-end-4 xl:col-end-2 ${variant === 'landscape-lg' ? 'lg:row-end-4 lg:col-end-2' : ''}`">
           <StaticImage
             :ctrl-key="`${ctrlKey}-StayPhoto`"
-            :entity-src="props.offer.stay.photo"
+            :entity-src="offer.stay.photo"
             :category="ImageCategory.Hotel"
             sizes="xs:85vw sm:85vw md:85vw lg:75vw xl:30vw"
             :ui="{ 
@@ -107,23 +106,38 @@ const uiStyling = {
         </div>
 
         <div :class="`w-full h-auto row-start-3 row-end-4 col-start-1 col-end-3 xl:row-start-2 xl:row-end-3 xl:col-start-2 xl:col-end-3 pl-4 xl:pl-0 ${ variant === 'landscape-lg' ? 'lg:row-start-2 lg:row-end-3 lg:col-start-2 lg:col-end-3 pl-4 lg:pl-0' : '' }`">
-          <div class="w-full mt-2">
-            <UIcon name="i-material-symbols-location-on-rounded" class="w-5 h-5 inline-block opacity-70 mr-2"/>
+          <div class="w-full flex flex-row flex-nowrap items-center mt-2">
+            <UIcon 
+              name="i-material-symbols-location-on-rounded" 
+              mode="svg" 
+              class="w-5 h-5 inline-block mr-2"
+              :customize="IconSvgCustomizers.opacity(0.7)"
+              />
             <div class="w-fit truncate inline-block text-xs text-gray-500 dark:text-gray-400">
               {{ getLocalizeableValue(offer.stay.city.country.name, locale as Locale) }}, {{ getLocalizeableValue(offer.stay.city.name, locale as Locale) }}
             </div>
           </div>
           <div class="w-full flex flex-row flex-wrap items-center gap-2 mt-2">
             <div class="flex-initial flex flex-row flex-nowrap items-center gap-[2px]">
-              <ClientOnly>
-                <UIcon v-for="i in range(0, 5)" :key="`${props.ctrlKey}-HotelStar-${i}`" name="i-material-symbols-star" class="w-5 h-5 bg-red-400 inline-block" />
-              </ClientOnly>
+              <UIcon 
+                v-for="i in range(0, 5)" 
+                :key="`${ctrlKey}-HotelStar-${i}`" 
+                name="i-material-symbols-star" 
+                mode="svg" 
+                class="w-5 h-5 inline-block" 
+                :customize="IconSvgCustomizers.fill('#f87171')"
+              />
             </div>
             <div class="flex-initial flex-shrink-0 basis-auto truncate text-xs text-gray-600 dark:text-gray-300 mr-2">
               {{ $t(getI18nResName2('searchStays', 'stayRatingCaption')) }}
             </div>
             <div class="flex-initial flex flex-row flex-nowrap items-center gap-1 self-end">
-              <UIcon name="i-ri-cup-fill" class="w-5 h-5 inline-block opacity-90 mr-2" />
+              <UIcon 
+                name="i-ri-cup-fill" 
+                mode="svg"
+                class="w-5 h-5 inline-block mr-2"
+                :customize="IconSvgCustomizers.opacity(0.9)"
+              />
               <div class="text-xs text-gray-600 dark:text-gray-300">20+</div>
               <div class="w-full truncate text-xs text-gray-600 dark:text-gray-300">
                 {{ $t(getI18nResName3('searchStays', 'filters', 'amenities')) }}
@@ -163,7 +177,7 @@ const uiStyling = {
                 @click="favouriteBtnClick"
               />
 
-              <UButton size="lg" class="w-full flex-1" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.StayDetails)}/${props.offer.id}`, locale as Locale)" :external="false" :target="isElectronBuild() ? '_blank' : undefined">
+              <UButton size="lg" class="w-full flex-1" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.StayDetails)}/${offer.id}`, locale as Locale)" :external="false" :target="isElectronBuild() ? '_blank' : undefined">
                 {{ $t(getI18nResName2('searchStays', 'viewPlace')) }}
               </UButton>
             </div>

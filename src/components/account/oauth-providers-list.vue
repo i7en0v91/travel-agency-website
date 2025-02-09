@@ -6,13 +6,10 @@ import { formatAuthCallbackUrl } from './../../helpers/dom';
 
 interface IProps {
   ctrlKey: string,
-  divisorLabelResName?: I18nResName | undefined,
+  divisorLabelResName?: I18nResName,
   emailOption?: boolean
 }
-withDefaults(defineProps<IProps>(), {
-  divisorLabelResName: undefined,
-  emailOption: false
-});
+const { emailOption = false } = defineProps<IProps>();
 
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();

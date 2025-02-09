@@ -1,4 +1,4 @@
-import { type EntityDataAttrsOnly, type IFlight, type IFlightOffer, type IStayOffer } from '@golobe-demo/shared';
+import type { EntityDataAttrsOnly, IFlight, IFlightOffer, IStayOffer } from '@golobe-demo/shared';
 import { sha256 } from 'ohash';
 import { randomBytes } from 'crypto';
 

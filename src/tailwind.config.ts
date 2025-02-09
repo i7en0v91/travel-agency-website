@@ -12,11 +12,22 @@ export default <Partial<Config>>{
   ],
   theme: {
     extend: {
+      zIndex: {
+        'pgcontent': '10',
+        'navbar': '60',
+        'modalform': '70',
+        'cookies': '100'
+      },
       spacing: {
         'maxpgw': `${MaxSupportedWidth}px`,
         'minpgw': `${MinSupportedWidth}px`,
-        'worldmapw': '916px', // min world map canvas element width
-        'worldmaph': 'calc(916px*505/1230+5px)' // min world map element height
+        'worldmapw': '916px', // min world map canvas element width 
+        'worldmaph': 'calc(916px*505/1230+5px)', // min world map element height
+        'traveldtlsh': '41rem', // maximum size of travel details texting block for large devices
+        // rems - approximate estimation of footer's height upper bound
+        'mincontvhxs': 'calc(max(0px, 100vh - 88rem))', 
+        'mincontvhlg': 'calc(max(0px, 100vh - 66rem))',
+        'mincontvhxxl': 'calc(max(0px, 100vh - 46rem))',
       },
       aspectRatio: {
         'worldmap': '1230 / 505', // world map model aspect ratio

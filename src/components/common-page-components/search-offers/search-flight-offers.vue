@@ -1,22 +1,19 @@
 <script setup lang="ts">
 import { type EntityId, type FlightClass, type TripType, getI18nResName2, FlightMinPassengers } from '@golobe-demo/shared';
-import { type ISearchListItem, type ISearchFlightOffersMainParams, type ISearchFlightOffersParams } from './../../../types';
+import type { ISearchListItem, ISearchFlightOffersMainParams, ISearchFlightOffersParams } from './../../../types';
 import { ApiEndpointCitiesSearch } from './../../../server/api-definitions';
 import InputFieldFrame from '../../forms/input-field-frame.vue';
 import SearchListInput from './../../forms/search-list-input.vue';
 import DropdownList from './../../../components/forms/dropdown-list.vue';
 import SearchFlightDatePicker from './search-flights-date-picker.vue';
 import SearchFlightsParams from './search-flights-params.vue';
-import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
   takeInitialValuesFromUrlQuery?: boolean
 }
-const props = withDefaults(defineProps<IProps>(), {
-  takeInitialValuesFromUrlQuery: false
-});
+const { ctrlKey, takeInitialValuesFromUrlQuery = false } = defineProps<IProps>();
 
 defineExpose({
   getSearchParamsFromInputControls
@@ -34,7 +31,7 @@ const searchOffersStoreAccessor = useSearchOffersStore();
 
 let searchOffersStore: Awaited<ReturnType<typeof searchOffersStoreAccessor.getInstance<ISearchFlightOffersParams>>> | undefined;
 let displayedSearchParams: ComputedRef<Partial<ISearchFlightOffersMainParams>> | undefined;
-if (props.takeInitialValuesFromUrlQuery) {
+if (takeInitialValuesFromUrlQuery) {
   searchOffersStore = await searchOffersStoreAccessor.getInstance('flights', true, false);
   displayedSearchParams = computed<Partial<ISearchFlightOffersMainParams>>(() => { return searchOffersStore!.viewState.currentSearchParams; });
   fromCity.value = displayedSearchParams.value.fromCity ?? null;
@@ -48,7 +45,7 @@ if (props.takeInitialValuesFromUrlQuery) {
     } 
     : null;
   watch([fromCity, toCity, flightParams, tripType, tripDates], () => {
-    logger.debug(`(SearchFlightOffers) search params watch handler, ctrlKey=${props.ctrlKey}`);
+    logger.debug(`(SearchFlightOffers) search params watch handler, ctrlKey=${ctrlKey}`);
     const inputParams = getSearchParamsFromInputControls();
     $emit('change', inputParams);
   });
@@ -56,14 +53,13 @@ if (props.takeInitialValuesFromUrlQuery) {
   searchOffersStore = await searchOffersStoreAccessor.getInstance('flights', false, false);
   displayedSearchParams = computed<Partial<ISearchFlightOffersMainParams>>(getSearchParamsFromInputControls);
   watch(displayedSearchParams, () => {
-    logger.debug(`(SearchFlightOffers) search params change handler, ctrlKey=${props.ctrlKey}`);
+    logger.debug(`(SearchFlightOffers) search params change handler, ctrlKey=${ctrlKey}`);
     $emit('change', displayedSearchParams!.value);
   });
 }
 
-const fromComponent = shallowRef<ComponentInstance<typeof SearchListInput>>();
-const toComponent = shallowRef<ComponentInstance<typeof SearchListInput>>();
-const tripTypeComponent = shallowRef<ComponentInstance<typeof DropdownList>>();
+const fromComponent = useTemplateRef('from-component');
+const toComponent = useTemplateRef('to-component');
 
 function getSearchParamsFromInputControls (): Partial<ISearchFlightOffersMainParams> {
   return {
@@ -180,10 +176,10 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchFlightOffers
       <div class="flex flex-row flex-nowrap w-full min-h-[3.25rem] max-h-[3.25rem] align-middle items-center gap-[6px] rounded ring-1 ring-inset ring-gray-500 dark:ring-gray-400 px-[16px]">
         <div class="flex flex-row flex-grow flex-shrink basis-auto flex-nowrap items-center justify-center gap-[6px] text-gray-500 dark:text-gray-400 font-medium">
           <SearchListInput
-            ref="fromComponent"
+            ref="from-component"
             v-model:selected-value="fromCity"
             class="w-full min-h-[3.25rem] max-h-[3.25rem]"
-            :ctrl-key="`${props.ctrlKey}-From`"
+            :ctrl-key="`${ctrlKey}-From`"
             :item-search-url="`/${ApiEndpointCitiesSearch}`"
             :persistent="true"
             type="destination"
@@ -192,10 +188,10 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchFlightOffers
           />
           <span class="text-gray-500 dark:text-gray-400">-</span>
           <SearchListInput
-            ref="toComponent"
+            ref="to-component"
             v-model:selected-value="toCity"
             class="w-full min-h-[3.25rem] max-h-[3.25rem]"
-            :ctrl-key="`${props.ctrlKey}-To`"
+            :ctrl-key="`${ctrlKey}-To`"
             :item-search-url="`/${ApiEndpointCitiesSearch}`"
             :persistent="true"
             type="destination"
@@ -208,9 +204,9 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchFlightOffers
     </InputFieldFrame>
     <div class="flex flex-col sm:flex-row flex-nowrap flex-grow flex-shrink-[5] flex-basis-auto w-full gap-x-[16px] gap-y-4 sm:gap-x-[24px] sm:gap-y-6">
       <DropdownList
-        ref="tripTypeComponent"
         v-model:selected-value="tripType"
-        :ctrl-key="`${props.ctrlKey}-TripType`"
+        :ctrl-key="`${ctrlKey}-TripType`"
+        class="search-flights-trip-type"
         :caption-res-name="getI18nResName2('searchFlights', 'tripCaption')"
         :persistent="true"
         default-value="oneway"

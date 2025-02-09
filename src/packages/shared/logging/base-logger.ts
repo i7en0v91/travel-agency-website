@@ -3,10 +3,10 @@ import isNumber from 'lodash-es/isNumber';
 import { stringifyClone } from './../utils';
 import AppConfig from './../appconfig';
 import { type AppExceptionCode, flattenError, getErrorAppExceptionCode, wrapExceptionIfNeeded } from './../exceptions';
-import { type LogLevel } from './../types';
+import type { LogLevel } from './../types';
 import { LogLevelEnum, LogAlwaysLevel } from './../constants';
 import deepmerge from 'lodash-es/merge';
-import { type IAppLogger } from './common';
+import type { IAppLogger } from './common';
 import { consola } from 'consola';
 
 export abstract class AppLoggerBase<TOptions extends typeof AppConfig.logging.common> implements IAppLogger {

@@ -1,4 +1,4 @@
-import { type EntityId } from '@golobe-demo/shared';
+import type { EntityId } from '@golobe-demo/shared';
 import isArray from 'lodash-es/isArray';
 import isString from 'lodash-es/isString';
 import isNumber from 'lodash-es/isNumber';
@@ -47,6 +47,7 @@ export const useControlSettingsStore = defineStore('controlSettingsStore', () =>
             logger.debug(`(controlSettingsStore) control value setting read (string): ctrlKey=${ctrlKey}'}, value=${result}`);
             return result;
           }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (err: any) {
           // should try another format
         }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getI18nResName3, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
-import { type IMapControlProps } from './../../../types';
+import type { IMapControlProps } from './../../../types';
 import type { YMap } from '@yandex/ymaps3-types';
 import { YandexMapHint, YandexMapControlButton, VueYandexMaps, YandexMapControls, YandexMapZoomControl, YandexMap, YandexMapDefaultMarker, YandexMapDefaultSchemeLayer, YandexMapDefaultFeaturesLayer } from 'vue-yandex-maps';
 import isString from 'lodash-es/isString';
@@ -9,10 +9,7 @@ import { getCommonServices } from '../../../helpers/service-accessors';
 
 const DefaultZoomLevel = 14;
 
-const props = withDefaults(defineProps<IMapControlProps>(), {
-  webUrl: undefined,
-  styleClass: undefined
-});
+const { ctrlKey, origin } = defineProps<IMapControlProps>();
 
 const { t } = useI18n();
 
@@ -24,16 +21,16 @@ const map = shallowRef<YMap>();
 const isFullscreen = ref(false);
 
 const toggleFullscreen = () => {
-  logger.verbose(`(YandexMaps) toggling fullscreen, current fullscreen mode=${isFullscreen.value}, ctrlKey=${props.ctrlKey}`);
+  logger.verbose(`(YandexMaps) toggling fullscreen, current fullscreen mode=${isFullscreen.value}, ctrlKey=${ctrlKey}`);
   try {
     if (isFullscreen.value) {
       document.exitFullscreen();
     } else {
       map.value!.container.requestFullscreen();
     }
-    logger.verbose(`(YandexMaps) fullscreen toggled, current fullscreen mode=${isFullscreen.value}, ctrlKey=${props.ctrlKey}`);
+    logger.verbose(`(YandexMaps) fullscreen toggled, current fullscreen mode=${isFullscreen.value}, ctrlKey=${ctrlKey}`);
   } catch (err: any) {
-    logger.warn(`(YandexMaps) failed to toggle fullscreen, mode=${isFullscreen.value}, ctrlKey=${props.ctrlKey}`, err);
+    logger.warn(`(YandexMaps) failed to toggle fullscreen, mode=${isFullscreen.value}, ctrlKey=${ctrlKey}`, err);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to toggle fullscreen mode', 'error-stub');
   }
 };
@@ -43,20 +40,20 @@ function onMapStatusChanged () {
     const isLoaded = VueYandexMaps.isLoaded.value;
     const loadError = VueYandexMaps.loadError.value;
     const loadStatus = VueYandexMaps.loadStatus.value;
-    logger.verbose(`(YandexMaps) map status changed, ctrlKey=${props.ctrlKey}, isLoaded=${isLoaded}, loadStatus=${loadStatus}, hasException=${!!loadError}`);
+    logger.verbose(`(YandexMaps) map status changed, ctrlKey=${ctrlKey}, isLoaded=${isLoaded}, loadStatus=${loadStatus}, hasException=${!!loadError}`);
     if (loadStatus === 'error' || loadError) {
       const errMsg = isString(loadError) ? loadError : ((loadError as any)?.message ?? '');
-      logger.warn(`(YandexMaps) exception occured, mode=${isFullscreen.value}, ctrlKey=${props.ctrlKey}, isLoaded=${isLoaded}, loadStatus=${loadStatus}, errMsg=${errMsg}`, !isString(loadError) ? loadError : undefined);
+      logger.warn(`(YandexMaps) exception occured, mode=${isFullscreen.value}, ctrlKey=${ctrlKey}, isLoaded=${isLoaded}, loadStatus=${loadStatus}, errMsg=${errMsg}`, !isString(loadError) ? loadError : undefined);
       $emit('onerror', loadError);
     }
   } catch (err: any) {
-    logger.warn(`(YandexMaps) exception occured while processing map status chage, mode=${isFullscreen.value}, ctrlKey=${props.ctrlKey}`, err);
+    logger.warn(`(YandexMaps) exception occured while processing map status chage, mode=${isFullscreen.value}, ctrlKey=${ctrlKey}`, err);
     $emit('onerror', err);
   }
 }
 
 function formatWebUrl (): string {
-  return `https://yandex.ru/maps/?ll=${props.origin.lon.toFixed(6)}%2C${props.origin.lat.toFixed(6)}&theme=${theme.currentTheme.value}&z=${DefaultZoomLevel}`;
+  return `https://yandex.ru/maps/?ll=${origin.lon.toFixed(6)}%2C${origin.lat.toFixed(6)}&theme=${theme.currentTheme.value}&z=${DefaultZoomLevel}`;
 }
 
  
@@ -90,7 +87,7 @@ onMounted(() => {
       <ComponentWaitingIndicator ctrl-key="YandexMap-InitializationWaiter" />
     </div>
     <div :style="map ? {width: '100%', height: 'auto'} : {width: '100%', height: 0, maxHeight: 0, overflowY: 'hidden'}">
-      <YandexMap v-model="map" :settings="{ location: { center: [props.origin.lon, props.origin.lat], zoom: DefaultZoomLevel }, showScaleInCopyrights: true, theme: theme.currentTheme.value, className: styleClass }">
+      <YandexMap v-model="map" :settings="{ location: { center: [origin.lon, origin.lat], zoom: DefaultZoomLevel }, showScaleInCopyrights: true, theme: theme.currentTheme.value, className: styleClass }">
         <YandexMapDefaultFeaturesLayer />
         <YandexMapDefaultSchemeLayer :settings="{ theme: theme.currentTheme.value }" />
 
@@ -104,7 +101,7 @@ onMounted(() => {
           </YandexMapControlButton>
         </YandexMapControls>
 
-        <YandexMapDefaultMarker :settings="{ coordinates: [props.origin.lon, props.origin.lat], id: `${ctrlKey}-origin`, properties: { hint: t(getI18nResName3('stayDetailsPage', 'location', 'demoMarker')) }, color: theme.currentTheme.value === 'light' ? 'red' : '#A259FF', draggable: false }" />
+        <YandexMapDefaultMarker :settings="{ coordinates: [origin.lon, origin.lat], id: `${ctrlKey}-origin`, properties: { hint: t(getI18nResName3('stayDetailsPage', 'location', 'demoMarker')) }, color: theme.currentTheme.value === 'light' ? 'red' : '#A259FF', draggable: false }" />
         <YandexMapHint hint-property="hint">
           <template #default="{ content }">
             <div class="bg-white dark:bg-gray-900 p-2 text-sm w-fit h-auto" :style="{ position: 'absolute', borderRadius: '4px', width: '250px', maxWidth: '250px', transform: 'translate(7px, -100%)' }">

@@ -10,7 +10,6 @@ import AccountPageContainer from './../components/account/page-container.vue';
 import { getCommonServices } from './../helpers/service-accessors';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
 import CaptchaProtection from './../components/forms/captcha-protection.vue';
-import { type ComponentInstance } from 'vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
 
@@ -35,7 +34,7 @@ const logger = getCommonServices().getLogger();
 const themeSettings = useThemeSettings();
 const userNotificationStore = useUserNotificationStore();
 
-const captcha = shallowRef<ComponentInstance<typeof CaptchaProtection>>();
+const captcha = useTemplateRef('captcha');
 
 const schema = computed(() => {
   const passwordFields = createPasswordSchema({

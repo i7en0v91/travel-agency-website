@@ -11,19 +11,14 @@ interface IProps {
   amount?: number,
   paymentProcessing?: boolean
 };
-const props = withDefaults(defineProps<IProps>(), {
-  amount: undefined,
-  paymentProcessing: false
-});
+const { ctrlKey, paymentProcessing = false } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
-
 const { status } = useAuth();
-
 const $emit = defineEmits<{(event: 'pay'): void}>();
 
 function onPayBtnClick () {
-  logger.debug(`(PaymentController) payment btn clicked, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(PaymentController) payment btn clicked, ctrlKey=${ctrlKey}`);
   $emit('pay');
 }
 

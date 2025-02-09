@@ -58,7 +58,7 @@ Almost any type of entities are available for editing, but some operations may b
 
 ### System requirements
 Project requires [Node.js](https://nodejs.org/) v20+ to be installed. 
-It targets Linux as primary development platform, compatibility with other OSes haven't been tested properly yet. Although, project is able to run on Windows in at least quickstart configuration with Acsys CMS (unfortunately, currently may log lots of warnings during build and produces display artifacts in PDF documents generated). Don't forget to remove package-lock.json before installing npm dependencies if not running on Linux
+It targets Linux as primary development platform, compatibility with other OSes haven't been tested properly yet. Although, project is able to run on Windows in at least quickstart configuration with Acsys CMS (unfortunately, currently may log lots of warnings during build). Don't forget to remove package-lock.json before installing npm dependencies if not running on Linux
 
 ## Setting up development environment
 Development mode provides many useful things among which are hot module reload and rich and more meaningful stack traces. It also assumes reduced optimization and performance penalty for diagnostics overhead. This demo project is also configured differently when running in development environment. Here are required steps:
@@ -99,11 +99,11 @@ You need to do the following:
 
 After these steps are done, you may run Quickstart configuration with `npm run quickstart:electron` or proceed with setup of development environment as described [above](https://github.com/i7en0v91/travel-agency-website/tree/main#setting-up-development-environment) and then execute one of the following implemented configurations:
 - Preview - `npm run build` then `npm run preview:electron`
-- Development - `npm run dev`, currently experimental
+- Development - `npm run dev`
 
 To run e2e tests switch back to browser build.
 
-**NOTE**: backend part is hosted by Nitro and will run in separate process outside desktop app. For simplicity the process starts in parallel (on Linux), so subsequent launches may produce EADDRINUSE (port: 3000) errors in case of recent non-gracefull exit. You can safely ignore it, desktop app should still boot normally, if not - terminate backend process
+**NOTE**: backend part is hosted by Nitro and will run in separate process outside desktop app. For simplicity the process starts in parallel, so subsequent launches may produce EADDRINUSE (port: 3000) errors in case of recent non-gracefull exit. You can safely ignore it, desktop app should still boot normally, if not - terminate backend process
 
 ## Architecture
 

@@ -1,5 +1,5 @@
 import { type IOfferBookingData, AppException, AppExceptionCodeEnum, DbVersionInitial, newUniqueId, type IAppLogger, type EntityId, type IStayOfferDetails, type IFlightOffer, type IOfferBooking, type EntityDataAttrsOnly } from '@golobe-demo/shared';
-import { type IStaysLogic, type IBookingLogic } from './../types';
+import type { IStaysLogic, IBookingLogic } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import { BookingInfoQuery, MapBooking } from './queries';
 import { executeInTransaction } from './../helpers/db';

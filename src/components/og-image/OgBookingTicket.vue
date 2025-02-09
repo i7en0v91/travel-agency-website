@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { AppExceptionCodeEnum, AppException, getI18nResName2, OgImageExt, type Locale, type Theme, DefaultLocale, type IImageCategoryInfo, getLocalizeableValue, ImageCategory } from '@golobe-demo/shared';
-import { type IBookingTicketStayTitleProps, type IBookingTicketProps, type IBookingTicketFlightGfxProps } from './../../types';
+import { AppExceptionCodeEnum, AppException, getI18nResName2, OgImageExt, type Locale, type Theme, DefaultLocale, getLocalizeableValue, ImageCategory } from '@golobe-demo/shared';
+import type { IBookingTicketStayTitleProps, IBookingTicketProps, IBookingTicketFlightGfxProps } from './../../types';
 import { joinURL } from 'ufo';
 import isString from 'lodash-es/isString';
 import { usePreviewState } from './../../composables/preview-state';
@@ -41,14 +41,21 @@ const IconTypesMapping = new Map<string, IconType>([
 
 const CommonClass = 'not-hidden';
 
-const props = defineProps<Required<IBookingTicketProps & { theme: Theme }>>();
+const { 
+  ctrlKey, 
+  details,
+  offerKind, 
+  titleOrGfx, 
+  theme, 
+  generalInfo 
+} = defineProps<Required<IBookingTicketProps & { theme: Theme }>>();
 
 const logger = getCommonServices().getLogger();
-logger.verbose(`(OgBookingTicket) component setup, ctrlKey=${props.ctrlKey}, offerKind=${props.offerKind}, gfx=${JSON.stringify(props.titleOrGfx)}, theme=${props.theme}`);
+logger.verbose(`(OgBookingTicket) component setup, ctrlKey=${ctrlKey}, offerKind=${offerKind}, gfx=${JSON.stringify(titleOrGfx)}, theme=${theme}`);
 
-const missedIcon = props.details?.items?.find(i => !IconTypesMapping.get(i.icon) ? i : undefined);
+const missedIcon = details?.items?.find(i => !IconTypesMapping.get(i.icon) ? i : undefined);
 if(missedIcon) {
-  logger.warn(`(OgBookingTicket) unexpected icon, ctrlKey=${props.ctrlKey}, offerKind=${props.offerKind}, theme=${props.theme}`, missedIcon);
+  logger.warn(`(OgBookingTicket) unexpected icon, ctrlKey=${ctrlKey}, offerKind=${offerKind}, theme=${theme}`, missedIcon);
   throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to render booking ticket image', 'error-page');
 }
 
@@ -56,18 +63,18 @@ const { locale } = useI18n();
 const requestLocale = useRequestEvent()?.context.ogImageContext?.locale ?? DefaultLocale;
 locale.value = requestLocale;
 
-let avatarImageSize: IImageCategoryInfo;
+let avatarImageSize: Awaited<ReturnType<ReturnType<typeof useSystemConfigurationStore>['getImageSrcSize']>>;
 try {
   const systemConfigurationStore = useSystemConfigurationStore();
   avatarImageSize = await systemConfigurationStore.getImageSrcSize(ImageCategory.UserAvatar);
 } catch (err: any) {
-  logger.warn(`(OgBookingTicket) failed to detect avatar image category size, ctrlKey=${props.ctrlKey}`, err);
+  logger.warn(`(OgBookingTicket) failed to detect avatar image category size, ctrlKey=${ctrlKey}`, err);
   throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to render booking ticket image', 'error-page');
 }
 
 const { enabled } = usePreviewState();
 
-const avatarImgUrl = props.generalInfo.avatar ? formatImageEntityUrl(props.generalInfo.avatar, ImageCategory.UserAvatar, undefined, enabled) : undefined;
+const avatarImgUrl = generalInfo.avatar ? formatImageEntityUrl(generalInfo.avatar, ImageCategory.UserAvatar, undefined, enabled) : undefined;
 const flightRouteLabelImgUrl = joinURL('/img', 'og', `og-image-link-flights.${OgImageExt}`);
 
 const detailsIconStyle = {
@@ -100,7 +107,7 @@ const gfxHighlightStyles = [
 ];
 
 const gfxFlightRouteLabelStyleCommon = {
-  boxShadow: `0px 4px 16px ${SvgColors[props.theme].shadow}`,
+  boxShadow: `0px 4px 16px ${SvgColors[theme].shadow}`,
   position: 'absolute'
 };
 
@@ -122,14 +129,14 @@ function onError (err: any) {
   throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to render booking ticket image', 'error-page');
 }
 
-logger.verbose(`(OgBookingTicket) setup script completed, ctrlKey=${props.ctrlKey}, offerKind=${props.offerKind}`);
+logger.verbose(`(OgBookingTicket) setup script completed, ctrlKey=${ctrlKey}, offerKind=${offerKind}`);
 
 </script>
 
 <!-- TODO: rewrite to Tailwind -->
 <template>
   <div class="container">
-    <NuxtErrorBoundary @error="onError" :class="CommonClass">
+    <NuxtErrorBoundary :class="CommonClass" @error="onError">
       <div :class="`og-app-page ${theme} body-bg ${CommonClass}`">
         <svg
           v-if="theme === 'light'"
@@ -576,7 +583,7 @@ logger.verbose(`(OgBookingTicket) setup script completed, ctrlKey=${props.ctrlKe
                   >
                   <div :class="`booking-ticket-flight-texting font-body input-ctrl-color ${CommonClass}`">
                     <div :class="`booking-ticket-flight-username font-bold ${CommonClass}`">
-                      {{ (props.titleOrGfx as IBookingTicketFlightGfxProps).userName }}
+                      {{ (titleOrGfx as IBookingTicketFlightGfxProps).userName }}
                     </div>
                     <div :class="`booking-ticket-flight-sub font-size-min ${CommonClass}`">
                       {{ $t(getI18nResName2('ticket', 'boardingPass')) }}

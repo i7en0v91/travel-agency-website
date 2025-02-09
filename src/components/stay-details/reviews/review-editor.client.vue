@@ -1,21 +1,20 @@
 <script setup lang="ts">
 import { type EntityId, AppException, AppExceptionCodeEnum, MaxStayReviewLength, getI18nResName2, getI18nResName3, type I18nResName } from '@golobe-demo/shared';
 import * as config from './../../../node_modules/@nuxt/ui/dist/runtime/ui.config/index.js';
-import { type ReviewEditorButtonType } from './../../../types';
+import type { ReviewEditorButtonType } from './../../../types';
 import { TiptapUnderline, TiptapPlaceholder } from './../../../client/tiptapExt';
 import ReviewEditorButton from './review-editor-button.vue';
 import ComponentWaitingIndicator from '../../forms/component-waiting-indicator.vue';
 import ReviewScorePicker from './review-score-picker.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 import { useModalDialogResult } from '../../../composables/modal-dialog-result';
-import { type ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string,
   stayId: EntityId
 }
 
-const props = defineProps<IProps>();
+const { ctrlKey, stayId } = defineProps<IProps>();
 const logger = getCommonServices().getLogger();
 
 const { t } = useI18n();
@@ -32,10 +31,10 @@ const editor = useEditor({
     })]
 });
 const scorePickerResult = ref<number | 'cancel'>();
-const reviewScorePickerRef = shallowRef<ComponentInstance<typeof ReviewScorePicker>>()as Ref<ComponentInstance<typeof ReviewScorePicker>>;  
+const reviewScorePickerRef = useTemplateRef('review-score-picker');  
 
 function setEditedContent (content: string) {
-  logger.verbose(`(ReviewEditor) set content, ctrlKey=${props.ctrlKey}, length=${content?.length}`);
+  logger.verbose(`(ReviewEditor) set content, ctrlKey=${ctrlKey}, length=${content?.length}`);
   editor.value?.commands.setContent(content);
 }
 
@@ -44,14 +43,14 @@ defineExpose({
 });
 
 const reviewStoreFactory = useStayReviewsStoreFactory();
-const reviewStore = await reviewStoreFactory.getInstance(props.stayId);
+const reviewStore = await reviewStoreFactory.getInstance(stayId);
 
 const validationErrMsgResName = ref<I18nResName | undefined>();
 
 const open = ref(false);
 
 function onButtonClicked (type: ReviewEditorButtonType) {
-  logger.debug(`(ReviewEditor) btn click handler, ctrlKey=${props.ctrlKey}, type=${type}`);
+  logger.debug(`(ReviewEditor) btn click handler, ctrlKey=${ctrlKey}, type=${type}`);
   let editMethod: () => void;
   switch (type) {
     case 'bold':
@@ -84,9 +83,9 @@ function onButtonClicked (type: ReviewEditorButtonType) {
   }
   try {
     editMethod();
-    logger.debug(`(ReviewEditor) btn click handler - completed, ctrlKey=${props.ctrlKey}, type=${type}`);
+    logger.debug(`(ReviewEditor) btn click handler - completed, ctrlKey=${ctrlKey}, type=${type}`);
   } catch (err: any) {
-    logger.verbose(`(ReviewEditor) btn click handler failed, ctrlKey=${props.ctrlKey}, type=${type}`, err);
+    logger.verbose(`(ReviewEditor) btn click handler failed, ctrlKey=${ctrlKey}, type=${type}`, err);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'edit review error occured', 'error-stub');
   }
 }
@@ -100,7 +99,7 @@ const $emit = defineEmits<{
 }>();
 
 function isEditorTextValid (): true | I18nResName {
-  logger.debug(`(ReviewEditor) validating editor text, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(ReviewEditor) validating editor text, ctrlKey=${ctrlKey}`);
   const validatingText = editor.value!.getText()?.replace(/\s/g, '') ?? '';
   let result = validatingText.length > 0 ? true : getI18nResName3('stayDetailsPage', 'reviews', 'validationErrEmptyReview');
   if (result !== true) {
@@ -109,18 +108,18 @@ function isEditorTextValid (): true | I18nResName {
   if (result && editor.value!.getHTML().length >= MaxStayReviewLength) {
     result = getI18nResName3('stayDetailsPage', 'reviews', 'validationErrTooLongReview');
   }
-  logger.debug(`(ReviewEditor) editor text validation finished, ctrlKey=${props.ctrlKey}, text=${validatingText}, result=${result}`);
+  logger.debug(`(ReviewEditor) editor text validation finished, ctrlKey=${ctrlKey}, text=${validatingText}, result=${result}`);
   return result;
 }
 
 async function onSendReviewBtnClick (): Promise<void> {
-  logger.debug(`(ReviewEditor) send review btn click handler, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(ReviewEditor) send review btn click handler, ctrlKey=${ctrlKey}`);
 
   validationErrMsgResName.value = undefined;
   const validationResult = isEditorTextValid();
   if (validationResult !== true) {
     validationErrMsgResName.value = validationResult;
-    logger.verbose(`(ReviewEditor) review text validation failed, ctrlKey=${props.ctrlKey}, result=${validationResult}`);
+    logger.verbose(`(ReviewEditor) review text validation failed, ctrlKey=${ctrlKey}, result=${validationResult}`);
     return;
   }
 
@@ -128,17 +127,17 @@ async function onSendReviewBtnClick (): Promise<void> {
   const reviewScorePicker = useModalDialogResult<number | 'cancel'>(reviewScorePickerRef, { open, result: scorePickerResult }, 'cancel');
   const result = await reviewScorePicker.show();
   if (!result || result === 'cancel') {
-    logger.verbose(`(ReviewEditor) cancelled, ctrlKey=${props.ctrlKey}, result=${scorePickerResult.value}`);
+    logger.verbose(`(ReviewEditor) cancelled, ctrlKey=${ctrlKey}, result=${scorePickerResult.value}`);
     scorePickerResult.value = prevUserScore;
     return;
   }
 
-  logger.verbose(`(ReviewEditor) submitting review, ctrlKey=${props.ctrlKey}, score=${scorePickerResult.value}`);
+  logger.verbose(`(ReviewEditor) submitting review, ctrlKey=${ctrlKey}, score=${scorePickerResult.value}`);
   $emit('submitReview', editor.value!.getHTML(), result);
 }
 
 function onCancelReviewEditBtnClick () {
-  logger.debug(`(ReviewEditor) cancel review edit btn click handler, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(ReviewEditor) cancel review edit btn click handler, ctrlKey=${ctrlKey}`);
   validationErrMsgResName.value = undefined;
   $emit('cancelEdit');
 }
@@ -150,17 +149,17 @@ function isSendButtonVisible (): boolean {
 const sendButtonVisible = ref(isSendButtonVisible());
 
 watch(() => reviewStore.status, () => {
-  logger.debug(`(ReviewEditor) review store status changed, ctrlKey=${props.ctrlKey}, status=${reviewStore.status}`);
+  logger.debug(`(ReviewEditor) review store status changed, ctrlKey=${ctrlKey}, status=${reviewStore.status}`);
   sendButtonVisible.value = isSendButtonVisible();
 });
 
 onBeforeUnmount(() => {
-  logger.verbose(`(ReviewEditor) before unmount handler, ctrlKey=${props.ctrlKey}`);
+  logger.verbose(`(ReviewEditor) before unmount handler, ctrlKey=${ctrlKey}`);
   unref(editor)?.destroy();
 });
 
 onMounted(() => {
-  logger.verbose(`(ReviewEditor) mounted, ctrlKey=${props.ctrlKey}`);
+  logger.verbose(`(ReviewEditor) mounted, ctrlKey=${ctrlKey}`);
   isMounted.value = true;
   sendButtonVisible.value = isSendButtonVisible();
 });
@@ -172,63 +171,63 @@ onMounted(() => {
     <div v-if="editor" class="w-full h-auto">
       <div class="w-full h-auto flex flex-row flex-wrap items-center gap-4">
         <ReviewEditorButton
-          :ctrl-key="`${props.ctrlKey}-BtnBold`"
+          :ctrl-key="`${ctrlKey}-BtnBold`"
           type="bold"
           :disabled="!editor.can().chain().focus().toggleBold().run()"
           :active="editor.isActive('bold')"
           @click="onButtonClicked('bold')"
         />
         <ReviewEditorButton
-          :ctrl-key="`${props.ctrlKey}-BtnItalic`"
+          :ctrl-key="`${ctrlKey}-BtnItalic`"
           type="italic"
           :disabled="!editor.can().chain().focus().toggleItalic().run()"
           :active="editor.isActive('italic')"
           @click="onButtonClicked('italic')"
         />
         <ReviewEditorButton
-          :ctrl-key="`${props.ctrlKey}-BtnStrikethrough`"
+          :ctrl-key="`${ctrlKey}-BtnStrikethrough`"
           type="strikethrough"
           :disabled="!editor.can().chain().focus().toggleStrike().run()"
           :active="editor.isActive('strike')"
           @click="onButtonClicked('strikethrough')"
         />
         <ReviewEditorButton
-          :ctrl-key="`${props.ctrlKey}-BtnUnderline`"
+          :ctrl-key="`${ctrlKey}-BtnUnderline`"
           type="underline"
           :disabled="!editor.can().chain().focus().toggleUnderline().run()"
           :active="editor.isActive('underline')"
           @click="onButtonClicked('underline')"
         />
         <ReviewEditorButton
-          :ctrl-key="`${props.ctrlKey}-BtnBulletList`"
+          :ctrl-key="`${ctrlKey}-BtnBulletList`"
           type="bulletList"
           :disabled="false"
           :active="editor.isActive('bulletList')"
           @click="onButtonClicked('bulletList')"
         />
         <ReviewEditorButton
-          :ctrl-key="`${props.ctrlKey}-BtnOrderedList`"
+          :ctrl-key="`${ctrlKey}-BtnOrderedList`"
           type="orderedList"
           :disabled="false"
           :active="editor.isActive('orderedList')"
           @click="onButtonClicked('orderedList')"
         />
         <ReviewEditorButton
-          :ctrl-key="`${props.ctrlKey}-BtnBlockquote`"
+          :ctrl-key="`${ctrlKey}-BtnBlockquote`"
           type="blockquote"
           :disabled="false"
           :active="editor.isActive('blockquote')"
           @click="onButtonClicked('blockquote')"
         />
         <ReviewEditorButton
-          :ctrl-key="`${props.ctrlKey}-BtnUndo`"
+          :ctrl-key="`${ctrlKey}-BtnUndo`"
           type="undo"
           :disabled="!editor.can().chain().focus().undo().run()"
           :active="editor.isActive('undo')"
           @click="onButtonClicked('undo')"
         />
         <ReviewEditorButton
-          :ctrl-key="`${props.ctrlKey}-BtnRedo`"
+          :ctrl-key="`${ctrlKey}-BtnRedo`"
           type="redo"
           :disabled="!editor.can().chain().focus().redo().run()"
           :active="editor.isActive('redo')"
@@ -254,10 +253,10 @@ onMounted(() => {
       <ComponentWaitingIndicator v-else :ctrl-key="`${ctrlKey}-SendReviewWaiter`" class="!w-8 !h-8" ui="w-8 h-8"/>
     </div>
     <ReviewScorePicker 
-      ref="reviewScorePickerRef"
+      ref="review-score-picker"
       v-model:open="open" 
       v-model:result="scorePickerResult"
-      :ctrl-key="`${props.ctrlKey}-scorePicker`" 
+      :ctrl-key="`${ctrlKey}-scorePicker`" 
       @close="open = false"/>
   </div>
 </template>

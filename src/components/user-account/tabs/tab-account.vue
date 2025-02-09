@@ -7,14 +7,13 @@ import ListPropertyEdit from './../../forms/property-grid/list-property-edit.vue
 import CaptchaProtection from './../../../components/forms/captcha-protection.vue';
 import { useCaptchaToken } from './../../../composables/captcha-token';
 import { post } from './../../../helpers/rest-utils';
-import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
   ready: boolean
 }
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
 enum PropertyCtrlKeys {
   FirstName = 'userAccountProperty-FirstName',
@@ -33,11 +32,11 @@ const logger = getCommonServices().getLogger();
 
 const isError = ref(false);
 
-const captcha = shallowRef<ComponentInstance<typeof CaptchaProtection>>();
-const propFirstName = shallowRef<ComponentInstance<typeof SimplePropertyEdit>>();
-const propLastName = shallowRef<ComponentInstance<typeof SimplePropertyEdit>>();
-const propPassword = shallowRef<ComponentInstance<typeof SimplePropertyEdit>>();
-const propEmails = shallowRef<ComponentInstance<typeof ListPropertyEdit>>();
+const captcha = useTemplateRef('captcha');
+const propFirstName = useTemplateRef('prop-first-name');
+const propLastName = useTemplateRef('prop-last-name');
+const propPassword = useTemplateRef('prop-password');
+const propEmails = useTemplateRef('prop-emails');
 
 const captchaToken = useCaptchaToken(captcha as any);
 let isCaptchaTokenRequestPending = false;
@@ -58,7 +57,7 @@ function refreshAccountData () {
 }
 
 function onPropertyEnterEditMode (ctrlKey: string) {
-  logger.debug(`(TabAccount) property entered edit mode: ctrlKey=${props.ctrlKey}, propsCtrlKey=${ctrlKey}`);
+  logger.debug(`(TabAccount) property entered edit mode: ctrlKey=${ctrlKey}, propsCtrlKey=${ctrlKey}`);
   const propEditStoppers =
     [propFirstName, propLastName, propPassword, propEmails]
       .filter(p => p.value)
@@ -72,7 +71,7 @@ function onPropertyEnterEditMode (ctrlKey: string) {
 
 async function validateAndSaveChanges (dto: IUpdateAccountDto, emailForVerification?: string): Promise<I18nResName | 'success' | 'cancel'> {
   if (isCaptchaTokenRequestPending) {
-    logger.verbose(`(TabAccount) simple property change canceled - captcha request pending: ctrlKey=${props.ctrlKey}`);
+    logger.verbose(`(TabAccount) simple property change canceled - captcha request pending: ctrlKey=${ctrlKey}`);
     return 'cancel';
   }
 
@@ -119,7 +118,7 @@ async function validateAndSaveChanges (dto: IUpdateAccountDto, emailForVerificat
 }
 
 async function validateAndSaveSimpleChanges (propCtrlKey: PropertyCtrlKeys, value?: string): Promise<I18nResName | 'success' | 'cancel'> {
-  logger.verbose(`(TabAccount) validating and saving simple property change: ctrlKey=${props.ctrlKey}, propCtrlKey=${propCtrlKey}, value=${maskLog(value)}`);
+  logger.verbose(`(TabAccount) validating and saving simple property change: ctrlKey=${ctrlKey}, propCtrlKey=${propCtrlKey}, value=${maskLog(value)}`);
   let updateDto: IUpdateAccountDto = {
     locale: locale.value,
     theme: themeSettings.currentTheme.value
@@ -139,7 +138,7 @@ async function validateAndSaveSimpleChanges (propCtrlKey: PropertyCtrlKeys, valu
 }
 
 async function validateAndSaveEmailChanges (newValues: (string | undefined)[], _currentValues: (string | undefined)[], op: 'add' | 'change' | 'delete', propIdx: number | 'add', newValue?: string) : Promise<I18nResName | 'success' | 'cancel'> {
-  logger.verbose(`(TabAccount) validating and saving email changes: ctrlKey=${props.ctrlKey}, op=${op}, propIdx=${propIdx}, newValue=${maskLog(newValue)}`);
+  logger.verbose(`(TabAccount) validating and saving email changes: ctrlKey=${ctrlKey}, op=${op}, propIdx=${propIdx}, newValue=${maskLog(newValue)}`);
   const updateDto: IUpdateAccountDto = {
     locale: locale.value,
     theme: themeSettings.currentTheme.value,
@@ -163,7 +162,7 @@ onMounted(() => {
       <ErrorHelm v-model:is-error="isError" :appearance="'error-stub'" :user-notification="true">
         <PropertyGrid ctrl-key="userAccountPropertyGrid">
           <SimplePropertyEdit
-            ref="propFirstName"
+            ref="prop-first-name"
             v-model:value="firstName"
             :ctrl-key="PropertyCtrlKeys.FirstName"
             type="text"
@@ -174,7 +173,7 @@ onMounted(() => {
             @enter-edit-mode="onPropertyEnterEditMode"
           />
           <SimplePropertyEdit
-            ref="propLastName"
+            ref="prop-last-name"
             v-model:value="lastName"
             :ctrl-key="PropertyCtrlKeys.LastName"
             type="text"
@@ -185,7 +184,7 @@ onMounted(() => {
             @enter-edit-mode="onPropertyEnterEditMode"
           />
           <SimplePropertyEdit
-            ref="propPassword"
+            ref="prop-password"
             v-model:value="password"
             :ctrl-key="PropertyCtrlKeys.Password"
             type="password"
@@ -200,7 +199,7 @@ onMounted(() => {
           />
         </PropertyGrid>
         <ListPropertyEdit
-          ref="propEmails"
+          ref="prop-emails"
           v-model:values="emails"
           :ctrl-key="PropertyCtrlKeys.Emails"
           type="email"

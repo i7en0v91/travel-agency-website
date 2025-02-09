@@ -5,7 +5,6 @@ import { getCommonServices } from './../../helpers/service-accessors';
 import { ApiEndpointCompanyReviewsList, type ICompanyReviewDto } from './../../server/api-definitions';
 import { useCarouselPlayer } from '../../composables/carousel-player';
 import type { UCarousel } from '../../.nuxt/components';
-import type { ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string,
@@ -35,8 +34,8 @@ const reviewsListFetch = await useFetch(`/${ApiEndpointCompanyReviewsList}`,
   });
 
 
-const carouselRef = shallowRef<ComponentInstance<typeof UCarousel> | undefined>();
-useCarouselPlayer(carouselRef);
+const carouselRef = useTemplateRef('carousel');
+useCarouselPlayer(carouselRef as any);
 
 </script>
 
@@ -44,7 +43,7 @@ useCarouselPlayer(carouselRef);
   <ErrorHelm :is-error="!!reviewsListFetch.error.value">
     <UCarousel
       v-slot="{ item: review }" 
-      ref="carouselRef"
+      ref="carousel"
       :items="reviewsListFetch.data.value" 
       :ui="{ item: 'snap-end justify-around basis-full md:basis-1/2 xl:basis-1/3' }"
       :indicators="false" 

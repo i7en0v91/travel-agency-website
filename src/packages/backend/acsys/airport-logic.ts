@@ -1,5 +1,5 @@
 import { AppException, AppExceptionCodeEnum, DbVersionInitial, newUniqueId, type PreviewMode, type IAppLogger, type EntityId, type IAirport, type EntityDataAttrsOnly } from '@golobe-demo/shared';
-import { type ICitiesLogic, type IAirportLogic, type IAirportShort, type IAirportData,  } from './../types';
+import type { ICitiesLogic, IAirportLogic, IAirportShort, IAirportData,  } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import type { AcsysDraftEntitiesResolver } from './acsys-draft-entities-resolver';
 import { mapGeoCoord, executeInTransaction } from './../helpers/db';

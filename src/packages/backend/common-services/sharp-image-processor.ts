@@ -1,4 +1,4 @@
-import { type IImageProcessor, type IAppLogger } from '@golobe-demo/shared';
+import type { IImageProcessor, IAppLogger } from '@golobe-demo/shared';
 import sharp from 'sharp';
 
 export class ImageProcessor implements IImageProcessor {

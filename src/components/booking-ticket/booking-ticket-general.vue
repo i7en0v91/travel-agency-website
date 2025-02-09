@@ -1,20 +1,16 @@
 <script setup lang="ts">
 
 import { ImageCategory, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
-import { type IBookingTicketGeneralProps } from './../../types';
+import type { IBookingTicketGeneralProps } from './../../types';
 import { formatImageEntityUrl } from './../../helpers/dom';
 
-const props = withDefaults(defineProps<IBookingTicketGeneralProps>(), {
-  avatar: undefined,
-  texting: undefined,
-  classResName: undefined
-});
+const { avatar } = defineProps<IBookingTicketGeneralProps>();
 
 const { t } = useI18n();
 
 const userAvatarUrl = computed(() => {
-  return props.avatar ?   
-    formatImageEntityUrl(props.avatar, ImageCategory.UserAvatar, 1) :
+  return avatar ?   
+    formatImageEntityUrl(avatar, ImageCategory.UserAvatar, 1) :
     undefined;
 });
 

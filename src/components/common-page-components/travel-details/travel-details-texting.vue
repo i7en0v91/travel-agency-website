@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type ITravelDetailsData, type ITravelDetailsTextingData } from './../../../types';
-import type { WatchStopHandle, ComponentInstance } from 'vue';
+import type { ITravelDetailsData, ITravelDetailsTextingData } from './../../../types';
+import type { WatchStopHandle } from 'vue';
 import TravelDetailsTextingFrame from './travel-details-texting-frame.vue';
 import TravelDetailsFrameContainer from './travel-details-frame-container.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
@@ -10,12 +10,10 @@ interface IProps {
   ctrlKey: string,
   bookKind: 'flight' | 'stay'
 };
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 const activeFrame = ref<'initial' | 'A' | 'B'>('initial');
-const elFrameA = shallowRef<ComponentInstance<typeof TravelDetailsTextingFrame>>();
-const elFrameB = shallowRef<ComponentInstance<typeof TravelDetailsTextingFrame>>();
 const isError = ref(false);
 const initialFrameHidden = ref(false);
 const clientFramesActivated = ref(false);
@@ -27,7 +25,7 @@ const dataBuf2 = ref<ITravelDetailsTextingData | undefined>();
 const watches: WatchStopHandle[] = [];
 
 function swapFrames () {
-  logger.debug(`(TravelDetailsTexting) swapping frames: ctrlKey=${props.ctrlKey}, activeFrame=${activeFrame.value}`);
+  logger.debug(`(TravelDetailsTexting) swapping frames: ctrlKey=${ctrlKey}, activeFrame=${activeFrame.value}`);
   switch (activeFrame.value) {
     case 'initial':
       activeFrame.value = 'A';
@@ -66,16 +64,16 @@ if (storeInstance.current?.texting) {
 }
 
 function onUpcomingDataChanged (data?: ITravelDetailsData | undefined) {
-  logger.verbose(`(TravelDetailsTexting) upcoming data changed: ctrlKey=${props.ctrlKey}, activeFrame=${activeFrame.value}`);
+  logger.verbose(`(TravelDetailsTexting) upcoming data changed: ctrlKey=${ctrlKey}, activeFrame=${activeFrame.value}`);
   if (data?.texting) {
     (activeFrame.value !== 'A' ? dataBuf2 : dataBuf1).value = data.texting;
   }
 }
 
 function onInitialDataReady (data: ITravelDetailsData) {
-  logger.verbose(`(TravelDetailsTexting) initial data ready: ctrlKey=${props.ctrlKey}, activeFrame=${activeFrame.value}`);
+  logger.verbose(`(TravelDetailsTexting) initial data ready: ctrlKey=${ctrlKey}, activeFrame=${activeFrame.value}`);
   if (activeFrame.value !== 'initial' || dataBufInitial.value) {
-    logger.verbose(`(TravelDetailsTexting) initial data has been already processed: ctrlKey=${props.ctrlKey}, activeFrame=${activeFrame.value}`);
+    logger.verbose(`(TravelDetailsTexting) initial data has been already processed: ctrlKey=${ctrlKey}, activeFrame=${activeFrame.value}`);
     return;
   }
 
@@ -85,7 +83,7 @@ function onInitialDataReady (data: ITravelDetailsData) {
 }
 
 async function startWatchingForDataChanges () : Promise<void> {
-  logger.verbose(`(TravelDetailsTexting) starting to watch for data changes: ctrlKey=${props.ctrlKey}`);
+  logger.verbose(`(TravelDetailsTexting) starting to watch for data changes: ctrlKey=${ctrlKey}`);
 
   const storeInstance = await (travelDetailsStore.getInstance());
   watches.push(watch([() => storeInstance.upcoming?.cityId, () => storeInstance.upcoming?.texting], () => {
@@ -100,7 +98,7 @@ async function startWatchingForDataChanges () : Promise<void> {
 }
 
 function stopWatchingForDataChanges () {
-  logger.verbose(`(TravelDetailsTexting) stopping to watch for data changes: ctrlKey=${props.ctrlKey}`);
+  logger.verbose(`(TravelDetailsTexting) stopping to watch for data changes: ctrlKey=${ctrlKey}`);
   watches.forEach(sw => sw());
 }
 
@@ -118,7 +116,7 @@ xl:row-start-1 xl:row-end-3 xl:col-start-1 xl:col-end-2
 </script>
 
 <template>
-  <div :class="`w-full h-full ${GridLayoutClass} bg-primary-200 dark:bg-gray-700 rounded-xl`" role="article">
+  <div :class="`w-full h-full xl:h-traveldtlsh ${GridLayoutClass} bg-primary-200 dark:bg-gray-700 rounded-xl`" role="article">
     <ErrorHelm v-model:is-error="isError">
       <TravelDetailsFrameContainer>
         <Transition v-bind="TravelDetails">
@@ -133,7 +131,6 @@ xl:row-start-1 xl:row-end-3 xl:col-start-1 xl:col-end-2
         <Transition v-bind="TravelDetails">
           <TravelDetailsTextingFrame
             v-show="activeFrame === 'A'"
-            ref="elFrameA"
             :book-kind="bookKind"
             :ctrl-key="`${ctrlKey}-TravelDetailsTexting-FrameA`"
             :texting="dataBuf2"
@@ -143,7 +140,6 @@ xl:row-start-1 xl:row-end-3 xl:col-start-1 xl:col-end-2
         <Transition v-bind="TravelDetails">
           <TravelDetailsTextingFrame
             v-show="activeFrame === 'B'"
-            ref="elFrameB"
             :book-kind="bookKind"
             :ctrl-key="`${ctrlKey}-TravelDetailsTexting-FrameB`"
             :texting="dataBuf1"

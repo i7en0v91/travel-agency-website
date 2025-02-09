@@ -4,14 +4,13 @@ import { getCommonServices } from '../../../helpers/service-accessors';
 import type ModalWaitingIndicator from '../../forms/modal-waiting-indicator.vue';
 import { useDocumentDownloader, type IDocumentDownloader } from './../../../composables/document-downloader';
 import { useModalWaiter, type IModalWaiter } from './../../../composables/modal-waiter';
-import { type ComponentInstance } from 'vue';
 
 interface IProps {
   ctrlKey: string,
   bookingId: EntityId,
   offer: EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>
 };
-const props = defineProps<IProps>();
+const { ctrlKey, bookingId, offer } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 const navLinkBuilder = useNavLinkBuilder();
@@ -21,7 +20,7 @@ const theme = useThemeSettings();
 
 const isError = ref(false);
 
-const modalWaiterRef = shallowRef<ComponentInstance<typeof ModalWaitingIndicator>>() as Ref<ComponentInstance<typeof ModalWaitingIndicator>>;
+const modalWaiterRef = useTemplateRef('modal-waiter');
 const modalWaiterOpen = ref<boolean>(false);
 let modalWaiter: IModalWaiter | undefined;
 let documentDownloader: IDocumentDownloader | undefined;
@@ -29,7 +28,7 @@ let documentDownloader: IDocumentDownloader | undefined;
 const userAccountStore = useUserAccountStore();
 
 async function onBtnClick(): Promise<void> {
-  logger.verbose(`(TicketCardContainer) download btn clicked, ctrlKey=${props.ctrlKey}, bookingId=${props.bookingId}`);
+  logger.verbose(`(TicketCardContainer) download btn clicked, ctrlKey=${ctrlKey}, bookingId=${bookingId}`);
 
   let firstName: string | undefined;
   let lastName: string | undefined;
@@ -38,14 +37,14 @@ async function onBtnClick(): Promise<void> {
     firstName = userAccount.firstName;
     lastName = userAccount.lastName;
   } catch (err: any) {
-    logger.warn(`(TicketCardContainer) failed to initialize user account info, ctrlKey=${props.ctrlKey}`, err);
+    logger.warn(`(TicketCardContainer) failed to initialize user account info, ctrlKey=${ctrlKey}`, err);
   }
 
-  await documentDownloader!.download(props.bookingId, props.offer, firstName, lastName, locale.value as Locale, theme.currentTheme.value);
+  await documentDownloader!.download(bookingId, offer, firstName, lastName, locale.value as Locale, theme.currentTheme.value);
 }
 
 onMounted(() => {
-  modalWaiter = useModalWaiter(modalWaiterRef, modalWaiterOpen);
+  modalWaiter = useModalWaiter(modalWaiterRef as any, modalWaiterOpen);
   documentDownloader = useDocumentDownloader(modalWaiter);
 });
 
@@ -66,6 +65,6 @@ onMounted(() => {
         <UButton size="lg" class="w-min flex-initial" icon="i-heroicons-chevron-right-20-solid" :ui="{ base: 'justify-center' }" variant="outline" color="gray" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.BookingDetails)}/${bookingId}`, locale as Locale)" :external="false"  :target="isElectronBuild() ? '_blank' : undefined"/>
       </div>
     </div>
-    <ModalWaitingIndicator ref="modalWaiterRef" v-model:open="modalWaiterOpen" :ctrl-key="`${props.ctrlKey}-Waiter`" :label-res-name="getI18nResName2('bookingCommon', 'generatingDoc')"/>
+    <ModalWaitingIndicator ref="modal-waiter" v-model:open="modalWaiterOpen" :ctrl-key="`${ctrlKey}-Waiter`" :label-res-name="getI18nResName2('bookingCommon', 'generatingDoc')"/>
   </article>
 </template>

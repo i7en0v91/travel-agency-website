@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { type Locale, getLocalizeableValue } from '@golobe-demo/shared';
 import isString from 'lodash-es/isString';
-import { type ISearchOffersChoiceFilterProps, type ISearchOffersFilterVariant, type SearchOffersFilterVariantId } from './../../../../types';
+import type { ISearchOffersChoiceFilterProps, ISearchOffersFilterVariant, SearchOffersFilterVariantId } from './../../../../types';
 
 interface IProps {
   ctrlKey: string,
   filterParams: ISearchOffersChoiceFilterProps
 }
 
-const props = defineProps<IProps>();
+const { filterParams } = defineProps<IProps>();
 const modelValue = defineModel<SearchOffersFilterVariantId>('value', { required: false });
 
 const { locale } = useI18n();
@@ -26,7 +26,7 @@ function getVariantDisplayText (variant: ISearchOffersFilterVariant, locale: Loc
 }
 
 const options = computed(() => {
-  return props.filterParams.variants.map(v => {
+  return filterParams.variants.map(v => {
     return {
       value: v.id,
       label: getVariantDisplayText(v, locale.value as Locale)

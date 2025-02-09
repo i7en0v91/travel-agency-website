@@ -21,21 +21,12 @@ interface IProps {
     price?: Decimal
   }
 }
-const props = withDefaults(defineProps<IProps>(), {
-  departCity: undefined,
-  arriveCity: undefined,
-  departTimeUtc: undefined,
-  arriveTimeUtc: undefined,
-  airlineCompany: undefined,
-  airplaneName: undefined,
-  additionalInfo: undefined,
-  utcOffsetMinutes: undefined
-});
+const { utcOffsetMinutes, departTimeUtc, kind } = defineProps<IProps>();
 
 const { locale, t, d } = useI18n();
 const isError = ref(false);
 
-const flightDateText = computed(() => props.departTimeUtc ? (t(getI18nResName3('flightDetailsCard', 'direction', props.kind), { date: d(getValueForFlightDayFormatting(props.departTimeUtc, props.utcOffsetMinutes!), 'day') })) : undefined);
+const flightDateText = computed(() => departTimeUtc ? (t(getI18nResName3('flightDetailsCard', 'direction', kind), { date: d(getValueForFlightDayFormatting(departTimeUtc, utcOffsetMinutes!), 'day') })) : undefined);
 const featureIcons: string[] = ['i-material-symbols-flight', 'i-material-symbols-wifi', 'i-ion-stopwatch', 'i-material-symbols-fastfood', 'i-material-symbols-airline-seat-recline-extra'];
 
 const uiStyling = {

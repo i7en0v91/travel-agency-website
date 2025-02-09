@@ -7,23 +7,23 @@ interface IProps {
   bookingId: EntityId,
   offer: EntityDataAttrsOnly<IFlightOffer>
 };
-const props = defineProps<IProps>();
+const { offer, ctrlKey } = defineProps<IProps>();
 
 const { d, t, locale } = useI18n();
 
-const displayItems = props.offer.arriveFlight ? [props.offer.departFlight, props.offer.arriveFlight] : [props.offer.departFlight];
+const displayItems = offer.arriveFlight ? [offer.departFlight, offer.arriveFlight] : [offer.departFlight];
 const detailsCommon = [
-  { ctrlKey: `${props.ctrlKey}-Details-Gate`, caption: getI18nResName3('ticket', 'details', 'gate'), icon: 'i-material-symbols-door-front', text: 'A12' },
-  { ctrlKey: `${props.ctrlKey}-Details-Seat`, caption: getI18nResName3('ticket', 'details', 'seat'), icon: 'i-material-symbols-airline-seat-recline-extra', text: '128' }
+  { ctrlKey: `${ctrlKey}-Details-Gate`, caption: getI18nResName3('ticket', 'details', 'gate'), icon: 'i-material-symbols-door-front', text: 'A12' },
+  { ctrlKey: `${ctrlKey}-Details-Seat`, caption: getI18nResName3('ticket', 'details', 'seat'), icon: 'i-material-symbols-airline-seat-recline-extra', text: '128' }
 ];
 
 </script>
 
 <template>
   <div class="w-full h-auto">
-    <TicketCardContainer :ctrl-key="`${props.ctrlKey}-Container`" :booking-id="bookingId" :offer="offer"> 
+    <TicketCardContainer :ctrl-key="`${ctrlKey}-Container`" :booking-id="bookingId" :offer="offer"> 
       <div class="w-full h-auto grid grid-flow-row auto-rows-auto grid-cols-userticketentriesxs 2xl:grid-cols-userticketentries2xl items-center gap-4">
-        <div v-for="(item, i) in displayItems" :key="`${props.ctrlKey}-${item.id}Flight`" class="contents w-max h-auto">
+        <div v-for="(item, i) in displayItems" :key="`${ctrlKey}-${item.id}Flight`" class="contents w-max h-auto">
           <div class="contents w-max h-auto">
             <StaticImage
               :ctrl-key="`${ctrlKey}-CompanyLogo-${i}`"
@@ -54,8 +54,8 @@ const detailsCommon = [
             </div>
             <BookingTicketDetails 
               :ctrl-key="`${ctrlKey}-Details`" 
-              :items="[{ ctrlKey: `${props.ctrlKey}-Details-Date`, caption: getI18nResName3('ticket', 'details', 'date'), icon: 'i-heroicons-calendar-days-20-solid', text: d(getValueForFlightDayFormatting(item.departTimeUtc, item.departAirport.city.utcOffsetMin), 'day') },
-                        { ctrlKey: `${props.ctrlKey}-Details-Duration`, caption: getI18nResName3('ticket', 'details', 'duration'), icon: 'i-ion-stopwatch', text: t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting(item.departTimeUtc, item.arriveTimeUtc)) }, 
+              :items="[{ ctrlKey: `${ctrlKey}-Details-Date`, caption: getI18nResName3('ticket', 'details', 'date'), icon: 'i-heroicons-calendar-days-20-solid', text: d(getValueForFlightDayFormatting(item.departTimeUtc, item.departAirport.city.utcOffsetMin), 'day') },
+                        { ctrlKey: `${ctrlKey}-Details-Duration`, caption: getI18nResName3('ticket', 'details', 'duration'), icon: 'i-ion-stopwatch', text: t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting(item.departTimeUtc, item.arriveTimeUtc)) }, 
                         ...detailsCommon]" 
               class="w-full min-w-[25rem] h-auto col-start-1 col-end-5 2xl:col-start-5 2xl:col-end-6"/>
           </div>

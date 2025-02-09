@@ -4,12 +4,12 @@ interface IProps {
   ctrlKey: string,
   ui?: string
 }
-const props = withDefaults(defineProps<IProps>(), { ui: '' });
+const { ui = '' } = defineProps<IProps>();
 
 </script>
 
 <template>
   <div class="flex flex-row flex-nowrap justify-center w-full h-auto">
-    <UIcon name="i-mdi-loading" :class="`w-16 h-16 animate-spin text-gray-400 dark:text-gray-500 ${props.ui ?? ''}`"/>
+    <UIcon name="i-mdi-loading" :class="`w-16 h-16 animate-spin text-gray-400 dark:text-gray-500 ${ui ?? ''}`"/>
   </div>
 </template>

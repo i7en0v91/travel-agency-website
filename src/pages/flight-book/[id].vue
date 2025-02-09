@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ImageCategory, type EntityDataAttrsOnly, type IFlightOffer, type ILocalizableValue, type EntityId, getLocalizeableValue, getI18nResName3, getI18nResName2, type I18nResName, AppPage, type Locale } from '@golobe-demo/shared';
 import OfferBooking from './../../components/booking-page/offer-booking.vue';
-import { type IOfferBookingStoreFactory } from './../../stores/offer-booking-store';
+import type { IOfferBookingStoreFactory } from './../../stores/offer-booking-store';
 import OfferDetailsBreadcrumbs from './../../components/common-page-components/offer-details-breadcrumbs.vue';
 import FlightDetailsCard from './../../components/common-page-components/flight-details-card.vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';

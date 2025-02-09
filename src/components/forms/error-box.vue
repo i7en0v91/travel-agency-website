@@ -7,13 +7,11 @@ interface IProps {
   msgResName: I18nResName,
   msgResParams?: any
 }
-const props = withDefaults(defineProps<IProps>(), {
-  msgResParams: undefined
-});
+const { httpCode } = defineProps<IProps>();
 
 const { locale, t } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
-const httpCodeResName = props.httpCode === 404 ? '404' : '500';
+const httpCodeResName = httpCode === 404 ? '404' : '500';
 
 </script>
 

@@ -1,8 +1,8 @@
 import { type IAirplaneData, EntityChangeSubscribersOrder, DbVersionInitial, newUniqueId, type IAppLogger, type IAirplane, type EntityId } from '@golobe-demo/shared';
-import { type EntityChangeNotificationCallbackArgs, type EntityChangeNotificationCallback, type EntityChangeNotificationSubscriberId, type IEntityChangeNotificationTask, type IAirplaneLogic } from './../types';
+import type { EntityChangeNotificationCallbackArgs, EntityChangeNotificationCallback, EntityChangeNotificationSubscriberId, IEntityChangeNotificationTask, IAirplaneLogic } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import { AllAirplanesCacheKey } from './../helpers/utils';
-import { type Storage, type StorageValue } from 'unstorage';
+import type { Storage, StorageValue } from 'unstorage';
 import { AirplaneInfoQuery, MapAirplane } from './queries';
 import { executeInTransaction } from './../helpers/db';
 

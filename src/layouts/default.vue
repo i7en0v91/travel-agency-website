@@ -42,36 +42,54 @@ if(isElectronBuild()) {
       siteSearchOpen.value = true;
     }
   });
+  (globalThis as any).$navLinkBuilder = useNavLinkBuilder();
 }
 
-const error = useError();
 const isAuthFormsPage = computed(() => route.path.includes(`/${getPagePath(AppPage.Login)}`) || route.path.includes(`/${getPagePath(AppPage.Signup)}`) || route.path.includes(`/${getPagePath(AppPage.ForgotPassword)}`) || route.path.includes(`/${getPagePath(AppPage.EmailVerifyComplete)}`));
-const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.value);
+const showDefaultComponents = computed(() => !isAuthFormsPage.value);
 const hideInElectron = isElectronBuild() ? {
   navBar: true,
   footer: import.meta.client && (route.query ?? {})[QueryInternalRequestParam] === '1',
   cookies: import.meta.client && (route.query ?? {})[QueryInternalRequestParam] === '1'
 } : undefined;
 
+
+const ContentWrapperClass = "w-full h-auto relative z-pgcontent bg-gray-50 dark:bg-gray-900";
+const SlotWrapperClass = "w-full h-auto min-h-mincontvhxs lg:min-h-mincontvhlg xxl:min-h-mincontvhxxl";
+
 </script>
 
 <template>
-  <div class="page-content bg-gray-50 dark:bg-gray-900 w-full min-h-lvh min-w-minpgw">
+  <div class="bg-gray-50 dark:bg-gray-900 w-full min-h-lvh min-w-minpgw">
     <NavBar v-if="!hideInElectron?.navBar && showDefaultComponents" ctrl-key="NavBar">
-      <div class="w-full h-auto relative z-0">
-        <slot/>
+      <div :class="ContentWrapperClass">
+        <div :class="SlotWrapperClass">
+          <slot/>
+        </div>
         <AppFooter v-if="!hideInElectron?.footer" ctrl-key="Footer" />
       </div>
     </NavBar>
-    <div v-else-if="showDefaultComponents" class="w-full h-auto relative z-0">
-      <div class="w-full h-auto relative z-0">
-        <slot/>
-        <AppFooter v-if="!hideInElectron?.footer" ctrl-key="Footer" />
-      </div>
+    <div v-else-if="showDefaultComponents" class="contents">
+      <UContainer class="pt-4">
+        <div class="absolute w-full max-w-[inherit] top-0 bottom-0 bg-primary-300 dark:bg-gray-800" />
+        <div :class="ContentWrapperClass">
+          <div :class="SlotWrapperClass">
+            <slot />
+          </div>
+          <!-- nav bar is hidden in Electron build, show only footer -->
+          <AppFooter v-if="!hideInElectron?.footer" ctrl-key="Footer" />
+        </div>
+      </UContainer>
     </div>
-    <div v-else class="w-full h-auto relative z-0">
+    <div v-else class="contents">
       <NavLogo v-if="!isAuthFormsPage && !hideInElectron?.navBar" ctrl-key="standaloneAppLogo" />
-      <slot/>
+      <UContainer class="pt-4">
+        <div :class="ContentWrapperClass">
+          <div :class="SlotWrapperClass">
+            <slot />
+          </div>
+        </div>
+      </UContainer>
     </div>
     <ClientOnly>
       <CookieBanner v-if="!hideInElectron?.cookies" ctrl-key="CookieBanner" />

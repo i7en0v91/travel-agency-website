@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { getI18nResName3 } from '@golobe-demo/shared';
-import { type PropertyGridControlButtonType } from './../../../types';
+import type { PropertyGridControlButtonType } from './../../../types';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string,
   buttons: PropertyGridControlButtonType[]
 }
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
 const ButtonIconTypeMap: { [P in PropertyGridControlButtonType]: string } = {
   'add': 'i-heroicons-plus-circle-20-solid',
@@ -20,7 +20,7 @@ const ButtonIconTypeMap: { [P in PropertyGridControlButtonType]: string } = {
 const logger = getCommonServices().getLogger();
 
 function onControlButtonClick (button: PropertyGridControlButtonType) {
-  logger.debug(`(ProperyGridControlSection) onControlButtonClick, ctrlKey=${props.ctrlKey}, button=${button}`);
+  logger.debug(`(ProperyGridControlSection) onControlButtonClick, ctrlKey=${ctrlKey}, button=${button}`);
   $emit('click', button);
 }
 
@@ -43,7 +43,7 @@ const uiStyling = {
 
 <template>
   <div>
-    <UButton v-for="b in buttons" :key="`${props.ctrlKey}-${b}`" size="xl" variant="outline" color="primary" :ui="uiStyling" :icon="ButtonIconTypeMap[b]" @click="() => onControlButtonClick(b)">
+    <UButton v-for="b in buttons" :key="`${ctrlKey}-${b}`" size="xl" variant="outline" color="primary" :ui="uiStyling" :icon="ButtonIconTypeMap[b]" @click="() => onControlButtonClick(b)">
       {{ $t(getI18nResName3('propertyGrid', 'controlButtons', b)) }}
     </UButton>
   </div>

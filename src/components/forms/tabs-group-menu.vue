@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type DropdownListValue, type IDropdownListItemProps } from './../../types';
+import type { DropdownListValue, IDropdownListItemProps } from './../../types';
 
 interface ISortInfoProps {
   ctrlKey: string,
@@ -7,10 +7,10 @@ interface ISortInfoProps {
   items: IDropdownListItemProps[]
 }
 
-const props = defineProps<ISortInfoProps>();
+const { items } = defineProps<ISortInfoProps>();
 const tabModel = defineModel<DropdownListValue>('modelValue', { required: false });
 
-const selected = ref<IDropdownListItemProps | undefined>(tabModel.value ? (props.items.find(i => i.value === tabModel.value)) : undefined);
+const selected = ref<IDropdownListItemProps | undefined>(tabModel.value ? (items.find(i => i.value === tabModel.value)) : undefined);
 
 onMounted(() => {
   watch(selected, () => {
@@ -19,7 +19,7 @@ onMounted(() => {
     }
   }, { immediate: false });
   watch(tabModel, () => {
-    selected.value = tabModel.value ? (props.items.find(i => i.value === tabModel!.value)) : undefined;
+    selected.value = tabModel.value ? (items.find(i => i.value === tabModel!.value)) : undefined;
   }, { immediate: false });
 });
 

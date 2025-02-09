@@ -1,8 +1,8 @@
 <template>
-  <h2 :id="props.id" class="text-3xl font-semibold w-fit max-w-[90vw] break-words text-gray-600 dark:text-gray-300 my-4">
+  <h2 :id="id" class="text-3xl font-semibold w-fit max-w-[90vw] break-words text-gray-600 dark:text-gray-300 my-4">
     <a
-      v-if="props.id && generate"
-      :href="`#${props.id}`"
+      v-if="id && generate"
+      :href="`#${id}`"
     >
       <slot />
     </a>
@@ -11,8 +11,8 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{ id?: string }>();
+const { id } = defineProps<{ id?: string }>();
 
 const { headings } = useRuntimeConfig().public.mdc;
-const generate = computed(() => props.id && ((typeof headings?.anchorLinks === 'boolean' && headings?.anchorLinks === true) || (typeof headings?.anchorLinks === 'object' && headings?.anchorLinks?.h2)));
+const generate = computed(() => id && ((typeof headings?.anchorLinks === 'boolean' && headings?.anchorLinks === true) || (typeof headings?.anchorLinks === 'object' && headings?.anchorLinks?.h2)));
 </script>

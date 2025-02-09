@@ -7,12 +7,12 @@ interface IProps {
   linkUrl: string,
   btnLabel: string
 }
-const props = defineProps<IProps>();
+const { linkUrl, imageName } = defineProps<IProps>();
 
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 const to = computed(() => {
-  let page = lookupPageByUrl(props.linkUrl);
+  let page = lookupPageByUrl(linkUrl);
   if(page === SystemPage.Drafts)  {
     page = AppPage.Index;
   };
@@ -25,7 +25,7 @@ const to = computed(() => {
 </script>
 
 <template>
-  <PageImageLink :ctrl-key="`ImageLink-${props.imageName}`" :btn-label="btnLabel" :link-url="to" :image-name="imageName" :external="false">
+  <PageImageLink :ctrl-key="`ImageLink-${imageName}`" :btn-label="btnLabel" :link-url="to" :image-name="imageName" :external="false">
     <template #title>
       <slot name="title" />
     </template>

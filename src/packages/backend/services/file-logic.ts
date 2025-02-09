@@ -1,5 +1,5 @@
 import { type IFileData, type IFileInfo, AppException, AppExceptionCodeEnum, DbVersionInitial, newUniqueId, type EntityId, type Timestamp, type IAppLogger } from '@golobe-demo/shared';
-import { type IFileLogic } from './../types';
+import type { IFileLogic } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import dayjs from 'dayjs';
 

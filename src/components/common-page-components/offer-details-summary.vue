@@ -5,11 +5,12 @@ import range from 'lodash-es/range';
 import { useUserFavouritesStore } from './../../stores/user-favourites-store';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
+import { IconSvgCustomizers } from './../../helpers/components';
 
 interface IProps {
   ctrlKey: string,
-  offerKind?: OfferKind | undefined,
-  offerId?: EntityId | undefined,
+  offerKind?: OfferKind,
+  offerId?: EntityId,
   city?: EntityDataAttrsOnly<ICity>,
   title?: ILocalizableValue,
   price?: Price,
@@ -19,16 +20,7 @@ interface IProps {
   btnResName: I18nResName,
   btnLinkUrl: string | null
 };
-const props = withDefaults(defineProps<IProps>(), {
-  offerKind: undefined,
-  offerId: undefined,
-  city: undefined,
-  title: undefined,
-  price: undefined,
-  reviewScore: undefined,
-  numReviews: undefined,
-  variant: 'default'
-});
+const { ctrlKey, offerId, offerKind, numReviews, reviewScore, variant = 'default' } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 
@@ -43,24 +35,22 @@ const userFavouritesStoreFactory = useUserFavouritesStore();
 let favouriteStatusWatcher: ReturnType<typeof useOfferFavouriteStatus> | undefined;
 const isFavourite = ref(false);
 
-const scoreClassResName = computed(() => props.reviewScore ? getScoreClassResName(props.reviewScore) : undefined);
-const reviewsCountText = computed(() => props.numReviews ? `${props.numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), props.numReviews)}` : '');
+const scoreClassResName = computed(() => reviewScore ? getScoreClassResName(reviewScore) : undefined);
+const reviewsCountText = computed(() => numReviews ? `${numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), numReviews)}` : '');
 
 async function toggleFavourite (): Promise<void> {
-  const offerId = props.offerId!;
-  const offerKind = props.offerKind!;
   logger.verbose(`(OfferDetailsSummary) toggling favourite, offerId=${offerId}, kind=${offerKind}, current=${isFavourite.value}`);
   if(!await requestUserAction()) {
     logger.verbose(`(OfferDetailsSummary) favourite hasn't been toggled - not allowed in preview mode, offerId=${offerId}, kind=${offerKind}, current=${isFavourite.value}`);
     return;
   }
   const store = await userFavouritesStoreFactory.getInstance();
-  const result = await store.toggleFavourite(offerId, offerKind);
+  const result = await store.toggleFavourite(offerId!, offerKind!);
   logger.verbose(`(OfferDetailsSummary) favourite toggled, offerId=${offerId}, isFavourite=${result}`);
 }
 
 async function favouriteBtnClick (): Promise<void> {
-  logger.debug(`(OfferDetailsSummary) favourite button clicked, ctrlKey=${props.ctrlKey}, current=${isFavourite.value}`);
+  logger.debug(`(OfferDetailsSummary) favourite button clicked, ctrlKey=${ctrlKey}, current=${isFavourite.value}`);
   await toggleFavourite();
 }
 
@@ -71,7 +61,7 @@ function scheduleTooltipAutoHide () {
 const $emit = defineEmits<{(event: 'btnClick'): void}>();
 
 function onBtnClick () {
-  logger.debug(`(OfferDetailsSummary) button clicked, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(OfferDetailsSummary) button clicked, ctrlKey=${ctrlKey}`);
   $emit('btnClick');
 }
 
@@ -80,11 +70,11 @@ function initializeFavouriteStatusWatcherIfNeeded () {
     return;
   }
 
-  if (props.offerId && props.offerKind) {
-    logger.debug(`(OfferDetailsSummary) creating favourite status watcher, ctrlKey=${props.ctrlKey}, offerId=${props.offerId}, offerKind=${props.offerKind}`);
-    favouriteStatusWatcher = useOfferFavouriteStatus(props.offerId, props.offerKind);
+  if (offerId && offerKind) {
+    logger.debug(`(OfferDetailsSummary) creating favourite status watcher, ctrlKey=${ctrlKey}, offerId=${offerId}, offerKind=${offerKind}`);
+    favouriteStatusWatcher = useOfferFavouriteStatus(offerId, offerKind);
     watch(() => favouriteStatusWatcher!.isFavourite, () => {
-      logger.debug(`(OfferDetailsSummary) favourite status updated, ctrlKey=${props.ctrlKey}, offerId=${props.offerId}, offerKind=${props.offerKind}, status=${favouriteStatusWatcher!.isFavourite}`);
+      logger.debug(`(OfferDetailsSummary) favourite status updated, ctrlKey=${ctrlKey}, offerId=${offerId}, offerKind=${offerKind}, status=${favouriteStatusWatcher!.isFavourite}`);
       isFavourite.value = favouriteStatusWatcher!.isFavourite;
     });
     isFavourite.value = favouriteStatusWatcher!.isFavourite;
@@ -92,7 +82,7 @@ function initializeFavouriteStatusWatcherIfNeeded () {
 }
 
 onMounted(() => {
-  watch(() => [props.offerId, props.offerKind], initializeFavouriteStatusWatcherIfNeeded);
+  watch(() => [offerId, offerKind], initializeFavouriteStatusWatcherIfNeeded);
   initializeFavouriteStatusWatcherIfNeeded();
 });
 
@@ -109,9 +99,14 @@ onMounted(() => {
             </h1>
             <div v-if="offerKind === 'stays' && variant === 'default'" class="flex-initial inline-flex flex-row flex-wrap items-center gap-4 translate-y-[0.1rem]">
               <div class="inline-flex flex-row flex-nowrap items-center gap-[2px]">
-                <ClientOnly>
-                  <UIcon v-for="i in range(0, 5)" :key="`${props.ctrlKey}-HotelStar-${i}`" name="i-material-symbols-star" class="w-5 h-5 bg-red-400 inline-block" />
-                </ClientOnly>
+                <UIcon 
+                  v-for="i in range(0, 5)" 
+                  :key="`${ctrlKey}-HotelStar-${i}`" 
+                  name="i-material-symbols-star" 
+                  mode="svg"
+                  class="w-5 h-5 inline-block" 
+                  :customize="IconSvgCustomizers.fill('#f87171')"
+                />
               </div>
               <div class="text-xs">
                 {{ $t(getI18nResName2('searchStays', 'stayRatingCaption')) }}

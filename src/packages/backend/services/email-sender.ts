@@ -1,8 +1,8 @@
 import { maskLog, buildParamsLogData, DefaultLocale, SecretValueMask, AppConfig, AppException, AppExceptionCodeEnum, EmailTemplateEnum, AppPage, getPagePath, type IAppLogger } from '@golobe-demo/shared';
-import { type IEmailParams, type IEmailSender } from './../types';
+import type { IEmailParams, IEmailSender } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import { createTransport } from 'nodemailer';
-import { type Logger as MailLogger } from 'nodemailer/lib/shared';
+import type { Logger as MailLogger } from 'nodemailer/lib/shared';
 import template from 'lodash-es/template';
 import { withQuery, joinURL } from 'ufo';
 import juice from 'juice';

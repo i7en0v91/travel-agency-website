@@ -1,6 +1,6 @@
 import { type IStaySearchHistory, SessionStaySearchHistory } from '@golobe-demo/shared';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type ISearchedCityHistoryDto } from '../../../api-definitions';
+import type { ISearchedCityHistoryDto } from '../../../api-definitions';
 import { getUserSessionValue } from '../../../utils/user-session';
 import type { H3Event } from 'h3';
 import { destr } from 'destr';

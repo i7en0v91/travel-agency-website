@@ -11,13 +11,10 @@ interface IProps {
   spaced?: boolean,
   centered?: boolean
 };
-withDefaults(defineProps<IProps>(), {
-  padded: true,
-  spaced: true,
-  centered: false,
-  btnLabel: undefined,
-  linkUrl: undefined
-});
+const { 
+  padded = true, 
+  spaced = true
+} = defineProps<IProps>();
 
 const tooltipShown = ref(false);
 

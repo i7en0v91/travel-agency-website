@@ -1,5 +1,5 @@
 import { type IUserMinimalInfo, type IUserEmailInfo, type IFileInfo, AuthProvider, type EntityDataAttrsOnly, type IStayImageShort, type AirplaneImageKind, type IStayDescription, type IStay, type IStayOffer, type IFlightOffer, type IAirport, type IAirplane, type IAirlineCompany, type ICity, type IFlight, type FlightClass, type EntityId, type IStayShort, type IStayReview, type IStayOfferDetails, type StayServiceLevel, type StayDescriptionParagraphType, type IOfferBooking, type CssPropertyList, ImageCategory, DefaultStayReviewScore, lookupValueOrThrow } from '@golobe-demo/shared';
-import { type IUserProfileFileInfoUnresolved, type IImageFileInfoUnresolved } from './../types';
+import type { IUserProfileFileInfoUnresolved, IImageFileInfoUnresolved } from './../types';
 import { Prisma } from '@prisma/client';
 import { destr } from 'destr';
 import orderBy from 'lodash-es/orderBy';

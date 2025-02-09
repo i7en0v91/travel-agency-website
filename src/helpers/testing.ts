@@ -1,5 +1,5 @@
 import { lookupParentDirectory, type IAppLogger } from '@golobe-demo/shared';
-import { type IAuthUserDto } from '../server/api-definitions';
+import type { IAuthUserDto } from '../server/api-definitions';
 import { EOL } from 'os';
 import { appendFileSync } from 'fs';
 import { cp, access, readdir, stat } from 'fs/promises';
@@ -42,28 +42,29 @@ export const OAUTH_TESTUSER_PROFILE: ITestLocalProfile = {
 function createFileLogger (prefix: string) : IAppLogger {
   if (!fileLogger) {
     let lowerWarnsToInfo = false;
+    const ts = () => new Date().toISOString();
     fileLogger = {
       lowerWarnsWithoutErrorLevel: (useInfoLevel: boolean) => {
         lowerWarnsToInfo = useInfoLevel;
       },
       debug: function (msg: string, data?: any): void {
-        appendFileSync(LogFilePath, `[${prefix}] DEBUG ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
+        appendFileSync(LogFilePath, `[${prefix}] DEBUG ${ts()} ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
       },
       verbose: function (msg: string, data?: object | undefined): void {
-        appendFileSync(LogFilePath, `[${prefix}] VERBOSE ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
+        appendFileSync(LogFilePath, `[${prefix}] VERBOSE ${ts()} ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
       },
       info: function (msg: string, data?: object | undefined): void {
-        appendFileSync(LogFilePath, `[${prefix}] INFO ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
+        appendFileSync(LogFilePath, `[${prefix}] INFO ${ts()} ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
       },
       warn: function (msg: string, err?: any, data?: object | undefined): void {
         const level = (lowerWarnsToInfo && !err) ? 'INFO' : 'WARN';
-        appendFileSync(LogFilePath, `[${prefix}] ${level} ${msg}, err=${JSON.stringify(err)} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
+        appendFileSync(LogFilePath, `[${prefix}] ${level} ${ts()} ${msg}, err=${JSON.stringify(err)} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
       },
       error: function (msg: string, err?: any, data?: object | undefined): void {
-        appendFileSync(LogFilePath, `[${prefix}] ERROR ${msg}, err=${JSON.stringify(err)} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
+        appendFileSync(LogFilePath, `[${prefix}] ERROR ${ts()} ${msg}, err=${JSON.stringify(err)} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
       },
       always: function (msg: string, data?: object | undefined): void {
-        appendFileSync(LogFilePath, `[${prefix}] INFO ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
+        appendFileSync(LogFilePath, `[${prefix}] INFO ${ts()} ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
       }
     };
   }

@@ -1,5 +1,5 @@
 import { AppConfig } from '@golobe-demo/shared';
-import { type IPopularCityDto } from '../../api-definitions';
+import type { IPopularCityDto } from '../../api-definitions';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
 import type { H3Event } from 'h3';
 import { getServerServices } from '../../../helpers/service-accessors';

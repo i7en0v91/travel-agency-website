@@ -1,5 +1,5 @@
 import { type IFileData, type IFileInfo, getCurrentTimeUtc, AppException, AppExceptionCodeEnum, type EntityId, type Timestamp, type IAppLogger } from '@golobe-demo/shared';
-import { type IFileLogic } from './../types';
+import type { IFileLogic } from './../types';
 import { UserRoleEnum, type IAcsysClientProvider, type IAcsysClientStandard, type IAcsysClientViewer } from './client/interfaces';
 import { FileUniqParamsSepToken, FileUniqParamsSepChar } from './client/constants';
 import { murmurHash } from 'ohash';

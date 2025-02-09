@@ -3,8 +3,8 @@ import { AppConfig, getI18nResName1, HeaderAppVersion } from '@golobe-demo/share
 import PhotoSlide from './../../components/account/photo-slide.vue';
 import { type IImageDetailsDto, ApiEndpointAuthFormPhotos } from './../../server/api-definitions';
 import { usePreviewState } from './../../composables/preview-state';
-import { type IStaticImageUiProps } from './../../types';
-import { type ComponentInstance, type Ref } from 'vue';
+import type { IStaticImageUiProps } from './../../types';
+import type { Ref } from 'vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 import type { UCarousel } from '../../.nuxt/components';
 import { useCarouselPlayer } from '../../composables/carousel-player';
@@ -23,8 +23,8 @@ const logger = getCommonServices().getLogger();
 
 const { enabled } = usePreviewState();
 
-const carouselRef = shallowRef<ComponentInstance<typeof UCarousel> | undefined>();
-useCarouselPlayer(carouselRef);
+const carouselRef = useTemplateRef('carousel');
+useCarouselPlayer(carouselRef as any);
 
 const authFormsImagesUrl = `/${ApiEndpointAuthFormPhotos}`;
 const { error, data } = await useFetch(authFormsImagesUrl,
@@ -63,14 +63,13 @@ watch(() => imageSlugs.value, () => {
   }
 });
 
-
 </script>
 
 <template>
   <div :class="`flex-initial hidden md:block w-[386px] min-w-[386px] lg:w-[486px] lg:min-w-[486px] rounded-4xl overflow-hidden ${ui?.wrapper ?? ''}`" role="figure">
     <ErrorHelm v-model:is-error="isError">
       <UCarousel
-        v-if="imageSlugs?.length ?? 0 > 0" ref="carouselRef" v-slot="{ item: imgSlug }" 
+        v-if="imageSlugs?.length ?? 0 > 0" ref="carousel" v-slot="{ item: imgSlug }" 
         :items="imageSlugs" 
         :ui="{ 
           item: 'w-full snap-end',

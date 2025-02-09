@@ -4,6 +4,7 @@ import { UserAccountTabGroup, UserAccountTabAccount, UserAccountTabHistory, User
 import AvatarBox from './../components/user-account/avatar-box.vue';
 import UserCover from './../components/user-account/user-cover.vue';
 import TabsGroup from '../components/forms/tabs-group.vue';
+import PageSection from './../components/common-page-components/page-section.vue';
 import ComponentWaitingIndicator from '../components/forms/component-waiting-indicator.vue';
 
 definePageMeta({
@@ -31,7 +32,7 @@ const primaryEmail = computed(() => {
 </script>
 
 <template>
-  <ContentSection :spaced="false">
+  <PageSection ctrl-key="UserAccountSection" :spaced="false">
     <ClientOnly>
       <div :class="LocatorClasses.UserAccountPage">
         <div class="w-full grid grid-rows-1 grid-cols-1 profile-images pb-[40px] sm:pb-[60px]">
@@ -58,7 +59,7 @@ const primaryEmail = computed(() => {
 
         <section class="mx-auto px-2 pt-1 pb-4 mt-8">
           <TabsGroup
-            v-model:activeTabKey="selectedTab"
+            v-model:active-tab-key="selectedTab"
             :ctrl-key="UserAccountTabGroup"
             :tabs="[
               { ctrlKey: UserAccountTabAccount, slotName: 'account', label: { resName: getI18nResName3('accountPage', 'tabAccount', 'title'), shortIcon: 'i-heroicons-user-20-solid' }, enabled: true, tabName: UserAccountTabAccount },
@@ -94,5 +95,5 @@ const primaryEmail = computed(() => {
         <ComponentWaitingIndicator ctrl-key="AccountPageClientFallback" class="my-8 min-h-[calc(300px+10rem)]"/>
       </template>
     </ClientOnly>
-  </ContentSection>
+  </PageSection>
 </template>

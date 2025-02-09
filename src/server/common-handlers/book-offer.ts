@@ -1,6 +1,6 @@
 import { type IOfferBookingData, AvailableStayServiceLevel, type EntityId, type OfferKind, type StayServiceLevel, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { defineWebApiEventHandler } from '../../server/utils/webapi-event-handler';
-import { type IBookingResultDto } from '../../server/api-definitions';
+import type { IBookingResultDto } from '../../server/api-definitions';
 import { extractUserIdFromSession } from '../../server/utils/auth';
 import type { H3Event } from 'h3';
 import { getServerSession } from '#auth';

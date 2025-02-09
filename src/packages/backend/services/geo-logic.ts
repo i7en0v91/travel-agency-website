@@ -1,6 +1,6 @@
 import { calculateDistanceKm, AppException, AppExceptionCodeEnum, DbVersionInitial, CurrentUserGeoLocation, newUniqueId, type IAppLogger, type ICountry, type EntityId, type GeoPoint, type DistanceUnitKm } from '@golobe-demo/shared';
-import { type ICityShort, type ICityData, type ICountryData, type IGeoLogic } from './../types';
-import { type Storage, type StorageValue } from 'unstorage';
+import type { ICityShort, ICityData, ICountryData, IGeoLogic } from './../types';
+import type { Storage, StorageValue } from 'unstorage';
 import type { PrismaClient } from '@prisma/client';
 import { mapDbGeoCoord, mapGeoCoord } from '../helpers/db';
 import isNumber from 'lodash-es/isNumber';
