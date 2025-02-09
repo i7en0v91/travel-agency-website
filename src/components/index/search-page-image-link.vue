@@ -6,7 +6,7 @@ interface IProps {
   ctrlKey: string,
   page: 'flights' | 'stays'
 }
-defineProps<IProps>();
+const { page } = defineProps<IProps>();
 
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
@@ -17,7 +17,7 @@ const navLinkBuilder = useNavLinkBuilder();
   <div class="search-page-image-link">
     <StaticImage
       :ctrl-key="ctrlKey"
-      :asset-src="{ filename: `image-link-${$props.page}.webp`, width: 590, height: 550 }"
+      :asset-src="{ filename: `image-link-${page}.webp`, width: 590, height: 550 }"
       sizes="xs:40vw sm:40vw md:40vw lg:40vw xl:40vw"
       class="image-link-img"
       img-class="search-stays-page-link-img"

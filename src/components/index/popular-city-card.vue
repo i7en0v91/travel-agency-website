@@ -10,7 +10,7 @@ interface IProps {
   citySlug?: string,
   numStays?: number
 };
-const props = defineProps<IProps>();
+const { text } = defineProps<IProps>();
 
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
@@ -32,7 +32,7 @@ const navLinkBuilder = useNavLinkBuilder();
         />
         <div class="popular-city-info">
           <div :class="`pl-xs-2 pt-xs-2 ${text ? 'popular-city-name' : 'data-loading-stub text-data-loading m-xs-2'} font-h5`">
-            {{ props.text ? ((props.text as any)[locale]) : '&nbsp;' }}
+            {{ text ? ((text as any)[locale]) : '&nbsp;' }}
           </div>
           <div v-if="searchKind === 'flight'" class="popular-city-links mt-xs-2 p-xs-2">
             <NuxtLink class="popular-city-link brdr-1 hidden-overflow-nontabbable" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindFlights, locale as Locale, { fromCitySlug: citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">

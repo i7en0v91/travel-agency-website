@@ -1,7 +1,7 @@
 import { AppConfig } from '@golobe-demo/shared';
 import type { H3Event } from 'h3';
 import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
-import { type ICompanyReviewDto } from '../../api-definitions';
+import type { ICompanyReviewDto } from '../../api-definitions';
 import { getServerServices } from '../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {

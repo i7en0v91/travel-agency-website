@@ -1,5 +1,5 @@
 import { newUniqueId, DbVersionInitial, type PreviewMode, type IAppLogger, type ICountry, type EntityId, type DistanceUnitKm } from '@golobe-demo/shared';
-import { type ICityShort, type ICityData, type ICountryData, type IGeoLogic } from './../types';
+import type { ICityShort, ICityData, ICountryData, IGeoLogic } from './../types';
 import { mapGeoCoord, executeInTransaction } from './../helpers/db';
 import type { PrismaClient } from '@prisma/client';
 import type { AcsysDraftEntitiesResolver } from './acsys-draft-entities-resolver';

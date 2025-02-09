@@ -1,6 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { getLocalizeableValue, LocaleEnum, DbVersionInitial, newUniqueId, type Locale, type IAppLogger, type EmailTemplateEnum, type ILocalizableValue, type EntityId } from '@golobe-demo/shared';
-import { type IMailTemplateLogic } from './../types';
+import type { IMailTemplateLogic } from './../types';
 import { mapEnumDbValue } from '../helpers/db';
 
 export class MailTemplateLogic implements IMailTemplateLogic {

@@ -1,5 +1,5 @@
 import { mapLocalizeableValues, AppException, AppExceptionCodeEnum, type GetEntityCacheItem, type PreviewMode, type IAppLogger, type CacheEntityType, type EntityId } from '@golobe-demo/shared';
-import { type IEntityCacheLogic } from './../types';
+import type { IEntityCacheLogic } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import type { AcsysDraftEntitiesResolver } from './acsys-draft-entities-resolver';
 

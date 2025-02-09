@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppExceptionCodeEnum, AppException, getI18nResName2, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, type Locale, DefaultLocale, getLocalizeableValue, getValueForFlightDayFormatting, type ImageCategory, type ILocalizableValue, type ICity, type EntityDataAttrsOnly, type IImageEntitySrc, type IImageCategoryInfo, type OfferKind } from '@golobe-demo/shared';
+import { AppExceptionCodeEnum, AppException, getI18nResName2, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, type Locale, DefaultLocale, getLocalizeableValue, getValueForFlightDayFormatting, type ImageCategory, type ILocalizableValue, type ICity, type EntityDataAttrsOnly, type IImageEntitySrc, type OfferKind } from '@golobe-demo/shared';
 import { ApiEndpointImage } from './../../server/api-definitions';
 import { withQuery } from 'ufo';
 import { usePreviewState } from './../../composables/preview-state';
@@ -18,30 +18,30 @@ interface IProps {
 
 const CommonClass = 'not-hidden';
 
-const props = defineProps<IProps>();
+const { utcOffsetMin, dateUnixUtc, image, kind } = defineProps<IProps>();
 
 const { d, locale } = useI18n();
 const requestLocale = useRequestEvent()?.context.ogImageContext?.locale ?? DefaultLocale;
 locale.value = requestLocale;
 
 const logger = getCommonServices().getLogger();
-logger.verbose('(OgOfferSummary) component setup', props.image);
+logger.verbose('(OgOfferSummary) component setup', image);
 
-const dateStr = props.kind === 'flights' ? d(getValueForFlightDayFormatting(new Date(props.dateUnixUtc), props.utcOffsetMin!), 'day') : d(new Date(props.dateUnixUtc), 'day');
+const dateStr = kind === 'flights' ? d(getValueForFlightDayFormatting(new Date(dateUnixUtc), utcOffsetMin!), 'day') : d(new Date(dateUnixUtc), 'day');
 
-let imageSize: IImageCategoryInfo;
+let imageSize: Awaited<ReturnType<ReturnType<typeof useSystemConfigurationStore>['getImageSrcSize']>>;
 try {
   const systemConfigurationStore = useSystemConfigurationStore();
-  imageSize = await systemConfigurationStore.getImageSrcSize(props.image.category);
+  imageSize = await systemConfigurationStore.getImageSrcSize(image.category);
 } catch (err: any) {
-  logger.warn('(OgOfferSummary) failed to detect image category size', err, props.image);
+  logger.warn('(OgOfferSummary) failed to detect image category size', err, image);
   throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to render offer summary image', 'error-page');
 }
 
 const { enabled } = usePreviewState();
 const imgUrl = withQuery(`/${ApiEndpointImage}`, { 
-  slug: props.image.slug, 
-  category: props.image.category ,
+  slug: image.slug, 
+  category: image.category ,
   ...(enabled ? set({}, QueryPagePreviewModeParam, PreviewModeParamEnabledValue) : {})
 });
 
@@ -53,8 +53,8 @@ function onError (err: any) {
 </script>
 
 <template>
-  <div :class="`container`">
-    <NuxtErrorBoundary @error="onError" :class="CommonClass">
+  <div class="container">
+    <NuxtErrorBoundary :class="CommonClass" @error="onError">
       <div :class="`og-app-page ${CommonClass}`">
         <svg
           :class="`og-golobe-logo ${CommonClass}`"

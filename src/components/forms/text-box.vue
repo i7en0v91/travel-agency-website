@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type I18nResName } from '@golobe-demo/shared';
+import type { I18nResName } from '@golobe-demo/shared';
 import FieldFrame from './field-frame.vue';
 
 const { t } = useI18n();
@@ -12,13 +12,7 @@ interface IProps {
   modelValue?: string,
   maxLength?: number
 }
-withDefaults(defineProps<IProps>(), {
-  type: 'text',
-  modelValue: undefined,
-  maxLength: 256,
-  captionResName: undefined,
-  placeholderResName: undefined
-});
+const { maxLength = 256, type = 'text' } = defineProps<IProps>();
 
 const $emit = defineEmits(['update:modelValue']);
 const htmlId = useId();
@@ -33,7 +27,7 @@ const htmlId = useId();
       class="input-field p-xs-1 brdr-1"
       :placeholder="placeholderResName ? t(placeholderResName) : ''"
       :value="modelValue"
-      :maxLength="256"
+      :maxLength="maxLength"
       :autocomplete="type === 'password' ? 'on' : 'off'"
       @input="(e: Event) => { $emit('update:modelValue', (e.target as HTMLInputElement).value); }"
     >

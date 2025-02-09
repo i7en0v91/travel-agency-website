@@ -1,34 +1,36 @@
 <script setup lang="ts">
-import { type I18nResName } from '@golobe-demo/shared';
-import { type IDropdownListProps, type IDropdownListItemProps, type DropdownListValue } from './../../types';
+import type { I18nResName } from '@golobe-demo/shared';
+import type { IDropdownListProps, IDropdownListItemProps, DropdownListValue } from './../../types';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 import FieldFrame from './../forms/field-frame.vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 
-const props = withDefaults(defineProps<IDropdownListProps>(), {
-  selectedValue: undefined,
-  defaultValue: undefined,
-  placeholderResName: undefined,
-  initiallySelectedValue: undefined,
-  listContainerClass: '',
-  kind: 'primary'
-});
+const { 
+  selectedValue, 
+  items, 
+  initiallySelectedValue, 
+  persistent, 
+  defaultValue, 
+  ctrlKey, 
+  listContainerClass = '', 
+  kind = 'primary' 
+} = defineProps<IDropdownListProps>();
 
-const elBtn = shallowRef<HTMLElement>();
-const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
+const openBtn = useTemplateRef<HTMLElement>('open-btn');
+const dropdown = useTemplateRef<InstanceType<typeof Dropdown>>('dropdown');
 const hasMounted = ref(false);
 
 const logger = getCommonServices().getLogger();
 
 const controlSettingsStore = useControlSettingsStore();
-const controlValueSetting = controlSettingsStore.getControlValueSetting<DropdownListValue | undefined>(props.ctrlKey, props.defaultValue, props.persistent);
+const controlValueSetting = controlSettingsStore.getControlValueSetting<DropdownListValue | undefined>(ctrlKey, defaultValue, persistent);
 const selectedItemResName = ref<I18nResName | undefined>();
-if (props.initiallySelectedValue) {
-  controlValueSetting.value = props.initiallySelectedValue;
+if (initiallySelectedValue) {
+  controlValueSetting.value = initiallySelectedValue;
   selectedItemResName.value = lookupValueResName(controlValueSetting.value);
-} else if (props.initiallySelectedValue === null) {
-  controlValueSetting.value = props.defaultValue;
+} else if (initiallySelectedValue === null) {
+  controlValueSetting.value = defaultValue;
   selectedItemResName.value = lookupValueResName(controlValueSetting.value);
 }
 
@@ -46,7 +48,7 @@ function hideDropdown () {
 
 function lookupValueResName (value?: DropdownListValue | undefined) : I18nResName | undefined {
   if (value) {
-    const itemProps = props.items.find(i => i.value === value);
+    const itemProps = items.find(i => i.value === value);
     return itemProps?.resName;
   } else {
     return undefined;
@@ -56,15 +58,15 @@ function lookupValueResName (value?: DropdownListValue | undefined) : I18nResNam
 const $emit = defineEmits<{(event: 'update:selectedValue', value?: DropdownListValue | undefined): void}>();
 
 function updateSelectedValue (value?: DropdownListValue | undefined) {
-  logger.verbose(`(DropdownList) updating selected value: ctrlKey=${props.ctrlKey}, value=${value}`);
+  logger.verbose(`(DropdownList) updating selected value: ctrlKey=${ctrlKey}, value=${value}`);
   controlValueSetting.value = value;
   selectedItemResName.value = lookupValueResName(value);
   $emit('update:selectedValue', value);
-  logger.verbose(`(DropdownList) selected value updated: ctrlKey=${props.ctrlKey}, value=${value}`);
+  logger.verbose(`(DropdownList) selected value updated: ctrlKey=${ctrlKey}, value=${value}`);
 }
 
 function onActivate (item: IDropdownListItemProps) {
-  logger.verbose(`(DropdownList) list item activated: ctrlKey=${props.ctrlKey}, value=${item.value}`);
+  logger.verbose(`(DropdownList) list item activated: ctrlKey=${ctrlKey}, value=${item.value}`);
   hideDropdown();
   updateSelectedValue(item.value);
 }
@@ -78,11 +80,11 @@ onBeforeMount(() => {
 });
 onMounted(() => {
   hasMounted.value = true;
-  if (controlValueSetting.value || (props.initiallySelectedValue !== undefined)) {
+  if (controlValueSetting.value || (initiallySelectedValue !== undefined)) {
     $emit('update:selectedValue', controlValueSetting.value);
   }
-  watch(() => props.selectedValue, () => {
-    updateSelectedValue(props.selectedValue);
+  watch(() => selectedValue, () => {
+    updateSelectedValue(selectedValue);
   });
 });
 
@@ -101,7 +103,7 @@ onMounted(() => {
       placement="bottom-end"
       :prevent-overflow="kind === 'primary' ? true : false"
       :flip="false"
-      :boundary="elBtn"
+      :boundary="openBtn"
       :theme="kind === 'primary' ? 'control-dropdown' : 'secondary-dropdown'"
       no-auto-focus
       @apply-show="onMenuShown"
@@ -109,8 +111,8 @@ onMounted(() => {
     >
       <FieldFrame :text-res-name="captionResName" class="dropdown-list-field-frame">
         <button
-          :id="`dropdown-list-${props.ctrlKey}`"
-          ref="elBtn"
+          :id="`dropdown-list-${ctrlKey}`"
+          ref="open-btn"
           class="dropdown-list-btn brdr-1"
           type="button"
           @keyup.escape="hideDropdown"
@@ -120,7 +122,7 @@ onMounted(() => {
       </FieldFrame>
       <template #popper>
         <ClientOnly>
-          <ol :class="`dropdown-list ${listContainerClass}`" :data-popper-anchor="`dropdown-list-${props.ctrlKey}`">
+          <ol :class="`dropdown-list ${listContainerClass}`" :data-popper-anchor="`dropdown-list-${ctrlKey}`">
             <li
               v-for="(item, idx) in items"
               :key="`${ctrlKey}-v${idx}`"

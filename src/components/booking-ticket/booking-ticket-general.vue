@@ -1,13 +1,9 @@
 <script setup lang="ts">
 
 import { ImageCategory, getI18nResName2 } from '@golobe-demo/shared';
-import { type IBookingTicketGeneralProps } from './../../types';
+import type { IBookingTicketGeneralProps } from './../../types';
 
-withDefaults(defineProps<IBookingTicketGeneralProps>(), {
-  avatar: undefined,
-  texting: undefined,
-  classResName: undefined
-});
+defineProps<IBookingTicketGeneralProps>();
 
 </script>
 

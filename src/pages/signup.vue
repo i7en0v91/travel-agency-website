@@ -13,7 +13,6 @@ import SimpleButton from './../components/forms/simple-button.vue';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
 import CaptchaProtection from './../components/forms/captcha-protection.vue';
-import { type ComponentInstance } from 'vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
 
@@ -45,7 +44,7 @@ const signUpErrorMsgResName = ref('');
 const agreeToPolicies = ref(false);
 
 const emailIsNotTakenByOtherUsers = ref(true);
-const captcha = shallowRef<ComponentInstance<typeof CaptchaProtection>>();
+const captcha = useTemplateRef('captcha');
 
 const { createI18nMessage } = validators;
 const withI18nMessage = createI18nMessage({ t });

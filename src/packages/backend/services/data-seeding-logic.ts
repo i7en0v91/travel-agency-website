@@ -12,7 +12,7 @@ import orderBy from 'lodash-es/orderBy';
 import set from 'lodash-es/set';
 import template from 'lodash-es/template';
 import { murmurHash } from 'ohash';
-import { type H3Event } from 'h3';
+import type { H3Event } from 'h3';
 
 interface ContextParams {
   logger: IAppLogger,

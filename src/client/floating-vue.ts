@@ -1,5 +1,5 @@
 import { getCommonServices } from '../helpers/service-accessors';
-import { type FloatingVueHydrationHints } from './../types';
+import type { FloatingVueHydrationHints } from './../types';
 
 const PopperClassNamePatches: { customTheme: string, extensionList: string[] }[] = [
   { customTheme: 'default-dropdown', extensionList: ['dropdown'] },

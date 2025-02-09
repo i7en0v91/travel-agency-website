@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { type I18nResName, getI18nResName1 } from '@golobe-demo/shared';
 import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../../helpers/dom';
+import type { DatePickerDate, DatePickerModel } from 'v-calendar/dist/types/src/use/datePicker.js';
 import type { Dropdown } from 'floating-vue';
 import dayjs from 'dayjs';
 import FieldFrame from './../forms/field-frame.vue';
 import { getCommonServices } from '../../helpers/service-accessors';
+import { datePickerValueToDate } from './../../helpers/components';
 
 interface IProps {
   ctrlKey: string,
@@ -17,46 +19,36 @@ interface IProps {
   minDate?: Date
 }
 
-const props = withDefaults(defineProps<IProps>(), {
-  selectedDate: undefined,
-  defaultDate: undefined,
-  initiallySelectedDate: undefined,
-  icon: true,
-  minDate: undefined
-});
-
-type DatePickerDate = number | string | Date | null | {
-  start?: number | string | Date | null,
-  end?: number | string | Date | null
-};
+const { selectedDate, initiallySelectedDate, persistent, ctrlKey, defaultDate, icon = true } = defineProps<IProps>();
 
 const { d, locale } = useI18n();
 
-const elBtn = shallowRef<HTMLElement>();
-const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
+const openBtn = useTemplateRef<HTMLElement>('open-btn');
+const dropdown = useTemplateRef<InstanceType<typeof Dropdown>>('dropdown');
+const calendar = useTemplateRef('calendar');
 
 const logger = getCommonServices().getLogger();
 
 const today = eraseTimeOfDay(dayjs().utc(true).toDate());
-let defaultValue = props.defaultDate ? eraseTimeOfDay(props.defaultDate) : today;
+let defaultValue = defaultDate ? eraseTimeOfDay(defaultDate) : today;
 if (dayjs(defaultValue).isBefore(today)) {
   defaultValue = today;
 }
 
 const controlSettingsStore = useControlSettingsStore();
-const controlValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(props.ctrlKey, defaultValue.toISOString(), props.persistent);
+const controlValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(ctrlKey, defaultValue.toISOString(), persistent);
 if (dayjs(controlValueSetting.value).isBefore(today)) {
   controlValueSetting.value = today.toISOString();
 }
 
 let initialValue = defaultValue;
-if (props.initiallySelectedDate) {
-  initialValue = props.initiallySelectedDate;
+if (initiallySelectedDate) {
+  initialValue = initiallySelectedDate;
   if (dayjs(initialValue).isBefore(today)) {
     initialValue = today;
   }
   controlValueSetting.value = initialValue.toISOString();
-} else if (props.initiallySelectedDate === null) {
+} else if (initiallySelectedDate === null) {
   initialValue = defaultValue;
   controlValueSetting.value = initialValue.toISOString();
 }
@@ -81,24 +73,24 @@ function hideDropdown () {
   dropdown.value?.hide();
 }
 
-function fireSelectedDateChange () {
-  logger.debug(`(DatePicker) date changed: ctrlKey=${props.ctrlKey}, value=${selectedValue.value}`);
-  $emit('update:selectedDate', eraseTimeOfDay(selectedValue.value));
+function fireSelectedDateChange (date: Date) {
+  logger.debug(`(DatePicker) date changed: ctrlKey=${ctrlKey}, date=${date}`);
+  $emit('update:selectedDate', eraseTimeOfDay(date));
 }
 
-function onCalendarValueUpdated () {
-  logger.verbose(`(DatePicker) calendar date updated: ctrlKey=${props.ctrlKey}, value=${selectedValue.value}`);
-  controlValueSetting.value! = eraseTimeOfDay(selectedValue.value).toISOString();
-  fireSelectedDateChange();
-  logger.verbose(`(DatePicker) selected date(s) updated: ctrlKey=${props.ctrlKey}`);
+function onSelectedDateUpdated (date: Date) {
+  logger.verbose(`(DatePicker) calendar date updated: ctrlKey=${ctrlKey}, date=${date}`);
+  controlValueSetting.value! = eraseTimeOfDay(date).toISOString();
+  fireSelectedDateChange(date);
+  logger.verbose(`(DatePicker) selected date(s) updated: ctrlKey=${ctrlKey}`);
 }
 
 const $emit = defineEmits<{(event: 'update:selectedDate', date: Date): void}>();
 
-function onDateSelected (value: DatePickerDate) {
-  logger.verbose(`(SearchFlightsDatePicker) date selected: ctrlKey=${props.ctrlKey}, value=${JSON.stringify(value)}`);
+function onValueSelected (value: DatePickerModel) {
+  logger.verbose(`(SearchFlightsDatePicker) value selected: ctrlKey=${ctrlKey}, value=${JSON.stringify(value)}`);
   hideDropdown();
-  onCalendarValueUpdated();
+  onSelectedDateUpdated(datePickerValueToDate(value as DatePickerDate, calendar.value?.locale, logger));
 }
 
 function onEscape () {
@@ -116,11 +108,11 @@ onBeforeMount(() => {
 });
 onMounted(() => {
   hasMounted.value = true;
-  fireSelectedDateChange();
+  fireSelectedDateChange(selectedValue.value);
 });
 
-watch(() => props.selectedDate, () => {
-  selectedValue.value = props.selectedDate ?? defaultValue;
+watch(() => selectedDate, () => {
+  selectedValue.value = selectedDate ?? defaultValue;
 });
 
 </script>
@@ -136,7 +128,7 @@ watch(() => props.selectedDate, () => {
       :hide-triggers="(triggers: any) => [...triggers, 'click']"
       placement="bottom"
       :flip="false"
-      :boundary="elBtn"
+      :boundary="openBtn"
       theme="control-dropdown"
       @apply-show="onMenuShown"
       @apply-hide="onMenuHide"
@@ -144,8 +136,8 @@ watch(() => props.selectedDate, () => {
       <FieldFrame :text-res-name="captionResName" class="date-picker-field-frame">
         <div class="date-picker-field-div">
           <button
-            :id="`date-picker-${props.ctrlKey}`"
-            ref="elBtn"
+            :id="`date-picker-${ctrlKey}`"
+            ref="open-btn"
             class="date-picker-field-btn brdr-1"
             type="button"
             @keyup.escape="hideDropdown"
@@ -155,13 +147,14 @@ watch(() => props.selectedDate, () => {
           <div
             v-if="icon"
             :class="`date-picker-field-icon icon-calendar pl-xs-3 ml-xs-2`"
-            :alt="props.icon ? $t(getI18nResName1('calendarImgAlt')) : ''"
+            :alt="icon ? $t(getI18nResName1('calendarImgAlt')) : ''"
           />
         </div>
       </FieldFrame>
       <template #popper>
         <ClientOnly>
           <VDatePicker
+            ref="calendar"
             v-model:model-value="selectedValue"
             timezone="utc"
             mode="date"
@@ -169,7 +162,7 @@ watch(() => props.selectedDate, () => {
             color="golobe"
             :min-date="minDate ?? today"
             :locale="locale"
-            @update:model-value="onDateSelected"
+            @update:model-value="onValueSelected"
           />
         </ClientOnly>
       </template>

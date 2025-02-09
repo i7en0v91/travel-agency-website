@@ -12,13 +12,12 @@ import SimpleButton from './../components/forms/simple-button.vue';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import OAuthProviderList from './../components/account/oauth-providers-list.vue';
 import CaptchaProtection from './../components/forms/captcha-protection.vue';
-import { type ComponentInstance } from 'vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
 
 const { t, locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
-const captcha = shallowRef<ComponentInstance<typeof CaptchaProtection>>();
+const captcha = useTemplateRef('captcha');
 
 definePageMeta({
   middleware: 'auth',

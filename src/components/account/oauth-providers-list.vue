@@ -5,11 +5,9 @@ import OAuthBtn from './oauth-btn.vue';
 
 interface IProps {
   ctrlKey: string,
-  divisorLabelResName?: I18nResName | undefined
+  divisorLabelResName?: I18nResName
 }
-withDefaults(defineProps<IProps>(), {
-  divisorLabelResName: undefined
-});
+defineProps<IProps>();
 
 const showTestLocalProvider = isDevOrTestEnv() || isQuickStartEnv() || isElectronBuild();
 const thirdPartyOAuthEnabled = !isQuickStartEnv() && !isElectronBuild();

@@ -9,18 +9,17 @@ interface IProps {
   digits: string,
   dueDate: Date
 };
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
-
-const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
+const tooltip = useTemplateRef<InstanceType<typeof Tooltip>>('tooltip');
 
 function scheduleTooltipAutoHide () {
   setTimeout(() => { tooltip.value?.hide(); }, TooltipHideTimeout);
 }
 
 function onRemoveBtnClick () {
-  logger.debug(`(PaymentCard) remove btn clicked, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(PaymentCard) remove btn clicked, ctrlKey=${ctrlKey}`);
 }
 
 const tooltipId = useId();

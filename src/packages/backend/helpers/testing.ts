@@ -1,4 +1,4 @@
-import { type IAppLogger } from '@golobe-demo/shared';
+import type { IAppLogger } from '@golobe-demo/shared';
 import { EOL } from 'os';
 import { appendFileSync } from 'fs';
 import { resolve } from 'pathe';

@@ -1,6 +1,6 @@
 import { AppConfig, AppException, AppExceptionCodeEnum, newUniqueId, type EntityId, type IAppLogger, type IAppConfig } from '@golobe-demo/shared';
-import { type EntityChangeNotificationSubscriptionOptions, type EntityChangeNotificationSubscriberId, type IEntityChangeNotificationTask, type EntityChangeNotificationCallback } from './../types';
-import { type EntityModel, type IChangeDependencyTracker } from './change-dependency-tracker';
+import type { EntityChangeNotificationSubscriptionOptions, EntityChangeNotificationSubscriberId, IEntityChangeNotificationTask, EntityChangeNotificationCallback } from './../types';
+import type { EntityModel, IChangeDependencyTracker } from './change-dependency-tracker';
 import { setInterval as scheduleTimer } from 'timers';
 import dayjs from 'dayjs';
 import isString from 'lodash-es/isString';

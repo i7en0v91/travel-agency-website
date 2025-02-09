@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { maskLog, SecretValueMask, isPasswordSecure, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
-import { type SimplePropertyType, type PropertyGridControlButtonType } from './../../../types';
+import type { SimplePropertyType, PropertyGridControlButtonType } from './../../../types';
 import { defaultErrorHandler } from './../../../helpers/exceptions';
 import { useVuelidate } from '@vuelidate/core';
 import * as validators from '@vuelidate/validators';
 import { email as vEmail, required as vRequired, minLength as vMinLength } from '@vuelidate/validators';
 import PropertyGridRow from './property-grid-row.vue';
 import TextBox from './../../forms/text-box.vue';
-import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
@@ -44,7 +43,7 @@ const EmptyValuePlaceholder = '-';
 
 const logger = getCommonServices().getLogger();
 
-const rootComponent = shallowRef<ComponentInstance<typeof PropertyGridRow>>();
+const rootComponent = useTemplateRef('root-component');
 const isEditMode = ref(false);
 const customValidationErrMsgResName = ref<string | undefined>();
 const editValue = ref(props.value);
@@ -191,7 +190,7 @@ defineExpose({
 
 <template>
   <PropertyGridRow
-    ref="rootComponent"
+    ref="root-component"
     class="simple-property-edit"
     :ctrl-key="`${props.ctrlKey}-row`"
     :first-control-section-buttons="firstSectionButtons"

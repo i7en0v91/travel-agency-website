@@ -1,5 +1,5 @@
 import { type ReviewSummary, type ISearchFlightOffersResult,  type ISearchStayOffersResult, type IStayShort, type IStayOffer, type EntityId, type IOfferBooking, type IStay, type IStayReview, type IStayImageShort, type IFlight, type ICity, type IAirlineCompany, type IAirplane, type IAirport, type IFlightOffer, type EntityDataAttrsOnly, type IStayOfferDetails, CheckInOutDateUrlFormat } from '@golobe-demo/shared';
-import { type ISearchedStayDto, type ISearchedStayOfferDto, type ISearchedFlightDto, type ISearchedFlightOfferDto, type IFlightDto, type ICityDto, type IStayDto, type IFlightOfferDetailsDto, type IAirlineCompanyDto, type IAirplaneDto, type IAirportDto, type IStayOfferDetailsDto, type IStayReviewDto, type IBookingDetailsDto } from '../api-definitions';
+import type { ISearchedStayDto, ISearchedStayOfferDto, ISearchedFlightDto, ISearchedFlightOfferDto, IFlightDto, ICityDto, IStayDto, IFlightOfferDetailsDto, IAirlineCompanyDto, IAirplaneDto, IAirportDto, IStayOfferDetailsDto, IStayReviewDto, IBookingDetailsDto } from '../api-definitions';
 import dayjs from 'dayjs';
 
 export function mapAirlineCompany (value: EntityDataAttrsOnly<IAirlineCompany>): IAirlineCompanyDto {

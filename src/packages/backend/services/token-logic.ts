@@ -1,6 +1,6 @@
 import { MaxTokenConsumeAttempts, TokenKind, type IAppLogger, type EntityId, lookupValueOrThrow, DbVersionInitial, AppException, AppExceptionCodeEnum, newUniqueId } from '@golobe-demo/shared';
 import type { PrismaClient } from '@prisma/client';
-import { type TokenConsumeResult, type ITokenLogic, type ITokenIssueResult } from './../types';
+import type { TokenConsumeResult, ITokenLogic, ITokenIssueResult } from './../types';
 import { mapEnumDbValue, executeInTransaction } from '../helpers/db';
 import { generateNewTokenValue, verifyTokenValue, isTokenActive } from './../helpers/tokens';
 

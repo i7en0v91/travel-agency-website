@@ -8,7 +8,7 @@ interface IProps {
 };
 defineProps<IProps>();
 
-const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
+const tooltip = useTemplateRef<InstanceType<typeof Tooltip>>('tooltip');
 
 function scheduleTooltipAutoHide () {
   setTimeout(() => { tooltip.value?.hide(); }, TooltipHideTimeout);

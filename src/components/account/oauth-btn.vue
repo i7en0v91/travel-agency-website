@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import  { type AuthProvider, type I18nResName } from '@golobe-demo/shared';
+import type { AuthProvider, I18nResName } from '@golobe-demo/shared';
 
 interface IProps {
   ctrlKey: string,
@@ -8,11 +8,11 @@ interface IProps {
   ariaLabelResName?: I18nResName,
   enabled: boolean
 }
-const props = withDefaults(defineProps<IProps>(), { ariaLabelResName: undefined });
+const { enabled } = defineProps<IProps>();
 
 const $emit = defineEmits(['click']);
 function onClick () {
-  if (!props.enabled) {
+  if (!enabled) {
     return;
   }
 

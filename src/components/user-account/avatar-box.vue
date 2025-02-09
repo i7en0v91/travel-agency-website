@@ -2,15 +2,14 @@
 
 import { DefaultUserAvatarSlug, ImageCategory, type IImageEntitySrc, getI18nResName2 } from '@golobe-demo/shared';
 import EditableImage from './../images/editable-image.vue';
-import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: string
 }
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
-const userAvatarImage = shallowRef<ComponentInstance<typeof EditableImage>>();
+const userAvatarImage = useTemplateRef('avatar-image');
 
 const userAccountStore = useUserAccountStore();
 const userAccount = await userAccountStore.getUserAccount();
@@ -24,36 +23,36 @@ const imageSrc = ref(userAccount.avatar
 
 function checkImageSrcDiffers(firstSrc: IImageEntitySrc | undefined, secondSrc: IImageEntitySrc | undefined): boolean {
   if(!firstSrc && !secondSrc) {
-    logger.debug(`(UserAvatar) image src are the same, ctrlKey=${props.ctrlKey}, first=${JSON.stringify(firstSrc)}, second=${JSON.stringify(secondSrc)}`);
+    logger.debug(`(UserAvatar) image src are the same, ctrlKey=${ctrlKey}, first=${JSON.stringify(firstSrc)}, second=${JSON.stringify(secondSrc)}`);
     return false;
   }
 
   if(firstSrc?.slug !== secondSrc?.slug) {
-    logger.debug(`(UserAvatar) image src slugs differ, ctrlKey=${props.ctrlKey}, first=${JSON.stringify(firstSrc)}, second=${JSON.stringify(secondSrc)}`);
+    logger.debug(`(UserAvatar) image src slugs differ, ctrlKey=${ctrlKey}, first=${JSON.stringify(firstSrc)}, second=${JSON.stringify(secondSrc)}`);
     return true;
   }
 
   if(firstSrc?.timestamp !== secondSrc?.timestamp) {
-    logger.debug(`(UserAvatar) image src timestamps differ, ctrlKey=${props.ctrlKey}, first=${JSON.stringify(firstSrc)}, second=${JSON.stringify(secondSrc)}`);
+    logger.debug(`(UserAvatar) image src timestamps differ, ctrlKey=${ctrlKey}, first=${JSON.stringify(firstSrc)}, second=${JSON.stringify(secondSrc)}`);
     return true;
   }
 
-  logger.debug(`(UserAvatar) image src are the same, ctrlKey=${props.ctrlKey}, first=${JSON.stringify(firstSrc)}, second=${JSON.stringify(secondSrc)}`);
+  logger.debug(`(UserAvatar) image src are the same, ctrlKey=${ctrlKey}, first=${JSON.stringify(firstSrc)}, second=${JSON.stringify(secondSrc)}`);
   return false;
 }
 
 watch(userAccount, () => {
-  logger.debug(`(UserAvatar) user account watch handler, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(UserAvatar) user account watch handler, ctrlKey=${ctrlKey}`);
   if (userAccount.avatar && checkImageSrcDiffers(imageSrc.value, userAccount.avatar)) {
-    logger.verbose(`(UserAvatar) user image changed, ctrlKey=${props.ctrlKey}`);
+    logger.verbose(`(UserAvatar) user image changed, ctrlKey=${ctrlKey}`);
     userAvatarImage.value?.setImage(userAccount.avatar!);
   }
 });
 
 watch(imageSrc, () => {
-  logger.debug(`(UserAvatar) edit image watch handler, ctrlKey=${props.ctrlKey}, editSlug=${imageSrc.value?.slug}`);
+  logger.debug(`(UserAvatar) edit image watch handler, ctrlKey=${ctrlKey}, editSlug=${imageSrc.value?.slug}`);
   if (imageSrc.value && checkImageSrcDiffers(imageSrc.value, userAccount.avatar)) {
-    logger.verbose(`(UserAvatar) user image changed, ctrlKey=${props.ctrlKey}`);
+    logger.verbose(`(UserAvatar) user image changed, ctrlKey=${ctrlKey}`);
     userAccountStore.notifyUserAccountChanged({
       avatar: {
         slug: imageSrc.value.slug,
@@ -65,7 +64,7 @@ watch(imageSrc, () => {
 
 onMounted(() => {
   if (userAccount.avatar && checkImageSrcDiffers(imageSrc.value, userAccount.avatar)) {
-    logger.verbose(`(UserAvatar) setting up initial image, ctrlKey=${props.ctrlKey}, editSlug=${imageSrc.value?.slug}, newSlug=${userAccount.avatar?.slug}`);
+    logger.verbose(`(UserAvatar) setting up initial image, ctrlKey=${ctrlKey}, editSlug=${imageSrc.value?.slug}, newSlug=${userAccount.avatar?.slug}`);
     userAvatarImage.value!.setImage(userAccount.avatar!);
   }
 });
@@ -77,7 +76,7 @@ onMounted(() => {
       Then, in case such avatar image is loaded before hydration (e.g. from browser cache)
       background stub animation behind actual avatar may be interpreted by user as an "artifact" -->
   <EditableImage
-    ref="userAvatarImage"
+    ref="avatar-image"
     v-model:entity-src="imageSrc"
     :category="ImageCategory.UserAvatar"
     ctrl-key="userAvatar"

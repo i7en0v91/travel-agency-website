@@ -1,7 +1,7 @@
 import { AppException, AppExceptionCodeEnum, type EntityId, ImageCategory } from '@golobe-demo/shared';
 import { CroppingImageFormat } from '../../../../helpers/constants';
 import { extractUserIdFromSession } from './../../../../server/utils/auth';
-import { type IImageUploadResultDto } from '../../../api-definitions';
+import type { IImageUploadResultDto } from '../../../api-definitions';
 import type { H3Event } from 'h3';
 import isString from 'lodash-es/isString';
 import isBuffer from 'lodash-es/isBuffer';

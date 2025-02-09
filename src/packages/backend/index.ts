@@ -1,6 +1,6 @@
-import { type IAppLogger } from '@golobe-demo/shared';
+import type { IAppLogger } from '@golobe-demo/shared';
 import { ServerLogger } from './common-services/logging';
-import { type IHtmlPageModelMetadata } from './types';
+import type { IHtmlPageModelMetadata } from './types';
 import { HtmlPageModelMetadata } from './common-services/html-page-model-metadata';
 
 export { buildBackendServicesLocator } from './service-locators';

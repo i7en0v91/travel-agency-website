@@ -14,15 +14,9 @@ interface IProps {
   contentPadded?: boolean,
   isError?: boolean
 };
-const props = withDefaults(defineProps<IProps>(), {
-  subtextResName: undefined,
-  btnTextResName: undefined,
-  contentPadded: true,
-  linkUrl: undefined,
-  isError: false
-});
+const { ctrlKey, contentPadded = true, isError = false } = defineProps<IProps>();
 
-const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
+const tooltip = useTemplateRef<InstanceType<typeof Tooltip>>('tooltip');
 const tooltipId = useId();
 
 const { locale } = useI18n();
@@ -62,7 +56,7 @@ function scheduleTooltipAutoHide () {
         no-auto-focus
         @apply-show="scheduleTooltipAutoHide"
       >
-        <SimpleButton :ctrl-key="`${props.ctrlKey}-Btn`" :label-res-name="btnTextResName" kind="support" class="page-section-button" />
+        <SimpleButton :ctrl-key="`${ctrlKey}-Btn`" :label-res-name="btnTextResName" kind="support" class="page-section-button" />
         <template #popper>
           <div>
             {{ $t(getI18nResName1('notAvailableInDemo')) }}

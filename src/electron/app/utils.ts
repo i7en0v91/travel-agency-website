@@ -1,6 +1,6 @@
 import { net } from 'electron';
 import { DefaultLocale, AppConfig, delay } from '@golobe-demo/shared';
-import { type ElectronMainLogger } from './logging';
+import type { ElectronMainLogger } from './logging';
 import { consola } from 'consola';
 
 export async function pingServer(timeoutMs: number, logger: ElectronMainLogger): Promise<boolean> {

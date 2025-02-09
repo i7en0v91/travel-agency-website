@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="TItem extends EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>">
-import { type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, type OfferKind } from '@golobe-demo/shared';
+import type { EntityDataAttrsOnly, IFlightOffer, IStayOffer, OfferKind } from '@golobe-demo/shared';
 import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
 import FlightsListItemCard from './search-flights-result-card.vue';
 import StaysListItemCard from './search-stays-result-card.vue';
@@ -12,11 +12,10 @@ interface IProps {
   offersKind: OfferKind,
   items: TItem[]
 }
-const props = withDefaults(defineProps<IProps>(), {
-});
+const { ctrlKey, offersKind } = defineProps<IProps>();
 
 const searchOffersStoreAccessor = useSearchOffersStore();
-const searchOffersStore = await searchOffersStoreAccessor.getInstance(props.offersKind, true, true);
+const searchOffersStore = await searchOffersStoreAccessor.getInstance(offersKind, true, true);
 
 const logger = getCommonServices().getLogger();
 
@@ -31,7 +30,7 @@ const updateWaitingStubValue = () => {
 
 watch(() => searchOffersStore.resultState.status, () => {
   if (searchOffersStore.resultState.status === 'error') {
-    logger.warn(`(ResultItemsList) exception while fetching items, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
+    logger.warn(`(ResultItemsList) exception while fetching items, ctrlKey=${ctrlKey}, type=${offersKind}`);
     isError.value = true;
   } else {
     isError.value = false;
@@ -48,7 +47,7 @@ watch(() => searchOffersStore.resultState.status, () => {
       <ol v-if="waitingStubMode === 'not-needed' && items.length > 0">
         <li
           v-for="(offer, idx) in (items)"
-          :key="`${props.ctrlKey}-Offer-${offer.id}`"
+          :key="`${ctrlKey}-Offer-${offer.id}`"
           class="result-list-item-div"
         >
           <FlightsListItemCard v-if="offersKind === 'flights'" :ctrl-key="`${ctrlKey}-FlightsCard-${idx}`" :offer="(offer as EntityDataAttrsOnly<IFlightOffer>)" />

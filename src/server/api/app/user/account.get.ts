@@ -1,7 +1,7 @@
 import type { H3Event } from 'h3';
 import { AppException, AppExceptionCodeEnum, type EntityId } from '@golobe-demo/shared';
 import { extractUserIdFromSession } from './../../../../server/utils/auth';
-import { type IUserAccountDto } from '../../../api-definitions';
+import type { IUserAccountDto } from '../../../api-definitions';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
 import { getServerSession } from '#auth';
 import { getServerServices } from '../../../../helpers/service-accessors';

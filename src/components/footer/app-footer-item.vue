@@ -8,12 +8,10 @@ interface IProps {
   sectionKey: string,
   labelResName: string
 }
-const props = defineProps<IProps>();
+const { sectionKey, labelResName } = defineProps<IProps>();
 
 const { t } = useI18n();
-
-const elBtn = shallowRef<HTMLElement>();
-const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
+const tooltip = useTemplateRef<InstanceType<typeof Tooltip>>('tooltip');
 
 const $emit = defineEmits(['click']);
 
@@ -39,8 +37,8 @@ const tooltipId = useId();
       no-auto-focus
       @apply-show="scheduleTooltipAutoHide"
     >
-      <button ref="elBtn" :class="`footer-item-ctrl tabbable tabbable-group-${props.sectionKey} brdr-1`">
-        {{ t(props.labelResName) }}
+      <button ref="link-btn" :class="`footer-item-ctrl tabbable tabbable-group-${sectionKey} brdr-1`">
+        {{ t(labelResName) }}
       </button>
       <template #popper>
         <div class="footer-item-tooltip">

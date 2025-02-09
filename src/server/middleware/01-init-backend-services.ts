@@ -1,4 +1,4 @@
-import { type IAppLogger } from '@golobe-demo/shared';
+import type { IAppLogger } from '@golobe-demo/shared';
 import { buildBackendServicesLocator, createLogger as createBackendLogger } from '@golobe-demo/backend';
 import { defineEventHandler, type H3Event } from 'h3';
 import once from 'lodash-es/once';

@@ -17,13 +17,13 @@ interface IProps {
   ctrlKey: string,
   ready: boolean
 }
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 const isError = ref(false);
 
 const controlSettingsStore = useControlSettingsStore();
-const timeRangeControlValueSetting = controlSettingsStore.getControlValueSetting<TimeRangeFilter>(`${props.ctrlKey}-TimeRangeFilter`, DefaultTimeRangeFilter, true);
+const timeRangeControlValueSetting = controlSettingsStore.getControlValueSetting<TimeRangeFilter>(`${ctrlKey}-TimeRangeFilter`, DefaultTimeRangeFilter, true);
 const timeRangeFilter = ref<TimeRangeFilter>(timeRangeControlValueSetting.value ?? DefaultTimeRangeFilter);
 const timeRangeFilterDropdownItems: {value: TimeRangeFilter, resName: I18nResName}[] = (['upcoming', 'passed'] as TimeRangeFilter[]).map(f => { return { value: f, resName: getI18nResName3('accountPage', 'tabHistory', f) }; });
 
@@ -47,9 +47,9 @@ const userTicketsFetch = await useFetch(`/${ApiEndpointUserTickets}`,
   },
   cache: (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
   transform: (response: IUserTicketsResultDto) => {
-    logger.verbose(`(TabHistory) received user tickets response, ctrlKey=${props.ctrlKey}`);
+    logger.verbose(`(TabHistory) received user tickets response, ctrlKey=${ctrlKey}`);
     if (!response) {
-      logger.warn(`(TabHistory) user tickets response is empty, ctrlKey=${props.ctrlKey}`);
+      logger.warn(`(TabHistory) user tickets response is empty, ctrlKey=${ctrlKey}`);
       return []; // error should be logged by fetchEx
     }
     return mapUserTicketsResult(response);
@@ -69,9 +69,9 @@ const displayedItems = computed<{ [P in OfferKind]:(UserTicketItem[] | undefined
 });
 
 watch(userTicketsFetch.status, () => { 
-  logger.debug(`(TabHistory) tickets fetch status changed: ctrlKey=${props.ctrlKey}, status=${userTicketsFetch.status.value}`);
+  logger.debug(`(TabHistory) tickets fetch status changed: ctrlKey=${ctrlKey}, status=${userTicketsFetch.status.value}`);
   if(userTicketsFetch.status.value === 'error') {
-    logger.warn(`(TabHistory) got failed tickets fetch status: ctrlKey=${props.ctrlKey}`);
+    logger.warn(`(TabHistory) got failed tickets fetch status: ctrlKey=${ctrlKey}`);
     isError.value = true;
   } else if(userTicketsFetch.status.value === 'success') {
     isError.value = false;
@@ -80,7 +80,7 @@ watch(userTicketsFetch.status, () => {
 });
 
 onMounted(() => {
-  logger.verbose(`(TabHistory) mounted, fetching tickets: ctrlKey=${props.ctrlKey}`);
+  logger.verbose(`(TabHistory) mounted, fetching tickets: ctrlKey=${ctrlKey}`);
   userTicketsFetch.execute();
 });
 

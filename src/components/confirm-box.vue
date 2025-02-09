@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type I18nResName, getI18nResName2 } from '@golobe-demo/shared';
-import { type ConfirmBoxButton } from './../types';
+import type { ConfirmBoxButton } from './../types';
 import { VueFinalModal } from 'vue-final-modal';
 import SimpleButton from './forms/simple-button.vue';
 import { getCommonServices } from '../helpers/service-accessors';
@@ -13,10 +13,10 @@ interface IProps {
   msgResArgs?: any
 }
 
-const props = defineProps<IProps>();
+const { ctrlKey, setResultCallback } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
-const clickedButton = shallowRef<ConfirmBoxButton>();
+const clickedButton = ref<ConfirmBoxButton>();
 
 const $emit = defineEmits(['update:modelValue']);
 
@@ -24,19 +24,19 @@ function setResultAndClose () {
   if (!clickedButton.value) {
     clickedButton.value = 'cancel';
   }
-  props.setResultCallback(clickedButton.value);
+  setResultCallback(clickedButton.value);
   $emit('update:modelValue', false);
 }
 
 function onClosed () {
   if (!clickedButton.value) {
     clickedButton.value = 'cancel';
-    props.setResultCallback(clickedButton.value);
+    setResultCallback(clickedButton.value);
   }
 }
 
 function onButtonClick (button: ConfirmBoxButton) {
-  logger.verbose(`(ConfirmBox) button clicked: ctrlKey=${props.ctrlKey}, butotn=${button}`);
+  logger.verbose(`(ConfirmBox) button clicked: ctrlKey=${ctrlKey}, butotn=${button}`);
   clickedButton.value = button;
   setResultAndClose();
 }
@@ -53,26 +53,26 @@ function onButtonClick (button: ConfirmBoxButton) {
   >
     <ClientOnly>
       <div class="confirm-box-msg">
-        {{ $t(props.msgResName, props.msgResArgs) }}
+        {{ $t(msgResName, msgResArgs) }}
       </div>
       <div class="confirm-box-buttons mt-xs-4">
         <SimpleButton
-          v-if="props.buttons.includes('yes')"
-          :ctrl-key="`${props.ctrlKey}-btnYes`"
+          v-if="buttons.includes('yes')"
+          :ctrl-key="`${ctrlKey}-btnYes`"
           :label-res-name="getI18nResName2('confirmBox', 'btnYes')"
           kind="support"
           @click="() => onButtonClick('yes')"
         />
         <SimpleButton
-          v-if="props.buttons.includes('no')"
-          :ctrl-key="`${props.ctrlKey}-btnNo`"
+          v-if="buttons.includes('no')"
+          :ctrl-key="`${ctrlKey}-btnNo`"
           :label-res-name="getI18nResName2('confirmBox', 'btnNo')"
           kind="support"
           @click="() => onButtonClick('no')"
         />
         <SimpleButton
-          v-if="props.buttons.includes('cancel')"
-          :ctrl-key="`${props.ctrlKey}-btnCancel`"
+          v-if="buttons.includes('cancel')"
+          :ctrl-key="`${ctrlKey}-btnCancel`"
           :label-res-name="getI18nResName2('confirmBox', 'btnCancel')"
           kind="support"
           icon="cross"

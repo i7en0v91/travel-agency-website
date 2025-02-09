@@ -1,7 +1,7 @@
 import { UserNotificationLevel, AppException, AppExceptionCodeEnum, type I18nResName, getI18nResName2, isElectronBuild } from '@golobe-demo/shared';
 import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../helpers/dom';
 import { useModal } from 'vue-final-modal';
-import { type ConfirmBoxButton } from './../types';
+import type { ConfirmBoxButton } from './../types';
 import ConfirmBox from './../components/confirm-box.vue';
 import { getCommonServices } from '../helpers/service-accessors';
 import { getDialogsFacade } from '../helpers/electron';

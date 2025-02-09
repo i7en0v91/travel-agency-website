@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type IBookingTicketDetailsProps } from './../../types';
+import type { IBookingTicketDetailsProps } from './../../types';
 import BookingTicketDetailsItem from './booking-ticket-details-item.vue';
 
 defineProps<IBookingTicketDetailsProps>();

@@ -5,7 +5,7 @@ import type { AvailableRouterMethod as _AvailableRouterMethod } from 'nitropack'
 import { destr } from 'destr';
 import isString from 'lodash-es/isString';
 import isNumber from 'lodash-es/isNumber';
-import { type IApiErrorDto } from '../server/api-definitions';
+import type { IApiErrorDto } from '../server/api-definitions';
 
 export type FetchExOptions = {
   defautAppExceptionAppearance: AppExceptionAppearance
@@ -74,8 +74,11 @@ export function createFetch(options: FetchExOptions, nuxtApp: ReturnType<typeof 
   return $fetch.create({
     baseURL: nuxtApp.$nuxtSiteConfig.url!,
     onRequest(ctx: FetchContext) {
-      const headers = ctx.options.headers ||= useRequestHeaders(['cookie']) || {};
-      addHeader(headers, HeaderAppVersion, AppConfig.versioning.appVersion.toString());
+      if(ctx.options.headers) {
+        addHeader(ctx.options.headers, HeaderAppVersion, AppConfig.versioning.appVersion.toString());  
+      } else {
+        addHeader(useRequestHeaders(['cookie']), HeaderAppVersion, AppConfig.versioning.appVersion.toString());
+      }
     },
     onRequestError (ctx) {
       logger.warn(`(fetch-ex) fetch exception occured in fetch request, url=${ctx.request.toString()}`, ctx.error);

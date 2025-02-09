@@ -8,6 +8,7 @@ $app-footer-centering-breakpoint: map.get($breakpoints, 's');
 
 .app-footer {
   padding-top: 271px;
+  flex: 0 1 auto;
 
   .app-footer-div {
     padding-left: var(--#{$prefix}-page-padding-x);

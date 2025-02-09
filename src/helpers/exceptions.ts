@@ -1,6 +1,6 @@
 import { isElectronBuild, getUsrMsgResName, mapAppExceptionToHttpStatus, AppException, AppExceptionCodeEnum, UserNotificationLevel } from '@golobe-demo/shared';
-import { type IUserNotificationParams } from './../stores/user-notification-store';
-import { type NuxtError } from 'nuxt/app';
+import type { IUserNotificationParams } from './../stores/user-notification-store';
+import type { NuxtError } from 'nuxt/app';
 import { consola } from 'consola';
 
 export function defaultErrorHandler (err: any, nuxtApp?: ReturnType<typeof useNuxtApp>) {

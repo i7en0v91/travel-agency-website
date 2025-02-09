@@ -10,14 +10,14 @@ interface IProps {
   imgSrc: IImageEntitySrc,
   relativeCoord: { x: number, y: number }
 };
-const props = defineProps<IProps>();
+const { cityName, countryName, relativeCoord, slug } = defineProps<IProps>();
 
 const { locale } = useI18n();
 const travelDetailsStore = useTravelDetailsStore();
 
-const cityUrl = ref<string>(travelDetailsStore.buildTravelCityUrl(props.slug));
+const cityUrl = ref<string>(travelDetailsStore.buildTravelCityUrl(slug));
 function updateCityUrl () {
-  cityUrl.value = travelDetailsStore.buildTravelCityUrl(props.slug);
+  cityUrl.value = travelDetailsStore.buildTravelCityUrl(slug);
 }
 
 onMounted(() => {
@@ -32,9 +32,9 @@ onMounted(() => {
     class="world-map-city-label p-xs-2 px brdr-2"
     :style="{
       position: 'relative',
-      top: `${Math.round(props.relativeCoord.y * 100)}%`,
-      left: `${Math.round(props.relativeCoord.x * 100)}%`,
-      transform: `translate(${props.relativeCoord.x > WorldMapCityLabelFlipX ? '-110' : '10'}%, -105%)`
+      top: `${Math.round(relativeCoord.y * 100)}%`,
+      left: `${Math.round(relativeCoord.x * 100)}%`,
+      transform: `translate(${relativeCoord.x > WorldMapCityLabelFlipX ? '-110' : '10'}%, -105%)`
     }"
   >
     <StaticImage
@@ -48,10 +48,10 @@ onMounted(() => {
     />
     <div class="world-map-city-info">
       <NuxtLink :external="false" :replace="true" :href="cityUrl" class="world-map-city-name brdr-1 no-hidden-parent-tabulation-check" :aria-label="$t(getI18nResName3('flightsPage', 'worldMap', 'cityTravelInfoAria'))">
-        {{ (props.cityName as any)[locale] }}
+        {{ (cityName as any)[locale] }}
       </NuxtLink>
       <div class="world-map-city-country">
-        {{ (props.countryName as any)[locale] }}
+        {{ (countryName as any)[locale] }}
       </div>
     </div>
   </div>

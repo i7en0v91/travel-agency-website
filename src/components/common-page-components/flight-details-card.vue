@@ -18,20 +18,11 @@ interface IProps {
   },
   tag: 'h1' | 'h2' | 'div'
 }
-const props = withDefaults(defineProps<IProps>(), {
-  departCity: undefined,
-  arriveCity: undefined,
-  departTimeUtc: undefined,
-  arriveTimeUtc: undefined,
-  airlineCompany: undefined,
-  airplaneName: undefined,
-  additionalInfo: undefined,
-  utcOffsetMinutes: undefined
-});
+const { utcOffsetMinutes, departTimeUtc, kind } = defineProps<IProps>();
 
 const { locale, t, d } = useI18n();
 
-const flightDateText = computed(() => props.departTimeUtc ? (t(getI18nResName3('flightDetailsCard', 'direction', props.kind), { date: d(getValueForFlightDayFormatting(props.departTimeUtc, props.utcOffsetMinutes!), 'day') })) : undefined);
+const flightDateText = computed(() => departTimeUtc ? (t(getI18nResName3('flightDetailsCard', 'direction', kind), { date: d(getValueForFlightDayFormatting(departTimeUtc, utcOffsetMinutes!), 'day') })) : undefined);
 const featureIcons: string[] = ['airplane', 'wifi', 'stopwatch', 'fastfood', 'seat-recline'];
 
 </script>

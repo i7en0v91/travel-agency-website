@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { AppException, AppExceptionCodeEnum, getI18nResName2 } from '@golobe-demo/shared';
-import { type TravelDetailsImageStatus } from './../../../types';
+import type { TravelDetailsImageStatus } from './../../../types';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import { defaultErrorHandler } from './../../../helpers/exceptions';
 import type { WatchStopHandle, ComponentInstance } from 'vue';
@@ -14,14 +14,14 @@ interface IProps {
   ctrlKey: string,
   bookKind: 'flight' | 'stay'
 };
-const props = defineProps<IProps>();
+const { ctrlKey, bookKind } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 const travelDetailsStore = useTravelDetailsStore();
 const isError = ref(false);
 
-const textingComponent = shallowRef<ComponentInstance<typeof TravelDetailsTexting>>();
-const imageComponents = shallowRef<ComponentInstance<typeof TravelDetailsImage>[]>();
+const textingComponent = useTemplateRef('texting-component');
+const imageComponents = useTemplateRef<ComponentInstance<typeof TravelDetailsImage>[]>('image-components');
 const imagesCurrentStatuses = range(0, 4).map((_: any) => ref<TravelDetailsImageStatus | undefined>());
 const imagesUpcomingStatuses = range(0, 4).map((_: any) => ref<TravelDetailsImageStatus | undefined>());
 
@@ -33,7 +33,7 @@ try {
   if(import.meta.server && AppException.isAppException(err) && err.code === AppExceptionCodeEnum.OBJECT_NOT_FOUND) {
     defaultErrorHandler(err);
   };
-  logger.warn(`(TravelDetails) failed to obtain travel details store, ctrlKey=${props.ctrlKey}`, err);
+  logger.warn(`(TravelDetails) failed to obtain travel details store, ctrlKey=${ctrlKey}`, err);
   isError.value = true;
 }
 
@@ -44,11 +44,11 @@ function processCurrentStatusChanges () {
     return;
   }
 
-  logger.debug(`(TravelDetails) processCurrentStatusChanges, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(TravelDetails) processCurrentStatusChanges, ctrlKey=${ctrlKey}`);
   const allImagesReady = imagesCurrentStatuses.every((s: Ref<TravelDetailsImageStatus | undefined>) => { return s.value === 'ready' || s.value === 'error'; });
-  const initialFrame = imageComponents.value && imageComponents.value!.every(f => f.isInitialFrame());
+  const initialFrame = imageComponents.value?.length && imageComponents.value!.every(f => f.isInitialFrame());
   if (allImagesReady && initialFrame) {
-    logger.info(`(TravelDetails) all inital images have been preRendered, ctrlKey=${props.ctrlKey}, current cityId=${storeInstance.current?.cityId}`);
+    logger.info(`(TravelDetails) all inital images have been preRendered, ctrlKey=${ctrlKey}, current cityId=${storeInstance.current?.cityId}`);
     storeInstance.onPreRenderCompleted(storeInstance.current!.cityId);
   }
 }
@@ -58,28 +58,28 @@ function processUpcomingStatusChanges () {
     return;
   }
 
-  logger.debug(`(TravelDetails) processUpcomingStatusChanges, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(TravelDetails) processUpcomingStatusChanges, ctrlKey=${ctrlKey}`);
   if (imagesUpcomingStatuses.every((s: Ref<TravelDetailsImageStatus | undefined>) => s.value === 'ready' || s.value === 'error')) {
     const frames = imageComponents.value!;
     const toBeDisplayedCityId = frames[0].getUpcomingCityId();
     if (toBeDisplayedCityId && toBeDisplayedCityId === storeInstance.upcoming?.cityId) {
-      logger.info(`(TravelDetails) all upcoming images have been preRendered, ctrlKey=${props.ctrlKey}, upcoming cityId=${toBeDisplayedCityId}, current cityId=${storeInstance.current?.cityId}`);
+      logger.info(`(TravelDetails) all upcoming images have been preRendered, ctrlKey=${ctrlKey}, upcoming cityId=${toBeDisplayedCityId}, current cityId=${storeInstance.current?.cityId}`);
       for (let i = 0; i < frames.length; i++) {
         const imageFrame = frames[i];
         if (imageFrame.getUpcomingCityId() === toBeDisplayedCityId) {
           imageFrame.swapFrames();
         } else {
-          logger.warn(`(TravelDetails) image frame is out of sync, ctrlKey=${props.ctrlKey}, frame's upcoming cityId=${imageFrame.getUpcomingCityId()}, store's upcoming cityId=${toBeDisplayedCityId}`);
+          logger.warn(`(TravelDetails) image frame is out of sync, ctrlKey=${ctrlKey}, frame's upcoming cityId=${imageFrame.getUpcomingCityId()}, store's upcoming cityId=${toBeDisplayedCityId}`);
         }
       }
       textingComponent.value!.swapFrames();
       storeInstance.onPreRenderCompleted(toBeDisplayedCityId);
       setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
     } else if (toBeDisplayedCityId) {
-      logger.debug(`(TravelDetails) processUpcomingStatusChanges, prerendered city is out of sync, ctrlKey=${props.ctrlKey}, preRendered cityId=${toBeDisplayedCityId}, store upcoming cityId=${storeInstance.upcoming?.cityId}`);
+      logger.debug(`(TravelDetails) processUpcomingStatusChanges, prerendered city is out of sync, ctrlKey=${ctrlKey}, preRendered cityId=${toBeDisplayedCityId}, store upcoming cityId=${storeInstance.upcoming?.cityId}`);
     }
   } else {
-    logger.debug(`(TravelDetails) processUpcomingStatusChanges, not all of upcoming frames completed prerendering, ctrlKey=${props.ctrlKey}, statuses=${JSON.stringify(imagesUpcomingStatuses.map((s: { value: any; }) => s.value))}`);
+    logger.debug(`(TravelDetails) processUpcomingStatusChanges, not all of upcoming frames completed prerendering, ctrlKey=${ctrlKey}, statuses=${JSON.stringify(imagesUpcomingStatuses.map((s: { value: any; }) => s.value))}`);
   }
 }
 
@@ -124,10 +124,10 @@ onMounted(() => {
     :is-error="isError"
   >
     <article class="travel-details">
-      <TravelDetailsTexting ref="textingComponent" :ctrl-key="`${ctrlKey}-TravelDetailsTexting`" :book-kind="bookKind" />
+      <TravelDetailsTexting ref="texting-component" :ctrl-key="`${ctrlKey}-TravelDetailsTexting`" :book-kind="bookKind" />
       <TravelDetailsImage
         v-for="(idx) in range(0, 4).map((i: any) => i)"
-        ref="imageComponents"
+        ref="image-components"
         :key="`${ctrlKey}-TravelDetailsImage-${idx}`"
         :ctrl-key="`${ctrlKey}-TravelDetailsImage-${idx}`"
         :image-index="idx"

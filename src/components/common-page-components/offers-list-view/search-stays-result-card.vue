@@ -12,8 +12,7 @@ interface IProps {
   ctrlKey: string,
   offer: EntityDataAttrsOnly<IStayOffer>
 }
-const props = withDefaults(defineProps<IProps>(), {
-});
+const { ctrlKey, offer } = defineProps<IProps>();
 
 const { status } = useAuth();
 const { locale, t } = useI18n();
@@ -24,27 +23,27 @@ const logger = getCommonServices().getLogger();
 
 const isError = ref(false);
 
-const stay = props.offer.stay;
+const stay = offer.stay;
 const scoreClassResName = getScoreClassResName(stay.reviewSummary!.score);
 const reviewsCountText = `${stay.reviewSummary!.numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), stay.reviewSummary!.numReviews)}`;
 
 const userFavouritesStore = useUserFavouritesStore();
-const favouriteStatusWatcher = useOfferFavouriteStatus(props.offer.id, props.offer.kind);
+const favouriteStatusWatcher = useOfferFavouriteStatus(offer.id, offer.kind);
 
 async function toggleFavourite (): Promise<void> {
-  const offerId = props.offer.id;
+  const offerId = offer.id;
   logger.verbose(`(SearchStayResultCard) toggling favourite, offerId=${offerId}, current=${favouriteStatusWatcher.isFavourite}`);
   if(!await requestUserAction()) {
     logger.verbose(`(SearchStayResultCard) favourite hasn't been toggled - not available in preview mode, offerId=${offerId}, current=${favouriteStatusWatcher.isFavourite}`);
     return;
   }
   const store = await userFavouritesStore.getInstance();
-  const result = await store.toggleFavourite(offerId, 'stays' as OfferKind, props.offer);
+  const result = await store.toggleFavourite(offerId, 'stays' as OfferKind, offer);
   logger.verbose(`(SearchStayResultCard) favourite toggled, offerId=${offerId}, isFavourite=${result}`);
 }
 
 async function favouriteBtnClick (): Promise<void> {
-  logger.debug(`(SearchStayResultCard) favourite button clicked, ctrlKey=${props.ctrlKey}, current=${favouriteStatusWatcher.isFavourite}`);
+  logger.debug(`(SearchStayResultCard) favourite button clicked, ctrlKey=${ctrlKey}, current=${favouriteStatusWatcher.isFavourite}`);
   await toggleFavourite();
 }
 
@@ -57,7 +56,7 @@ async function favouriteBtnClick (): Promise<void> {
         <div class="search-stays-card-stay-photo">
           <StaticImage
             :ctrl-key="`${ctrlKey}-StayPhoto`"
-            :entity-src="props.offer.stay.photo"
+            :entity-src="offer.stay.photo"
             :category="ImageCategory.Hotel"
             sizes="xs:85vw sm:85vw md:85vw lg:75vw xl:30vw"
             class="stay-photo"
@@ -102,7 +101,7 @@ async function favouriteBtnClick (): Promise<void> {
                     </div>
                     <div class="search-stays-card-features mt-xs-2">
                       <div class="search-stays-card-stars mt-xs-1 mr-xs-2">
-                        <div v-for="i in range(0, 5)" :key="`${props.ctrlKey}-HotelStar-${i}`" class="stay-card-star" />
+                        <div v-for="i in range(0, 5)" :key="`${ctrlKey}-HotelStar-${i}`" class="stay-card-star" />
                       </div>
                       <div class="search-stays-card-rating-caption mt-xs-1 mr-xs-2">
                         {{ $t(getI18nResName2('searchStays', 'stayRatingCaption')) }}
@@ -133,12 +132,12 @@ async function favouriteBtnClick (): Promise<void> {
                 <SimpleButton
                   v-if="status === 'authenticated'"
                   class="search-stays-card-btn-like"
-                  :ctrl-key="`${props.ctrlKey}-LikeBtn`"
+                  :ctrl-key="`${ctrlKey}-LikeBtn`"
                   :icon="`${favouriteStatusWatcher.isFavourite ? 'heart' : 'like'}`"
                   kind="support"
                   @click="favouriteBtnClick"
                 />
-                <NuxtLink class="btn btn-primary brdr-1 search-stays-card-btn-details" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.StayDetails)}/${props.offer.id}`, locale as Locale)" :target="isElectronBuild() ? '_blank' : undefined">
+                <NuxtLink class="btn btn-primary brdr-1 search-stays-card-btn-details" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.StayDetails)}/${offer.id}`, locale as Locale)" :target="isElectronBuild() ? '_blank' : undefined">
                   {{ $t(getI18nResName2('searchStays', 'viewPlace')) }}
                 </NuxtLink>
               </div>

@@ -1,8 +1,8 @@
 import { EntityIdTestRegEx, EntityChangeSubscribersOrder, ImageCategory, newUniqueId, DbVersionInitial, lookupKeyByValueOrThrow, tryLookupKeyByValue, type IImageCategoryInfo, type EntityId, type IAppLogger } from '@golobe-demo/shared';
 import type { PrismaClient } from '@prisma/client';
-import { type Storage, type StorageValue } from 'unstorage';
+import type { Storage, StorageValue } from 'unstorage';
 import { ImageCategoryInfosCacheKey } from './../helpers/utils';
-import { type EntityChangeNotificationCallbackArgs, type EntityChangeNotificationCallback, type EntityChangeNotificationSubscriberId, type IEntityChangeNotificationTask, type IImageCategoryLogic } from './../types';
+import type { EntityChangeNotificationCallbackArgs, EntityChangeNotificationCallback, EntityChangeNotificationSubscriberId, IEntityChangeNotificationTask, IImageCategoryLogic } from './../types';
 import { mapEnumDbValue } from '../helpers/db';
 
 export class ImageCategoryLogic implements IImageCategoryLogic {

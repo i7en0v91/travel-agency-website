@@ -15,21 +15,19 @@ interface IProps {
     payments: string
   }
 }
-const props = withDefaults(defineProps<IProps>(), {
-  activeOption: undefined
-});
+const { activeOption } = defineProps<IProps>();
 
 const paymentsTabReady = ref(false);
 const historyTabReady = ref(false);
 const accountTabReady = ref(false);
 const tabReady = computed(() =>
-  props.activeOption && (
-    (props.activeOption === UserAccountOptionButtonPayments && paymentsTabReady.value) ||
-    (props.activeOption === UserAccountOptionButtonHistory && historyTabReady.value) ||
-    (props.activeOption === UserAccountOptionButtonAccount && accountTabReady.value)
+  activeOption && (
+    (activeOption === UserAccountOptionButtonPayments && paymentsTabReady.value) ||
+    (activeOption === UserAccountOptionButtonHistory && historyTabReady.value) ||
+    (activeOption === UserAccountOptionButtonAccount && accountTabReady.value)
   ));
 
-watch(() => props.activeOption, () => {
+watch(() => activeOption, () => {
   setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 });
 watch(tabReady, () => {
@@ -44,8 +42,8 @@ watch(tabReady, () => {
     <ClientOnly>
       <div class="account-page-tab" :style="{ display: tabReady ? 'block' : 'none' }">
         <KeepAlive>
-          <TabPayments v-if="props.activeOption === UserAccountOptionButtonPayments" :id="tabPanelIds.payments" v-model:ready="paymentsTabReady" ctrl-key="userAccountTabPayments" />
-          <TabHistory v-else-if="props.activeOption === UserAccountOptionButtonHistory" :id="tabPanelIds.history" v-model:ready="historyTabReady" ctrl-key="userAccountTabHistory" />
+          <TabPayments v-if="activeOption === UserAccountOptionButtonPayments" :id="tabPanelIds.payments" v-model:ready="paymentsTabReady" ctrl-key="userAccountTabPayments" />
+          <TabHistory v-else-if="activeOption === UserAccountOptionButtonHistory" :id="tabPanelIds.history" v-model:ready="historyTabReady" ctrl-key="userAccountTabHistory" />
           <TabAccount v-else :id="tabPanelIds.account" v-model:ready="accountTabReady" ctrl-key="userAccountTabAccount" />
         </KeepAlive>
       </div>

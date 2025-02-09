@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
-import { type IBookingTicketFlightGfxProps } from './../../types';
+import type { IBookingTicketFlightGfxProps } from './../../types';
 import throttle from 'lodash-es/throttle';
 import { useThemeSettings } from './../../composables/theme-settings';
 import BookingTicketFlightLabel from './booking-ticket-flight-label.vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 
-const props = defineProps<IBookingTicketFlightGfxProps>();
+const { ctrlKey, userName } = defineProps<IBookingTicketFlightGfxProps>();
 
 declare type RGBColor = { r: number, g: number, b: number };
 const FlightRouteColorLight: RGBColor = { r: 141, g: 211, b: 187 };
@@ -17,8 +17,8 @@ const FlightRouteCurvenessOffset = -100;
 
 const logger = getCommonServices().getLogger();
 
-const canvasEl = shallowRef<HTMLCanvasElement>();
-const containerEl = shallowRef<HTMLElement>();
+const drawingCanvas = useTemplateRef<HTMLCanvasElement>('drawing-canvas');
+const container = useTemplateRef<HTMLElement>('container');
 
 const themeSettings = useThemeSettings();
 
@@ -28,7 +28,7 @@ function renderFrameSafe () {
   try {
     doRenderFrame();
   } catch (err: any) {
-    logger.warn(`(BookingTicketFlightGfx) exception occured while redering frame, ctrlKey=${props.ctrlKey}`, err);
+    logger.warn(`(BookingTicketFlightGfx) exception occured while redering frame, ctrlKey=${ctrlKey}`, err);
   }
 }
 
@@ -62,15 +62,15 @@ function doRenderFrame () {
     return;
   }
 
-  const canvasElClientRect = canvasEl.value?.getClientRects();
+  const canvasElClientRect = drawingCanvas.value?.getClientRects();
   if ((canvasElClientRect?.length ?? 0) === 0) {
     logger.debug('(BookingTicketFlightGfx) nothing to render, canvas element empty');
     return;
   }
 
-  const ctx = canvasEl.value?.getContext('2d');
+  const ctx = drawingCanvas.value?.getContext('2d');
   if (!ctx) {
-    logger.error(`(BookingTicketFlightGfx) cannot acquire 2D context, ctrlKey=${props.ctrlKey}`);
+    logger.error(`(BookingTicketFlightGfx) cannot acquire 2D context, ctrlKey=${ctrlKey}`);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'cannot acquire 2D context', 'error-stub');
   }
 
@@ -95,16 +95,16 @@ function renderMapFrame () {
 }
 
 function updateCanvasSize () {
-  logger.debug(`(BookingTicketFlightGfx) updating canvas size, ctrlKey=${props.ctrlKey}`);
-  if (containerEl.value!) {
-    const containerRect = containerEl.value.getBoundingClientRect();
+  logger.debug(`(BookingTicketFlightGfx) updating canvas size, ctrlKey=${ctrlKey}`);
+  if (container.value!) {
+    const containerRect = container.value.getBoundingClientRect();
     canvasSize.value = {
       width: containerRect.width,
       height: containerRect.height
     };
-    logger.debug(`(BookingTicketFlightGfx) using canvas size w=${canvasSize.value.width}, h=${canvasSize.value.height}, ctrlKey=${props.ctrlKey}`);
+    logger.debug(`(BookingTicketFlightGfx) using canvas size w=${canvasSize.value.width}, h=${canvasSize.value.height}, ctrlKey=${ctrlKey}`);
   } else {
-    logger.warn(`(BookingTicketFlightGfx) cannot update canvas size - container is not initialized, ctrlKey=${props.ctrlKey}`);
+    logger.warn(`(BookingTicketFlightGfx) cannot update canvas size - container is not initialized, ctrlKey=${ctrlKey}`);
   }
 }
 
@@ -134,9 +134,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="containerEl" class="booking-ticket-flight-gfx">
+  <div ref="container" class="booking-ticket-flight-gfx">
     <div class="ticket-flight-gfx-container">
-      <canvas ref="canvasEl" class="ticket-flight-gfx-canvas" :width="canvasSize?.width ?? 1" :height="canvasSize?.height ?? 1" :style="{ width: `${canvasSize?.width ?? 1}px`, height: `${canvasSize?.height ?? 1}px` }" />
+      <canvas ref="drawing-canvas" class="ticket-flight-gfx-canvas" :width="canvasSize?.width ?? 1" :height="canvasSize?.height ?? 1" :style="{ width: `${canvasSize?.width ?? 1}px`, height: `${canvasSize?.height ?? 1}px` }" />
       <div v-if="canvasSize" class="ticket-flight-gfx-controls" :style="{ width: `${canvasSize.width}px`, height: `${canvasSize.height}px` }">
         <BookingTicketFlightLabel
           v-if="canvasSize"

@@ -1,14 +1,14 @@
 import { type IUserProfileInfo, type IUserMinimalInfo, type IImageInfo, obtainFreeSlug, EmailTemplateEnum, getI18nResName3, ImageCategory, AppConfig, AppException, AppExceptionCodeEnum, maskLog, isPasswordSecure, DbVersionInitial, type Locale, type Theme, SecretValueMask, DefaultEmailTheme, DefaultLocale, newUniqueId, type IAppLogger, AuthProvider, TokenKind, type EntityId, type Timestamp } from '@golobe-demo/shared';
-import { type UpdateUserAccountResult, type IFileLogic, type IUserProfileFileInfoUnresolved, type IMailTemplateLogic, type IImageProvider, type IEmailParams, type PasswordRecoveryResult, type IImageLogic, type ITokenLogic, type IEmailSender, type IUserLogic, type UserResponseDataSet, type RegisterVerificationFlow, type RegisterUserByEmailResponse } from './../types';
+import type { UpdateUserAccountResult, IFileLogic, IUserProfileFileInfoUnresolved, IMailTemplateLogic, IImageProvider, IEmailParams, PasswordRecoveryResult, IImageLogic, ITokenLogic, IEmailSender, IUserLogic, UserResponseDataSet, RegisterVerificationFlow, RegisterUserByEmailResponse } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import groupBy from 'lodash-es/groupBy';
 import values from 'lodash-es/values';
 import { MapUserEntityMinimal, UserProfileQuery, MapUserEntityProfile, UserMinimalQuery } from './queries';
-import { type IServerI18n } from './../common-services/i18n';
+import type { IServerI18n } from './../common-services/i18n';
 import { mapEnumDbValue, executeInTransaction } from '../helpers/db';
 import { calculatePasswordHash, getSomeSalt, verifyPassword } from './../helpers/utils';
 import { isTokenActive } from './../helpers/tokens';
-import { type H3Event } from 'h3';
+import type { H3Event } from 'h3';
 
 export class UserLogic implements IUserLogic {
   private logger: IAppLogger;

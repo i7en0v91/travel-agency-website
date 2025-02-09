@@ -19,7 +19,7 @@ interface IProps {
   escToClose: boolean
 }
 
-const props = defineProps<IProps>();
+const { category, fillAlpha } = defineProps<IProps>();
 
 const { t } = useI18n();
 const userNotificationStore = useUserNotificationStore();
@@ -28,10 +28,10 @@ const themeSettings = useThemeSettings();
 const logger = getCommonServices().getLogger();
 
 const isError = ref(false);
-const cropperImg = shallowRef<InstanceType<typeof HTMLImageElement>>();
+const cropperImg = useTemplateRef<HTMLImageElement>('cropper-image');
 let cropper : Cropper | undefined;
 
-const imageSize = await systemConfigurationStore.getImageSrcSize(props.category);
+const imageSize = await systemConfigurationStore.getImageSrcSize(category);
 
 const $emit = defineEmits(['update:modelValue']);
 
@@ -89,7 +89,7 @@ function onImgError () {
       level: UserNotificationLevel.ERROR,
       resName: getI18nResName3('editableImage', 'issues', 'imageLoadFailed')
     });
-    logger.warn(`(cropping-box) failed to load image, category=${props.category}`);
+    logger.warn(`(cropping-box) failed to load image, category=${category}`);
   }
 }
 
@@ -105,7 +105,7 @@ function onImgLoad () {
         level: UserNotificationLevel.ERROR,
         resName: getI18nResName3('editableImage', 'issues', 'imageLoadFailed')
       });
-      logger.warn(`(cropping-box) image is empty, category=${props.category}`);
+      logger.warn(`(cropping-box) image is empty, category=${category}`);
     }
   }, 1);
 }
@@ -116,22 +116,22 @@ function readCropperCanvasAsByteArray (): Promise<Uint8Array> {
     minHeight: Math.floor(imageSize.height / ImageCaptureMinSizeBase),
     imageSmoothingEnabled: false,
     imageSmoothingQuality: 'high',
-    fillColor: props.fillAlpha ? (themeSettings.currentTheme.value === 'light' ? 'white' : 'black') : 'transparent'
+    fillColor: fillAlpha ? (themeSettings.currentTheme.value === 'light' ? 'white' : 'black') : 'transparent'
   };
 
   const promise = new Promise<Uint8Array>((resolve, reject) => {
-    logger.verbose(`(cropping-box) starting to capture canvas, category=${props.category}`);
+    logger.verbose(`(cropping-box) starting to capture canvas, category=${category}`);
     cropper!.getCroppedCanvas(canvasOptions).toBlob((blob: Blob | null) => {
       if (!blob) {
-        reject(new Error(`(cropping-box) failed to capture canvas, got empty data, category=${props.category}`));
+        reject(new Error(`(cropping-box) failed to capture canvas, got empty data, category=${category}`));
         return;
       }
 
       blob.arrayBuffer().then((b) => {
-        logger.verbose(`(cropping-box) canvas captured, category=${props.category}, size=${b.byteLength}`);
+        logger.verbose(`(cropping-box) canvas captured, category=${category}, size=${b.byteLength}`);
         resolve(new Uint8Array(b));
       }).catch((r) => {
-        logger.warn(`(cropping-box) failed to capture canvas, category=${props.category}`, r);
+        logger.warn(`(cropping-box) failed to capture canvas, category=${category}`, r);
         reject(new Error('failed to crop image'));
       });
     }, CroppingImageFormat, 1);
@@ -149,7 +149,7 @@ async function onUploadClick (): Promise<void> {
       const imageDataBase64 = Buffer.from(imageData).toString('base64');
       setCurrentImageData(imageDataBase64);
     } catch (err: any) {
-      logger.warn(`(cropping-box) failed to crop image, category=${props.category}`, err);
+      logger.warn(`(cropping-box) failed to crop image, category=${category}`, err);
       setCurrentImageData(null);
       userNotificationStore.show({
         level: UserNotificationLevel.ERROR,
@@ -207,8 +207,8 @@ function destroyCropperSafe () {
     class="modal-window"
     content-class="cropping-box p-xs-3 p-s-4"
     :lock-scroll="false"
-    :click-to-close="$props.clickToClose"
-    :esc-to-close="$props.escToClose"
+    :click-to-close="clickToClose"
+    :esc-to-close="escToClose"
     @opened="onOpened"
     @closed="onClosed"
     @update:model-value="(val: boolean) => $emit('update:modelValue', val)"
@@ -219,7 +219,7 @@ function destroyCropperSafe () {
       </h3>
       <div class="cropping-box-container">
         <ErrorHelm :is-error="isError">
-          <img ref="cropperImg" class="cropping-box-img" :alt="t(getI18nResName2('editableImage', 'editImgAlt'))" @error="onImgError" @load="onImgLoad">
+          <img ref="cropper-image" class="cropping-box-img" :alt="t(getI18nResName2('editableImage', 'editImgAlt'))" @error="onImgError" @load="onImgLoad">
         </ErrorHelm>
       </div>
       <div class="cropping-box-divisor my-xs-2 my-s-3" />

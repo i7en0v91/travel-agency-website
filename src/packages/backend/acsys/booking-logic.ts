@@ -1,5 +1,5 @@
-import { type IOfferBookingData, type IAppLogger, type EntityId, type IStayOfferDetails, type IFlightOffer, type IOfferBooking } from '@golobe-demo/shared';
-import { type IBookingLogic } from './../types';
+import type { IOfferBookingData, IAppLogger, EntityId, IStayOfferDetails, IFlightOffer, IOfferBooking } from '@golobe-demo/shared';
+import type { IBookingLogic } from './../types';
 
 export class BookingLogic implements IBookingLogic {
   private readonly logger: IAppLogger;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type EntityId, type OfferKind, lookupPageByUrl, AppPage, SystemPage, KeyCodeEsc, type Locale, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { type ActivePageLink, type NavBarMode } from './../../types';
+import type { ActivePageLink, NavBarMode } from './../../types';
 import { formatAuthCallbackUrl, updateTabIndices, isPrefersReducedMotionEnabled } from './../../helpers/dom';
 import { withQuery } from 'ufo';
 import NavLink from './nav-link.vue';
@@ -20,7 +20,7 @@ interface IProps {
   ctrlKey: string,
   mode: NavBarMode
 }
-const props = defineProps<IProps>();
+const { ctrlKey, mode } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 const nuxtApp = useNuxtApp();
@@ -31,30 +31,28 @@ const navLinkBuilder = useNavLinkBuilder();
 const collapsed = ref(true);
 const toggling = ref(false);
 
-const navBarEl = shallowRef<HTMLElement>();
-
 const userAccountStore = useUserAccountStore();
 userAccountStore.getUserAccount(); // start auth session refreshing in background
 
 async function getBookingOfferKind (bookingId: EntityId): Promise<OfferKind> {
-  logger.verbose(`(NavUser) obtaining booking offer kind: ctrlKey=${props.ctrlKey}, bookingId=${bookingId}`);
+  logger.verbose(`(NavUser) obtaining booking offer kind: ctrlKey=${ctrlKey}, bookingId=${bookingId}`);
   const offerBookingStoreFactory = await useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
   const offerBookingStore = await offerBookingStoreFactory.getUserBooking(bookingId, !!nuxtApp.ssrContext?.event.context.ogImageContext, nuxtApp.ssrContext?.event);
   const offerId = offerBookingStore.offerId;
   const offerKind = offerBookingStore.offerKind;
-  logger.verbose(`(NavUser) booking offer kind obtained: ctrlKey=${props.ctrlKey}, bookingId=${bookingId}, offerId=${offerId}, offerKind=${offerKind}`);
+  logger.verbose(`(NavUser) booking offer kind obtained: ctrlKey=${ctrlKey}, bookingId=${bookingId}, offerId=${offerId}, offerKind=${offerKind}`);
   return offerKind;
 }
 
 async function getActivePageLink () : Promise<ActivePageLink | undefined> {
   const currentPage = lookupPageByUrl(route.path);
   if (currentPage === undefined) {
-    logger.warn(`(NavBar) failed to detected current page, ctrlKey=${props.ctrlKey}, page=${route.path}`);
+    logger.warn(`(NavBar) failed to detected current page, ctrlKey=${ctrlKey}, page=${route.path}`);
     return undefined;
   }
 
   if(currentPage === SystemPage.Drafts) {
-    logger.debug(`(NavBar) current page is system, ctrlKey=${props.ctrlKey}, path=${route.path}`);
+    logger.debug(`(NavBar) current page is system, ctrlKey=${ctrlKey}, path=${route.path}`);
     return undefined;
   }
 
@@ -80,19 +78,19 @@ async function getActivePageLink () : Promise<ActivePageLink | undefined> {
       break;
   }
   if (!result && currentPage === AppPage.BookingDetails) {
-    logger.verbose(`(NavBar) current page link is booking page, detecting offer kind, ctrlKey=${props.ctrlKey}, path=${route.path}`);
+    logger.verbose(`(NavBar) current page link is booking page, detecting offer kind, ctrlKey=${ctrlKey}, path=${route.path}`);
     try {
       const bookingParam = route.params.id!.toString();
       const bookingId = bookingParam;
       const offerKind = await getBookingOfferKind(bookingId);
       result = offerKind === 'flights' ? AppPage.Flights : AppPage.Stays;
     } catch (err: any) {
-      logger.warn(`(NavUser) failed to obtain booking offer kind url: ctrlKey=${props.ctrlKey}, path=${route.path}`, err);
+      logger.warn(`(NavUser) failed to obtain booking offer kind url: ctrlKey=${ctrlKey}, path=${route.path}`, err);
       result = undefined;
     }
   }
 
-  logger.debug(`(NavBar) active page link obtained, ctrlKey=${props.ctrlKey}, page=${result ?? 'none'}, `);
+  logger.debug(`(NavBar) active page link obtained, ctrlKey=${ctrlKey}, page=${result ?? 'none'}, `);
   return result;
 }
 
@@ -104,23 +102,23 @@ function isAnimated (): boolean {
 
 function togglePageLinksMenu () {
   if (!toggling.value) {
-    logger.debug(`(NavBar) toggling navbar, ctrlKey=${props.ctrlKey}, new state collapsed=${!collapsed.value}`);
+    logger.debug(`(NavBar) toggling navbar, ctrlKey=${ctrlKey}, new state collapsed=${!collapsed.value}`);
     collapsed.value = !collapsed.value;
     toggling.value = isAnimated() && true;
   } else {
-    logger.verbose(`(NavBar) wont toggle navbar, it is currently toggling, ctrlKey=${props.ctrlKey}`);
+    logger.verbose(`(NavBar) wont toggle navbar, it is currently toggling, ctrlKey=${ctrlKey}`);
   }
 }
 
 function onPageLinksToggled () {
-  logger.debug(`(NavBar) page links toggled, ctrlKey=${props.ctrlKey}, collapsed=${collapsed.value}`);
+  logger.debug(`(NavBar) page links toggled, ctrlKey=${ctrlKey}, collapsed=${collapsed.value}`);
   toggling.value = false;
   updateTabIndices();
 }
 
 function onLinkClicked () {
   if (!toggling.value && !collapsed.value) {
-    logger.verbose(`(NavBar) locale changed, collapsing, ctrlKey=${props.ctrlKey}`);
+    logger.verbose(`(NavBar) locale changed, collapsing, ctrlKey=${ctrlKey}`);
     toggling.value = isAnimated() && true;
     setTimeout(() => {
       collapsed.value = true;
@@ -128,19 +126,19 @@ function onLinkClicked () {
   }
 }
 
-const cssClass = computed(() => `nav-bar ${props.mode === 'inApp' ? 'nav-bar-inapp' : 'nav-bar-landing'}`);
+const cssClass = computed(() => `nav-bar ${mode === 'inApp' ? 'nav-bar-inapp' : 'nav-bar-landing'}`);
 const isErrorPage = useError().value;
 
 function handleKeyup (e: KeyboardEvent) {
   if (e.key?.toLowerCase() === KeyCodeEsc.toLowerCase() && !toggling.value && !collapsed.value) {
-    logger.debug(`(NavBar) ESC pressed, collapsing, ctrlKey=${props.ctrlKey}`);
+    logger.debug(`(NavBar) ESC pressed, collapsing, ctrlKey=${ctrlKey}`);
     togglePageLinksMenu();
   }
 }
 
 onMounted(async () => {
   watch(() => route.path, () => {
-    logger.debug(`(NavBar) route changed, updating active page link, ctrlKey=${props.ctrlKey}, route=${route.path}`);
+    logger.debug(`(NavBar) route changed, updating active page link, ctrlKey=${ctrlKey}, route=${route.path}`);
     setTimeout(async () => {
       activePageLink.value = await getActivePageLink();
     }, 0);
@@ -157,7 +155,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <nav id="nav-main" ref="navBarEl" :aria-label="$t(getI18nResName2('ariaLabels', 'navMain'))" :class="cssClass">
+  <nav id="nav-main" :aria-label="$t(getI18nResName2('ariaLabels', 'navMain'))" :class="cssClass">
     <NavSearchPageLinks
       ctrl-key="navSearchPageLinks"
       :mode="mode"

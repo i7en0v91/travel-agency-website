@@ -10,15 +10,15 @@ interface IProps {
   disabled: boolean,
   active: boolean
 }
-const props = defineProps<IProps>();
+const { ctrlKey, type, disabled, active } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 
-const cssClass = computed(() => `review-editor-button brdr-1 editor-icon-${kebabCase(props.type)} ${(props.disabled) ? 'disabled' : ''} ${(props.active) ? 'active' : ''}`);
+const cssClass = computed(() => `review-editor-button brdr-1 editor-icon-${kebabCase(type)} ${(disabled) ? 'disabled' : ''} ${(active) ? 'active' : ''}`);
 
 const $emit = defineEmits(['click']);
 function onClick () {
-  logger.debug(`(ReviewEditorButton) clicked, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(ReviewEditorButton) clicked, ctrlKey=${ctrlKey}`);
   $emit('click');
 }
 

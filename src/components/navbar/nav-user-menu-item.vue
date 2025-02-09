@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Locale, type I18nResName } from '@golobe-demo/shared';
+import type { Locale, I18nResName } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 const { locale } = useI18n();
@@ -9,13 +9,9 @@ interface IProps {
   ctrlKey: string,
   textResName: I18nResName,
   to?: string,
-  icon: string,
-  chevron?: boolean
+  icon: string
 }
-const props = withDefaults(defineProps<IProps>(), {
-  chevron: true,
-  to: undefined
-});
+const { icon } = defineProps<IProps>();
 
 const $emit = defineEmits(['click']);
 
@@ -23,7 +19,7 @@ const $emit = defineEmits(['click']);
 
 <template>
   <div class="nav-user-menu-item">
-    <div :class="`nav-user-menu-icon mr-xs-2 nav-icon-common nav-link-icon-${props.icon}`" />
+    <div :class="`nav-user-menu-icon mr-xs-2 nav-icon-common nav-link-icon-${icon}`" />
     <NuxtLink
       v-if="to"
       class="nav-link nav-user-menu-chevron brdr-1"

@@ -1,8 +1,8 @@
 import { AppLoggerBase } from './base-logger';
 import omit from 'lodash-es/omit';
-import AppConfig from './../appconfig';
-import { type LogLevel } from './../types';
-import { LogAlwaysLevel } from './../constants';
+import type AppConfig from './../appconfig';
+import type { LogLevel } from './../types';
+import type { LogAlwaysLevel } from './../constants';
 import { type transport as WinstonTransport, type Logger as WinstonLogger, createLogger as createWinstonLogger, format as WinstonFormat } from 'winston';
 import traverse from 'traverse';
 const { combine, timestamp, json } = WinstonFormat;

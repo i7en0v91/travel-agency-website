@@ -10,7 +10,7 @@ interface IProps {
   amount?: number
 };
 
-const props = defineProps<IProps>();
+const { ctrlKey, amount } = defineProps<IProps>();
 
 const { d, n } = useI18n();
 
@@ -25,17 +25,17 @@ const paymentMethods = computed(() => [
     type: 'part',
     headerResName: getI18nResName3('payments', 'methods', 'partHeader'),
     textResName: getI18nResName3('payments', 'methods', 'partText'),
-    textResArgs: props.amount
+    textResArgs: amount
       ? {
-          now: n(Math.floor(props.amount * 0.5), 'currency'),
-          rest: n(Math.floor(props.amount * 0.5), 'currency'),
+          now: n(Math.floor(amount * 0.5), 'currency'),
+          rest: n(Math.floor(amount * 0.5), 'currency'),
           date: d(dayjs().add(1, 'month').toDate(), 'day')
         }
       : undefined
   }
 ]);
 
-const tooltip = shallowRef<InstanceType<typeof Tooltip>>();
+const tooltip = useTemplateRef<InstanceType<typeof Tooltip>>('tooltip');
 
 const selectedPaymentMethod = ref<PaymentMethodType>('full');
 
@@ -76,7 +76,7 @@ const tooltipId = useId();
     >
       <SimpleButton
         class="payment-method-moreinfo-btn mt-xs-3"
-        :ctrl-key="`${props.ctrlKey}-MoreInfoBtn`"
+        :ctrl-key="`${ctrlKey}-MoreInfoBtn`"
         :label-res-name="getI18nResName3('payments', 'methods', 'moreInfo')"
         kind="support"
       />

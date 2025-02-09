@@ -1,6 +1,6 @@
 import { getI18nResName2, AppConfig, type EntityId, type IEntityCacheCityItem, AppException, AppExceptionCodeEnum, AppPage, type Locale, UserNotificationLevel } from '@golobe-demo/shared';
 import { TravelDetailsHtmlAnchor } from './../helpers/constants';
-import { type ITravelDetailsData } from './../types';
+import type { ITravelDetailsData } from './../types';
 import { ApiEndpointPopularCityTravelDetails, ApiEndpointPopularCitiesList, type IPopularCityDto, type ITravelDetailsDto } from '../server/api-definitions';
 import once from 'lodash-es/once';
 import { withQuery, encodeHash, stringifyParsedURL, type ParsedURL } from 'ufo';

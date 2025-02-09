@@ -2,7 +2,7 @@
 import { type Locale, getLocalizeableValue } from '@golobe-demo/shared';
 import isString from 'lodash-es/isString';
 import { SearchOffersFilterTabGroupId } from './../../../../helpers/constants';
-import { type ISearchOffersFilterVariant } from './../../../../types';
+import type { ISearchOffersFilterVariant } from './../../../../types';
 import { getCommonServices } from '../../../../helpers/service-accessors';
 
 interface IProps {
@@ -11,16 +11,15 @@ interface IProps {
   value: boolean
 }
 
-const props = defineProps<IProps>();
+const { ctrlKey, value } = defineProps<IProps>();
 
 const { locale } = useI18n();
-
 const logger = getCommonServices().getLogger();
 
 const $emit = defineEmits<{(event: 'update:value', value: boolean): void}>();
 
 function fireValueChangeEvent (value: boolean) {
-  logger.verbose(`(FlowChecklistItem) firing value change event, ctrlKey=${props.ctrlKey}, value=${value}`);
+  logger.verbose(`(FlowChecklistItem) firing value change event, ctrlKey=${ctrlKey}, value=${value}`);
   $emit('update:value', value);
 }
 
@@ -37,7 +36,7 @@ function getVariantDisplayText (variant: ISearchOffersFilterVariant, locale: Loc
 }
 
 function onToggled () {
-  fireValueChangeEvent(!props.value);
+  fireValueChangeEvent(!value);
 }
 
 </script>

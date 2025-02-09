@@ -94,11 +94,11 @@ You need to do the following:
 
 After these steps are done, you may run Quickstart configuration with `npm run quickstart:electron` or proceed with setup of development environment as described [above](https://github.com/i7en0v91/travel-agency-website/tree/sass#setting-up-development-environment) and then execute one of the following implemented configurations:
 - Preview - `npm run build` then `npm run preview:electron`
-- Development - `npm run dev`, currently experimental
+- Development - `npm run dev`
 
 To run e2e tests switch back to browser build.
 
-**NOTE**: backend part is hosted by Nitro and will run in separate process outside desktop app. For simplicity the process starts in parallel (on Linux), so subsequent launches may produce EADDRINUSE (port: 3000) errors in case of recent non-gracefull exit. You can safely ignore it, desktop app should still boot normally, if not - terminate backend process
+**NOTE**: backend part is hosted by Nitro and will run in separate process outside desktop app. For simplicity the process starts in parallel, so subsequent launches may produce EADDRINUSE (port: 3000) errors in case of recent non-gracefull exit. You can safely ignore it, desktop app should still boot normally, if not - terminate backend process
 
 ## Architecture
 

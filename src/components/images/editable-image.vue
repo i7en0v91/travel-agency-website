@@ -9,7 +9,6 @@ import { basename, extname } from 'pathe';
 import StaticImage from './static-image.vue';
 import CroppingBox from './cropping-box.vue';
 import ModalWaitingIndicator from './../modal-waiting-indicator.vue';
-import { type ComponentInstance } from 'vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 globalThis.Buffer = globalThis.Buffer || Buffer;
@@ -21,8 +20,8 @@ interface IProps {
   sizes: string, // e.g. sm:100vw md:100vw lg:80vw xl:60vw xxl:40vw
   fillAlpha?: boolean, // substiture alpha-channel with solid color (from theme settings)
   btnResName?: I18nResName,
-  altResName?: I18nResName | undefined,
-  altResParams?: any | undefined,
+  altResName?: I18nResName,
+  altResParams?: any,
   showStub?: boolean,
   isHighPriority?: boolean,
   styling?: {
@@ -33,25 +32,16 @@ interface IProps {
   }
 }
 
-const props = withDefaults(defineProps<IProps>(), {
-  btnIcon: undefined,
-  altResName: undefined,
-  altResParams: undefined,
-  btnResName: undefined,
-  showStub: true,
-  fillAlpha: true,
-  styling: undefined,
-  isHighPriority: false
-});
+const { ctrlKey, category, fillAlpha = true, showStub = true, isHighPriority = false } = defineProps<IProps>();
 
 const { status } = useAuth();
 
 const { open } = useModal({
   component: CroppingBox,
   attrs: {
-    ctrlKey: `${props.ctrlKey}-croppingBox`,
-    category: props.category,
-    fillAlpha: props.fillAlpha,
+    ctrlKey: `${ctrlKey}-croppingBox`,
+    category,
+    fillAlpha,
     clickToClose: false,
     escToClose: true,
     onClosed () {
@@ -63,12 +53,11 @@ const { open } = useModal({
 const modalWaitingIndicator = useModal({
   component: ModalWaitingIndicator,
   attrs: {
-    ctrlKey: `${props.ctrlKey}-modalWaitingIndicator`,
+    ctrlKey: `${ctrlKey}-modalWaitingIndicator`,
     labelResName: getI18nResName2('editableImage', 'uploading')
   }
 });
-const fileInputEl = shallowRef<HTMLInputElement>();
-const staticImageComponent = shallowRef<ComponentInstance<typeof StaticImage>>();
+const fileInput = useTemplateRef<HTMLInputElement>('file-input');
 
 const userNotificationStore = useUserNotificationStore();
 const logger = getCommonServices().getLogger();
@@ -92,7 +81,7 @@ async function uploadCroppedImage () : Promise<void> {
       logger.info(`(editable-image) starting to upload image data, size=${imageBytes.length}, fileName=${uploadingFileName}`);
       await modalWaitingIndicator.open();
 
-      const query = uploadingFileName.length > 0 ? { fileName: uploadingFileName, category: props.category } : undefined;
+      const query = uploadingFileName.length > 0 ? { fileName: uploadingFileName, category } : undefined;
       const uploadedImageInfo = await post<any, IImageUploadResultDto>(`/${ApiEndpointUserImageUpload}`, query, imageBytes, undefined, true, undefined, 'default');
       if (uploadedImageInfo) {
         logger.info(`(editable-image) image uploaded, size=${imageBytes.length}, fileName=${uploadingFileName}`);
@@ -117,8 +106,8 @@ function readCurrentImageData (): string | undefined {
 
 function resetCurrentImageData () {
   setCurrentImageData(null);
-  if (fileInputEl.value) {
-    fileInputEl.value.value = '';
+  if (fileInput.value) {
+    fileInput.value.value = '';
   }
 }
 
@@ -225,7 +214,7 @@ function setImage (image: IImageEntitySrc) {
 }
 
 function openFileDialog () {
-  fileInputEl.value?.click();
+  fileInput.value?.click();
 }
 
 const fileInputHtmlId = useId();
@@ -239,7 +228,7 @@ defineExpose({
 <template>
   <div class="editable-image" role="img">
     <StaticImage
-      ref="staticImageComponent"
+      ref="static-image"
       :ctrl-key="`editableImage-${ctrlKey}`"
       :class="`editable-image-static-view ${styling?.containerClass}`"
       :show-stub="showStub"
@@ -253,7 +242,7 @@ defineExpose({
     <label :for="fileInputHtmlId" :class="`tabbable btn ${styling?.btnClass} py-xs-3 px-xs-2 ${styling?.btnIcon ? `btn-icon icon-${styling?.btnIcon}` : ''}`" @keyup.enter="openFileDialog" @keyup.space="openFileDialog">{{ btnResName ? $t(btnResName) : '&nbsp;' }}</label>
     <input
       :id="fileInputHtmlId"
-      ref="fileInputEl"
+      ref="file-input"
       :style=" { display: 'none' } "
       type="file"
       name="image"

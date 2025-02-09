@@ -1,7 +1,7 @@
 import { AppConfig, spinWait, type IAppLogger, HeaderContentType, LoadingStubFileName, HeaderCacheControl, isTestEnv } from '@golobe-demo/shared';
-import { type IServerServicesLocator } from '@golobe-demo/backend';
+import type { IServerServicesLocator } from '@golobe-demo/backend';
 import { defineEventHandler, sendWebResponse, type H3Event } from 'h3';
-import { type Storage, type StorageValue } from 'unstorage';
+import type { Storage, StorageValue } from 'unstorage';
 import { ApiEndpointPrefix } from '../api-definitions';
 import fromPairs from 'lodash-es/fromPairs';
 import isBuffer from 'lodash-es/isBuffer';

@@ -1,8 +1,8 @@
 import { EntityChangeSubscribersOrder, CurrentUserGeoLocation, DbVersionInitial, calculateDistanceKm, newUniqueId, type IAppLogger, type IAirlineCompany, type EntityId } from '@golobe-demo/shared';
 import type { PrismaClient } from '@prisma/client';
-import { type EntityChangeNotificationCallbackArgs, type EntityChangeNotificationCallback, type EntityChangeNotificationSubscriberId, type IEntityChangeNotificationTask, type IAirlineCompanyLogic, type IAirlineCompanyData } from './../types';
+import type { EntityChangeNotificationCallbackArgs, EntityChangeNotificationCallback, EntityChangeNotificationSubscriberId, IEntityChangeNotificationTask, IAirlineCompanyLogic, IAirlineCompanyData } from './../types';
 import { NearestAirlineCompanyCacheKey, AllAirlineCompaniesCacheKey } from './../helpers/utils';
-import { type Storage, type StorageValue } from 'unstorage';
+import type { Storage, StorageValue } from 'unstorage';
 import orderBy from 'lodash-es/orderBy';
 import { AirlineCompanyInfoQuery, MapAirlineCompany } from './queries';
 import { mapDbGeoCoord } from '../helpers/db';

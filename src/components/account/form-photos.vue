@@ -4,7 +4,7 @@ import { Pagination, Autoplay } from 'swiper/modules';
 import AuthFormsPhoto from './../../components/account/photo-slide.vue';
 import { type IImageDetailsDto, ApiEndpointAuthFormPhotos } from './../../server/api-definitions';
 import { usePreviewState } from './../../composables/preview-state';
-import { type Ref } from 'vue';
+import type { Ref } from 'vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
@@ -52,9 +52,6 @@ watch(() => imageSlugs.value, () => {
   if (imageSlugs.value) {
     isError.value = false;
   }
-});
-
-onMounted(() => {
 });
 
 </script>

@@ -9,7 +9,7 @@ interface IProps {
   showNoResultsStub: boolean
 }
 
-defineProps<IProps>();
+const { ctrlKey, captionResName } = defineProps<IProps>();
 
 const isCollapsed = ref(false);
 
@@ -17,10 +17,10 @@ const isCollapsed = ref(false);
 
 <template>
   <div class="filter-section pb-xs-5 mr-m-3 mt-xs-5">
-    <CollapsableSection v-model:collapsed="isCollapsed" :ctrl-key="`${$props.ctrlKey}-CollapseWrapper`" :collapse-enabled="true" :tabbable-group-id="SearchOffersFilterTabGroupId">
+    <CollapsableSection v-model:collapsed="isCollapsed" :ctrl-key="`${ctrlKey}-CollapseWrapper`" :collapse-enabled="true" :tabbable-group-id="SearchOffersFilterTabGroupId">
       <template #head>
         <h3 class="filter-section-caption">
-          {{ $t($props.captionResName) }}
+          {{ $t(captionResName) }}
         </h3>
       </template>
       <template #content>

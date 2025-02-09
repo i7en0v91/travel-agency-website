@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { AppPage, type Locale, getI18nResName2 } from '@golobe-demo/shared';
-import { type NavBarMode } from './../../types';
+import type { NavBarMode } from './../../types';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 const { locale } = useI18n();
@@ -10,10 +10,10 @@ interface IProps {
   ctrlKey: string,
   mode: NavBarMode
 }
-const props = defineProps<IProps>();
+const { mode } = defineProps<IProps>();
 
 const logoCssClass = computed(() => {
-  return ` nav-logo ${props.mode === 'landing' ? 'nav-logo-light' : ''} brdr-1`;
+  return ` nav-logo ${mode === 'landing' ? 'nav-logo-light' : ''} brdr-1`;
 });
 
 </script>

@@ -13,7 +13,7 @@ interface IProps {
   ctrlKey: string,
   bookKind: 'flight' | 'stay'
 };
-const props = defineProps<IProps>();
+const { ctrlKey, bookKind } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 
@@ -28,9 +28,9 @@ const popularCitiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`
     query: { drafts: enabled },
     default: () => { return range(0, 20, 1).map(_ => null); },
     transform: (response: IPopularCityDto[]) => {
-      logger.verbose(`(TravelCities) received popular cities list response: ctrlKey=${props.ctrlKey}`);
+      logger.verbose(`(TravelCities) received popular cities list response: ctrlKey=${ctrlKey}`);
       if (!response) {
-        logger.warn(`(TravelCities) popular cities list response is empty, ctrlKey=${props.ctrlKey}`);
+        logger.warn(`(TravelCities) popular cities list response is empty, ctrlKey=${ctrlKey}`);
         return range(0, 20, 1).map(_ => null); // error should be logged by fetchEx
       }
       return response;

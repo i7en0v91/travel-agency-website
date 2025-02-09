@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type I18nResName } from '@golobe-demo/shared';
+import type { I18nResName } from '@golobe-demo/shared';
 
-const elInput = shallowRef<HTMLInputElement>();
+const inputField = useTemplateRef<HTMLInputElement>('input-field');
 
 interface IProps {
   ctrlKey: string,
@@ -12,39 +12,34 @@ interface IProps {
   falseValue?: any,
   tabbableGroupId?: string
 }
-const props = withDefaults(defineProps<IProps>(), {
-  trueValue: true,
-  falseValue: false,
-  labelResName: undefined,
-  tabbableGroupId: undefined
-});
+const { modelValue, value, falseValue = false, trueValue = true } = defineProps<IProps>();
 
 const isChecked = computed(() => {
-  if (props.modelValue instanceof Array) {
-    return props.modelValue.includes(props.value);
+  if (modelValue instanceof Array) {
+    return modelValue.includes(value);
   }
-  return props.modelValue === props.trueValue;
+  return modelValue === trueValue;
 });
 
 const $emit = defineEmits(['update:modelValue']);
 
 function updateInput () {
-  const isChecked = elInput.value!.checked;
-  if (props.modelValue instanceof Array) {
-    const newValue = [...props.modelValue];
+  const isChecked = inputField.value!.checked;
+  if (modelValue instanceof Array) {
+    const newValue = [...modelValue];
     if (isChecked) {
-      newValue.push(props.value);
+      newValue.push(value);
     } else {
-      newValue.splice(newValue.indexOf(props.value), 1);
+      newValue.splice(newValue.indexOf(value), 1);
     }
     $emit('update:modelValue', newValue);
   } else {
-    $emit('update:modelValue', isChecked ? props.trueValue : props.falseValue);
+    $emit('update:modelValue', isChecked ? trueValue : falseValue);
   }
 }
 
 function onKeypress () {
-  elInput.value!.checked = !elInput.value!.checked;
+  inputField.value!.checked = !inputField.value!.checked;
   updateInput();
 }
 
@@ -59,7 +54,7 @@ const htmlId = useId();
     </div>
     <input
       :id="htmlId"
-      ref="elInput"
+      ref="input-field"
       class="checkbox-input-val"
       type="checkbox"
       :checked="isChecked"

@@ -63,7 +63,7 @@ import { murmurHash } from 'ohash';
 import { PrismaFlightOfferMaterializer, PrismaStayOfferMaterializer } from './common-services/offer-materializers';
 import { AcsysFlightOfferMaterializer, AcsysStayOfferMaterializer } from './acsys/offer-materializers';
 import orderBy from 'lodash-es/orderBy';
-import { type IInitializableOnStartup, type RegisterUserByEmailResponse, type IServerServicesLocator, type IAcsysServerServicesLocator } from './types';
+import type { IInitializableOnStartup, RegisterUserByEmailResponse, IServerServicesLocator, IAcsysServerServicesLocator } from './types';
 import dayjs from 'dayjs';
 import dayjsPluginUtc from 'dayjs/plugin/utc.js';
 

@@ -23,10 +23,7 @@ interface IProps {
   rooms?: IRoomInfo[]
 }
 
-withDefaults(defineProps<IProps>(), {
-  offerId: undefined,
-  rooms: undefined
-});
+defineProps<IProps>();
 
 </script>
 

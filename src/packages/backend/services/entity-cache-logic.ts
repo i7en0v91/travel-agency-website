@@ -1,6 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { AppException, AppExceptionCodeEnum, mapLocalizeableValues, type IAppLogger, type GetEntityCacheItem, type CacheEntityType, type IEntityCacheCityItem, type EntityId } from '@golobe-demo/shared';
-import { type IEntityCacheLogic } from './../types';
+import type { IEntityCacheLogic } from './../types';
 
 export class EntityCacheLogic implements IEntityCacheLogic {
   private logger: IAppLogger;

@@ -3,9 +3,9 @@ import { type EntityId, ImageCategory, type Locale, getLocalizeableValue, getSco
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices, isPrefersReducedMotionEnabled } from './../../../helpers/dom';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { Grid, Navigation } from 'swiper/modules';
-import { type Swiper } from 'swiper';
+import type { Swiper } from 'swiper';
 import ComponentWaitingIndicator from './../../../components/component-waiting-indicator.vue';
-import { type IStayReviewItem } from './../../../stores/stay-reviews-store';
+import type { IStayReviewItem } from './../../../stores/stay-reviews-store';
 import { useConfirmBox } from './../../../composables/confirm-box';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
@@ -22,7 +22,7 @@ const ReviewsPerSlidePage = 5;
 const { status } = useAuth();
 const { requestUserAction } = usePreviewState();
 
-const props = defineProps<IProps>();
+const { ctrlKey, stayId } = defineProps<IProps>();
 const logger = getCommonServices().getLogger();
 
 const swiper = shallowRef<InstanceType<typeof Swiper>>();
@@ -33,22 +33,22 @@ const pagingState = ref<{ of: number, total: number } | undefined>();
 const slideAnimationEnabled = import.meta.client && !isPrefersReducedMotionEnabled();
 
 function refreshPagingState () {
-  logger.debug(`(ReviewList) refreshing paging state, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  logger.debug(`(ReviewList) refreshing paging state, ctrlKey=${ctrlKey}, stayId=${stayId}`);
   const swiperInstance = swiper.value;
   if (!isSwiperReady.value || !swiperInstance) {
-    logger.debug(`(ReviewList) refreshing paging state - swiper not initialized, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+    logger.debug(`(ReviewList) refreshing paging state - swiper not initialized, ctrlKey=${ctrlKey}, stayId=${stayId}`);
     return;
   }
 
   const of = swiperInstance.realIndex + 1;
   const total = Math.ceil(swiperInstance.slides.length / ReviewsPerSlidePage);
 
-  logger.debug(`(ReviewList) refreshing paging state completed, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}, of=${of}, total=${total}`);
+  logger.debug(`(ReviewList) refreshing paging state completed, ctrlKey=${ctrlKey}, stayId=${stayId}, of=${of}, total=${total}`);
   pagingState.value = { of, total };
 }
 
 function rewindToTop () {
-  logger.debug(`(ReviewList) rewind to top, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  logger.debug(`(ReviewList) rewind to top, ctrlKey=${ctrlKey}, stayId=${stayId}`);
   if (isSwiperReady.value && swiper.value) {
     swiper.value.slideTo(0);
     refreshPagingState();
@@ -65,7 +65,7 @@ defineExpose({
 });
 
 const reviewStoreFactory = useStayReviewsStoreFactory();
-const reviewStore = await reviewStoreFactory.getInstance(props.stayId);
+const reviewStore = await reviewStoreFactory.getInstance(stayId);
 const userAccountStore = useUserAccountStore();
 const userAccount = ref<IUserAccount>();
 
@@ -83,7 +83,7 @@ async function refreshUserAccount (): Promise<void> {
     try {
       userAccount.value = await userAccountStore.getUserAccount();
     } catch (err: any) {
-      logger.warn(`(ReviewList) failed to initialize user account info, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`, err);
+      logger.warn(`(ReviewList) failed to initialize user account info, ctrlKey=${ctrlKey}, stayId=${stayId}`, err);
       userAccount.value = undefined;
     }
   } else {
@@ -101,19 +101,19 @@ function isTestUserReview (review: IStayReviewItem): boolean {
 }
 
 function onEditUserReviewBtnClick () {
-  logger.verbose(`(ReviewList) edit review btn click handler, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  logger.verbose(`(ReviewList) edit review btn click handler, ctrlKey=${ctrlKey}, stayId=${stayId}`);
   $emit('editBtnClick');
 }
 
 async function onDeleteUserReviewBtnClick (): Promise<void> {
-  logger.verbose(`(ReviewList) delete review btn click handler, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  logger.verbose(`(ReviewList) delete review btn click handler, ctrlKey=${ctrlKey}, stayId=${stayId}`);
 
   if(!await requestUserAction()) {
-    logger.verbose(`(ReviewList) delete review btn click handler hasn't been run - not allowed in preview mode, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+    logger.verbose(`(ReviewList) delete review btn click handler hasn't been run - not allowed in preview mode, ctrlKey=${ctrlKey}, stayId=${stayId}`);
     return;
   }
 
-  const result = await confirmBox.confirm(`${props.ctrlKey}-UserReview-DeleteConfirm`, ['yes', 'no'], getI18nResName3('stayDetailsPage', 'reviews', 'confirmDelete'));
+  const result = await confirmBox.confirm(`${ctrlKey}-UserReview-DeleteConfirm`, ['yes', 'no'], getI18nResName3('stayDetailsPage', 'reviews', 'confirmDelete'));
   if (result === 'yes') {
     const deletingReview = await reviewStore.getUserReview()!;
     await reviewStore.deleteReview();
@@ -127,27 +127,27 @@ function refreshTabIndices () {
 }
 
 function onSwiperInit () {
-  logger.debug(`(ReviewList) swiper initialized, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  logger.debug(`(ReviewList) swiper initialized, ctrlKey=${ctrlKey}, stayId=${stayId}`);
   swiper.value = (document.querySelector('.stay-reviews-swiper') as any).swiper as Swiper;
   isSwiperReady.value = true;
   nextTick(refreshPagingState);
 }
 
 function onSwiperSlideChanged () {
-  logger.debug(`(ReviewList) swiper slide changed, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  logger.debug(`(ReviewList) swiper slide changed, ctrlKey=${ctrlKey}, stayId=${stayId}`);
   refreshPagingState();
   refreshTabIndices();
 }
 
 function onNavNextBtnClick () {
-  logger.debug(`(ReviewList) nav next btn clicked, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  logger.debug(`(ReviewList) nav next btn clicked, ctrlKey=${ctrlKey}, stayId=${stayId}`);
   if (isSwiperReady.value && swiper.value) {
     swiper.value.slideNext();
   }
 }
 
 function onNavPrevBtnClick () {
-  logger.debug(`(ReviewList) nav next btn clicked, ctrlKey=${props.ctrlKey}, stayId=${props.stayId}`);
+  logger.debug(`(ReviewList) nav next btn clicked, ctrlKey=${ctrlKey}, stayId=${stayId}`);
   if (isSwiperReady.value && swiper.value) {
     swiper.value.slidePrev();
   }
@@ -232,7 +232,7 @@ function onNavPrevBtnClick () {
               <div v-if="review.user === 'current' || review.user.id === userAccount?.userId" class="stay-reviews-card-control-buttons">
                 <SimpleButton
                   class="stay-reviews-card-btn review-btn-delete no-hidden-parent-tabulation-check"
-                  :ctrl-key="`${props.ctrlKey}-UserReview-DeleteBtn`"
+                  :ctrl-key="`${ctrlKey}-UserReview-DeleteBtn`"
                   :aria-label-res-name="getI18nResName2('ariaLabels', 'btnDeleteUserReview')"
                   :title-res-name="getI18nResName2('ariaLabels', 'btnDeleteUserReview')"
                   icon="delete"
@@ -241,7 +241,7 @@ function onNavPrevBtnClick () {
                 />
                 <SimpleButton
                   class="stay-reviews-card-btn review-btn-edit no-hidden-parent-tabulation-check"
-                  :ctrl-key="`${props.ctrlKey}-UserReview-EditBtn`"
+                  :ctrl-key="`${ctrlKey}-UserReview-EditBtn`"
                   :aria-label-res-name="getI18nResName2('ariaLabels', 'btnEditUserReview')"
                   :title-res-name="getI18nResName2('ariaLabels', 'btnEditUserReview')"
                   icon="change"

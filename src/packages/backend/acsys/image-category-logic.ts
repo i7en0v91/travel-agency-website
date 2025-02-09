@@ -1,5 +1,5 @@
-import { type ImageCategory, type IImageCategoryInfo, type EntityId, type IAppLogger } from '@golobe-demo/shared';
-import { type  IImageCategoryLogic } from './../types';
+import type { ImageCategory, IImageCategoryInfo, EntityId, IAppLogger } from '@golobe-demo/shared';
+import type { IImageCategoryLogic } from './../types';
 
 export class ImageCategoryLogic implements IImageCategoryLogic {
   private readonly logger: IAppLogger;

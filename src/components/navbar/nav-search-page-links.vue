@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { AppPage, type Locale, getI18nResName2 } from '@golobe-demo/shared';
-import { type ActivePageLink, type NavBarMode } from './../../types';
+import type { ActivePageLink, NavBarMode } from './../../types';
 import ThemeSwitcher from './../../components/navbar/theme-switcher.vue';
 import LocaleSwitcher from './../../components/navbar/locale-switcher.vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
@@ -18,11 +18,7 @@ const logger = getCommonServices().getLogger();
 
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
-const props = withDefaults(defineProps<IProps>(), {
-  collapsed: false,
-  toggling: false,
-  activePageLink: undefined
-});
+const { ctrlKey, collapsed = false, toggling = false } = defineProps<IProps>();
 
 const $emit = defineEmits(['toggling', 'toggled', 'linkClicked']);
 
@@ -31,17 +27,17 @@ function getClassName (collapsed: boolean, toggling: boolean) {
 }
 
 function onAnimationStart () {
-  logger.debug(`(NavSearchPageLink) animation started, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(NavSearchPageLink) animation started, ctrlKey=${ctrlKey}`);
   $emit('toggling');
 }
 
 function onAnimationEnd () {
-  logger.debug(`(NavSearchPageLink) animation ended, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(NavSearchPageLink) animation ended, ctrlKey=${ctrlKey}`);
   $emit('toggled');
 }
 
 function onLinkClicked () {
-  logger.debug(`(NavSearchPageLink) link clicked, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(NavSearchPageLink) link clicked, ctrlKey=${ctrlKey}`);
   $emit('linkClicked');
 }
 

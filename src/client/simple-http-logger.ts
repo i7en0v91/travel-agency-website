@@ -30,7 +30,7 @@ export class Logger extends AppLoggerBase<typeof ClientLoggingOptions> {
     return {
       local,
       outside: local && this.checkNeedServerLogging(level)
-    }
+    };
   }
 
   override logOutside(logData: { level: LogLevel | (typeof LogAlwaysLevel) }): void {

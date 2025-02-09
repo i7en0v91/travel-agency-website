@@ -1,5 +1,5 @@
 import { type AppPage, type Locale, DefaultLocale, AppException, AppExceptionCodeEnum, getI18nResName2, getI18nResName3, type Theme, type I18nResName } from '@golobe-demo/shared';
-import { type ConfirmBoxButton } from './../types';
+import type { ConfirmBoxButton } from './../types';
 import type { NavProps } from '../electron/interfaces';
 import { getClientServices, getCommonServices } from './service-accessors';
 import once from 'lodash-es/once';

@@ -1,6 +1,6 @@
 import { AppException, AppExceptionCodeEnum, DbVersionInitial, newUniqueId, type IAppLogger, type EntityId, type IAirport, type EntityDataAttrsOnly } from '@golobe-demo/shared';
 import type { PrismaClient } from '@prisma/client';
-import { type IAirportLogic, type IAirportShort, type IAirportData, type ICitiesLogic } from './../types';
+import type { IAirportLogic, IAirportShort, IAirportData, ICitiesLogic } from './../types';
 import uniq from 'lodash-es/uniq';
 import groupBy from 'lodash-es/groupBy';
 import values from 'lodash-es/values';

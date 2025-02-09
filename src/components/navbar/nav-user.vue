@@ -12,7 +12,7 @@ import { useSignOut } from '../../composables/sign-out';
 interface IProps {
   ctrlKey: string
 }
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
 const signOutHelper = useSignOut();
 const { locale } = useI18n();
@@ -23,7 +23,7 @@ const logger = getCommonServices().getLogger();
 const userAccountStore = useUserAccountStore();
 const userAccount = await userAccountStore.getUserAccount();
 
-const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
+const dropdown = useTemplateRef<InstanceType<typeof Dropdown>>('dropdown');
 
 function onMenuShown () {
   setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
@@ -50,7 +50,7 @@ const isCurrentlyOnAccountPage = () => useRoute().path.includes(`/${getPagePath(
 
 async function onPaymentsMenuItemClick (): Promise<void> {
   const onAccountPage = isCurrentlyOnAccountPage();
-  logger.debug(`(NavUser) payments menu item clicked: ctrlKey=${props.ctrlKey}, isAccountPage=${onAccountPage}`);
+  logger.debug(`(NavUser) payments menu item clicked: ctrlKey=${ctrlKey}, isAccountPage=${onAccountPage}`);
   onMenuItemClick();
 
   if(onAccountPage) {
@@ -65,7 +65,7 @@ async function onPaymentsMenuItemClick (): Promise<void> {
 
 async function onSettingsMenuItemClick (): Promise<void> {
   const onAccountPage = isCurrentlyOnAccountPage();
-  logger.debug(`(NavUser) settings menu item clicked: ctrlKey=${props.ctrlKey}, isAccountPage=${onAccountPage}`);
+  logger.debug(`(NavUser) settings menu item clicked: ctrlKey=${ctrlKey}, isAccountPage=${onAccountPage}`);
   onMenuItemClick();
 
   if(onAccountPage) {

@@ -1,4 +1,4 @@
-import { type ICommonServicesLocator, type AppPage, type I18nResName, type GeoPoint, type Price, type StayOffersSortFactor, type FlightOffersSortFactor, type FlightClass, type TripType, type OfferKind, type Timestamp, type ILocalizableValue, type EntityId, type IImageEntitySrc, type CacheEntityType, type GetEntityCacheItem } from '@golobe-demo/shared';
+import type { ICommonServicesLocator, AppPage, I18nResName, GeoPoint, Price, StayOffersSortFactor, FlightOffersSortFactor, FlightClass, TripType, OfferKind, Timestamp, ILocalizableValue, EntityId, IImageEntitySrc, CacheEntityType, GetEntityCacheItem } from '@golobe-demo/shared';
 import type { IElectronShell } from './electron/interfaces';
 
 export type SimplePropertyType = 'text' | 'email' | 'password';
@@ -63,8 +63,8 @@ export interface IDropdownListProps {
   ctrlKey: string,
   captionResName?: I18nResName,
   persistent: boolean,
-  selectedValue?: DropdownListValue | undefined,
-  defaultValue?: DropdownListValue | undefined,
+  selectedValue?: DropdownListValue,
+  defaultValue?: DropdownListValue,
   initiallySelectedValue?: DropdownListValue | null | undefined,
   placeholderResName?: I18nResName,
   listContainerClass?: string,
@@ -82,8 +82,8 @@ export interface ITravelDetailsTextingData {
 }
 export interface ITravelDetailsData {
   cityId: EntityId,
-  texting?: ITravelDetailsTextingData | undefined,
-  images?: { slug: string, timestamp: Timestamp }[] | undefined
+  texting?: ITravelDetailsTextingData,
+  images?: { slug: string, timestamp: Timestamp }[]
 }
 
 /** Components - search lists (with autocomplete) */
@@ -204,14 +204,14 @@ export interface IBookingTicketGeneralProps {
 
 export interface IBookingTicketDatesItemProps {
   ctrlKey: string,
-  label?: string | undefined,
-  sub?: ILocalizableValue | I18nResName | undefined
+  label?: string,
+  sub?: ILocalizableValue | I18nResName
 }
 
 export interface IBookingTicketDatesProps {
   ctrlKey: string,
-  from?: IBookingTicketDatesItemProps | undefined,
-  to?: IBookingTicketDatesItemProps | undefined,
+  from?: IBookingTicketDatesItemProps,
+  to?: IBookingTicketDatesItemProps,
   offerKind?: OfferKind
 }
 
@@ -219,7 +219,7 @@ export interface IBookingTicketDetailsItemProps {
   ctrlKey: string,
   icon: string,
   caption: I18nResName,
-  text?: I18nResName | undefined
+  text?: I18nResName
 }
 
 export interface IBookingTicketDetailsProps {
@@ -241,10 +241,10 @@ export interface IBookingTicketFlightGfxProps {
 export interface IBookingTicketProps {
   ctrlKey: string,
   offerKind?: OfferKind,
-  generalInfo?: IBookingTicketGeneralProps | undefined,
-  dates?: Omit<IBookingTicketDatesProps, 'offerKind'> | undefined,
-  details?: IBookingTicketDetailsProps | undefined,
-  titleOrGfx?: IBookingTicketFlightGfxProps | IBookingTicketStayTitleProps | undefined
+  generalInfo?: IBookingTicketGeneralProps,
+  dates?: Omit<IBookingTicketDatesProps, 'offerKind'>,
+  details?: IBookingTicketDetailsProps,
+  titleOrGfx?: IBookingTicketFlightGfxProps | IBookingTicketStayTitleProps
 }
 
 export interface IClientServicesLocator extends ICommonServicesLocator {

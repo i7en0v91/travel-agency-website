@@ -8,26 +8,26 @@ interface IProps {
   bookingId: EntityId,
   offer: EntityDataAttrsOnly<IStayOffer>
 };
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
 const { d, t } = useI18n();
 
 const details = [
-  { ctrlKey: `${props.ctrlKey}-Details-CheckInTime`, caption: getI18nResName3('ticket', 'details', 'checkInTime'), icon: 'timer', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
-  { ctrlKey: `${props.ctrlKey}-Details-CheckOutTime`, caption: getI18nResName3('ticket', 'details', 'checkOutTime'), icon: 'timer', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
-  { ctrlKey: `${props.ctrlKey}-Details-Room`, caption: getI18nResName3('ticket', 'details', 'room'), icon: 'door', text: t(getI18nResName3('ticket', 'details', 'onArrival')) }
+  { ctrlKey: `${ctrlKey}-Details-CheckInTime`, caption: getI18nResName3('ticket', 'details', 'checkInTime'), icon: 'timer', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
+  { ctrlKey: `${ctrlKey}-Details-CheckOutTime`, caption: getI18nResName3('ticket', 'details', 'checkOutTime'), icon: 'timer', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
+  { ctrlKey: `${ctrlKey}-Details-Room`, caption: getI18nResName3('ticket', 'details', 'room'), icon: 'door', text: t(getI18nResName3('ticket', 'details', 'onArrival')) }
 ];
 
 </script>
 
 <template>
-  <TicketCardContainer :ctrl-key="`${props.ctrlKey}-Container`" :booking-id="bookingId" :offer="offer"> 
+  <TicketCardContainer :ctrl-key="`${ctrlKey}-Container`" :booking-id="bookingId" :offer="offer"> 
     <template #ticket-card>
       <div class="ticket-card">
         <div class="ticket-card-div">
           <div class="ticket-card-general">
             <div class="ticket-card-image ticket-stay-card-hotel-logo brdr-3 p-xs-2">
-              <TicketStayTitle :ctrl-key="`${props.ctrlKey}-StayTitle`" :city-name="offer.stay.city.name" :stay-name="offer.stay.name"/>
+              <TicketStayTitle :ctrl-key="`${ctrlKey}-StayTitle`" :city-name="offer.stay.city.name" :stay-name="offer.stay.name"/>
             </div>
             <div class="ticket-card-timings from ml-xs-5">
               <div class="ticket-card-caption">

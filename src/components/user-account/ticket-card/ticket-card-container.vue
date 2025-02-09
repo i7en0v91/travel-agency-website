@@ -8,7 +8,7 @@ interface IProps {
   bookingId: EntityId,
   offer: EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>
 };
-const props = defineProps<IProps>();
+const { ctrlKey, bookingId, offer } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 const navLinkBuilder = useNavLinkBuilder();
@@ -21,7 +21,7 @@ const documentDownloader = import.meta.client ? useDocumentDownloader() : undefi
 const userAccountStore = useUserAccountStore();
 
 async function onBtnClick(): Promise<void> {
-  logger.verbose(`(TicketCardContainer) download btn clicked, ctrlKey=${props.ctrlKey}, bookingId=${props.bookingId}`);
+  logger.verbose(`(TicketCardContainer) download btn clicked, ctrlKey=${ctrlKey}, bookingId=${bookingId}`);
 
   let firstName: string | undefined;
   let lastName: string | undefined;
@@ -30,10 +30,10 @@ async function onBtnClick(): Promise<void> {
     firstName = userAccount.firstName;
     lastName = userAccount.lastName;
   } catch (err: any) {
-    logger.warn(`(TicketCardContainer) failed to initialize user account info, ctrlKey=${props.ctrlKey}`, err);
+    logger.warn(`(TicketCardContainer) failed to initialize user account info, ctrlKey=${ctrlKey}`, err);
   }
 
-  await documentDownloader!.download(props.bookingId, props.offer, firstName, lastName, locale.value as Locale, theme.currentTheme.value);
+  await documentDownloader!.download(bookingId, offer, firstName, lastName, locale.value as Locale, theme.currentTheme.value);
 }
 
 </script>

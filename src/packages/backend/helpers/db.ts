@@ -1,7 +1,7 @@
 import { type IAppLogger, AppConfig, DbVersionDraft, isPublishEnv, isQuickStartEnv, EntityIdTestRegEx } from '@golobe-demo/shared';
 import { createPrismaClient } from './../prisma/client';
 import { Prisma, type PrismaClient } from '@prisma/client';
-import { type IConcurrentlyModifyingEntity } from './../types';
+import type { IConcurrentlyModifyingEntity } from './../types';
 import dayjs from 'dayjs';
 import { getServerServices } from './service-accessors';
 

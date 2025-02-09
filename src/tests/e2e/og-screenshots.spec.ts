@@ -1,5 +1,5 @@
 import { assert, beforeAll, afterAll, describe, test, type TestOptions } from 'vitest';
-import { type Page } from 'playwright-core';
+import type { Page } from 'playwright-core';
 import { setup, createPage } from '@nuxt/test-utils/e2e';
 import { join } from 'pathe';
 import { joinURL } from 'ufo';

@@ -1,8 +1,8 @@
 // Configuration for floating-vue as it is not available out-of-the box at the moment
 import FloatingVue from 'floating-vue';
-import { type DirectiveBinding } from 'vue';
+import type { DirectiveBinding } from 'vue';
 import { patchPopperComponent } from '../client/floating-vue';
-import { type FloatingVueHydrationHints } from './../types';
+import type { FloatingVueHydrationHints } from './../types';
 
 export default defineNuxtPlugin((nuxtApp) => {
   FloatingVue.options.themes['default-dropdown'] = {

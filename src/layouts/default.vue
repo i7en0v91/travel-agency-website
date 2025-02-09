@@ -6,7 +6,7 @@ import 'vue3-perfect-scrollbar/style.css';
 import '@vueform/slider/themes/default.css';
 
 import { QueryInternalRequestParam, AppPage, getPagePath, MainTitleSlug, lookupPageByUrl, getI18nResName2, ImageCategory, isElectronBuild } from '@golobe-demo/shared';
-import { type NavBarMode } from './../types';
+import type { NavBarMode } from './../types';
 import { ModalsContainer } from 'vue-final-modal';
 import AppContainer from './../components/app-container.vue';
 import NavBar from './../components/navbar/nav-bar.vue';
@@ -79,7 +79,9 @@ const hideInElectron = isElectronBuild() ? {
         <HeadingText ctrl-key="IndexPageMainHeading" />
       </SearchPageHead>
       <NavBar v-else-if="showDefaultComponents && !hideInElectron?.navBar" ctrl-key="NavBar" :mode="navBarMode" />
-      <slot />
+      <div class="track-content">
+        <slot />
+      </div>
       <AppFooter v-if="showDefaultComponents && !hideInElectron?.footer" ctrl-key="footer" />
     </AppContainer>
     <ClientOnly>

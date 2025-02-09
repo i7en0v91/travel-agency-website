@@ -14,16 +14,14 @@ interface IProps {
   ctrlKey: string,
   takeInitialValuesFromUrlQuery?: boolean
 }
-const props = withDefaults(defineProps<IProps>(), {
-  takeInitialValuesFromUrlQuery: false
-});
+const { ctrlKey, takeInitialValuesFromUrlQuery = false } = defineProps<IProps>();
 const logger = getCommonServices().getLogger();
 
 const { t } = useI18n();
 
-const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
+const dropdown = useTemplateRef<InstanceType<typeof Dropdown>>('dropdown');
 
-const elBtn = shallowRef<HTMLElement>();
+const openBtn = useTemplateRef<HTMLElement>('open-btn');
 const destinationCity = ref<ISearchListItem | undefined>();
 const checkInDate = ref<Date | undefined>();
 const checkOutDate = ref<Date | undefined>();
@@ -40,11 +38,11 @@ defineExpose({
   getSearchParamsFromInputControls
 });
 
-if (props.takeInitialValuesFromUrlQuery) {
+if (takeInitialValuesFromUrlQuery) {
   searchOffersStore = await searchOffersStoreAccessor.getInstance('stays', true, false);
   displayedSearchParams = computed<Partial<ISearchStayOffersMainParams>>(() => { return searchOffersStore!.viewState.currentSearchParams; });
   watch([destinationCity, checkInDate, checkOutDate, numRooms, numGuests], () => {
-    logger.debug(`(SearchStayOffers) search params watch handler, ctrlKey=${props.ctrlKey}`);
+    logger.debug(`(SearchStayOffers) search params watch handler, ctrlKey=${ctrlKey}`);
     const inputParams = getSearchParamsFromInputControls();
     $emit('change', inputParams);
   });
@@ -52,7 +50,7 @@ if (props.takeInitialValuesFromUrlQuery) {
   searchOffersStore = await searchOffersStoreAccessor.getInstance('stays', false, false);
   displayedSearchParams = computed<Partial<ISearchStayOffersMainParams>>(getSearchParamsFromInputControls);
   watch(displayedSearchParams, () => {
-    logger.debug(`(SearchStayOffers) search params change handler, ctrlKey=${props.ctrlKey}`);
+    logger.debug(`(SearchStayOffers) search params change handler, ctrlKey=${ctrlKey}`);
     $emit('change', displayedSearchParams!.value);
   });
 }
@@ -112,18 +110,18 @@ function onEscape () {
 }
 
 onBeforeMount(() => {
-  if (props.takeInitialValuesFromUrlQuery) {
-    const roomValueSetting = controlSettingsStore.getControlValueSetting<number | undefined>(`${props.ctrlKey}-Rooms`, 1, true);
+  if (takeInitialValuesFromUrlQuery) {
+    const roomValueSetting = controlSettingsStore.getControlValueSetting<number | undefined>(`${ctrlKey}-Rooms`, 1, true);
     roomValueSetting.value = displayedSearchParams?.value?.numRooms ?? 1;
-    const guestsValueSetting = controlSettingsStore.getControlValueSetting<number | undefined>(`${props.ctrlKey}-Guests`, 1, true);
+    const guestsValueSetting = controlSettingsStore.getControlValueSetting<number | undefined>(`${ctrlKey}-Guests`, 1, true);
     guestsValueSetting.value = displayedSearchParams?.value?.numGuests ?? 1;
   }
 
-  const roomValueSetting = controlSettingsStore.getControlValueSetting<number | undefined>(`${props.ctrlKey}-Rooms`, 1, true);
+  const roomValueSetting = controlSettingsStore.getControlValueSetting<number | undefined>(`${ctrlKey}-Rooms`, 1, true);
   if (roomValueSetting.value) {
     numRooms.value = roomValueSetting.value;
   }
-  const guestsValueSetting = controlSettingsStore.getControlValueSetting<number | undefined>(`${props.ctrlKey}-Guests`, 1, true);
+  const guestsValueSetting = controlSettingsStore.getControlValueSetting<number | undefined>(`${ctrlKey}-Guests`, 1, true);
   if (guestsValueSetting.value) {
     numGuests.value = guestsValueSetting.value;
   }
@@ -153,7 +151,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
         <SearchListInput
           v-model:selected-value="destinationCity"
           :initially-selected-value="takeInitialValuesFromUrlQuery ? (displayedSearchParams?.city ?? null) : undefined"
-          :ctrl-key="`${props.ctrlKey}-DestinationCity`"
+          :ctrl-key="`${ctrlKey}-DestinationCity`"
           class="search-stays-destination"
           :item-search-url="`/${ApiEndpointCitiesSearch}`"
           :additional-query-params="{ includeCountry: true }"
@@ -170,7 +168,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
       <DatePicker
         v-model:selected-date="checkInDate"
         :initially-selected-date="takeInitialValuesFromUrlQuery ? (displayedSearchParams?.checkIn ?? null) : undefined"
-        :ctrl-key="`${props.ctrlKey}-CheckIn`"
+        :ctrl-key="`${ctrlKey}-CheckIn`"
         class="search-stays-checkin"
         :caption-res-name="getI18nResName2('searchStays', 'checkInCaption')"
         :persistent="true"
@@ -179,7 +177,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
       <DatePicker
         v-model:selected-date="checkOutDate"
         :initially-selected-date="takeInitialValuesFromUrlQuery ? (displayedSearchParams?.checkOut ?? null) : undefined"
-        :ctrl-key="`${props.ctrlKey}-CheckOut`"
+        :ctrl-key="`${ctrlKey}-CheckOut`"
         class="search-stays-checkout"
         :caption-res-name="getI18nResName2('searchStays', 'checkOutCaption')"
         :persistent="true"
@@ -199,7 +197,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
       class="search-stays-bookparams"
       :flip="false"
       :no-auto-focus="true"
-      :boundary="elBtn"
+      :boundary="openBtn"
       theme="control-dropdown"
       @apply-show="onMenuShown"
       @apply-hide="onMenuHide"
@@ -207,8 +205,8 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
     >
       <FieldFrame :text-res-name="getI18nResName2('searchStays', 'roomsGuestsCaption')" class="search-stays-bookparams-frame">
         <button
-          :id="`stays-bookparams-${props.ctrlKey}`"
-          ref="elBtn"
+          :id="`stays-bookparams-${ctrlKey}`"
+          ref="open-btn"
           class="search-stays-bookparams-btn brdr-1"
           type="button"
         >
@@ -217,7 +215,7 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
       </FieldFrame>
       <template #popper>
         <ClientOnly>
-          <div class="search-stays-bookparams-content p-xs-2" :data-popper-anchor="`stays-bookparams-${props.ctrlKey}`">
+          <div class="search-stays-bookparams-content p-xs-2" :data-popper-anchor="`stays-bookparams-${ctrlKey}`">
             <SearchOffersCounter
               v-model:value="numRooms"
               :ctrl-key="`${ctrlKey}-Rooms`"

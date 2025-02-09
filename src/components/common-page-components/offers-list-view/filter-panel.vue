@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getI18nResName3, type OfferKind } from '@golobe-demo/shared';
-import { type ISearchOffersChecklistFilterProps, type ISearchOffersRangeFilterProps } from './../../../types';
+import type { ISearchOffersChecklistFilterProps, ISearchOffersRangeFilterProps } from './../../../types';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import { SearchOffersFilterTabGroupId } from './../../../helpers/constants';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
@@ -16,11 +16,10 @@ interface IProps {
   ctrlKey: string,
   offersKind: OfferKind
 }
-const props = withDefaults(defineProps<IProps>(), {
-});
+const { ctrlKey, offersKind } = defineProps<IProps>();
 
 const searchOffersStoreAccessor = useSearchOffersStore();
-const searchOffersStore = await searchOffersStoreAccessor.getInstance(props.offersKind, true, true);
+const searchOffersStore = await searchOffersStoreAccessor.getInstance(offersKind, true, true);
 
 const logger = getCommonServices().getLogger();
 
@@ -35,15 +34,15 @@ const filters = reactive([] as {
 const searchResultsEmpty = computed(() => (searchOffersStore?.viewState.displayOptions.totalCount ?? 0) === 0);
 
 function refreshFilterParams () {
-  logger.debug(`(FilterPanel) refershing filter params, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
+  logger.debug(`(FilterPanel) refershing filter params, ctrlKey=${ctrlKey}, type=${offersKind}`);
   if (!searchOffersStore || !searchOffersStore.viewState.currentSearchParams.filters) {
-    logger.debug(`(FilterPanel) filter params wont refresh, not initialized, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
+    logger.debug(`(FilterPanel) filter params wont refresh, not initialized, ctrlKey=${ctrlKey}, type=${offersKind}`);
     return;
   }
 
   const filtersOrdered = orderBy(searchOffersStore.viewState.currentSearchParams.filters, ['displayOrder'], ['asc']);
   if (filters.length === 0) {
-    logger.verbose(`(FilterPanel) initializing filters list, ctrlKey=${props.ctrlKey}, type=${props.offersKind}, count=${filtersOrdered.length}`);
+    logger.verbose(`(FilterPanel) initializing filters list, ctrlKey=${ctrlKey}, type=${offersKind}, count=${filtersOrdered.length}`);
     for (let i = 0; i < filtersOrdered.length; i++) {
       const filterParams = filtersOrdered[i];
       if (filterParams.type === 'checklist') {
@@ -63,21 +62,21 @@ function refreshFilterParams () {
         throw new Error('unknown filter');
       }
     }
-    logger.verbose(`(FilterPanel) filters list initialized, ctrlKey=${props.ctrlKey}, type=${props.offersKind}, count=${filtersOrdered.length}`);
+    logger.verbose(`(FilterPanel) filters list initialized, ctrlKey=${ctrlKey}, type=${offersKind}, count=${filtersOrdered.length}`);
   } else {
     for (let i = 0; i < filtersOrdered.length; i++) {
       filters[i].params = filtersOrdered[i];
     }
   }
   setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-  logger.debug(`(FilterPanel) filter params refreshed, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
+  logger.debug(`(FilterPanel) filter params refreshed, ctrlKey=${ctrlKey}, type=${offersKind}`);
 }
 if (import.meta.server) {
   refreshFilterParams();
 }
 
 onMounted(() => {
-  logger.verbose(`(FilterPanel) mounted, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
+  logger.verbose(`(FilterPanel) mounted, ctrlKey=${ctrlKey}, type=${offersKind}`);
   watch(() => searchOffersStore?.viewState.currentSearchParams.filters, () => {
     refreshFilterParams();
   });
@@ -89,9 +88,9 @@ onMounted(() => {
 });
 
 function refetchIfNotLatestFilterValues () {
-  logger.debug(`(FilterPanel) checking for refetch if not latest filter values were used, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
+  logger.debug(`(FilterPanel) checking for refetch if not latest filter values were used, ctrlKey=${ctrlKey}, type=${offersKind}`);
   if (searchOffersStore.resultState.status !== 'fetched' && searchOffersStore.resultState.status !== 'error') {
-    logger.debug(`(FilterPanel) checking for refetch skipped, as fetch is in progress, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
+    logger.debug(`(FilterPanel) checking for refetch skipped, as fetch is in progress, ctrlKey=${ctrlKey}, type=${offersKind}`);
     return;
   }
 
@@ -101,50 +100,50 @@ function refetchIfNotLatestFilterValues () {
     const fetchUsedValue = searchOffersStore.resultState.usedSearchParams!.filters!.find(f => f.filterId === filterId)!.currentValue;
     const lastUserValue = searchOffersStore.viewState.currentSearchParams.filters!.find(f => f.filterId === filterId)!.currentValue;
     if (!isEqual(fetchUsedValue, lastUserValue)) {
-      logger.verbose(`(FilterPanel) filter values have been changed by user during fetch, ctrlKey=${props.ctrlKey}, type=${props.offersKind}, filterId=${filterId}, fetchValue=${JSON.stringify(fetchUsedValue)}, lastUserValue=${JSON.stringify(lastUserValue)}`);
+      logger.verbose(`(FilterPanel) filter values have been changed by user during fetch, ctrlKey=${ctrlKey}, type=${offersKind}, filterId=${filterId}, fetchValue=${JSON.stringify(fetchUsedValue)}, lastUserValue=${JSON.stringify(lastUserValue)}`);
       filtersChanged = true;
     }
   }
 
   if (!filtersChanged) {
-    logger.debug(`(FilterPanel) checked for refetch - not needed, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
+    logger.debug(`(FilterPanel) checked for refetch - not needed, ctrlKey=${ctrlKey}, type=${offersKind}`);
     return;
   }
   setTimeout(() => searchOffersStore.fetchData('filter-refetch'), 0);
 }
 
 function applyFiltersAndRefetchData () {
-  logger.debug(`(FilterPanel) applying filters, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
+  logger.debug(`(FilterPanel) applying filters, ctrlKey=${ctrlKey}, type=${offersKind}`);
   for (let i = 0; i < filters.length; i++) {
     const inputState = filters[i];
     const storeState = searchOffersStore.viewState.currentSearchParams.filters!.find(f => f.filterId === inputState.params.filterId)!;
-    logger.debug(`(FilterPanel) setting filter value in store, ctrlKey=${props.ctrlKey}, filterId=${inputState.params.filterId}, value=${JSON.stringify(inputState.value)}`);
+    logger.debug(`(FilterPanel) setting filter value in store, ctrlKey=${ctrlKey}, filterId=${inputState.params.filterId}, value=${JSON.stringify(inputState.value)}`);
     storeState.currentValue = inputState.value;
   }
   if (searchOffersStore.resultState.status !== 'fetched' && searchOffersStore.resultState.status !== 'error') {
-    logger.debug(`(FilterPanel) fetching data was postponed as fetch is in progress, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
+    logger.debug(`(FilterPanel) fetching data was postponed as fetch is in progress, ctrlKey=${ctrlKey}, type=${offersKind}`);
     return;
   }
-  logger.debug(`(FilterPanel) fetching data with applied filters, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
+  logger.debug(`(FilterPanel) fetching data with applied filters, ctrlKey=${ctrlKey}, type=${offersKind}`);
   setTimeout(() => searchOffersStore.fetchData('filter-refetch'), 0);
 }
 
 function onApplyBtnClick () {
-  logger.debug(`(FilterPanel) apply btn click, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
+  logger.debug(`(FilterPanel) apply btn click, ctrlKey=${ctrlKey}, type=${offersKind}`);
   applyFiltersAndRefetchData();
 }
 
 function onResetBtnClick () {
-  logger.debug(`(FilterPanel) reset btn click, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
+  logger.debug(`(FilterPanel) reset btn click, ctrlKey=${ctrlKey}, type=${offersKind}`);
   for (let i = 0; i < filters.length; i++) {
     const filter = searchOffersStore.viewState.currentSearchParams.filters!.find(f => f.filterId === filters[i].params.filterId)!;
     if (filter.type === 'range') {
       const rangeFilter = filter as ISearchOffersRangeFilterProps;
-      logger.debug(`(FilterPanel) resetting range filter value in store, ctrlKey=${props.ctrlKey}, filterId=${filter.filterId}, value=${JSON.stringify(rangeFilter.valueRange)}`);
+      logger.debug(`(FilterPanel) resetting range filter value in store, ctrlKey=${ctrlKey}, filterId=${filter.filterId}, value=${JSON.stringify(rangeFilter.valueRange)}`);
       rangeFilter.currentValue = rangeFilter.valueRange;
     } else if (filter.type === 'checklist') {
       const checklistFilter = filter as ISearchOffersChecklistFilterProps;
-      logger.debug(`(FilterPanel) resetting checklist filter value in store, ctrlKey=${props.ctrlKey}, filterId=${filter.filterId}`);
+      logger.debug(`(FilterPanel) resetting checklist filter value in store, ctrlKey=${ctrlKey}, filterId=${filter.filterId}`);
       checklistFilter.currentValue = [];
     } else {
       throw new Error('unknown filter');
@@ -161,7 +160,7 @@ function onResetBtnClick () {
     <ErrorHelm v-model:is-error="isError">
       <ClientOnly>
         <!-- TODO: found SSR-aware UI components & remove ClientOnly -->
-        <CollapsableSection v-model:collapsed="isCollapsed" :ctrl-key="`${$props.ctrlKey}-FilterPanelSection`" :collapse-enabled="true" :tabbable-group-id="SearchOffersFilterTabGroupId">
+        <CollapsableSection v-model:collapsed="isCollapsed" :ctrl-key="`${ctrlKey}-FilterPanelSection`" :collapse-enabled="true" :tabbable-group-id="SearchOffersFilterTabGroupId">
           <template #head>
             <h2 class="filter-panel-header">
               {{ $t(getI18nResName3('searchOffers', 'filters', 'panelHeader')) }}
@@ -181,13 +180,13 @@ function onResetBtnClick () {
                 <div class="filter-panel-content mx-xs-2 mx-m-0">
                   <FilterSection
                     v-for="(filter) in filters"
-                    :key="`${props.ctrlKey}-FilterSection-${filter.params.filterId}`"
-                    :ctrl-key="`${props.ctrlKey}-FilterSection-${filter.params.filterId}`"
+                    :key="`${ctrlKey}-FilterSection-${filter.params.filterId}`"
+                    :ctrl-key="`${ctrlKey}-FilterSection-${filter.params.filterId}`"
                     :caption-res-name="filter.params.captionResName"
                     :show-no-results-stub="searchResultsEmpty"
                   >
-                    <RangeFilter v-if="filter.params.type === 'range'" v-model:value="filter.value" :ctrl-key="`${props.ctrlKey}-${filter.params.filterId}`" :filter-params="filter.params" />
-                    <ChecklistFilter v-else-if="filter.params.type === 'checklist'" v-model:value="filter.value" :ctrl-key="`${props.ctrlKey}-${filter.params.filterId}`" :filter-params="filter.params" :max-collapsed-list-items-count="(filter.params.display === 'list' && (filter.params.variants?.length ?? 0) > 5) ? 4 : undefined" />
+                    <RangeFilter v-if="filter.params.type === 'range'" v-model:value="filter.value" :ctrl-key="`${ctrlKey}-${filter.params.filterId}`" :filter-params="filter.params" />
+                    <ChecklistFilter v-else-if="filter.params.type === 'checklist'" v-model:value="filter.value" :ctrl-key="`${ctrlKey}-${filter.params.filterId}`" :filter-params="filter.params" :max-collapsed-list-items-count="(filter.params.display === 'list' && (filter.params.variants?.length ?? 0) > 5) ? 4 : undefined" />
                   </FilterSection>
                 </div>
               </PerfectScrollbar>

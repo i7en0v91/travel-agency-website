@@ -4,15 +4,11 @@ import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 interface IProps {
   ctrlKey: string,
-  offerKind?: OfferKind | undefined,
-  city?: EntityDataAttrsOnly<ICity> | undefined,
-  placeName?: ILocalizableValue | undefined
+  offerKind?: OfferKind,
+  city?: EntityDataAttrsOnly<ICity>,
+  placeName?: ILocalizableValue
 };
-withDefaults(defineProps<IProps>(), {
-  offerKind: undefined,
-  city: undefined,
-  placeName: undefined
-});
+defineProps<IProps>();
 
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();

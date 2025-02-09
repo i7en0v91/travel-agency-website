@@ -36,7 +36,9 @@
     "unlighthouse-authenticated": "cd ./tests/unlighthouse && cross-env UNLIGHTHOUSE_MODE=authenticated npx unlighthouse",
     "quickstart:build": "env-cmd -f ./packages/backend/.env cross-env NODE_ENV=production VITE_QUICKSTART=1 NODE_OPTIONS='--disable-warning=DEP0166 --disable-warning=DEP0155' npm run build",
     "quickstart:run": "cross-env NODE_ENV=production VITE_QUICKSTART=1 npm run preview",
-    "quickstart:run:electron": "cross-env NODE_ENV=production VITE_QUICKSTART=1 npm run preview & cross-env VITE_QUICKSTART=1 npx electron . --no-sandbox --enable-logging dist-electron/main.js",
+    "quickstart:run:electron:client": "cross-env VITE_QUICKSTART=1 npx electron . --no-sandbox --enable-logging dist-electron/main.js",
+    "quickstart:run:electron:server": "cross-env NODE_ENV=production VITE_QUICKSTART=1 npm run preview",
+    "quickstart:run:electron": "npm run quickstart:run:electron:client | npm run quickstart:run:electron:server",
     "quickstart": "npm run quickstart:prepare --workspace=@golobe-demo/backend && npm run quickstart:build && npm run quickstart:run",
     "quickstart:electron": "npm run quickstart:prepare --workspace=@golobe-demo/backend && npm run quickstart:build && npm run quickstart:run:electron"
   },

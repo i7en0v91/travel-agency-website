@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Locale, type I18nResName } from '@golobe-demo/shared';
+import type { Locale, I18nResName } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { getCommonServices } from '../../helpers/service-accessors';
 
@@ -14,23 +14,19 @@ interface IProps {
   linkClass?: string,
   isActive?: boolean
 }
-const props = withDefaults(defineProps<IProps>(), {
-  icon: undefined,
-  linkClass: undefined,
-  isActive: false
-});
+const { ctrlKey, linkClass, icon, isActive = false } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 
 function getClass (): string {
-  if (!props.icon) {
-    return `nav-link brdr-1 ${props.linkClass ?? ''}`;
+  if (!icon) {
+    return `nav-link brdr-1 ${linkClass ?? ''}`;
   }
-  return `nav-link nav-link-icon nav-icon-common nav-link-icon-${props.icon} brdr-1  ${props.linkClass ?? ''}`;
+  return `nav-link nav-link-icon nav-icon-common nav-link-icon-${icon} brdr-1  ${linkClass ?? ''}`;
 }
 
 function onClick () {
-  logger.debug(`(NavLink) on click, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(NavLink) on click, ctrlKey=${ctrlKey}`);
   $emit('click');
 }
 

@@ -82,11 +82,15 @@ a {
   }
 
   .app-track {
-    min-height: 250px;
     max-width: $max-page-width;
+    min-height: calc(max(100vh, 250px));
     display: flex;
     flex-direction: column;
     width: 100%;
+
+    .track-content {
+      flex: 1 1 100%;
+    }
   }
 }
 

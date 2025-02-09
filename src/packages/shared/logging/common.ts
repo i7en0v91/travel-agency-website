@@ -4,7 +4,7 @@ import range from 'lodash-es/range';
 import fromPairs from 'lodash-es/fromPairs';
 import type { LogObject } from 'consola';
 import AppConfig from './../appconfig';
-import { type LogLevel } from './../types';
+import type { LogLevel } from './../types';
 
 /** Log message will be suppressed only if all specified filters combined by AND mathches their input strings */
 export interface ILogSuppressionRule {

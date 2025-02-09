@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { QueryInternalRequestParam, isElectronBuild, type BookingPageArgs, AppException, AppExceptionCodeEnum, clampTextLine, getLocalizeableValue, getValueForFlightDurationFormatting, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, extractAirportCode, ImageCategory, type ICity, type EntityDataAttrsOnly, type ILocalizableValue, type IFlightOffer, type IStayOfferDetails, type EntityId, type ReviewSummary, getI18nResName2, getI18nResName3, AppPage, type Locale, AvailableLocaleCodes, DefaultTheme } from '@golobe-demo/shared';
 import fromPairs from 'lodash-es/fromPairs';
-import { type IBookingTicketFlightGfxProps, type IBookingTicketStayTitleProps, type IBookingTicketProps } from './../../types';
+import type { IBookingTicketFlightGfxProps, IBookingTicketStayTitleProps, IBookingTicketProps } from './../../types';
 import { ApiEndpointBookingOffer, ApiEndpointStayOfferReviewSummary } from './../../server/api-definitions';
 import BookingTicket from './../../components/booking-ticket/booking-ticket.vue';
 import ComponentWaitingIndicator from './../../components/component-waiting-indicator.vue';
 import TermsOfUse from './../../components/booking-page/terms-of-use.vue';
 import { getObject } from './../../helpers/rest-utils';
-import { type IOfferBookingStore } from './../../stores/offer-booking-store';
+import type { IOfferBookingStore } from './../../stores/offer-booking-store';
 import { mapFlightOfferDetails, mapStayOfferDetails, mapReviewSummary } from './../../helpers/entity-mappers';
-import { type IReviewSummaryDto } from '../../server/api-definitions';
+import type { IReviewSummaryDto } from '../../server/api-definitions';
 import { useDocumentDownloader } from './../../composables/document-downloader';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { getCommonServices } from '../../helpers/service-accessors';

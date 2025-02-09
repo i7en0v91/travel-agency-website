@@ -32,8 +32,8 @@ if (import.meta.client) {
 }
 
 const availableLocales = locales.value.filter(l => !isString(l)).map(l => l as LocaleObject);
-const elBtn = shallowRef<HTMLElement>();
-const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
+const openBtn = useTemplateRef<HTMLElement>('open-btn');
+const dropdown = useTemplateRef<InstanceType<typeof Dropdown>>('dropdown');
 
 function onMenuShown () {
   setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
@@ -67,12 +67,12 @@ const $emit = defineEmits(['changed']);
       :hide-triggers="(triggers: any) => [...triggers, 'click']"
       placement="bottom"
       :flip="false"
-      :boundary="elBtn"
+      :boundary="openBtn"
       theme="default-dropdown"
       @apply-show="onMenuShown"
       @apply-hide="onMenuHide"
     >
-      <button :id="`nav-locale-switcher-${ctrlKey}`" ref="elBtn" class="locale-switcher-btn brdr-1 px-xs-1" type="button" @keyup.escape="hideDropdown">
+      <button :id="`nav-locale-switcher-${ctrlKey}`" ref="open-btn" class="locale-switcher-btn brdr-1 px-xs-1" type="button" @keyup.escape="hideDropdown">
         {{ locale.toUpperCase() }}
       </button>
       <template #popper>

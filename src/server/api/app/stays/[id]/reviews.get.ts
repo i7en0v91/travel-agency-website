@@ -1,7 +1,7 @@
 import { type EntityId, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { extractUserIdFromSession } from './../../../../../server/utils/auth';
 import { defineWebApiEventHandler } from '../../../../utils/webapi-event-handler';
-import { type IStayReviewsDto } from '../../../../api-definitions';
+import type { IStayReviewsDto } from '../../../../api-definitions';
 import { mapStayReview } from '../../../../utils/dto-mappers';
 import { getServerSession } from '#auth';
 import type { H3Event } from 'h3';

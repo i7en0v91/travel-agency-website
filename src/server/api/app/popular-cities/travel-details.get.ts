@@ -1,5 +1,5 @@
 import { AppConfig, type EntityId, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
-import { type ITravelDetailsDto } from '../../../api-definitions';
+import type { ITravelDetailsDto } from '../../../api-definitions';
 import { defineWebApiEventHandler } from './../../../utils/webapi-event-handler';
 import type { H3Event } from 'h3';
 import { getServerServices } from '../../../../helpers/service-accessors';

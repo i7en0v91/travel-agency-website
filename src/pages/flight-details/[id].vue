@@ -5,7 +5,7 @@ import orderBy from 'lodash-es/orderBy';
 import range from 'lodash-es/range';
 import OfferDetailsSummary from './../../components/common-page-components/offer-details-summary.vue';
 import FlightDetailsCard from './../../components/common-page-components/flight-details-card.vue';
-import { type IFlightOfferDetailsDto } from '../../server/api-definitions';
+import type { IFlightOfferDetailsDto } from '../../server/api-definitions';
 import { mapFlightOfferDetails } from './../../helpers/entity-mappers';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Locale, AppPage, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { type ITravelDetailsTextingData } from './../../../types';
+import type { ITravelDetailsTextingData } from './../../../types';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 
@@ -11,35 +11,32 @@ interface IProps {
   isInitial?: boolean
 };
 
-const props = withDefaults(defineProps<IProps>(), {
-  texting: undefined,
-  tabbable: undefined
-});
+const { bookKind, texting, isInitial } = defineProps<IProps>();
 
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
 const fadeIn = ref<boolean | undefined>(undefined);
 const cssClass = computed(() => {
-  if (!props.texting) {
-    return props.isInitial ? 'initialized' : 'initializing';
+  if (!texting) {
+    return isInitial ? 'initialized' : 'initializing';
   }
   return 'initialized loaded';
 });
 
 const bookLinkUrl = computed(() => {
-  const citySlug = props.texting?.slug;
+  const citySlug = texting?.slug;
   if (!citySlug) {
-    return navLinkBuilder.buildPageLink(props.bookKind === 'flight' ? AppPage.Flights : AppPage.Stays, locale.value as Locale);
+    return navLinkBuilder.buildPageLink(bookKind === 'flight' ? AppPage.Flights : AppPage.Stays, locale.value as Locale);
   }
   return navLinkBuilder.buildPageLink(
-    props.bookKind === 'flight' ? AppPage.FindFlights : AppPage.FindStays,
+    bookKind === 'flight' ? AppPage.FindFlights : AppPage.FindStays,
     locale.value as Locale,
-    props.bookKind === 'flight' ? { fromCitySlug: citySlug } : { citySlug }
+    bookKind === 'flight' ? { fromCitySlug: citySlug } : { citySlug }
   );
 });
 
-const price = computed(() => props.texting?.price ? props.texting.price.toFixed(0) : undefined);
+const price = computed(() => texting?.price ? texting.price.toFixed(0) : undefined);
 
 </script>
 

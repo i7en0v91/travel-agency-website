@@ -4,7 +4,7 @@ import isString from 'lodash-es/isString';
 import FlowChecklistItem from './flow-checklist-item.vue';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../../helpers/dom';
 import { SearchOffersFilterTabGroupId } from './../../../../helpers/constants';
-import { type ISearchOffersChecklistFilterProps, type ISearchOffersFilterVariant, type SearchOffersFilterVariantId } from './../../../../types';
+import type { ISearchOffersChecklistFilterProps, ISearchOffersFilterVariant, SearchOffersFilterVariantId } from './../../../../types';
 import { getCommonServices } from '../../../../helpers/service-accessors';
 
 interface IProps {
@@ -14,18 +14,15 @@ interface IProps {
   maxCollapsedListItemsCount?: number
 }
 
-const props = withDefaults(defineProps<IProps>(), {
-  maxCollapsedListItemsCount: undefined
-});
+const { ctrlKey, value, filterParams, maxCollapsedListItemsCount } = defineProps<IProps>();
 
 const { locale } = useI18n();
-
 const logger = getCommonServices().getLogger();
 
 const $emit = defineEmits<{(event: 'update:value', value: SearchOffersFilterVariantId[]): void}>();
 
 function fireValueChangeEvent (value: SearchOffersFilterVariantId[]) {
-  logger.verbose(`(ChecklistFilter) firing value change event, ctrlKey=${props.ctrlKey}, values=[${value.join('; ')}]`);
+  logger.verbose(`(ChecklistFilter) firing value change event, ctrlKey=${ctrlKey}, values=[${value.join('; ')}]`);
   $emit('update:value', value);
 }
 
@@ -42,7 +39,7 @@ function getVariantDisplayText (variant: ISearchOffersFilterVariant, locale: Loc
 }
 
 function onVariantToggled (variantId: SearchOffersFilterVariantId) {
-  const newValue = [...props.value];
+  const newValue = [...value];
   if (newValue.includes(variantId)) {
     newValue.splice(newValue.indexOf(variantId), 1);
   } else {
@@ -53,13 +50,13 @@ function onVariantToggled (variantId: SearchOffersFilterVariantId) {
 }
 
 const variantsToDisplay = computed(() => {
-  return (props.filterParams.display === 'list' && props.maxCollapsedListItemsCount !== undefined)
-    ? props.filterParams.variants.slice(0, Math.min(props.maxCollapsedListItemsCount, props.filterParams.variants.length))
-    : props.filterParams.variants;
+  return (filterParams.display === 'list' && maxCollapsedListItemsCount !== undefined)
+    ? filterParams.variants.slice(0, Math.min(maxCollapsedListItemsCount, filterParams.variants.length))
+    : filterParams.variants;
 });
 
 const numMoreVariantsToDisplay = computed(() => {
-  return (props.filterParams.display === 'list' && props.maxCollapsedListItemsCount !== undefined) ? Math.max(0, props.filterParams.variants.length - props.maxCollapsedListItemsCount) : 0;
+  return (filterParams.display === 'list' && maxCollapsedListItemsCount !== undefined) ? Math.max(0, filterParams.variants.length - maxCollapsedListItemsCount) : 0;
 });
 
 const listExpanded = ref(false);
@@ -74,7 +71,7 @@ function toggleList () {
 <template>
   <div class="checklist-filter">
     <ol :class="filterParams.display === 'flow' ? 'flow-checklist' : 'list-checklist'">
-      <li v-for="(variant) in (listExpanded ? props.filterParams.variants : variantsToDisplay)" :key="`${ctrlKey}-${variant.id}`" class="checklist-filter-container">
+      <li v-for="(variant) in (listExpanded ? filterParams.variants : variantsToDisplay)" :key="`${ctrlKey}-${variant.id}`" class="checklist-filter-container">
         <FlowChecklistItem
           v-if="filterParams.display === 'flow'"
           class="m-xs-2"
@@ -99,7 +96,7 @@ function toggleList () {
     <SimpleButton
       v-if="numMoreVariantsToDisplay"
       class="list-checklist-toggler mb-xs-2 ml-xs-2"
-      :ctrl-key="`${props.ctrlKey}-ListToggler`"
+      :ctrl-key="`${ctrlKey}-ListToggler`"
       :label-res-name="listExpanded ? getI18nResName3('searchOffers', 'filters', 'checklistCollapseItems') : getI18nResName3('searchOffers', 'filters', 'checklistMoreItems')"
       :label-res-args="listExpanded ? undefined : numMoreVariantsToDisplay"
       :tabbable-group-id="SearchOffersFilterTabGroupId"

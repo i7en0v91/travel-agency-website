@@ -47,8 +47,8 @@ const paymentCards = [
             tag="div"
           >
             <div class="payment-cards-grid">
-              <PaymentCard v-for="(card, idx) in paymentCards" :key="`PaymentCard-${idx}`" :ctrl-key="`${$props.ctrlKey}-PaymentCard-${idx}`" :digits="card.digits" :due-date="card.dueDate"/>
-              <AddNewCard :ctrl-key="`${$props.ctrlKey}-AddNewCard`" class="add-new-card"/>
+              <PaymentCard v-for="(card, idx) in paymentCards" :key="`PaymentCard-${idx}`" :ctrl-key="`${ctrlKey}-PaymentCard-${idx}`" :digits="card.digits" :due-date="card.dueDate"/>
+              <AddNewCard :ctrl-key="`${ctrlKey}-AddNewCard`" class="add-new-card"/>
             </div>
           </PerfectScrollbar>
         </div>  

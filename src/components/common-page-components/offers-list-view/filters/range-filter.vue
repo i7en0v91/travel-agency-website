@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getI18nResName3, convertTimeOfDay } from '@golobe-demo/shared';
-import { type ISearchOffersRangeFilterProps } from './../../../../types';
+import type { ISearchOffersRangeFilterProps } from './../../../../types';
 import Slider from '@vueform/slider';
 import dayjs from 'dayjs';
 import isNumber from 'lodash-es/isNumber';
@@ -13,15 +13,15 @@ interface IProps {
   value: { min: number, max: number }
 }
 
-const props = defineProps<IProps>();
+const { ctrlKey, filterParams, value } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
-const editValue = ref([props.value.min, props.value.max]);
-watch(() => props.value, () => {
-  logger.debug(`(RangeFilter) received value update, ctrlKey=${props.ctrlKey}, new value min=${props.value.min}, new value max=${props.value.max}, current value min=${editValue.value[0]}, current value max=${editValue.value[1]}`);
-  if (Math.abs(props.value.min - editValue.value[0]) > 0.01 || Math.abs(props.value.max - editValue.value[1]) > 0.01) {
-    editValue.value[0] = props.value.min;
-    editValue.value[1] = props.value.max;
+const editValue = ref([value.min, value.max]);
+watch(() => value, () => {
+  logger.debug(`(RangeFilter) received value update, ctrlKey=${ctrlKey}, new value min=${value.min}, new value max=${value.max}, current value min=${editValue.value[0]}, current value max=${editValue.value[1]}`);
+  if (Math.abs(value.min - editValue.value[0]) > 0.01 || Math.abs(value.max - editValue.value[1]) > 0.01) {
+    editValue.value[0] = value.min;
+    editValue.value[1] = value.max;
   }
 });
 
@@ -33,30 +33,30 @@ const { d, t } = useI18n();
 const $emit = defineEmits<{(event: 'update:value', value: { min: number, max: number }): void}>();
 
 function fireValueChangeEvent (value: { min: number, max: number }) {
-  logger.verbose(`(RangeFilter) firing value change event, ctrlKey=${props.ctrlKey}, value min=${value.min}, value max=${value.max}`);
+  logger.verbose(`(RangeFilter) firing value change event, ctrlKey=${ctrlKey}, value min=${value.min}, value max=${value.max}`);
   $emit('update:value', value);
 }
 
 function onSliderValueChanged (value: number[]) {
-  logger.debug(`(RangeFilter) slider value changed, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(RangeFilter) slider value changed, ctrlKey=${ctrlKey}`);
   if (value?.length === 2) {
     fireValueChangeEvent({ min: value[0], max: value[1] });
   }
 }
 
 function onSliderValueUpdated (value: number[]) {
-  logger.debug(`(RangeFilter) slider value updated, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(RangeFilter) slider value updated, ctrlKey=${ctrlKey}`);
   if (value && (value.length ?? 0) === 2) {
     updateHandleTooltipPositions(value[0], value[1]);
   } else {
-    updateHandleTooltipPositions(props.filterParams.valueRange.min, props.filterParams.valueRange.max);
+    updateHandleTooltipPositions(filterParams.valueRange.min, filterParams.valueRange.max);
   }
 }
 
 function updateHandleTooltipPositions (fromValue: number, toValue: number) {
-  logger.debug(`(RangeFilter) updating handle tooltip positions, ctrlKey=${props.ctrlKey}, from=${fromValue}, to=${toValue}`);
-  const minValue = props.filterParams.valueRange.min;
-  const maxValue = props.filterParams.valueRange.max;
+  logger.debug(`(RangeFilter) updating handle tooltip positions, ctrlKey=${ctrlKey}, from=${fromValue}, to=${toValue}`);
+  const minValue = filterParams.valueRange.min;
+  const maxValue = filterParams.valueRange.max;
 
   if (Math.abs(maxValue - minValue) < 0.1) {
     leftHandlePos.value = 0.0;
@@ -72,7 +72,7 @@ function onHandleSlide (value: number[]) {
   if (value && (value.length ?? 0) === 2) {
     updateHandleTooltipPositions(value[0], value[1]);
   } else {
-    updateHandleTooltipPositions(props.filterParams.valueRange.min, props.filterParams.valueRange.max);
+    updateHandleTooltipPositions(filterParams.valueRange.min, filterParams.valueRange.max);
   }
 }
 
@@ -96,9 +96,9 @@ function tooltipTextFormatter (value: any): string {
     return value;
   }
 
-  if (props.filterParams.limitLabelFormatter === 'price') {
+  if (filterParams.limitLabelFormatter === 'price') {
     return `$${(Math.floor(numericValue!))}`;
-  } else if (props.filterParams.limitLabelFormatter === 'daytime') {
+  } else if (filterParams.limitLabelFormatter === 'daytime') {
     return d(getValueForTimeOfDayFormatting(numericValue), 'daytime');
   } else {
     return value.toString();

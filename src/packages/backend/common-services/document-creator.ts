@@ -1,6 +1,6 @@
 import { type DocumentCommonParams, QueryPageTimestampParam, eraseTimeOfDay, getLocalizeableValue, getI18nResName2, getI18nResName3, PdfBulletSize, PdfFontRegularFile, PdfFontParagraphTitleSize, PdfFontMediumFile, PdfFontMainTitleSize, PdfFontSemiboldFile, PdfDocMargins, PdfImgWidth, OgImagePathSegment, DefaultLocale, PdfPaperWidth, PdfPaperHeight, PdfFontPrimarySize, AppConfig, AppException, AppExceptionCodeEnum, QueryInternalRequestParam, OgImageExt, AppPage, type Theme, type Locale, type EntityId, type EntityDataAttrsOnly, type IFlightOffer, type IOfferBooking, type IStayOfferDetails, type IAppLogger, getPagePath, type Timestamp } from '@golobe-demo/shared';
-import { type IServerI18n, type IAppAssetsProvider, type IDocumentCreator, type IHtmlPageCacheCleaner } from './../types';
-import { type H3Event } from 'h3';
+import type { IServerI18n, IAppAssetsProvider, IDocumentCreator, IHtmlPageCacheCleaner } from './../types';
+import type { H3Event } from 'h3';
 import PDFDocument from 'pdfkit';
 import { type ParsedURL, parseURL, stringifyQuery, stringifyParsedURL } from 'ufo';
 import { Minipass } from 'minipass';

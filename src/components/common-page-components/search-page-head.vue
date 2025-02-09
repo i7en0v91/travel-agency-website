@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type ImageCategory, type IImageEntitySrc, type I18nResName } from '@golobe-demo/shared';
+import type { ImageCategory, IImageEntitySrc, I18nResName } from '@golobe-demo/shared';
 import StaticImage from './../../components/images/static-image.vue';
 import SearchOffers from './search-offers/search-offers.vue';
 

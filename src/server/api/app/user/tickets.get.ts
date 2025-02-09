@@ -1,6 +1,6 @@
 import { type EntityId, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type IUserTicketsResultDto } from '../../../api-definitions';
+import type { IUserTicketsResultDto } from '../../../api-definitions';
 import { mapSearchFlightOfferResultEntities, mapSearchedFlightOffer, mapSearchedStayOffer, mapSearchStayOfferResultEntities } from '../../../utils/dto-mappers';
 import { extractUserIdFromSession } from './../../../../server/utils/auth';
 import type { H3Event } from 'h3';

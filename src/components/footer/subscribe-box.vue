@@ -9,7 +9,7 @@ interface IProps {
 }
 defineProps<IProps>();
 
-const elInput = shallowRef<HTMLInputElement | undefined>();
+const inputField = useTemplateRef<HTMLInputElement>('input-field');
 const useremail = ref('');
 const userNotificationStore = useUserNotificationStore();
 
@@ -26,7 +26,7 @@ const v$ = useVuelidate(rules, { useremail, $lazy: true });
 
 function cancelInput () {
   useremail.value = '';
-  elInput!.value?.blur();
+  inputField!.value?.blur();
   v$.value.$reset();
 }
 
@@ -60,7 +60,7 @@ const emailId = useId();
       <div class="subscribe-box-input mt-xs-3">
         <input
           :id="emailId"
-          ref="elInput"
+          ref="input-field"
           v-model="useremail"
           type="email"
           class="input-field email-field brdr-1"

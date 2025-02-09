@@ -15,31 +15,28 @@ interface IFlightParams {
 
 interface IProps {
   ctrlKey: string,
-  params?: IFlightParams | undefined,
+  params?: IFlightParams,
   initiallySelectedParams?: IFlightParams | null | undefined
 }
 
-const props = withDefaults(defineProps<IProps>(), {
-  params: undefined,
-  initiallySelectedParams: undefined
-});
+const { ctrlKey, params, initiallySelectedParams } = defineProps<IProps>();
 
 const FlightClassDropdownClass = 'search-offers-dropdown-list-container';
 
-const elBtn = shallowRef<HTMLElement>();
-const elDropdownContainer = shallowRef<HTMLElement>();
-const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
+const openBtn = useTemplateRef<HTMLElement>('open-btn');
+const dropdownContainer = useTemplateRef<HTMLElement>('dropdown-container');
+const dropdown = useTemplateRef<InstanceType<typeof Dropdown>>('dropdown');
 const hasMounted = ref(false);
 
 const logger = getCommonServices().getLogger();
 
 const controlSettingsStore = useControlSettingsStore();
-const passengerControlValueSetting = controlSettingsStore.getControlValueSetting<number>(`${props.ctrlKey}-NumPassengers`, FlightMinPassengers, true);
-const classControlValueSetting = controlSettingsStore.getControlValueSetting<FlightClass>(`${props.ctrlKey}-FlightClass`, DefaultFlightClass, true);
-if (props.initiallySelectedParams) {
-  passengerControlValueSetting.value = props.initiallySelectedParams.passengers;
-  classControlValueSetting.value = props.initiallySelectedParams.class;
-} else if (props.initiallySelectedParams === null) {
+const passengerControlValueSetting = controlSettingsStore.getControlValueSetting<number>(`${ctrlKey}-NumPassengers`, FlightMinPassengers, true);
+const classControlValueSetting = controlSettingsStore.getControlValueSetting<FlightClass>(`${ctrlKey}-FlightClass`, DefaultFlightClass, true);
+if (initiallySelectedParams) {
+  passengerControlValueSetting.value = initiallySelectedParams.passengers;
+  classControlValueSetting.value = initiallySelectedParams.class;
+} else if (initiallySelectedParams === null) {
   passengerControlValueSetting.value = FlightMinPassengers;
   classControlValueSetting.value = DefaultFlightClass;
 }
@@ -67,7 +64,7 @@ const displayText = computed(() => {
   }
 
   const passengersText = `${numPassengers.value} ${t(getI18nResName2('searchFlights', 'passenger'), numPassengers.value!)}`;
-  const flightClassResName = getI18nResName3('searchFlights', 'class', props.params?.class ?? classControlValueSetting.value!);
+  const flightClassResName = getI18nResName3('searchFlights', 'class', params?.class ?? classControlValueSetting.value!);
   const flightClass = t(flightClassResName);
 
   return `${passengersText}, ${flightClass}`;
@@ -76,17 +73,17 @@ const displayText = computed(() => {
 const $emit = defineEmits<{(event: 'update:params', params?: IFlightParams | undefined): void}>();
 
 function updateParams (params: IFlightParams) {
-  logger.verbose(`(SearchFlightsParams) updating params: ctrlKey=${props.ctrlKey}, params=${JSON.stringify(params)}`);
+  logger.verbose(`(SearchFlightsParams) updating params: ctrlKey=${ctrlKey}, params=${JSON.stringify(params)}`);
   passengerControlValueSetting.value = params?.passengers ?? FlightMinPassengers;
   classControlValueSetting.value = params?.class ?? DefaultFlightClass;
   $emit('update:params', params);
-  logger.verbose(`(SearchFlightsParams) selected params updated: ctrlKey=${props.ctrlKey}, params=${JSON.stringify(params)}`);
+  logger.verbose(`(SearchFlightsParams) selected params updated: ctrlKey=${ctrlKey}, params=${JSON.stringify(params)}`);
 }
 
 function onParamsChange () {
   updateParams({
-    class: selectedClass.value ?? props.params?.class ?? DefaultFlightClass,
-    passengers: numPassengers.value ?? props.params?.passengers ?? FlightMinPassengers
+    class: selectedClass.value ?? params?.class ?? DefaultFlightClass,
+    passengers: numPassengers.value ?? params?.passengers ?? FlightMinPassengers
   });
 }
 
@@ -102,7 +99,7 @@ function handleDocumentEvent (evt: Event) {
   let isInsideDropdown = false;
   let isInsideFlightClassDropdown = false;
   evt.composedPath().forEach((e: EventTarget) => {
-    if (e === elDropdownContainer.value) {
+    if (e === dropdownContainer.value) {
       isInsideDropdown = true;
     }
     if ((e instanceof HTMLElement) && (e as any).className.includes(FlightClassDropdownClass)) {
@@ -150,7 +147,7 @@ function onEscape () {
       :prevent-overflow="false"
       placement="bottom-end"
       :flip="false"
-      :boundary="elBtn"
+      :boundary="openBtn"
       theme="control-dropdown"
       @apply-show="onMenuShown"
       @apply-hide="onMenuHide"
@@ -159,7 +156,7 @@ function onEscape () {
       <FieldFrame :text-res-name="getI18nResName2('searchFlights', 'flightParamsCaption')" class="dropdown-list-field-frame">
         <button
           :id="`flight-params-${ctrlKey}`"
-          ref="elBtn"
+          ref="open-btn"
           class="brdr-1"
           type="button"
         >
@@ -168,10 +165,10 @@ function onEscape () {
       </FieldFrame>
       <template #popper>
         <ClientOnly>
-          <div ref="elDropdownContainer" class="search-offers-dropdown-list-container flight-params-controls p-xs-2 p-s-3" :data-popper-anchor="`flight-params-${props.ctrlKey}`">
+          <div ref="dropdown-container" class="search-offers-dropdown-list-container flight-params-controls p-xs-2 p-s-3" :data-popper-anchor="`flight-params-${ctrlKey}`">
             <SearchOffersCounter
               v-model:value="numPassengers"
-              :ctrl-key="`${props.ctrlKey}-NumPassengers`"
+              :ctrl-key="`${ctrlKey}-NumPassengers`"
               :default-value="FlightMinPassengers"
               :min-value="FlightMinPassengers"
               :max-value="FlightMaxPassengers"

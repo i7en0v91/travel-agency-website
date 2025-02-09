@@ -10,7 +10,7 @@ interface IProps {
   setResultCallback: (result: number | 'cancel') => void
 }
 
-const props = defineProps<IProps>();
+const { ctrlKey, setResultCallback } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 const hoveredScore = ref<number>();
@@ -20,35 +20,35 @@ let resultSet = false;
 const $emit = defineEmits(['update:modelValue']);
 
 function setResultAndClose (result: number | 'cancel') {
-  logger.debug(`(ReviewScorePicker) setResultAndClose, ctrlKey=${props.ctrlKey}, resultSet=${resultSet}`);
+  logger.debug(`(ReviewScorePicker) setResultAndClose, ctrlKey=${ctrlKey}, resultSet=${resultSet}`);
   if (!resultSet) {
     resultSet = true;
-    props.setResultCallback(result);
+    setResultCallback(result);
   }
   $emit('update:modelValue', false);
 }
 
 function onClosed () {
-  logger.debug(`(ReviewScorePicker) onClosed, ctrlKey=${props.ctrlKey}, resultSet=${resultSet}`);
+  logger.debug(`(ReviewScorePicker) onClosed, ctrlKey=${ctrlKey}, resultSet=${resultSet}`);
   if (!resultSet) {
     resultSet = true;
-    props.setResultCallback('cancel');
+    setResultCallback('cancel');
     $emit('update:modelValue', false);
   }
 }
 
 function onPickerItemHovered (score: number) {
-  logger.debug(`(ReviewScorePicker) picker item hovered, ctrlKey=${props.ctrlKey}, score=${score}`);
+  logger.debug(`(ReviewScorePicker) picker item hovered, ctrlKey=${ctrlKey}, score=${score}`);
   hoveredScore.value = score;
 }
 
 function onPickerItemUnhovered () {
-  logger.debug(`(ReviewScorePicker) picker item unhovered, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(ReviewScorePicker) picker item unhovered, ctrlKey=${ctrlKey}`);
   hoveredScore.value = 0;
 }
 
 function onPickerItemClicked (score: number) {
-  logger.debug(`(ReviewScorePicker) picker item clicked, ctrlKey=${props.ctrlKey}, score=${score}`);
+  logger.debug(`(ReviewScorePicker) picker item clicked, ctrlKey=${ctrlKey}, score=${score}`);
   setResultAndClose(score);
 }
 
@@ -71,7 +71,7 @@ function onPickerItemClicked (score: number) {
       <div class="review-score-picker-div my-xs-5">
         <div
           v-for="(i) in range(0, 5)"
-          :key="`${$props.ctrlKey}-ScorePickerItem-${i}`"
+          :key="`${ctrlKey}-ScorePickerItem-${i}`"
           :class="`review-score-picker-item ${ hoveredScore ? (i < hoveredScore ? 'highlight' : '') : '' }`"
           :data-score="i"
           @mouseover="() => { onPickerItemHovered(i + 1); }"
@@ -80,7 +80,7 @@ function onPickerItemClicked (score: number) {
         />
       </div>
       <SimpleButton
-        :ctrl-key="`${props.ctrlKey}-btnCancel`"
+        :ctrl-key="`${ctrlKey}-btnCancel`"
         :label-res-name="getI18nResName2('confirmBox', 'btnCancel')"
         kind="support"
         icon="cross"

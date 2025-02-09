@@ -19,9 +19,9 @@ const MapCityPointerLength = 55;
 interface IProps {
   ctrlKey: string
 }
-const props = defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
-const canvasEl = shallowRef<HTMLCanvasElement>();
+const drawingCanvas = useTemplateRef('drawing-canvas');
 const logger = getCommonServices().getLogger();
 
 const worldMapStore = useWorldMapStore();
@@ -72,15 +72,15 @@ function doRenderMapFrame () {
     return;
   }
 
-  const canvasElClientRect = canvasEl.value?.getClientRects();
-  if ((canvasElClientRect?.length ?? 0) === 0) {
+  const canvasClientRect = drawingCanvas.value?.getClientRects();
+  if ((canvasClientRect?.length ?? 0) === 0) {
     logger.debug('(WorldMap) nothing to render, canvas element empty');
     return;
   }
 
-  const ctx = canvasEl.value?.getContext('2d');
+  const ctx = drawingCanvas.value?.getContext('2d');
   if (!ctx) {
-    logger.error(`(WorldMap) cannot acquire 2D context, ctrlKey=${props.ctrlKey}`);
+    logger.error(`(WorldMap) cannot acquire 2D context, ctrlKey=${ctrlKey}`);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'cannot acquire 2D context', 'error-stub');
   }
 
@@ -134,11 +134,11 @@ const onWindowResize = () => setTimeout(throttle(function () {
 }), 100);
 
 function testCanvasIsInViewport () : boolean {
-  if (!canvasEl.value || !worldMap) {
+  if (!drawingCanvas.value || !worldMap) {
     return false;
   }
 
-  const rect = canvasEl.value.getBoundingClientRect();
+  const rect = drawingCanvas.value.getBoundingClientRect();
   const html = document.documentElement;
   return ((rect.top > 0 && rect.top < (window.innerHeight || html.clientHeight)) ||
       (rect.bottom > 0 && rect.bottom < (window.innerHeight || html.clientHeight)) ||
@@ -146,7 +146,7 @@ function testCanvasIsInViewport () : boolean {
 }
 
 function raiseWorldMapInViewportIfNeeded () {
-  if (!canvasEl.value || !worldMap) {
+  if (!drawingCanvas.value || !worldMap) {
     return;
   }
 
@@ -229,7 +229,7 @@ onUnmounted(() => {
         @ps-scroll-x="onScroll"
       >
         <div class="world-map-content">
-          <canvas v-if="worldMap?.status.value === 'ready' && worldMap?.viewport" id="worldMapCanvas" ref="canvasEl" :width="worldMap.viewport.width" :height="worldMap.viewport.height" />
+          <canvas v-if="worldMap?.status.value === 'ready' && worldMap?.viewport" id="worldMapCanvas" ref="drawing-canvas" :width="worldMap.viewport.width" :height="worldMap.viewport.height" />
           <WorldMapCityLabel
             v-for="(city) in (worldMap?.displayedObjects.cities ?? [])"
             :key="`world-map-city-${city.slug}`"

@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { type IBookingTicketDetailsItemProps } from './../../types';
+import type { IBookingTicketDetailsItemProps } from './../../types';
 
-withDefaults(defineProps<IBookingTicketDetailsItemProps>(), {
-  text: undefined
-});
+defineProps<IBookingTicketDetailsItemProps>();
 
 </script>
 

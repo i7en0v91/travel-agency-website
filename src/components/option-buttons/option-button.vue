@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { type IOptionButtonProps } from './../../types';
+import type { IOptionButtonProps } from './../../types';
 
-const props = withDefaults(defineProps<IOptionButtonProps>(), {
-  isActive: false,
-  subtextResName: null,
-  subtextResArgs: null,
-  tabName: undefined
-});
+const { 
+  ctrlKey, 
+  shortIcon, 
+  isActive = false, 
+  subtextResName = null, 
+  subtextResArgs = null 
+} = defineProps<IOptionButtonProps>();
 
 const $emit = defineEmits<{(event: 'click', ctrlKey: string): void}>();
 
 function onActivate () {
-  $emit('click', props.ctrlKey);
+  $emit('click', ctrlKey);
 }
 
 const htmlLabelId = useId();
@@ -34,7 +35,7 @@ const htmlId = useId();
   >
     <div class="option-button-separator" role="separator" />
     <div class="option-button-div px-xs-2 py-xs-2 py-s-3">
-      <div v-if="props.shortIcon" :class="`option-button-icon mr-xs-2 option-button-icon-${props.shortIcon}`" />
+      <div v-if="shortIcon" :class="`option-button-icon mr-xs-2 option-button-icon-${shortIcon}`" />
       <div class="option-button-text">
         <div :id="htmlLabelId" class="option-button-label">
           {{ $t(labelResName) }}

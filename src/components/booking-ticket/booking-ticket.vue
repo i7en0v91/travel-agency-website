@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type IBookingTicketFlightGfxProps, type IBookingTicketStayTitleProps, type IBookingTicketProps } from './../../types';
+import type { IBookingTicketFlightGfxProps, IBookingTicketStayTitleProps, IBookingTicketProps } from './../../types';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import BookingTicketDates from './booking-ticket-dates.vue';
 import BookingTicketGeneral from './booking-ticket-general.vue';
@@ -9,13 +9,7 @@ import BookingTicketFlightGfx from './booking-ticket-flight-gfx.vue';
 import BookingTicketStayTitle from './booking-ticket-stay-title.vue';
 import ComponentWaitingIndicator from './../../components/component-waiting-indicator.vue';
 
-withDefaults(defineProps<IBookingTicketProps>(), {
-  generalInfo: undefined,
-  dates: undefined,
-  details: undefined,
-  offerKind: undefined,
-  titleOrGfx: undefined
-});
+defineProps<IBookingTicketProps>();
 
 </script>
 

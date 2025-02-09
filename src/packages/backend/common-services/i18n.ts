@@ -5,7 +5,7 @@ import toPairs from 'lodash-es/toPairs';
 import isObject from 'lodash-es/isObject';
 import difference from 'lodash-es/difference';
 import uniq from 'lodash-es/uniq';
-import { type IAppAssetsProvider, type IInitializableOnStartup } from '../types';
+import type { IAppAssetsProvider, IInitializableOnStartup } from '../types';
 
 export interface IServerI18n extends IInitializableOnStartup {
   getLocalizedResource(resName: I18nResName, locale: Locale): string;

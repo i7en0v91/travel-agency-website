@@ -9,14 +9,14 @@ interface IProps {
   dueDate: Date
 };
 
-const props = defineProps<IProps>();
+const { ctrlKey, selected } = defineProps<IProps>();
 const logger = getCommonServices().getLogger();
 
 const $emit = defineEmits<{(event: 'update:selected', value: boolean): void}>();
 
 function onClicked () {
-  logger.debug(`(PaymentMethodCard) on click, ctrlKey=${props.ctrlKey}, selected=${props.selected}`);
-  if (props.selected) {
+  logger.debug(`(PaymentMethodCard) on click, ctrlKey=${ctrlKey}, selected=${selected}`);
+  if (selected) {
     return;
   }
   $emit('update:selected', true);
@@ -25,7 +25,7 @@ function onClicked () {
 </script>
 
 <template>
-  <li :class="`payment-card-variant ${$props.selected ? 'selected' : ''} tabbable brdr-3 p-xs-3`" role="radio" @click="onClicked" @keyup.space="onClicked" @keyup.enter="onClicked">
+  <li :class="`payment-card-variant ${selected ? 'selected' : ''} tabbable brdr-3 p-xs-3`" role="radio" @click="onClicked" @keyup.space="onClicked" @keyup.enter="onClicked">
     <div class="payment-card-operator-logo" />
     <div class="payment-card-details">
       <div class="payment-card-details-digits">

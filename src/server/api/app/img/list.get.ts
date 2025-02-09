@@ -1,6 +1,6 @@
 import { AppConfig, AppException, AppExceptionCodeEnum, ImageCategory } from '@golobe-demo/shared';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { type IImageDetailsDto } from '../../../api-definitions';
+import type { IImageDetailsDto } from '../../../api-definitions';
 import type { H3Event } from 'h3';
 import toPairs from 'lodash-es/toPairs';
 import dayjs from 'dayjs';

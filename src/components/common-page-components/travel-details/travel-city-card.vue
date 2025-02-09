@@ -11,7 +11,7 @@ interface IProps {
   citySlug?: string,
   imgSrc?: IImageEntitySrc
 };
-const props = defineProps<IProps>();
+const { cityName, promoLine, promoPrice } = defineProps<IProps>();
 
 const navLinkBuilder = useNavLinkBuilder();
 const { locale } = useI18n();
@@ -24,15 +24,15 @@ const { locale } = useI18n();
     <div class="travel-city-card-details p-xs-4">
       <div class="travel-city-card-texts">
         <div class="travel-city-card-place-info">
-          <h3 :class="`${props.cityName ? '' : 'data-loading-stub text-data-loading'} font-h4`">
-            {{ props.cityName ? (props.cityName as any)[locale] : '&nbsp;' }}
+          <h3 :class="`${cityName ? '' : 'data-loading-stub text-data-loading'} font-h4`">
+            {{ cityName ? (cityName as any)[locale] : '&nbsp;' }}
           </h3>
-          <div :class="props.promoLine ? '' : 'data-loading-stub text-data-loading mt-xs-1'">
-            {{ props.promoLine ? (props.promoLine as any)[locale] : '&nbsp;' }}
+          <div :class="promoLine ? '' : 'data-loading-stub text-data-loading mt-xs-1'">
+            {{ promoLine ? (promoLine as any)[locale] : '&nbsp;' }}
           </div>
         </div>
-        <div :class="props.promoPrice ? 'travel-city-card-price' : 'data-loading-stub text-data-loading travel-city-card-price'">
-          {{ props.promoPrice ? `$ ${props.promoPrice}` : '&nbsp;' }}
+        <div :class="promoPrice ? 'travel-city-card-price' : 'data-loading-stub text-data-loading travel-city-card-price'">
+          {{ promoPrice ? `$ ${promoPrice}` : '&nbsp;' }}
         </div>
       </div>
       <NuxtLink class="btn btn-primary brdr-1 mt-xs-3 no-hidden-parent-tabulation-check" :to="citySlug ? (bookKind === 'flight' ? navLinkBuilder.buildPageLink(AppPage.FindFlights, locale as Locale, { fromCitySlug: citySlug }) : navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug })) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">

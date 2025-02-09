@@ -1,5 +1,5 @@
 import { type PageCacheVaryOptions, getLocaleFromUrl, localizePath, AppException, AppExceptionCodeEnum, AppConfig, getPagePath, SystemPage, type AppPage, type EntityId, extractIdFromUrl, lookupPageByUrl, type IAppLogger, QueryDraftRequestPathParam, type UninitializedPageTimestamp, UninitializedPageTimestampValue, NuxtIslandPathSegment, NuxtImagePathSegment, QueryPageTimestampParam, QueryInternalRequestParam, DefaultLocale, QueryPagePreviewModeParam } from '@golobe-demo/shared';
-import { type IServerServicesLocator } from '@golobe-demo/backend';
+import type { IServerServicesLocator } from '@golobe-demo/backend';
 import { parseQuery, parseURL, type ParsedURL, stringifyQuery, stringifyParsedURL } from 'ufo';
 import { ApiEndpointPrefix } from '../api-definitions';
 import { defineEventHandler, sendRedirect, type H3Event } from 'h3';

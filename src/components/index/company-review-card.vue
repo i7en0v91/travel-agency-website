@@ -10,7 +10,7 @@ interface IProps {
   userName?: ILocalizableValue,
   imgSrc?: IImageEntitySrc
 };
-const props = defineProps<IProps>();
+const { header, body, userName, imgSrc } = defineProps<IProps>();
 
 const { locale } = useI18n();
 const expanded = ref(false);
@@ -25,8 +25,8 @@ function toggleReviewText () {
   <article class="company-review-card mx-xs-3">
     <div class="company-review-card-backface my-xs-3 my-s-4" />
     <div class="company-review-card-frontface py-xs-3 py-s-4">
-      <h3 :class="`${props.header ? 'review-card-header px-xs-3 px-s-4' : 'data-loading-stub text-data-loading mx-xs-3 mx-s-4 mb-xs-1'} font-h4`">
-        {{ props.header ? (props.header as any)[locale] : '&nbsp;' }}
+      <h3 :class="`${header ? 'review-card-header px-xs-3 px-s-4' : 'data-loading-stub text-data-loading mx-xs-3 mx-s-4 mb-xs-1'} font-h4`">
+        {{ header ? (header as any)[locale] : '&nbsp;' }}
       </h3>
       <PerfectScrollbar
         class="review-card-scroll-container"
@@ -39,18 +39,18 @@ function toggleReviewText () {
         tag="div"
       >
         <div :class="`review-card-content px-xs-3 px-s-4 ${expanded ? 'expanded' : ''}`">
-          <p :class="props.body ? 'review-card-body' : 'data-loading-stub text-data-loading mt-xs-3'">
-            {{ props.body ? (props.body as any)[locale] : '&nbsp;' }}
+          <p :class="body ? 'review-card-body' : 'data-loading-stub text-data-loading mt-xs-3'">
+            {{ body ? (body as any)[locale] : '&nbsp;' }}
           </p>
           <button class="review-expand-btn mt-xs-3 mr-xs-1 brdr-1 no-hidden-parent-tabulation-check" type="button" @click="toggleReviewText">
             {{ $t(getI18nResName3('indexPage', 'companyReviewSection', expanded ? 'collapseBtn' : 'expandBtn')) }}
           </button>
           <div class="review-card-stars mt-xs-3">
-            <div v-for="i in range(0, 5)" :key="`${props.ctrlKey}-ReviewStar-${i}`" class="review-card-star" />
+            <div v-for="i in range(0, 5)" :key="`${ctrlKey}-ReviewStar-${i}`" class="review-card-star" />
           </div>
           <div class="review-card-userinfo mt-xs-2 mt-s-4">
-            <div :class="props.userName ? 'review-card-user-name' : 'data-loading-stub text-data-loading'">
-              {{ props.userName ? (props.userName as any)[locale] : '&nbsp;' }}
+            <div :class="userName ? 'review-card-user-name' : 'data-loading-stub text-data-loading'">
+              {{ userName ? (userName as any)[locale] : '&nbsp;' }}
             </div>
             <div class="review-card-user-company mt-xs-1">
               {{ $t(getI18nResName3('indexPage', 'companyReviewSection', 'userCompany')) }}

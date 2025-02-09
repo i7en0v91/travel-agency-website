@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type I18nResName } from '@golobe-demo/shared';
-import { type ButtonKind } from './../../types';
+import type { I18nResName } from '@golobe-demo/shared';
+import type { ButtonKind } from './../../types';
 
 interface IProps {
   ctrlKey: string,
@@ -13,16 +13,7 @@ interface IProps {
   icon?: string,
   enabled?: boolean
 }
-const props = withDefaults(defineProps<IProps>(), {
-  kind: 'default',
-  enabled: true,
-  icon: undefined,
-  labelResName: undefined,
-  labelResArgs: undefined,
-  titleResName: undefined,
-  ariaLabelResName: undefined,
-  tabbableGroupId: undefined
-});
+const { tabbableGroupId, labelResName, icon, enabled = true, kind = 'default' } = defineProps<IProps>();
 const $emit = defineEmits(['click']);
 
 function onClick () {
@@ -30,8 +21,8 @@ function onClick () {
 }
 
 const cssClass = computed(() => {
-  let result = `btn py-xs-3 px-xs-2 ${props.icon ? `btn-icon icon-${props.icon}` : ''} ${!(props.labelResName?.length ?? 0) ? 'btn-icon-only' : ''} ${(props.enabled ?? true) ? 'enabled' : 'disabled'} ${props.tabbableGroupId ? `tabbable-group-${props.tabbableGroupId}` : ''}`;
-  switch (props.kind) {
+  let result = `btn py-xs-3 px-xs-2 ${icon ? `btn-icon icon-${icon}` : ''} ${!(labelResName?.length ?? 0) ? 'btn-icon-only' : ''} ${(enabled ?? true) ? 'enabled' : 'disabled'} ${tabbableGroupId ? `tabbable-group-${tabbableGroupId}` : ''}`;
+  switch (kind) {
     case 'icon':
       result += ' btn-picture';
       break;

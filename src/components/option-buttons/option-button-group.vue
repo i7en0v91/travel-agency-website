@@ -1,77 +1,81 @@
 <script setup lang="ts">
-import { type IOptionButtonGroupProps } from './../../types';
+import type { IOptionButtonGroupProps } from './../../types';
 import { getLastSelectedOptionStorageKey } from './../../helpers/dom';
 import OptionButton from './option-button.vue';
 import OtherOptionsButton from './other-options-button.vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 
-const props = withDefaults(defineProps<IOptionButtonGroupProps>(), {
-  useAdaptiveButtonWidth: false
-});
+const { 
+  ctrlKey, 
+  activeOptionCtrl, 
+  options, 
+  otherOptions, 
+  useAdaptiveButtonWidth = false 
+} = defineProps<IOptionButtonGroupProps>();
 
 const $emit = defineEmits<{(event: 'update:activeOptionCtrl', newActiveOptionCtrlKey: string, prevActiveOptionCtrlKey?: string): void}>();
 
 const logger = getCommonServices().getLogger();
 
 function saveLastSelectedOption (lastSelectOption?: string) {
-  const storageKey = getLastSelectedOptionStorageKey(props.ctrlKey);
+  const storageKey = getLastSelectedOptionStorageKey(ctrlKey);
   if (lastSelectOption) {
-    logger.debug(`(OptionButtonGroup) saving last active option: groupKey=${props.ctrlKey}, key=${storageKey}, option=${lastSelectOption ?? '[empty]'}`);
+    logger.debug(`(OptionButtonGroup) saving last active option: groupKey=${ctrlKey}, key=${storageKey}, option=${lastSelectOption ?? '[empty]'}`);
     localStorage.setItem(storageKey, lastSelectOption);
   } else {
-    logger.debug(`(OptionButtonGroup) removing last active option: groupKey=${props.ctrlKey}, key=${storageKey}`);
+    logger.debug(`(OptionButtonGroup) removing last active option: groupKey=${ctrlKey}, key=${storageKey}`);
     localStorage.removeItem(storageKey);
   }
 }
 
 function loadLastSelectedOption (): string | undefined {
-  const storageKey = getLastSelectedOptionStorageKey(props.ctrlKey);
-  logger.debug(`(OptionButtonGroup) loading last active option: groupKey=${props.ctrlKey}, key=${storageKey}`);
+  const storageKey = getLastSelectedOptionStorageKey(ctrlKey);
+  logger.debug(`(OptionButtonGroup) loading last active option: groupKey=${ctrlKey}, key=${storageKey}`);
   const result = localStorage.getItem(storageKey) ?? undefined;
-  logger.debug(`(OptionButtonGroup) last active option loaded: groupKey=${props.ctrlKey}, resuilt=${result}`);
+  logger.debug(`(OptionButtonGroup) last active option loaded: groupKey=${ctrlKey}, resuilt=${result}`);
   return result;
 }
 
 function fireActiveOptionChange (newActiveOptionKey: string) {
-  const currentActiveOptionKey = props.activeOptionCtrl;
+  const currentActiveOptionKey = activeOptionCtrl;
   if (!currentActiveOptionKey || currentActiveOptionKey !== newActiveOptionKey) {
-    logger.debug(`(OptionButtonGroup) firing active option change: groupKey=${props.ctrlKey}, newActiveOption=${newActiveOptionKey}, prevActiveOption=${currentActiveOptionKey}`);
+    logger.debug(`(OptionButtonGroup) firing active option change: groupKey=${ctrlKey}, newActiveOption=${newActiveOptionKey}, prevActiveOption=${currentActiveOptionKey}`);
     $emit('update:activeOptionCtrl', newActiveOptionKey);
     saveLastSelectedOption(newActiveOptionKey);
   }
 }
 
 function onOptionButtonClick (ctrlKey: string) {
-  logger.debug(`(OptionButtonGroup) received option button click event: groupKey=${props.ctrlKey}, ctrlKey=${ctrlKey}`);
+  logger.debug(`(OptionButtonGroup) received option button click event: groupKey=${ctrlKey}, ctrlKey=${ctrlKey}`);
   fireActiveOptionChange(ctrlKey);
 }
 
 function initActiveOption () {
-  if (!props.activeOptionCtrl) {
-    logger.debug(`(OptionButtonGroup) initializing active option: groupKey=${props.ctrlKey}`);
+  if (!activeOptionCtrl) {
+    logger.debug(`(OptionButtonGroup) initializing active option: groupKey=${ctrlKey}`);
     const savedOption = loadLastSelectedOption();
     if (savedOption) {
-      logger.debug(`(OptionButtonGroup) last selected option has been read from storage: groupKey=${props.ctrlKey}, option=${savedOption}`);
-      if (props.options.some(x => x.ctrlKey === savedOption) || props.otherOptions?.variants.some(v => v.ctrlKey === savedOption)) {
+      logger.debug(`(OptionButtonGroup) last selected option has been read from storage: groupKey=${ctrlKey}, option=${savedOption}`);
+      if (options.some(x => x.ctrlKey === savedOption) || otherOptions?.variants.some(v => v.ctrlKey === savedOption)) {
         fireActiveOptionChange(savedOption);
         return;
       } else {
-        logger.warn(`(OptionButtonGroup) last selected option has been read from storage, but respective button cannot be found: groupKey=${props.ctrlKey}, option=${savedOption}`);
+        logger.warn(`(OptionButtonGroup) last selected option has been read from storage, but respective button cannot be found: groupKey=${ctrlKey}, option=${savedOption}`);
       }
     }
 
-    const firstEnabledOption = props.options.find(o => o.enabled === true && (o.ctrlKey !== props.otherOptions?.ctrlKey || props.otherOptions!.variants.some(v => v.enabled)));
+    const firstEnabledOption = options.find(o => o.enabled === true && (o.ctrlKey !== otherOptions?.ctrlKey || otherOptions!.variants.some(v => v.enabled)));
     if (firstEnabledOption) {
-      if (firstEnabledOption.ctrlKey === props.otherOptions?.ctrlKey) {
-        const firstEnabledOtherOptionVariant = props.otherOptions!.variants.find(v => v.enabled === true)!;
-        logger.debug(`(OptionButtonGroup) setting other option variant active: groupKey=${props.ctrlKey}, optionKey=${firstEnabledOtherOptionVariant.ctrlKey}`);
+      if (firstEnabledOption.ctrlKey === otherOptions?.ctrlKey) {
+        const firstEnabledOtherOptionVariant = otherOptions!.variants.find(v => v.enabled === true)!;
+        logger.debug(`(OptionButtonGroup) setting other option variant active: groupKey=${ctrlKey}, optionKey=${firstEnabledOtherOptionVariant.ctrlKey}`);
         fireActiveOptionChange(firstEnabledOtherOptionVariant.ctrlKey);
       } else {
-        logger.debug(`(OptionButtonGroup) setting option active: groupKey=${props.ctrlKey}, optionKey=${firstEnabledOption.ctrlKey}`);
+        logger.debug(`(OptionButtonGroup) setting option active: groupKey=${ctrlKey}, optionKey=${firstEnabledOption.ctrlKey}`);
         fireActiveOptionChange(firstEnabledOption.ctrlKey);
       }
     } else {
-      logger.verbose(`(OptionButtonGroup) all options are disabled, nothing to make active: groupKey=${props.ctrlKey}`);
+      logger.verbose(`(OptionButtonGroup) all options are disabled, nothing to make active: groupKey=${ctrlKey}`);
     }
   }
 }
@@ -91,10 +95,10 @@ onMounted(() => {
     :role="role"
   >
     <OptionButton
-      v-for="o in props.options"
+      v-for="o in options"
       :key="o.ctrlKey"
       :ctrl-key="o.ctrlKey"
-      :is-active="(props.activeOptionCtrl && props.activeOptionCtrl === o.ctrlKey) ? true : false"
+      :is-active="(activeOptionCtrl && activeOptionCtrl === o.ctrlKey) ? true : false"
       :label-res-name="o.labelResName"
       :short-icon="o.shortIcon"
       :subtext-res-name="o.subtextResName"
@@ -106,19 +110,19 @@ onMounted(() => {
     />
     <OtherOptionsButton
       v-if="otherOptions"
-      :ctrl-key="`${props.ctrlKey}-otherOpts`"
-      :default-res-name="props.otherOptions!.defaultResName"
-      :selected-res-name="props.otherOptions!.selectedResName"
-      :subtext-res-name="props.otherOptions!.subtextResName"
-      :subtext-res-args="props.otherOptions!.subtextResArgs"
-      :variants="props.otherOptions!.variants.map(v => {
+      :ctrl-key="`${ctrlKey}-otherOpts`"
+      :default-res-name="otherOptions!.defaultResName"
+      :selected-res-name="otherOptions!.selectedResName"
+      :subtext-res-name="otherOptions!.subtextResName"
+      :subtext-res-args="otherOptions!.subtextResArgs"
+      :variants="otherOptions!.variants.map(v => {
         return {
           ...v,
-          isActive: props.activeOptionCtrl === v.ctrlKey
+          isActive: activeOptionCtrl === v.ctrlKey
         };
       })"
       :role="{ role: 'radio' }"
-      :enabled="props.otherOptions!.enabled"
+      :enabled="otherOptions!.enabled"
       @item-click="onOptionButtonClick"
     />
   </section>

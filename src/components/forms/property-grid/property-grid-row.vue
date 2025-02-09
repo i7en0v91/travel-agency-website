@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getCommonServices } from '../../../helpers/service-accessors';
-import { type PropertyGridControlButtonType } from './../../../types';
+import type { PropertyGridControlButtonType } from './../../../types';
 import PropertyGridControlSection from './property-grid-control-section.vue';
 
 interface IProps {
@@ -8,12 +8,12 @@ interface IProps {
   firstControlSectionButtons: PropertyGridControlButtonType[],
   lastControlSectionButtons: PropertyGridControlButtonType[]
 }
-const props = defineProps<IProps>();
+const { ctrlKey, firstControlSectionButtons, lastControlSectionButtons } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 
 function onControlButtonClick (button: PropertyGridControlButtonType) {
-  logger.debug(`(ProperyGridRow) onControlButtonClick, ctrlKey=${props.ctrlKey}, button=${button}`);
+  logger.debug(`(ProperyGridRow) onControlButtonClick, ctrlKey=${ctrlKey}, button=${button}`);
   $emit('buttonClick', button);
 }
 
@@ -33,10 +33,10 @@ const $emit = defineEmits<{(event: 'buttonClick', button: PropertyGridControlBut
               </div>
             </td>
             <td class="property-grid-cell property-grid-first-section">
-              <PropertyGridControlSection :ctrl-key="`${props.ctrlKey}-firstControlSection`" :buttons="props.firstControlSectionButtons" @click="onControlButtonClick" />
+              <PropertyGridControlSection :ctrl-key="`${ctrlKey}-firstControlSection`" :buttons="firstControlSectionButtons" @click="onControlButtonClick" />
             </td>
             <td class="property-grid-cell property-grid-last-section">
-              <PropertyGridControlSection :ctrl-key="`${props.ctrlKey}-lastControlSection`" :buttons="props.lastControlSectionButtons" @click="onControlButtonClick" />
+              <PropertyGridControlSection :ctrl-key="`${ctrlKey}-lastControlSection`" :buttons="lastControlSectionButtons" @click="onControlButtonClick" />
             </td>
           </tr>
           <tr>

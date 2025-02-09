@@ -1,7 +1,7 @@
 import { AppException, AppExceptionCodeEnum, type EntityId } from '@golobe-demo/shared';
 import { extractUserIdFromSession } from './../../../../../server/utils/auth';
 import { defineWebApiEventHandler } from '../../../../utils/webapi-event-handler';
-import { type IToggleFavouriteOfferResultDto } from '../../../../api-definitions';
+import type { IToggleFavouriteOfferResultDto } from '../../../../api-definitions';
 import type { H3Event } from 'h3';
 import { getServerSession } from '#auth';
 import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';

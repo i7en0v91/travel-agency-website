@@ -1,22 +1,27 @@
 <script setup lang="ts">
-import { type IOtherOptionsButtonGroupProps } from './../../types';
+import type { IOtherOptionsButtonGroupProps } from './../../types';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 
-const props = defineProps<IOtherOptionsButtonGroupProps>();
+const { 
+  ctrlKey,
+  variants, 
+  selectedResName, 
+  defaultResName 
+} = defineProps<IOtherOptionsButtonGroupProps>();
 
 const { t } = useI18n();
 
 const hasActiveItem = computed(() => {
-  return props.variants.some(v => v.enabled && v.isActive === true);
+  return variants.some(v => v.enabled && v.isActive === true);
 });
 
 const buttonLabel = computed(() => {
-  const variantLabelResName = hasActiveItem.value ? props.variants.find(v => v.isActive)!.labelResName : undefined;
-  return hasActiveItem.value ? t(props.selectedResName, { variantLabel: t(variantLabelResName!) }) : t(props.defaultResName);
+  const variantLabelResName = hasActiveItem.value ? variants.find(v => v.isActive)!.labelResName : undefined;
+  return hasActiveItem.value ? t(selectedResName, { variantLabel: t(variantLabelResName!) }) : t(defaultResName);
 });
 
-const dropdown = shallowRef<InstanceType<typeof Dropdown>>();
+const dropdown = useTemplateRef<InstanceType<typeof Dropdown>>('dropdown');
 
 function onActivate (itemCtrlKey: string) {
   $emit('itemClick', itemCtrlKey);
@@ -56,7 +61,7 @@ const htmlId = useId();
 
 <template>
   <div
-    :id="`other-options-menu-anchor-${props.ctrlKey}`"
+    :id="`other-options-menu-anchor-${ctrlKey}`"
     :class="`option-button tabbable ${hasActiveItem ? 'active' : ''} ${enabled ? 'enabled' : 'disabled'}`"
     @click="onClick"
     @keyup.space="onClick"
@@ -92,9 +97,9 @@ const htmlId = useId();
         </div>
       </div>
       <template #popper>
-        <ol :class="`options-button-dropdown dropdown-list ${hasActiveItem ? 'active' : ''}`" :data-popper-anchor="`other-options-menu-anchor-${props.ctrlKey}`">
+        <ol :class="`options-button-dropdown dropdown-list ${hasActiveItem ? 'active' : ''}`" :data-popper-anchor="`other-options-menu-anchor-${ctrlKey}`">
           <li
-            v-for="v in props.variants"
+            v-for="v in variants"
             :key="v.ctrlKey"
             :class="`dropdown-list-item px-xs-2 ${v.isActive ? 'active' : ''} ${v.enabled ? 'enabled' : 'disabled'}`"
             @click="() => { if(v.enabled) { onActivate(v.ctrlKey); } }"

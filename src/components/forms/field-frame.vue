@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type I18nResName } from '@golobe-demo/shared';
+import type { I18nResName } from '@golobe-demo/shared';
 
 const { t } = useI18n();
 
@@ -7,11 +7,7 @@ interface IProps {
   textResName?: I18nResName,
   inputHtmlId?: string
 }
-
-withDefaults(defineProps<IProps>(), {
-  textResName: undefined,
-  inputHtmlId: undefined
-});
+defineProps<IProps>();
 
 </script>
 

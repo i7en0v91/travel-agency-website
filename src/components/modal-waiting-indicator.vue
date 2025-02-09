@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type I18nResName } from '@golobe-demo/shared';
+import type { I18nResName } from '@golobe-demo/shared';
 import { VueFinalModal } from 'vue-final-modal';
 
 interface IProps {

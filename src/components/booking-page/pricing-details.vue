@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="TOffer extends EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>">
-  import { type Locale, getScoreClassResName, getLocalizeableValue, type I18nResName, getI18nResName2, getI18nResName3, type ReviewSummary, type ImageCategory, type IImageEntitySrc, type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, type ILocalizableValue } from '@golobe-demo/shared';
+import { type Locale, getScoreClassResName, getLocalizeableValue, type I18nResName, getI18nResName2, getI18nResName3, type ReviewSummary, type ImageCategory, type IImageEntitySrc, type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, type ILocalizableValue } from '@golobe-demo/shared';
 import sum from 'lodash-es/sum';
 import StaticImage from './../../components/images/static-image.vue';
 import PriceDecompositionItem from './price-decomposition-item.vue';
@@ -16,16 +16,17 @@ interface IProps {
     reviewSummary?: ReviewSummary
   }
 };
-const props = withDefaults(defineProps<IProps>(), {
-  imageEntitySrc: undefined,
-  heading: undefined,
-  priceDecompoisition: undefined
-});
+
+const { 
+  heading,
+  imageEntitySrc,
+  priceDecompoisition
+} = defineProps<IProps>();
 
 const { t, locale } = useI18n();
 
-const scoreClassResName = computed(() => props.heading?.reviewSummary?.score ? getScoreClassResName(props.heading?.reviewSummary.score) : undefined);
-const reviewsCountText = computed(() => props.heading?.reviewSummary?.numReviews !== undefined ? `${props.heading?.reviewSummary.numReviews} ${t(getI18nResName3('stayDetailsPage', 'reviews', 'count'), props.heading?.reviewSummary.numReviews)}` : '');
+const scoreClassResName = computed(() => heading?.reviewSummary?.score ? getScoreClassResName(heading?.reviewSummary.score) : undefined);
+const reviewsCountText = computed(() => heading?.reviewSummary?.numReviews !== undefined ? `${heading?.reviewSummary.numReviews} ${t(getI18nResName3('stayDetailsPage', 'reviews', 'count'), heading?.reviewSummary.numReviews)}` : '');
 
 </script>
 
@@ -92,7 +93,7 @@ const reviewsCountText = computed(() => props.heading?.reviewSummary?.numReviews
         <PriceDecompositionItem v-for="(item, idx) in priceDecompoisition" :key="`${ctrlKey}-${idx}`" :ctrl-key="`${ctrlKey}-${idx}`" :label-res-name="item.labelResName" :amount="item.amount" />
       </ol>
       <hr class="pricing-details-section-separator">
-      <PriceDecompositionItem :ctrl-key="`${ctrlKey}-Total`" :label-res-name="getI18nResName3('bookingCommon', 'pricingDecomposition', 'total')" :amount="props.priceDecompoisition[0].amount ? sum(props.priceDecompoisition.map(i => i.amount!)) : undefined" :style="{ display: 'block' }" />
+      <PriceDecompositionItem :ctrl-key="`${ctrlKey}-Total`" :label-res-name="getI18nResName3('bookingCommon', 'pricingDecomposition', 'total')" :amount="priceDecompoisition[0].amount ? sum(priceDecompoisition.map(i => i.amount!)) : undefined" :style="{ display: 'block' }" />
     </div>
   </section>
 </template>

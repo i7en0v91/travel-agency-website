@@ -1,4 +1,4 @@
-import { type OfferKind, type EntityId } from '@golobe-demo/shared';
+import type { OfferKind, EntityId } from '@golobe-demo/shared';
 import { useUserFavouritesStore } from './../stores/user-favourites-store';
 import { getCommonServices } from '../helpers/service-accessors';
 

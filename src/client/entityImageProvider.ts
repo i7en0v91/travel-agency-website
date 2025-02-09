@@ -1,5 +1,5 @@
 import { AppConfig, type IAppLogger } from '@golobe-demo/shared';
-import { type ImageModifiers, type ImageCTX } from '@nuxt/image';
+import type { ImageModifiers, ImageCTX } from '@nuxt/image';
 import clamp from 'lodash-es/clamp';
 import { getCommonServices } from '../helpers/service-accessors';
 

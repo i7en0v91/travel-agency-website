@@ -9,12 +9,11 @@ interface IProps {
   ctrlKey: string,
   offersKind: OfferKind
 }
-const props = withDefaults(defineProps<IProps>(), {
-});
+const { ctrlKey, offersKind } = defineProps<IProps>();
 
 const { status } = useAuth();
 const searchOffersStoreAccessor = useSearchOffersStore();
-const searchOffersStore = await searchOffersStoreAccessor.getInstance(props.offersKind, true, true);
+const searchOffersStore = await searchOffersStoreAccessor.getInstance(offersKind, true, true);
 
 const logger = getCommonServices().getLogger();
 
@@ -34,17 +33,17 @@ const getViewState = (): ViewState => {
 };
 
 const updateViewState = () => {
-  logger.debug(`(ListPaging) updating view state, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
+  logger.debug(`(ListPaging) updating view state, ctrlKey=${ctrlKey}, type=${offersKind}`);
   viewState.value = getViewState();
 };
 
 function onPageBtnClick () {
-  logger.verbose(`(ListPaging) page button clicked, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
+  logger.verbose(`(ListPaging) page button clicked, ctrlKey=${ctrlKey}, type=${offersKind}`);
   searchOffersStore.fetchData('page-fetch');
 }
 
 onMounted(() => {
-  logger.verbose(`(ListPaging) mounted, ctrlKey=${props.ctrlKey}, type=${props.offersKind}`);
+  logger.verbose(`(ListPaging) mounted, ctrlKey=${ctrlKey}, type=${offersKind}`);
 
   watch(() => searchOffersStore.resultState.status, () => {
     updateViewState();

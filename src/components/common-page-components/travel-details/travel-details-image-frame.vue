@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue, ImageCategory, type Timestamp, getI18nResName2 } from '@golobe-demo/shared';
-import { type TravelDetailsImageStatus } from './../../../types';
+import type { TravelDetailsImageStatus } from './../../../types';
 import { ApiEndpointImage } from './../../../server/api-definitions';
-import { type ComponentInstance, type GlobalComponents } from 'vue';
 import { usePreviewState } from './../../../composables/preview-state';
 import { withQuery } from 'ufo';
 import set from 'lodash-es/set';
 import { getCommonServices } from '../../../helpers/service-accessors';
-type NuxtImg = GlobalComponents['NuxtImg'];
 
 interface IProps {
   ctrlKey: string,
@@ -15,26 +13,22 @@ interface IProps {
   timestamp?: Timestamp,
   status?: TravelDetailsImageStatus
 };
-const props = withDefaults(defineProps<IProps>(), {
-  status: 'loading',
-  slug: undefined,
-  timestamp: undefined
-});
+const { ctrlKey, timestamp, slug, status = 'loading' } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger();
 
 const systemConfigurationStore = useSystemConfigurationStore();
 const { enabled } = usePreviewState();
 
-const imgEl = shallowRef<ComponentInstance<NuxtImg>>();
+const image = useTemplateRef('img-component');
 const $emit = defineEmits<{(event: 'update:status', status?: TravelDetailsImageStatus): void}>();
 
-function fireStatusChange (status: TravelDetailsImageStatus) {
-  if (!props.status || status !== props.status) {
-    logger.debug(`(TravelDetailsImageFrame) status changed: ctrlKey=${props.ctrlKey}, new status=${status}, prev status=${props.status}`);
-    $emit('update:status', status);
+function fireStatusChange (newStatus: TravelDetailsImageStatus) {
+  if (!status || newStatus !== status) {
+    logger.debug(`(TravelDetailsImageFrame) status changed: ctrlKey=${ctrlKey}, new status=${newStatus}, prev status=${status}`);
+    $emit('update:status', newStatus);
   } else {
-    logger.debug(`(TravelDetailsImageFrame) wont fire status change as it is still the same: ctrlKey=${props.ctrlKey}, status=${status}`);
+    logger.debug(`(TravelDetailsImageFrame) wont fire status change as it is still the same: ctrlKey=${ctrlKey}, status=${newStatus}`);
   }
 }
 
@@ -50,17 +44,17 @@ function getImgUrl (slug?: string, timestamp?: Timestamp): string | undefined {
   };
   return withQuery(`/${ApiEndpointImage}`, query);
 };
-const imgUrl = computed(() => { return getImgUrl(props.slug, props.timestamp); });
+const imgUrl = computed(() => { return getImgUrl(slug, timestamp); });
 
 const fadeIn = ref<boolean | undefined>(undefined);
 const cssClass = computed(() => {
-  if (!props.slug && !props.status) {
+  if (!slug && !status) {
     return 'initializing';
   }
-  if (!props.slug) {
+  if (!slug) {
     return 'initialized';
   }
-  if (props.status === 'loading' || props.status === 'error') {
+  if (status === 'loading' || status === 'error') {
     return 'initialized';
   }
   return 'initialized loaded';
@@ -76,10 +70,10 @@ function onError (err: any) {
   fireStatusChange('error');
 }
 
-watch(() => props.slug, () => {
-  const newUrl = getImgUrl(props.slug, props.timestamp);
-  if (!newUrl || newUrl !== imgEl.value?.src) {
-    logger.debug(`(TravelDetailsImageFrame) image url changed, new url=${newUrl}, prev url=${imgEl.value?.src}`);
+watch(() => slug, () => {
+  const newUrl = getImgUrl(slug, timestamp);
+  if (!newUrl || newUrl !== image.value?.src) {
+    logger.debug(`(TravelDetailsImageFrame) image url changed, new url=${newUrl}, prev url=${image.value?.src}`);
     fadeIn.value = false;
     fireStatusChange('loading');
   }
@@ -93,7 +87,7 @@ const imageSize = await systemConfigurationStore.getImageSrcSize(ImageCategory.T
   <div :class="`travel-details-frame brdr-3 ${cssClass}`">
     <nuxt-img
       v-if="imgUrl"
-      ref="imgEl"
+      ref="img-component"
       :src="imgUrl"
       fit="cover"
       :width="imageSize.width"

@@ -11,27 +11,21 @@ interface IProps {
   city?: EntityDataAttrsOnly<ICity>
 }
 
-const props = withDefaults(defineProps<IProps>(), {
-  cssClass: undefined,
-  webUrl: undefined,
-  city: undefined
-});
+const { ctrlKey, origin } = defineProps<IProps>();
 
 const { locale } = useI18n();
-
 const logger = getCommonServices().getLogger();
-
 const isError = ref(false);
 
 const $emit = defineEmits(['update:webUrl']);
 
 function onWebUrlChange (value: string) {
-  logger.verbose(`(InteractiveMap) web url changed, ctrlKey=${props.ctrlKey}, value=${value}`);
+  logger.verbose(`(InteractiveMap) web url changed, ctrlKey=${ctrlKey}, value=${value}`);
   $emit('update:webUrl', value);
 }
 
 function onMapError (err: any) {
-  logger.warn(`(InteractiveMap) got exception from map component, ctrlKey=${props.ctrlKey}`, err);
+  logger.warn(`(InteractiveMap) got exception from map component, ctrlKey=${ctrlKey}`, err);
   isError.value = true;
 }
 
@@ -47,7 +41,7 @@ const MapComponent = AppConfig.maps ? resolveComponent(AppConfig.maps.mapControl
           <component
             :is="MapComponent"
             :css-class="cssClass"
-            :origin="props.origin"
+            :origin="origin"
             :ctrl-key="`${ctrlKey}-MapCtrl`"
             @update:web-url="onWebUrlChange"
             @onerror="onMapError"

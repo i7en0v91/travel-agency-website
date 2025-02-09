@@ -1,6 +1,6 @@
 import { type EntityId, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { defineWebApiEventHandler } from '../../../../utils/webapi-event-handler';
-import { type IReviewSummaryDto } from '../../../../api-definitions';
+import type { IReviewSummaryDto } from '../../../../api-definitions';
 import type { H3Event } from 'h3';
 import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
 

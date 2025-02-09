@@ -1,12 +1,8 @@
 <script setup lang="ts">
-import { type IBookingTicketDatesProps } from './../../types';
+import type { IBookingTicketDatesProps } from './../../types';
 import BookingTicketDateItem from './booking-ticket-date-item.vue';
 
-withDefaults(defineProps<IBookingTicketDatesProps>(), {
-  from: undefined,
-  to: undefined,
-  offerKind: undefined
-});
+defineProps<IBookingTicketDatesProps>();
 
 </script>
 

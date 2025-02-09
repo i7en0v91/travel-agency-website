@@ -1,6 +1,6 @@
 import { type IImageData, ImageCategory, newUniqueId, DbVersionInitial, type PreviewMode, type IAppLogger, type EntityId } from '@golobe-demo/shared';
-import { type IImageLogic, type IAuthFormImageLogic, type AuthFormImageData, type IAuthFormImageInfo } from './../types';
-import { type EventHandlerRequest, type H3Event } from 'h3';
+import type { IImageLogic, IAuthFormImageLogic, AuthFormImageData, IAuthFormImageInfo } from './../types';
+import type { EventHandlerRequest, H3Event } from 'h3';
 import type { AcsysDraftEntitiesResolver } from './acsys-draft-entities-resolver';
 import type { PrismaClient } from '@prisma/client';
 import isString from 'lodash-es/isString';

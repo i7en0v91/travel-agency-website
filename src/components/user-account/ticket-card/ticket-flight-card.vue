@@ -7,23 +7,23 @@ interface IProps {
   bookingId: EntityId,
   offer: EntityDataAttrsOnly<IFlightOffer>
 };
-const props = defineProps<IProps>();
+const { offer, ctrlKey } = defineProps<IProps>();
 
 const { d, t, locale } = useI18n();
 
-const displayItems = props.offer.arriveFlight ? [props.offer.departFlight, props.offer.arriveFlight] : [props.offer.departFlight];
+const displayItems = offer.arriveFlight ? [offer.departFlight, offer.arriveFlight] : [offer.departFlight];
 const detailsCommon = [
-  { ctrlKey: `${props.ctrlKey}-Details-Gate`, caption: getI18nResName3('ticket', 'details', 'gate'), icon: 'door', text: 'A12' },
-  { ctrlKey: `${props.ctrlKey}-Details-Seat`, caption: getI18nResName3('ticket', 'details', 'seat'), icon: 'seat', text: '128' }
+  { ctrlKey: `${ctrlKey}-Details-Gate`, caption: getI18nResName3('ticket', 'details', 'gate'), icon: 'door', text: 'A12' },
+  { ctrlKey: `${ctrlKey}-Details-Seat`, caption: getI18nResName3('ticket', 'details', 'seat'), icon: 'seat', text: '128' }
 ];
 
 </script>
 
 <template>
-  <TicketCardContainer :ctrl-key="`${props.ctrlKey}-Container`" :booking-id="bookingId" :offer="offer"> 
+  <TicketCardContainer :ctrl-key="`${ctrlKey}-Container`" :booking-id="bookingId" :offer="offer"> 
     <template #ticket-card>
       <div class="ticket-card">
-        <div v-for="(item, i) in displayItems" :key="`${props.ctrlKey}-${item.id}Flight`" class="ticket-card-div">
+        <div v-for="(item, i) in displayItems" :key="`${ctrlKey}-${item.id}Flight`" class="ticket-card-div">
           <div class="ticket-card-general">
             <StaticImage
               :ctrl-key="`${ctrlKey}-CompanyLogo-${i}`"
@@ -55,8 +55,8 @@ const detailsCommon = [
             </div>
             <BookingTicketDetails
               :ctrl-key="`${ctrlKey}-Details`" 
-              :items="[{ ctrlKey: `${props.ctrlKey}-Details-Date`, caption: getI18nResName3('ticket', 'details', 'date'), icon: 'calendar', text: d(getValueForFlightDayFormatting(item.departTimeUtc, item.departAirport.city.utcOffsetMin), 'day') },
-                        { ctrlKey: `${props.ctrlKey}-Details-Duration`, caption: getI18nResName3('ticket', 'details', 'duration'), icon: 'timer', text: t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting(item.departTimeUtc, item.arriveTimeUtc)) }, 
+              :items="[{ ctrlKey: `${ctrlKey}-Details-Date`, caption: getI18nResName3('ticket', 'details', 'date'), icon: 'calendar', text: d(getValueForFlightDayFormatting(item.departTimeUtc, item.departAirport.city.utcOffsetMin), 'day') },
+                        { ctrlKey: `${ctrlKey}-Details-Duration`, caption: getI18nResName3('ticket', 'details', 'duration'), icon: 'timer', text: t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting(item.departTimeUtc, item.arriveTimeUtc)) }, 
                         ...detailsCommon]" 
               class="ticket-card-details"/>
           </div>

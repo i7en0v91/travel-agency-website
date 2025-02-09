@@ -2,9 +2,9 @@ import { QueryPagePreviewModeParam, AppConfig, type IAppLogger, AppException, Ap
 import type { H3Event, EventHandler, EventHandlerRequest, EventHandlerResponse } from 'h3';
 import axios from 'axios';
 import { withQuery } from 'ufo';
-import { type ObjectSchema } from 'yup';
+import type { ObjectSchema } from 'yup';
 import omit from 'lodash-es/omit';
-import { type IApiErrorDto, type ICaptchaVerificationDto } from '../api-definitions';
+import type { IApiErrorDto, ICaptchaVerificationDto } from '../api-definitions';
 import { getServerSession } from '#auth';
 import { getCommonServices } from '../../helpers/service-accessors';
 

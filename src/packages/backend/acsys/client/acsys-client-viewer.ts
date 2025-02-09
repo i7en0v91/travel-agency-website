@@ -1,6 +1,6 @@
 import { AppException, AppExceptionCodeEnum, type IAcsysUserOptions, type IAppLogger, type EntityId } from '@golobe-demo/shared';
 import type { IAcsysClientViewer } from './interfaces';
-import { type StorageItemResponseDto } from './dto';
+import type { StorageItemResponseDto } from './dto';
 import { RouteGetFile, RouteReadData, AcsysTableStorageItems, AcsysTableIdColumn } from './constants';
 import { AcsysClientBase } from './acsys-client-base';
 import { ApiResponseTypes, UserRoleEnum } from './interfaces';

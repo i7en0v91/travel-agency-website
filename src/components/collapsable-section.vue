@@ -13,57 +13,53 @@ interface IProps {
   persistent?: boolean
 }
 
-const props = withDefaults(defineProps<IProps>(), {
-  tabbableGroupId: undefined,
-  showCollapsableButton: true,
-  persistent: true
-});
+const { ctrlKey, collapsed, collapseEnabled, showCollapsableButton = true, persistent = true } = defineProps<IProps>();
 
-const sectionHtmlElId = props.ctrlKey;
+const sectionHtmlElId = ctrlKey;
 
 const controlSettingsStore = useControlSettingsStore();
-const controlSingleValueSetting = props.persistent ? controlSettingsStore.getControlValueSetting<'collapsed' | 'expanded' | undefined>(`${props.ctrlKey}-collapsed`, 'expanded', true) : undefined;
+const controlSingleValueSetting = persistent ? controlSettingsStore.getControlValueSetting<'collapsed' | 'expanded' | undefined>(`${ctrlKey}-collapsed`, 'expanded', true) : undefined;
 
 const logger = getCommonServices().getLogger();
 const toggling = ref(false);
 
 function toggle () {
   if (!toggling.value) {
-    const newValue = !props.collapsed;
-    toggling.value = props.collapseEnabled && true;
+    const newValue = !collapsed;
+    toggling.value = collapseEnabled && true;
     if (controlSingleValueSetting) {
       controlSingleValueSetting.value = newValue ? 'collapsed' : 'expanded';
     }
-    if (!props.collapseEnabled) {
+    if (!collapseEnabled) {
       setTimeout(updateSectionMaxHeightHtmlVar, 0);
     }
-    logger.debug(`(CollapsableSection) changing state, ctrlKey=${props.ctrlKey}, new toggled=${newValue}`);
+    logger.debug(`(CollapsableSection) changing state, ctrlKey=${ctrlKey}, new toggled=${newValue}`);
     $emit('update:collapsed', newValue);
   }
 }
 
 function expand () {
-  if (props.collapsed) {
+  if (collapsed) {
     toggle();
   }
 }
 
 function collapse () {
-  if (!props.collapsed) {
+  if (!collapsed) {
     toggle();
   }
 }
 
 const sectionHtmlElMaxHeight = ref('0px');
 function onAnimationStart () {
-  if (props.collapseEnabled) {
+  if (collapseEnabled) {
     toggling.value = true;
     setTimeout(updateSectionMaxHeightHtmlVar, 0);
   }
 }
 
 function updateSectionMaxHeightHtmlVar () {
-  logger.debug(`(CollapsableSection) updating section max height, ctrlKey=${props.ctrlKey}`);
+  logger.debug(`(CollapsableSection) updating section max height, ctrlKey=${ctrlKey}`);
   const htmlElQuery = document.querySelectorAll(`#${sectionHtmlElId} .collapsable-section-content > *:first-child`);
   if (htmlElQuery.length === 0) {
     return;
@@ -76,7 +72,7 @@ function updateSectionMaxHeightHtmlVar () {
 }
 
 function onAnimationEnd () {
-  if (props.collapseEnabled) {
+  if (collapseEnabled) {
     toggling.value = false;
   }
   setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
@@ -89,12 +85,12 @@ const onWindowResize = () => setTimeout(throttle(function () {
 }), 100);
 
 onMounted(() => {
-  let initiallyCollapsed = props.collapsed;
-  if (props.collapseEnabled) {
+  let initiallyCollapsed = collapsed;
+  if (collapseEnabled) {
     if (controlSingleValueSetting) {
       const initValue = controlSingleValueSetting.value === 'collapsed';
-      if (initValue !== props.collapsed) {
-        logger.debug(`(CollapsableSection) initial collapsed state in settings differs from passed in props, ctrlKey=${props.ctrlKey}, props=${props.collapsed}, settings=${initValue}`);
+      if (initValue !== collapsed) {
+        logger.debug(`(CollapsableSection) initial collapsed state in settings differs from passed in props, ctrlKey=${ctrlKey}, props=${collapsed}, settings=${initValue}`);
         initiallyCollapsed = initValue;
         toggle();
       }
@@ -109,7 +105,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  if (props.collapseEnabled) {
+  if (collapseEnabled) {
     window.removeEventListener('resize', onWindowResize);
   }
 });
