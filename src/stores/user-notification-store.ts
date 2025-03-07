@@ -1,7 +1,8 @@
-import { isElectronBuild, AppException, AppExceptionCodeEnum, isDevOrTestEnv, UserNotificationLevel, type I18nResName } from '@golobe-demo/shared';
+import { isElectronBuild, UserNotificationLevel, type I18nResName } from '@golobe-demo/shared';
+import { StoreKindEnum } from './../helpers/constants';
 import { TYPE, useToast } from 'vue-toastification';
-import { getCommonServices } from '../helpers/service-accessors';
 import { getDialogsFacade } from '../helpers/electron';
+import { buildStoreDefinition } from './../helpers/stores/pinia';
 
 export interface IUserNotificationParams {
   level: UserNotificationLevel;
@@ -9,60 +10,76 @@ export interface IUserNotificationParams {
   resArgs?: any
 }
 
-export interface IUserNotificationStore {
-  show: (params: IUserNotificationParams) => void;
-};
+const StoreId = StoreKindEnum.UserNotification;
 
-export const useUserNotificationStore = defineStore('userNotificationStore', () => {
-  const { t } = useI18n();
+/** 
+ * KB: at the moment doesn't have any state or patches, but is imported by 
+ * infrastructure code like global exception handlers where not all plugins &
+ * composables are available. This may result into dependency resolution issues
+ * and probably it will be better to use more flexible Setup API store definition 
+ * instead of Options API (see https://pinia.vuejs.org/core-concepts/#Setup-Stores)
+ */
+const StoreDef = buildStoreDefinition(StoreId, 
+  (clientSideOptions) => {
+    const toastManager = !isElectronBuild() ? useToast() : undefined;
+    const nuxtApp = clientSideOptions!.nuxtApp;
+    const localizer = () => nuxtApp.$i18n as ReturnType<typeof useI18n>;
+    
+    return {
+      localizer,
+      toastManager
+    };
+  },
+  {
+    state: () => { return {}; },
+    getters: { },
+    actions: {
+      /**
+       * Shows notification to user
+       */
+      show(params: IUserNotificationParams) {
+        if(!import.meta.client) {
+          return;
+        }
 
-  const toastManager = (import.meta.client && !isElectronBuild()) ? useToast() : undefined;
+        const logger = this.getLogger();
+        logger.verbose(`showing new notification`, { params });
 
-  const doShowOnClient = (params: IUserNotificationParams) => {
-    const msg = t(params.resName, params.resArgs);
-    if(isElectronBuild()) {    
-      const dialogsFacade = getDialogsFacade(t);
-      switch (params.level) {
-        case UserNotificationLevel.INFO:
-          dialogsFacade!.showNotification('info', msg);
-          break;
-        case UserNotificationLevel.WARN:
-          dialogsFacade!.showNotification('warning', msg);
-          break;
-        case UserNotificationLevel.ERROR:
-          dialogsFacade!.showNotification('error', msg);
-          break;
+        const { localizer } = this.clientSetupVariables();
+        const { t } = localizer();
+        const msg = t(params.resName, params.resArgs);
+
+        if(isElectronBuild()) {    
+          const dialogsFacade = getDialogsFacade(t);
+          switch (params.level) {
+            case UserNotificationLevel.INFO:
+              dialogsFacade!.showNotification('info', msg);
+              break;
+            case UserNotificationLevel.WARN:
+              dialogsFacade!.showNotification('warning', msg);
+              break;
+            case UserNotificationLevel.ERROR:
+              dialogsFacade!.showNotification('error', msg);
+              break;
+          }
+        } else {
+          const { toastManager } = this.clientSetupVariables();
+          switch (params.level) {
+            case UserNotificationLevel.INFO:
+              toastManager!.info(msg, { type: TYPE.INFO });
+              break;
+            case UserNotificationLevel.WARN:
+              toastManager!.warning(msg, { type: TYPE.WARNING });
+              break;
+            case UserNotificationLevel.ERROR:
+              toastManager!.error(msg, { type: TYPE.ERROR });
+              break;
+          }
+        }
       }
-    } else {
-      switch (params.level) {
-        case UserNotificationLevel.INFO:
-          toastManager!.info(msg, { type: TYPE.INFO });
-          break;
-        case UserNotificationLevel.WARN:
-          toastManager!.warning(msg, { type: TYPE.WARNING });
-          break;
-        case UserNotificationLevel.ERROR:
-          toastManager!.error(msg, { type: TYPE.ERROR });
-          break;
-      }
-    }
-  };
+    },
+    patches: { }
+  }
+);
 
-  const show = (params: IUserNotificationParams) => {
-    const logger = getCommonServices().getLogger();
-    if (import.meta.client) {
-      logger.verbose('(user-notification-store): showing new notification', params);
-      doShowOnClient(params);
-    } else {
-      // TODO: implement passing notification data in payload, but in this case preventing page from being cached (in Nitro cache also)
-      logger.warn('(user-notification-store): showing notification from server side is not implemented', params);
-      if(isDevOrTestEnv()) {
-        throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'showing notification from server side is not implemented', 'error-page');
-      }
-    }
-  };
-
-  return {
-    show
-  } as IUserNotificationStore;
-});
+export const useUserNotificationStore = defineStore(StoreId, StoreDef);

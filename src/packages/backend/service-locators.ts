@@ -166,7 +166,8 @@ async function buildAcsysBackendServicesLocator(acsysModuleOptions: IAcsysOption
     getCompanyReviewsLogic: () => provider.resolve('companyReviewsLogic'),
     getBookingLogic: () => provider.resolve('bookingLogic'),
     getDocumentCreator: () => provider.resolve('documentCreator'),
-    getDataSeedingLogic: () => provider.resolve('dataSeedingLogic')
+    getDataSeedingLogic: () => provider.resolve('dataSeedingLogic'),
+    getCache: () => provider.resolve('cache')
   };
 }
 
@@ -246,7 +247,8 @@ async function buildPrismaBackendServicesLocator(logger: IAppLogger): Promise<IS
     getCompanyReviewsLogic: () => provider.resolve('companyReviewsLogic'),
     getBookingLogic: () => provider.resolve('bookingLogic'),
     getDocumentCreator: () => provider.resolve('documentCreator'),
-    getDataSeedingLogic: () => provider.resolve('dataSeedingLogic')
+    getDataSeedingLogic: () => provider.resolve('dataSeedingLogic'),
+    getCache: () => provider.resolve('cache')
   };
 }
 
@@ -267,7 +269,7 @@ export async function buildBackendServicesLocator(logger: IAppLogger): Promise<I
   } else {
     const srcDir = await lookupParentDirectory(resolve('./'), 'src', async (path: string) => { await access(path); return true; });
     if(!srcDir) {
-      logger.error(`failed to resolve src dir`);
+      logger.error('failed to resolve src dir');
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to resolve src dir', 'error-page');
     }
   
@@ -282,9 +284,8 @@ export async function buildBackendServicesLocator(logger: IAppLogger): Promise<I
   }
 
   if(!result) {
-    const errMsg = `unexpected CMS type: ${process.env.CMS}`;
-    logger.error(errMsg);
-    throw new AppException(AppExceptionCodeEnum.UNKNOWN, errMsg, 'error-page');
+    logger.error('unexpected CMS type', undefined, { CMS: process.env.CMS });
+    throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected CMS type', 'error-page');
   }
 
   logger.verbose('starting initializable services');
@@ -309,7 +310,6 @@ export async function buildBackendServicesLocator(logger: IAppLogger): Promise<I
 }
 
 /** Acsys */
-const LoggingPrefix = 'AcsysServerServicesLocator';
 const ViewSampleDataPreviewMode: PreviewMode = false;
 
 const SampleStr = 'AcsysSampleData';
@@ -337,22 +337,22 @@ declare type SampleDataIds = {
 };
 
 async function deleteViewSampleData(sampleDataIds: SampleDataIds, serviceLocator: IServerServicesLocator, logger: IAppLogger): Promise<void> {
-  logger.verbose(`(${LoggingPrefix}) deleting view sample data`);
+  logger.verbose('deleting view sample data');
   
   if(sampleDataIds.tokenId) {
-    logger.debug(`(${LoggingPrefix}) deleting sample verification token, id=${sampleDataIds.tokenId}`);
+    logger.debug('deleting sample verification token', { id: sampleDataIds.tokenId });
     const tokenLogic = serviceLocator.getTokenLogic();
     await tokenLogic.deleteToken(sampleDataIds.tokenId);
   }
   
   if(sampleDataIds.mailTemplateId) {
-    logger.debug(`(${LoggingPrefix}) deleting sample mail template, id=${sampleDataIds.mailTemplateId}`);
+    logger.debug('deleting sample mail template', { id: sampleDataIds.mailTemplateId });
     const mailTemplateLogic = serviceLocator.getMailTemplateLogic();
     await mailTemplateLogic.deleteTemplate(sampleDataIds.mailTemplateId);
   }
 
   if(sampleDataIds.bookingId) {
-    logger.debug(`(${LoggingPrefix}) deleting sample booking, id=${sampleDataIds.bookingId}`);
+    logger.debug('deleting sample booking', { id: sampleDataIds.bookingId });
     const bookingLogic = serviceLocator.getBookingLogic();
     await bookingLogic.deleteBooking(sampleDataIds.bookingId);
   }
@@ -360,14 +360,14 @@ async function deleteViewSampleData(sampleDataIds: SampleDataIds, serviceLocator
   if(sampleDataIds.userId) {
     const stayLogic = serviceLocator.getStaysLogic();
     const stayOffers = (await stayLogic.searchOffers({ citySlug: SampleCitySlugs[0], }, sampleDataIds.userId, { direction: 'asc' }, { skip: 0, take: 1000 }, false, ViewSampleDataPreviewMode)).pagedItems;
-    logger.debug(`(${LoggingPrefix}) deleting sample stay offers, count=${stayOffers.length}`);
+    logger.debug('deleting sample stay offers', { count: stayOffers.length });
     for(let i = 0; i < stayOffers.length; i++) {
       await stayLogic.deleteStayOffer(stayOffers[i].id);
     }
   }
 
   if(sampleDataIds.stayId) {
-    logger.debug(`(${LoggingPrefix}) deleting sample stay, id=${sampleDataIds.stayId}`);
+    logger.debug('deleting sample stay', { id: sampleDataIds.stayId });
     const stayLogic = serviceLocator.getStaysLogic();
     await stayLogic.deleteStay(sampleDataIds.stayId);
   }
@@ -375,7 +375,7 @@ async function deleteViewSampleData(sampleDataIds: SampleDataIds, serviceLocator
   if(sampleDataIds.userId) {
     const flightsLogic = serviceLocator.getFlightsLogic();
     const flightOffers = (await flightsLogic.searchOffers({ }, sampleDataIds.userId, { direction: 'asc' }, { direction: 'asc' }, { skip: 0, take: 1000 }, false, false, ViewSampleDataPreviewMode)).pagedItems;
-    logger.debug(`(${LoggingPrefix}) deleting sample flight offers, count=${flightOffers.length}`);
+    logger.debug('deleting sample flight offers', { count: flightOffers.length });
     for(let i = 0; i < flightOffers.length; i++) {
       await flightsLogic.deleteFlightOffer(flightOffers[i].id);
       await flightsLogic.deleteFlight(flightOffers[i].departFlight.id);
@@ -386,14 +386,14 @@ async function deleteViewSampleData(sampleDataIds: SampleDataIds, serviceLocator
   }
 
   if(sampleDataIds.airplaneId) {
-    logger.debug(`(${LoggingPrefix}) deleting sample airplane, id=${sampleDataIds.airplaneId}`);
+    logger.debug('deleting sample airplane', { id: sampleDataIds.airplaneId });
     const airplaneLogic = serviceLocator.getAirplaneLogic();
     await airplaneLogic.deleteAirplane(sampleDataIds.airplaneId);
   }
 
   if(sampleDataIds.airportIds) {
     const airportIds = sampleDataIds.airportIds;
-    logger.debug(`(${LoggingPrefix}) deleting sample airports, count=${airportIds.length}`);
+    logger.debug('deleting sample airports', { count: airportIds.length });
     const airportLogic = serviceLocator.getAirportLogic();
     for(let i = 0; i < airportIds.length; i++) {
       await airportLogic.deleteAirport(airportIds[i]);
@@ -401,20 +401,20 @@ async function deleteViewSampleData(sampleDataIds: SampleDataIds, serviceLocator
   }
 
   if(sampleDataIds.airlineCompanyId) {
-    logger.debug(`(${LoggingPrefix}) deleting sample airline company, id=${sampleDataIds.airlineCompanyId}`);
+    logger.debug('deleting sample airline company', { id: sampleDataIds.airlineCompanyId });
     const airlineCompanyLogic = serviceLocator.getAirlineCompanyLogic();
     await airlineCompanyLogic.deleteCompany(sampleDataIds.airlineCompanyId);
   }
 
   if(sampleDataIds.companyReviewId) {
-    logger.debug(`(${LoggingPrefix}) deleting sample company review data`);
+    logger.debug('deleting sample company review data');
     const companyReviewLogic = serviceLocator.getCompanyReviewsLogic();
     await companyReviewLogic.deleteReview(sampleDataIds.companyReviewId);
   }
 
   if(sampleDataIds.cityIds) {
     const cityIds = sampleDataIds.cityIds;
-    logger.debug(`(${LoggingPrefix}) deleting sample cities, count=${cityIds.length}`);
+    logger.debug('deleting sample cities', { count: cityIds.length });
     const cityLogic = serviceLocator.getCitiesLogic();
     for(let i = 0; i < cityIds.length; i++) {
       await cityLogic.deleteCity(cityIds[i]);
@@ -422,19 +422,19 @@ async function deleteViewSampleData(sampleDataIds: SampleDataIds, serviceLocator
   }
 
   if(sampleDataIds.countryId) {
-    logger.debug(`(${LoggingPrefix}) deleting sample country, id=${sampleDataIds.countryId}`);
+    logger.debug('deleting sample country', { id: sampleDataIds.countryId });
     const geoLogic = serviceLocator.getGeoLogic();
     await geoLogic.deleteCountry(sampleDataIds.countryId);
   }
 
   if(sampleDataIds.userId) {
-    logger.debug(`(${LoggingPrefix}) deleting sample user, id=${sampleDataIds.userId}`);
+    logger.debug('deleting sample user', { id: sampleDataIds.userId });
     const userLogic = serviceLocator.getUserLogic();
     await userLogic.deleteUser(sampleDataIds.userId);
   }
 
   if(sampleDataIds.imageId) {
-    logger.debug(`(${LoggingPrefix}) deleting sample image, id=${sampleDataIds.userId}`);
+    logger.debug('deleting sample image', { id: sampleDataIds.userId });
     const imageLogic = serviceLocator.getImageLogic();
     const imageProvider = serviceLocator.getImageProvider();
     await imageProvider.clearImageCache(sampleDataIds.imageId, SampleImageCategory);
@@ -443,19 +443,19 @@ async function deleteViewSampleData(sampleDataIds: SampleDataIds, serviceLocator
   }
 
   if(sampleDataIds.authFormImageId) {
-    logger.debug(`(${LoggingPrefix}) deleting sample auth form image, id=${sampleDataIds.authFormImageId}`);
+    logger.debug('deleting sample auth form image', { id: sampleDataIds.authFormImageId });
     const authFormImageLogic = serviceLocator.getAuthFormImageLogic();
     await authFormImageLogic.deleteImage(sampleDataIds.authFormImageId);
   }
 
-  logger.verbose(`(${LoggingPrefix}) view sample data deleted`);
+  logger.verbose('view sample data deleted');
 }
 
 /**
  * At least one record in source collection is required for view initialization (Acsys v1.0.1)
  */
 async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logger: IAppLogger): Promise<SampleDataIds | 'already-exist'> {
-  logger.verbose(`(${LoggingPrefix}) ensuring view sample data`);
+  logger.verbose('ensuring view sample data');
 
   const sampleIds: SampleDataIds = {
     companyReviewId: undefined,
@@ -486,14 +486,14 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
     servicesLogger.lowerWarnsWithoutErrorLevel(false);
   }
   if (imageCategory) {
-    logger.verbose(`(${LoggingPrefix}) view sample data ensured - already exist`);
+    logger.verbose('view sample data ensured - already exist');
     return 'already-exist';
   }
 
-  logger.debug(`(${LoggingPrefix}) creating sample image category`);
+  logger.debug('creating sample image category');
   await imageCategoryLogic.createCategory(ImageCategory.SampleData, SampleImageCategorySize.width, SampleImageCategorySize.height);
   
-  logger.debug(`(${LoggingPrefix}) creating sample image data`);
+  logger.debug('creating sample image data');
   const imageLogic = serviceLocator.getImageLogic();
 
   const imageProcessor = serviceLocator.getImageProcessor();
@@ -509,23 +509,23 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
   };
   sampleIds.imageId = (await imageLogic.createImage(sampleImageData, undefined, ViewSampleDataPreviewMode)).id;
 
-  logger.debug(`(${LoggingPrefix}) creating sample auth form image data`);
+  logger.debug('creating sample auth form image data');
   const authFormImageLogic = serviceLocator.getAuthFormImageLogic();
   sampleIds.authFormImageId = await authFormImageLogic.createImage(sampleIds.imageId, 999, ViewSampleDataPreviewMode);
  
-  logger.debug(`(${LoggingPrefix}) creating user sample data`);
+  logger.debug('creating user sample data');
   const userLogic = serviceLocator.getUserLogic();
   const password = `s@mPl3sPwd${murmurHash(`${random(2 ^ 30, false)}${random(2 ^ 30, false)}`)}`;
   const registerUserResult = await userLogic.registerUserByEmail(SampleUserEmail, password, 'verified', SampleStr, SampleStr, DefaultTheme, DefaultLocale) as RegisterUserByEmailResponse;
   switch(registerUserResult) {
     case 'already-exists':
     case 'insecure-password':
-      logger.warn(`(${LoggingPrefix}) failed to register sample user, rseult=${registerUserResult}`);
+      logger.warn('failed to register sample user', undefined, { result: registerUserResult });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to register user', 'error-page');
   }
   sampleIds.userId = registerUserResult;
 
-  logger.debug(`(${LoggingPrefix}) creating sample geo data`);
+  logger.debug('creating sample geo data');
   const geoLogic = serviceLocator.getGeoLogic();
   sampleIds.countryId = await geoLogic.createCountry({ name: SampleLocalizeableStr });
   sampleIds.cityIds = [
@@ -553,7 +553,7 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
     }, ViewSampleDataPreviewMode)
   ];
 
-  logger.debug(`(${LoggingPrefix}) creating sample popular city data`);
+  logger.debug('creating sample popular city data');
   const cityLogic = serviceLocator.getCitiesLogic();
   sampleIds.popularCityId = sampleIds.cityIds[1];
   await cityLogic.makeCityPopular({ 
@@ -572,7 +572,7 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
         order: 0 
       }], ViewSampleDataPreviewMode);
 
-  logger.debug(`(${LoggingPrefix}) creating sample company review data`);
+  logger.debug('creating sample company review data');
   const companyReviewLogic = serviceLocator.getCompanyReviewsLogic();
   sampleIds.companyReviewId = await companyReviewLogic.createReview({ 
     imageId: sampleIds.imageId, 
@@ -581,7 +581,7 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
     userName: SampleLocalizeableStr
   }, ViewSampleDataPreviewMode);
   
-  logger.debug(`(${LoggingPrefix}) creating sample airline company data`);
+  logger.debug('creating sample airline company data');
   const airlineCompanyLogic = serviceLocator.getAirlineCompanyLogic();
   sampleIds.airlineCompanyId = await airlineCompanyLogic.createAirlineCompany({ 
     cityId: sampleIds.cityIds[0], 
@@ -599,7 +599,7 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
     } 
   }, ViewSampleDataPreviewMode);
 
-  logger.debug(`(${LoggingPrefix}) creating sample airports data`);
+  logger.debug('creating sample airports data');
   const airportLogic = serviceLocator.getAirportLogic();
   sampleIds.airportIds = [
     await airportLogic.createAirport({ 
@@ -620,7 +620,7 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
     }, ViewSampleDataPreviewMode)
   ];
   
-  logger.debug(`(${LoggingPrefix}) creating sample airplane data`);
+  logger.debug('creating sample airplane data');
   const airplaneLogic = serviceLocator.getAirplaneLogic();
   sampleIds.airplaneId = await airplaneLogic.createAirplane({ 
     name: SampleLocalizeableStr, 
@@ -631,17 +631,17 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
     }]
   }, ViewSampleDataPreviewMode);
 
-  logger.debug(`(${LoggingPrefix}) creating sample flight offers data`);
+  logger.debug('creating sample flight offers data');
   const flightsLogic = serviceLocator.getFlightsLogic();
   const flightOffers = await flightsLogic.searchOffers({ }, sampleIds.userId, { direction: 'asc' }, { direction: 'asc' }, { skip: 0, take: 1 }, false, false, ViewSampleDataPreviewMode);
   if(flightOffers.pagedItems.length === 0) {
-    logger.warn(`(${LoggingPrefix}) failed to create flight offers, rseult=${registerUserResult}`);
+    logger.warn('failed to create flight offers', undefined, { rseult: registerUserResult });
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to create flight offers', 'error-page');
   }
   const flightOffer = flightOffers.pagedItems[0];
   await flightsLogic.toggleFavourite(flightOffer.id, sampleIds.userId);
 
-  logger.debug(`(${LoggingPrefix}) creating sample stay data`);
+  logger.debug('creating sample stay data');
   const stayLogic = serviceLocator.getStaysLogic();
   sampleIds.stayId = await stayLogic.createStay({ 
     cityId: sampleIds.cityIds[0], 
@@ -668,16 +668,16 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
       slug: 'acsys-sample-stay-data-slug' 
     }, ViewSampleDataPreviewMode);
   
-  logger.debug(`(${LoggingPrefix}) creating sample stay offers data`);
+  logger.debug('creating sample stay offers data');
   const stayOffers = await stayLogic.searchOffers({ citySlug: SampleCitySlugs[0], }, sampleIds.userId, { direction: 'asc' }, { skip: 0, take: 1 }, false, ViewSampleDataPreviewMode);
   if(stayOffers.pagedItems.length === 0) {
-    logger.warn(`(${LoggingPrefix}) failed to create stay offers, rseult=${registerUserResult}`);
+    logger.warn('failed to create stay offers', undefined, { rseult: registerUserResult });
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to create stay offers', 'error-page');
   }
   const stayOffer = stayOffers.pagedItems[0];
   await stayLogic.toggleFavourite(stayOffer.id, sampleIds.userId);
 
-  logger.debug(`(${LoggingPrefix}) creating sample booking data`);
+  logger.debug('creating sample booking data');
   const bookingLogic = serviceLocator.getBookingLogic();
   sampleIds.bookingId = await bookingLogic.createBooking({ 
     bookedUserId: sampleIds.userId, 
@@ -686,24 +686,24 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
     serviceLevel: undefined 
   });
 
-  logger.debug(`(${LoggingPrefix}) creating sample mail template data`);
+  logger.debug('creating sample mail template data');
   const mailTemplateLogic = serviceLocator.getMailTemplateLogic();
   sampleIds.mailTemplateId = await mailTemplateLogic.createTemplate(EmailTemplateEnum.EmailVerify, SampleLocalizeableStr, ViewSampleDataPreviewMode);
 
-  logger.debug(`(${LoggingPrefix}) creating sample verification token data`);
+  logger.debug('creating sample verification token data');
   const tokenLogic = serviceLocator.getTokenLogic();
   sampleIds.tokenId = (await tokenLogic.issueToken(TokenKind.EmailVerify, sampleIds.userId, false)).id;
 
-  logger.verbose(`(${LoggingPrefix}) view sample data ensured`);
+  logger.verbose('view sample data ensured');
   return sampleIds;
 }
 
 async function ensureViews(acsysClient: IAcsysClientAdministrator, serviceLocator: IServerServicesLocator, logger: IAppLogger): Promise<void> {
-  logger.info(`(${LoggingPrefix}) ensuring views`);
+  logger.info('ensuring views');
 
   const ensureViewResult = await ensureViewSampleData(serviceLocator, logger);
   if(ensureViewResult === 'already-exist') {
-    logger.info(`(${LoggingPrefix}) views ensured - already exist`);
+    logger.info('views ensured - already exist');
     return;
   }
 
@@ -711,13 +711,13 @@ async function ensureViews(acsysClient: IAcsysClientAdministrator, serviceLocato
   for(let i = 0; i < viewsConfig.length; i++) {
     const sourceCollection = viewsConfig[i][0];
     const viewConfig = viewsConfig[i][1];
-    logger.debug(`(${LoggingPrefix}) checking view exists, sourceCollection=${sourceCollection.valueOf()}`);
+    logger.debug('checking view exists', { sourceCollection: sourceCollection.valueOf() });
     const viewInfo = await acsysClient.findViewInfo(sourceCollection);
     if(viewInfo) {
-      logger.debug(`(${LoggingPrefix}) view already exists, sourceCollection=${sourceCollection.valueOf()}, viewId=${viewInfo.id}`);
+      logger.debug('view already exists', { sourceCollection: sourceCollection.valueOf(), viewId: viewInfo.id });
       continue;
     }
-    logger.verbose(`(${LoggingPrefix}) creating view, sourceCollection=${sourceCollection.valueOf()}, name=${viewConfig.displayProps.name}`);
+    logger.verbose('creating view', { sourceCollection: sourceCollection.valueOf(), name: viewConfig.displayProps.name });
 
     // fill display order
     const columnSettings: Omit<IViewColumnSettings, 'id'>[] = [];
@@ -734,15 +734,15 @@ async function ensureViews(acsysClient: IAcsysClientAdministrator, serviceLocato
     await acsysClient.setViewDisplayProps(viewId, viewConfig.displayProps);
     await acsysClient.setViewColumnSettings(viewId, sourceCollection, columnSettings);
     
-    logger.verbose(`(${LoggingPrefix}) view created, sourceCollection=${sourceCollection.valueOf()}, name=${viewConfig.displayProps.name}, viewId=${viewId}`);
+    logger.verbose('view created', { sourceCollection: sourceCollection.valueOf(), name: viewConfig.displayProps.name, viewId });
   }
   await deleteViewSampleData(ensureViewResult, serviceLocator, logger);
 
-  logger.info(`(${LoggingPrefix}) views ensured`);
+  logger.info('views ensured');
 }
 
 async function ensureNonAdminUsers(acsysClient: IAcsysClientAdministrator, moduleOptions: IAcsysOptions, logger: IAppLogger): Promise<void> {
-  logger.info(`(${LoggingPrefix}) ensuring non-admin users`);
+  logger.info('ensuring non-admin users');
 
   const nonAdminUsers = toPairs(moduleOptions.users).filter(x => x[0] !== 'admin');
   const usersData = [] as UserData[];
@@ -761,7 +761,7 @@ async function ensureNonAdminUsers(acsysClient: IAcsysClientAdministrator, modul
         role = UserRoleEnum.Viewer;
         break;
       default: 
-        logger.error(`(${LoggingPrefix}) unexpected user type in module config: ${userType}`);
+        logger.error('ensure non admin users, unexpected user type', undefined, userType);
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'invalid user type in acsys configuration', 'error-page');
     }
     usersData.push({
@@ -777,7 +777,7 @@ async function ensureNonAdminUsers(acsysClient: IAcsysClientAdministrator, modul
     await acsysClient.createUser(usersData[i]);
   }
 
-  logger.info(`(${LoggingPrefix}) non-admin users ensured, count=${usersData.length}`);
+  logger.info('non-admin users ensured', { count: usersData.length });
 }
 
 async function isConnected(acsysClient: IAcsysClientBase): Promise<boolean> {
@@ -785,45 +785,45 @@ async function isConnected(acsysClient: IAcsysClientBase): Promise<boolean> {
 }
 
 async function sendInitialLocalDatabaseConfig(acsysClient: IAcsysClientBase, moduleOptions: IAcsysOptions, logger: IAppLogger): Promise<boolean> {
-  logger.debug(`(${LoggingPrefix}) sending initial local database config`);
+  logger.debug('sending initial local database config');
   const result = await acsysClient.sendInitialLocalDatabaseConfig(moduleOptions.projectName);
-  logger.debug(`(${LoggingPrefix}) initial local database config sent, result=${result}`);
+  logger.debug('initial local database config sent', result);
   return result;
 }
 
 async function hasAdmin(acsysClient: IAcsysClientBase, logger: IAppLogger): Promise<boolean> {
-  logger.debug(`(${LoggingPrefix}) has admin check`);
+  logger.debug('has admin check');
   const result = await acsysClient.hasAdmin();
-  logger.debug(`(${LoggingPrefix}) has admin check completed, result=${result}`);
+  logger.debug('has admin check completed', result);
   return result;
 }
 
 async function sendRegisterAdminRequest(acsysClient: IAcsysClientBase, adminUser: UserData, logger: IAppLogger): Promise<boolean> {
-  logger.debug(`(${LoggingPrefix}) sending register admin request, username=${adminUser.username}`);
+  logger.debug('sending register admin request', { username: adminUser.username });
   const result = await acsysClient.register(adminUser);
-  logger.debug(`(${LoggingPrefix}) register admin request completed, result=${result}`);
+  logger.debug('register admin request completed', result);
   return result;
 }
 
 async function ensureAdminUser(acsysClient: IAcsysClientBase, moduleOptions: IAcsysOptions, logger: IAppLogger): Promise<void> {
-  logger.verbose(`(${LoggingPrefix}) ensuring admin user`);
+  logger.verbose('ensuring admin user');
   let connected = await isConnected(acsysClient);
   if(!connected) {
-    logger.verbose(`(${LoggingPrefix}) not connected, performing inital configuration`);
+    logger.verbose('not connected, performing inital configuration');
     if(isSqlite()) {
       const initialized = await sendInitialLocalDatabaseConfig(acsysClient, moduleOptions, logger);
       if(!initialized) {
-        logger.error(`(${LoggingPrefix}) failed to send initial local database config request`);
+        logger.error('failed to send initial local database config request');
         throw new Error('inital configuration failed');  
       }
     } else {
-      logger.error(`(${LoggingPrefix}) setting inital config for non-SQLite db has not been implmented yet`);
+      logger.error('setting inital config for non-SQLite db has not been implmented yet');
       throw new Error('inital configuration for non-SQLite not implmeneted');
     }
 
     connected = await isConnected(acsysClient);
     if(!connected) {
-      logger.error(`(${LoggingPrefix}) not connected event after inital config`);
+      logger.error('not connected event after inital config');
       throw new Error('not connected');
     }
   }
@@ -831,7 +831,7 @@ async function ensureAdminUser(acsysClient: IAcsysClientBase, moduleOptions: IAc
   const usersInitialized = await hasAdmin(acsysClient, logger);
   if(!usersInitialized) {
     const adminUsers = toPairs(moduleOptions.users).filter(x => x[0] === 'admin');
-    logger.info(`(${LoggingPrefix}) creating admin users, count=${adminUsers.length}`);
+    logger.info('creating admin users', { count: adminUsers.length });
     const userData = [] as UserData[];
     for(let i = 0; i < adminUsers.length; i++) {
       const userInfo = adminUsers[i][1];
@@ -848,7 +848,7 @@ async function ensureAdminUser(acsysClient: IAcsysClientBase, moduleOptions: IAc
           role = UserRoleEnum.Viewer;
           break;
         default: 
-          logger.error(`(${LoggingPrefix}) unexpected user type in module config: ${userType}`);
+          logger.error('ensure admin users, unexpected user type', undefined, userType);
           throw new Error('unexpected user type');
       }
       userData.push({
@@ -861,14 +861,14 @@ async function ensureAdminUser(acsysClient: IAcsysClientBase, moduleOptions: IAc
     }
 
     if(userData.length === 0) {
-      logger.error(`(${LoggingPrefix}) cannot obtain admin user data from module configuration`);
+      logger.error('cannot obtain admin user data from module configuration');
       throw new Error('admin user data missed');
     }
 
     const data = userData[0]; // only 1 admin user is possible
     const result = await sendRegisterAdminRequest(acsysClient, data, logger);
     if(!result) {
-      logger.error(`(${LoggingPrefix}) failed to register admin user: ${data.username}`);
+      logger.error('failed to register admin user', undefined, { username: data.username });
       throw new Error('failed to register admin user');
     }
   }

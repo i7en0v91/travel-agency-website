@@ -4,7 +4,7 @@ import { type ITestingPageCacheActionDto, type ITestingPageCacheActionResultDto,
 import fromPairs from 'lodash-es/fromPairs';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
 import type { H3Event } from 'h3';
-import { getServerServices } from '../../../../helpers/service-accessors';
+import { getServerServices, getCommonServices } from '../../../../helpers/service-accessors';
 
 declare type HandlePageActionResult = {
   testId: string | undefined;
@@ -35,7 +35,7 @@ async function handleIndexPageActionRequest(action: TestingPageCacheActionEnum, 
     return { testId: undefined };
   } else if(action === TestingPageCacheActionEnum.Change) {
     if(!testToken) {
-      logger.warn( `(api:testing:page-action) testToken was not specified, page=index`);
+      logger.warn('testToken was not specified, page index');
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'testToken parameter was not specified', 'error-stub');
     }
 
@@ -45,14 +45,14 @@ async function handleIndexPageActionRequest(action: TestingPageCacheActionEnum, 
     const companyReviewImages = await imageLogic.getAllImagesByCategory(ImageCategory.CompanyReview, true, event.context.preview.mode);
     const companyReviewImage = companyReviewImages.find(i => !i.slug.includes('test'));
     if(!companyReviewImage) {
-      logger.warn( `(api:testing:page-action) cannot find any company review image, need data seeding (empty DB?), page=index`);
+      logger.warn('cannot find any company review image, need data seeding (empty DB?), page index');
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'cannot find company review image', 'error-stub');
     }
 
     const timestamp = new Date().getTime();
     const imageBytes = await imageLogic.getImageBytes(companyReviewImage.id, undefined, ImageCategory.CompanyReview, event, event.context.preview.mode);
     if(!imageBytes) {
-      logger.warn( `(api:testing:page-action) cannot obtain company review image bytes, page=index, imageId=${companyReviewImage.id}`);
+      logger.warn('cannot obtain company review image bytes, page index', undefined, { imageId: companyReviewImage.id });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'cannot load company review image', 'error-stub');
     }
 
@@ -80,7 +80,7 @@ async function handleIndexPageActionRequest(action: TestingPageCacheActionEnum, 
     };
   } else {
     if(!testId) {
-      logger.warn( `(api:testing:page-action) testId was not specified, page=index`);
+      logger.warn('testId was not specified, page index');
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'testId parameter was not specified', 'error-stub');
     }
     const reviewId = testId;
@@ -99,14 +99,14 @@ async function handleAuthFormPageActionRequest(page: AppPage, action: TestingPag
     return { testId: undefined };
   } else if(action === TestingPageCacheActionEnum.Change) {
     if(!testToken) {
-      logger.warn( `(api:testing:page-action) testToken was not specified, page=${page.valueOf()}`);
+      logger.warn('testToken was not specified, auth form page');
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'testToken parameter was not specified', 'error-stub');
     }
 
     const authFormImageLogic = getServerServices()!.getAuthFormImageLogic();
     const authFormImages = await authFormImageLogic.getAllImages(event, event.context.preview.mode);
     if(!authFormImages.length) {
-      logger.warn( `(api:testing:page-action) no auth form images registered in system (db seed needed?), page=${page.valueOf()}`);
+      logger.warn('no auth form images registered in system (db seed needed?', undefined, { page: page.valueOf() });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'no any auth forms images registered', 'error-stub');
     }
 
@@ -114,7 +114,7 @@ async function handleAuthFormPageActionRequest(page: AppPage, action: TestingPag
     const sampleImageSlug = authFormImages[0].image.slug;
     const imageData = await imageLogic.getImageBytes(undefined, sampleImageSlug, ImageCategory.AuthFormsImage, event, event.context.preview.mode);
     if(!imageData) {
-      logger.warn( `(api:testing:page-action) failed to obtain image bytes, page=${page.valueOf()}, slug=${sampleImageSlug}`);
+      logger.warn('failed to obtain image bytes', undefined, { page: page.valueOf(), slug: sampleImageSlug });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to load image', 'error-stub');
     }
 
@@ -126,7 +126,7 @@ async function handleAuthFormPageActionRequest(page: AppPage, action: TestingPag
     };
   } else {
     if(!testId) {
-      logger.warn( `(api:testing:page-action) testId was not specified, page=${page.valueOf()}`);
+      logger.warn('testId was not specified', undefined, { page: page.valueOf() });
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'testId parameter was not specified', 'error-stub');
     }
     const authFormImageId = testId;
@@ -144,7 +144,7 @@ async function handleFlightOfferPageActionRequest(page: AppPage, action: Testing
     const flightsLogic = getServerServices()!.getFlightsLogic();
     const flightOffers = (await flightsLogic.searchOffers({ }, 'guest', { direction: 'asc' }, { direction: 'asc' }, { skip: 0, take: NumGeneratedOffersForFlightPages }, false, false, event.context.preview.mode)).pagedItems;
     if(!flightOffers.length) {
-      logger.warn( `(api:testing:page-action) no flight offers found (db seeding needed?), page=${page.valueOf()}`);
+      logger.warn('no flight offers found (db seeding needed?', undefined, { page: page.valueOf() });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'no flight offers found', 'error-stub');
     }
 
@@ -152,12 +152,12 @@ async function handleFlightOfferPageActionRequest(page: AppPage, action: Testing
     return { testId: flightOffer.id };
   } else if(action === TestingPageCacheActionEnum.Change) {
     if(!testId) {
-      logger.warn( `(api:testing:page-action) testId was not specified, page=${page.valueOf()}`);
+      logger.warn('testId was not specified, flight offer page');
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'testId parameter was not specified', 'error-stub');
     }
 
     if(!testToken) {
-      logger.warn( `(api:testing:page-action) testToken was not specified, page=${page.valueOf()}`);
+      logger.warn('testToken was not specified, flight offer page');
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'testToken parameter was not specified', 'error-stub');
     }
 
@@ -181,7 +181,7 @@ async function handleFlightOfferPageActionRequest(page: AppPage, action: Testing
       }
     })).count > 0;
     if(!updated) {
-      logger.warn( `(api:testing:page-action) failed to update airplane name, page=${page.valueOf()}, flightOfferId=${flightOfferId}, airplaneId=${airplaneId}`);
+      logger.warn('failed to update airplane name', undefined, { page: page.valueOf(), flightOfferId, airplaneId });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to update airplane name', 'error-stub');
     }
 
@@ -200,7 +200,7 @@ async function handleStayOfferPageActionRequest(page: AppPage, action: TestingPa
     const staysLogic = getServerServices()!.getStaysLogic();
     const staysOffers = (await staysLogic.searchOffers({ }, 'guest', { direction: 'asc' }, { skip: 0, take: NumGeneratedOffersForStayPages }, false, event.context.preview.mode)).pagedItems;
     if(!staysOffers.length) {
-      logger.warn( `(api:testing:page-action) no stay offers found (db seeding needed?), page=${page.valueOf()}`);
+      logger.warn('no stay offers found (db seeding needed?', undefined, { page: page.valueOf() });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'no stay offers found', 'error-stub');
     }
 
@@ -208,12 +208,12 @@ async function handleStayOfferPageActionRequest(page: AppPage, action: TestingPa
     return { testId: stayOffer.id };
   } else if(action === TestingPageCacheActionEnum.Change) {
     if(!testId) {
-      logger.warn( `(api:testing:page-action) testId was not specified, page=${page.valueOf()}`);
+      logger.warn('testId was not specified, stay offer page');
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'testId parameter was not specified', 'error-stub');
     }
 
     if(!testToken) {
-      logger.warn( `(api:testing:page-action) testToken was not specified, page=${page.valueOf()}`);
+      logger.warn('testToken was not specified, stay offer page');
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'testToken parameter was not specified', 'error-stub');
     }
 
@@ -237,7 +237,7 @@ async function handleStayOfferPageActionRequest(page: AppPage, action: TestingPa
       }
     })).count > 0;
     if(!updated) {
-      logger.warn( `(api:testing:page-action) failed to update hotel name, page=${page.valueOf()}, stayOfferId=${stayOfferId}, hotelId=${hotelId}`);
+      logger.warn('failed to update hotel name', undefined, { page: page.valueOf(), stayOfferId, hotelId });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to update hotel name', 'error-stub');
     }
 
@@ -257,14 +257,14 @@ async function handleFlightsOrStaysPageActionRequest(page: AppPage, action: Test
     return { testId: undefined };
   } else if(action === TestingPageCacheActionEnum.Change) {
     if(!testToken) {
-      logger.warn( `(api:testing:page-action) testToken was not specified, page=${page.valueOf()}`);
+      logger.warn('testToken was not specified, flights or stay offer page');
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'testToken parameter was not specified', 'error-stub');
     }
 
     const citiesLogic = getServerServices()!.getCitiesLogic();
     const popularCities = await citiesLogic.getPopularCities(event.context.preview.mode);
     if(!popularCities.length) {
-      logger.warn( `(api:testing:page-action) no popular cities registered in system (db seed needed?), page=${page.valueOf()}`);
+      logger.warn('no popular cities registered in system (db seed needed?', undefined, { page: page.valueOf() });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'no any popular cities registered', 'error-stub');
     }
 
@@ -285,7 +285,7 @@ async function handleFlightsOrStaysPageActionRequest(page: AppPage, action: Test
       }
     })).count > 0;
     if(!updated) {
-      logger.warn( `(api:testing:page-action) failed to update popular city name, page=${page.valueOf()}, cityId=${cityId}, citySlug=${popularCityInfo.slug}`);
+      logger.warn('failed to update popular city name', undefined, { page: page.valueOf(), cityId, citySlug: popularCityInfo.slug });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to update popular city name', 'error-stub');
     }
 
@@ -303,7 +303,7 @@ async function handleBookingPageActionRequest(action: TestingPageCacheActionEnum
   const authSession = await getServerSession(event);
   const userId = extractUserIdFromSession(authSession);
   if(!userId) {
-    logger.warn(`(api:testing:page-action) failed to extract userId from session, page=${AppPage.BookingDetails.valueOf()}`);
+    logger.warn('failed to extract userId from session', undefined, { page: AppPage.BookingDetails.valueOf() });
     throw new AppException(
       AppExceptionCodeEnum.UNAUTHENTICATED,
       'failed to obtain userId',
@@ -315,7 +315,7 @@ async function handleBookingPageActionRequest(action: TestingPageCacheActionEnum
     const flightsLogic = getServerServices()!.getFlightsLogic();
     const flightOffers = (await flightsLogic.searchOffers({ tripType: 'return' }, 'guest', { direction: 'asc' }, { direction: 'asc' }, { skip: 0, take: NumGeneratedOffersForBookingPages }, false, false, event.context.preview.mode)).pagedItems;
     if(!flightOffers.length) {
-      logger.warn( `(api:testing:page-action) no flight offers found (db seeding needed?), page=${AppPage.BookingDetails.valueOf()}`);
+      logger.warn('no flight offers found (db seeding needed?', undefined, { page: AppPage.BookingDetails.valueOf() });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'no flight offers found', 'error-stub');
     }
 
@@ -331,12 +331,12 @@ async function handleBookingPageActionRequest(action: TestingPageCacheActionEnum
     return { testId: bookingId };
   } else if(action === TestingPageCacheActionEnum.Change) {
     if(!testId) {
-      logger.warn( `(api:testing:page-action) testId was not specified, page=${AppPage.BookingDetails.valueOf()}`);
+      logger.warn('testId was not specified, booking page');
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'testId parameter was not specified', 'error-stub');
     }
 
     if(!testToken) {
-      logger.warn( `(api:testing:page-action) testToken was not specified, page=${AppPage.BookingDetails.valueOf()}`);
+      logger.warn('testToken was not specified, booking page');
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'testToken parameter was not specified', 'error-stub');
     }
 
@@ -363,7 +363,7 @@ async function handleBookingPageActionRequest(action: TestingPageCacheActionEnum
       }
     })).count > 0;
     if(!updated) {
-      logger.warn( `(api:testing:page-action) failed to update depart city name, page=${AppPage.BookingDetails.valueOf()}, flightOfferId=${flightOfferId}, bookingId=${bookingId}`);
+      logger.warn('failed to update depart city name', undefined, { page: AppPage.BookingDetails.valueOf(), flightOfferId, bookingId });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to update depart city name', 'error-stub');
     }
 
@@ -379,15 +379,15 @@ async function handleBookingPageActionRequest(action: TestingPageCacheActionEnum
 
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getServerServices()!.getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
   
-  logger.debug('(api:testing:page-action) parsing page action request from HTTP body');
+  logger.debug('parsing page action request from HTTP body');
   const pageActionDto: ITestingPageCacheActionDto = TestingPageCacheActionDtoSchema.cast(await readBody(event));
 
   const page = pageActionDto.page === 'index' ? AppPage.Index : (lookupValueOrThrow(AppPage, pageActionDto.page) as AppPage);
   const pageAction = lookupValueOrThrow(TestingPageCacheActionEnum, pageActionDto.action) as TestingPageCacheActionEnum;
   let handleActionResult: HandlePageActionResult;
-  logger.debug(`(api:testing:page-action) performing page action: page=${page.valueOf()}, action=${pageAction.valueOf()}, testId=${pageActionDto.testId ?? ''}, testToken=${pageActionDto.testToken ?? ''}`);
+  logger.debug('performing page action', { page: page.valueOf(), action: pageAction.valueOf(), testId: pageActionDto.testId ?? '', testToken: pageActionDto.testToken ?? '' });
   switch(page) {
     case AppPage.Index:
       handleActionResult = await handleIndexPageActionRequest(pageAction, pageActionDto.testId, pageActionDto.testToken, logger, event);
@@ -419,10 +419,10 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
       handleActionResult = await handleBookingPageActionRequest(pageAction, pageActionDto.testId, pageActionDto.testToken, logger, event);
       break;
     default:
-      logger.warn(`(api:testing:page-action) unexpected page=${page.valueOf()}`);
+      logger.warn('unexpected', undefined, { page: page.valueOf() });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'not implemented', 'error-stub');
   }
-  logger.debug(`(api:testing:page-action) page action performed: page=${page.valueOf()}, action=${pageAction.valueOf()}, testId=${pageActionDto.testId ?? ''}, testToken=${pageActionDto.testToken ?? ''}, result=${JSON.stringify(handleActionResult.testId)}`);
+  logger.debug('page action performed', { page: page.valueOf(), action: pageAction.valueOf(), testId: pageActionDto.testId ?? '', testToken: pageActionDto.testToken ?? '', result: handleActionResult.testId });
   
   handleCacheHeaders(event, {
     cacheControls: ['no-cache'],

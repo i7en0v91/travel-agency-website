@@ -2,10 +2,12 @@ import type { EntityDataAttrsOnly, IFlight, IFlightOffer, IStayOffer } from '@go
 import { sha256 } from 'ohash';
 import { randomBytes } from 'crypto';
 
-export const ImageCategoryInfosCacheKey = 'ImageCategoryInfos';
-export const AllAirlineCompaniesCacheKey = 'AllAirlineCompanies';
-export const AllAirplanesCacheKey = 'AllAirplanes';
-export const NearestAirlineCompanyCacheKey = 'NearestAirlineCompany';
+export const ImageCategoryInfosCacheKey = 'image-category-infos';
+export const AllAirlineCompaniesCacheKey = 'all-airline-companies';
+export const AllAirplanesCacheKey = 'all-airplanes';
+export const NearestCityAirlineCompaniesCacheKey = 'nearest-city-airline-companies';
+export const NearestAirlineCompanyCacheKey = 'nearest-airline-companies';
+export const AverageCityDistanceCacheKey = 'avg-city-distance';
 
 export function getSomeSalt (): string {
   return randomBytes(12).toString('base64');

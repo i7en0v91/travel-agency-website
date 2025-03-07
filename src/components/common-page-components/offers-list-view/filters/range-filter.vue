@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../../helpers/components';
 import { getI18nResName3, convertTimeOfDay } from '@golobe-demo/shared';
 import type { ISearchOffersRangeFilterProps } from './../../../../types';
 import Slider from '@vueform/slider';
@@ -8,17 +9,17 @@ import isString from 'lodash-es/isString';
 import { getCommonServices } from '../../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   filterParams: ISearchOffersRangeFilterProps,
   value: { min: number, max: number }
 }
 
 const { ctrlKey, filterParams, value } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'RangeFilter' });
 const editValue = ref([value.min, value.max]);
 watch(() => value, () => {
-  logger.debug(`(RangeFilter) received value update, ctrlKey=${ctrlKey}, new value min=${value.min}, new value max=${value.max}, current value min=${editValue.value[0]}, current value max=${editValue.value[1]}`);
+  logger.debug('received value update', { ctrlKey, newValue: value, currentValue: editValue.value });
   if (Math.abs(value.min - editValue.value[0]) > 0.01 || Math.abs(value.max - editValue.value[1]) > 0.01) {
     editValue.value[0] = value.min;
     editValue.value[1] = value.max;
@@ -33,19 +34,19 @@ const { d, t } = useI18n();
 const $emit = defineEmits<{(event: 'update:value', value: { min: number, max: number }): void}>();
 
 function fireValueChangeEvent (value: { min: number, max: number }) {
-  logger.verbose(`(RangeFilter) firing value change event, ctrlKey=${ctrlKey}, value min=${value.min}, value max=${value.max}`);
+  logger.verbose('firing value change event', { ctrlKey, min: value.min, max: value.max });
   $emit('update:value', value);
 }
 
 function onSliderValueChanged (value: number[]) {
-  logger.debug(`(RangeFilter) slider value changed, ctrlKey=${ctrlKey}`);
+  logger.debug('slider value changed', ctrlKey);
   if (value?.length === 2) {
     fireValueChangeEvent({ min: value[0], max: value[1] });
   }
 }
 
 function onSliderValueUpdated (value: number[]) {
-  logger.debug(`(RangeFilter) slider value updated, ctrlKey=${ctrlKey}`);
+  logger.debug('slider value updated', ctrlKey);
   if (value && (value.length ?? 0) === 2) {
     updateHandleTooltipPositions(value[0], value[1]);
   } else {
@@ -54,7 +55,7 @@ function onSliderValueUpdated (value: number[]) {
 }
 
 function updateHandleTooltipPositions (fromValue: number, toValue: number) {
-  logger.debug(`(RangeFilter) updating handle tooltip positions, ctrlKey=${ctrlKey}, from=${fromValue}, to=${toValue}`);
+  logger.debug('updating handle tooltip positions', { ctrlKey, from: fromValue, to: toValue });
   const minValue = filterParams.valueRange.min;
   const maxValue = filterParams.valueRange.max;
 

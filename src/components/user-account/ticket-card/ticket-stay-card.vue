@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { getI18nResName2, getI18nResName3, type EntityId, type EntityDataAttrsOnly, type IStayOffer } from '@golobe-demo/shared';
 import TicketCardContainer from './ticket-card-container.vue';
 import TicketStayTitle from './../../booking-ticket/booking-ticket-stay-title.vue';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   bookingId: EntityId,
   offer: EntityDataAttrsOnly<IStayOffer>
 };
@@ -13,21 +14,21 @@ const { ctrlKey } = defineProps<IProps>();
 const { d, t } = useI18n();
 
 const details = [
-  { ctrlKey: `${ctrlKey}-Details-CheckInTime`, caption: getI18nResName3('ticket', 'details', 'checkInTime'), icon: 'timer', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
-  { ctrlKey: `${ctrlKey}-Details-CheckOutTime`, caption: getI18nResName3('ticket', 'details', 'checkOutTime'), icon: 'timer', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
-  { ctrlKey: `${ctrlKey}-Details-Room`, caption: getI18nResName3('ticket', 'details', 'room'), icon: 'door', text: t(getI18nResName3('ticket', 'details', 'onArrival')) }
+  { ctrlKey: [...ctrlKey, 'Details', 'CheckInTime'] as ControlKey, caption: getI18nResName3('ticket', 'details', 'checkInTime'), icon: 'timer', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
+  { ctrlKey: [...ctrlKey, 'Details', 'CheckOutTime'] as ControlKey, caption: getI18nResName3('ticket', 'details', 'checkOutTime'), icon: 'timer', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
+  { ctrlKey: [...ctrlKey, 'Details', 'Room'] as ControlKey, caption: getI18nResName3('ticket', 'details', 'room'), icon: 'door', text: t(getI18nResName3('ticket', 'details', 'onArrival')) }
 ];
 
 </script>
 
 <template>
-  <TicketCardContainer :ctrl-key="`${ctrlKey}-Container`" :booking-id="bookingId" :offer="offer"> 
+  <TicketCardContainer :ctrl-key="[...ctrlKey, 'Wrapper']" :booking-id="bookingId" :offer="offer"> 
     <template #ticket-card>
       <div class="ticket-card">
         <div class="ticket-card-div">
           <div class="ticket-card-general">
             <div class="ticket-card-image ticket-stay-card-hotel-logo brdr-3 p-xs-2">
-              <TicketStayTitle :ctrl-key="`${ctrlKey}-StayTitle`" :city-name="offer.stay.city.name" :stay-name="offer.stay.name"/>
+              <TicketStayTitle :ctrl-key="[...ctrlKey, 'Title']" :city-name="offer.stay.city.name" :stay-name="offer.stay.name"/>
             </div>
             <div class="ticket-card-timings from ml-xs-5">
               <div class="ticket-card-caption">
@@ -47,7 +48,7 @@ const details = [
               </div>
             </div>
             <BookingTicketDetails
-              :ctrl-key="`${ctrlKey}-Details`" 
+              :ctrl-key="[...ctrlKey, 'Details']" 
               :items="details" 
               class="ticket-card-details"/>
           </div>

@@ -35,7 +35,7 @@ async function handleLogEntry(logEntry: { level: LogLevel | (typeof LogAlwaysLev
 }
 
 export default defineWebApiEventHandler(async (event: H3Event) => {
-  const logger = getServerServices()!.getLogger();
+  const logger = getServerServices()!.getLogger().addContextProps({ component: 'WebApi' });
 
   // client's message/error will be logged inside handler logging wrapper
   const body = await readBody(event);

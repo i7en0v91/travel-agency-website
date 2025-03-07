@@ -4,10 +4,9 @@ import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
 import { getCommonServices, getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event) => {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
   if (!AppConfig.email) {
-    const msg = '(recover-password) cannot recover password as emailing is disabled';
-    logger.warn(msg);
+    logger.warn('cannot recover password as emailing is disabled');
     throw new AppException(AppExceptionCodeEnum.EMAILING_DISABLED, 'cannot recover password as emailing is disabled', 'error-stub');
   }
 

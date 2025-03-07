@@ -1,16 +1,17 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { AppPage, getPagePath, type Locale, getI18nResName3, type EntityId, type IStayOffer, type IFlightOffer, type EntityDataAttrsOnly, isElectronBuild } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   bookingId: EntityId,
   offer: EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>
 };
 const { ctrlKey, bookingId, offer } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'TicketCardContainer' });
 const navLinkBuilder = useNavLinkBuilder();
 
 const { locale } = useI18n();
@@ -21,7 +22,7 @@ const documentDownloader = import.meta.client ? useDocumentDownloader() : undefi
 const userAccountStore = useUserAccountStore();
 
 async function onBtnClick(): Promise<void> {
-  logger.verbose(`(TicketCardContainer) download btn clicked, ctrlKey=${ctrlKey}, bookingId=${bookingId}`);
+  logger.verbose('download btn clicked', { ctrlKey, bookingId });
 
   let firstName: string | undefined;
   let lastName: string | undefined;
@@ -30,7 +31,7 @@ async function onBtnClick(): Promise<void> {
     firstName = userAccount.firstName;
     lastName = userAccount.lastName;
   } catch (err: any) {
-    logger.warn(`(TicketCardContainer) failed to initialize user account info, ctrlKey=${ctrlKey}`, err);
+    logger.warn('failed to initialize user account info', err, ctrlKey);
   }
 
   await documentDownloader!.download(bookingId, offer, firstName, lastName, locale.value as Locale, theme.currentTheme.value);
@@ -57,7 +58,7 @@ async function onBtnClick(): Promise<void> {
       <div class="ticket-card-buttons">
         <SimpleButton
           kind="default"
-          :ctrl-key="`${ctrlKey}-BtnDownload`"
+          :ctrl-key="[...ctrlKey, 'Btn', 'Download']"
           class="ticket-card-button-download"
           :label-res-name="getI18nResName3('accountPage', 'tabHistory', 'btnDownload')"
           @click="onBtnClick"

@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { AppPage, getI18nResName3, type IImageEntitySrc, type ILocalizableValue, ImageCategory, type Locale } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   bookKind: 'flight' | 'stay',
   cityName?: ILocalizableValue,
   promoLine?: ILocalizableValue,
@@ -40,13 +41,13 @@ const { locale } = useI18n();
       </NuxtLink>
     </div>
     <StaticImage
-      :ctrl-key="`${ctrlKey}-CityImage`"
-      :entity-src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
+      :ctrl-key="[...ctrlKey, 'StaticImg', 'City']"
+      :src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
       :category="ImageCategory.CityCard"
       sizes="xs:90vw sm:80vw md:60vw lg:50vw xl:50vw"
       class="travel-city-card-img brdr-3"
-      :alt-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'imgAlt')"
-      :show-stub="true"
+      :alt="{ resName: getI18nResName3('indexPage', 'companyReviewSection', 'imgAlt') }"
+      stub="default"
     />
   </article>
 </template>

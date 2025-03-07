@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../helpers/components';
 import { type I18nResName, getI18nResName2 } from '@golobe-demo/shared';
 import type { ConfirmBoxButton } from './../types';
 import { VueFinalModal } from 'vue-final-modal';
@@ -6,7 +7,7 @@ import SimpleButton from './forms/simple-button.vue';
 import { getCommonServices } from '../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   setResultCallback: (button: ConfirmBoxButton) => void,
   buttons: ConfirmBoxButton[],
   msgResName: I18nResName,
@@ -15,7 +16,7 @@ interface IProps {
 
 const { ctrlKey, setResultCallback } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ConfirmBox' });
 const clickedButton = ref<ConfirmBoxButton>();
 
 const $emit = defineEmits(['update:modelValue']);
@@ -36,7 +37,7 @@ function onClosed () {
 }
 
 function onButtonClick (button: ConfirmBoxButton) {
-  logger.verbose(`(ConfirmBox) button clicked: ctrlKey=${ctrlKey}, butotn=${button}`);
+  logger.verbose('button clicked', { ctrlKey, butotn: button });
   clickedButton.value = button;
   setResultAndClose();
 }
@@ -58,21 +59,21 @@ function onButtonClick (button: ConfirmBoxButton) {
       <div class="confirm-box-buttons mt-xs-4">
         <SimpleButton
           v-if="buttons.includes('yes')"
-          :ctrl-key="`${ctrlKey}-btnYes`"
+          :ctrl-key="[...ctrlKey, 'Btn', 'Yes']"
           :label-res-name="getI18nResName2('confirmBox', 'btnYes')"
           kind="support"
           @click="() => onButtonClick('yes')"
         />
         <SimpleButton
           v-if="buttons.includes('no')"
-          :ctrl-key="`${ctrlKey}-btnNo`"
+          :ctrl-key="[...ctrlKey, 'Btn', 'No']"
           :label-res-name="getI18nResName2('confirmBox', 'btnNo')"
           kind="support"
           @click="() => onButtonClick('no')"
         />
         <SimpleButton
           v-if="buttons.includes('cancel')"
-          :ctrl-key="`${ctrlKey}-btnCancel`"
+          :ctrl-key="[...ctrlKey, 'Btn', 'Cancel']"
           :label-res-name="getI18nResName2('confirmBox', 'btnCancel')"
           kind="support"
           icon="cross"

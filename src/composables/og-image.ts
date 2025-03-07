@@ -6,9 +6,9 @@ export function useOgImage (component?: { name: string, props: any}, skipCache: 
   const route = useRoute();
   const { locale } = useI18n();
 
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'UseOgImage' });
   if (!AppConfig.ogImage.enabled) {
-    logger.debug(`(og-image) skipping OG image metadata as disabled, path=${route.path}`);
+    logger.debug('skipping OG image metadata as disabled', { path: route.path });
     return;
   }
 
@@ -16,7 +16,7 @@ export function useOgImage (component?: { name: string, props: any}, skipCache: 
 
   const currentPage = lookupPageByUrl(route.path);
   if (currentPage === undefined) {
-    logger.warn(`(og-image) failed to detect current page, using default, path=${route.path}, url=${defaultImgUrl}`);
+    logger.warn('failed to detect current page, using default', undefined, { path: route.path, url: defaultImgUrl });
     defineOgImage({
       url: defaultImgUrl
     });
@@ -24,13 +24,13 @@ export function useOgImage (component?: { name: string, props: any}, skipCache: 
   }
 
   if(currentPage === SystemPage.Drafts) {
-    logger.debug(`(og-image) skipping OG image metadata for system page, path=${route.path}`);
+    logger.debug('skipping OG image metadata for system page', { path: route.path });
     return;
   }
 
   const isDynamicOgImagePage = EntityIdPages.includes(currentPage!);
   if (isDynamicOgImagePage && !component) {
-    logger.warn(`(og-image) page requires a component to generate image, using default, path=${route.path}, page=${currentPage}, url=${defaultImgUrl}`);
+    logger.warn('page requires a component to generate image, using default', undefined, { path: route.path, page: currentPage, url: defaultImgUrl });
     defineOgImage({
       url: defaultImgUrl
     });
@@ -38,7 +38,7 @@ export function useOgImage (component?: { name: string, props: any}, skipCache: 
   }
 
   if (component) {
-    logger.verbose(`(og-image) using component for og image, path=${route.path}, page=${currentPage}, component=${component.name}, skipCache=${skipCache}, props=${JSON.stringify(component.props)}`);
+    logger.verbose('using component for og image', { path: route.path, page: currentPage, component: component.name, skipCache, props: component.props });
     defineOgImageComponent(component.name, component.props, {
       cacheMaxAgeSeconds: skipCache ? 0 : undefined
     });
@@ -46,7 +46,7 @@ export function useOgImage (component?: { name: string, props: any}, skipCache: 
   }
 
   const imgUrl = joinURL('/img', 'og', getOgImageFileName(currentPage, locale.value as Locale));
-  logger.verbose(`(og-image) using prerendered screenshot for og image, path=${route.path}, page=${currentPage}, url=${imgUrl}`);
+  logger.verbose('using prerendered screenshot for og image', { path: route.path, page: currentPage, url: imgUrl });
   defineOgImage({
     url: imgUrl
   });

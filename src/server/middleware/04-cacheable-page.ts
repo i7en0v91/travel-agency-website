@@ -17,7 +17,7 @@ async function redirectWithNewQuery(originalUrl: ParsedURL, newQuery: any, event
   parsedUrl.search = stringifyQuery(newQuery);
   const resultUrl = stringifyParsedURL(parsedUrl);
   await sendRedirect(event, resultUrl);
-  logger.verbose(`(cacheable-page) redirect sent, original url=${event.node.req.url}, new url=${resultUrl}`);
+  logger.verbose(`(cacheable-page) redirect sent, originalUrl=${event.node.req.url}, newUrl=${resultUrl}`);
 }
 
 async function handleMissedParams(
@@ -182,7 +182,7 @@ export default defineEventHandler(async (event) => {
       const requestTimestamp = get(cacheablePageQuery, QueryPageTimestampParam);
       const actualTimestamp = (isDate(pageTimestamp) ? pageTimestamp.getTime() : pageTimestamp).toString();
       if(actualTimestamp !== requestTimestamp) {
-        logger.verbose(`(cacheable-page) request query timestamp does not match current actual, url=${event.node.req.url}, currentPage=${currentPage}, request t=${requestTimestamp}, actual t=${actualTimestamp}`);
+        logger.verbose(`(cacheable-page) request query timestamp does not match current actual, url=${event.node.req.url}, currentPage=${currentPage}, requestTimestamp=${requestTimestamp}, actualTimestamp=${actualTimestamp}`);
         redirectQuery = set((redirectQuery ?? parseQuery(url.search)), QueryPageTimestampParam, actualTimestamp);
       }
     }

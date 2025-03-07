@@ -16,7 +16,9 @@ export interface ILogVueSuppressionRule extends ILogSuppressionRule  {
 }
 
 export interface IAppLogger {
-  lowerWarnsWithoutErrorLevel(useInfoLevel: boolean): void
+  addContextProps(props: Record<string, any>): IAppLogger;
+
+  lowerWarnsWithoutErrorLevel(useInfoLevel: boolean): void;
 
   debug(msg: string, data?: any) : void;
 

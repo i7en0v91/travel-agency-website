@@ -14,7 +14,7 @@ export class AcsysClientViewer extends AcsysClientBase implements IAcsysClientVi
   }
 
   getFileInfos = async (fileIds: EntityId[]): Promise<{ id: EntityId, mimeType: string; lastModifiedUtc: Date; }[]> => {
-    this.logger.verbose(`(AcsysClientViewer) obtaining file info, fileIds=[${fileIds.join('; ')}]`); 
+    this.logger.verbose('obtaining file info', fileIds); 
 
     const queryParams = {
       table: AcsysTableStorageItems,
@@ -31,17 +31,17 @@ export class AcsysClientViewer extends AcsysClientBase implements IAcsysClientVi
         };
     });
 
-    this.logger.verbose(`(AcsysClientViewer) file infos obtained, fileIds=[${fileIds.join('; ')}], result=[${JSON.stringify(result)}]`); 
+    this.logger.verbose('file infos obtained', { fileIds, result }); 
     return result;
   };
 
   readFile = async (fileId: EntityId): Promise<{ mimeType: string, bytes: Buffer, lastModifiedUtc: Date }> => {
-    this.logger.verbose(`(AcsysClientViewer) reading file, fileId=${fileId}`); 
+    this.logger.verbose('reading file', fileId); 
 
     await this.ensureAuthenticated(false);
     const accessToken = this.getCurrentAccessToken();
     if(!accessToken) {
-      this.logger.warn(`(AcsysClientViewer) failed to read file, cannot obtain access token, fileId=${fileId}`);
+      this.logger.warn('failed to read file, cannot obtain access token', undefined, fileId);
       throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'failed to read file', 'error-stub');
     }
 
@@ -52,7 +52,7 @@ export class AcsysClientViewer extends AcsysClientBase implements IAcsysClientVi
 
     const fetchResult = await this.fetch<ApiResponseTypes.bytes>(RouteGetFile, queryParams, undefined, 'GET', UserRoleEnum.Viewer, true, ApiResponseTypes.bytes, undefined);
     
-    this.logger.verbose(`(AcsysClientViewer) file read completed, fileId=${fileId}, mimeType=${fetchResult.mimeType}, size=${fetchResult.bytes.length}`); 
+    this.logger.verbose('file read completed', { fileId, mimeType: fetchResult.mimeType, size: fetchResult.bytes.length }); 
     return {
       mimeType: fetchResult.mimeType,
       bytes: fetchResult.bytes,

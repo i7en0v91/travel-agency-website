@@ -5,6 +5,7 @@ import throttle from 'lodash-es/throttle';
 import { useThemeSettings } from './../../composables/theme-settings';
 import BookingTicketFlightLabel from './booking-ticket-flight-label.vue';
 import { getCommonServices } from '../../helpers/service-accessors';
+import { toShortForm } from './../../helpers/components';
 
 const { ctrlKey, userName } = defineProps<IBookingTicketFlightGfxProps>();
 
@@ -15,7 +16,7 @@ const FlightRouteVertexSize = 5;
 const FlightRouteVertexPosAdj = 136 * 0.5;
 const FlightRouteCurvenessOffset = -100;
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'BookingTicketFlightGfx' });
 
 const drawingCanvas = useTemplateRef<HTMLCanvasElement>('drawing-canvas');
 const container = useTemplateRef<HTMLElement>('container');
@@ -28,7 +29,7 @@ function renderFrameSafe () {
   try {
     doRenderFrame();
   } catch (err: any) {
-    logger.warn(`(BookingTicketFlightGfx) exception occured while redering frame, ctrlKey=${ctrlKey}`, err);
+    logger.warn('exception occured while redering frame', err, ctrlKey);
   }
 }
 
@@ -56,21 +57,21 @@ function renderFlightRoute (from: { x: number, y: number }, to: { x: number, y: 
 }
 
 function doRenderFrame () {
-  logger.debug('(BookingTicketFlightGfx) redering new frame');
+  logger.debug('redering new frame');
   if (!canvasSize.value) {
-    logger.debug('(BookingTicketFlightGfx) nothing to render, world map was not initialized');
+    logger.debug('nothing to render, world map was not initialized');
     return;
   }
 
   const canvasElClientRect = drawingCanvas.value?.getClientRects();
   if ((canvasElClientRect?.length ?? 0) === 0) {
-    logger.debug('(BookingTicketFlightGfx) nothing to render, canvas element empty');
+    logger.debug('nothing to render, canvas element empty');
     return;
   }
 
   const ctx = drawingCanvas.value?.getContext('2d');
   if (!ctx) {
-    logger.error(`(BookingTicketFlightGfx) cannot acquire 2D context, ctrlKey=${ctrlKey}`);
+    logger.error('cannot acquire 2D context', undefined, ctrlKey);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'cannot acquire 2D context', 'error-stub');
   }
 
@@ -95,16 +96,16 @@ function renderMapFrame () {
 }
 
 function updateCanvasSize () {
-  logger.debug(`(BookingTicketFlightGfx) updating canvas size, ctrlKey=${ctrlKey}`);
+  logger.debug('updating canvas size', ctrlKey);
   if (container.value!) {
     const containerRect = container.value.getBoundingClientRect();
     canvasSize.value = {
       width: containerRect.width,
       height: containerRect.height
     };
-    logger.debug(`(BookingTicketFlightGfx) using canvas size w=${canvasSize.value.width}, h=${canvasSize.value.height}, ctrlKey=${ctrlKey}`);
+    logger.debug('using canvas size', { w: canvasSize.value.width, h: canvasSize.value.height, ctrlKey });
   } else {
-    logger.warn(`(BookingTicketFlightGfx) cannot update canvas size - container is not initialized, ctrlKey=${ctrlKey}`);
+    logger.warn('cannot update canvas size - container is not initialized', undefined, ctrlKey);
   }
 }
 
@@ -140,7 +141,7 @@ onUnmounted(() => {
       <div v-if="canvasSize" class="ticket-flight-gfx-controls" :style="{ width: `${canvasSize.width}px`, height: `${canvasSize.height}px` }">
         <BookingTicketFlightLabel
           v-if="canvasSize"
-          :ctrl-key="`${ctrlKey}-FromLabel`"
+          :ctrl-key="[...ctrlKey, 'From']"
           :user-name="userName"
           :style="{
             bottom: `${Math.round(0.1 * 100)}%`,
@@ -151,7 +152,7 @@ onUnmounted(() => {
         />
         <BookingTicketFlightLabel
           v-if="canvasSize"
-          :ctrl-key="`${ctrlKey}-ToLabel`"
+          :ctrl-key="[...ctrlKey, 'To']"
           :user-name="userName"
           :style="{
             top: `${Math.round(0.1 * 100)}%`,
@@ -161,7 +162,7 @@ onUnmounted(() => {
           arrow-class="arrow-bottom"
         />
         <div
-          :key="`${ctrlKey}-FromHighlight`"
+          :key="`${toShortForm(ctrlKey)}-FromHighlight`"
           class="ticket-flight-gfx-highlight"
           :style="{
             bottom: `${Math.round(0.1 * 100)}%`,
@@ -169,7 +170,7 @@ onUnmounted(() => {
           }"
         />
         <div
-          :key="`${ctrlKey}-ToHighlight`"
+          :key="`${toShortForm(ctrlKey)}-ToHighlight`"
           class="ticket-flight-gfx-highlight"
           :style="{
             top: `${Math.round(0.1 * 100)}%`,

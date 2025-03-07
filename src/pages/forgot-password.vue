@@ -14,6 +14,7 @@ import OAuthProviderList from './../components/account/oauth-providers-list.vue'
 import CaptchaProtection from './../components/forms/captcha-protection.vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
+import type { ControlKey } from './../helpers/components';
 
 const { t, locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
@@ -28,6 +29,8 @@ definePageMeta({
   title: { resName: getI18nResName2('forgotPasswordPage', 'title'), resArgs: undefined }
 });
 useOgImage();
+
+const CtrlKey: ControlKey = ['Page', 'ForgotPassword'];
 
 const { signIn } = useAuth();
 const localePath = useLocalePath();
@@ -108,7 +111,7 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
 <template>
   <div class="forgot-password-page account-page no-hidden-parent-tabulation-check">
     <div class="forgot-password-page-content">
-      <NavLogo ctrl-key="forgotPasswordPageAppLogo" mode="inApp" />
+      <NavLogo :ctrl-key="[...CtrlKey, 'NavLogo']" mode="inApp" :hard-link="false"/>
       <NuxtLink class="back-to-login-link brdr-1" :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
         {{ t(getI18nResName2('accountPageCommon', 'backToLogin')) }}
       </NuxtLink>
@@ -121,7 +124,7 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
       <form>
         <TextBox
           v-model="useremail"
-          ctrl-key="forgotPasswordPgEmail"
+          :ctrl-key="[...CtrlKey, 'TextBox', 'Email']"
           class="form-field forgot-password-form-field forgot-password-email-field"
           type="email"
           :caption-res-name="getI18nResName2('accountPageCommon', 'emailLabel')"
@@ -132,11 +135,11 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
             {{ v$.useremail.$errors[0].$message }}
           </div>
         </div>
-        <CaptchaProtection ref="captcha" ctrl-key="ForgotPasswordCaptchaProtection" @verified="onCaptchaVerified" />
+        <CaptchaProtection ref="captcha" :ctrl-key="[...CtrlKey, 'Captcha']" @verified="onCaptchaVerified" />
       </form>
-      <SimpleButton ctrl-key="forgotPaswordSubmitBtn" class="forgot-password-submit-btn mt-xs-2" :label-res-name="getI18nResName3('forgotPasswordPage', 'forms', 'submit')" @click="submitClick" />
-      <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('forgotPasswordPage', 'loginWith')" @click="onOAuthProviderClick" />
+      <SimpleButton :ctrl-key="[...CtrlKey, 'Btn', 'Submit']" class="forgot-password-submit-btn mt-xs-2" :label-res-name="getI18nResName3('forgotPasswordPage', 'forms', 'submit')" @click="submitClick" />
+      <OAuthProviderList :ctrl-key="[...CtrlKey, 'OauthProviders']" :divisor-label-res-name="getI18nResName2('forgotPasswordPage', 'loginWith')" @click="onOAuthProviderClick" />
     </div>
-    <AccountFormPhotos ctrl-key="ForgotPasswordPhotos" class="forgot-password-account-forms-photos" />
+    <AccountFormPhotos :ctrl-key="[...CtrlKey, 'AccountFormPhotos']" class="forgot-password-account-forms-photos" />
   </div>
 </template>

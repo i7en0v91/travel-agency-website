@@ -148,7 +148,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
     airplaneLogic: IAirplaneLogic,
     staysLogic: IStaysLogic
   ) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'DataSeedingLogic' });
     this.userLogic = userLogic;
     this.imageProcessor = imageProcessor;
     this.imageCategoryLogic = imageCategoryLogic;
@@ -168,23 +168,38 @@ export class DataSeedingLogic implements IDataSeedingLogic {
     return murmurHash(Buffer.from(value).toString('base64'));
   }
   
+  // Amends sample data in case of missed values
+  padLocalizableValue(value: Partial<ILocalizableValue>, logger: IAppLogger): ILocalizableValue {
+    if(!value.en) {
+      logger.error('cannot pad localizable value', undefined, value);
+      throw new Error('cannot pad localizable value');
+    }
+    if(!value.ru?.length) {
+      value.ru = value.en;
+    }
+    if(!value.fr?.length) {
+      value.fr = value.en;
+    }
+    return value as ILocalizableValue;
+  }
+
   async checkFileExists (filePath: string): Promise<boolean> {
     try {
       await access(filePath);
       return true;
     } catch (err: any) {
-      this.logger.debug(`${this.LoggingPrefix} cannot access file, probably does not exist (msg=${err?.message ?? ''})`);
+      this.logger.debug('cannot access file, probably does not exist (', { msg: err?.message ?? '' });
       return false;
     }
   };
   
   async ensureUser (ctx: ContextParams, password: string, email: string, firstName: string, lastName: string, authProvider: AuthProvider, providerIdentity: string, avatarFileName: string | undefined): Promise<EntityId> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> ensuring user, providerIdentity=${providerIdentity}, providerType=${authProvider}, email=${email}, avatarFile=${avatarFileName}`);
+    ctx.logger.info('>>> ensuring user', { providerIdentity, providerType: authProvider, email, avatarFile: avatarFileName });
   
     const userLogic = this.userLogic;
     const user = await userLogic.findUser(authProvider, providerIdentity, 'minimal');
     if (user) {
-      ctx.logger.info(`${this.LoggingPrefix} ensuring user - completed - already exists, providerIdentity=${providerIdentity}, providerType=${authProvider}, email=${email}, id=${user.id}`);
+      ctx.logger.info('ensuring user - completed - already exists', { providerIdentity, providerType: authProvider, email, id: user.id });
       return user.id;
     }
     const userId = (await userLogic.registerUserByEmail(email, password, 'verified', firstName, lastName, 'light', 'en')) as EntityId;
@@ -197,51 +212,51 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       await userLogic.uploadUserImage(userId, ImageCategory.UserAvatar, bytes, mime, basename(avatarFileName), ctx.event);
     }
   
-    ctx.logger.info(`${this.LoggingPrefix} >>> user created, providerIdentity=${providerIdentity}, providerType=${authProvider}, email=${email}, id=${userId}`);
+    ctx.logger.info('>>> user created', { providerIdentity, providerType: authProvider, email, id: userId });
     return userId;
   }
   
   async ensureAppAdminUser (ctx: ContextParams) : Promise<void> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> ensuring admin user`);
+    ctx.logger.info('>>> ensuring admin user');
     const password = process.env.APP_ADMIN_PWD;
     if (!password || password.length === 0) {
-      ctx.logger.error(`${this.LoggingPrefix} Admin user password must be passed in APP_ADMIN_PWD env variable`);
+      ctx.logger.error('Admin user password must be passed in APP_ADMIN_PWD env variable');
       throw new Error('Admin user password must be passed in APP_ADMIN_PWD env variable');
     }
     await this.ensureUser(ctx, password, AdminUserEmail, 'app_admin', 'app_admin', AuthProvider.Email, AdminUserEmail, undefined);
   
-    ctx.logger.info(`${this.LoggingPrefix} ensuring admin user - completed - created new`);
+    ctx.logger.info('ensuring admin user - completed - created new');
   }
   
   async ensureCredentialsTestUser (ctx: ContextParams) : Promise<void> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> ensuring credentials test user`);
+    ctx.logger.info('>>> ensuring credentials test user');
     await this.ensureUser(ctx, TEST_USER_PASSWORD, credentialsTestUserProfile.email, credentialsTestUserProfile.firstName, credentialsTestUserProfile.lastName, AuthProvider.Email, credentialsTestUserProfile.email, undefined);
-    ctx.logger.info(`${this.LoggingPrefix} >>> credentials test user ensured`);
+    ctx.logger.info('>>> credentials test user ensured');
   }
   
   async ensureImageCategory (ctx: ContextParams, type: ImageCategory, width: number, height: number) : Promise<EntityId> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> ensuring image category, type=${type}, width=${width}, height=${height}`);
+    ctx.logger.info('>>> ensuring image category', { type, width, height });
   
     const imageCategoryLogic = this.imageCategoryLogic;
     const imageCategory = await imageCategoryLogic.findCategory(type);
     if (imageCategory) {
-      ctx.logger.info(`${this.LoggingPrefix} >>> ensuring image category, type=${type} - completed - already exists`);
+      ctx.logger.info('>>> ensuring image category', type);
       return imageCategory.id;
     }
   
     const categoryId = await imageCategoryLogic.createCategory(type, width, height);
-    ctx.logger.info(`${this.LoggingPrefix} >>> ensuring image category, type=${type} - completed - created new, id=${categoryId}`);
+    ctx.logger.info('>>> ensuring image category', { type, id: categoryId });
     return categoryId;
   }
   
   async ensureImage (ctx: ContextParams, contentFile: string, imageData: Partial<IImageData> & Pick<IImageData, 'mimeType' | 'slug' | 'category'>, previewMode: PreviewMode, regionOfImage?: { width: number, height: number }, invertForDarkTheme?: boolean): Promise<EntityId> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> ensuring image, fileName=${contentFile}, slug=${imageData.slug}, previewMode=${previewMode}`);
+    ctx.logger.info('>>> ensuring image', { fileName: contentFile, slug: imageData.slug, previewMode });
     imageData.originalName ??= basename(contentFile);
   
     const imageLogic = this.imageLogic;
     const imageEntity = await imageLogic.findImage(undefined, imageData.slug!, imageData.category!, ctx.event, previewMode);
     if (imageEntity) {
-      ctx.logger.info(`${this.LoggingPrefix} >>> ensuring image, contentFile=${contentFile} - completed - already exists`);
+      ctx.logger.info('>>> ensuring image', contentFile);
       return imageEntity.id;
     }
   
@@ -257,12 +272,12 @@ export class DataSeedingLogic implements IDataSeedingLogic {
     imageData.invertForDarkTheme = invertForDarkTheme;
     const imageId = (await imageLogic.createImage(imageData as IImageData, undefined, previewMode)).id;
     
-    ctx.logger.info(`${this.LoggingPrefix} >>> ensuring image, contentFile=${contentFile}, previewMode=${previewMode} - completed - created new, id=${imageId}`);
+    ctx.logger.info('>>> ensuring image', { contentFile, previewMode, id: imageId });
     return imageId;
   }
   
   async addMainTitleImage (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> creating main title image, previewMode=${previewMode}`);
+    ctx.logger.info('>>> creating main title image', previewMode);
     await this.ensureImageCategory(ctx, ImageCategory.MainTitle, 1770, 1180);
   
     const stubCssStyle = fromPairs([
@@ -278,11 +293,11 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       mimeType: MimeTypeWebp
     }, previewMode);
   
-    ctx.logger.info(`${this.LoggingPrefix} >>> creating main title image, previewMode=${previewMode} - completed`);
+    ctx.logger.info('>>> creating main title image', previewMode);
   }
   
   async addAuthFormsPhotos (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding auth forms photos, previewMode=${previewMode}`);
+    ctx.logger.info('>>> adding auth forms photos', previewMode);
     const authFormImageLogic = this.authFormImageLogic;
     const allAuthFormImages = await authFormImageLogic.getAllImages(ctx.event, previewMode);
   
@@ -317,16 +332,16 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       await authFormImageLogic.createImage(imageId, 3, previewMode);
     }
     
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding auth forms photos - completed, previewMode=${previewMode}`);
+    ctx.logger.info('>>> adding auth forms photos - completed', previewMode);
   }
   
   async ensureMailTemplate (ctx: ContextParams, kind: EmailTemplateEnum, templateFileEn: string, templateFileFr: string, templateFileRu: string, previewMode: PreviewMode): Promise<void> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> ensuring mail template, kind=${kind}, en=${templateFileEn}, fr=${templateFileFr}, ru=${templateFileRu}`);
+    ctx.logger.info('>>> ensuring mail template', { kind, en: templateFileEn, fr: templateFileFr, ru: templateFileRu });
   
     const mailTemplateLogic = this.mailTemplateLogic;
     const markup = await mailTemplateLogic.getTemplateMarkup(kind, DefaultLocale, previewMode);
     if (markup) {
-      ctx.logger.info(`${this.LoggingPrefix} >>> ensuring mail template, kind=${kind} - already exists`);
+      ctx.logger.info('>>> ensuring mail template', kind);
       return;
     }
   
@@ -335,11 +350,11 @@ export class DataSeedingLogic implements IDataSeedingLogic {
     const ru = await readFile(templateFileRu, 'utf8');
     const templateId = await mailTemplateLogic.createTemplate(kind, { en, fr, ru }, previewMode);
     
-    ctx.logger.info(`${this.LoggingPrefix} >>> ensuring mail template - created, id = ${templateId}`);
+    ctx.logger.info('>>> ensuring mail template - created', { id:  templateId });
   }
   
   async ensureMailTemplates (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> ensuring mail templates, previewMode=${previewMode}`);
+    ctx.logger.info('>>> ensuring mail templates', previewMode);
   
     const getTemplateFilePath = (basename: string, locale: string): string => {
       return join(ctx.contentDir, 'mail-templates', `${basename}-${locale}.html`);
@@ -364,13 +379,13 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       await this.ensureMailTemplate(ctx, kind, getTemplateFilePath(basename, DefaultLocale), getTemplateFilePath(basename, 'fr'), getTemplateFilePath(basename, 'ru'), previewMode);
     }
   
-    ctx.logger.info(`${this.LoggingPrefix} >>> ensuring mail templates, previewMode=${previewMode} - completed`);
+    ctx.logger.info('>>> ensuring mail templates', previewMode);
   }
   
   async addDefaultUserProfileImages (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding default user profile images, previewMode=${previewMode}`);
+    ctx.logger.info('>>> adding default user profile images', previewMode);
   
-    ctx.logger.verbose(`${this.LoggingPrefix} adding default user avatar`);
+    ctx.logger.verbose('adding default user avatar');
     await this.ensureImageCategory(ctx, ImageCategory.UserAvatar, 512, 512);
     await this.ensureImage(ctx, 'default-user-avatar.webp', {
       category: ImageCategory.UserAvatar,
@@ -378,7 +393,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       mimeType: MimeTypeWebp
     }, previewMode);
   
-    ctx.logger.verbose(`${this.LoggingPrefix} adding default user cover`);
+    ctx.logger.verbose('adding default user cover');
     await this.ensureImageCategory(ctx, ImageCategory.UserCover, 1230, 350);
     await this.ensureImage(ctx, 'default-user-cover.webp', {
       category: ImageCategory.UserCover,
@@ -386,21 +401,21 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       mimeType: MimeTypeWebp
     }, previewMode);
   
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding default user cover image, previewMode=${previewMode} - completed`);
+    ctx.logger.info('>>> adding default user cover image', previewMode);
   }
   
   async ensureCountry (ctx: ContextParams, countryInfo: ICountryInfo): Promise<EntityId> {
-    ctx.logger.info(`${this.LoggingPrefix} ensuring country, code=${countryInfo.code}, name=${countryInfo.name.en}`);
+    ctx.logger.info('ensuring country', { code: countryInfo.code, name: countryInfo.name.en });
     const geoLogic = this.geoLogic;
     if (!ctx.dbCountryMap) {
-      ctx.logger.info(`${this.LoggingPrefix} >>> initializing country data context`);
+      ctx.logger.info('>>> initializing country data context');
       const countries = await geoLogic.getAllCountries();
       ctx.dbCountryMap = new Map<string, EntityId>();
       for (let i = 0; i < countries.length; i++) {
         const country = countries[i];
         ctx.dbCountryMap.set(country.name.en, country.id);
       }
-      ctx.logger.info(`${this.LoggingPrefix} >>> Country data context initialized, size=${ctx.dbCountryMap.size}`);
+      ctx.logger.info('>>> Country data context initialized', { size: ctx.dbCountryMap.size });
     }
   
     const existingCountry = ctx.dbCountryMap.get(countryInfo.name.en!);
@@ -408,10 +423,10 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       return existingCountry;
     }
   
-    const countryId = await geoLogic.createCountry({ name: countryInfo.name as ILocalizableValue });
+    const countryId = await geoLogic.createCountry({ name: this.padLocalizableValue(countryInfo.name, ctx.logger) });
     ctx.dbCountryMap.set(countryInfo.name.en!, countryId);
   
-    ctx.logger.info(`${this.LoggingPrefix} adding country, code=${countryInfo.code}, name=${countryInfo.name.en} - created new, id=${countryId}`);
+    ctx.logger.info('adding country', { code: countryInfo.code, name: countryInfo.name.en, id: countryId });
     return countryId;
   }
   
@@ -424,26 +439,25 @@ export class DataSeedingLogic implements IDataSeedingLogic {
     const cityNameEn = cityInfo.name.en!;
     const citySlug = slugify(cityNameEn, { lower: true });
     if (citySlug.length > 256) {
-      const msg = `got too long slug for city, name=${cityNameEn}`;
-      ctx.logger.warn(msg);
-      throw new Error(msg);
+      ctx.logger.warn('got too long slug for city', undefined, { name: cityNameEn });
+      throw new Error('too long slug for city');
     }
     return citySlug;
   }
   
   async ensureCity (ctx: ContextParams, cityInfo: ICityInfo, countryId: EntityId, previewMode: PreviewMode): Promise<EntityId> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding city, code=${cityInfo.code}, name=${cityInfo.name.en}, countryId=${countryId}, previewMode=${previewMode}`);
+    ctx.logger.info('>>> adding city', { code: cityInfo.code, name: cityInfo.name.en, countryId, previewMode });
   
     const geoLogic = this.geoLogic;
     if (!ctx.dbCityMap) {
-      ctx.logger.info(`${this.LoggingPrefix} >>> initializing city data context`);
+      ctx.logger.info('>>> initializing city data context');
       const cities = await geoLogic.getAllCities(previewMode);
       ctx.dbCityMap = new Map<string, EntityId>();
       for (let i = 0; i < cities.length; i++) {
         const city = cities[i];
         ctx.dbCityMap.set(city.name.en, city.id);
       }
-      ctx.logger.info(`${this.LoggingPrefix} >>> City data context initialized, size=${ctx.dbCityMap.size}`);
+      ctx.logger.info('>>> City data context initialized', { size: ctx.dbCityMap.size });
     }
   
     const existingCity = ctx.dbCityMap.get(cityInfo.name.en!);
@@ -451,6 +465,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       return existingCity;
     }
   
+    const cityName = this.padLocalizableValue(cityInfo.name, ctx.logger);
     const cityId = await geoLogic.createCity({
       slug: this.getCitySlug(ctx, cityInfo),
       geo: {
@@ -459,29 +474,29 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       },
       utcOffsetMin: cityInfo.utcOffsetMin,
       population: cityInfo.population,
-      name: cityInfo.name as ILocalizableValue,
+      name: cityName,
       countryId
     }, previewMode);
   
     ctx.dbCityMap.set(cityInfo.name.en!, cityId);
   
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding city, code=${cityInfo.code}, name=${cityInfo.name.en}, countryId=${countryId}, previewMode=${previewMode} - created new, id=${cityId}`);
+    ctx.logger.info('>>> adding city', { code: cityInfo.code, name: cityInfo.name.en, countryId, previewMode, id: cityId });
     return cityId;
   }
   
   async ensureAirport (ctx: ContextParams, airportInfo: IAirportInfo, cityId: EntityId, previewMode: PreviewMode): Promise<EntityId> {
-    ctx.logger.info(`${this.LoggingPrefix} adding airport, code=${airportInfo.code}, name=${airportInfo.name.en}, cityId=${cityId}, previewMode=${previewMode}`);
+    ctx.logger.info('adding airport', { code: airportInfo.code, name: airportInfo.name.en, cityId, previewMode });
   
     const airportLogic = this.airportLogic;
     if (!ctx.dbAirportMap) {
-      ctx.logger.info(`${this.LoggingPrefix} >>> initializing airport data context`);
+      ctx.logger.info('>>> initializing airport data context');
       const airports = await airportLogic.getAllAirportsShort(previewMode);
       ctx.dbAirportMap = new Map<string, EntityId>();
       for (let i = 0; i < airports.length; i++) {
         const airport = airports[i];
         ctx.dbAirportMap.set(airport.name.en, airport.id);
       }
-      ctx.logger.info(`${this.LoggingPrefix} Airport data context initialized, size=${ctx.dbAirportMap.size}`);
+      ctx.logger.info('Airport data context initialized', { size: ctx.dbAirportMap.size });
     }
   
     const existingAirport = ctx.dbAirportMap.get(airportInfo.name.en!);
@@ -489,23 +504,24 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       return existingAirport;
     }
   
+    const airportName = this.padLocalizableValue(airportInfo.name, ctx.logger);
     const airportId = await airportLogic.createAirport({
       cityId,
       geo: {
         lat: airportInfo.lat.toNumber(),
         lon: airportInfo.lon.toNumber()
       },
-      name: airportInfo.name as ILocalizableValue
+      name: airportName
     }, previewMode);
   
     ctx.dbAirportMap.set(airportInfo.name.en!, airportId);
   
-    ctx.logger.info(`${this.LoggingPrefix} adding airport, code=${airportInfo.code}, name=${airportInfo.name.en}, cityId=${cityId}, previewMode=${previewMode} - created new, id=${airportId}`);
+    ctx.logger.info('adding airport', { code: airportInfo.code, name: airportInfo.name.en, cityId, previewMode, id: airportId });
     return airportId;
   }
   
   async addGeoData (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding geo data, previewMode=${previewMode}`);
+    ctx.logger.info('>>> adding geo data', previewMode);
   
     type CityUtcOffsetJsonRaw = {
       city: string,
@@ -538,12 +554,12 @@ export class DataSeedingLogic implements IDataSeedingLogic {
     const mapAirportJson = (src: AirportJsonRaw) : AirportJson => {
       const locPoints = src.coor.replace('Point', '').replace('(', '').replace(')', '').split(' ').map(s => new Decimal(s));
       if (locPoints?.length !== 2) {
-        ctx.logger.error(`${this.LoggingPrefix} failed to parse airport location: airport=${src.airport}, value=${src.coor}`);
+        ctx.logger.error('failed to parse airport location', undefined, { airport: src.airport, value: src.coor });
         throw new Error(`failed to parse airport location: airport=${src.airport}, value=${src.coor}`);
       }
       const cityPopulation = parseInt(src.cityPopulation);
       if (cityPopulation <= 0 || cityPopulation > 200000000) {
-        ctx.logger.error(`${this.LoggingPrefix} suspicious city population value: airport=${src.airport}, value=${src.cityPopulation}`);
+        ctx.logger.error('suspicious city population value', undefined, { airport: src.airport, value: src.cityPopulation });
         throw new Error(`suspicious city population value: airport=${src.airport}, value=${src.cityPopulation}`);
       }
   
@@ -567,27 +583,27 @@ export class DataSeedingLogic implements IDataSeedingLogic {
     const updateLocalization = (airportJson: AirportJson, locale: 'ru' | 'fr') => {
       const country = countryMap.get(airportJson.countryCode);
       if (!country) {
-        ctx.logger.error(`${this.LoggingPrefix} cannot find country for ${locale.toUpperCase()} localization: airport=${airportJson.code}`);
+        ctx.logger.error('cannot find localization for country', undefined, { locale: locale.toUpperCase(), airport: airportJson.code });
         throw new Error(`cannot find country for ${locale.toUpperCase()} localization: airport=${airportJson.code}`);
       }
       country.name[locale] = airportJson.countryLabel;
   
       const city = cityMap.get(airportJson.cityCode);
       if (!city) {
-        ctx.logger.error(`${this.LoggingPrefix} cannot find city for ${locale.toUpperCase()} localization: airport=${airportJson.code}`);
+        ctx.logger.error('cannot find localization for city', undefined, { locale: locale.toUpperCase(), airport: airportJson.code });
         throw new Error(`cannot find city for ${locale.toUpperCase()} localization: airport=${airportJson.code}`);
       }
       city.name[locale] = airportJson.cityName;
   
       const airport = airportMap.get(airportJson.code);
       if (!airport) {
-        ctx.logger.error(`${this.LoggingPrefix} cannot find airport for ${locale.toUpperCase()} localization: airport=${airportJson.code}`);
+        ctx.logger.error('cannot find localization for airport', undefined, { locale: locale.toUpperCase(), airport: airportJson.code });
         throw new Error(`cannot find airport for ${locale.toUpperCase()} localization: airport=${airportJson.code}`);
       }
       airport.name[locale] = airportJson.airportLabel;
     };
   
-    ctx.logger.info(`${this.LoggingPrefix} adding geo data - creating unlocalized indexes`);
+    ctx.logger.info('adding geo data - creating unlocalized indexes');
     const enFilePath = join(ctx.contentDir, 'geo', 'city-airports-en.json');
     const enFileContent = await readFile(enFilePath, 'utf-8');
     const enJson = (destr<AirportJsonRaw[]>(enFileContent)).map(src => mapAirportJson(src));
@@ -613,7 +629,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       if (!city) {
         const cityUtcOffset = cityUtcOffsetsMap.get(airportJson.cityCode);
         if (!cityUtcOffset) {
-          // ctx.logger.debug(`${this.LoggingPrefix} adding geo data - cannot find utc offset for city: code=${airportJson.cityCode}, name=${airportJson.cityName}`);
+          // ctx.logger.debug('adding geo data - cannot find utc offset for city', { code: airportJson.cityCode, name: airportJson.cityName });
           // throw new Error('cannot find utc offset for city');
           // missedUtcOffsetsCount++;
         }
@@ -661,7 +677,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
     }
   
     const missedUtcOffsetCityCodes = Array.from(missedUtcOffsetCitiesMap.keys());
-    ctx.logger.info(`${this.LoggingPrefix} adding geo data - filling UTC offset for cities where it is missed, count=${missedUtcOffsetCityCodes.length}`);
+    ctx.logger.info('adding geo data - filling UTC offset for cities where it is missed', { count: missedUtcOffsetCityCodes.length });
     const citiesWithUtcOffsets = allCities.filter(c => !missedUtcOffsetCitiesMap.has(c.code));
   
     for (let i = 0; i < missedUtcOffsetCityCodes.length; i++) {
@@ -679,11 +695,11 @@ export class DataSeedingLogic implements IDataSeedingLogic {
         }
       }
   
-      ctx.logger.verbose(`${this.LoggingPrefix} adding geo data - updating city UTC offset, code=${city.code}, name=${city.name}, nearestCity=${nearestCity.name}, utcOffset=${nearestCity.utcOffsetMin}`);
+      ctx.logger.verbose('adding geo data - updating city UTC offset', { code: city.code, name: city.name, nearestCity: nearestCity.name, utcOffset: nearestCity.utcOffsetMin });
       city.utcOffsetMin = nearestCity.utcOffsetMin;
     }
   
-    ctx.logger.info(`${this.LoggingPrefix} adding geo data - RU localization`);
+    ctx.logger.info('adding geo data - RU localization');
     const ruFilePath = join(ctx.contentDir, 'geo', 'city-airports-ru.json');
     const ruFileContent = await readFile(ruFilePath, 'utf-8');
     const ruJson = (destr<AirportJsonRaw[]>(ruFileContent)).map(src => mapAirportJson(src));
@@ -692,7 +708,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       updateLocalization(airportJson, 'ru');
     }
   
-    ctx.logger.info(`${this.LoggingPrefix} adding geo data - FR localization`);
+    ctx.logger.info('adding geo data - FR localization');
     const frFilePath = join(ctx.contentDir, 'geo', 'city-airports-fr.json');
     const frFileContent = await readFile(frFilePath, 'utf-8');
     const frJson = (destr<AirportJsonRaw[]>(frFileContent)).map(src => mapAirportJson(src));
@@ -701,25 +717,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       updateLocalization(airportJson, 'fr');
     }
   
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding geo data - fitlering uncomplete data`);
-    const removeUncompleteEntries = <T extends { code: string, name: Partial<ILocalizableValue> }>(map: Map<string, T>): number => {
-      const allEntries = Array.from(map.values());
-      const entryCodesToRemove : string[] = [];
-      for (let i = 0; i < allEntries.length; i++) {
-        if ((allEntries[i].name?.en?.length ?? 0) === 0 ||
-            (allEntries[i].name?.ru?.length ?? 0) === 0 ||
-            (allEntries[i].name?.fr?.length ?? 0) === 0) {
-          entryCodesToRemove.push(allEntries[i].code);
-        }
-      }
-      entryCodesToRemove.forEach((c) => { map.delete(c); });
-      return entryCodesToRemove.length;
-    };
-  
-    ctx.logger.info(`${this.LoggingPrefix} adding geo data - ${removeUncompleteEntries(airportMap)} uncompleted airports removed`);
-    ctx.logger.info(`${this.LoggingPrefix} adding geo data - ${removeUncompleteEntries(cityMap)} uncompleted cities removed`);
-    ctx.logger.info(`${this.LoggingPrefix} adding geo data - ${removeUncompleteEntries(countryMap)} uncompleted countries removed`);
-  
+    ctx.logger.info('>>> adding geo data - fitlering uncomplete data');
     let allAirports = Array.from(airportMap.values());
     const airportCodesToRemove: string[] = [];
     for (let i = 0; i < allAirports.length; i++) {
@@ -728,7 +726,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       }
     }
     airportCodesToRemove.forEach(c => cityMap.delete(c));
-    ctx.logger.info(`${this.LoggingPrefix} adding geo data - ${airportCodesToRemove.length} airports without city removed`);
+    ctx.logger.info('adding geo data, airports without city removed', { count: airportCodesToRemove.length });
   
     allCities = Array.from(cityMap.values());
     let unreferencedAirportsCount = 0;
@@ -744,25 +742,25 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       }
       city.airports = filteredAirportList;
     }
-    ctx.logger.info(`${this.LoggingPrefix} adding geo data - ${unreferencedAirportsCount} unreferenced city airports removed`);
+    ctx.logger.info('adding geo data, unreferenced city airports removed', { count: unreferencedAirportsCount });
   
     allCities = Array.from(cityMap.values());
     const allCountries = Array.from(countryMap.values());
     allAirports = Array.from(airportMap.values());
   
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding geo data - COUNTRY entities`);
+    ctx.logger.info('>>> adding geo data - COUNTRY entities');
     for (let i = 0; i < allCountries.length; i++) {
       await this.ensureCountry(ctx, allCountries[i]);
     }
   
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding geo data - adding CITY entities`);
+    ctx.logger.info('>>> adding geo data - adding CITY entities');
     for (let i = 0; i < allCities.length; i++) {
       const cityInfo = allCities[i];
       const countryId = ctx.dbCountryMap!.get(cityInfo.countryInfo.name.en!)!;
       await this.ensureCity(ctx, allCities[i], countryId, previewMode);
     }
   
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding geo data - adding AIRPORT entities`);
+    ctx.logger.info('>>> adding geo data - adding AIRPORT entities');
     const ignoreAirports = ['Peoria International Airport', 'Albuquerque International Sunport', 'Gulfport-Biloxi International Airport', 'Quad Cities International Airport', 'Guaraní International Airport']; // airports with inconsistent data
     for (let i = 0; i < allAirports.length; i++) {
       const airportInfo = allAirports[i];
@@ -773,11 +771,11 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       await this.ensureAirport(ctx, allAirports[i], cityId, previewMode);
     }
   
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding geo data, previewMode=${previewMode} - completed: totalAirport=${airportMap.size}, totalCities=${cityMap.size}, totalCountries=${countryMap.size}`);
+    ctx.logger.info('>>> adding geo data  - completed', { previewMode, totalAirport: airportMap.size, totalCities: cityMap.size, totalCountries: countryMap.size });
   }
   
   async addPopularCities (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding popular cities, previewMode=${previewMode}`);
+    ctx.logger.info('>>> adding popular cities', previewMode);
   
     type PopularCityJson = { name: string, rating: number, geo: { lon: number, lat: number }, promoLine: { en: string, ru: string, fr: string }, visibleOnWorldMap?: boolean };
     type TravelDetailsJson = {
@@ -800,7 +798,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
     for (let i = 0; i < enJson.length; i++) {
       const popularCityJson = enJson[i];
       if (existingPopularCities.some(e => e.cityDisplayName.en === popularCityJson.name)) {
-        ctx.logger.info(`${this.LoggingPrefix} adding popular cities - ${popularCityJson.name} already exists`);
+        ctx.logger.info('adding popular cities - already exists', { name: popularCityJson.name });
         continue;
       }
   
@@ -812,9 +810,8 @@ export class DataSeedingLogic implements IDataSeedingLogic {
   
       const travelDetails = cityDetails.find(i => i.slug === citySlug);
       if (!travelDetails) {
-        const msg = `cannot find travel details for popular city, name=${popularCityJson.name}`;
-        ctx.logger.warn(msg);
-        throw new Error(msg);
+        ctx.logger.warn('cannot find travel details for popular city', undefined, { name: popularCityJson.name });
+        throw new Error('cannot find travel details for popular city');
       }
   
       await citiesLogic.makeCityPopular({
@@ -827,9 +824,9 @@ export class DataSeedingLogic implements IDataSeedingLogic {
         geo: popularCityJson.geo
       }, previewMode);
   
-      ctx.logger.info(`${this.LoggingPrefix} adding popular cities, previewMode=${previewMode} - ${popularCityJson.name} created`);
+      ctx.logger.info('adding popular cities - city created', { previewMode, name: popularCityJson.name });
     }
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding popular cities, previewMode=${previewMode} - completed`);
+    ctx.logger.info('>>> adding popular cities - completed', previewMode);
   }
   
   async getImageSize (filePath: string): Promise<{ width: number, height: number }> {
@@ -850,7 +847,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
   }
   
   async addCityImages (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding city images, previewMode=${previewMode}`);
+    ctx.logger.info('>>> adding city images', previewMode);
   
     const citiesLogic = this.citiesLogic;
     const popularCityInfos = await citiesLogic.getPopularCities(previewMode);
@@ -859,18 +856,18 @@ export class DataSeedingLogic implements IDataSeedingLogic {
   
     const cardImageFiles = imageFiles.filter(f => !f.includes('-')).map(f => join(ctx.contentDir, 'cities', f));
     const cityCardCategorySize = await this.computeImageCategorySize(cardImageFiles);
-    ctx.logger.info(`${this.LoggingPrefix} adding city images - city card category sizes: w=${cityCardCategorySize.width}, h=${cityCardCategorySize.height}`);
+    ctx.logger.info('adding city images - city card category sizes', { w: cityCardCategorySize.width, h: cityCardCategorySize.height });
   
     const travelBlockImageFiles = imageFiles.filter(f => !cardImageFiles.includes(f)).map(f => join(ctx.contentDir, 'cities', f));
     const travelBlockCategorySize = await this.computeImageCategorySize(travelBlockImageFiles);
-    ctx.logger.info(`${this.LoggingPrefix} adding city images - travel block category sizes: w=${travelBlockCategorySize.width}, h=${travelBlockCategorySize.height}`);
+    ctx.logger.info('adding city images - travel block category sizes', { w: travelBlockCategorySize.width, h: travelBlockCategorySize.height });
   
     await this.ensureImageCategory(ctx, ImageCategory.CityCard, cityCardCategorySize.width, cityCardCategorySize.height);
     await this.ensureImageCategory(ctx, ImageCategory.TravelBlock, travelBlockCategorySize.width, travelBlockCategorySize.height);
   
     for (let i = 0; i < popularCityInfos.length; i++) {
       const popularCityInfo = popularCityInfos[i];
-      ctx.logger.verbose(`${this.LoggingPrefix} processing popular city images - cityId=${popularCityInfo.id}`);
+      ctx.logger.verbose('processing popular city images -', { cityId: popularCityInfo.id });
   
       const citySlugBase = popularCityInfo.cityDisplayName.en.replace(/\s/g, '').toLowerCase();
       const testPath = join(ctx.contentDir, `cities/${citySlugBase}.webp`);
@@ -879,9 +876,8 @@ export class DataSeedingLogic implements IDataSeedingLogic {
         await access(testPath);
       } catch (err: any) {
         // presumably file does not exist
-        const msg = `cannot find city images: ${citySlugBase}.webp`;
-        ctx.logger.error(`${this.LoggingPrefix} ${msg}`, err);
-        throw new Error(msg);
+        ctx.logger.error('cannot find city images', err, { slug: citySlugBase });
+        throw new Error('cannot find city images');
       }
   
       const imageIds = [] as EntityId[];
@@ -905,13 +901,13 @@ export class DataSeedingLogic implements IDataSeedingLogic {
   
       await citiesLogic.setPopularCityImages(popularCityInfo.id, imageIds.map((id, order) => { return { id, order: order + 1 }; }), previewMode);
   
-      ctx.logger.verbose(`${this.LoggingPrefix} popular city images processed, previewMode=${previewMode} - cityId=${popularCityInfo.id}`);
+      ctx.logger.verbose('popular city images processed', { previewMode, cityId: popularCityInfo.id });
     }
-    ctx.logger.info(`${this.LoggingPrefix} ensuring popular city image - completed, previewMode=${previewMode}`);
+    ctx.logger.info('ensuring popular city image - completed', previewMode);
   }
   
   async addCompanyReviews (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding company reviews, previewMode=${previewMode}`);
+    ctx.logger.info('>>> adding company reviews', previewMode);
   
     type Review = {
       header: ILocalizableValue,
@@ -925,7 +921,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
   
     const reviewsImageFiles = (await readdir(join(ctx.contentDir, 'company-reviews'))).filter(f => f.includes('webp')).map(f => join(ctx.contentDir, 'company-reviews', f));
     const reviewImageCategorySize = await this.computeImageCategorySize(reviewsImageFiles);
-    ctx.logger.info(`${this.LoggingPrefix} adding company reviews - company review image category size: w=${reviewImageCategorySize.width}, h=${reviewImageCategorySize.height}`);
+    ctx.logger.info('adding company reviews - company review image category size', { w: reviewImageCategorySize.width, h: reviewImageCategorySize.height });
     await this.ensureImageCategory(ctx, ImageCategory.CompanyReview, reviewImageCategorySize.width, reviewImageCategorySize.height);
   
     const companyReviewsLogic = this.companyReviewsLogic;
@@ -934,11 +930,11 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       const review = reviews[i];
   
       const imageFileBaseName = basename(reviewsImageFiles[i]);
-      ctx.logger.verbose(`${this.LoggingPrefix} adding company review, file=${imageFileBaseName}`);
+      ctx.logger.verbose('adding company review', { file: imageFileBaseName });
   
       const imageSlug = `company-${imageFileBaseName.split('.')[0]}`;
       if (existingReviews.some(r => r.imgSlug === imageSlug)) {
-        ctx.logger.verbose(`${this.LoggingPrefix} adding company review - already exist, file=${imageFileBaseName}`);
+        ctx.logger.verbose('adding company review - already exist', { file: imageFileBaseName });
         continue;
       }
   
@@ -954,13 +950,13 @@ export class DataSeedingLogic implements IDataSeedingLogic {
         imageId
       }, previewMode);
       
-      ctx.logger.info(`${this.LoggingPrefix} added company review image, previewMode=${previewMode} - baseName=${imageFileBaseName}, companyReviewId=${reviewId}`);
+      ctx.logger.info('added company review image', { previewMode, baseName: imageFileBaseName, companyReviewId: reviewId });
     }
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding company reviews, previewMode=${previewMode} - completed`);
+    ctx.logger.info('>>> adding company reviews', previewMode);
   }
   
   async addFlightsPageTitleImages (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> creating flights page title images, previewMode=${previewMode}`);
+    ctx.logger.info('>>> creating flights page title images', previewMode);
     await this.ensureImageCategory(ctx, ImageCategory.PageTitle, 1770, 1180);
     const stubCssStyle = fromPairs([
       ['backgroundImage', 'radial-gradient(circle at 68% 25%, hsla(60, 100%, 68%, 0.5) -25%, hsla(38, 100%, 61%, 0.29) 38%), linear-gradient(47deg, hsl(240, 97%, 31%) -20%, hsl(0, 0%, 36%) 49%)'],
@@ -974,11 +970,11 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       stubCssStyle,
       mimeType: MimeTypeWebp
     }, previewMode);
-    ctx.logger.info(`${this.LoggingPrefix} >>> creating flights page title images, previewMode=${previewMode} - completed`);
+    ctx.logger.info('>>> creating flights page title images', previewMode);
   }
   
   async compileWorldMapData (ctx: ContextParams): Promise<void> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> compiling world map data`);
+    ctx.logger.info('>>> compiling world map data');
   
     const srcFile = join(ctx.contentDir, 'geo', 'world-map.svg');
     const worldMapSvg = await readFile(srcFile, 'utf8');
@@ -1003,7 +999,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
           continue;
         }
         if (i + 1 === tokens.length) {
-          ctx.logger.warn(`${this.LoggingPrefix} unpaired point coordinate: ${cellSvg}`);
+          ctx.logger.warn('unpaired point', undefined, { coordinates: cellSvg });
           throw new Error('unpaired point coordinate');
         }
         const nextToken = tokens[i + 1];
@@ -1016,13 +1012,13 @@ export class DataSeedingLogic implements IDataSeedingLogic {
           }
           cellPoints.push(point);
         } catch (err: any) {
-          ctx.logger.warn(`${this.LoggingPrefix} failed to parse point coordinates: ${cellSvg}`, err);
+          ctx.logger.warn('failed to parse point', err, { coordinates: cellSvg });
           throw new Error('failed to parse point coordinate');
         }
       }
   
       if (!cellPoints.length) {
-        ctx.logger.warn(`${this.LoggingPrefix} no point data found in cell: ${cellSvg}`);
+        ctx.logger.warn('no point data found in cell', undefined, { coordinates: cellSvg });
         throw new Error('no point data found in cell');
       }
   
@@ -1064,11 +1060,19 @@ export class DataSeedingLogic implements IDataSeedingLogic {
     const outFile = join(ctx.appDataDir, 'world-map.json');
     await writeFile(outFile, JSON.stringify(resultJson), 'utf8');
   
-    ctx.logger.info(`${this.LoggingPrefix} >>> compiling world map data - completed: count=${mapPoints.length}, left=${Math.min(...mapPoints.map(p => p.x))}, right=${Math.max(...mapPoints.map(p => p.x))}, top=${Math.min(...mapPoints.map(p => p.y))}, bottom=${Math.max(...mapPoints.map(p => p.y))}, d=${mean(mapPoints.map(p => p.d))}`);
+    const logSummary = {
+      count: mapPoints.length,
+      left: Math.min(...mapPoints.map(p => p.x)),
+      right: Math.max(...mapPoints.map(p => p.x)),
+      top: Math.min(...mapPoints.map(p => p.y)),
+      bottom: Math.max(...mapPoints.map(p => p.y)),
+      d: mean(mapPoints.map(p => p.d))
+    };
+    ctx.logger.info('>>> compiling world map data - completed', { count: logSummary.count, left: logSummary.left, right: logSummary.right, top: logSummary.top, bottom: logSummary.bottom, d: logSummary.d });
   }
   
   async addAirlineCompanies (ctx: ContextParams, previewMode: PreviewMode) {
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding airline companies, previewMode=${previewMode}`);
+    ctx.logger.info('>>> adding airline companies', previewMode);
   
     type AirlineCompanyJsonRaw = {
       citySlug: string,
@@ -1095,7 +1099,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
     const json = (destr<AirlineCompanyJsonRaw[]>(fileContent));
     for (let i = 0; i < json.length; i++) {
       const companyJson = json[i];
-      ctx.logger.verbose(`${this.LoggingPrefix} adding airline companies - city=${companyJson.citySlug}`);
+      ctx.logger.verbose('adding airline companies -', { city: companyJson.citySlug });
       const logoImageSlug = `airline-company-logo-${i}`;
   
       const cityInfo = (await citiesLogic.getCity(companyJson.citySlug, previewMode));
@@ -1110,7 +1114,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
           mimeType: MimeTypeWebp
         }, previewMode, undefined, companyJson.invertLogoForDarkTheme);
       } else {
-        ctx.logger.error(`${this.LoggingPrefix} Airline company logo image does not exists: ${getLogoFilePath(citySlug, undefined)}`);
+        ctx.logger.error('Airline company logo image does not exists', undefined, { city: citySlug });
         throw new Error('Airline company logo image does not exists');
       }
   
@@ -1120,17 +1124,17 @@ export class DataSeedingLogic implements IDataSeedingLogic {
         city: {
           geo: cityInfo.geo
         },
-        name: companyJson.name,
+        name: this.padLocalizableValue(companyJson.name, ctx.logger),
         reviewSummary: {
           numReviews: companyJson.numReviews,
           score: companyJson.reviewScore
         }
       }, previewMode);
   
-      ctx.logger.verbose(`${this.LoggingPrefix} adding airline companies - added for city=${companyJson.citySlug}, id=${companyId}`);
+      ctx.logger.verbose('adding airline companies - added for', { city: companyJson.citySlug, id: companyId });
     }
   
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding airline companies, previewMode=${previewMode} - completed: count=${json.length}`);
+    ctx.logger.info('>>> adding airline companies', { previewMode, count: json.length });
   }
   
   async createAirplaneImageData (ctx: ContextParams, airplaneIndex: number, featureCategorySize: { width: number, height: number }, previewMode: PreviewMode): Promise<{ imageId: EntityId, kind: AirplaneImageKind, order: number }[]> {
@@ -1221,7 +1225,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
   }
   
   async addAirplanes (ctx: ContextParams, previewMode: PreviewMode) {
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding airplanes, previewMode=${previewMode}`);
+    ctx.logger.info('>>> adding airplanes', previewMode);
   
     const isFeatureFileName = (fileName: string): boolean => {
       return fileName.includes(<AirplaneImageKind>'business') ||
@@ -1238,7 +1242,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
     const featureImageFiles = imageFiles.filter(isFeatureFileName).map(f => join(ctx.contentDir, 'airplanes', f));
     const featureCategorySize = await this.computeImageCategorySize(featureImageFiles);
     await this.ensureImageCategory(ctx, ImageCategory.AirplaneFeature, featureCategorySize.width, featureCategorySize.height);
-    ctx.logger.info(`${this.LoggingPrefix} >>> airplane feature image category size: width=${featureCategorySize.width}, height=${featureCategorySize.height}`);
+    ctx.logger.info('>>> airplane feature image category size', { width: featureCategorySize.width, height: featureCategorySize.height });
   
     let i = 0;
     const getAirplaneImageFilePath = (index: number) => join(ctx.contentDir, 'airplanes', `airplane-0${index + 1}.webp`);
@@ -1246,7 +1250,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
     const airplaneLogic = this.airplaneLogic;
     let addMore = await this.checkFileExists(getAirplaneImageFilePath(i));
     while (addMore) {
-      ctx.logger.debug(`${this.LoggingPrefix} >>> adding airplane #${i} images, previewMode=${previewMode}`);
+      ctx.logger.debug('>>> adding airplane images', { previewMode, num: i });
   
       const imageData = await this.createAirplaneImageData(ctx, i, featureCategorySize, previewMode);
       const airplaneData: IAirplaneData = {
@@ -1262,7 +1266,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       addMore = await this.checkFileExists(getAirplaneImageFilePath(++i));
     }
   
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding airplanes, previewMode=${previewMode} - compelted: count=${i}`);
+    ctx.logger.info('>>> adding airplanes - completed', { previewMode, count: i });
   }
   
   buildStayDescription (templates: DescriptionTemplatesJson, hotelName: ILocalizableValue): IStayDescriptionData[] {
@@ -1313,9 +1317,9 @@ export class DataSeedingLogic implements IDataSeedingLogic {
   }
   
   async ensureReviewUsers (ctx: ContextParams, userNames: string[]): Promise<EntityId[]> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding hotels - ensuring review users`);
+    ctx.logger.info('>>> adding hotels - ensuring review users');
   
-    ctx.logger.debug(`${this.LoggingPrefix} >>> adding hotels - locating review user avatar files`);
+    ctx.logger.debug('>>> adding hotels - locating review user avatar files');
     const avatarFiles = (await readdir(join(ctx.contentDir, 'hotels'))).filter(f => f.includes('avatar')).map(f => join('hotels', f));
   
     const userLogic = this.userLogic;
@@ -1333,7 +1337,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
   
       const password = process.env.APP_SECONDARYUSER_PWD!;
       if (!password || password.length === 0) {
-        ctx.logger.error(`${this.LoggingPrefix} Review user password must be passed in APP_SECONDARYUSER_PWD env variable`);
+        ctx.logger.error('Review user password must be passed in APP_SECONDARYUSER_PWD env variable');
         throw new Error('Review user passwordmust be passed in APP_SECONDARYUSER_PWD env variable');
       }
       const firstName = userName.split(' ')[0];
@@ -1343,7 +1347,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       result.push(userId);
     }
   
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding hotels - review users ensured, count=${result.length}`);
+    ctx.logger.info('>>> adding hotels - review users ensured', { count: result.length });
     return result;
   }
   
@@ -1369,7 +1373,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
   }
   
   async buildStayImages (ctx: ContextParams, staySlug: string, hotelRoomCategorySize: { width: number, height: number }, previewMode: PreviewMode): Promise<IStayImageData[]> {
-    ctx.logger.debug(`${this.LoggingPrefix} adding hotels - building stay images, slug=${staySlug}, previewMode=${previewMode}`);
+    ctx.logger.debug('adding hotels - building stay images', { slug: staySlug, previewMode });
     const randomizer = this.hashString(staySlug) % 16;
   
     const result: IStayImageData[] = [];
@@ -1434,33 +1438,33 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       serviceLevel: 'CityView3'
     });
   
-    ctx.logger.debug(`${this.LoggingPrefix} adding hotels, previewMode=${previewMode} - building stay images completed, slug=${staySlug}`);
+    ctx.logger.debug('adding hotels', { previewMode, slug: staySlug });
     return result;
   }
   
   async addHotels (ctx: ContextParams, previewMode: PreviewMode) {
-    ctx.logger.info(`${this.LoggingPrefix} >>> adding hotels, previewMode=${previewMode}`);
+    ctx.logger.info('>>> adding hotels', previewMode);
   
     const citiesLogic = this.citiesLogic;
     const stayLogic = this.staysLogic;
   
-    ctx.logger.debug(`${this.LoggingPrefix} adding hotels - loading hotels list`);
+    ctx.logger.debug('adding hotels - loading hotels list');
     const hotelsFilePath = join(ctx.contentDir, 'hotels', 'hotels.json');
     const hotelsFileContent = await readFile(hotelsFilePath, 'utf-8');
     const hotelsJson = (destr<HotelsJson>(hotelsFileContent));
   
-    ctx.logger.debug(`${this.LoggingPrefix} adding hotels - calculating hotel room category size`);
+    ctx.logger.debug('adding hotels - calculating hotel room category size');
     const imageFiles = await readdir(join(ctx.contentDir, 'hotels'));
     const roomImageFiles = imageFiles.filter(f => f.includes('room-')).map(f => join(ctx.contentDir, 'hotels', f));
     const hotelRoomCategorySize = await this.computeImageCategorySize(roomImageFiles);
-    ctx.logger.debug(`${this.LoggingPrefix} adding hotels - hotel room image category sizes: w=${hotelRoomCategorySize.width}, h=${hotelRoomCategorySize.height}`);
+    ctx.logger.debug('adding hotels - hotel room image category sizes', { w: hotelRoomCategorySize.width, h: hotelRoomCategorySize.height });
   
     await this.ensureImageCategory(ctx, ImageCategory.Hotel, 1024, 1024);
     await this.ensureImageCategory(ctx, ImageCategory.HotelRoom, hotelRoomCategorySize.width, hotelRoomCategorySize.height);
   
     const reviewUserIds = await this.ensureReviewUsers(ctx, hotelsJson.userNames);
     if (reviewUserIds.length === 0) {
-      ctx.logger.error(`${this.LoggingPrefix} Review users list is empty`);
+      ctx.logger.error('Review users list is empty');
       throw new Error('Review users list is empty');
     }
   
@@ -1469,11 +1473,11 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       const identityJson = hotelIdentities[i];
       const stayEntity = await stayLogic.findStay(identityJson.slug, previewMode);
       if (stayEntity) {
-        ctx.logger.debug(`${this.LoggingPrefix} adding hotels - already exists: slug=${stayEntity.slug}`);
+        ctx.logger.debug('adding hotels - already exists', { slug: stayEntity.slug });
         continue;
       }
   
-      ctx.logger.debug(`${this.LoggingPrefix} adding hotels, previewMode=${previewMode} - creating new: slug=${identityJson.slug}`);
+      ctx.logger.debug('adding hotels', { previewMode, slug: identityJson.slug });
       const cityInfo = await citiesLogic.getCity(identityJson.citySlug, previewMode);
   
       const seedHotelInPreviewMode = SeedDraftHotelSlug ? identityJson.slug.includes(SeedDraftHotelSlug) : SeedPreviewMode;
@@ -1489,11 +1493,11 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       await stayLogic.createStay(stayData, seedHotelInPreviewMode);
     }
   
-    ctx.logger.info(`${this.LoggingPrefix} adding hotels, previewMode=${previewMode} - completed, count=${hotelIdentities.length}`);
+    ctx.logger.info('adding hotels', { previewMode, count: hotelIdentities.length });
   }
   
   async addStaysPageTitleImages (ctx: ContextParams, previewMode: PreviewMode) : Promise<void> {
-    ctx.logger.info(`${this.LoggingPrefix} >>> creating stays page title images, previewMode=${previewMode}`);
+    ctx.logger.info('>>> creating stays page title images', previewMode);
     await this.ensureImageCategory(ctx, ImageCategory.PageTitle, 1770, 1180);
     const stubCssStyle = fromPairs([
       ['backgroundImage', 'linear-gradient(75deg, hsla(197, 79%, 50%, 0.42) 7%, hsla(20, 100%, 37%, 0.68) 117%), linear-gradient(29deg, hsla(240, 100%, 93%, 0.57) -16%, hsla(36, 39%, 47%, 0.73) 153%), linear-gradient(0deg, hsla(63, 100%, 71%, 0.23) 21%, hsl(60, 100%, 70%) 57%, hsla(63, 100%, 84%, 0.67) 86%)'],
@@ -1507,43 +1511,43 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       stubCssStyle,
       mimeType: MimeTypeWebp
     }, previewMode);
-    ctx.logger.info(`${this.LoggingPrefix} >>> creating stays page title images, previewMode=${previewMode} - completed`);
+    ctx.logger.info('>>> creating stays page title images', previewMode);
   }
   
   async seedDb (event: H3Event) : Promise<void> {
     const logger: IAppLogger = this.logger;
-    logger.info(`${this.LoggingPrefix} starting data seeding`);
+    logger.info('starting data seeding');
   
-    logger.info(`${this.LoggingPrefix} === SEEDING DB ===`);
+    logger.info('-------- SEEDING DB --------');
     try {
-      logger.info(`${this.LoggingPrefix} locating content directory`);
+      logger.info('locating content directory');
       let contentDir = await lookupParentDirectory(process.cwd(), AppConfig.dataSeeding.dirs.content, async (path: string) => { await access(path); return true; });
       if (!contentDir) {
-        logger.warn(`${this.LoggingPrefix} FAILED to locate content directory`);
+        logger.warn('FAILED to locate content directory');
         return;
       }
       contentDir = resolve(contentDir!);
-      logger.info(`${this.LoggingPrefix} using content directory: ${contentDir}`);
+      logger.info('using content directory', { dir: contentDir });
   
       logger.info('locating public resources directory');
       let publicResDir = await lookupParentDirectory(process.cwd(), AppConfig.dataSeeding.dirs.publicRes, async (path: string) => { await access(path); return true; });
       if (!publicResDir) {
-        logger.warn(`${this.LoggingPrefix} FAILED to locate public resources directory`);
+        logger.warn('FAILED to locate public resources directory');
         return;
       }
       publicResDir = resolve(publicResDir!);
-      logger.info(`${this.LoggingPrefix} using public resources directory: ${publicResDir}`);
+      logger.info('using public resources directory', { dir: publicResDir });
   
-      logger.info(`${this.LoggingPrefix} locating appdata directory`);
+      logger.info('locating appdata directory');
       let appDataDir = resolve(join(publicResDir, '/../', 'assets', AppConfig.dataSeeding.dirs.appData));
       if (!await this.checkFileExists(appDataDir)) {
         appDataDir = resolve(join(publicResDir, AppConfig.dataSeeding.dirs.appData));
       }
       if (!await this.checkFileExists(appDataDir)) {
-        logger.warn(`${this.LoggingPrefix} FAILED to locate app data directory`);
+        logger.warn('FAILED to locate app data directory');
         return;
       }
-      logger.info(`${this.LoggingPrefix} using app data directory: ${appDataDir}`);
+      logger.info('using app data directory', { dir: appDataDir });
   
       const ctx: ContextParams = {
         logger,
@@ -1576,12 +1580,12 @@ export class DataSeedingLogic implements IDataSeedingLogic {
         await this.ensureCredentialsTestUser(ctx);
       }
   
-      logger.info(`${this.LoggingPrefix} === DB SEEDING COMPLETED ===`);
+      logger.info('-------- DB SEEDING COMPLETED --------');
     } catch (err: any) {
-      logger.warn(`${this.LoggingPrefix} db seeding failed`, err);
+      logger.warn('db seeding failed', err);
     }
   
-    logger.info(`${this.LoggingPrefix} data seeding completed`);
+    logger.info('data seeding completed');
   };
 
   async seed(event: H3Event): Promise<void> {
@@ -1589,7 +1593,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
   }
 
   async getInitialSeedingStatus () : Promise<InitialDataSeedingStatus> {
-    this.logger.debug(`${this.LoggingPrefix} checking inital DB seeding status`);
+    this.logger.debug('checking inital DB seeding status');
     let result: InitialDataSeedingStatus = 'required';
   
     const dbRepository = await getGlobalPrismaClient(this.logger);
@@ -1619,7 +1623,7 @@ export class DataSeedingLogic implements IDataSeedingLogic {
       result = 'required';
     }
   
-    this.logger.debug(`${this.LoggingPrefix} inital DB seeding status check result = ${result}`);
+    this.logger.debug('inital DB seeding status check', { result:  result });
     return result;
   }  
 }

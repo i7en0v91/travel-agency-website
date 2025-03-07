@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../../helpers/components';
 import { getLocalizeableValue, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, getValueForFlightDurationFormatting, extractAirportCode, type Locale, getI18nResName2, getI18nResName3, ImageCategory, type EntityId, type EntityDataAttrsOnly, type IFlightOffer } from '@golobe-demo/shared';
 import TicketCardContainer from './ticket-card-container.vue';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   bookingId: EntityId,
   offer: EntityDataAttrsOnly<IFlightOffer>
 };
@@ -13,28 +14,28 @@ const { d, t, locale } = useI18n();
 
 const displayItems = offer.arriveFlight ? [offer.departFlight, offer.arriveFlight] : [offer.departFlight];
 const detailsCommon = [
-  { ctrlKey: `${ctrlKey}-Details-Gate`, caption: getI18nResName3('ticket', 'details', 'gate'), icon: 'door', text: 'A12' },
-  { ctrlKey: `${ctrlKey}-Details-Seat`, caption: getI18nResName3('ticket', 'details', 'seat'), icon: 'seat', text: '128' }
+  { ctrlKey: [...ctrlKey, 'Details', 'Gate'] as ControlKey, caption: getI18nResName3('ticket', 'details', 'gate'), icon: 'door', text: 'A12' },
+  { ctrlKey: [...ctrlKey, 'Details', 'Seat'] as ControlKey, caption: getI18nResName3('ticket', 'details', 'seat'), icon: 'seat', text: '128' }
 ];
 
 </script>
 
 <template>
-  <TicketCardContainer :ctrl-key="`${ctrlKey}-Container`" :booking-id="bookingId" :offer="offer"> 
+  <TicketCardContainer :ctrl-key="[...ctrlKey, 'Wrapper']" :booking-id="bookingId" :offer="offer"> 
     <template #ticket-card>
       <div class="ticket-card">
-        <div v-for="(item, i) in displayItems" :key="`${ctrlKey}-${item.id}Flight`" class="ticket-card-div">
+        <div v-for="(item, i) in displayItems" :key="`${toShortForm(ctrlKey)}-${item.id}Flight`" class="ticket-card-div">
           <div class="ticket-card-general">
             <StaticImage
-              :ctrl-key="`${ctrlKey}-CompanyLogo-${i}`"
+              :ctrl-key="[...ctrlKey, 'CompanyLogo', i]"
               class="ticket-card-image ticket-flight-card-company-logo brdr-3 p-xs-2"
-              :entity-src="item.airlineCompany.logoImage"
+              :src="item.airlineCompany.logoImage"
               :category="ImageCategory.AirlineLogo"
-              :show-stub="false"
+              :stub="false"
               :request-extra-display-options="true"
-              img-class="ticket-flight-card-company-logo-img"
+              :ui="{ img: 'ticket-flight-card-company-logo-img' }"
               sizes="xs:30vw sm:30vw md:20vw lg:20vw xl:20vw"
-              :alt-res-name="getI18nResName2('searchFlights', 'airlineCompanyLogoAlt')"
+              :alt="{ resName: getI18nResName2('searchFlights', 'airlineCompanyLogoAlt') }"
             />
             <div class="ticket-card-timings from ml-xs-5">
               <div class="ticket-card-caption">
@@ -54,9 +55,9 @@ const detailsCommon = [
               </div>
             </div>
             <BookingTicketDetails
-              :ctrl-key="`${ctrlKey}-Details`" 
-              :items="[{ ctrlKey: `${ctrlKey}-Details-Date`, caption: getI18nResName3('ticket', 'details', 'date'), icon: 'calendar', text: d(getValueForFlightDayFormatting(item.departTimeUtc, item.departAirport.city.utcOffsetMin), 'day') },
-                        { ctrlKey: `${ctrlKey}-Details-Duration`, caption: getI18nResName3('ticket', 'details', 'duration'), icon: 'timer', text: t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting(item.departTimeUtc, item.arriveTimeUtc)) }, 
+              :ctrl-key="[...ctrlKey, 'Details']" 
+              :items="[{ ctrlKey: [...ctrlKey, 'Details', 'Dates'], caption: getI18nResName3('ticket', 'details', 'date'), icon: 'calendar', text: d(getValueForFlightDayFormatting(item.departTimeUtc, item.departAirport.city.utcOffsetMin), 'day') },
+                        { ctrlKey: [...ctrlKey, 'Details', 'Duration'], caption: getI18nResName3('ticket', 'details', 'duration'), icon: 'timer', text: t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting(item.departTimeUtc, item.arriveTimeUtc)) }, 
                         ...detailsCommon]" 
               class="ticket-card-details"/>
           </div>

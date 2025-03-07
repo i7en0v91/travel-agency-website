@@ -1,4 +1,4 @@
-import { EntityIdTestRegEx, EntityChangeSubscribersOrder, ImageCategory, newUniqueId, DbVersionInitial, lookupKeyByValueOrThrow, tryLookupKeyByValue, type IImageCategoryInfo, type EntityId, type IAppLogger } from '@golobe-demo/shared';
+import { formatAppCacheKey, EntityIdTestRegEx, EntityChangeSubscribersOrder, ImageCategory, newUniqueId, DbVersionInitial, lookupKeyByValueOrThrow, tryLookupKeyByValue, type IImageCategoryInfo, type EntityId, type IAppLogger } from '@golobe-demo/shared';
 import type { PrismaClient } from '@prisma/client';
 import type { Storage, StorageValue } from 'unstorage';
 import { ImageCategoryInfosCacheKey } from './../helpers/utils';
@@ -6,6 +6,8 @@ import type { EntityChangeNotificationCallbackArgs, EntityChangeNotificationCall
 import { mapEnumDbValue } from '../helpers/db';
 
 export class ImageCategoryLogic implements IImageCategoryLogic {
+  private readonly CacheKey = formatAppCacheKey(ImageCategoryInfosCacheKey);
+
   private readonly logger: IAppLogger;
   private readonly dbRepository: PrismaClient;
   private readonly cache: Storage<StorageValue>;
@@ -13,7 +15,7 @@ export class ImageCategoryLogic implements IImageCategoryLogic {
 
   public static inject = ['dbRepository', 'entityChangeNotifications', 'cache', 'logger'] as const;
   constructor (dbRepository: PrismaClient, entityChangeNotifications: IEntityChangeNotificationTask, cache: Storage<StorageValue>, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'ImageCategoryLogic' });
     this.dbRepository = dbRepository;
     this.cache = cache;
     this.entityChangeNotifications = entityChangeNotifications;
@@ -24,7 +26,7 @@ export class ImageCategoryLogic implements IImageCategoryLogic {
   }
 
   subscribeForEntityChanges = () => {
-    this.logger.verbose('(ImageCategoryLogic) subscribing for image category entities changes');
+    this.logger.verbose('subscribing for image category entities changes');
 
     const subscriberId = this.entityChangeNotifications.subscribeForChanges({
       target: [{
@@ -34,19 +36,19 @@ export class ImageCategoryLogic implements IImageCategoryLogic {
       order: EntityChangeSubscribersOrder.ImageCategoryLogic
     }, this.entityChangeCallback);
 
-    this.logger.verbose(`(ImageCategoryLogic) subscribed for image category entities changes, subscriberId=${subscriberId}`);
+    this.logger.verbose('subscribed for image category entities changes', subscriberId);
   };
 
   entityChangeCallback: EntityChangeNotificationCallback = async (_: EntityChangeNotificationSubscriberId, args: EntityChangeNotificationCallbackArgs): Promise<void> => {
-    this.logger.debug('(ImageCategoryLogic) entities change callback');
+    this.logger.debug('entities change callback');
     if(args.target === 'too-much' || (args.target.find(x => x.entity === 'ImageCategory')?.ids.length ?? 0) > 0) {
       await this.clearCategoriesCache();
     }
-    this.logger.debug('(ImageCategoryLogic) entities change callback completed');
+    this.logger.debug('entities change callback completed');
   };
 
   async findCategory (category: ImageCategory | EntityId): Promise<IImageCategoryInfo | undefined> {
-    this.logger.debug(`(ImageCategoryLogic) finding category, category=${category}`);
+    this.logger.debug('finding category', category);
     const categoryEntity = EntityIdTestRegEx.test(category) ? 
       (
         await this.dbRepository.imageCategory.findUnique({
@@ -62,7 +64,7 @@ export class ImageCategoryLogic implements IImageCategoryLogic {
       );
     
     if (!categoryEntity) {
-      this.logger.warn(`(ImageCategoryLogic) category not found, category=${category}`);
+      this.logger.warn('category not found', undefined, category);
       return undefined;
     }
 
@@ -74,12 +76,12 @@ export class ImageCategoryLogic implements IImageCategoryLogic {
       createdUtc: categoryEntity.createdUtc,
       modifiedUtc: categoryEntity.modifiedUtc
     };
-    this.logger.debug(`(ImageCategoryLogic) category found, category=${result.kind}, id=${result.id}`);
+    this.logger.debug('category found', { category: result.kind, id: result.id });
     return result;
   }
 
   async createCategory (type: ImageCategory, width: number, height: number): Promise<EntityId> {
-    this.logger.info(`(ImageCategoryLogic) creating category, type=${type}, width=${width}, height=${height}`);
+    this.logger.info('creating category', { type, width, height });
     const categoryId = (await this.dbRepository.imageCategory.create({ 
       data: { 
         id: newUniqueId(),
@@ -93,17 +95,17 @@ export class ImageCategoryLogic implements IImageCategoryLogic {
       } 
     })).id as EntityId;
     await this.clearCategoriesCache();
-    this.logger.info(`(ImageCategoryLogic) category created, type=${type}, id=${categoryId}`);
+    this.logger.info('category created', { type, id: categoryId });
     return categoryId;
   }
 
   async getImageCategoryInfos (allowCachedValue: boolean): Promise<ReadonlyMap<ImageCategory, IImageCategoryInfo>> {
-    this.logger.debug(`(ImageCategoryLogic) accessing image category infos, allowCachedValue=${allowCachedValue}`);
+    this.logger.debug('accessing image category infos', allowCachedValue);
 
-    let entries = allowCachedValue ? (await this.cache.getItem(ImageCategoryInfosCacheKey) as [ImageCategory, IImageCategoryInfo][]) : undefined;
+    let entries = allowCachedValue ? (await this.cache.getItem(this.CacheKey) as [ImageCategory, IImageCategoryInfo][]) : undefined;
     if (!entries) {
       entries = [];
-      this.logger.verbose('(ImageCategoryLogic) image category infos - cache miss, loading from db');
+      this.logger.verbose('image category infos - cache miss, loading from db');
       const categoryEntities = await this.dbRepository.imageCategory.findMany({ select: { id: true, kind: true, width: true, height: true, createdUtc: true, modifiedUtc: true } });
       for (let i = 0; i < categoryEntities.length; i++) {
         const entity = categoryEntities[i];
@@ -112,17 +114,17 @@ export class ImageCategoryLogic implements IImageCategoryLogic {
           entries.push([enumValue, { width: entity.width, height: entity.height, id: entity.id, kind: enumValue, createdUtc: entity.createdUtc, modifiedUtc: entity.modifiedUtc }]);  
         }
       }
-      this.logger.debug(`(ImageCategoryLogic) image category infos - updating cache, count=${entries.length}, allowCachedValue=${allowCachedValue}`);
-      await this.cache.setItem(ImageCategoryInfosCacheKey, entries);
+      this.logger.debug('image category infos - updating cache', { count: entries.length, allowCachedValue });
+      await this.cache.setItem(this.CacheKey, entries);
     }
 
     const result = new Map<ImageCategory, IImageCategoryInfo>(entries);
-    this.logger.debug(`(ImageCategoryLogic) image category infos count=${entries.length}, allowCachedValue=${allowCachedValue}`);
+    this.logger.debug('image category infos', { count: entries.length, allowCachedValue });
     return result;
   }
 
   async clearCategoriesCache(): Promise<void> {
-    this.logger.verbose('(ImageCategoryLogic) clearing categories cache');
-    await this.cache.removeItem(ImageCategoryInfosCacheKey);
+    this.logger.verbose('clearing categories cache');
+    await this.cache.removeItem(this.CacheKey);
   }
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { areCtrlKeysEqual, type ControlKey } from './../../../helpers/components';
 import { AppConfig, type EntityId, type OfferKind, type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, eraseTimeOfDay, getValueForFlightDayFormatting, getI18nResName3, type I18nResName } from '@golobe-demo/shared';
-import { TabHistoryOptionButtonGroup, TabHistoryOptionButtonFlights, TabHistoryOptionButtonStays } from './../../../helpers/constants';
 import FlightTicketCard from './../../../components/user-account/ticket-card/ticket-flight-card.vue';
 import StayTicketCard from './../../../components/user-account/ticket-card/ticket-stay-card.vue';
 import { mapUserTicketsResult } from './../../../helpers/entity-mappers';
@@ -14,21 +14,23 @@ declare type TimeRangeFilter = 'upcoming' | 'passed';
 const DefaultTimeRangeFilter: TimeRangeFilter = 'upcoming';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   ready: boolean
 }
 const { ctrlKey } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const TabHistoryOptionButtonGroup: ControlKey = [...ctrlKey, 'OptionBtnGroup'];
+const TabHistoryOptionButtonFlights: ControlKey = [...TabHistoryOptionButtonGroup, 'Flights', 'Option'];
+const TabHistoryOptionButtonStays: ControlKey = [...TabHistoryOptionButtonGroup, 'Stays', 'Option'];
+const DefaultActiveTabKey: ControlKey = TabHistoryOptionButtonFlights;
+
+const logger = getCommonServices().getLogger().addContextProps({ component: 'TabHistory' });
 const isError = ref(false);
 
-const controlSettingsStore = useControlSettingsStore();
-const timeRangeControlValueSetting = controlSettingsStore.getControlValueSetting<TimeRangeFilter>(`${ctrlKey}-TimeRangeFilter`, DefaultTimeRangeFilter, true);
-const timeRangeFilter = ref<TimeRangeFilter>(timeRangeControlValueSetting.value ?? DefaultTimeRangeFilter);
+const timeRangeFilter = ref<TimeRangeFilter>();
 const timeRangeFilterDropdownItems: {value: TimeRangeFilter, resName: I18nResName}[] = (['upcoming', 'passed'] as TimeRangeFilter[]).map(f => { return { value: f, resName: getI18nResName3('accountPage', 'tabHistory', f) }; });
 
-const DefaultActiveTabKey = TabHistoryOptionButtonFlights;
-const activeOptionCtrl = ref<string | undefined>();
+const activeOptionCtrl = ref<ControlKey | undefined>();
 
 const $emit = defineEmits(['update:ready']);
 
@@ -47,9 +49,9 @@ const userTicketsFetch = await useFetch(`/${ApiEndpointUserTickets}`,
   },
   cache: (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
   transform: (response: IUserTicketsResultDto) => {
-    logger.verbose(`(TabHistory) received user tickets response, ctrlKey=${ctrlKey}`);
+    logger.verbose('received user tickets response', ctrlKey);
     if (!response) {
-      logger.warn(`(TabHistory) user tickets response is empty, ctrlKey=${ctrlKey}`);
+      logger.warn('user tickets response is empty', undefined, ctrlKey);
       return []; // error should be logged by fetchEx
     }
     return mapUserTicketsResult(response);
@@ -57,11 +59,16 @@ const userTicketsFetch = await useFetch(`/${ApiEndpointUserTickets}`,
   $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-page' })
 });
 
-const filterCheckpointDate = dayjs(eraseTimeOfDay(dayjs().local().toDate()));
+const now = dayjs().toDate();
+const localUtcOffset = dayjs().local().utcOffset();
+const filterCheckpointDates = {
+  flights: dayjs(now),
+  stays: dayjs(eraseTimeOfDay(getValueForFlightDayFormatting(now, localUtcOffset)))
+};
 const displayedItems = computed<{ [P in OfferKind]:(UserTicketItem[] | undefined) }>(() => {
   return (userTicketsFetch.status.value === 'success' && userTicketsFetch.data.value !== null) ? {
-    flights: userTicketsFetch.data.value.filter(o => o.kind === 'flights' && (filterCheckpointDate.isAfter(getValueForFlightDayFormatting((o as EntityDataAttrsOnly<IFlightOffer>).departFlight.departTimeUtc, (o as EntityDataAttrsOnly<IFlightOffer>).departFlight.departAirport.city.utcOffsetMin)) === (timeRangeFilter.value === 'passed'))),
-    stays: userTicketsFetch.data.value.filter(o => o.kind === 'stays' && (filterCheckpointDate.isAfter((o as EntityDataAttrsOnly<IStayOffer>).checkIn) === (timeRangeFilter.value === 'passed')))
+    flights: userTicketsFetch.data.value.filter(o => o.kind === 'flights' && (filterCheckpointDates.flights.isAfter((o as EntityDataAttrsOnly<IFlightOffer>).departFlight.departTimeUtc) === (timeRangeFilter.value === 'passed'))),
+    stays: userTicketsFetch.data.value.filter(o => o.kind === 'stays' && (filterCheckpointDates.stays.isAfter((o as EntityDataAttrsOnly<IStayOffer>).checkIn) === (timeRangeFilter.value === 'passed')))
   } : {
     flights: undefined,
     stays: undefined
@@ -69,9 +76,9 @@ const displayedItems = computed<{ [P in OfferKind]:(UserTicketItem[] | undefined
 });
 
 watch(userTicketsFetch.status, () => { 
-  logger.debug(`(TabHistory) tickets fetch status changed: ctrlKey=${ctrlKey}, status=${userTicketsFetch.status.value}`);
+  logger.debug('tickets fetch status changed', { ctrlKey, status: userTicketsFetch.status.value });
   if(userTicketsFetch.status.value === 'error') {
-    logger.warn(`(TabHistory) got failed tickets fetch status: ctrlKey=${ctrlKey}`);
+    logger.warn('got failed tickets fetch status', undefined, ctrlKey);
     isError.value = true;
   } else if(userTicketsFetch.status.value === 'success') {
     isError.value = false;
@@ -80,7 +87,7 @@ watch(userTicketsFetch.status, () => {
 });
 
 onMounted(() => {
-  logger.verbose(`(TabHistory) mounted, fetching tickets: ctrlKey=${ctrlKey}`);
+  logger.verbose('mounted, fetching tickets', ctrlKey);
   userTicketsFetch.execute();
 });
 
@@ -94,20 +101,20 @@ onMounted(() => {
       </h2>
       <DropdownList
         v-model:selected-value="timeRangeFilter"
-        :ctrl-key="`${ctrlKey}-TimeRangeFilter`"
+        :ctrl-key="[...ctrlKey, 'TimeRangeFilter', 'Dropdown']"
         :caption-res-name="undefined"
         :persistent="true"
         kind="secondary"
         class="account-tab-history-dropdown"
         list-container-class="account-tab-history-dropdown-list"
-        :default-value="timeRangeControlValueSetting.value ?? DefaultTimeRangeFilter"
+        :default-value="DefaultTimeRangeFilter"
         :items="timeRangeFilterDropdownItems"
       />
     </div>
     <div class="account-tab-history pb-xs-2 pb-s-3 brdr-3" role="form">
       <ErrorHelm v-model:is-error="isError" :appearance="'error-stub'" :user-notification="true">
         <OptionButtonGroup
-          v-model:active-option-ctrl="activeOptionCtrl"
+          v-model:active-option-key="activeOptionCtrl"
           :ctrl-key="TabHistoryOptionButtonGroup"
           role="tablist"
           :options="[
@@ -116,8 +123,8 @@ onMounted(() => {
           ]"
         />
         <OfferTabbedView
-          :ctrl-key="`${ctrlKey}-OfferTabView`" 
-          :selected-kind="(activeOptionCtrl ?? DefaultActiveTabKey) === TabHistoryOptionButtonFlights ? 'flights' : 'stays'" 
+          :ctrl-key="[...ctrlKey, 'OfferTabView']" 
+          :selected-kind="areCtrlKeysEqual((activeOptionCtrl ?? DefaultActiveTabKey), TabHistoryOptionButtonFlights) ? 'flights' : 'stays'" 
           :tab-panel-ids="{ flights: flightsTabHtmlId, stays: staysTabHtmlId }" 
           :displayed-items="displayedItems"
           :no-offers-res-name="{

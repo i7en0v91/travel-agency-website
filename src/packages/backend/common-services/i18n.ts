@@ -18,7 +18,7 @@ export class ServerI18n implements IServerI18n {
 
   public static inject = ['appAssetsProvider', 'logger'] as const;
   constructor (appAssetsProvider: IAppAssetsProvider, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'ServerI18n' });
     this.localizationMap = new Map<Locale, NonNullable<unknown>>();
     this.appAssetsProvider = appAssetsProvider;
   }
@@ -29,7 +29,7 @@ export class ServerI18n implements IServerI18n {
 
   getKeysRecusive = (currentList: [string[], any][], level: number): [string[], any][] => {
     if (level > 10) {
-      this.logger.error('(ServerI18n) cannot access localization file, recursion limit reached');
+      this.logger.error('cannot access localization file, recursion limit reached');
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'internal server error', 'error-page');
     }
 
@@ -52,26 +52,26 @@ export class ServerI18n implements IServerI18n {
   };
 
   getLocalizedResource = (resName: I18nResName, locale: Locale): string => {
-    this.logger.debug(`(ServerI18n) access resource: locale=${locale}, resName=${resName}`);
+    this.logger.debug('access resource', { locale, resName });
     const entries = this.localizationMap.get(locale);
     if (!entries) {
-      this.logger.warn(`(ServerI18n) resource was not found: locale=${locale}, resName=${resName}`);
+      this.logger.warn('resource was not found', undefined, { locale, resName });
       return '';
     }
     const result = get(entries, resName);
-    this.logger.debug(`(ServerI18n) resource accessed: locale=${locale}, resName=${resName}, result=${result}`);
+    this.logger.debug('resource accessed', { locale, resName, result });
     return result;
   };
 
   loadLocalization = async (locale: Locale): Promise<NonNullable<unknown>> => {
-    this.logger.verbose(`(ServerI18n) initializing localization map: locale=${locale}`);
+    this.logger.verbose('initializing localization map', locale);
     const result = await this.appAssetsProvider.getLocalization(locale);
-    this.logger.verbose(`(ServerI18n) localization map initialization completed, locale=${locale}`);
+    this.logger.verbose('localization map initialization completed', locale);
     return result;
   };
 
   createLocalizationMap = async (): Promise<ReadonlyMap<Locale, NonNullable<unknown>>> => {
-    this.logger.info('(ServerI18n) initializing localization map');
+    this.logger.info('initializing localization map');
 
     let numEntries: number | undefined;
     const resultMap = new Map<Locale, NonNullable<unknown>>([]);
@@ -87,11 +87,11 @@ export class ServerI18n implements IServerI18n {
         const actualKeys = this.getKeys(resultMap.get(locale));
         const diffKeys = uniq([...difference(intialKeys, actualKeys), ...difference(actualKeys, intialKeys)]);
         const allKeys = uniq([...intialKeys, ...actualKeys]);
-        this.logger.warn(`(ServerI18n) number of entries in ${locale} file does not match initial: actual=${localeEntries}, initial=${numEntries}, diffKeys=${JSON.stringify(diffKeys)}, allKeys=[${allKeys}]`);
+        this.logger.warn('number of entries in locale file does not match initial', undefined, { locale, actual: localeEntries, initial: numEntries, diffKeys, allKeys });
       }
     }
 
-    this.logger.info(`(ServerI18n) localization map initialization completed, numEntries=${numEntries}`);
+    this.logger.info('localization map initialization completed', numEntries);
     return resultMap;
   };
 }

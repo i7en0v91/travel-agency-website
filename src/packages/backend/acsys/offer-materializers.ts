@@ -17,13 +17,13 @@ export class AcsysFlightOfferMaterializer implements IFlightOfferMaterializer {
   
   public static inject = ['flightOfferMaterializerPrisma', 'dbRepository', 'logger'] as const;
   constructor (prismaImplementation: IFlightOfferMaterializer, dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'AcsysOfferMaterializers' });
     this.dbRepository = dbRepository;
     this.prismaImplementation = prismaImplementation;
   }
 
   async createFlightsAndFillIds (flights: EntityDataAttrsOnly<IFlight>[]): Promise<void> {
-    this.logger.verbose(`(FlightsLogic-Acsys) AcsysFlightOfferMaterializer - creating memory flights and filling IDs, count=${flights.length}`);
+    this.logger.verbose('AcsysFlightOfferMaterializer - creating memory flights and filling IDs', { count: flights.length });
 
     await executeInTransaction(async () => {
       for (let i = 0; i < flights.length; i++) {
@@ -51,11 +51,11 @@ export class AcsysFlightOfferMaterializer implements IFlightOfferMaterializer {
       }
     }, this.dbRepository);
 
-    this.logger.verbose(`(FlightsLogic-Acsys) AcsysFlightOfferMaterializer - creating memory flights and filling IDs - completed, count=${flights.length}`);
+    this.logger.verbose('AcsysFlightOfferMaterializer - creating memory flights and filling IDs - completed', { count: flights.length });
   }
 
   async ensureFlightsInDatabase (flights: EntityDataAttrsOnly<IFlight>[]): Promise<void> {
-    this.logger.debug(`(FlightsLogic-Acsys) AcsysFlightOfferMaterializer - ensuring flights in DB, count=${flights.length}`);
+    this.logger.debug('AcsysFlightOfferMaterializer - ensuring flights in DB', { count: flights.length });
 
     const memoryFlightsMap = new Map<string, EntityDataAttrsOnly<IFlight>>(
       flights.map(f => [buildFlightUniqueDataKey(f), f]));
@@ -102,16 +102,16 @@ export class AcsysFlightOfferMaterializer implements IFlightOfferMaterializer {
       await this.createFlightsAndFillIds(flightsToCreate);
     }
 
-    this.logger.debug(`(FlightsLogic-Acsys) AcsysFlightOfferMaterializer - ensuring offers in DB - completed, count=${flights.length}, num identified=${identifiedCount}`);
+    this.logger.debug('AcsysFlightOfferMaterializer - ensuring offers in DB - completed', { count: flights.length, identified: identifiedCount });
   }
 
   async createOffersAndFillIds (offers: FlightOfferWithSortFactor[], flightIdsMap: Map<string, EntityId>): Promise<void> {
-    this.logger.verbose(`(FlightsLogic-Acsys) AcsysFlightOfferMaterializer - creating memory offers and filling IDs, count=${offers.length}`);
+    this.logger.verbose('AcsysFlightOfferMaterializer - creating memory offers and filling IDs', { count: offers.length });
     if (offers.length === 0) {
       return;
     }
 
-    this.logger.debug('(FlightsLogic-Acsys) AcsysFlightOfferMaterializer - running offer\'s create transaction');
+    this.logger.debug('AcsysFlightOfferMaterializer - running offers create transaction');
     await executeInTransaction(async () => {
       for (let i = 0; i < offers.length; i++) {
         const offer = offers[i];
@@ -137,20 +137,20 @@ export class AcsysFlightOfferMaterializer implements IFlightOfferMaterializer {
       }
     }, this.dbRepository);
 
-    this.logger.verbose(`(FlightsLogic-Acsys) AcsysFlightOfferMaterializer - creating memory offers and filling IDs - completed, count=${offers.length}`);
+    this.logger.verbose('AcsysFlightOfferMaterializer - creating memory offers and filling IDs - completed', { count: offers.length });
   }
 
   async ensureOffersMaterialized (offers: FlightOfferWithSortFactor[], userId: EntityId | 'guest', previewMode: PreviewMode): Promise<void> {
-    this.logger.debug(`(FlightsLogic-Acsys) AcsysFlightOfferMaterializer - ensuring offers in DB, userId=${userId}, count=${offers.length}, previewMode=${previewMode}`);
+    this.logger.debug('AcsysFlightOfferMaterializer - ensuring offers in DB', { userId, count: offers.length, previewMode });
 
     let identifiedCount = 0;
     if(previewMode) {
-      this.logger.debug(`(FlightsLogic-Acsys) AcsysFlightOfferMaterializer - ensuring offers in DB, userId=${userId}, count=${offers.length}, previewMode=${previewMode}`);
+      this.logger.debug('AcsysFlightOfferMaterializer - ensuring offers in DB, preview', { userId, count: offers.length, previewMode });
 
       const memoryOffersMap = new Map<string, FlightOfferWithSortFactor>(
         offers.map(o => [buildFlightOfferUniqueDataKey(o), o]));
   
-      this.logger.debug(`(FlightsLogic-Acsys) AcsysFlightOfferMaterializer - preparing offer's flight IDs, previewMode=${previewMode}`);
+      this.logger.debug('AcsysFlightOfferMaterializer - preparing offer', previewMode);
       const flightsDeduped = uniqBy(flatten(offers.map(o => [o.departFlight, o.arriveFlight])).filter(f => f).map((f) => { return { flight: f, dataHash: buildFlightUniqueDataKey(f!) }; }), f => f!.dataHash).map(f => f.flight!);
       await this.ensureFlightsInDatabase(flightsDeduped);
       const flightIdsMap = new Map<string, EntityId>(flightsDeduped.map(f => [buildFlightUniqueDataKey(f), f.id]));
@@ -217,7 +217,7 @@ export class AcsysFlightOfferMaterializer implements IFlightOfferMaterializer {
       await this.prismaImplementation.ensureOffersMaterialized(offers, userId, previewMode);
     }
 
-    this.logger.debug(`(FlightsLogic-Acsys) AcsysFlightOfferMaterializer - ensuring offers in DB - completed, userId=${userId}, count=${offers.length}, previewMode=${previewMode}, num identified=${identifiedCount}`);
+    this.logger.debug('AcsysFlightOfferMaterializer - ensuring offers in DB - completed', { userId, count: offers.length, previewMode, identified: identifiedCount });
   }
 };
 
@@ -229,18 +229,18 @@ export class AcsysStayOfferMaterializer implements IStayOfferMaterializer {
   
   public static inject = ['stayOfferMaterializerPrisma', 'dbRepository', 'logger'] as const;
   constructor (prismaImplementation: IStayOfferMaterializer, dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'AcsysOfferMaterializers' });
     this.dbRepository = dbRepository;
     this.prismaImplementation = prismaImplementation;
   }
 
   async createOffersAndFillIds (offers: StayOfferWithSortFactor[]): Promise<void> {
-    this.logger.verbose(`(StaysLogic-Acsys) AcsysStayOfferMaterializer creating memory offers and filling IDs, count=${offers.length}`);
+    this.logger.verbose('AcsysStayOfferMaterializer creating memory offers and filling IDs', { count: offers.length });
     if (offers.length === 0) {
       return;
     }
 
-    this.logger.debug('(StaysLogic-Acsys) AcsysStayOfferMaterializer running offer\'s create transaction');
+    this.logger.debug('AcsysStayOfferMaterializer running offers create transaction');
     await executeInTransaction(async () => {
       for (let i = 0; i < offers.length; i++) {
         const offer = offers[i];
@@ -268,11 +268,11 @@ export class AcsysStayOfferMaterializer implements IStayOfferMaterializer {
       }
     }, this.dbRepository);
 
-    this.logger.verbose(`(StaysLogic-Acsys) AcsysStayOfferMaterializer creating memory offers and filling IDs - completed, count=${offers.length}`);
+    this.logger.verbose('AcsysStayOfferMaterializer creating memory offers and filling IDs - completed', { count: offers.length });
   }
 
   async ensureOffersMaterialized(offers: StayOfferWithSortFactor[], userId: EntityId | 'guest', previewMode: PreviewMode): Promise<void> {
-    this.logger.debug(`(StaysLogic-Acsys) AcsysStayOfferMaterializer ensuring offers in DB, userId=${userId}, count=${offers.length}, previewMode=${previewMode}`);
+    this.logger.debug('AcsysStayOfferMaterializer ensuring offers in DB', { userId, count: offers.length, previewMode });
 
     let identifiedCount = 0;
     if(previewMode) {
@@ -343,6 +343,6 @@ export class AcsysStayOfferMaterializer implements IStayOfferMaterializer {
       await this.prismaImplementation.ensureOffersMaterialized(offers, userId, previewMode);
     }
 
-    this.logger.debug(`(StaysLogic-Acsys) AcsysStayOfferMaterializer ensuring offers in DB - completed, userId=${userId}, count=${offers.length}, num identified=${identifiedCount}`);
+    this.logger.debug('AcsysStayOfferMaterializer ensuring offers in DB - completed', { userId, count: offers.length, identified: identifiedCount });
   }
 }

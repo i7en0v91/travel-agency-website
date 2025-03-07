@@ -13,14 +13,14 @@ export class ImageLogic implements IImageLogic {
 
   public static inject = ['dbRepository', 'fileLogic', 'imageCategoryLogic', 'logger'] as const;
   constructor (dbRepository: PrismaClient, fileLogic: IFileLogic, imageCategoryLogic: IImageCategoryLogic, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'ImageLogic' });
     this.fileLogic = fileLogic;
     this.dbRepository = dbRepository;
     this.imageCategoryLogic = imageCategoryLogic;
   }
 
   deleteImage =  async (id: EntityId): Promise<void> => {
-    this.logger.verbose(`(ImageLogic) deleting image: id=${id}`);
+    this.logger.verbose('deleting image', id);
     await this.dbRepository.image.update({
       where: {
         id,
@@ -31,7 +31,7 @@ export class ImageLogic implements IImageLogic {
         version: { increment: 1 }
       }
     });
-    this.logger.verbose(`(ImageLogic) image deleted: id=${id}`);
+    this.logger.verbose('image deleted', id);
   };
 
   getIdQueryFilter (id: EntityId | undefined, slug: string | undefined, category: ImageCategory, userId?: EntityId): Prisma.ImageWhereUniqueInput {
@@ -43,7 +43,7 @@ export class ImageLogic implements IImageLogic {
   }
 
   async createImage (data: IImageData, userId: EntityId | undefined): Promise<{ id: EntityId, timestamp: Timestamp }> {
-    this.logger.verbose(`(ImageLogic) creating image, slug=${data.slug}, category=${data.category}, ownerId=${data.ownerId}, userId=${userId}, fileName=${data.originalName}, length=${data.bytes.length}`);
+    this.logger.verbose('creating image', { slug: data.slug, category: data.category, ownerId: data.ownerId, userId, fileName: data.originalName, length: data.bytes.length });
 
     const categoryId = (await this.imageCategoryLogic.getImageCategoryInfos(CachedResultsInAppServicesEnabled)).get(data.category)!.id;
     const result = await executeInTransaction(async () => {
@@ -66,7 +66,7 @@ export class ImageLogic implements IImageLogic {
       return { id: imageEntity.id, timestamp: fileCreationResult.timestamp };
     }, this.dbRepository);
 
-    this.logger.verbose(`(ImageLogic) image created, id=${result.id}, slug=${data.slug}, category=${data.category}, ownerId=${data.ownerId}, userId=${userId}, fileName=${data.originalName}, length=${data.bytes.length}`);
+    this.logger.verbose('image created', { id: result.id, slug: data.slug, category: data.category, ownerId: data.ownerId, userId, fileName: data.originalName, length: data.bytes.length });
     return result;
   }
 
@@ -77,7 +77,7 @@ export class ImageLogic implements IImageLogic {
    * @param imageFileId Optional, if provided, used for optimization to skip additional DB request for obtaining image file ID
    */
   async updateImage (imageId: EntityId, data: IImageData, imageFileId: EntityId | undefined, userId: EntityId | undefined, event: H3Event): Promise<{ timestamp: Timestamp }> {
-    this.logger.verbose(`(ImageLogic) updating image, imageId=${imageId}, slug=${data.slug}, category=${data.category}, ownerId=${data.ownerId}, userId=${userId}, imageFileId=${imageFileId}, fileName=${data.originalName}, length=${data.bytes?.length?.toString() ?? '[empty]'}`);
+    this.logger.verbose('updating image', { imageId, slug: data.slug, category: data.category, ownerId: data.ownerId, userId, imageFileId, fileName: data.originalName, length: data.bytes?.length?.toString() ?? '[empty]' });
 
     if (!imageFileId) {
       const fileInfo = await this.dbRepository.image.findFirst({
@@ -90,7 +90,7 @@ export class ImageLogic implements IImageLogic {
         }
       });
       if (!fileInfo || !fileInfo.fileId) {
-        this.logger.warn(`(ImageLogic) cannot update image because it is not found: imageId=${imageId}, slug=${data.slug}, category=${data.category}, ownerId=${data.ownerId}, userId=${userId}, imageFileId=${imageFileId}, fileName=${data.originalName}, length=${data.bytes?.length?.toString() ?? '[empty]'}`);
+        this.logger.warn('cannot update image because it is not found', undefined, { imageId, slug: data.slug, category: data.category, ownerId: data.ownerId, userId, imageFileId, fileName: data.originalName, length: data.bytes?.length?.toString() ?? '[empty]' });
         throw new AppException(
           AppExceptionCodeEnum.OBJECT_NOT_FOUND,
           'Cannot update image as it is not found',
@@ -121,23 +121,23 @@ export class ImageLogic implements IImageLogic {
       });
     }, this.dbRepository);
 
-    this.logger.verbose(`(ImageLogic) image updated, imageId=${imageId}, slug=${data.slug}, category=${data.category}, ownerId=${data.ownerId}, userId=${userId}, imageFileId=${imageFileId}, fileName=${data.originalName}, length=${data.bytes?.length?.toString() ?? '[empty]'}`);
+    this.logger.verbose('image updated', { imageId, slug: data.slug, category: data.category, ownerId: data.ownerId, userId, imageFileId, fileName: data.originalName, length: data.bytes?.length?.toString() ?? '[empty]' });
     return { timestamp };
   }
 
   async checkAccess (id: EntityId | undefined, slug: string | undefined, category: ImageCategory, _: PreviewMode, userId?: EntityId | undefined): Promise<ImageCheckAccessResult | undefined> {
-    this.logger.debug(`(ImageLogic) checking access, id=${id}, slug=${slug}, category=${category}, userId=${userId}`);
+    this.logger.debug('checking access', { id, slug, category, userId });
     if (!ImageAuthRequiredCategories.includes(category)) {
-      this.logger.debug(`(ImageLogic) access granted, category is unprotected, id=${id}, slug=${slug}, category=${category}, userId=${userId}`);
+      this.logger.debug('access granted, category is unprotected', { id, slug, category, userId });
       return 'unprotected';
     }
     if (slug && ImagePublicSlugs.includes(slug.toString())) {
-      this.logger.debug(`(ImageLogic) access granted, public slug, id=${id}, slug=${slug}, category=${category}, userId=${userId}`);
+      this.logger.debug('access granted, public slug', { id, slug, category, userId });
       return 'unprotected';
     }
 
     if (!userId) {
-      this.logger.warn(`(ImageLogic) image can be accessed only by authorized users-owners, id=${id}, slug=${slug}, category=${category}`);
+      this.logger.warn('image can be accessed only by authorized users-owners', undefined, { id, slug, category });
       return 'denied';
     }
 
@@ -149,31 +149,31 @@ export class ImageLogic implements IImageLogic {
         where: this.getIdQueryFilter(id, slug, category, undefined)
       }) > 0;
       if (!exists) {
-        this.logger.warn(`(ImageLogic) image was not found, id=${id}, slug=${slug}, category=${category}, userId=${userId}`);
+        this.logger.warn('image was not found', undefined, { id, slug, category, userId });
         return undefined;
       }
     }
 
-    this.logger.debug(`(ImageLogic) access ${isOwner ? 'granted' : 'denied'}, id=${id}, slug=${slug}, category=${category}, userId=${userId}`);
+    this.logger.debug('access status', { granted: isOwner, id, slug, category, userId });
     return isOwner ? 'granted' : 'denied';
   }
 
   async findImage (id: EntityId | undefined, slug: string | undefined, category: ImageCategory, event: H3Event): Promise<IImageInfo | undefined> {
-    this.logger.verbose(`(ImageLogic) loading image info, id=${id}, slug=${slug}, category=${category}`);
+    this.logger.verbose('loading image info', { id, slug, category });
     const queryResult = await this.dbRepository.image.findFirst({
       where: this.getIdQueryFilter(id, slug, category, undefined),
       select: ImageInfoQuery.select
     });
     if (!queryResult) {
-      this.logger.warn(`(ImageLogic) cannot found image, id=${id}, slug=${slug}`);
+      this.logger.warn('cannot found image', undefined, { id, slug });
       return undefined;
     }
 
     const resultFileUnresolved = MapImageInfo(queryResult);
-    this.logger.debug(`(ImageLogic) find image - resoving file, id=${id}, slug=${slug}, fileId=${resultFileUnresolved.fileId}`);
+    this.logger.debug('find image - resoving file', { id, slug, fileId: resultFileUnresolved.fileId });
     const fileInfos = await this.fileLogic.findFiles([resultFileUnresolved.fileId], event);
     if (!fileInfos?.length) {
-      this.logger.warn(`(ImageLogic) cannot found file, id=${id}, slug=${slug}, fileId=${resultFileUnresolved.fileId}`);
+      this.logger.warn('cannot found file', undefined, { id, slug, fileId: resultFileUnresolved.fileId });
       return undefined;
     }
 
@@ -181,12 +181,12 @@ export class ImageLogic implements IImageLogic {
       ...resultFileUnresolved,
       file: fileInfos[0]
     };
-    this.logger.verbose(`(ImageLogic) image bytes loaded, id=${id}, slug=${slug}`);
+    this.logger.verbose('image bytes loaded', { id, slug });
     return result;
   }
 
   async getImagesByIds(ids: EntityId[]): Promise<IImageFileInfoUnresolved[]> {
-    this.logger.debug(`(ImageLogic) loading image infos by ids, count=${ids.length}`);
+    this.logger.debug('loading image infos by ids', { count: ids.length });
 
     const queryResult = await this.dbRepository.image.findMany({
       where: {
@@ -199,39 +199,39 @@ export class ImageLogic implements IImageLogic {
     });
     
     const result = queryResult.map(q => { return MapImageInfo(q); });
-    this.logger.debug(`(ImageLogic) image infos by ids loaded, req count=${ids.length}, result count=${result.length}`);
+    this.logger.debug('image infos by ids loaded', { reqCount: ids.length, resCount: result.length });
     return result;
   }
 
   async getImageBytes (id: EntityId | undefined, slug: string | undefined, category: ImageCategory, event: H3Event): Promise<IImageBytes | undefined> {
-    this.logger.verbose(`(ImageLogic) loading image bytes, id=${id}, slug=${slug}, category=${category}`);
+    this.logger.verbose('loading image bytes', { id, slug, category });
     const queryResult = await this.dbRepository.image.findFirst({
       where: this.getIdQueryFilter(id, slug, category, undefined),
       select: { fileId: true }
     });
     if (!queryResult) {
-      this.logger.warn(`(ImageLogic) cannot found image, id=${id}, slug=${slug}`);
+      this.logger.warn('get image bytes - cannot found image', undefined, { id, slug });
       return undefined;
     }
     const fileId = queryResult?.fileId;
     if (!fileId) {
-      this.logger.warn(`(ImageLogic) file not linked, id=${id}, slug=${slug}`);
+      this.logger.warn('file not linked', undefined, { id, slug });
       return undefined;
     }
 
     const fileData = await this.fileLogic.getFileData(fileId, event);
     if(!fileData) {
-      this.logger.warn(`(ImageLogic) file not found, id=${id}, slug=${slug}, fileId=${fileId}`);
+      this.logger.warn('file not found', undefined, { id, slug, fileId });
       return undefined;
     }
 
     const result: IImageBytes = { bytes: fileData.bytes, mimeType: fileData.mime ?? undefined, modifiedUtc: fileData.modifiedUtc! };
-    this.logger.verbose(`(ImageLogic) image bytes loaded, id=${id}, slug=${slug}, mime=${result.mimeType}, size=${result.bytes.byteLength}`);
+    this.logger.verbose('image bytes loaded', { id, slug, mime: result.mimeType, size: result.bytes.byteLength });
     return result;
   }
 
   async getAllImagesByCategory (category: ImageCategory, skipAuthChecks: boolean): Promise<IImageFileInfoUnresolved[]> {
-    this.logger.debug(`(ImageLogic) accessing all images by category=${category}, skipAuthChecks=${skipAuthChecks}`);
+    this.logger.debug('accessing all images by', { category, skipAuthChecks });
 
     if (!skipAuthChecks && ImageAuthRequiredCategories.includes(category)) {
       throw new AppException(
@@ -247,20 +247,20 @@ export class ImageLogic implements IImageLogic {
     });
     const resultFileUnresolved = queryResult.map(MapImageInfo);
 
-    this.logger.debug(`(ImageLogic) images by category: category=${category}, skipAuthChecks=${skipAuthChecks}, count=${resultFileUnresolved.length}`);
+    this.logger.debug('images by category', { category, skipAuthChecks, count: resultFileUnresolved.length });
     return resultFileUnresolved;
   }
 
   async resolveImageFiles(imageInfos: IImageFileInfoUnresolved[], event: H3Event): Promise<IImageInfo[]> {
-    this.logger.debug(`(ImageLogic) resolving image files, count=${imageInfos.length}`);
+    this.logger.debug('resolving image files', { count: imageInfos.length });
 
     const result = [] as IImageInfo[];
     for(let i = 0; i < imageInfos.length; i++) {
       const unresolvedInfo = imageInfos[i];
-      this.logger.debug(`(ImageLogic) find image - resoving file, id=${unresolvedInfo.id}, slug=${unresolvedInfo.slug}, fileId=${unresolvedInfo.fileId}`);    
+      this.logger.debug('find image - resoving file', { id: unresolvedInfo.id, slug: unresolvedInfo.slug, fileId: unresolvedInfo.fileId });    
       const fileInfos = await this.fileLogic.findFiles([unresolvedInfo.fileId], event);
       if (!fileInfos?.length) {
-        this.logger.warn(`(ImageLogic) cannot found file, id=${unresolvedInfo.id}, slug=${unresolvedInfo.slug}, fileId=${unresolvedInfo.fileId}`);
+        this.logger.warn('cannot found file', undefined, { id: unresolvedInfo.id, slug: unresolvedInfo.slug, fileId: unresolvedInfo.fileId });
         continue;
       }
       result.push({
@@ -269,7 +269,7 @@ export class ImageLogic implements IImageLogic {
       });
     }
 
-    this.logger.debug(`(ImageLogic) image files resolved, result count=${result.length} (of requested count=${imageInfos.length})`);
+    this.logger.debug('image files resolved', { rescount: result.length, reqCount: imageInfos.length });
     return result;
   }
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import type { Locale, I18nResName } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { getCommonServices } from '../../helpers/service-accessors';
@@ -7,16 +8,17 @@ const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   to: string,
   textResName: I18nResName,
   icon?: string,
   linkClass?: string,
-  isActive?: boolean
+  isActive?: boolean,
+  hardLink: boolean
 }
 const { ctrlKey, linkClass, icon, isActive = false } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'NavLink' });
 
 function getClass (): string {
   if (!icon) {
@@ -26,7 +28,7 @@ function getClass (): string {
 }
 
 function onClick () {
-  logger.debug(`(NavLink) on click, ctrlKey=${ctrlKey}`);
+  logger.debug('on click', ctrlKey);
   $emit('click');
 }
 
@@ -37,7 +39,7 @@ const $emit = defineEmits(['click']);
 <template>
   <div :class="`nav-page-link-cell ${isActive ? 'active' : ''}`">
     <div class="nav-item nav-page-link mx-l-2 my-xs-2 py-l-2 my-l-0">
-      <NuxtLink :class="getClass()" :to="navLinkBuilder.buildLink(to, locale as Locale)" @click="onClick">
+      <NuxtLink :class="getClass()" :to="navLinkBuilder.buildLink(to, locale as Locale)" :external="hardLink" @click="onClick">
         {{ $t(textResName) }}
       </NuxtLink>
     </div>

@@ -1,6 +1,6 @@
 import { FlexibleDatesRangeDays, RestApiLogging } from './constants';
 import { isDevEnv, isTestEnv, isPublishEnv, isQuickStartEnv, isElectronBuild } from './environment';
-import type { LogLevel, Locale, I18nResName } from './types';
+import type { CacheEntityType, LogLevel, Locale, I18nResName } from './types';
 import type { ILogSuppressionRule, ILogVueSuppressionRule } from './logging/common';
 import type { AppExceptionCode } from './exceptions';
 
@@ -45,6 +45,7 @@ export interface IAppConfig {
       level: LogLevel,
       redact: string[],
       maskedNumCharsVisible: number,
+      maxArrayLoggingLength: number,
       appExceptionLogLevels: { appExceptionCode: AppExceptionCode, logLevel: LogLevel }[],
       region: string,
       timeZone: string
@@ -123,11 +124,6 @@ export interface IAppConfig {
   },
   caching: {
     intervalSeconds: number | false,
-    clientRuntime: {
-      expirationsSeconds: {
-        default: number
-      }
-    },
     invalidation: {
       intervalSeconds: number,
       maxChangedPagesForPurge: number,
@@ -142,7 +138,10 @@ export interface IAppConfig {
       },
       ogImageCachePrefix: string
     },
-    httpDefaults: string
+    httpDefaults: string,
+    entities: {
+      expiration: Partial<Record<CacheEntityType, number>> & { default: number }
+    }
   },
   searchOffers: {
     listPageSize: number,
@@ -204,8 +203,13 @@ const Config : IAppConfig = {
         'details.user.*',
         'captchaToken',
         'accessToken',
-        'refreshToken'
+        'refreshToken',
+        'token'
       ],
+      /** 
+       * maximum size of an array field in payload data after which it is logged 
+       * as a number representing total items count instead of actual content */
+      maxArrayLoggingLength: 10,
       maskedNumCharsVisible: 1, // number of first and last characters visible in masked string
       appExceptionLogLevels: [ // custom remapping of AppException's default WARN logging level
         { appExceptionCode: 'UNAUTHENTICATED', logLevel: 'info' },
@@ -328,11 +332,6 @@ const Config : IAppConfig = {
   },
   caching: {
     intervalSeconds: HtmlPageCachingEnabled ? CachingIntervalSeconds : false, // maximum amount of time in seconds that rendered html page's data can be cached and re-served to client while re-redering in background. False - caching disabled
-    clientRuntime: { // client-side entity cache-related settings
-      expirationsSeconds: { // cache item expiration in seconds, must not exceed "maxage" cache HTTP-header across involved entity types
-        default: 1800 // default expiration for any entity type
-      }
-    },    
     invalidation:  // rendered page cache invalidation options when html content has been changed e.g. from CMS
     {
       intervalSeconds: isTestEnv() ? 21 * 24 * 60 * 60 : 10 * 60, // invalidation timer task interval in seconds (almost disabled in tests as triggered via test endpoint)
@@ -348,7 +347,12 @@ const Config : IAppConfig = {
       },
       ogImageCachePrefix: 'cache:nuxt-og-image@3.1.1' // prefix for og-image cache keys
     },
-    httpDefaults: 'no-store, private' // default value for 'Cache-Control' response header if not filled by app server
+    httpDefaults: 'no-store, private', // default value for 'Cache-Control' response header if not filled by app server
+    entities: { // cache related settings for app runtime entity data
+      expiration: { // cache item expiration in seconds
+        default: 1800 // default expiration for any entity type
+      }
+    }
   },
   searchOffers: { // settings related to flight & stay offers search pages with filter & pagination
     listPageSize: 20, // pagination - number of offer items fetched from server in one request

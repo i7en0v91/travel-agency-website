@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm } from './../../helpers/components';
 import { AppExceptionCodeEnum, AppException, getI18nResName2, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, OgImageExt, type Locale, type Theme, DefaultLocale, getLocalizeableValue, ImageCategory } from '@golobe-demo/shared';
 import type { IBookingTicketStayTitleProps, IBookingTicketProps, IBookingTicketFlightGfxProps } from './../../types';
 import { ApiEndpointImage } from './../../server/api-definitions';
@@ -42,21 +43,21 @@ const {
   generalInfo 
 } = defineProps<Required<IBookingTicketProps & { theme: Theme }>>();
 
-const logger = getCommonServices().getLogger();
-logger.verbose(`(OgBookingTicket) component setup, ctrlKey=${ctrlKey}, offerKind=${offerKind}, gfx=${JSON.stringify(titleOrGfx)}, theme=${theme}`);
+const logger = getCommonServices().getLogger().addContextProps({ component: 'OgBookingTicket' });
+logger.verbose('component setup', { ctrlKey, offerKind, gfx: titleOrGfx, theme });
 
 const { locale } = useI18n();
 const requestLocale = useRequestEvent()?.context.ogImageContext?.locale ?? DefaultLocale;
 locale.value = requestLocale;
 
-let avatarImageSize: Awaited<ReturnType<ReturnType<typeof useSystemConfigurationStore>['getImageSrcSize']>>;
+const systemConfigurationStore = useSystemConfigurationStore();
 try {
-  const systemConfigurationStore = useSystemConfigurationStore();
-  avatarImageSize = await systemConfigurationStore.getImageSrcSize(ImageCategory.UserAvatar);
+  await systemConfigurationStore.loadImageCategories();  
 } catch (err: any) {
-  logger.warn(`(OgBookingTicket) failed to detect avatar image category size, ctrlKey=${ctrlKey}`, err);
+  logger.warn('failed to detect avatar image category size', err, ctrlKey);
   throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to render booking ticket image', 'error-page');
 }
+const avatarImageSize = systemConfigurationStore.imageCategories.find(x => x.kind === ImageCategory.UserAvatar)!;
 
 const { enabled } = usePreviewState();
 
@@ -116,11 +117,11 @@ const gfxFlightRouteLabelStyles = [
 ];
 
 function onError (err: any) {
-  logger.warn('(OgBookingTicket) render exception', err);
+  logger.warn('render exception', err);
   throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to render booking ticket image', 'error-page');
 }
 
-logger.verbose(`(OgBookingTicket) setup script completed, ctrlKey=${ctrlKey}, offerKind=${offerKind}`);
+logger.verbose('setup script completed', { ctrlKey, offerKind });
 
 </script>
 
@@ -151,7 +152,7 @@ logger.verbose(`(OgBookingTicket) setup script completed, ctrlKey=${ctrlKey}, of
         <div :class="`booking-ticket-div ${CommonClass}`">
           <div :class="`booking-ticket ${CommonClass}`">
             <div :class="`booking-ticket-dates bordered dates-bg ${CommonClass}`">
-              <div v-for="(item, idx) in [dates.from!, dates.to!]" :key="`${ctrlKey}-Date-${idx}`" :class="`ticket-date-item-div ${CommonClass}`">
+              <div v-for="(item, idx) in [dates.from!, dates.to!]" :key="`${toShortForm(ctrlKey)}-Date-${idx}`" :class="`ticket-date-item-div ${CommonClass}`">
                 <div :class="`ticket-date-item ${CommonClass}`">
                   <div :class="`ticket-date-item-label input-ctrl-color font-body font-size-h3 ${CommonClass}`">
                     {{ item.label }}
@@ -361,7 +362,7 @@ logger.verbose(`(OgBookingTicket) setup script completed, ctrlKey=${ctrlKey}, of
                 <!-- eslint-disable-next-line -->
                 <svg
                   v-for="(style, idx) in gfxHighlightStyles"
-                  :key="`${ctrlKey}-Highlight${idx}`"
+                  :key="`${toShortForm(ctrlKey)}-Highlight${idx}`"
                   :style="style as any"
                   :class="CommonClass"
                   width="120"
@@ -540,7 +541,7 @@ logger.verbose(`(OgBookingTicket) setup script completed, ctrlKey=${ctrlKey}, of
                   </g>
                 </svg>
                 <svg
-                  :key="`${ctrlKey}-FlightRoute`"
+                  :key="`${toShortForm(ctrlKey)}-FlightRoute`"
                   :style="{
                     top: '88px',
                     left: '68px',
@@ -563,7 +564,7 @@ logger.verbose(`(OgBookingTicket) setup script completed, ctrlKey=${ctrlKey}, of
                 </svg>
                 <div
                   v-for="(style, idx) in gfxFlightRouteLabelStyles"
-                  :key="`${ctrlKey}-RouteLabel${idx}`"
+                  :key="`${toShortForm(ctrlKey)}-RouteLabel${idx}`"
                   :class="`booking-ticket-flight-label ${CommonClass}`"
                   :style="(style as any)"
                 >

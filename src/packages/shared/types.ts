@@ -60,8 +60,7 @@ export interface ILocalizableValue {
 export type CacheEntityType = keyof typeof CacheEntityTypeEnum;
 export interface IEntityCacheItem {
   id: EntityId,
-  type: CacheEntityType,
-  expireAt?: Date
+  type: CacheEntityType
 }
 export interface IEntityCacheSlugItem extends IEntityCacheItem {
   slug: string,
@@ -69,7 +68,8 @@ export interface IEntityCacheSlugItem extends IEntityCacheItem {
 export interface IEntityCacheCityItem extends IEntityCacheSlugItem {
   displayName: ILocalizableValue
 }
-export type GetEntityCacheItem<TEntity extends CacheEntityType> = TEntity extends 'City' ? (IEntityCacheCityItem & { type: TEntity }) : never;
+export type GetEntityCacheItem<TEntity extends CacheEntityType> = 
+  TEntity extends 'City' ? (IEntityCacheCityItem & { type: TEntity }) : never;
 
 export interface IImageProcessor {
   getImageSize (imgData: Buffer): Promise<{width: number, height: number}>;

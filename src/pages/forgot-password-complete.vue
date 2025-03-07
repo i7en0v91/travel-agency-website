@@ -3,6 +3,7 @@ import { AppPage, getPagePath, RecoverPasswordCompleteResultEnum, type Locale, g
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { getCommonServices } from '../helpers/service-accessors';
+import type { ControlKey } from './../helpers/components';
 
 definePageMeta({
   middleware: 'auth',
@@ -14,10 +15,12 @@ definePageMeta({
 });
 useOgImage();
 
+const CtrlKey: ControlKey = ['Page', 'ForgotPasswordComplete'];
+
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ForgotPasswordComplete' });
 const completionResult = ref(RecoverPasswordCompleteResultEnum.LINK_INVALID);
 const route = useRoute();
 const resultParam = route.query.result?.toString();
@@ -26,19 +29,19 @@ if (resultParam) {
   if (resultCode) {
     completionResult.value = resultCode;
   } else {
-    logger.warn(`(forgot-password-complete) unexpected result: ${resultParam}`);
+    logger.warn('unexpected result', undefined, { result: resultParam });
   }
 } else {
-  logger.warn('(forgot-password-complete) result is empty');
+  logger.warn('result is empty');
 }
 
 </script>
 
 <template>
   <div class="complete-password-page account-page no-hidden-parent-tabulation-check">
-    <AccountFormPhotos ctrl-key="CompletePasswordPhotos" class="complete-password-account-forms-photos" />
+    <AccountFormPhotos :ctrl-key="[...CtrlKey, 'AccountFormPhotos']" class="complete-password-account-forms-photos" />
     <div class="complete-password-page-div">
-      <NavLogo ctrl-key="completePasswordPageAppLogo" class="complete-password-page-logo" mode="inApp" />
+      <NavLogo :ctrl-key="[...CtrlKey, 'NavLogo']" class="complete-password-page-logo" mode="inApp" :hard-link="false"/>
       <div class="complete-password-page-content">
         <div v-if="completionResult === RecoverPasswordCompleteResultEnum.SUCCESS">
           {{ $t(getI18nResName3('forgotPasswordCompletePage', 'text', 'success')) }}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { type EntityId, type ReviewSummary, getI18nResName2, getI18nResName3, type I18nResName, DefaultStayReviewScore, getScoreClassResName } from '@golobe-demo/shared';
 import { TooltipHideTimeout } from './../../../helpers/constants';
 import type { IStayReviewItem } from './../../../stores/stay-reviews-store';
@@ -13,7 +14,7 @@ import { getCommonServices } from '../../../helpers/service-accessors';
 const { t } = useI18n();
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   stayId: EntityId,
   preloadedSummaryInfo?: ReviewSummary
 }
@@ -21,9 +22,10 @@ interface IProps {
 const { ctrlKey, preloadedSummaryInfo, stayId } = defineProps<IProps>();
 
 const { status } = useAuth();
+const userNotificationStore = useUserNotificationStore();
 const { enabled, requestUserAction } = usePreviewState();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ReviewSection' });
 
 const reviewStoreFactory = useStayReviewsStoreFactory();
 const reviewStore = await reviewStoreFactory.getInstance(stayId);
@@ -45,7 +47,7 @@ let reviewsCount: number | undefined;
 const $emit = defineEmits<{(event: 'reviewSummaryChanged', value: ReviewSummary): void}>();
 
 function refreshReviewSummaryValues(refreshFromStore: boolean = true) {
-  logger.debug(`(StayReviews) refreshing review summary values: ctrlKey=${ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, refreshFromStore=${refreshFromStore}`);
+  logger.debug('refreshing review summary values', { ctrlKey, numItems: reviewStore.items?.length, status: reviewStore.status, refreshFromStore });
   if(enabled) {
     cumulativeScore = DefaultStayReviewScore;
     reviewsCount = 0;
@@ -61,18 +63,18 @@ function refreshReviewSummaryValues(refreshFromStore: boolean = true) {
   reviewScore.value = cumulativeScore !== undefined  ? (reviewsCount! > 0 ? cumulativeScore / reviewsCount! : DefaultStayReviewScore) : undefined; 
   reviewsCountText.value = reviewsCount !== undefined ? `${reviewsCount} ${t(getI18nResName3('stayDetailsPage', 'reviews', 'count'), reviewsCount)}` : '';
   scoreClassResName.value = reviewScore.value !== undefined ? getScoreClassResName(reviewScore.value) : undefined;
-  logger.debug(`(StayReviews) review summary values refreshed: ctrlKey=${ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, refreshFromStore=${refreshFromStore}`);
+  logger.debug('review summary values refreshed', { ctrlKey, numItems: reviewStore.items?.length, status: reviewStore.status, refreshFromStore });
 }
 
 function adjustReviewSummaryValues(currentReviewScore: number | undefined, newReviewScore: number | undefined) {
-  logger.debug(`(StayReviews) adjusting review summary values: ctrlKey=${ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, currentReviewScore=${currentReviewScore ?? ''}, newReviewScore=${newReviewScore ?? ''}`);
+  logger.debug('adjusting review summary values', { ctrlKey, numItems: reviewStore.items?.length, status: reviewStore.status, currentReviewScore: currentReviewScore ?? '', newReviewScore: newReviewScore ?? '' });
   if(cumulativeScore === undefined || reviewsCount === undefined) {
-    logger.warn(`(StayReviews) cannot adjust uninitialized review summary values: ctrlKey=${ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, cumulativeScore=${cumulativeScore}, reviewsCount=${reviewsCount},  currentReviewScore=${currentReviewScore ?? ''}, newReviewScore=${newReviewScore ?? ''}`);
+    logger.warn('cannot adjust uninitialized review summary values', undefined, { ctrlKey, numItems: reviewStore.items?.length, status: reviewStore.status, cumulativeScore, reviewsCount, currentReviewScore: currentReviewScore ?? '', newReviewScore: newReviewScore ?? '' });
     return;
   }
 
   if(currentReviewScore !== undefined && reviewsCount === 0) {
-    logger.warn(`(StayReviews) failed to adjust empty review summary values: ctrlKey=${ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, cumulativeScore=${cumulativeScore}, reviewsCount=${reviewsCount},  currentReviewScore=${currentReviewScore ?? ''}, newReviewScore=${newReviewScore ?? ''}`);
+    logger.warn('failed to adjust empty review summary values', undefined, { ctrlKey, numItems: reviewStore.items?.length, status: reviewStore.status, cumulativeScore, reviewsCount, currentReviewScore: currentReviewScore ?? '', newReviewScore: newReviewScore ?? '' });
     return;
   }
 
@@ -90,31 +92,31 @@ function adjustReviewSummaryValues(currentReviewScore: number | undefined, newRe
     refreshReviewSummaryValues(false);
     $emit('reviewSummaryChanged', { numReviews: reviewsCount, score: reviewsCount > 0 ? (cumulativeScore / reviewsCount) : DefaultStayReviewScore });
   }
-  logger.debug(`(StayReviews) review summary values adjusted: ctrlKey=${ctrlKey}, numItems=${reviewStore.items?.length}, status=${reviewStore.status}, currentReviewScore=${currentReviewScore ?? ''}, newReviewScore=${newReviewScore ?? ''}`);
+  logger.debug('review summary values adjusted', { ctrlKey, numItems: reviewStore.items?.length, status: reviewStore.status, currentReviewScore: currentReviewScore ?? '', newReviewScore: newReviewScore ?? '' });
 }
 
 function onUserReviewDeleted (deletedReview: IStayReviewItem) {
-  logger.verbose(`(StayReviews) user review deleted handler: ctrlKey=${ctrlKey}`);
+  logger.verbose('user review deleted handler', ctrlKey);
   adjustReviewSummaryValues(deletedReview.score, undefined);
 }
 
 function onAddReviewBtnClick () {
-  logger.verbose(`(StayReviews) add btn click handler: ctrlKey=${ctrlKey}`);
+  logger.verbose('add btn click handler', ctrlKey);
   const userReview = reviewStore.getUserReview()?.text.en ?? '';
   editor.value?.setEditedContent(userReview);
   editorSection.value?.expand();
 }
 
 async function onSubmitReview (reviewHtml: string, score: number): Promise<void> {
-  logger.debug(`(StayReviews) send review handler, ctrlKey=${ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`);
+  logger.debug('send review handler', { ctrlKey, reviewHtml, score });
 
-  if(!await requestUserAction()) {
-    logger.verbose(`(StayReviews) send review handler hasn't been run - not allowed in preview mode, ctrlKey=${ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`);
+  if(!await requestUserAction(userNotificationStore)) {
+    logger.verbose('send review handler hasn', { ctrlKey, reviewHtml, score });
     return;
   }
 
   if(reviewStore.status === 'pending') {
-    logger.verbose(`(StayReviews) cannot submit review while store is in pending state, ctrlKey=${ctrlKey}, reviewHtml=${reviewHtml}`);
+    logger.verbose('cannot submit review while store is in pending state', { ctrlKey, reviewHtml });
     return;
   }
 
@@ -125,15 +127,15 @@ async function onSubmitReview (reviewHtml: string, score: number): Promise<void>
     editorSection.value?.collapse();
     reviewList.value?.rewindToTop();  
   } catch(err: any) {
-    logger.warn(`(StayReviews) failed to submit review, ctrlKey=${ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`, err);
+    logger.warn('failed to submit review', err, { ctrlKey, reviewHtml, score });
     adjustReviewSummaryValues(score, prevUserReviewScore);
   }
 
-  logger.debug(`(StayReviews) send review handler completed, ctrlKey=${ctrlKey}, reviewHtml=${reviewHtml}, score=${score}`);
+  logger.debug('send review handler completed', { ctrlKey, reviewHtml, score });
 }
 
 function onCancelEdit () {
-  logger.debug(`(StayReviews) cancel review edit handler, ctrlKey=${ctrlKey}`);
+  logger.debug('cancel review edit handler', ctrlKey);
   editorSection.value?.collapse();
 }
 
@@ -162,7 +164,7 @@ const tooltipId = useId();
         <SimpleButton
           v-if="status === 'authenticated'"
           class="stay-reviews-addBtn mt-xs-2"
-          :ctrl-key="`${ctrlKey}-AddReviewBtn`"
+          :ctrl-key="[...ctrlKey, 'Btn', 'Add']"
           :label-res-name="getI18nResName3('stayDetailsPage', 'reviews', 'giveReviewBtn')"
           :aria-label-res-name="getI18nResName2('ariaLabels', 'btnGiveReview')"
           kind="default"
@@ -183,7 +185,7 @@ const tooltipId = useId();
         >
           <SimpleButton
             class="stay-reviews-addBtn mt-xs-2"
-            :ctrl-key="`${ctrlKey}-AddReviewBtn`"
+            :ctrl-key="[...ctrlKey, 'Btn', 'Add']"
             :label-res-name="getI18nResName3('stayDetailsPage', 'reviews', 'giveReviewBtn')"
             :aria-label-res-name="getI18nResName2('ariaLabels', 'btnGiveReview')"
             kind="default"
@@ -216,10 +218,9 @@ const tooltipId = useId();
           v-if="status === 'authenticated'"
           ref="editor-section"
           v-model:collapsed="editorHidden"
-          :ctrl-key="`${ctrlKey}-ReviewEditorSection`"
-          :collapse-enabled="true"
+          :ctrl-key="[...ctrlKey, 'CollapsableSection']"
+          collapseable
           :show-collapsable-button="false"
-          :persistent="false"
         >
           <template #head>
             <div />
@@ -227,7 +228,7 @@ const tooltipId = useId();
           <template #content>
             <ReviewEditor
               ref="editor"
-              :ctrl-key="`${ctrlKey}-ReviewEditor`"
+              :ctrl-key="[...ctrlKey, 'ReviewEditor']"
               :stay-id="stayId"
               class="stay-reviews-editor pt-xs-2"
               @submit-review="onSubmitReview"
@@ -236,10 +237,10 @@ const tooltipId = useId();
           </template>
         </CollapsableSection>
       </ClientOnly>
-      <ReviewList ref="review-list" :ctrl-key="`${ctrlKey}-ReviewList`" :stay-id="stayId" @edit-btn-click="onAddReviewBtnClick" @user-review-deleted="onUserReviewDeleted"/>
+      <ReviewList ref="review-list" :ctrl-key="[...ctrlKey, 'ResultItemsList']" :stay-id="stayId" @edit-btn-click="onAddReviewBtnClick" @user-review-deleted="onUserReviewDeleted"/>
     </section>
     <template #fallback>
-      <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-ClientFallback`" class="my-xs-5"/>
+      <ComponentWaitingIndicator :ctrl-key="[...ctrlKey, 'ClientFallback']" class="my-xs-5"/>
     </template>
   </ClientOnly>
 </template>

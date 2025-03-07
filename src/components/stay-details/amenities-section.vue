@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { getI18nResName3, type I18nResName } from '@golobe-demo/shared';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 
 defineProps<IProps>();
@@ -44,7 +45,7 @@ const amenities: IAmenityItem[] = [
       {{ $t(getI18nResName3('stayDetailsPage', 'amenities', 'title')) }}
     </h2>
     <ul class="stay-amenities-grid mt-xs-5 pb-xs-2">
-      <li v-for="(amenity, idx) in (listExpanded ? amenities : amenities.slice(0, CollapsedListSize))" :key="`${ctrlKey}-${idx}`" class="stay-amenities-item">
+      <li v-for="(amenity, idx) in (listExpanded ? amenities : amenities.slice(0, CollapsedListSize))" :key="`${toShortForm(ctrlKey)}-${idx}`" class="stay-amenities-item">
         <span :class="`stay-amenities-item-icon amenity-icon-${amenity.icon} mr-xs-2`" />
         <span class="stay-amenities-item-text">
           {{ $t(amenity.resName) }}
@@ -52,7 +53,7 @@ const amenities: IAmenityItem[] = [
       </li>
       <SimpleButton
         class="stay-amenities-list-toggler mx-xs-2 p-xs-2"
-        :ctrl-key="`${ctrlKey}-ListToggler`"
+        :ctrl-key="[...ctrlKey, 'Btn', 'Toggler']"
         :label-res-name="listExpanded ? getI18nResName3('stayDetailsPage', 'amenities', 'collapseItems') : getI18nResName3('stayDetailsPage', 'amenities', 'moreItems')"
         :label-res-args="listExpanded ? undefined : (amenities.length - 1)"
         kind="support"

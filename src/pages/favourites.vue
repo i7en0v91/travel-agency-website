@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { AppException, AppExceptionCodeEnum, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { FavouritesOptionButtonStays, FavouritesOptionButtonGroup, FavouritesOptionButtonFlights } from './../helpers/constants';
 import { defaultErrorHandler } from './../helpers/exceptions';
 import OptionButtonGroup from './../components/option-buttons/option-button-group.vue';
 import OfferTabbedView from './../components/common-page-components/offer-tabbed-view.vue';
@@ -9,6 +8,7 @@ import StaysListItemCard from './../components/common-page-components/offers-lis
 import { useUserFavouritesStore } from './../stores/user-favourites-store';
 import ComponentWaitingIndicator from './../components/component-waiting-indicator.vue';
 import { getCommonServices } from '../helpers/service-accessors';
+import { areCtrlKeysEqual, type ControlKey } from './../helpers/components';
 
 definePageMeta({
   middleware: 'auth',
@@ -17,24 +17,30 @@ definePageMeta({
 });
 useOgImage();
 
-const DefaultActiveTabKey = FavouritesOptionButtonFlights;
+const CtrlKey: ControlKey = ['Page', 'Favourites'];
+const FavouritesOptionButtonGroup: ControlKey = [...CtrlKey, 'OptionBtnGroup'];
+const FavouritesOptionButtonFlights: ControlKey = [...FavouritesOptionButtonGroup, 'Flights', 'Option'];
+const FavouritesOptionButtonStays: ControlKey = [...FavouritesOptionButtonGroup, 'Stays', 'Option'];
+const DefaultActiveTabKey: ControlKey = FavouritesOptionButtonFlights;
 
-const logger = getCommonServices().getLogger();
+const nuxtApp = useNuxtApp();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'Favourites' });
 const isError = ref(false);
 
+const userNotificationStore = useUserNotificationStore();
 const userFavouritesStore = useUserFavouritesStore();
 let userFavourites: Awaited<ReturnType<typeof userFavouritesStore.getInstance>> | undefined;
 try {
   userFavourites = await userFavouritesStore.getInstance();
 } catch (err: any) {
-  logger.warn('(Favourites) failed to initialized user favourites store', err);
+  logger.warn('failed to initialized user favourites store', err);
   isError.value = true;
 }
 
 const flightsTabHtmlId = useId();
 const staysTabHtmlId = useId();
 
-const activeOptionCtrl = ref<string | undefined>();
+const activeOptionCtrl = ref<ControlKey | undefined>();
 
 const displayedItems = computed(() => {
   return userFavourites
@@ -50,7 +56,7 @@ const displayedItems = computed(() => {
 
 onMounted(() => {
   watch(() => userFavourites?.status, () => {
-    logger.debug(`(Favourites) handling favourites store status change, status=${userFavourites!.status}`);
+    logger.debug('handling favourites store status change', { status: userFavourites!.status });
     switch (userFavourites!.status) {
       case 'success':
         isError.value = false;
@@ -65,7 +71,7 @@ onMounted(() => {
     defaultErrorHandler(new AppException(
       AppExceptionCodeEnum.UNKNOWN,
       'unhandled exception occured',
-      'error-stub'));
+      'error-stub'), { nuxtApp, userNotificationStore });
   }
 });
 
@@ -79,7 +85,7 @@ onMounted(() => {
           {{ $t(getI18nResName2('favouritesPage', 'title')) }}
         </h1>
         <OptionButtonGroup
-          v-model:active-option-ctrl="activeOptionCtrl"
+          v-model:active-option-key="activeOptionCtrl"
           class="favourites-page-tabs-control mt-xs-4"
           :ctrl-key="FavouritesOptionButtonGroup"
           role="tablist"
@@ -89,8 +95,8 @@ onMounted(() => {
           ]"
         />
         <OfferTabbedView
-          ctrl-key="favouritesList" 
-          :selected-kind="(activeOptionCtrl ?? DefaultActiveTabKey) === FavouritesOptionButtonFlights ? 'flights' : 'stays'" 
+          :ctrl-key="[...CtrlKey, 'OfferTabView']" 
+          :selected-kind="areCtrlKeysEqual(activeOptionCtrl ?? DefaultActiveTabKey, FavouritesOptionButtonFlights) ? 'flights' : 'stays'" 
           :tab-panel-ids="{ flights: flightsTabHtmlId, stays: staysTabHtmlId }" 
           :displayed-items="displayedItems"
           :no-offers-res-name="{
@@ -104,7 +110,7 @@ onMounted(() => {
       </ErrorHelm>
     </section>
     <template #fallback>
-      <ComponentWaitingIndicator ctrl-key="FavouritesPageClientFallback" class="my-xs-5"/>
+      <ComponentWaitingIndicator :ctrl-key="[...CtrlKey, 'ClientFallback']" class="my-xs-5"/>
     </template>
   </ClientOnly>
 </template>

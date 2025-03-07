@@ -1,4 +1,5 @@
 import { MimeTypeWebp } from '@golobe-demo/shared';
+import type { ControlKey } from './components';
 
 export enum DeviceSizeEnum {
   XS = 'XS',
@@ -27,27 +28,32 @@ export const CroppingImageDataKey = 'current-cropping-image-data';
 export const CroppingImageFormat = MimeTypeWebp;
 export const TooltipHideTimeout = 2000;
 export const HashNavigationPageTimeout = 3000;
+export const StoreOperationTimeout = 30000;
 
-export const UserAccountTabAccount = 'account';
-export const UserAccountTabHistory = 'history';
-export const UserAccountTabPayments = 'payments';
-export const UserAccountOptionButtonGroup = 'accountOptionButtonsGroup';
-export const UserAccountOptionButtonAccount = `${UserAccountOptionButtonGroup}-${UserAccountTabAccount}`;
-export const UserAccountOptionButtonHistory = `${UserAccountOptionButtonGroup}-${UserAccountTabHistory}`;
-export const UserAccountOptionButtonPayments = `${UserAccountOptionButtonGroup}-${UserAccountTabPayments}`;
-
-export const SearchFlightOffersDisplayOptions = 'searchFlightOffers-DisplayOptions';
-export const SearchStayOffersDisplayOptions = 'searchStayOffers-DisplayOptions';
-
-export const FavouritesOptionButtonGroup = 'favouritesOptBtnGrp';
-export const FavouritesOptionButtonFlights = `${FavouritesOptionButtonGroup}-Flights`;
-export const FavouritesOptionButtonStays = `${FavouritesOptionButtonGroup}-Stays`;
-
-export const TabHistoryOptionButtonGroup = 'tabHistoryOptBtnGrp';
-export const TabHistoryOptionButtonFlights = `${TabHistoryOptionButtonGroup}-Flights`;
-export const TabHistoryOptionButtonStays = `${TabHistoryOptionButtonGroup}-Stays`;
+export const UserAccountTabAccount = 'Account';
+export const UserAccountTabHistory = 'History';
+export const UserAccountTabPayments = 'Payments';
+export const UserAccountPageCtrlKey: ControlKey = ['Page', 'Account'];
+export const UserAccountOptionButtonGroup: ControlKey = [...UserAccountPageCtrlKey, 'OptionBtnGroup'];
+export const UserAccountOptionButtonAccount: ControlKey = [...UserAccountOptionButtonGroup, 'Account', 'Option'];
+export const UserAccountOptionButtonHistory: ControlKey = [...UserAccountOptionButtonGroup, 'History', 'Option'];
+export const UserAccountOptionButtonPayments: ControlKey = [...UserAccountOptionButtonGroup, 'Payments', 'Option'];
 
 export const SearchOffersFilterTabGroupId = 'search-offers-filter-panel-gid';
+enum SearchStaysOptionButtonEnum { Hotels = 'Hotels', Motels = 'Motels', Resorts = 'Resorts' };
+export type SearchStaysOptionButtonKind = keyof typeof SearchStaysOptionButtonEnum;
+export const SearchStaysOptionButtons: SearchStaysOptionButtonKind[] = [
+  SearchStaysOptionButtonEnum.Hotels, 
+  SearchStaysOptionButtonEnum.Motels, 
+  SearchStaysOptionButtonEnum.Resorts
+];
 
 export const WorldMapCityLabelFlipX = 0.85;
 export const TravelDetailsHtmlAnchor = 'travelDetails';
+
+export enum StoreKindEnum {
+  SystemConfiguration = 'system-configuration',
+  UserNotification = 'user-notification',
+  ControlValues = 'control-values',
+  EntityCache = 'entity-cache'
+}

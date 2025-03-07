@@ -15,6 +15,7 @@ import OAuthProviderList from './../components/account/oauth-providers-list.vue'
 import CaptchaProtection from './../components/forms/captcha-protection.vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
+import type { ControlKey } from './../helpers/components';
 
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
@@ -31,6 +32,8 @@ definePageMeta({
   title: { resName: getI18nResName2('signUpPage', 'title'), resArgs: undefined }
 });
 useOgImage();
+
+const CtrlKey: ControlKey = ['Page', 'Signup'];
 
 const themeSettings = useThemeSettings();
 const userNotificationStore = useUserNotificationStore();
@@ -146,9 +149,9 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
 
 <template>
   <div class="signup-page account-page no-hidden-parent-tabulation-check">
-    <AccountFormPhotos ctrl-key="SignUpPhotos" class="signup-account-forms-photos" />
+    <AccountFormPhotos :ctrl-key="[...CtrlKey, 'AccountFormPhotos']" class="signup-account-forms-photos" />
     <div class="signup-page-content">
-      <NavLogo ctrl-key="signupPageAppLogo" mode="inApp" />
+      <NavLogo :ctrl-key="[...CtrlKey, 'NavLogo']" mode="inApp" :hard-link="false"/>
       <h1 class="signup-title font-h2">
         {{ t(getI18nResName2('signUpPage', 'title')) }}
       </h1>
@@ -159,7 +162,7 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
         <div class="signup-firstname-field mt-xs-1 mt-m-3">
           <TextBox
             v-model="firstname"
-            ctrl-key="signUpPgFirstName"
+            :ctrl-key="[...CtrlKey, 'TextBox', 'FirstName']"
             class="form-field signup-form-field"
             type="text"
             :max-length="128"
@@ -175,7 +178,7 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
         <div class="signup-lastname-field mt-xs-1 mt-m-3">
           <TextBox
             v-model="lastname"
-            ctrl-key="signUpPgLastName"
+            :ctrl-key="[...CtrlKey, 'TextBox', 'LastName']"
             class="form-field signup-form-field"
             type="text"
             :max-length="128"
@@ -191,7 +194,7 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
         <div class="signup-email-field mt-xs-1 mt-m-3">
           <TextBox
             v-model="usermail"
-            ctrl-key="signUpPgEmail"
+            :ctrl-key="[...CtrlKey, 'TextBox', 'Email']"
             class="form-field signup-form-field"
             type="email"
             :max-length="256"
@@ -207,7 +210,7 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
         <div class="signup-password-field mt-xs-1 mt-m-3">
           <TextBox
             v-model="password"
-            ctrl-key="signUpPgPassword"
+            :ctrl-key="[...CtrlKey, 'TextBox', 'Password']"
             class="form-field signup-form-field"
             type="password"
             :caption-res-name="getI18nResName2('accountPageCommon', 'passwordLabel')"
@@ -222,7 +225,7 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
         <div class="signup-confirm-password-field mt-xs-1 mt-m-3">
           <TextBox
             v-model="confirmPassword"
-            ctrl-key="signUpPgConfirmPassword"
+            :ctrl-key="[...CtrlKey, 'TextBox', 'ConfirmPassword']"
             class="form-field signup-form-field"
             type="password"
             :caption-res-name="getI18nResName2('accountPageCommon', 'confirmPasswordLabel')"
@@ -234,9 +237,9 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
             </div>
           </div>
         </div>
-        <CaptchaProtection ref="captcha" ctrl-key="SignUpCaptchaProtection" @verified="onCaptchaVerified" />
+        <CaptchaProtection ref="captcha" :ctrl-key="[...CtrlKey, 'Captcha']" @verified="onCaptchaVerified" />
       </form>
-      <CheckBox v-model:model-value="agreeToPolicies" ctrl-key="cbAgreeToPolicies" class="privacy-checkbox mt-xs-4" :value="true">
+      <CheckBox v-model:model-value="agreeToPolicies" :ctrl-key="[...CtrlKey, 'Checkbox', 'AgreeToPolicies']" class="privacy-checkbox mt-xs-4" :value="true">
         <i18n-t :keypath="getI18nResName2('signUpPage', 'agreeWithPolicy')" tag="div" class="ml-xs-2" scope="global">
           <template #privacyLink>
             <NuxtLink class="privacy-link brdr-1" target="_blank" :to="navLinkBuilder.buildPageLink(AppPage.Privacy, locale as Locale)">
@@ -248,14 +251,14 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
       <div v-if="signUpErrorMsgResName?.length" class="form-error-msg mt-xs-3 mt-xs-5">
         {{ $t(signUpErrorMsgResName) }}
       </div>
-      <SimpleButton ctrl-key="signUpBtn" class="signup-btn mt-xs-2" :label-res-name="getI18nResName3('signUpPage', 'forms', 'createAccount')" @click="signUpClick" />
+      <SimpleButton :ctrl-key="[...CtrlKey, 'Btn', 'Signup']" class="signup-btn mt-xs-2" :label-res-name="getI18nResName3('signUpPage', 'forms', 'createAccount')" @click="signUpClick" />
       <div class="already-have-account mt-xs-4">
         {{ $t(getI18nResName2('signUpPage', 'alreadyHaveAccount')) }}
         <span class="signup-login-link">
           <NuxtLink class="brdr-1" :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">{{ $t(getI18nResName2('accountPageCommon', 'login')) }}</NuxtLink>
         </span>
       </div>
-      <OAuthProviderList ctrl-key="SignUpProviders" :divisor-label-res-name="getI18nResName2('signUpPage', 'signUpWith')" @click="onOAuthProviderClick" />
+      <OAuthProviderList :ctrl-key="[...CtrlKey, 'OauthProviders']" :divisor-label-res-name="getI18nResName2('signUpPage', 'signUpWith')" @click="onOAuthProviderClick" />
     </div>
   </div>
 </template>

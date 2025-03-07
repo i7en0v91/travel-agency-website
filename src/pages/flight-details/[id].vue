@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm } from './../../helpers/components';
 import { AvailableFlightClasses, ImageCategory, type IFlightOffer, type ILocalizableValue, type EntityId, AppPage, getPagePath, type Locale, getLocalizeableValue, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import { ApiEndpointFlightOfferDetails } from './../../server/api-definitions';
 import orderBy from 'lodash-es/orderBy';
@@ -9,6 +10,7 @@ import type { IFlightOfferDetailsDto } from '../../server/api-definitions';
 import { mapFlightOfferDetails } from './../../helpers/entity-mappers';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
+import type { ControlKey } from './../../helpers/components';
 
 const NumAirplaneFeatureImages = 8;
 
@@ -27,7 +29,7 @@ definePageMeta({
   title: { resName: getI18nResName2('flightDetailsPage', 'title'), resArgs: undefined }
 });
 
-const CtrlKey = 'FlightOfferDetailsSummary';
+const CtrlKey: ControlKey = ['Page', 'FlightDetails'];
 
 const nuxtApp = useNuxtApp();
 const { enabled } = usePreviewState();
@@ -100,7 +102,7 @@ onMounted(() => {
   <article class="flight-details-page no-hidden-parent-tabulation-check">
     <ErrorHelm :is-error="flightDetailsFetch.status.value === 'error'" class="flight-details-page-error-helm">
       <OfferDetailsBreadcrumbs
-        :ctrl-key="`${CtrlKey}-Breadcrumbs`"
+        :ctrl-key="[...CtrlKey, 'Breadcrumbs']"
         offer-kind="flights"
         :city="flightOffer?.departFlight?.departAirport.city"
         :place-name="flightOffer?.departFlight?.departAirport.name"
@@ -119,13 +121,13 @@ onMounted(() => {
         :btn-link-url="navLinkBuilder.buildLink(flightOffer ? `/${getPagePath(AppPage.BookFlight)}/${offerId}` : route.fullPath, locale as Locale)"
       />
       <StaticImage
-        :ctrl-key="`${CtrlKey}-MainImage`"
+        :ctrl-key="[...CtrlKey, 'StaticImg', 1]"
         class="flight-details-airplane-image mt-xs-4 mt-s-5"
-        :entity-src="flightOffer?.departFlight?.airplane.images.find(x => x.kind === 'main')?.image"
+        :src="flightOffer?.departFlight?.airplane.images.find(x => x.kind === 'main')?.image"
         :category="ImageCategory.Airplane"
-        :is-high-priority="true"
+        :high-priority="true"
         sizes="xs:100vw sm:100vw md:100vw lg:100vw xl:100vw"
-        :alt-res-name="getI18nResName2('flightDetailsPage', 'airplaneMainImageAlt')"
+        :alt="{ resName: getI18nResName2('flightDetailsPage', 'airplaneMainImageAlt') }"
       />
       <section class="flight-details-class-features">
         <h2 v-if="flightOffer?.departFlight" class="flight-details-class-features-caption mb-xs-1">
@@ -133,7 +135,7 @@ onMounted(() => {
         </h2>
         <div v-else class="data-loading-stub text-data-loading mb-xs-1" />
         <ol class="flight-details-class-checkmarks mb-xs-1">
-          <li v-for="flightClass in AvailableFlightClasses" :key="`${CtrlKey}-${flightClass}Checkmark`" class="flight-details-class-checkmark-item">
+          <li v-for="flightClass in AvailableFlightClasses" :key="`${toShortForm(CtrlKey)}-${flightClass}Checkmark`" class="flight-details-class-checkmark-item">
             <div :class="`flight-details-class-checkmark brdr-1 ${ flightOffer?.class === flightClass ? 'checked' : ''}`" />
             <div class="flight-details-class-name ml-xs-2">
               {{ $t(getI18nResName3('searchFlights', 'class', flightClass)) }}
@@ -144,13 +146,13 @@ onMounted(() => {
       <section class="flight-details-class-images mt-xs-4">
         <StaticImage
           v-for="(image, idx) in offerDataAvailable ? airplaneImages : range(0, NumAirplaneFeatureImages).map(_ => undefined)"
-          :key="`${CtrlKey}-AirplaneImage-${idx}`"
-          :ctrl-key="`${CtrlKey}-AirplaneImage-${idx}`"
+          :key="`${toShortForm(CtrlKey)}-AirplaneImage-${idx}`"
+          :ctrl-key="[...CtrlKey, 'Airplane', 'StaticImg', idx]"
           class="flight-details-class-image brdr-3"
-          :entity-src="image"
+          :src="image"
           :category="ImageCategory.AirplaneFeature"
           sizes="xs:50vw sm:40vw md:30vw lg:20vw xl:10vw"
-          :alt-res-name="getI18nResName2('flightDetailsPage', 'airplaneFeatureImageAlt')"
+          :alt="{ resName: getI18nResName2('flightDetailsPage', 'airplaneFeatureImageAlt') }"
         />
       </section>
       <section class="flight-details-company-policies brdr-2 p-xs-3">
@@ -159,7 +161,7 @@ onMounted(() => {
         </h2>
         <div v-else class="data-loading-stub text-data-loading" />
         <div class="flight-details-policies-details mt-xs-2">
-          <div v-for="(item, idx) in ['cleaning', 'screening']" :key="`${CtrlKey}-CompanyPolicy-${idx}`" class="flight-details-policy-item mt-xs-1">
+          <div v-for="(item, idx) in ['cleaning', 'screening']" :key="`${toShortForm(CtrlKey)}-CompanyPolicy-${idx}`" class="flight-details-policy-item mt-xs-1">
             <div class="flight-details-policy-item-icon" />
             <div v-if="flightOffer?.departFlight" class="flight-details-policy-item-text">
               {{ $t(getI18nResName3('flightDetailsPage', 'companyPolicies', item as any)) }}
@@ -169,7 +171,7 @@ onMounted(() => {
         </div>
       </section>
       <FlightDetailsCard
-        :ctrl-key="`${CtrlKey}-DepartFlightCard`"
+        :ctrl-key="[...CtrlKey, 'Card', 'DepartFlight']"
         class="flight-details-flight-card"
         :depart-city="flightOffer?.departFlight?.departAirport.city"
         :arrive-city="flightOffer?.departFlight?.arriveAirport.city"
@@ -183,7 +185,7 @@ onMounted(() => {
       />
       <FlightDetailsCard
         v-if="flightOffer && flightOffer.arriveFlight"
-        :ctrl-key="`${CtrlKey}-ArriveFlightCard`"
+        :ctrl-key="[...CtrlKey, 'Card', 'ArriveFlight']"
         class="flight-details-flight-card"
         :depart-city="flightOffer?.arriveFlight.departAirport.city"
         :arrive-city="flightOffer?.arriveFlight.arriveAirport.city"

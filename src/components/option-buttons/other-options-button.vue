@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import type { IOtherOptionsButtonGroupProps } from './../../types';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
@@ -23,7 +24,7 @@ const buttonLabel = computed(() => {
 
 const dropdown = useTemplateRef<InstanceType<typeof Dropdown>>('dropdown');
 
-function onActivate (itemCtrlKey: string) {
+function onActivate (itemCtrlKey: ControlKey) {
   $emit('itemClick', itemCtrlKey);
   dropdown.value?.hide();
 }
@@ -53,7 +54,7 @@ function onDropdownHide () {
   setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 }
 
-const $emit = defineEmits<{(event: 'itemClick', ctrlKey: string): void}>();
+const $emit = defineEmits<{(event: 'itemClick', ctrlKey: ControlKey): void}>();
 
 const htmlId = useId();
 
@@ -61,7 +62,7 @@ const htmlId = useId();
 
 <template>
   <div
-    :id="`other-options-menu-anchor-${ctrlKey}`"
+    :id="`other-options-menu-anchor-${toShortForm(ctrlKey)}`"
     :class="`option-button tabbable ${hasActiveItem ? 'active' : ''} ${enabled ? 'enabled' : 'disabled'}`"
     @click="onClick"
     @keyup.space="onClick"
@@ -73,7 +74,7 @@ const htmlId = useId();
       ref="dropdown"
       v-floating-vue-hydration="{ tabIndex: 0 }"
       :ctrl-key="`${ctrlKey}-DropDownWrapper`"
-      :aria-id="`${ctrlKey}-DropDownWrapper`"
+      :aria-id="`${toShortForm(ctrlKey)}-DropDownWrapper`"
       :distance="6"
       :hide-triggers="(triggers: any) => [...triggers, 'click']"
       :show-triggers="(triggers: any) => [...triggers, 'click']"
@@ -97,10 +98,10 @@ const htmlId = useId();
         </div>
       </div>
       <template #popper>
-        <ol :class="`options-button-dropdown dropdown-list ${hasActiveItem ? 'active' : ''}`" :data-popper-anchor="`other-options-menu-anchor-${ctrlKey}`">
+        <ol :class="`options-button-dropdown dropdown-list ${hasActiveItem ? 'active' : ''}`" :data-popper-anchor="`other-options-menu-anchor-${toShortForm(ctrlKey)}`">
           <li
             v-for="v in variants"
-            :key="v.ctrlKey"
+            :key="toShortForm(v.ctrlKey)"
             :class="`dropdown-list-item px-xs-2 ${v.isActive ? 'active' : ''} ${v.enabled ? 'enabled' : 'disabled'}`"
             @click="() => { if(v.enabled) { onActivate(v.ctrlKey); } }"
           >

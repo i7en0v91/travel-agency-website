@@ -23,7 +23,7 @@ export class UserLogic implements IUserLogic {
 
   public static inject = ['logger', 'imageLogic', 'fileLogic', 'imageProvider', 'tokenLogic', 'mailTemplateLogic', 'emailSender', 'serverI18n', 'dbRepository'] as const;
   constructor (logger: IAppLogger, imageLogic: IImageLogic, fileLogic: IFileLogic, imageProvider: IImageProvider, tokenLogic: ITokenLogic, mailTemplateLogic: IMailTemplateLogic, emailSender: IEmailSender, serverI18n: IServerI18n, dbRepository: PrismaClient) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'UserLogic' });
     this.dbRepository = dbRepository;
     this.tokenLogic = tokenLogic;
     this.emailSender = emailSender;
@@ -37,15 +37,14 @@ export class UserLogic implements IUserLogic {
   getMailTemplate = async(kind: EmailTemplateEnum, params: IEmailParams): Promise<string> => {
     const mailTemplateMarkup = await this.mailTemplateLogic.getTemplateMarkup(kind, params.locale, false);
     if (!mailTemplateMarkup) {
-      const msg = `(EmailSender) mail template markup not found: kind=${kind}, subject=${params.subject}, to=${params.to}, userId=${params.userId}, locale=${params.locale}`;
-      this.logger.warn(msg);
-      throw new AppException(AppExceptionCodeEnum.UNKNOWN, msg, 'error-page');
+      this.logger.warn('mail template markup not found', undefined, { kind, subject: params.subject, to: params.to, userId: params.userId, locale: params.locale });
+      throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'mail template markup not found', 'error-page');
     }
     return mailTemplateMarkup;
   };
 
   deleteUser = async (id: EntityId): Promise<void> => {
-    this.logger.verbose(`(UserLogic) deleting user: userId=${id}`);
+    this.logger.verbose('deleting user', { userId: id });
     await executeInTransaction(async () => {
       await this.dbRepository.userEmail.updateMany({
         where: {
@@ -84,12 +83,12 @@ export class UserLogic implements IUserLogic {
         }
       });
     }, this.dbRepository);
-    this.logger.verbose(`(UserLogic) user deleted: userId=${id}`);
+    this.logger.verbose('user deleted', { userId: id });
   };
 
   updateUserAccount = async (userId: EntityId, firstName: string | undefined, lastName: string | undefined, password: string | undefined, emails: string[] | undefined, theme: Theme | undefined, locale: Locale | undefined): Promise<UpdateUserAccountResult> => {
     const logParams = `userId=${userId}, firstName=${firstName !== undefined ? maskLog(firstName) : '[skip]'}, lastName=${lastName !== undefined ? maskLog(lastName) : '[skip]'}, password=${password !== undefined ? SecretValueMask : '[skip]'}, ${emails !== undefined ? ((emails.length ?? 0).toString() + ' emails') : '[skip]'}, locale=${locale ?? '[none]'}`;
-    this.logger.info(`(UserLogic) updating user account: ${logParams}`);
+    this.logger.info('updating user account', logParams);
     locale ??= DefaultLocale;
 
     const emailingEnabled = AppConfig.email;
@@ -97,35 +96,35 @@ export class UserLogic implements IUserLogic {
 
     const userInfo = await this.getUser(userId, 'minimal');
     if (!userInfo) {
-      this.logger.warn(`(UserLogic) cannot update user account - user was not found: ${logParams}`);
+      this.logger.warn('cannot update user account - user was not found', undefined, logParams);
       throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'user was not found', 'error-page');
     }
 
     if (password !== undefined && !isPasswordSecure(password)) {
-      this.logger.warn(`(UserLogic) cannot update user account - password is insecure: ${logParams}`);
+      this.logger.warn('cannot update user account - password is insecure', undefined, logParams);
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'password is insecure', 'error-stub');
     }
 
     if (userInfo.authProvider === AuthProvider.Email && emails !== undefined && emails.length === 0) {
-      this.logger.info(`(UserLogic) cannot remove last email from Email user with auth provider: ${logParams}`);
+      this.logger.info('cannot remove last email from Email user with auth provider', logParams);
       return 'deleting-last-email';
     }
 
     if ((emails?.length ?? 0) > AppConfig.maxUserEmailsCount) {
-      this.logger.warn(`(UserLogic) cannot update user account - maximum number of allowed emails limit exceeded: ${logParams}`);
+      this.logger.warn('cannot update user account - maximum number of allowed emails limit exceeded', undefined, logParams);
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'maximum emails count limit exceeded', 'error-stub');
     }
 
     const hasDuplicates = emails !== undefined && values(groupBy(emails)).some(v => v.length > 1);
     if (hasDuplicates) {
-      this.logger.info(`(UserLogic) cannot update user account - email duplicates detected: ${logParams}`);
+      this.logger.info('cannot update user account - email duplicates detected', logParams);
       return 'email-already-exists';
     }
 
     const emailIdsToDelete = emails !== undefined ? userInfo.emails.filter(ue => !ue.isDeleted && !emails.includes(ue.email)).map(e => e.id) : undefined;
     const emailsToAdd = emails !== undefined ? emails.filter(e => e.length > 0 && !userInfo.emails.some(ue => !ue.isDeleted && ue.email === e)) : undefined;
     if ((emailsToAdd?.length ?? 0) > 1) {
-      this.logger.warn(`(UserLogic) cannot update user account - too many changes in emails: ${logParams}`);
+      this.logger.warn('cannot update user account - too many changes in emails', undefined, logParams);
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'too many emails', 'error-stub');
     }
     const emailToAdd = ((emailsToAdd?.length ?? 0) > 0) ? emailsToAdd![0] : undefined;
@@ -138,11 +137,11 @@ export class UserLogic implements IUserLogic {
         }
       }) > 0;
       if (emailAlreadyExists) {
-        this.logger.info(`(UserLogic) cannot update user account - adding email already exists: ${logParams}`);
+        this.logger.info('cannot update user account - adding email already exists', logParams);
         return 'email-already-exists';
       }
 
-      this.logger.verbose(`(UserLogic) adding new email to user account: userId=${userId}, email=${maskLog(emailToAdd)}, emailingEnambed=${emailingEnabled}`);
+      this.logger.verbose('adding new email to user account', { userId, email: maskLog(emailToAdd), emailingEnambed: emailingEnabled });
       changedEmailId = ((emailIdsToDelete?.length === 1) && emailToAdd) ? emailIdsToDelete[0] : undefined;
       isAutoVerified = !emailingEnabled;
       const newEmailEntity = await this.dbRepository.userEmail.create({
@@ -177,20 +176,20 @@ export class UserLogic implements IUserLogic {
         try {
           await this.sendConfirmationEmail(userId, newEmailEntity.id, emailToAdd, locale, TokenKind.EmailVerify, theme ?? DefaultEmailTheme);
         } catch (err: any) {
-          this.logger.warn(`(UserLogic) failed to send verification for newly addded email: id=${userId}, email=${maskLog(emailToAdd)}`, err);
+          this.logger.warn('failed to send verification for newly addded email', err, { id: userId, email: maskLog(emailToAdd) });
           await this.dbRepository.userEmail.delete({ where: { id: newEmailEntity.id } });
           throw err;
         }
       }
     }
 
-    this.logger.verbose(`(UserLogic) updating user account data: ${logParams}`);
+    this.logger.verbose('updating user account data', logParams);
     await executeInTransaction(async () => {
       if ((emailIdsToDelete?.length ?? 0) > 0) {
         const deleteEmailWithEditChain = async (emailId: EntityId): Promise<void> => {
           let deletingId : EntityId | undefined = emailId;
           while (deletingId) {
-            this.logger.debug(`(UserLogic) updating user account data - deleting email in chain: userId=${userId}, emailId=${deletingId}, originalEmailId=${emailId}`);
+            this.logger.debug('updating user account data - deleting email in chain', { userId, emailId: deletingId, originalEmailId: emailId });
             deletingId = (await this.dbRepository.userEmail.update({
               where: {
                 id: deletingId
@@ -208,12 +207,12 @@ export class UserLogic implements IUserLogic {
 
         if (changedEmailId) {
           if (isAutoVerified) {
-            this.logger.debug(`(UserLogic) updating user account data - deleting emails in autoverified email edit chain: userId=${userId}, emailIds=[${emailIdsToDelete?.join(', ')}]`);
+            this.logger.debug('updating user account data - deleting emails in autoverified email edit chain', userId);
             for (let i = 0; i < emailIdsToDelete!.length; i++) {
               await deleteEmailWithEditChain(emailIdsToDelete![i]);
             }
           } else {
-            this.logger.debug(`(UserLogic) updating user account data - marking changed unverified email deleted: userId=${userId}, emailId=${changedEmailId}`);
+            this.logger.debug('updating user account data - marking changed unverified email deleted', { userId, emailId: changedEmailId });
             await this.dbRepository.userEmail.updateMany({
               where: {
                 id: changedEmailId,
@@ -227,7 +226,7 @@ export class UserLogic implements IUserLogic {
             });
           }
         } else {
-          this.logger.debug(`(UserLogic) updating user account data - delete emails: userId=${userId}, emailIds=[${emailIdsToDelete?.join(', ')}]`);
+          this.logger.debug('updating user account data - delete emails', { userId, emailIds: emailIdsToDelete });
           for (let i = 0; i < emailIdsToDelete!.length; i++) {
             await deleteEmailWithEditChain(emailIdsToDelete![i]);
           }
@@ -235,12 +234,12 @@ export class UserLogic implements IUserLogic {
       }
 
       if (password !== undefined) {
-        this.logger.debug(`(UserLogic) updating user account data - set password, userId=${userId}`);
+        this.logger.debug('updating user account data - set password', userId);
         await this.setUserPassword(userId, password);
       }
 
       if (firstName !== undefined || lastName !== undefined) {
-        this.logger.debug(`(UserLogic) updating user account data - first/last name, userId=${userId}`);
+        this.logger.debug('updating user account data - first/last name', userId);
         await this.dbRepository.user.update({
           where: {
             id: userId,
@@ -255,12 +254,12 @@ export class UserLogic implements IUserLogic {
       }
     }, this.dbRepository);
 
-    this.logger.info(`(UserLogic) user account updated: ${logParams}`);
+    this.logger.info('user account updated', logParams);
     return isAutoVerified ? 'email-autoverified' : 'success';
   };
 
   uploadUserImage = async (userId: EntityId, category: ImageCategory, bytes: Buffer, mimeType: string, fileName: string | undefined, event: H3Event): Promise<{ id: EntityId, slug: string, timestamp: Timestamp }> => {
-    this.logger.info(`(UserLogic) uploading user image: userId=${userId}, category=${category}, length=${bytes.length}, mimeType=${mimeType}, fileName=${fileName}`);
+    this.logger.info('uploading user image', { userId, category, length: bytes.length, mimeType, fileName });
 
     const userFilterQuery = {
       isDeleted: false,
@@ -287,7 +286,7 @@ export class UserLogic implements IUserLogic {
       }
     });
     if (!userImagesInfo) {
-      this.logger.warn(`(UserLogic) cannot upload image - user was not found: id=${userId}`);
+      this.logger.warn('cannot upload image - user was not found', undefined, { id: userId });
       throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'user was not found', 'error-page');
     }
 
@@ -303,7 +302,7 @@ export class UserLogic implements IUserLogic {
         targetCategoryImageInfo = userImagesInfo.cover ? mapImageInfo(userImagesInfo.cover) : undefined;
         break;
       default:
-        this.logger.warn(`(UserLogic) unexpected uploading image category: userId=${userId}, category=${category}`);
+        this.logger.warn('unexpected uploading image category', undefined, { userId, category });
         throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'unexpected category', 'error-page');
     }
 
@@ -344,7 +343,7 @@ export class UserLogic implements IUserLogic {
     let imageId: EntityId | undefined;
     let timestamp: Timestamp = 0;
     if (imageFileId) {
-      this.logger.verbose(`(UserLogic) updating existing image: imageId=${targetCategoryImageInfo!.imageId}, fileId=${imageFileId}, slug=${slug}, userId=${userId}, length=${bytes.length}, fileName=${fileName}`);
+      this.logger.verbose('updating existing image', { imageId: targetCategoryImageInfo!.imageId, fileId: imageFileId, slug, userId, length: bytes.length, fileName });
       imageId = targetCategoryImageInfo!.imageId;
       const queryResult = await this.imageLogic.updateImage(targetCategoryImageInfo!.imageId, {
         bytes,
@@ -363,7 +362,7 @@ export class UserLogic implements IUserLogic {
         await this.imageProvider.clearImageCache(slug, category);
       }
     } else {
-      this.logger.verbose(`(UserLogic) creating new image file: slug=${slug}, userId=${userId}, category=${category}, length=${bytes.length}, fileName=${fileName}`);
+      this.logger.verbose('creating new image file', { slug, userId, category, length: bytes.length, fileName });
       await executeInTransaction(async () => {
         const queryResult = await this.imageLogic.createImage({
           bytes,
@@ -401,7 +400,7 @@ export class UserLogic implements IUserLogic {
       }, this.dbRepository);
     }
 
-    this.logger.info(`(UserLogic) user image uploaded: imageId=${imageId}, slug=${slug}, userId=${userId}, length=${bytes.length}, fileName=${fileName}`);
+    this.logger.info('user image uploaded', { imageId, slug, userId, length: bytes.length, fileName });
     return {
       id: imageId!,
       slug: slug!,
@@ -410,10 +409,10 @@ export class UserLogic implements IUserLogic {
   };
 
   setUserPassword = async (userId: EntityId, password: string): Promise<void> => {
-    this.logger.info(`(UserLogic) setting user password: id=${userId}`);
+    this.logger.info('setting user password', { id: userId });
 
     if (!isPasswordSecure(password)) {
-      this.logger.warn('(UserLogic) cannot set password, its insecure');
+      this.logger.warn('cannot set password, its insecure');
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'password is insecure', 'error-stub');
     }
 
@@ -427,31 +426,31 @@ export class UserLogic implements IUserLogic {
       }
     });
     if (updateResult.count === 0) {
-      this.logger.warn(`(UserLogic) seems like users doesnt exist in DB or is deleted: id=${userId}`);
+      this.logger.warn('seems like users doesnt exist in DB or is deleted', undefined, { id: userId });
       throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'user not found', 'error-page');
     }
 
-    this.logger.info(`(UserLogic) user password set: id=${userId}`);
+    this.logger.info('user password set', { id: userId });
   };
 
   verifyUserPassword = async (email: string, password: string): Promise<IUserMinimalInfo | undefined> => {
     email = email.trim();
-    this.logger.verbose(`(UserLogic) verifying user password: email=${maskLog(email)}`);
+    this.logger.verbose('verifying user password', { email: maskLog(email) });
 
     const userEntity = await this.findUserByEmail(email, true, 'profile');
     if (!userEntity) {
-      this.logger.verbose(`(UserLogic) password was not verified as user with specified email was not found or email hasn't been verified yet, email=${maskLog(email)}`);
+      this.logger.verbose('password was not verified as user with specified email was not found or email hasn', { email: maskLog(email) });
       return undefined;
     }
 
     if (!userEntity.passwordHash || !userEntity.passwordSalt) {
       // password was not set - this may happen in case third-paty auth provider was used for creating user's profile
-      this.logger.verbose(`(UserLogic) password was not verified as password hasn't been setup for the user profile, email=${maskLog(email)}`);
+      this.logger.verbose('password was not verified as password hasn', { email: maskLog(email) });
       return undefined;
     }
 
     if (!verifyPassword(password, userEntity.passwordSalt, userEntity.passwordHash)) {
-      this.logger.verbose(`(UserLogic) password verification failed, email=${maskLog(email)}`);
+      this.logger.verbose('password verification failed', { email: maskLog(email) });
       return undefined;
     }
 
@@ -460,7 +459,7 @@ export class UserLogic implements IUserLogic {
 
   registerUserByEmail = async (email: string, password: string, verification: RegisterVerificationFlow, firstName: string | undefined, lastName: string | undefined, theme: Theme | undefined, locale: Locale | undefined): Promise<RegisterUserByEmailResponse> => {
     email = email.trim();
-    this.logger.info(`(UserLogic) registering user by email: email=${maskLog(email)}, verification=${verification}, firstName=${maskLog(firstName)}, lastName=${maskLog(lastName)}, theme=${theme}, locale=${locale}`);
+    this.logger.info('registering user by email', { email: maskLog(email), verification, firstName: maskLog(firstName), lastName: maskLog(lastName), theme, locale });
     locale ??= DefaultLocale;
 
     const isUserRegistrationLinkExpired = (userInfo: IUserMinimalInfo) => {
@@ -483,16 +482,16 @@ export class UserLogic implements IUserLogic {
     const existingUser = await this.findUserByEmail(email, false, 'minimal');
     if (existingUser) {
       if (isUserRegistrationLinkExpired(existingUser)) {
-        this.logger.info(`(UserLogic) previous user registration expired, removing old user: id=${existingUser.id}, createdUtc=${existingUser.createdUtc}, email=${maskLog(email)}`);
+        this.logger.info('previous user registration expired, removing old user', { id: existingUser.id, createdUtc: existingUser.createdUtc, email: maskLog(email) });
         await this.dbRepository.user.delete({ where: { id: existingUser.id } });
       } else {
-        this.logger.warn(`(UserLogic) cannot register user by email as it is already exists, email=${maskLog(email)}`);
+        this.logger.warn('cannot register user by email as it is already exists', undefined, { email: maskLog(email) });
         return 'already-exists';
       }
     }
 
     if (!isPasswordSecure(password)) {
-      this.logger.warn('(UserLogic) cannot register user by email as provided password is not secure');
+      this.logger.warn('cannot register user by email as provided password is not secure');
       return 'insecure-password';
     }
 
@@ -528,18 +527,18 @@ export class UserLogic implements IUserLogic {
         const userEmailId = userEntity.emails[0].id;
         await this.sendConfirmationEmail(userEntity.id, userEmailId, email, locale, TokenKind.RegisterAccount, theme ?? DefaultEmailTheme);
       } catch (err: any) {
-        this.logger.warn(`(UserLogic) failed to send registration verification email to user: id=${userEntity.id}, email=${maskLog(email)}`, err);
+        this.logger.warn('failed to send registration verification email to user', err, { id: userEntity.id, email: maskLog(email) });
         await this.dbRepository.user.delete({ where: { id: userEntity.id } });
         throw err;
       }
     }
 
-    this.logger.info(`(UserLogic) user registered by email successfully: id=${userEntity.id}, email=${maskLog(email)}`);
+    this.logger.info('user registered by email successfully', { id: userEntity.id, email: maskLog(email) });
     return userEntity.id;
   };
 
   sendConfirmationEmail = async (userId: EntityId, userEmailId: EntityId, email: string, locale: Locale, kind: TokenKind.RegisterAccount | TokenKind.EmailVerify, theme?: Theme): Promise<void> => {
-    this.logger.verbose(`(UserLogic) sending email to user: userId=${userId}, email=${maskLog(email)}, emailId=${userEmailId}, theme=${theme}, locale=${locale}, kind=${kind}`);
+    this.logger.verbose('sending email to user', { userId, email: maskLog(email), emailId: userEmailId, theme, locale, kind });
     const tokenData = await this.tokenLogic.issueToken(kind, userId, false);
     
     const emailParams : IEmailParams = {
@@ -564,19 +563,19 @@ export class UserLogic implements IUserLogic {
         }
       }
     });
-    this.logger.verbose(`(UserLogic) email sent to user: userId=${userId}, email=${maskLog(email)}, emailId=${userEmailId}, theme=${theme}, locale=${locale}, kind=${kind}`);
+    this.logger.verbose('email sent to user', { userId, email: maskLog(email), emailId: userEmailId, theme, locale, kind });
   };
 
   resolveUserFiles = async (userProfileUnresolved: IUserProfileFileInfoUnresolved): Promise<IUserProfileInfo> => {
     const userId = userProfileUnresolved.id;
-    this.logger.debug(`(UserLogic) resoving user files: userId=${userId}`);
+    this.logger.debug('resoving user files', userId);
     let avatarFileInfo: IImageInfo | undefined;
     let coverFileInfo: IImageInfo | undefined;
     if(userProfileUnresolved.avatar) {
-      this.logger.debug(`(UserLogic) get user - resoving avatar file: id=${userId}, fileId=${userProfileUnresolved.avatar.fileId}`);
+      this.logger.debug('get user - resoving avatar file', { id: userId, fileId: userProfileUnresolved.avatar.fileId });
       const fileInfos = await this.fileLogic.findFiles([userProfileUnresolved.avatar.fileId]);
       if (!fileInfos?.length) {
-        this.logger.warn(`(UserLogic) cannot found avatar file, id=${userProfileUnresolved.avatar.id}, slug=${userProfileUnresolved.avatar.slug}, fileId=${userProfileUnresolved.avatar.fileId}`);
+        this.logger.warn('cannot found avatar file', undefined, { id: userProfileUnresolved.avatar.id, slug: userProfileUnresolved.avatar.slug, fileId: userProfileUnresolved.avatar.fileId });
       }
       avatarFileInfo = {
         ...userProfileUnresolved.avatar,
@@ -585,10 +584,10 @@ export class UserLogic implements IUserLogic {
     }
 
     if(userProfileUnresolved.cover) {
-      this.logger.debug(`(UserLogic) get user - resoving cover file: id=${userId}, fileId=${userProfileUnresolved.cover.fileId}`);
+      this.logger.debug('get user - resoving cover file', { id: userId, fileId: userProfileUnresolved.cover.fileId });
       const fileInfos = await this.fileLogic.findFiles([userProfileUnresolved.cover.fileId]);
       if (!fileInfos?.length) {
-        this.logger.warn(`(UserLogic) cannot found cover file, id=${userProfileUnresolved.cover.id}, slug=${userProfileUnresolved.cover.slug}, fileId=${userProfileUnresolved.cover.fileId}`);
+        this.logger.warn('cannot found cover file', undefined, { id: userProfileUnresolved.cover.id, slug: userProfileUnresolved.cover.slug, fileId: userProfileUnresolved.cover.fileId });
       }
       coverFileInfo = {
         ...userProfileUnresolved.cover,
@@ -596,7 +595,7 @@ export class UserLogic implements IUserLogic {
       };
     }
 
-    this.logger.debug(`(UserLogic) user files resolving completed: userId=${userId}`);
+    this.logger.debug('user files resolving completed', userId);
     return {
       ...userProfileUnresolved,
       avatar: avatarFileInfo,
@@ -605,7 +604,7 @@ export class UserLogic implements IUserLogic {
   };
 
   getUser = async <TDataSet extends keyof UserResponseDataSet>(userId: EntityId, dataSet: TDataSet): Promise<UserResponseDataSet[TDataSet] | undefined> => {
-    this.logger.verbose(`(UserLogic) get user: id=${userId}, dataSet=${dataSet}`);
+    this.logger.verbose('get user', { id: userId, dataSet });
 
     const filterQuery = {
       isDeleted: false,
@@ -619,14 +618,14 @@ export class UserLogic implements IUserLogic {
       };
       const userEntity = await this.dbRepository.user.findFirst(userProfileQuery);
       if (!userEntity) {
-        this.logger.warn(`(UserLogic) get user - not found: id=${userId}, dataSet=${dataSet}`);
+        this.logger.warn('get user - not found', undefined, { id: userId, dataSet });
         return undefined;
       }
 
       const userProfileUnresolved = MapUserEntityProfile(userEntity);
       const result = await this.resolveUserFiles(userProfileUnresolved);
       
-      this.logger.verbose(`(UserLogic) get user - found: id=${userId}}`);
+      this.logger.verbose('get user - found', { id: userId });
       return result;
     } else {
       const userMinimalQuery = {
@@ -635,18 +634,18 @@ export class UserLogic implements IUserLogic {
       };
       const userEntity = await this.dbRepository.user.findFirst(userMinimalQuery);
       if (!userEntity) {
-        this.logger.warn(`(UserLogic) get user - not found: id=${userId}, dataSet=${dataSet}`);
+        this.logger.warn('get user minimal - not found', undefined, { id: userId, dataSet });
         return undefined;
       }
 
-      this.logger.verbose(`(UserLogic) get user - found: id=${userId}}`);
+      this.logger.verbose('get user minimal - found', { id: userId });
       return MapUserEntityMinimal(userEntity);
     }
   };
 
   findUser = async <TDataSet extends keyof UserResponseDataSet>(
     authProvider: AuthProvider, providerIdentity: string, dataSet: TDataSet): Promise<UserResponseDataSet[TDataSet] | undefined> => {
-    this.logger.verbose(`(UserLogic) finding user: authProvider=${authProvider}, providerIdentity=${providerIdentity}, dataSet=${dataSet}`);
+    this.logger.verbose('finding user', { authProvider, providerIdentity, dataSet });
     if (dataSet === 'profile') {
       const userProfileQuery = {
         where: {
@@ -658,14 +657,14 @@ export class UserLogic implements IUserLogic {
       };
       const userEntity = await this.dbRepository.user.findFirst(userProfileQuery);
       if (!userEntity) {
-        this.logger.verbose(`(UserLogic) user not found: authProvider=${authProvider}, providerIdentity=${providerIdentity}`);
+        this.logger.verbose('user not found', { authProvider, providerIdentity });
         return undefined;
       }
 
       const userProfileUnresolved = MapUserEntityProfile(userEntity);
       const result = await this.resolveUserFiles(userProfileUnresolved);
       
-      this.logger.verbose(`(UserLogic) user found: id=${userEntity.id}, authProvider=${authProvider}, providerIdentity=${providerIdentity}`);
+      this.logger.verbose('user found', { id: userEntity.id, authProvider, providerIdentity });
       return result;
     } else {
       const userMinimalQuery = {
@@ -678,18 +677,18 @@ export class UserLogic implements IUserLogic {
       };
       const userEntity = await this.dbRepository.user.findFirst(userMinimalQuery);
       if (!userEntity) {
-        this.logger.verbose(`(UserLogic) user not found: authProvider=${authProvider}, providerIdentity=${providerIdentity}`);
+        this.logger.verbose('user not found (minimal', { authProvider, providerIdentity });
         return undefined;
       }
 
-      this.logger.verbose(`(UserLogic) user found: id=${userEntity.id}, authProvider=${authProvider}, providerIdentity=${providerIdentity}`);
+      this.logger.verbose('user found (minimal', { id: userEntity.id, authProvider, providerIdentity });
       return MapUserEntityMinimal(userEntity);
     }
   };
 
   findUserByEmail = async <TDataSet extends keyof UserResponseDataSet>(
     email: string, mustBeVerified: boolean, dataSet: TDataSet): Promise<UserResponseDataSet[TDataSet] | undefined> => {
-    this.logger.verbose(`(UserLogic) finding user by email: email=${maskLog(email)}, mustBeVerified=${mustBeVerified}, dataSet=${dataSet}`);
+    this.logger.verbose('finding user by email', { email: maskLog(email), mustBeVerified, dataSet });
 
     const filterQuery = {
       isDeleted: false,
@@ -709,13 +708,13 @@ export class UserLogic implements IUserLogic {
       };
       const userEntity = await this.dbRepository.user.findFirst(userProfileQuery);
       if (!userEntity) {
-        this.logger.verbose(`(UserLogic) user not found: email=${maskLog(email)}, mustBeVerified=${mustBeVerified}, dataSet=${dataSet}`);
+        this.logger.verbose('user not found', { email: maskLog(email), mustBeVerified, dataSet });
         return undefined;
       }
 
       const userProfileUnresolved = MapUserEntityProfile(userEntity);
       const result = await this.resolveUserFiles(userProfileUnresolved);
-      this.logger.verbose(`(UserLogic) user found: id=${userEntity.id}, email=${maskLog(email)}, mustBeVerified=${mustBeVerified}`);
+      this.logger.verbose('user found', { id: userEntity.id, email: maskLog(email), mustBeVerified });
       return result;
     } else {
       const userMinimalQuery = {
@@ -724,17 +723,17 @@ export class UserLogic implements IUserLogic {
       };
       const userEntity = await this.dbRepository.user.findFirst(userMinimalQuery);
       if (!userEntity) {
-        this.logger.verbose(`(UserLogic) user not found: email=${maskLog(email)}, mustBeVerified=${mustBeVerified}, dataSet=${dataSet}`);
+        this.logger.verbose('user not found (minimal', { email: maskLog(email), mustBeVerified, dataSet });
         return undefined;
       }
 
-      this.logger.verbose(`(UserLogic) user found: id=${userEntity.id}, email=${maskLog(email)}, mustBeVerified=${mustBeVerified}`);
+      this.logger.verbose('user found (minimal', { id: userEntity.id, email: maskLog(email), mustBeVerified });
       return MapUserEntityMinimal(userEntity);
     }
   };
 
   ensureOAuthUser = async (authProvider: AuthProvider, providerIdentity: string, firstName: string | undefined, lastName: string | undefined, email: string | undefined, emailVerified: boolean | undefined): Promise<IUserProfileInfo> => {
-    this.logger.info(`(UserLogic) ensuring oauth user: authProvider=${authProvider}, providerIdentity=${providerIdentity}, email=${maskLog(email)}, emailVerified=${emailVerified}, firstName=${maskLog(firstName)}, lastName=${maskLog(lastName)}`);
+    this.logger.info('ensuring oauth user', { authProvider, providerIdentity, email: maskLog(email), emailVerified, firstName: maskLog(firstName), lastName: maskLog(lastName) });
     if (authProvider === AuthProvider.Email) {
       throw new Error(`Provider [${AuthProvider.Email}] is not considered as OAuth`);
     }
@@ -753,11 +752,11 @@ export class UserLogic implements IUserLogic {
     if (userEntity) {
       const userProfileUnresolved = MapUserEntityProfile(userEntity);
       const result = await this.resolveUserFiles(userProfileUnresolved);
-      this.logger.verbose(`(UserLogic) oauth user found: id=${userEntity.id}, authProvider=${authProvider}, providerIdentity=${providerIdentity}`);
+      this.logger.verbose('oauth user found', { id: userEntity.id, authProvider, providerIdentity });
       return result;
     }
 
-    this.logger.info(`(UserLogic) oauth user not found, creating new: authProvider=${authProvider}, providerIdentity=${providerIdentity}, email=${maskLog(email)}, emailVerified=${emailVerified}, firstName=${maskLog(firstName)}, lastName=${maskLog(lastName)}`);
+    this.logger.info('oauth user not found, creating new', { authProvider, providerIdentity, email: maskLog(email), emailVerified, firstName: maskLog(firstName), lastName: maskLog(lastName) });
     const emails = email
       ? {
           create: [{
@@ -783,19 +782,19 @@ export class UserLogic implements IUserLogic {
     });
 
     const result: IUserProfileInfo = MapUserEntityMinimal(newUserEntity);
-    this.logger.info(`(UserLogic) new oauth user created: id=${result.id}, authProvider=${authProvider}, providerIdentity=${providerIdentity}`);
+    this.logger.info('new oauth user created', { id: result.id, authProvider, providerIdentity });
 
     return result;
   };
 
   recoverUserPassword = async (email: string, theme: Theme | undefined, locale: Locale | undefined): Promise<PasswordRecoveryResult> => {
-    this.logger.info(`(UserLogic) recovering user password: email=${maskLog(email)}, theme=${theme}, locale=${locale}`);
+    this.logger.info('recovering user password', { email: maskLog(email), theme, locale });
     locale ??= DefaultLocale;
 
     try {
       const userEntity = await this.findUserByEmail(email, false, 'minimal');
       if (!userEntity) {
-        this.logger.info(`(UserLogic) cannot find user by specified email to recover password, email=${maskLog(email)}`);
+        this.logger.info('cannot find user by specified email to recover password', { email: maskLog(email) });
         return 'user-not-found';
       }
 
@@ -815,16 +814,16 @@ export class UserLogic implements IUserLogic {
         }
       });
       if (userEmails.length === 0) {
-        this.logger.warn(`(UserLogic) cannot find user by specified email to recover password, but seems like internal exception, email=${maskLog(email)}`);
+        this.logger.warn('cannot find user by specified email to recover password, but seems like internal exception', undefined, { email: maskLog(email) });
         return 'user-not-found';
       }
       const verificationToken = userEmails[0].verificationToken;
       if (!userEmails[0].isVerified && (!verificationToken || isTokenActive(verificationToken.isDeleted, verificationToken.attemptsMade, verificationToken.createdUtc) === 'active')) {
-        this.logger.info(`(UserLogic) user email verification pending, no need to recover password, email=${maskLog(email)}`);
+        this.logger.info('user email verification pending, no need to recover password', { email: maskLog(email) });
         return 'email-not-verified';
       }
 
-      this.logger.verbose(`(UserLogic) sending password recovery email to user: id=${userEntity.id}, email=${maskLog(email)}`);
+      this.logger.verbose('sending password recovery email to user', { id: userEntity.id, email: maskLog(email) });
       const tokenData = await this.tokenLogic.issueToken(TokenKind.PasswordRecovery, userEntity.id, true);
       const emailParams : IEmailParams = {
         locale,
@@ -838,10 +837,10 @@ export class UserLogic implements IUserLogic {
       const mailTemplateMarkup = await this.getMailTemplate(EmailTemplateEnum.PasswordRecovery, emailParams);
       await this.emailSender.sendEmail(EmailTemplateEnum.PasswordRecovery, mailTemplateMarkup, emailParams);
 
-      this.logger.info(`(UserLogic) user password recovery started successfully (email sent): email=${maskLog(email)}`);
+      this.logger.info('user password recovery started successfully (email sent', { email: maskLog(email) });
       return 'success';
     } catch (err: any) {
-      this.logger.warn(`(UserLogic) failed to send password recovery email to user: email=${maskLog(email)}`, err);
+      this.logger.warn('failed to send password recovery email to user', err, { email: maskLog(email) });
       throw err;
     }
   };

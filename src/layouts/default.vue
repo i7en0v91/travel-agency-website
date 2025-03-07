@@ -14,6 +14,7 @@ import HeadingText from './../components/index/main-heading-text.vue';
 import AppFooter from './../components/footer/app-footer.vue';
 import CookieBanner from './../components/cookie-banner.vue';
 import SearchPageHead from './../components/common-page-components/search-page-head.vue';
+import type { ControlKey } from './../helpers/components';
 
 const route = useRoute();
 const { t, locale } = useI18n();
@@ -47,12 +48,15 @@ useServerSeoMeta({
   ogDescription: t(getI18nResName2('site', 'description'))
 });
 
+const CtrlKey: ControlKey = ['Layout'];
+
 await usePageSetup();
 
 const navBarMode : ComputedRef<NavBarMode> = computed(
   () => (lookupPageByUrl(route.path) === AppPage.Index && !error.value) ? 'landing' : 'inApp');
 
 const error = useError();
+const useHardLinks = !!error.value && !!useNuxtApp().isHydrating;
 const isAuthFormsPage = computed(() => route.path.includes(`/${getPagePath(AppPage.Login)}`) || route.path.includes(`/${getPagePath(AppPage.Signup)}`) || route.path.includes(`/${getPagePath(AppPage.ForgotPassword)}`) || route.path.includes(`/${getPagePath(AppPage.EmailVerifyComplete)}`));
 const showDefaultComponents = computed(() => error.value || !isAuthFormsPage.value);
 const hideInElectron = isElectronBuild() ? {
@@ -68,24 +72,24 @@ const hideInElectron = isElectronBuild() ? {
     <AppContainer>
       <SearchPageHead
         v-if="navBarMode === 'landing' && showDefaultComponents"
-        ctrl-key="SearchPageHead"
+        :ctrl-key="[...CtrlKey, 'SearchPageHead']"
         class="search-page-head-landing"
         :image-entity-src="{ slug: MainTitleSlug }"
         :category="ImageCategory.MainTitle"
         :image-alt-res-name="getI18nResName2('searchPageCommon', 'mainImageAlt')"
         overlay-class="search-page-head-landing-overlay"
       >
-        <NavBar v-if="!hideInElectron?.navBar" ctrl-key="NavBar" :mode="navBarMode" />
-        <HeadingText ctrl-key="IndexPageMainHeading" />
+        <NavBar v-if="!hideInElectron?.navBar" :ctrl-key="[...CtrlKey, 'NavBar']" :mode="navBarMode" :hard-links="useHardLinks" />
+        <HeadingText :ctrl-key="[...CtrlKey, 'SearchPageHead', 'Title']" />
       </SearchPageHead>
-      <NavBar v-else-if="showDefaultComponents && !hideInElectron?.navBar" ctrl-key="NavBar" :mode="navBarMode" />
+      <NavBar v-else-if="showDefaultComponents && !hideInElectron?.navBar" :ctrl-key="[...CtrlKey, 'NavBar']" :mode="navBarMode" :hard-links="useHardLinks" />
       <div class="track-content">
         <slot />
       </div>
-      <AppFooter v-if="showDefaultComponents && !hideInElectron?.footer" ctrl-key="footer" />
+      <AppFooter v-if="showDefaultComponents && !hideInElectron?.footer" :ctrl-key="[...CtrlKey, 'Footer']" :hard-links="useHardLinks" />
     </AppContainer>
     <ClientOnly>
-      <CookieBanner v-if="!hideInElectron?.cookies" ctrl-key="CookieBanner" />
+      <CookieBanner v-if="!hideInElectron?.cookies" :ctrl-key="[...CtrlKey, 'CookieBanner']" />
     </ClientOnly>
     <ModalsContainer />
   </div>

@@ -1,4 +1,4 @@
-import type { Locale, Theme, FlightClass } from './types';
+import type { Locale, Theme, FlightClass, TripType } from './types';
 
 export enum LogLevelEnum {
   'debug' = 10,
@@ -9,6 +9,7 @@ export enum LogLevelEnum {
   'never' = 100
 }
 export const LogAlwaysLevel = 'always';
+export const PrimitiveDataValuePropName = 'val';
 
 export enum CmsType {
   acsys = 'acsys'
@@ -42,12 +43,9 @@ export const AvailableLocaleCodes = Object.keys(LocaleEnum).map(x => x.toLowerCa
 
 export const AdminUserEmail = 'admin@golobe.demo';
 
-export const DataKeyImageSrcSizes = 'ImageSrcSizes';
-export const DataKeyEntityCacheItems = 'EntityCacheItems';
 export const DataKeyWorldMapData = 'WorldMapData';
 export const DataKeySearchFlightOffers = 'SearchFlightOffers';
 export const DataKeySearchStayOffers = 'SearchStayOffers';
-export const DataKeyImageDetails = (ctrlKey: string, slug: string) => `ImageDetails-${ctrlKey}-${slug}`;
 
 export const SessionThemeKey = 'theme';
 export const SessionLocaleKey = 'locale';
@@ -168,7 +166,8 @@ export const MaxListPropertyElementsCount = 256;
 
 export const FlightMinPassengers = 1;
 export const FlightMaxPassengers = 8;
-export const DefaultFlightClass = 'economy';
+export const DefaultFlightClass: FlightClass ='economy';
+export const DefaultFlightTripType: TripType = 'oneway';
 export const StaysMinRoomsCount = 1;
 export const StaysMaxRoomsCount = 4;
 export const StaysMinGuestsCount = 1;
@@ -371,7 +370,7 @@ export enum ImageCategory {
 }
 export const ImageAuthRequiredCategories = [ImageCategory.UserCover];
 export const ImagePublicSlugs = [DefaultUserCoverSlug, DefaultUserAvatarSlug];
-export const AvailableImageCategories = Object.values(ImageCategory).map(x => x.valueOf());
+export const AvailableImageCategories = Object.values(ImageCategory).map(x => x.valueOf() as keyof typeof ImageCategory);
 
 export enum AuthProvider {
   Email = 'EMAIL',

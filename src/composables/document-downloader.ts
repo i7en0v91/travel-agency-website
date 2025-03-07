@@ -19,7 +19,7 @@ export interface IDocumentDownloader {
 }
 
 export function useDocumentDownloader (): IDocumentDownloader {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'DocumentDownloader' });
 
   const { d, t } = useI18n();
   const { enabled } = usePreviewState();
@@ -28,7 +28,7 @@ export function useDocumentDownloader (): IDocumentDownloader {
   const modalWaitingIndicator = useModal({
     component: ModalWaitingIndicator,
     attrs: {
-      ctrlKey: `DocumentDownloader-modalWaitingIndicator`,
+      ctrlKey: ['DocumentDownloader', 'Waiter'],
       labelResName: getI18nResName2('bookingCommon', 'generatingDoc')
     }
   });
@@ -66,7 +66,7 @@ export function useDocumentDownloader (): IDocumentDownloader {
     };
     const documentBytes = await getBytes(path, searchQuery, undefined, 'no-store', true, undefined, 'throw');
     if (!documentBytes?.byteLength) {
-      logger.warn(`(document-downloader) failed to download document, bookingId=${bookingId}, locale=${locale}, theme=${theme}`);
+      logger.warn('failed to download document', undefined, { bookingId, locale, theme });
       throw new AppException(AppExceptionCodeEnum.DOCUMENT_GENERATION_FAILED, 'failed to download document', 'error-stub');
     }
     return new Blob(new Array(documentBytes));
@@ -85,21 +85,21 @@ export function useDocumentDownloader (): IDocumentDownloader {
 
   const download = async(bookingId: EntityId, offer: EntityDataAttrsOnly<IFlightOffer | IStayOfferDetails | IStayOffer>, firstName: string | undefined, lastName: string | undefined, locale: Locale, theme: Theme): Promise<void> => {
     if(!import.meta.client) {
-      logger.warn(`(document-downloader) applicable only on client-side, bookingId=${bookingId}, locale=${locale}, theme=${theme}`);
+      logger.warn('applicable only on client-side', undefined, { bookingId, locale, theme });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'operation not available', 'error-page');
     }
 
-    logger.verbose(`(document-downloader) starting download, bookingId=${bookingId}, locale=${locale}, theme=${theme}`);
+    logger.verbose('starting download', { bookingId, locale, theme });
     try {
       await modalWaitingIndicator.open();
       const fileName = getFileName(offer, firstName, lastName);
       const documentBlob = await (isElectronBuild() ? renderOffscreenImage(bookingId, locale) : downloadFromServer(bookingId, theme, locale));
       saveAs(documentBlob as any, fileName );
-      logger.verbose(`(document-downloader) download completed, bookingId=${bookingId}, locale=${locale}, theme=${theme}, size=${documentBlob.size}`);
+      logger.verbose('download completed', { bookingId, locale, theme, size: documentBlob.size });
     } catch (err: any) {
-      logger.warn(`(document-downloader) failed to download document, bookingId=${bookingId}, locale=${locale}, theme=${theme}`, err);
+      logger.warn('failed to download document', err, { bookingId, locale, theme });
       const e = AppException.isAppException(err) ? err : new AppException(AppExceptionCodeEnum.DOCUMENT_GENERATION_FAILED, 'failed to generate document', 'error-stub');
-      defaultErrorHandler(e);
+      defaultErrorHandler(e, {});
     } finally {
       await modalWaitingIndicator.close();
     }

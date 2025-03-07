@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../../helpers/components';
 import { getI18nResName3, type I18nResName } from '@golobe-demo/shared';
 import { SearchOffersFilterTabGroupId } from './../../../../helpers/constants';
 import CollapsableSection from './../../../collapsable-section.vue';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   captionResName: I18nResName,
   showNoResultsStub: boolean
 }
@@ -17,7 +18,7 @@ const isCollapsed = ref(false);
 
 <template>
   <div class="filter-section pb-xs-5 mr-m-3 mt-xs-5">
-    <CollapsableSection v-model:collapsed="isCollapsed" :ctrl-key="`${ctrlKey}-CollapseWrapper`" :collapse-enabled="true" :tabbable-group-id="SearchOffersFilterTabGroupId">
+    <CollapsableSection v-model:collapsed="isCollapsed" :ctrl-key="[...ctrlKey, 'CollapsableSection']" collapseable persistent :tabbable-group-id="SearchOffersFilterTabGroupId">
       <template #head>
         <h3 class="filter-section-caption">
           {{ $t(captionResName) }}

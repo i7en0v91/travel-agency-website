@@ -1,17 +1,17 @@
 import { AppConfig } from '@golobe-demo/shared';
 import Toast, { type PluginOptions, POSITION as ToastPosition } from 'vue-toastification';
-import { getCommonServices } from '../helpers/service-accessors';
+import { getClientServices, getCommonServices } from '../helpers/service-accessors';
 
 let _ToastPluginUsed = false;
 
 export async function usePageSetup(): Promise<void> {
-  const logger = getCommonServices().getLogger();
-  logger.verbose('(page-setup) entered');
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'PageSetup' });
+  logger.verbose('entered');
 
   const nuxtApp = useNuxtApp();
 
   if(!_ToastPluginUsed) {
-    logger.verbose('(page-setup) adding toast plugin');
+    logger.verbose('adding toast plugin');
     const toastOptions : PluginOptions = {
       maxToasts: AppConfig.userNotifications.maxItems,
       timeout: AppConfig.userNotifications.timeoutMs,
@@ -24,13 +24,17 @@ export async function usePageSetup(): Promise<void> {
     };
     nuxtApp.vueApp.use(Toast, toastOptions);
     _ToastPluginUsed = true;
-    logger.verbose('(page-setup) toast plugin added');
+    logger.verbose('toast plugin added');
   }
   
+  if(import.meta.client) {
+    getClientServices().userNotificationStore = useUserNotificationStore();
+  }
   const systemConfigurationStore = useSystemConfigurationStore();
-  await systemConfigurationStore.initialize();
+  await systemConfigurationStore.loadImageCategories();
+  useEntityCacheStore();
 
-  logger.verbose('(page-setup) completed');
+  logger.verbose('completed');
 }
 
 function filterNotificationDuplicates (

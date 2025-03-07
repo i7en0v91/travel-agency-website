@@ -3,6 +3,8 @@ import type CaptchaProtection from './../components/forms/captcha-protection.vue
 import type { ComponentInstance } from 'vue';
 import { getCommonServices } from '../helpers/service-accessors';
 
+const CommonLogProps = { component: 'CaptchaToken' };
+
 export interface ICaptchaTokenComposable {
   requestToken: () => Promise<string>,
   onCaptchaVerified: (token: string) => void
@@ -10,14 +12,14 @@ export interface ICaptchaTokenComposable {
 }
 
 export function useCaptchaToken (captcha: ReturnType<typeof useTemplateRef<ComponentInstance<typeof CaptchaProtection>>>): ICaptchaTokenComposable {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps(CommonLogProps);
 
   let captchaVerificationResolveCallback: ((value: string | PromiseLike<string>) => void) | undefined;
   let captchaVerificationRejectCallback: ((reason?: any) => void) | undefined;
 
   const requestToken = () => {
     if (captchaVerificationResolveCallback || captchaVerificationRejectCallback) {
-      logger.warn('(captcha-token) cannot send update request as there is already one pending');
+      logger.warn('cannot send update request as there is already one pending');
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'pending update request', 'error-stub');
     }
 
@@ -29,7 +31,7 @@ export function useCaptchaToken (captcha: ReturnType<typeof useTemplateRef<Compo
       captchaVerificationResolveCallback = (value: string | PromiseLike<string>) => { resetCallbacks(); resolve(value); };
       captchaVerificationRejectCallback = (reason?: any) => {
         resetCallbacks();
-        logger.warn('(captcha-token) captcha verification failed', undefined, reason);
+        logger.warn('captcha verification failed', undefined, { reason });
         reject(new AppException(AppExceptionCodeEnum.CAPTCHA_VERIFICATION_FAILED, 'captcha verification failed', 'error-stub'));
       };
       captcha.value!.startVerification();
@@ -40,7 +42,7 @@ export function useCaptchaToken (captcha: ReturnType<typeof useTemplateRef<Compo
     if (captchaVerificationRejectCallback) {
       captchaVerificationRejectCallback(reason);
     } else {
-      logger.warn('(captcha-token) cannot find pedning captcha reject callback', undefined, reason);
+      logger.warn('cannot find pedning captcha reject callback', undefined, { reason });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'internal request verification error', 'error-stub');
     }
   };
@@ -49,7 +51,7 @@ export function useCaptchaToken (captcha: ReturnType<typeof useTemplateRef<Compo
     if (captchaVerificationResolveCallback) {
       captchaVerificationResolveCallback(captchaToken ?? '');
     } else {
-      logger.warn('(captcha-token) cannot find pedning captcha verification callback');
+      logger.warn('cannot find pedning captcha verification callback');
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'internal request verification error', 'error-stub');
     }
   };

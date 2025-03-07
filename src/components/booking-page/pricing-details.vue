@@ -1,11 +1,12 @@
 <script setup lang="ts" generic="TOffer extends EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { type Locale, getScoreClassResName, getLocalizeableValue, type I18nResName, getI18nResName2, getI18nResName3, type ReviewSummary, type ImageCategory, type IImageEntitySrc, type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, type ILocalizableValue } from '@golobe-demo/shared';
 import sum from 'lodash-es/sum';
 import StaticImage from './../../components/images/static-image.vue';
 import PriceDecompositionItem from './price-decomposition-item.vue';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   imageEntitySrc?: IImageEntitySrc,
   category: ImageCategory,
   imageAltResName: I18nResName,
@@ -34,15 +35,15 @@ const reviewsCountText = computed(() => heading?.reviewSummary?.numReviews !== u
   <section class="pricing-details brdr-3 p-xs-3 p-s-4">
     <div class="pricing-details-subject">
       <StaticImage
-        :ctrl-key="`${ctrlKey}-StaticImg`"
-        :show-stub="true"
-        :is-high-priority="false"
+        :ctrl-key="[...ctrlKey, 'StaticImg']"
+        stub="default"
         class="pricing-details-photo"
-        img-class="pricing-details-photo-img"
-        :entity-src="imageEntitySrc"
+        :ui="{ img: 'pricing-details-photo-img' }"
+        :src="imageEntitySrc"
         :category="category"
         sizes="xs:40vw sm:30vw md:30vw lg:30vw xl:20vw"
-        :alt-res-name="imageAltResName"
+        :alt="{ resName: imageAltResName }"
+        high-priority
       />
       <div class="pricing-subject-info">
         <h2 v-if="heading?.sub" class="pricing-subject-heading-sub">
@@ -90,10 +91,10 @@ const reviewsCountText = computed(() => heading?.reviewSummary?.numReviews !== u
         {{ $t(getI18nResName3('bookingCommon', 'pricingDecomposition', 'caption')) }}
       </h4>
       <ol class="pricing-details-decomposition-list mt-xs-3">
-        <PriceDecompositionItem v-for="(item, idx) in priceDecompoisition" :key="`${ctrlKey}-${idx}`" :ctrl-key="`${ctrlKey}-${idx}`" :label-res-name="item.labelResName" :amount="item.amount" />
+        <PriceDecompositionItem v-for="(item, idx) in priceDecompoisition" :key="`${toShortForm(ctrlKey)}-${idx}`" :ctrl-key="[...ctrlKey, idx]" :label-res-name="item.labelResName" :amount="item.amount" />
       </ol>
       <hr class="pricing-details-section-separator">
-      <PriceDecompositionItem :ctrl-key="`${ctrlKey}-Total`" :label-res-name="getI18nResName3('bookingCommon', 'pricingDecomposition', 'total')" :amount="priceDecompoisition[0].amount ? sum(priceDecompoisition.map(i => i.amount!)) : undefined" :style="{ display: 'block' }" />
+      <PriceDecompositionItem :ctrl-key="[...ctrlKey, 'Total']" :label-res-name="getI18nResName3('bookingCommon', 'pricingDecomposition', 'total')" :amount="priceDecompoisition[0].amount ? sum(priceDecompoisition.map(i => i.amount!)) : undefined" :style="{ display: 'block' }" />
     </div>
   </section>
 </template>

@@ -13,19 +13,19 @@ export class AirlineCompanyLogic implements IAirlineCompanyLogic {
   public static inject = ['airlineCompanyLogicPrisma', 'acsysDraftsEntitiesResolver', 'dbRepository', 'logger'] as const;
   constructor (prismaImplementation: IAirlineCompanyLogic, acsysDraftsEntitiesResolver: AcsysDraftEntitiesResolver, dbRepository: PrismaClient, logger: IAppLogger) {
     this.dbRepository = dbRepository;
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'AirlineCompanyLogic-Acsys' });
     this.prismaImplementation = prismaImplementation;
     this.acsysDraftsEntitiesResolver = acsysDraftsEntitiesResolver;
   }
 
   async initialize(): Promise<void> {
-    this.logger.debug('(AirlineCompanyLogic-Acsys) initializing');
+    this.logger.debug('initializing');
     await this.prismaImplementation.initialize();
-    this.logger.debug('(AirlineCompanyLogic-Acsys) initialized');
+    this.logger.debug('initialized');
   };
 
   async deleteCompany(id: EntityId): Promise<void>  {
-    this.logger.debug(`(AirlineCompanyLogic-Acsys) deleting airline company: id=${id}`);
+    this.logger.debug('deleting airline company', id);
     const deleted = (await this.dbRepository.acsysDraftsAirlineCompany.updateMany({
       where: {
         id,
@@ -38,15 +38,15 @@ export class AirlineCompanyLogic implements IAirlineCompanyLogic {
     })).count > 0;
 
     if(!deleted) {
-      this.logger.debug(`(AirlineCompanyLogic-Acsys) no airline companies have been deleted in drafts table, proceeding to the main table: id=${id}`);
+      this.logger.debug('no airline companies have been deleted in drafts table, proceeding to the main table', id);
       await this.prismaImplementation.deleteCompany(id);
     }
     
-    this.logger.debug(`(AirlineCompanyLogic-Acsys) airline company deleted: id=${id}`);
+    this.logger.debug('airline company deleted', id);
   };
 
   async getAllAirlineCompanies (allowCachedValue: boolean, previewMode: PreviewMode): Promise<IAirlineCompany[]> {
-    this.logger.debug(`(AirlineCompanyLogic-Acsys) get all airline companies, allowCachedValue=${allowCachedValue}, previewMode=${previewMode}`);
+    this.logger.debug('get all airline companies', { allowCachedValue, previewMode });
     let result: IAirlineCompany[];
     if(previewMode) {
       const resolvedAirlineCompanies = (await this.acsysDraftsEntitiesResolver.resolveAirlineCompanies({}));
@@ -54,12 +54,12 @@ export class AirlineCompanyLogic implements IAirlineCompanyLogic {
     } else {
       result = await this.prismaImplementation.getAllAirlineCompanies(allowCachedValue, previewMode);
     }
-    this.logger.debug(`(AirlineCompanyLogic-Acsys) get all airline companies, count=${result.length}, allowCachedValue=${allowCachedValue}, previewMode=${previewMode}`);
+    this.logger.debug('get all airline companies', { count: result.length, allowCachedValue, previewMode });
     return result;
   }
 
   async createAirlineCompany (companyData: IAirlineCompanyData, previewMode: PreviewMode): Promise<EntityId> {
-    this.logger.debug(`(AirlineCompanyLogic-Acsys) creating airline company, previewMode=${previewMode}`);
+    this.logger.debug('creating airline company', previewMode);
     let companyId: EntityId;
     if(previewMode) {
       companyId = await executeInTransaction(async () => {
@@ -92,14 +92,14 @@ export class AirlineCompanyLogic implements IAirlineCompanyLogic {
     } else {
       companyId = await this.prismaImplementation.createAirlineCompany(companyData, previewMode);
     }
-    this.logger.debug(`(AirlineCompanyLogic-Acsys) creating airline company - completed, id=${companyId}, previewMode=${previewMode}`);
+    this.logger.debug('creating airline company - completed', { id: companyId, previewMode });
     return companyId;
   }
 
   async getNearestCompany (allowCachedValue: boolean) : Promise<IAirlineCompany> {
-    this.logger.debug(`(AirlineCompanyLogic-Acsys) get nearest company, allowCachedValue=${allowCachedValue}`);
+    this.logger.debug('get nearest company', allowCachedValue);
     const result = await this.prismaImplementation.getNearestCompany(allowCachedValue);
-    this.logger.debug(`(AirlineCompanyLogic-Acsys) nearest company, id=${result.id}, name=${result.name.en}, allowCachedValue=${allowCachedValue}`);
+    this.logger.debug('nearest company', { id: result.id, name: result.name.en, allowCachedValue });
     return result;
   }
 }

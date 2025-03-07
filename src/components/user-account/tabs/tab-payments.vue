@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { getI18nResName3 } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import PaymentCard from './../../payments/payment-card.vue';
@@ -6,7 +7,7 @@ import AddNewCard from './../../payments/add-new-card.vue';
 import dayjs from 'dayjs';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   ready: boolean
 }
 defineProps<IProps>();
@@ -47,8 +48,8 @@ const paymentCards = [
             tag="div"
           >
             <div class="payment-cards-grid">
-              <PaymentCard v-for="(card, idx) in paymentCards" :key="`PaymentCard-${idx}`" :ctrl-key="`${ctrlKey}-PaymentCard-${idx}`" :digits="card.digits" :due-date="card.dueDate"/>
-              <AddNewCard :ctrl-key="`${ctrlKey}-AddNewCard`" class="add-new-card"/>
+              <PaymentCard v-for="(card, idx) in paymentCards" :key="`PaymentCard-${idx}`" :ctrl-key="[...ctrlKey, 'Card', idx]" :digits="card.digits" :due-date="card.dueDate"/>
+              <AddNewCard :ctrl-key="[...ctrlKey, 'Add']" class="add-new-card"/>
             </div>
           </PerfectScrollbar>
         </div>  

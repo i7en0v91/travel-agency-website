@@ -12,7 +12,7 @@ export class AcsysClientProvider implements IAcsysClientProvider {
 
   public static inject = ['acsysModuleOptions', 'logger'] as const;
   constructor (moduleOptions: IAcsysOptions, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'AcsysClientProvider' });
     const siteUrl = AppConfig.siteUrl;
     const baseUrl = isPublishEnv() ? `${siteUrl}:${moduleOptions.port}` : `http://localhost:${moduleOptions.port}`;
     this.clientViewer = new AcsysClientViewer(baseUrl, moduleOptions.users.viewer, logger, UserRoleEnum.Viewer);
@@ -25,7 +25,7 @@ export class AcsysClientProvider implements IAcsysClientProvider {
     TResClient extends IAcsysClientBase = 
     TUserRole extends UserRoleEnum.Administrator ? IAcsysClientAdministrator : (TUserRole extends UserRoleEnum.Standard ? IAcsysClientStandard : IAcsysClientViewer)
   >(mode: TUserRole): TResClient => {
-    this.logger.debug(`(AcsysClientProvider) get, mode=${mode}`);
+    this.logger.debug('get', mode);
     if(mode === UserRoleEnum.Administrator) {
       return this.clientAdministrator as any;
     } else if(mode === UserRoleEnum.Standard) {
@@ -36,7 +36,7 @@ export class AcsysClientProvider implements IAcsysClientProvider {
   };
 
   onClientUsersReady = () => {
-    this.logger.debug(`(AcsysClientProvider) client users ready`);
+    this.logger.debug('client users ready');
     [this.clientViewer, this.clientStandard, this.clientAdministrator].forEach(c => c.onClientUsersReady());
   };
 }

@@ -1,50 +1,43 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import type { I18nResName } from '@golobe-demo/shared';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import SimpleButton from './../../forms/simple-button.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
-  value?: number,
+  ctrlKey: ControlKey,
   defaultValue: number,
-  initiallySelectedValue?: number | null | undefined,
   minValue: number,
   maxValue: number,
   labelResName: I18nResName
 }
 
-const { ctrlKey, value, defaultValue, initiallySelectedValue, minValue, maxValue } = defineProps<IProps>();
+const { 
+  ctrlKey, 
+  defaultValue, 
+  minValue, 
+  maxValue 
+} = defineProps<IProps>();
+
+const logger = getCommonServices().getLogger().addContextProps({ component: 'SearchOffersCounter' });
+const controlValuesStore = useControlValuesStore();
+
+const counterModel = defineModel<number | undefined>('value');
 
 const btnDecrement = useTemplateRef('btn-decrement');
 const btnIncrement = useTemplateRef('btn-increment');
-const hasMounted = ref(false);
-
-const logger = getCommonServices().getLogger();
-
-const controlSettingsStore = useControlSettingsStore();
-const controlValueSetting = controlSettingsStore.getControlValueSetting<number>(ctrlKey, defaultValue, true);
-if (initiallySelectedValue) {
-  controlValueSetting.value = initiallySelectedValue;
-} else if (initiallySelectedValue === null) {
-  controlValueSetting.value = defaultValue;
-}
-const currentValue = ref<number | undefined>();
-
-const $emit = defineEmits<{(event: 'update:value', value: number): void}>();
 
 const displayText = computed(() => {
-  return hasMounted.value ? (value ?? defaultValue) : '';
+  if(import.meta.server) {
+    return '';
+  }
+
+  return (counterModel.value ?? defaultValue)?.toString() ?? '';
 });
 
-function fireValueChanged () {
-  logger.debug(`(SearchOffersCounter) value changed: ctrlKey=${ctrlKey}, value=${currentValue.value}`);
-  controlValueSetting.value = currentValue.value;
-  $emit('update:value', currentValue.value!);
-}
-
 function onIncrementClick () {
-  const updatedValue = value! + 1;
+  const updatedValue = counterModel.value! + 1;
   if (updatedValue > maxValue) {
     return;
   }
@@ -54,12 +47,11 @@ function onIncrementClick () {
   if (updatedValue === maxValue) {
     btnIncrement.value?.$el.blur();
   }
-  currentValue.value = updatedValue;
-  fireValueChanged();
+  counterModel.value = updatedValue;
 }
 
 function onDecrementClick () {
-  const updatedValue = value! - 1;
+  const updatedValue = counterModel.value! - 1;
   if (updatedValue < minValue) {
     return;
   }
@@ -69,18 +61,32 @@ function onDecrementClick () {
   if (updatedValue === minValue) {
     btnDecrement.value?.$el.blur();
   }
-  currentValue.value = updatedValue;
-  fireValueChanged();
+  counterModel.value = updatedValue;
 }
 
-onBeforeMount(() => {
-  if (controlValueSetting.value) {
-    currentValue.value = controlValueSetting.value!;
-  }
-});
 onMounted(() => {
-  hasMounted.value = true;
-  fireValueChanged();
+  const initialOverwrite = counterModel.value;
+  logger.debug('acquiring value ref', { ctrlKey, defaultValue, initialOverwrite });
+  const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<number>(ctrlKey, {
+    initialOverwrite,
+    defaultValue
+  });
+
+  watch(storeValueRef, () => {
+    logger.debug('store value watcher', { ctrlKey, modelValue: counterModel.value, storeValue: storeValueRef.value });
+    const newValue: number = storeValueRef.value;
+    const changed = storeValueRef.value !== counterModel.value;
+    if(changed) {
+      counterModel.value = newValue;  
+    }
+  }, { immediate: true });
+
+  watch(counterModel, () => {
+    logger.debug('model value watcher', { ctrlKey, modelValue: counterModel.value, storeValue: storeValueRef.value });
+    if(counterModel.value !== storeValueRef.value) {
+      storeValueRef.value = counterModel.value ?? defaultValue;
+    }
+  }, { immediate: false });
 });
 
 </script>
@@ -95,7 +101,7 @@ onMounted(() => {
         <SimpleButton
           ref="btn-decrement"
           class="search-offers-counter-btn mr-xs-2"
-          :ctrl-key="`${ctrlKey}-BtnDecrement`"
+          :ctrl-key="[...ctrlKey, 'Btn', 'Decrement']"
           kind="icon"
           icon="decrement"
           :enabled="(value ?? defaultValue) > minValue"
@@ -107,7 +113,7 @@ onMounted(() => {
         <SimpleButton
           ref="btn-increment"
           class="search-offers-counter-btn ml-xs-2"
-          :ctrl-key="`${ctrlKey}-BtnIncrement`"
+          :ctrl-key="[...ctrlKey, 'Btn', 'Increment']"
           kind="icon"
           icon="increment"
           :enabled="(value ?? defaultValue) < maxValue"

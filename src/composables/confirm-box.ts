@@ -1,4 +1,5 @@
-import { UserNotificationLevel, AppException, AppExceptionCodeEnum, type I18nResName, getI18nResName2, isElectronBuild } from '@golobe-demo/shared';
+import type { ControlKey } from './../helpers/components';
+import { type IAppLogger, UserNotificationLevel, AppException, AppExceptionCodeEnum, type I18nResName, getI18nResName2, isElectronBuild } from '@golobe-demo/shared';
 import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../helpers/dom';
 import { useModal } from 'vue-final-modal';
 import type { ConfirmBoxButton } from './../types';
@@ -7,11 +8,11 @@ import { getCommonServices } from '../helpers/service-accessors';
 import { getDialogsFacade } from '../helpers/electron';
 
 interface IConfirmBox {
-  confirm: (ctrlKey: string, buttons: ConfirmBoxButton[], msgResName: I18nResName, msgResArgs?: any) => Promise<ConfirmBoxButton>
+  confirm: (ctrlKey: ControlKey, buttons: ConfirmBoxButton[], msgResName: I18nResName, msgResArgs?: any) => Promise<ConfirmBoxButton>
 }
 
-function useConfirmBoxComponent(userNotificationStore: ReturnType<typeof useUserNotificationStore>): IConfirmBox {
-  const attrCtrlKey = ref('');
+function useConfirmBoxComponent(userNotificationStore: ReturnType<typeof useUserNotificationStore>, logger: IAppLogger): IConfirmBox {
+  const attrCtrlKey = ref<ControlKey>();
   const attrButtons = ref<ConfirmBoxButton[]>([]);
   const attrMsgResName = ref<I18nResName>('');
   const attrMsgResArgs = ref();
@@ -34,11 +35,10 @@ function useConfirmBoxComponent(userNotificationStore: ReturnType<typeof useUser
         isOpened = true;
       },
       onClosed () {
-        const logger = getCommonServices().getLogger();
         let resultButton = result.value;
-        logger.verbose(`(user-confirm-box) closing confirm box: ctrlKey=${attrCtrlKey.value}, buttons=${JSON.stringify(attrButtons.value)}, msgResName=${attrMsgResName.value}, result=${resultButton}`);
+        logger.verbose('closing confirm box', { ctrlKey: attrCtrlKey.value, buttons: attrButtons.value, msgResName: attrMsgResName.value, result: resultButton });
         if (!resultButton) {
-          logger.warn(`(user-confirm-box) result was not set: ctrlKey=${attrCtrlKey.value}, buttons=${JSON.stringify(attrButtons.value)}, msgResName=${attrMsgResName.value}, result=${resultButton}`);
+          logger.warn('result was not set', undefined, { ctrlKey: attrCtrlKey.value, buttons: attrButtons.value, msgResName: attrMsgResName.value, result: resultButton });
           userNotificationStore.show({
             level: UserNotificationLevel.ERROR,
             resName: getI18nResName2('appErrors', 'unknown')
@@ -53,11 +53,10 @@ function useConfirmBoxComponent(userNotificationStore: ReturnType<typeof useUser
   });
 
   return {
-    confirm: (ctrlKey: string, buttons: ConfirmBoxButton[], msgResName: I18nResName, msgResArgs?: any): Promise<ConfirmBoxButton> => {
-      const logger = getCommonServices().getLogger();
-      logger.verbose(`(user-confirm-box) opening confirm box: ctrlKey=${ctrlKey}, buttons=${JSON.stringify(buttons)}, msgResName=${msgResName}`);
+    confirm: (ctrlKey: ControlKey, buttons: ConfirmBoxButton[], msgResName: I18nResName, msgResArgs?: any): Promise<ConfirmBoxButton> => {
+      logger.verbose('opening confirm box', { ctrlKey, buttons, msgResName });
       if (isOpened) {
-        logger.warn(`(user-confirm-box) cannot open another confirm box: ctrlKey=${ctrlKey}, buttons=${JSON.stringify(buttons)}, msgResName=${msgResName}`);
+        logger.warn('cannot open another confirm box', undefined, { ctrlKey, buttons, msgResName });
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to open modal window', 'error-stub');
       }
       attrCtrlKey.value = ctrlKey;
@@ -75,13 +74,12 @@ function useConfirmBoxComponent(userNotificationStore: ReturnType<typeof useUser
   };
 }
 
-function useConfirmBoxElectron(localizer: (ReturnType<typeof useI18n>)['t'] | undefined): IConfirmBox {
+function useConfirmBoxElectron(localizer: (ReturnType<typeof useI18n>)['t'] | undefined, logger: IAppLogger): IConfirmBox {
   const dialogsFacade = getDialogsFacade(localizer);
 
   return {
-    confirm: async (ctrlKey: string, buttons: ConfirmBoxButton[], msgResName: I18nResName, msgResArgs?: any): Promise<ConfirmBoxButton> => {
-      const logger = getCommonServices().getLogger();
-      logger.verbose(`(user-confirm-box) opening confirm box: ctrlKey=${ctrlKey}, buttons=${JSON.stringify(buttons)}, msgResName=${msgResName}`);
+    confirm: async (ctrlKey: ControlKey, buttons: ConfirmBoxButton[], msgResName: I18nResName, msgResArgs?: any): Promise<ConfirmBoxButton> => {
+      logger.verbose('open confirm box', { ctrlKey, buttons, msgResName });
       const msg = localizer(msgResName, msgResArgs);
       return await dialogsFacade.showConfirmBox(msg, buttons);
     }
@@ -89,11 +87,12 @@ function useConfirmBoxElectron(localizer: (ReturnType<typeof useI18n>)['t'] | un
 }
 
 export function useConfirmBox (): IConfirmBox {
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'UseConfirmBox' });
   if(!isElectronBuild()) {
     const userNotificationStore = useUserNotificationStore();
-    return useConfirmBoxComponent(userNotificationStore);
+    return useConfirmBoxComponent(userNotificationStore, logger);
   } else {
     const localizer = (useNuxtApp().$i18n as any).t;
-    return useConfirmBoxElectron(localizer);
+    return useConfirmBoxElectron(localizer, logger);
   }
 }

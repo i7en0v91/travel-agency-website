@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { type EntityId, type OfferKind, lookupPageByUrl, AppPage, SystemPage, KeyCodeEsc, type Locale, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import type { ActivePageLink, NavBarMode } from './../../types';
 import { formatAuthCallbackUrl, updateTabIndices, isPrefersReducedMotionEnabled } from './../../helpers/dom';
@@ -17,12 +18,13 @@ const { status } = useAuth();
 const { enabled } = usePreviewState();
 
 interface IProps {
-  ctrlKey: string,
-  mode: NavBarMode
+  ctrlKey: ControlKey,
+  mode: NavBarMode,
+  hardLinks: boolean
 }
 const { ctrlKey, mode } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'NavBar' });
 const nuxtApp = useNuxtApp();
 const route = useRoute();
 const { locale } = useI18n();
@@ -35,24 +37,24 @@ const userAccountStore = useUserAccountStore();
 userAccountStore.getUserAccount(); // start auth session refreshing in background
 
 async function getBookingOfferKind (bookingId: EntityId): Promise<OfferKind> {
-  logger.verbose(`(NavUser) obtaining booking offer kind: ctrlKey=${ctrlKey}, bookingId=${bookingId}`);
+  logger.verbose('obtaining booking offer kind', { ctrlKey, bookingId });
   const offerBookingStoreFactory = await useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
   const offerBookingStore = await offerBookingStoreFactory.getUserBooking(bookingId, !!nuxtApp.ssrContext?.event.context.ogImageContext, nuxtApp.ssrContext?.event);
   const offerId = offerBookingStore.offerId;
   const offerKind = offerBookingStore.offerKind;
-  logger.verbose(`(NavUser) booking offer kind obtained: ctrlKey=${ctrlKey}, bookingId=${bookingId}, offerId=${offerId}, offerKind=${offerKind}`);
+  logger.verbose('booking offer kind obtained', { ctrlKey, bookingId, offerId, offerKind });
   return offerKind;
 }
 
 async function getActivePageLink () : Promise<ActivePageLink | undefined> {
   const currentPage = lookupPageByUrl(route.path);
   if (currentPage === undefined) {
-    logger.warn(`(NavBar) failed to detected current page, ctrlKey=${ctrlKey}, page=${route.path}`);
+    logger.warn('failed to detected current page', undefined, { ctrlKey, page: route.path });
     return undefined;
   }
 
   if(currentPage === SystemPage.Drafts) {
-    logger.debug(`(NavBar) current page is system, ctrlKey=${ctrlKey}, path=${route.path}`);
+    logger.debug('current page is system', { ctrlKey, path: route.path });
     return undefined;
   }
 
@@ -78,19 +80,19 @@ async function getActivePageLink () : Promise<ActivePageLink | undefined> {
       break;
   }
   if (!result && currentPage === AppPage.BookingDetails) {
-    logger.verbose(`(NavBar) current page link is booking page, detecting offer kind, ctrlKey=${ctrlKey}, path=${route.path}`);
+    logger.verbose('current page link is booking page, detecting offer kind', { ctrlKey, path: route.path });
     try {
       const bookingParam = route.params.id!.toString();
       const bookingId = bookingParam;
       const offerKind = await getBookingOfferKind(bookingId);
       result = offerKind === 'flights' ? AppPage.Flights : AppPage.Stays;
     } catch (err: any) {
-      logger.warn(`(NavUser) failed to obtain booking offer kind url: ctrlKey=${ctrlKey}, path=${route.path}`, err);
+      logger.warn('failed to obtain booking offer kind url', err, { ctrlKey, path: route.path });
       result = undefined;
     }
   }
 
-  logger.debug(`(NavBar) active page link obtained, ctrlKey=${ctrlKey}, page=${result ?? 'none'}, `);
+  logger.debug('active page link obtained', { ctrlKey, page: result ?? 'none' });
   return result;
 }
 
@@ -102,23 +104,23 @@ function isAnimated (): boolean {
 
 function togglePageLinksMenu () {
   if (!toggling.value) {
-    logger.debug(`(NavBar) toggling navbar, ctrlKey=${ctrlKey}, new state collapsed=${!collapsed.value}`);
+    logger.debug('toggling navbar', { ctrlKey, collapsed: !collapsed.value });
     collapsed.value = !collapsed.value;
     toggling.value = isAnimated() && true;
   } else {
-    logger.verbose(`(NavBar) wont toggle navbar, it is currently toggling, ctrlKey=${ctrlKey}`);
+    logger.verbose('wont toggle navbar, it is currently toggling', ctrlKey);
   }
 }
 
 function onPageLinksToggled () {
-  logger.debug(`(NavBar) page links toggled, ctrlKey=${ctrlKey}, collapsed=${collapsed.value}`);
+  logger.debug('page links toggled', { ctrlKey, collapsed: collapsed.value });
   toggling.value = false;
   updateTabIndices();
 }
 
 function onLinkClicked () {
   if (!toggling.value && !collapsed.value) {
-    logger.verbose(`(NavBar) locale changed, collapsing, ctrlKey=${ctrlKey}`);
+    logger.verbose('locale changed, collapsing', ctrlKey);
     toggling.value = isAnimated() && true;
     setTimeout(() => {
       collapsed.value = true;
@@ -131,14 +133,14 @@ const isErrorPage = useError().value;
 
 function handleKeyup (e: KeyboardEvent) {
   if (e.key?.toLowerCase() === KeyCodeEsc.toLowerCase() && !toggling.value && !collapsed.value) {
-    logger.debug(`(NavBar) ESC pressed, collapsing, ctrlKey=${ctrlKey}`);
+    logger.debug('ESC pressed, collapsing', ctrlKey);
     togglePageLinksMenu();
   }
 }
 
 onMounted(async () => {
   watch(() => route.path, () => {
-    logger.debug(`(NavBar) route changed, updating active page link, ctrlKey=${ctrlKey}, route=${route.path}`);
+    logger.debug('route changed, updating active page link', { ctrlKey, route: route.path });
     setTimeout(async () => {
       activePageLink.value = await getActivePageLink();
     }, 0);
@@ -157,15 +159,16 @@ onBeforeUnmount(() => {
 <template>
   <nav id="nav-main" :aria-label="$t(getI18nResName2('ariaLabels', 'navMain'))" :class="cssClass">
     <NavSearchPageLinks
-      ctrl-key="navSearchPageLinks"
+      :ctrl-key="[...ctrlKey, 'SearchPageLinks']"
       :mode="mode"
       :collapsed="collapsed"
       :toggling="toggling"
       :active-page-link="activePageLink"
+      :hard-links="hardLinks"
       @toggled="onPageLinksToggled"
       @link-clicked="onLinkClicked"
     />
-    <NavLogo ctrl-key="navLogo" :mode="mode" />
+    <NavLogo :ctrl-key="[...ctrlKey, 'NavLink', 'NavLogo']" :mode="mode" :hard-link="hardLinks"/>
     <div class="nav-toggler-div mt-xs-2 mt-l-0">
       <button class="nav-toggler ml-xs-1 mb-xs-2 brdr-1" type="button" role="switch" :aria-checked="collapsed" @click="togglePageLinksMenu">
 &nbsp;
@@ -175,29 +178,32 @@ onBeforeUnmount(() => {
       <div v-if="!isErrorPage" class="nav-page-settings">
         <div v-if="status === 'authenticated'" class="nav-user-favourites-div">
           <NavLink
-            ctrl-key="navLinkFavourites"
+            :ctrl-key="[...ctrlKey, 'NavLink', 'Favourites']"
             link-class="nav-user-favourites mr-l-3"
             :to="navLinkBuilder.buildPageLink(AppPage.Favourites, locale as Locale)"
             :text-res-name="getI18nResName3('nav', 'userBox', 'favourites')"
             :is-active="activePageLink === AppPage.Favourites"
+            :hard-link="hardLinks"
             icon="favourite"
           />
         </div>
-        <LocaleSwitcher ctrl-key="navLocaleSwitcher" />
-        <ThemeSwitcher ctrl-key="navThemeSwitcher" />
+        <LocaleSwitcher :ctrl-key="[...ctrlKey, 'Toggler', 'Locale']" />
+        <ThemeSwitcher :ctrl-key="[...ctrlKey, 'Toggler', 'Theme']" />
         <ClientOnly>
-          <NavUser v-if="status==='authenticated'" ctrl-key="navUser" />
+          <NavUser v-if="status==='authenticated'" :ctrl-key="[...ctrlKey, 'NavUser']" />
           <div v-else class="nav-login">
             <NavLink
-              :id="`${ctrlKey}-login-link`"
-              ctrl-key="navLogin"
+              :id="`${toShortForm(ctrlKey)}-login-link`"
+              :ctrl-key="[...ctrlKey, 'NavLink', 'Login']"
               link-class="ml-l-2"
+              :hard-link="hardLinks"
               :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale, { originPath: formatAuthCallbackUrl(withQuery(route.path, route.query), enabled)})"
               :text-res-name="getI18nResName2('nav', 'login')"
             />
             <NavLink
               link-class="btn nav-signup-btn"
-              ctrl-key="navSignUp"
+              :ctrl-key="[...ctrlKey, 'NavLink', 'SignUp']"
+              :hard-link="hardLinks"
               :to="navLinkBuilder.buildPageLink(AppPage.Signup, locale as Locale)"
               :text-res-name="getI18nResName2('nav', 'signUp')"
             />

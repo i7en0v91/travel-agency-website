@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ArbitraryControlElementMarker, type ControlKey } from './../../helpers/components';
 import { type PaymentMethodType, getI18nResName3, getI18nResName1 } from '@golobe-demo/shared';
 import { TooltipHideTimeout } from './../../helpers/constants';
 import type { Tooltip } from 'floating-vue';
@@ -6,7 +7,7 @@ import PriceMethodVariant from './payment-method-variant.vue';
 import dayjs from 'dayjs';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   amount?: number
 };
 
@@ -52,8 +53,8 @@ const tooltipId = useId();
     <ul class="payment-method-picker-group" role="radiogroup">
       <PriceMethodVariant
         v-for="(item) in paymentMethods"
-        :key="`${ctrlKey}-Method-${item.type}`"
-        :ctrl-key="`${ctrlKey}-Method-${item.type}`"
+        :key="`${toShortForm(ctrlKey)}-Method-${item.type}`"
+        :ctrl-key="[...ctrlKey, 'PaymentMethod', item.type as ArbitraryControlElementMarker]"
         :type="(item.type as PaymentMethodType)"
         :selected="selectedPaymentMethod === item.type"
         :header-res-name="item.headerResName"
@@ -76,7 +77,7 @@ const tooltipId = useId();
     >
       <SimpleButton
         class="payment-method-moreinfo-btn mt-xs-3"
-        :ctrl-key="`${ctrlKey}-MoreInfoBtn`"
+        :ctrl-key="[...ctrlKey, 'Btn', 'MoreInfo']"
         :label-res-name="getI18nResName3('payments', 'methods', 'moreInfo')"
         kind="support"
       />

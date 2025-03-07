@@ -5,12 +5,12 @@ import { getServerServices } from '../../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const serverServices = getServerServices()!;
-  const logger = serverServices.getLogger();
+  const logger = serverServices.getLogger().addContextProps({ component: 'WebApi' });
   const bookingLogic = serverServices.getBookingLogic();
 
   const bookingParam = getRouterParams(event)?.id?.toString() ?? '';
   if (!bookingParam) {
-    logger.warn(`(api:booking-offer) booking id paramer was not speicifed: path=${event.path}`);
+    logger.warn('booking id paramer was not speicifed', undefined, { path: event.path });
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
       'booking id parameter was not specified',

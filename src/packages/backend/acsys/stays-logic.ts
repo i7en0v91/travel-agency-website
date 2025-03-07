@@ -13,14 +13,14 @@ export class StaysLogic implements IStaysLogic {
 
   public static inject = ['staysLogicPrisma', 'acsysDraftsEntitiesResolver', 'dbRepository', 'logger'] as const;
   constructor (prismaImplementation: IStaysLogic, acsysDraftsEntitiesResolver: AcsysDraftEntitiesResolver, dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'StaysLogic-Acsys' });
     this.prismaImplementation = prismaImplementation;
     this.dbRepository = dbRepository;
     this.acsysDraftsEntitiesResolver = acsysDraftsEntitiesResolver;
   }
 
   deleteStayOffer =  async (id: EntityId): Promise<void> => {
-    this.logger.debug(`(StaysLogic-Acsys) deleting stay offer: id=${id}`);
+    this.logger.debug('deleting stay offer', id);
 
     const deleted = (await this.dbRepository.acsysDraftsStayOffer.updateMany({
       where: {
@@ -33,15 +33,15 @@ export class StaysLogic implements IStaysLogic {
       }
     })).count > 0;
     if(!deleted) {
-      this.logger.debug(`(StaysLogic-Acsys) no stay offers have been deleted in drafts table, proceeding to the main table: id=${id}`);
+      this.logger.debug('no stay offers have been deleted in drafts table, proceeding to the main table', id);
       await this.prismaImplementation.deleteStayOffer(id);
     }
 
-    this.logger.debug(`(StaysLogic-Acsys) stay offer deleted: id=${id}`);
+    this.logger.debug('stay offer deleted', id);
   };
 
   deleteStay =  async (id: EntityId): Promise<void> => {
-    this.logger.debug(`(StaysLogic-Acsys) deleting stay: id=${id}`);
+    this.logger.debug('deleting stay', id);
 
     const deleted = (await this.dbRepository.acsysDraftsHotel.updateMany({
       where: {
@@ -54,11 +54,11 @@ export class StaysLogic implements IStaysLogic {
       }
     })).count > 0;
     if(!deleted) {
-      this.logger.debug(`(StaysLogic-Acsys) no stays have been deleted in drafts table, proceeding to the main table: id=${id}`);
+      this.logger.debug('no stays have been deleted in drafts table, proceeding to the main table', id);
       await this.prismaImplementation.deleteStay(id);
     }
 
-    this.logger.debug(`(StaysLogic-Acsys) stay deleted: id=${id}`);
+    this.logger.debug('stay deleted', id);
   };
   
   calculatePrice(stay: EntityDataAttrsOnly<IStayShort>, serviceLevel: StayServiceLevel): Decimal {
@@ -66,7 +66,7 @@ export class StaysLogic implements IStaysLogic {
   }
 
   async createStay (data: IStayData, previewMode: PreviewMode): Promise<EntityId> {
-    this.logger.debug(`(StaysLogic-Acsys) creating stay, slug=${data.slug}, previewMode=${previewMode}`);
+    this.logger.debug('creating stay', { slug: data.slug, previewMode });
 
     let stayId: EntityId;
     if(previewMode) {
@@ -143,12 +143,12 @@ export class StaysLogic implements IStaysLogic {
       stayId = await this.prismaImplementation.createStay(data, previewMode);
     }
     
-    this.logger.debug(`(StaysLogic-Acsys) stay created, slug=${data.slug}, id=${stayId}, previewMode=${previewMode}`);
+    this.logger.debug('stay created', { slug: data.slug, id: stayId, previewMode });
     return stayId;
   }
 
   async findStay (idOrSlug: EntityId | string, previewMode: PreviewMode): Promise<IStay | undefined> {
-    this.logger.debug(`(StaysLogic-Acsys) loading stay, idOrSlug=${idOrSlug}, previewMode=${previewMode}`);
+    this.logger.debug('loading stay', { idOrSlug, previewMode });
 
     let result: IStay | undefined;
     if(previewMode) {
@@ -164,26 +164,26 @@ export class StaysLogic implements IStaysLogic {
         }
       }))?.id;
       if(id) {
-        this.logger.debug(`(StaysLogic-Acsys) loading stay by id=${id}, previewMode=${previewMode}`);
+        this.logger.debug('loading stay by', { id, previewMode });
         const resolveResult = await this.acsysDraftsEntitiesResolver.resolveStays({ idsFilter:  [ id ], unresolvedEntityPolicy: UnresolvedEntityThrowingCondition.ExcludeFromResult });
         if(!resolveResult.notFoundIds?.length) {
           result = Array.from(resolveResult.items.values())[0];  
         }
       }
       if(!result) {
-        this.logger.debug(`(StaysLogic-Acsys) no stays have been found in drafts table, proceeding to the main table: idOrSlug=${idOrSlug}`);
+        this.logger.debug('no stays have been found in drafts table, proceeding to the main table', idOrSlug);
         result = await this.prismaImplementation.findStay(idOrSlug, previewMode);
       }
     } else {
       result = await this.prismaImplementation.findStay(idOrSlug, previewMode);
     }
 
-    this.logger.debug(`(StaysLogic-Acsys) stay found, idOrSlug=${idOrSlug}, slug=${result?.slug}, previewMode=${previewMode}, numDescriptions=${result?.description.length}, numReviews=${result?.reviews.length}, numImages=${result?.images.length}`);
+    this.logger.debug('stay found', { idOrSlug, slug: result?.slug, previewMode, numDescriptions: result?.description.length, numReviews: result?.reviews.length, numImages: result?.images.length });
     return result;
   }
 
   async getStayOffer (id: EntityId, userId: EntityId | 'guest', previewMode: PreviewMode): Promise<IStayOfferDetails> {
-    this.logger.debug(`(StaysLogic-Acsys) get stay offer, id=${id}, userId=${userId}, previewMode=${previewMode}`);
+    this.logger.debug('get stay offer', { id, userId, previewMode });
 
     let result: IStayOfferDetails;
     if(previewMode) {
@@ -193,12 +193,12 @@ export class StaysLogic implements IStaysLogic {
       result = await this.prismaImplementation.getStayOffer(id, userId, previewMode);
     }
     
-    this.logger.debug(`(StaysLogic-Acsys) get stay offer - found, id=${id}, userId=${userId}, previewMode=${previewMode}, modifiedUtc=${result.modifiedUtc}, price=${result.totalPrice}`);
+    this.logger.debug('get stay offer - found', { id, userId, previewMode, modifiedUtc: result.modifiedUtc, price: result.totalPrice });
     return result;
   }
 
   async getAllStays (previewMode: PreviewMode): Promise<IStayShort[]> {
-    this.logger.debug(`(StaysLogic-Acsys) obtaining list of stays, previewMode=${previewMode}`);
+    this.logger.debug('obtaining list of stays', previewMode);
 
     let result: IStayShort[];
     if(previewMode) {
@@ -206,7 +206,7 @@ export class StaysLogic implements IStaysLogic {
       result = stayResolveResult.map(stay => {
         const photo = stay.images.find(img => img.order === 0);
         if(!photo) {
-          this.logger.warn(`(StaysLogic-Acsys) failed to obtain list of stay - hotel does not contain main photo, hotelId=${stay.id}, previewMode=${previewMode}`);
+          this.logger.warn('failed to obtain list of stay - hotel does not contain main photo', undefined, { hotelId: stay.id, previewMode });
           return undefined;
         }
         
@@ -227,19 +227,19 @@ export class StaysLogic implements IStaysLogic {
       result = await this.prismaImplementation.getAllStays(previewMode);
     }
 
-    this.logger.debug(`(StaysLogic-Acsys) list of stays obtained, previewMode=${previewMode}, count=${result.length}`);
+    this.logger.debug('list of stays obtained', { previewMode, count: result.length });
     return result;
   }
 
   async toggleFavourite (offerId: EntityId, userId: EntityId): Promise<boolean> {
-    this.logger.debug(`(StaysLogic-Acsys) toggling favourite offer, id=${offerId}, userId=${userId}`);
+    this.logger.debug('toggling favourite offer', { id: offerId, userId });
     const result = await this.prismaImplementation.toggleFavourite(offerId, userId);
-    this.logger.debug(`(StaysLogic-Acsys) favourite offer toggled, id=${offerId}, userId=${userId}, result=${result}`);
+    this.logger.debug('favourite offer toggled', { id: offerId, userId, result });
     return result;
   }
 
   async searchOffers (filter: IStayOffersFilterParams, userId: EntityId | 'guest', sorting: ISorting<StayOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean, previewMode: PreviewMode, availableStays: (IStayShort & { reviewSummary: ReviewSummary })[] | undefined = undefined): Promise<ISearchStayOffersResult> {
-    this.logger.debug(`(StaysLogic-Acsys) search offers, filter=${JSON.stringify(filter)}, userId=${userId}, sorting=${JSON.stringify(sorting)}, pagination=${JSON.stringify(pagination)}, narrowFilterParams=${narrowFilterParams}, previewMode=${previewMode}, availableStays=${availableStays ? (availableStays.length) : ''}`);
+    this.logger.debug('search offers', { filter, userId, sorting, pagination, narrowFilterParams, previewMode, availableStays });
     let result: ISearchStayOffersResult;
     if(previewMode) {
       const allStays = (await this.getAllStays(true)).map(s => { 
@@ -255,42 +255,42 @@ export class StaysLogic implements IStaysLogic {
     } else {
       result = await this.prismaImplementation.searchOffers(filter, userId, sorting, pagination, narrowFilterParams, previewMode);
     }
-    this.logger.debug(`(StaysLogic-Acsys) search offers - completed, filter=${JSON.stringify(filter)}, userId=${userId}, previewMode=${previewMode}, availableStays=${availableStays ? (availableStays.length) : ''}, count=${result.pagedItems.length}`);
+    this.logger.debug('search offers - completed', { filter, userId, previewMode, availableStays, count: result.pagedItems.length });
     return result;
   }
 
   async getUserFavouriteOffers (userId: EntityId): Promise<ISearchStayOffersResult<IStayOffer & { addDateUtc: Date; }>> {
-    this.logger.debug(`(StaysLogic-Acsys) get user favourite offers, userId=${userId}`);
+    this.logger.debug('get user favourite offers', userId);
     const result = await this.prismaImplementation.getUserFavouriteOffers(userId);
-    this.logger.debug(`(StaysLogic-Acsys) get user favourite offers completed, userId=${userId}, count=${result.totalCount}`);
+    this.logger.debug('get user favourite offers completed', { userId, count: result.totalCount });
     return result;
   }
 
   async getUserTickets(userId: EntityId): Promise<ISearchStayOffersResult<IStayOffer & { bookingId: EntityId, bookDateUtc: Date; }>> {
-    this.logger.debug(`(StaysLogic-Acsys) get user tickets, userId=${userId}`);
+    this.logger.debug('get user tickets', userId);
     const result = await this.prismaImplementation.getUserTickets(userId);
-    this.logger.debug(`(StaysLogic-Acsys) get user tickets completed, userId=${userId}, count=${result.totalCount}`);
+    this.logger.debug('get user tickets completed', { userId, count: result.totalCount });
     return result;
   }
 
   async createOrUpdateReview (stayId: EntityId, textOrHtml: string, score: number, userId: EntityId): Promise<EntityId> {
-    this.logger.debug(`(StaysLogic-Acsys) create/update review, stayId=${stayId}, textOrHtml=${textOrHtml}, score=${score}, userId=${userId}`);
+    this.logger.debug('create/update review', { stayId, textOrHtml, score, userId });
     const reviewId = await this.prismaImplementation.createOrUpdateReview(stayId, textOrHtml, score, userId);
-    this.logger.debug(`(StaysLogic-Acsys) create/update review, stayId=${stayId}, score=${score}, userId=${userId}, reviewId=${reviewId}`);
+    this.logger.debug('create/update review', { stayId, score, userId, reviewId });
     return reviewId;
   }
 
   async deleteReview (stayId: EntityId, userId: EntityId): Promise<EntityId | undefined> {
-    this.logger.debug(`(StaysLogic-Acsys) delete review, stayId=${stayId}, userId=${userId}`);
+    this.logger.debug('delete review', { stayId, userId });
     const reviewId = await this.prismaImplementation.deleteReview(stayId, userId);
-    this.logger.debug(`(StaysLogic-Acsys) delete review - done, stayId=${stayId}, userId=${userId}, reviewId=${reviewId}`);
+    this.logger.debug('delete review - done', { stayId, userId, reviewId });
     return reviewId;
   }
 
   async getStayReviews (stayId: EntityId): Promise<EntityDataAttrsOnly<IStayReview>[]> {
-    this.logger.debug(`(StaysLogic-Acsys) get reviews, stayId=${stayId}`);
+    this.logger.debug('get reviews', stayId);
     const result = await this.prismaImplementation.getStayReviews(stayId);
-    this.logger.debug(`(StaysLogic-Acsys) get reviews - completed, stayId=${stayId}, count=${result.length}`);
+    this.logger.debug('get reviews - completed', { stayId, count: result.length });
     return result;
   }
 

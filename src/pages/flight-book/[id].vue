@@ -5,6 +5,7 @@ import type { IOfferBookingStoreFactory } from './../../stores/offer-booking-sto
 import OfferDetailsBreadcrumbs from './../../components/common-page-components/offer-details-breadcrumbs.vue';
 import FlightDetailsCard from './../../components/common-page-components/flight-details-card.vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
+import type { ControlKey, ArbitraryControlElementMarker } from './../../helpers/components';
 
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
@@ -23,7 +24,7 @@ definePageMeta({
   title: { resName: getI18nResName2('flightBookingPage', 'title'), resArgs: undefined }
 });
 
-const CtrlKey = 'FlightOfferBooking';
+const CtrlKey: ControlKey = ['Page', 'BookFlight'];
 
 const PriceDecompositionWeights: { labelResName: I18nResName, amount: number }[] = [
   { labelResName: getI18nResName3('bookingCommon', 'pricingDecomposition', 'fare'), amount: 0.6 },
@@ -100,13 +101,13 @@ onMounted(() => {
   <div class="flight-book-page">
     <ErrorHelm :is-error="isError" class="flight-book-page-error-helm">
       <OfferDetailsBreadcrumbs
-        :ctrl-key="`${CtrlKey}-Breadcrumbs`"
+        :ctrl-key="[...CtrlKey, 'Breadcrumbs']"
         offer-kind="flights"
         :city="flightOffer?.departFlight?.departAirport.city"
         :place-name="flightOffer?.departFlight?.departAirport.name"
       />
       <OfferBooking
-        :ctrl-key="`${CtrlKey}-${offerId}`"
+        :ctrl-key="[...CtrlKey, offerId as ArbitraryControlElementMarker]"
         :offer-id="offerId!"
         offer-kind="flights"
         :service-level="undefined"
@@ -115,7 +116,7 @@ onMounted(() => {
       >
         <template #offer-card>
           <FlightDetailsCard
-            :ctrl-key="`${CtrlKey}-DepartFlightCard`"
+            :ctrl-key="[...CtrlKey, 'Card', 'DepartFlight']"
             class="flight-card compact-layout"
             :depart-city="flightOffer?.departFlight?.departAirport.city"
             :arrive-city="flightOffer?.departFlight?.arriveAirport.city"
@@ -130,7 +131,7 @@ onMounted(() => {
           />
           <FlightDetailsCard
             v-if="flightOffer && flightOffer.arriveFlight"
-            :ctrl-key="`${CtrlKey}-ArriveFlightCard`"
+            :ctrl-key="[...CtrlKey, 'Card', 'ArriveFlight']"
             class="flight-card compact-layout mt-xs-4 mt-s-6"
             :depart-city="flightOffer?.arriveFlight.departAirport.city"
             :arrive-city="flightOffer?.arriveFlight.arriveAirport.city"

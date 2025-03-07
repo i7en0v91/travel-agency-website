@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { type Locale, getLocalizeableValue, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, getValueForFlightDurationFormatting, extractAirportCode, getI18nResName2, getI18nResName3, type EntityDataAttrsOnly, type ICity, ImageCategory, type ILocalizableValue, type IAirlineCompany } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import type { Decimal } from 'decimal.js';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   departCity?: EntityDataAttrsOnly<ICity>,
   arriveCity?: EntityDataAttrsOnly<ICity>,
   departTimeUtc?: Date,
@@ -62,15 +63,15 @@ const featureIcons: string[] = ['airplane', 'wifi', 'stopwatch', 'fastfood', 'se
         <div class="flight-details-main mt-xs-3">
           <div class="flight-details-company-div brdr-3 mt-xs-3 pr-xs-3 pr-s-4">
             <StaticImage
-              :ctrl-key="`${ctrlKey}-CompanyLogo`"
+              :ctrl-key="[...ctrlKey, 'StaticImg', 'CompanyLogo']"
               class="flight-details-company-logo m-xs-3 m-s-4"
-              :entity-src="airlineCompany?.logoImage"
+              :src="airlineCompany?.logoImage"
               :category="ImageCategory.AirlineLogo"
-              :show-stub="false"
+              :stub="false"
               :request-extra-display-options="true"
-              img-class="flight-details-company-logo-img"
+              :ui="{ img: 'flight-details-company-logo-img' }"
               sizes="xs:30vw sm:30vw md:20vw lg:20vw xl:20vw"
-              :alt-res-name="getI18nResName2('searchFlights', 'airlineCompanyLogoAlt')"
+              :alt="{ resName: getI18nResName2('searchFlights', 'airlineCompanyLogoAlt') }"
             />
             <div class="flight-details-company-info py-xs-2">
               <div v-if="airlineCompany" class="flight-details-company-name">
@@ -84,7 +85,7 @@ const featureIcons: string[] = ['airplane', 'wifi', 'stopwatch', 'fastfood', 'se
             </div>
           </div>
           <ul class="flight-details-features mt-xs-3">
-            <li v-for="(icon) in featureIcons" :key="`${ctrlKey}-Feature-${icon}`">
+            <li v-for="(icon) in featureIcons" :key="`${toShortForm(ctrlKey)}-Feature-${icon}`">
               <div :class="`flight-details-feature-icon icon-${icon} p-xs-4`" />
             </li>
           </ul>

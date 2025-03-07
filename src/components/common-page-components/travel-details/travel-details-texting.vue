@@ -1,16 +1,17 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import type { ITravelDetailsData, ITravelDetailsTextingData } from './../../../types';
 import type { WatchStopHandle } from 'vue';
 import TravelDetailsTextingFrame from './travel-details-texting-frame.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   bookKind: 'flight' | 'stay'
 };
 const { ctrlKey } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'TravelDetailsTexting' });
 const activeFrame = ref<'initial' | 'A' | 'B'>('initial');
 const isError = ref(false);
 const initialFrameHidden = ref(false);
@@ -23,7 +24,7 @@ const dataBuf2 = ref<ITravelDetailsTextingData | undefined>();
 const watches: WatchStopHandle[] = [];
 
 function swapFrames () {
-  logger.debug(`(TravelDetailsTexting) swapping frames: ctrlKey=${ctrlKey}, activeFrame=${activeFrame.value}`);
+  logger.debug('swapping frames', { ctrlKey, activeFrame: activeFrame.value });
   switch (activeFrame.value) {
     case 'initial':
       activeFrame.value = 'A';
@@ -62,16 +63,16 @@ if (storeInstance.current?.texting) {
 }
 
 function onUpcomingDataChanged (data?: ITravelDetailsData | undefined) {
-  logger.verbose(`(TravelDetailsTexting) upcoming data changed: ctrlKey=${ctrlKey}, activeFrame=${activeFrame.value}`);
+  logger.verbose('upcoming data changed', { ctrlKey, activeFrame: activeFrame.value });
   if (data?.texting) {
     (activeFrame.value !== 'A' ? dataBuf2 : dataBuf1).value = data.texting;
   }
 }
 
 function onInitialDataReady (data: ITravelDetailsData) {
-  logger.verbose(`(TravelDetailsTexting) initial data ready: ctrlKey=${ctrlKey}, activeFrame=${activeFrame.value}`);
+  logger.verbose('initial data ready', { ctrlKey, activeFrame: activeFrame.value });
   if (activeFrame.value !== 'initial' || dataBufInitial.value) {
-    logger.verbose(`(TravelDetailsTexting) initial data has been already processed: ctrlKey=${ctrlKey}, activeFrame=${activeFrame.value}`);
+    logger.verbose('initial data has been already processed', { ctrlKey, activeFrame: activeFrame.value });
     return;
   }
 
@@ -81,7 +82,7 @@ function onInitialDataReady (data: ITravelDetailsData) {
 }
 
 async function startWatchingForDataChanges () : Promise<void> {
-  logger.verbose(`(TravelDetailsTexting) starting to watch for data changes: ctrlKey=${ctrlKey}`);
+  logger.verbose('starting to watch for data changes', ctrlKey);
 
   const storeInstance = await (travelDetailsStore.getInstance());
   watches.push(watch([() => storeInstance.upcoming?.cityId, () => storeInstance.upcoming?.texting], () => {
@@ -96,7 +97,7 @@ async function startWatchingForDataChanges () : Promise<void> {
 }
 
 function stopWatchingForDataChanges () {
-  logger.verbose(`(TravelDetailsTexting) stopping to watch for data changes: ctrlKey=${ctrlKey}`);
+  logger.verbose('stopping to watch for data changes', ctrlKey);
   watches.forEach(sw => sw());
 }
 
@@ -113,7 +114,7 @@ onBeforeUnmount(() => {
         <Transition name="travel-details-fade">
           <TravelDetailsTextingFrame
             v-show="activeFrame === 'initial'"
-            :ctrl-key="`${ctrlKey}-TravelDetailsTexting-Initial`"
+            :ctrl-key="[...ctrlKey, 'TravelDetails', 'Texting', 1]"
             :texting="dataBufInitial"
             :book-kind="bookKind"
             :is-initial="activeFrame === 'initial'"
@@ -124,7 +125,7 @@ onBeforeUnmount(() => {
           <TravelDetailsTextingFrame
             v-show="activeFrame === 'A'"
             :book-kind="bookKind"
-            :ctrl-key="`${ctrlKey}-TravelDetailsTexting-FrameA`"
+            :ctrl-key="[...ctrlKey, 'TravelDetails', 'Texting', 2]"
             :texting="dataBuf2"
             :class="clientFramesActivated ? 'frames-activated' : 'frames-not-activated'"
           />
@@ -133,7 +134,7 @@ onBeforeUnmount(() => {
           <TravelDetailsTextingFrame
             v-show="activeFrame === 'B'"
             :book-kind="bookKind"
-            :ctrl-key="`${ctrlKey}-TravelDetailsTexting-FrameB`"
+            :ctrl-key="[...ctrlKey, 'TravelDetails', 'Texting', 3]"
             :texting="dataBuf1"
             :class="(clientFramesActivated && initialFrameHidden) ? 'frames-activated' : 'frames-not-activated'"
           />

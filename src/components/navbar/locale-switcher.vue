@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue, SessionLocaleKey } from '@golobe-demo/shared';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
@@ -17,7 +18,7 @@ const { locale, locales } = useI18n();
 const { enabled } = usePreviewState();
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 defineProps<IProps>();
 
@@ -61,8 +62,8 @@ const $emit = defineEmits(['changed']);
     <VDropdown
       ref="dropdown"
       v-floating-vue-hydration="{ tabIndex: 0 }"
-      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
-      :aria-id="`${ctrlKey}-DropDownWrapper`"
+      :ctrl-key="[...ctrlKey, 'Wrapper']"
+      :aria-id="`${toShortForm(ctrlKey)}-DropDownWrapper`"
       :distance="6"
       :hide-triggers="(triggers: any) => [...triggers, 'click']"
       placement="bottom"
@@ -72,11 +73,11 @@ const $emit = defineEmits(['changed']);
       @apply-show="onMenuShown"
       @apply-hide="onMenuHide"
     >
-      <button :id="`nav-locale-switcher-${ctrlKey}`" ref="open-btn" class="locale-switcher-btn brdr-1 px-xs-1" type="button" @keyup.escape="hideDropdown">
+      <button :id="`nav-locale-switcher-${toShortForm(ctrlKey)}`" ref="open-btn" class="locale-switcher-btn brdr-1 px-xs-1" type="button" @keyup.escape="hideDropdown">
         {{ locale.toUpperCase() }}
       </button>
       <template #popper>
-        <ul class="dropdown-list locale-switcher-list" :data-popper-anchor="`nav-locale-switcher-${ctrlKey}`">
+        <ul class="dropdown-list locale-switcher-list" :data-popper-anchor="`nav-locale-switcher-${toShortForm(ctrlKey)}`">
           <li v-for="l in availableLocales" :key="l.code" class="dropdown-list-item pl-xs-2 pr-xs-3">
             <NuxtLink :id="`locale-switch-link-${l.code!.toLowerCase()}`" :to="withQuery(switchLocalePath(l.code), enabled ? (set({}, QueryPagePreviewModeParam, PreviewModeParamEnabledValue)) : {})" class="nav-link locale-switcher-link brdr-1" @click="switchClicked">
               {{ l.name }}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ArbitraryControlElementMarker, ControlKey } from './../../helpers/components';
 import { AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { WorldMapCityLabelFlipX } from './../../helpers/constants';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
@@ -17,12 +18,12 @@ const MapCityPointerCurveness = 20;
 const MapCityPointerLength = 55;
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 const { ctrlKey } = defineProps<IProps>();
 
 const drawingCanvas = useTemplateRef('drawing-canvas');
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'WorldMap' });
 
 const worldMapStore = useWorldMapStore();
 const worldMap = await worldMapStore.getWorldMap();
@@ -59,28 +60,28 @@ function renderMapFrameSafe () {
     doRenderMapFrame();
   } catch (err: any) {
     if (!worldMapRenderError.value) {
-      logger.warn('(WorldMap) exception occured while redering world map', err);
+      logger.warn('exception occured while redering world map', err);
       worldMapRenderError.value = true;
     }
   }
 }
 
 function doRenderMapFrame () {
-  logger.debug('(WorldMap) redering new frame');
+  logger.debug('redering new frame');
   if (worldMap.displayedObjects.points.length === 0 || !worldMap.viewport) {
-    logger.debug('(WorldMap) nothing to render, world map was not initialized');
+    logger.debug('nothing to render, world map was not initialized');
     return;
   }
 
   const canvasClientRect = drawingCanvas.value?.getClientRects();
   if ((canvasClientRect?.length ?? 0) === 0) {
-    logger.debug('(WorldMap) nothing to render, canvas element empty');
+    logger.debug('nothing to render, canvas element empty');
     return;
   }
 
   const ctx = drawingCanvas.value?.getContext('2d');
   if (!ctx) {
-    logger.error(`(WorldMap) cannot acquire 2D context, ctrlKey=${ctrlKey}`);
+    logger.error('cannot acquire 2D context', undefined, ctrlKey);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'cannot acquire 2D context', 'error-stub');
   }
 
@@ -152,7 +153,7 @@ function raiseWorldMapInViewportIfNeeded () {
 
   if (!worldMapInViewportEventRaised && testCanvasIsInViewport()) {
     worldMap.onMapInViewport();
-    logger.verbose('(WorldMap) world map entered the viewport');
+    logger.verbose('world map entered the viewport');
     worldMapInViewportEventRaised = true;
     window.removeEventListener('scroll', onWindowScroll);
     renderMapFrame();
@@ -235,7 +236,7 @@ onUnmounted(() => {
             :key="`world-map-city-${city.slug}`"
             :class="cityLabelsVisibilityClass"
             :slug="city.slug"
-            :ctrl-key="`WorldMapCityLabel-${city.slug}`"
+            :ctrl-key="['WorldMap', 'CityLabel', city.slug as ArbitraryControlElementMarker]"
             :city-name="city.cityDisplayName"
             :country-name="city.countryDisplayName"
             :img-src="{ slug: city.imgSlug, timestamp: city.timestamp }"

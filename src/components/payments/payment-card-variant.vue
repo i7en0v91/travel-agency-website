@@ -1,21 +1,22 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { formatValidThruDate } from '@golobe-demo/shared';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   selected: boolean,
   digits: string,
   dueDate: Date
 };
 
 const { ctrlKey, selected } = defineProps<IProps>();
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'PaymentCardVariant' });
 
 const $emit = defineEmits<{(event: 'update:selected', value: boolean): void}>();
 
 function onClicked () {
-  logger.debug(`(PaymentMethodCard) on click, ctrlKey=${ctrlKey}, selected=${selected}`);
+  logger.debug('on click', { ctrlKey, selected });
   if (selected) {
     return;
   }

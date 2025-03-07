@@ -12,14 +12,14 @@ export class FlightsLogic implements IFlightsLogic {
 
   public static inject = ['flightsLogicPrisma', 'acsysDraftsEntitiesResolver', 'dbRepository', 'logger'] as const;
   constructor (prismaImplementation: IFlightsLogic,  acsysDraftsEntitiesResolver: AcsysDraftEntitiesResolver, dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'FlightsLogic-Acsys' });
     this.prismaImplementation = prismaImplementation;
     this.dbRepository = dbRepository;
     this.acsysDraftsEntitiesResolver = acsysDraftsEntitiesResolver;
   }
 
   async deleteFlightOffer(id: EntityId): Promise<void> {
-    this.logger.debug(`(FlightsLogic-Acsys) deleting flight offer: id=${id}`);
+    this.logger.debug('deleting flight offer', id);
 
     // skip booking & user offers deletion - those tables are empty in preview mode
     const deleted = (await this.dbRepository.acsysDraftsFlightOffer.updateMany({
@@ -33,15 +33,15 @@ export class FlightsLogic implements IFlightsLogic {
       }
     })).count > 0;
     if(!deleted) {
-      this.logger.debug(`(FlightsLogic-Acsys) no flight offers have been deleted in drafts table, proceeding to the main table: id=${id}`);
+      this.logger.debug('no flight offers have been deleted in drafts table, proceeding to the main table', id);
       await this.prismaImplementation.deleteFlightOffer(id);
     }
 
-    this.logger.debug(`(FlightsLogic-Acsys) flight offer deleted: id=${id}`);
+    this.logger.debug('flight offer deleted', id);
   };
 
   async deleteFlight(id: EntityId): Promise<void> {
-    this.logger.debug(`(FlightsLogic-Acsys) deleting flight: id=${id}`);
+    this.logger.debug('deleting flight', id);
     
     const deleted = (await this.dbRepository.acsysDraftsFlight.updateMany({
       where: {
@@ -54,21 +54,21 @@ export class FlightsLogic implements IFlightsLogic {
       }
     })).count > 0;
     if(!deleted) {
-      this.logger.debug(`(FlightsLogic-Acsys) no flights have been deleted in drafts table, proceeding to the main table: id=${id}`);
+      this.logger.debug('no flights have been deleted in drafts table, proceeding to the main table', id);
       await this.prismaImplementation.deleteFlight(id);
     }
 
-    this.logger.debug(`(FlightsLogic-Acsys) flight deleted: id=${id}`);
+    this.logger.debug('flight deleted', id);
   };
 
   async getFlightOffer (id: EntityId, userId: EntityId | 'guest', previewMode: boolean = false): Promise<IFlightOffer> {
-    this.logger.debug(`(FlightsLogic-Acsys) get flight offer, id=${id}, userId=${userId}, previewMode=${previewMode}`);
+    this.logger.debug('get flight offer', { id, userId, previewMode });
 
     let result: IFlightOffer;
     if(previewMode) {
       const resolveResult = await this.acsysDraftsEntitiesResolver.resolveFlightOffers({ idsFilter:  [ id ] });
       if(resolveResult.notFoundIds?.length) {
-        this.logger.warn(`(FlightsLogic-Acsys) flight offer not found, id=${id}`);
+        this.logger.warn('flight offer not found', undefined, id);
         throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'flight offer not found', 'error-stub');
       }
       result = Array.from(resolveResult.items.values())[0];
@@ -76,19 +76,19 @@ export class FlightsLogic implements IFlightsLogic {
       result = await this.prismaImplementation.getFlightOffer(id, userId, previewMode);
     }
 
-    this.logger.debug(`(FlightsLogic-Acsys) get flight offer - found, id=${id}, userId=${userId}, previewMode=${previewMode}, modifiedUtc=${result.modifiedUtc}, price=${result.totalPrice}`);
+    this.logger.debug('get flight offer - found', { id, userId, previewMode, modifiedUtc: result.modifiedUtc, price: result.totalPrice });
     return result;
   }
 
   async toggleFavourite (offerId: EntityId, userId: EntityId): Promise<boolean> {
-    this.logger.debug(`(FlightsLogic-Acsys) toggling favourite offer, id=${offerId}, userId=${userId}`);
+    this.logger.debug('toggling favourite offer', { id: offerId, userId });
     const result = await this.prismaImplementation.toggleFavourite(offerId, userId);
-    this.logger.debug(`(FlightsLogic-Acsys) favourite offer toggled, id=${offerId}, userId=${userId}, result=${result}`);
+    this.logger.debug('favourite offer toggled', { id: offerId, userId, result });
     return result;
   }
 
   async getFlightPromoPrice (cityId: EntityId, previewMode: boolean = false): Promise<Price> {
-    this.logger.debug(`(FlightsLogic-Acsys) get promo price, cityId=${cityId}, previewMode=${previewMode}`);
+    this.logger.debug('get promo price', { cityId, previewMode });
 
     let result: Price;
     if(previewMode) {
@@ -97,29 +97,29 @@ export class FlightsLogic implements IFlightsLogic {
       result = await this.prismaImplementation.getFlightPromoPrice(cityId, previewMode);
     }
     
-    this.logger.debug(`(FlightsLogic-Acsys) get promo price completed, cityId=${cityId}, previewMode=${previewMode}, result=${result.toString()}`);
+    this.logger.debug('get promo price completed', { cityId, previewMode, result: result.toString() });
     return result;
   }
 
   async searchOffers (filter: IFlightOffersFilterParams, userId: EntityId | 'guest', primarySorting: ISorting<FlightOffersSortFactor>, secondarySorting: ISorting<FlightOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean, topOffersStats: boolean, previewMode: boolean = false): Promise<ISearchFlightOffersResult> {
-    this.logger.debug(`(FlightsLogic-Acsys) search offers, filter=${JSON.stringify(filter)}, userId=${userId}, primarySorting=${JSON.stringify(primarySorting)}, secondarySorting=${JSON.stringify(secondarySorting)}, pagination=${JSON.stringify(pagination)}, narrowFilterParams=${narrowFilterParams}, topOffersStats=${topOffersStats}, previewMode=${previewMode}`);
+    this.logger.debug('search offers', { filter, userId, primarySorting, secondarySorting, pagination, narrowFilterParams, topOffersStats, previewMode });
     // preview mode is supported by passing it as an argument to search method below
     const result = await this.prismaImplementation.searchOffers(filter, userId, primarySorting, secondarySorting, pagination, narrowFilterParams, topOffersStats, previewMode);
-    this.logger.debug(`(FlightsLogic-Acsys) search offers - completed, filter=${JSON.stringify(filter)}, userId=${userId}, count=${result.pagedItems.length}, previewMode=${previewMode}`);
+    this.logger.debug('search offers - completed', { filter, userId, count: result.pagedItems.length, previewMode });
     return result;
   }
 
   async getUserFavouriteOffers (userId: EntityId): Promise<ISearchFlightOffersResult<IFlightOffer & { addDateUtc: Date }>> {
-    this.logger.debug(`(FlightsLogic-Acsys) get user favourite offers, userId=${userId}`);
+    this.logger.debug('get user favourite offers', userId);
     const result = await this.prismaImplementation.getUserFavouriteOffers(userId);
-    this.logger.debug(`(FlightsLogic-Acsys) get user favourite offers completed, userId=${userId}, count=${result.totalCount}`);
+    this.logger.debug('get user favourite offers completed', { userId, count: result.totalCount });
     return result;
   }
 
   async getUserTickets(userId: EntityId): Promise<ISearchFlightOffersResult<IFlightOffer & { bookingId: EntityId, bookDateUtc: Date; }>> {
-    this.logger.debug(`(FlightsLogic-Acsys) get user tickets, userId=${userId}`);
+    this.logger.debug('get user tickets', userId);
     const result = await this.prismaImplementation.getUserTickets(userId);
-    this.logger.debug(`(FlightsLogic-Acsys) get user tickets completed, userId=${userId}, count=${result.totalCount}`);
+    this.logger.debug('get user tickets completed', { userId, count: result.totalCount });
     return result;
   }
 }

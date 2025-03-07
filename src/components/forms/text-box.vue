@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import type { I18nResName } from '@golobe-demo/shared';
 import FieldFrame from './field-frame.vue';
 
 const { t } = useI18n();
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   captionResName?: I18nResName,
   placeholderResName?: I18nResName,
   type?: string,

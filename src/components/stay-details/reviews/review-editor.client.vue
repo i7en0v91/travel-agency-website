@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ArbitraryControlElementMarker, ControlKey } from './../../../helpers/components';
 import { type EntityId, AppException, AppExceptionCodeEnum, MaxStayReviewLength, getI18nResName2, getI18nResName3, type I18nResName } from '@golobe-demo/shared';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import type { ReviewEditorButtonType } from './../../../types';
@@ -11,12 +12,12 @@ import ReviewScorePicker from './review-score-picker.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   stayId: EntityId
 }
 
 const { ctrlKey, stayId } = defineProps<IProps>();
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ReviewEditor' });
 
 const { t } = useI18n();
 
@@ -33,7 +34,7 @@ const editor = useEditor({
 });
 
 function setEditedContent (content: string) {
-  logger.verbose(`(ReviewEditor) set content, ctrlKey=${ctrlKey}, length=${content?.length}`);
+  logger.verbose('set content', { ctrlKey, length: content?.length });
   editor.value?.commands.setContent(content);
 }
 
@@ -51,14 +52,13 @@ const scorePickerResult = ref<number | 'cancel'>('cancel');
 const { open } = useModal({
   component: ReviewScorePicker,
   attrs: {
-    ctrlKey: `${ctrlKey}-scorePicker`,
+    ctrlKey: [...ctrlKey, 'ScorePicker'],
     setResultCallback: (result: number | 'cancel') => { scorePickerResult.value = result; },
     onOpened () {
-      logger.debug(`(ReviewEditor) opened score picker: ctrlKey=${ctrlKey}, result=${scorePickerResult.value}`); ;
+      logger.debug('opened score picker', { ctrlKey, result: scorePickerResult.value });
     },
     onClosed () {
-      const logger = getCommonServices().getLogger();
-      logger.debug(`(ReviewEditor) closing score picker: ctrlKey=${ctrlKey}, result=${scorePickerResult.value}`);
+      logger.debug('closing score picker', { ctrlKey, result: scorePickerResult.value });
       completeCallback!();
       setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
     }
@@ -70,7 +70,7 @@ function refreshTabIndices () {
 }
 
 function onButtonClicked (type: ReviewEditorButtonType) {
-  logger.debug(`(ReviewEditor) btn click handler, ctrlKey=${ctrlKey}, type=${type}`);
+  logger.debug('btn click handler', { ctrlKey, type });
   let editMethod: () => void;
   switch (type) {
     case 'bold':
@@ -104,9 +104,9 @@ function onButtonClicked (type: ReviewEditorButtonType) {
   try {
     editMethod();
     refreshTabIndices();
-    logger.debug(`(ReviewEditor) btn click handler - completed, ctrlKey=${ctrlKey}, type=${type}`);
+    logger.debug('btn click handler - completed', { ctrlKey, type });
   } catch (err: any) {
-    logger.verbose(`(ReviewEditor) btn click handler failed, ctrlKey=${ctrlKey}, type=${type}`, err);
+    logger.verbose('btn click handler failed', { ctrlKey, type });
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'edit review error occured', 'error-stub');
   }
 }
@@ -124,13 +124,13 @@ function openScorePickerDialog (): Promise<void> {
   scorePickerResult.value = 'cancel';
   return new Promise((resolve) => {
     completeCallback = resolve;
-    logger.debug(`(ReviewEditor) opening score picker dialog, ctrlKey=${ctrlKey}`);
+    logger.debug('opening score picker dialog', ctrlKey);
     open();
   });
 }
 
 function isEditorTextValid (): true | I18nResName {
-  logger.debug(`(ReviewEditor) validating editor text, ctrlKey=${ctrlKey}`);
+  logger.debug('validating editor text', ctrlKey);
   const validatingText = editor.value!.getText()?.replace(/\s/g, '') ?? '';
   let result = validatingText.length > 0 ? true : getI18nResName3('stayDetailsPage', 'reviews', 'validationErrEmptyReview');
   if (result !== true) {
@@ -139,18 +139,18 @@ function isEditorTextValid (): true | I18nResName {
   if (result && editor.value!.getHTML().length >= MaxStayReviewLength) {
     result = getI18nResName3('stayDetailsPage', 'reviews', 'validationErrTooLongReview');
   }
-  logger.debug(`(ReviewEditor) editor text validation finished, ctrlKey=${ctrlKey}, text=${validatingText}, result=${result}`);
+  logger.debug('editor text validation finished', { ctrlKey, text: validatingText, result });
   return result;
 }
 
 async function onSendReviewBtnClick (): Promise<void> {
-  logger.debug(`(ReviewEditor) send review btn click handler, ctrlKey=${ctrlKey}`);
+  logger.debug('send review btn click handler', ctrlKey);
 
   validationErrMsgResName.value = undefined;
   const validationResult = isEditorTextValid();
   if (validationResult !== true) {
     validationErrMsgResName.value = validationResult;
-    logger.verbose(`(ReviewEditor) review text validation failed, ctrlKey=${ctrlKey}, result=${validationResult}`);
+    logger.verbose('review text validation failed', { ctrlKey, result: validationResult });
     return;
   }
 
@@ -158,16 +158,16 @@ async function onSendReviewBtnClick (): Promise<void> {
 
   const result = scorePickerResult.value;
   if (!result || result === 'cancel') {
-    logger.verbose(`(ReviewEditor) cancelled, ctrlKey=${ctrlKey}, result=${scorePickerResult.value}`);
+    logger.verbose('cancelled', { ctrlKey, result: scorePickerResult.value });
     return;
   }
 
-  logger.verbose(`(ReviewEditor) submitting review, ctrlKey=${ctrlKey}, score=${scorePickerResult.value}`);
+  logger.verbose('submitting review', { ctrlKey, score: scorePickerResult.value });
   $emit('submitReview', editor.value!.getHTML(), result);
 }
 
 function onCancelReviewEditBtnClick () {
-  logger.debug(`(ReviewEditor) cancel review edit btn click handler, ctrlKey=${ctrlKey}`);
+  logger.debug('cancel review edit btn click handler', ctrlKey);
   validationErrMsgResName.value = undefined;
   $emit('cancelEdit');
 }
@@ -179,17 +179,17 @@ function isSendButtonVisible (): boolean {
 const sendButtonVisible = ref(isSendButtonVisible());
 
 watch(() => reviewStore.status, () => {
-  logger.debug(`(ReviewEditor) review store status changed, ctrlKey=${ctrlKey}, status=${reviewStore.status}`);
+  logger.debug('review store status changed', { ctrlKey, status: reviewStore.status });
   sendButtonVisible.value = isSendButtonVisible();
 });
 
 onBeforeUnmount(() => {
-  logger.verbose(`(ReviewEditor) before unmount handler, ctrlKey=${ctrlKey}`);
+  logger.verbose('before unmount handler', ctrlKey);
   unref(editor)?.destroy();
 });
 
 onMounted(() => {
-  logger.verbose(`(ReviewEditor) mounted, ctrlKey=${ctrlKey}`);
+  logger.verbose('mounted', ctrlKey);
   isMounted.value = true;
   sendButtonVisible.value = isSendButtonVisible();
   refreshTabIndices();
@@ -202,63 +202,63 @@ onMounted(() => {
     <div v-if="editor" class="review-editor-container">
       <div class="review-editor-buttons">
         <ReviewEditorButton
-          :ctrl-key="`${ctrlKey}-BtnBold`"
+          :ctrl-key="[...ctrlKey, 'ReviewEditorBtn', 'Bold' as ArbitraryControlElementMarker]"
           type="bold"
           :disabled="!editor.can().chain().focus().toggleBold().run()"
           :active="editor.isActive('bold')"
           @click="onButtonClicked('bold')"
         />
         <ReviewEditorButton
-          :ctrl-key="`${ctrlKey}-BtnItalic`"
+          :ctrl-key="[...ctrlKey, 'ReviewEditorBtn', 'Italic' as ArbitraryControlElementMarker]"
           type="italic"
           :disabled="!editor.can().chain().focus().toggleItalic().run()"
           :active="editor.isActive('italic')"
           @click="onButtonClicked('italic')"
         />
         <ReviewEditorButton
-          :ctrl-key="`${ctrlKey}-BtnStrikethrough`"
+          :ctrl-key="[...ctrlKey, 'ReviewEditorBtn', 'Strikethrough' as ArbitraryControlElementMarker]"
           type="strikethrough"
           :disabled="!editor.can().chain().focus().toggleStrike().run()"
           :active="editor.isActive('strike')"
           @click="onButtonClicked('strikethrough')"
         />
         <ReviewEditorButton
-          :ctrl-key="`${ctrlKey}-BtnUnderline`"
+          :ctrl-key="[...ctrlKey, 'ReviewEditorBtn', 'Underline' as ArbitraryControlElementMarker]"
           type="underline"
           :disabled="!editor.can().chain().focus().toggleUnderline().run()"
           :active="editor.isActive('underline')"
           @click="onButtonClicked('underline')"
         />
         <ReviewEditorButton
-          :ctrl-key="`${ctrlKey}-BtnBulletList`"
+          :ctrl-key="[...ctrlKey, 'ReviewEditorBtn', 'BulletList' as ArbitraryControlElementMarker]"
           type="bulletList"
           :disabled="false"
           :active="editor.isActive('bulletList')"
           @click="onButtonClicked('bulletList')"
         />
         <ReviewEditorButton
-          :ctrl-key="`${ctrlKey}-BtnOrderedList`"
+          :ctrl-key="[...ctrlKey, 'ReviewEditorBtn', 'OrderedList' as ArbitraryControlElementMarker]"
           type="orderedList"
           :disabled="false"
           :active="editor.isActive('orderedList')"
           @click="onButtonClicked('orderedList')"
         />
         <ReviewEditorButton
-          :ctrl-key="`${ctrlKey}-BtnBlockquote`"
+          :ctrl-key="[...ctrlKey, 'ReviewEditorBtn', 'Blockquote' as ArbitraryControlElementMarker]"
           type="blockquote"
           :disabled="false"
           :active="editor.isActive('blockquote')"
           @click="onButtonClicked('blockquote')"
         />
         <ReviewEditorButton
-          :ctrl-key="`${ctrlKey}-BtnUndo`"
+          :ctrl-key="[...ctrlKey, 'ReviewEditorBtn', 'Undo' as ArbitraryControlElementMarker]"
           type="undo"
           :disabled="!editor.can().chain().focus().undo().run()"
           :active="editor.isActive('undo')"
           @click="onButtonClicked('undo')"
         />
         <ReviewEditorButton
-          :ctrl-key="`${ctrlKey}-BtnRedo`"
+          :ctrl-key="[...ctrlKey, 'ReviewEditorBtn', 'Redo' as ArbitraryControlElementMarker]"
           type="redo"
           :disabled="!editor.can().chain().focus().redo().run()"
           :active="editor.isActive('redo')"
@@ -286,7 +286,7 @@ onMounted(() => {
     <div class="review-editor-control-buttons mt-xs-2 mt-s-3 pb-xs-2">
       <SimpleButton
         kind="support"
-        :ctrl-key="`${ctrlKey}-CancelReviewEdit`"
+        :ctrl-key="[...ctrlKey, 'Btn', 'Cancel']"
         icon="cross"
         :label-res-name="getI18nResName3('reviewEditor', 'controlButtons', 'cancel')"
         @click="onCancelReviewEditBtnClick"
@@ -294,12 +294,12 @@ onMounted(() => {
       <SimpleButton
         v-if="sendButtonVisible"
         kind="default"
-        :ctrl-key="`${ctrlKey}-SendReview`"
+        :ctrl-key="[...ctrlKey, 'Btn', 'Send']"
         icon="paper-plane"
         :label-res-name="getI18nResName3('reviewEditor', 'controlButtons', 'send')"
         @click="onSendReviewBtnClick"
       />
-      <ComponentWaitingIndicator v-else :ctrl-key="`${ctrlKey}-SendReviewWaiter`" class="send-review-waiting-indicator" />
+      <ComponentWaitingIndicator v-else :ctrl-key="[...ctrlKey, 'Send', 'Waiter']" class="send-review-waiting-indicator" />
     </div>
   </div>
 </template>

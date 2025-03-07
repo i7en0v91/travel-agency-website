@@ -1,5 +1,6 @@
-import type { ICommonServicesLocator, AppPage, I18nResName, GeoPoint, Price, StayOffersSortFactor, FlightOffersSortFactor, FlightClass, TripType, OfferKind, Timestamp, ILocalizableValue, EntityId, IImageEntitySrc, CacheEntityType, GetEntityCacheItem } from '@golobe-demo/shared';
+import type { CacheEntityType, ICommonServicesLocator, AppPage, I18nResName, GeoPoint, Price, StayOffersSortFactor, FlightOffersSortFactor, FlightClass, TripType, OfferKind, Timestamp, ILocalizableValue, EntityId, IImageEntitySrc } from '@golobe-demo/shared';
 import type { IElectronShell } from './electron/interfaces';
+import type { ControlKey } from './helpers/components';
 
 export type SimplePropertyType = 'text' | 'email' | 'password';
 export type PropertyGridControlButtonType = 'change' | 'apply' | 'cancel' | 'delete' | 'add';
@@ -14,18 +15,11 @@ export type FloatingVueHydrationHints = {
   tabIndex: number | undefined
 };
 
-/** Client - entity cache */
-export interface IEntityCache {
-  set: <TEntityType extends CacheEntityType>(item: GetEntityCacheItem<TEntityType>, expireInSeconds: number | undefined) => Promise<void>,
-  remove: <TEntityType extends CacheEntityType>(id: EntityId | undefined, slug: string | undefined, type: TEntityType) => Promise<void>,
-  get: <TEntityType extends CacheEntityType>(ids: EntityId[], slugs: string[], type: TEntityType, fetchOnCacheMiss: false | { expireInSeconds: number | undefined }) => Promise<GetEntityCacheItem<TEntityType>[] | undefined>
-}
-
 /** Components - option buttons */
 export type IOptionButtonRole = { role: 'radio'} | { role: 'tab', tabPanelId: string };
 
 export interface IOptionButtonProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   enabled: boolean,
   isActive?: boolean,
   labelResName: I18nResName,
@@ -45,27 +39,27 @@ export interface IOtherOptionsButtonGroupProps extends Omit<IOptionButtonProps, 
 }
 
 export interface IOptionButtonGroupProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   options: IOptionButtonProps[],
   otherOptions?: IOtherOptionsButtonGroupProps,
-  activeOptionCtrl?: string,
+  defaultActiveOptionKey?: ControlKey,
   useAdaptiveButtonWidth?: boolean,
+  persistent?: boolean,
   role: 'radiogroup' | 'tablist'
 }
 
 /** Components - dropdown lists */
-export type DropdownListValue = string | number;
+export type DropdownListValue = string;
 export interface IDropdownListItemProps {
   value: DropdownListValue,
   resName: I18nResName
 }
 export interface IDropdownListProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   captionResName?: I18nResName,
-  persistent: boolean,
+  persistent?: boolean,
   selectedValue?: DropdownListValue,
   defaultValue?: DropdownListValue,
-  initiallySelectedValue?: DropdownListValue | null | undefined,
   placeholderResName?: I18nResName,
   listContainerClass?: string,
   items: IDropdownListItemProps[],
@@ -87,11 +81,11 @@ export interface ITravelDetailsData {
 }
 
 /** Components - search lists (with autocomplete) */
-export type SearchListItemType = 'destination';
+export type SearchListItemType = CacheEntityType;
 export interface ISearchListItem {
   id: EntityId,
   slug?: string,
-  displayName: ILocalizableValue | string
+  displayName: ILocalizableValue
 }
 
 /** Components - search offers */
@@ -139,8 +133,8 @@ export interface ISearchOffersFilterParams {
 
 // Search parameters
 export interface ISearchFlightOffersMainParams {
-  fromCity: ISearchListItem,
-  toCity: ISearchListItem,
+  fromCityId: EntityId,
+  toCityId: EntityId,
   tripType: TripType,
   dateFrom: Date,
   dateTo: Date,
@@ -149,7 +143,7 @@ export interface ISearchFlightOffersMainParams {
 }
 
 export interface ISearchStayOffersMainParams {
-  city: ISearchListItem,
+  cityId: EntityId,
   checkIn: Date,
   checkOut: Date,
   numRooms: number,
@@ -182,7 +176,7 @@ export interface ISearchStayOffersDisplayOptions extends ISearchOffersCommonDisp
 
 /** Components - maps */
 export interface IMapControlProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   origin: GeoPoint,
   cssClass?: string,
   webUrl?: string
@@ -193,7 +187,7 @@ export type ReviewEditorButtonType = 'bold' | 'italic' | 'strikethrough' | 'unde
 
 /** Components - booking ticket */
 export interface IBookingTicketGeneralProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   avatar?: IImageEntitySrc | null | undefined,
   texting?: {
     name: string,
@@ -203,43 +197,43 @@ export interface IBookingTicketGeneralProps {
 }
 
 export interface IBookingTicketDatesItemProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   label?: string,
   sub?: ILocalizableValue | I18nResName
 }
 
 export interface IBookingTicketDatesProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   from?: IBookingTicketDatesItemProps,
   to?: IBookingTicketDatesItemProps,
   offerKind?: OfferKind
 }
 
 export interface IBookingTicketDetailsItemProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   icon: string,
   caption: I18nResName,
   text?: I18nResName
 }
 
 export interface IBookingTicketDetailsProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   items?: IBookingTicketDetailsItemProps[]
 }
 
 export interface IBookingTicketStayTitleProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   stayName: ILocalizableValue,
   cityName: ILocalizableValue
 }
 
 export interface IBookingTicketFlightGfxProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   userName: string
 }
 
 export interface IBookingTicketProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   offerKind?: OfferKind,
   generalInfo?: IBookingTicketGeneralProps,
   dates?: Omit<IBookingTicketDatesProps, 'offerKind'>,
@@ -249,6 +243,6 @@ export interface IBookingTicketProps {
 
 export interface IClientServicesLocator extends ICommonServicesLocator {
   appMounted: boolean,
-  getEntityCache(): IEntityCache,
+  userNotificationStore?: ReturnType<typeof useUserNotificationStore>,
   getElectronShell(): IElectronShell
 }

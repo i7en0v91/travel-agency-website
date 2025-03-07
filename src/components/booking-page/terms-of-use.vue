@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { AppConfig, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import range from 'lodash-es/range';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 };
 defineProps<IProps>();
 
@@ -19,7 +20,7 @@ defineProps<IProps>();
         {{ $t(getI18nResName3('bookingTnC', 'payments', 'title')) }}
       </h3>
       <ul class="booking-terms-payment-terms">
-        <li v-for="(i) in range(0, 3)" :key="`${ctrlKey}-PaymentTerm${i}`" class="booking-terms-payment-term">
+        <li v-for="(i) in range(0, 3)" :key="`${toShortForm(ctrlKey)}-PaymentTerm${i}`" class="booking-terms-payment-term">
           <div class="booking-terms-payment-terms-bullet pt-xs-3 px-xs-2" />
           <div class="booking-terms-payment-terms-par pt-xs-3">
             {{ $t(getI18nResName3('bookingTnC', 'payments', `paragraph${i + 1}` as any), { companyName: AppConfig.booking.companyName }) }}

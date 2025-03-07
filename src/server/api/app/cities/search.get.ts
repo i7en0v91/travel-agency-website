@@ -7,12 +7,12 @@ import { getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const serverServices = getServerServices()!;
-  const logger = serverServices.getLogger();
+  const logger = serverServices.getLogger().addContextProps({ component: 'WebApi' });
   const citiesLogic = serverServices.getCitiesLogic();
   const query = getQuery(event);
 
   if (!query) {
-    logger.warn(`(api:cities-search) cities search query is empty, url=${event.node.req.url}`, undefined, query);
+    logger.warn('cities search query is empty', undefined, { url: event.node.req.url });
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
       'search query parameters were not specified',
@@ -22,7 +22,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
 
   const validationError = await validateObject(omit(query, QueryPagePreviewModeParam), CitiesSearchQuerySchema);
   if (validationError) {
-    logger.warn(`(api:cities-search) cities search query does not match schema, url=${event.node.req.url}, msg=${validationError.message}, issues=${validationError.errors?.join('; ') ?? '[empty]'}]`, undefined, query);
+    logger.warn('cities search query does not match schema', undefined, { ...(query), ...{ url: event.node.req.url, msg: validationError.message } });
     throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'search query arguments has invalid format', 'error-stub');
   }
 

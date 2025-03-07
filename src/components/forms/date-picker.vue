@@ -1,64 +1,45 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { type I18nResName, getI18nResName1 } from '@golobe-demo/shared';
 import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../../helpers/dom';
-import type { DatePickerDate, DatePickerModel } from 'v-calendar/dist/types/src/use/datePicker.js';
+import type { DatePickerModel } from 'v-calendar/dist/types/src/use/datePicker.js';
 import type { Dropdown } from 'floating-vue';
-import dayjs from 'dayjs';
 import FieldFrame from './../forms/field-frame.vue';
 import { getCommonServices } from '../../helpers/service-accessors';
-import { datePickerValueToDate } from './../../helpers/components';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   captionResName: I18nResName,
-  persistent: boolean,
-  selectedDate?: Date,
-  initiallySelectedDate?: Date | null | undefined,
+  persistent?: boolean,
   defaultDate?: Date,
   icon?: boolean,
   minDate?: Date
 }
 
-const { selectedDate, initiallySelectedDate, persistent, ctrlKey, defaultDate, icon = true } = defineProps<IProps>();
+const { 
+  ctrlKey, 
+  persistent = undefined, 
+  defaultDate = undefined, 
+  icon = true 
+} = defineProps<IProps>();
+
+const logger = getCommonServices().getLogger().addContextProps({ component: 'DatePicker' });
+const controlValuesStore = useControlValuesStore();
 
 const { d, locale } = useI18n();
+const modelValue = defineModel<Date | null | undefined>('selectedDate');
+const hasMounted = ref(false);
 
 const openBtn = useTemplateRef<HTMLElement>('open-btn');
 const dropdown = useTemplateRef<InstanceType<typeof Dropdown>>('dropdown');
-const calendar = useTemplateRef('calendar');
 
-const logger = getCommonServices().getLogger();
+const datesDisplayText = computed(() => {
+  return hasMounted.value ? (modelValue.value ? d(modelValue.value!, 'short') : '') : '';
+});
 
-const today = eraseTimeOfDay(dayjs().utc(true).toDate());
-let defaultValue = defaultDate ? eraseTimeOfDay(defaultDate) : today;
-if (dayjs(defaultValue).isBefore(today)) {
-  defaultValue = today;
-}
-
-const controlSettingsStore = useControlSettingsStore();
-const controlValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(ctrlKey, defaultValue.toISOString(), persistent);
-if (dayjs(controlValueSetting.value).isBefore(today)) {
-  controlValueSetting.value = today.toISOString();
-}
-
-let initialValue = defaultValue;
-if (initiallySelectedDate) {
-  initialValue = initiallySelectedDate;
-  if (dayjs(initialValue).isBefore(today)) {
-    initialValue = today;
-  }
-  controlValueSetting.value = initialValue.toISOString();
-} else if (initiallySelectedDate === null) {
-  initialValue = defaultValue;
-  controlValueSetting.value = initialValue.toISOString();
-}
-
-const selectedValue = ref<Date>(initialValue);
-const hasMounted = ref(false);
-
-function eraseTimeOfDay (dateTime: Date): Date {
-  const totalMs = dateTime.getTime();
-  return new Date(totalMs - totalMs % (1000 * 60 * 60 * 24));
+function onValueSelected (value: DatePickerModel) {
+  logger.verbose('value selected', { ctrlKey, value });
+  hideDropdown();
 }
 
 function onMenuShown () {
@@ -73,46 +54,36 @@ function hideDropdown () {
   dropdown.value?.hide();
 }
 
-function fireSelectedDateChange (date: Date) {
-  logger.debug(`(DatePicker) date changed: ctrlKey=${ctrlKey}, date=${date}`);
-  $emit('update:selectedDate', eraseTimeOfDay(date));
-}
-
-function onSelectedDateUpdated (date: Date) {
-  logger.verbose(`(DatePicker) calendar date updated: ctrlKey=${ctrlKey}, date=${date}`);
-  controlValueSetting.value! = eraseTimeOfDay(date).toISOString();
-  fireSelectedDateChange(date);
-  logger.verbose(`(DatePicker) selected date(s) updated: ctrlKey=${ctrlKey}`);
-}
-
-const $emit = defineEmits<{(event: 'update:selectedDate', date: Date): void}>();
-
-function onValueSelected (value: DatePickerModel) {
-  logger.verbose(`(SearchFlightsDatePicker) value selected: ctrlKey=${ctrlKey}, value=${JSON.stringify(value)}`);
-  hideDropdown();
-  onSelectedDateUpdated(datePickerValueToDate(value as DatePickerDate, calendar.value?.locale, logger));
-}
-
 function onEscape () {
   hideDropdown();
 }
 
-const datesDisplayText = computed(() => {
-  return hasMounted.value ? d(selectedValue.value!, 'short') : undefined;
-});
-
-onBeforeMount(() => {
-  if (controlValueSetting.value) {
-    selectedValue.value = eraseTimeOfDay(new Date(controlValueSetting.value!));
-  }
-});
 onMounted(() => {
-  hasMounted.value = true;
-  fireSelectedDateChange(selectedValue.value);
-});
+  const initialOverwrite = modelValue.value as Date;
+  logger.debug('acquiring store value ref', { ctrlKey, defaultValue: defaultDate, initialOverwrite });
+  const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<Date | null>(ctrlKey, {
+    initialOverwrite,
+    defaultValue: defaultDate,
+    persistent
+  });
 
-watch(() => selectedDate, () => {
-  selectedValue.value = selectedDate ?? defaultValue;
+  watch(storeValueRef, () => {
+    logger.debug('store value watcher', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value });
+    const newValue: Date | null = storeValueRef.value ?? null;
+    const changed = storeValueRef.value !== modelValue.value;
+    if(changed) {
+      modelValue.value = newValue;  
+    }
+  }, { immediate: true });
+
+  watch(modelValue, () => {
+    logger.debug('model value watcher', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value });
+    if(modelValue.value !== storeValueRef.value) {
+      storeValueRef.value = modelValue.value ?? null;
+    }
+  }, { immediate: false });
+
+  hasMounted.value = true;
 });
 
 </script>
@@ -122,8 +93,8 @@ watch(() => selectedDate, () => {
     <VDropdown
       ref="dropdown"
       v-floating-vue-hydration="{ tabIndex: 0 }"
-      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
-      :aria-id="`${ctrlKey}-DropDownWrapper`"
+      :ctrl-key="[...ctrlKey, 'Wrapper']"
+      :aria-id="`${toShortForm(ctrlKey)}-DropDownWrapper`"
       :distance="-6"
       :hide-triggers="(triggers: any) => [...triggers, 'click']"
       placement="bottom"
@@ -136,7 +107,7 @@ watch(() => selectedDate, () => {
       <FieldFrame :text-res-name="captionResName" class="date-picker-field-frame">
         <div class="date-picker-field-div">
           <button
-            :id="`date-picker-${ctrlKey}`"
+            :id="`date-picker-${toShortForm(ctrlKey)}`"
             ref="open-btn"
             class="date-picker-field-btn brdr-1"
             type="button"
@@ -155,12 +126,12 @@ watch(() => selectedDate, () => {
         <ClientOnly>
           <VDatePicker
             ref="calendar"
-            v-model:model-value="selectedValue"
+            v-model:model-value="modelValue"
             timezone="utc"
             mode="date"
             class="calendar"
             color="golobe"
-            :min-date="minDate ?? today"
+            :min-date="minDate"
             :locale="locale"
             @update:model-value="onValueSelected"
           />

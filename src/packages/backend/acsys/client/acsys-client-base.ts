@@ -63,35 +63,35 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
 
     this.apiSecret = process.env.ACSYS_SECRET as string;
     if(!this.apiSecret) {
-      this.logger.error(`(AcsysClientBase) [${this.roleKind}] api secret not specified`);
+      this.logger.error('api secret not specified', undefined, { roleKind: this.roleKind });
       throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'incorrect acsys configuration', 'error-page');
     }
 
     const parsedUrl = parseURL(baseUrl);
     if(!parsedUrl.host) {
-      this.logger.error(`(AcsysClientBase) [${this.roleKind}] cannot parse host baesUrl=${baseUrl}`);
+      this.logger.error('cannot parse host', undefined, { baesUrl: baseUrl, roleKind: this.roleKind });
       throw new Error('cannot parse host');
     }
     this.host = parsedUrl.host;
 
-    this.logger.debug(`(AcsysClientBase) [${this.roleKind}] constructed, baseUrl=${this.baseUrl}, host=${this.host}`);
+    this.logger.debug('constructed', { baseUrl: this.baseUrl, host: this.host, roleKind: this.roleKind });
   }
 
   onClientUsersReady = () => {
-    this.logger.debug(`(AcsysClientBase) [${this.roleKind}] on client users ready`);
+    this.logger.debug('on client users ready', { roleKind: this.roleKind });
     this.startAuthKeeper();
   };
 
   hasAdmin = async (): Promise<boolean> => {
-    this.logger.debug(`(AcsysClientBase) [${this.roleKind}] sending has admin check`);
+    this.logger.debug('sending has admin check', { roleKind: this.roleKind });
     const response = await this.fetch<ApiResponseTypes.json, any>(RouteHasAdmin, undefined, undefined, 'GET', undefined, false, ApiResponseTypes.json);
     const result = response?.value ?? false;
-    this.logger.debug(`(AcsysClientBase) [${this.roleKind}] has admin check sent, result=${result}`);
+    this.logger.debug('has admin check sent', { roleKind: this.roleKind, result });
     return result;
   };
 
   sendInitialLocalDatabaseConfig = async (projectName: string): Promise<boolean> => {
-    this.logger.debug(`(AcsysClientBase) [${this.roleKind}] sending initial local database config`);
+    this.logger.debug('sending initial local database config', { roleKind: this.roleKind });
 
     const configDto: SetInitialLocalDatabaseConfigDto = {
       projectName
@@ -99,12 +99,12 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
     const response = await this.fetch<ApiResponseTypes.text>(RouteInitialLocalDatabaseConfig, undefined, configDto, 'POST', undefined, false, ApiResponseTypes.text);
     const result = response.toLowerCase() === 'true';
 
-    this.logger.debug(`(AcsysClientBase) [${this.roleKind}] initial local database config sent, result=${result}`);
+    this.logger.debug('initial local database config sent', { roleKind: this.roleKind, result });
     return result;
   };
 
   register = async (adminUser: UserData): Promise<boolean> => {
-    this.logger.debug(`(AcsysClientBase) [${this.roleKind}] registering admin user`);
+    this.logger.debug('registering admin user', { roleKind: this.roleKind });
 
     const registerDto: RegisterUserDto = {
       data: {
@@ -118,7 +118,7 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
     const response = await this.fetch<ApiResponseTypes.json, any>(RouteRegister, undefined, registerDto, 'POST', undefined, false, ApiResponseTypes.json);
     const isSuccessfull = !!(response?.acsys_id);
 
-    this.logger.debug(`(AcsysClientBase) [${this.roleKind}] admin user register request completed, result=${isSuccessfull}`);
+    this.logger.debug('admin user register request completed', { roleKind: this.roleKind, result: isSuccessfull });
     return isSuccessfull;
   };
 
@@ -134,11 +134,11 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
     refreshToken: TokenInfo
   } => {
     if(!response.token) {
-      this.logger.warn(`(AcsysClientBase) [${this.roleKind}] authentication response does not contain token`);
+      this.logger.warn('authentication response does not contain token', undefined, { roleKind: this.roleKind });
       throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'authentication failed', 'error-page');
     }
     if(!response.refreshToken) {
-      this.logger.warn(`(AcsysClientBase) [${this.roleKind}] authentication response does not contain refresh token`);
+      this.logger.warn('authentication response does not contain refresh token', undefined, { roleKind: this.roleKind });
       throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'authentication failed', 'error-page');
     }
     let accessTokenPayload: JwtPayload, refreshTokenPayload: JwtPayload;
@@ -146,7 +146,7 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
       accessTokenPayload = verify(response.token, this.apiSecret) as JwtPayload;
       refreshTokenPayload = verify(response.refreshToken, this.apiSecret) as JwtPayload;
     } catch(err: any) {
-      this.logger.warn(`(AcsysClientBase) [${this.roleKind}] failed to verify tokens payload`, err);
+      this.logger.warn('failed to verify tokens payload', err, { roleKind: this.roleKind });
       throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'failed to verify auth tokens', 'error-page');
     }
 
@@ -163,7 +163,7 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
   };
 
   authenticate = async (): Promise<AuthSucceededEventOptions & UserInfoJwtPayload> => {
-    this.logger.verbose(`(AcsysClientBase) [${this.roleKind}] authenticating`);
+    this.logger.verbose('authenticating', { roleKind: this.roleKind });
 
     const authDto: AuthenticateDto = {
       username: {
@@ -176,7 +176,8 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
     const response = await this.fetch<ApiResponseTypes.json, AuthenticateResponseDto>(RouteAuthenticate, undefined, authDto, 'POST', undefined, false, ApiResponseTypes.json);
     const result = this.parseAuthResponse(response);
 
-    this.logger.verbose(`(AcsysClientBase) [${this.roleKind}] authenticated, exp=${result.accessToken.payload.exp ? (new Date(result.accessToken.payload.exp * 1000).toISOString()) : '(none)'}, role=${response.role}`);
+    const expFormatted = result.accessToken.payload.exp ? (new Date(result.accessToken.payload.exp * 1000).toISOString()) : '(none)';
+    this.logger.verbose('authenticated', { roleKind: this.roleKind, exp: expFormatted, role: response.role });
     return  {
       ...result,
       acsys_id: response.acsys_id,
@@ -185,35 +186,36 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
   };
 
   refreshToken = async (): Promise<AuthSucceededEventOptions> => {
-    this.logger.verbose(`(AcsysClientBase) [${this.roleKind}] refreshing token`);
+    this.logger.verbose('refreshing token', { roleKind: this.roleKind });
 
     const response = await this.fetch<ApiResponseTypes.json, RefreshTokenResponseDto>(RouteRefreshToken, undefined, undefined, 'POST', undefined, 'accept-pending-status', ApiResponseTypes.json);
     const result = this.parseAuthResponse(response);
 
-    this.logger.verbose(`(AcsysClientBase) [${this.roleKind}] token refreshed, exp=${result.accessToken.payload.exp ? (new Date(result.accessToken.payload.exp * 1000).toISOString()) : '(none)'}`);
+    const expFormatted = result.accessToken.payload.exp ? (new Date(result.accessToken.payload.exp * 1000).toISOString()) : '(none)';
+    this.logger.verbose('token refreshed', { roleKind: this.roleKind, exp: expFormatted });
     return result;
   };
 
   waitForNonPendingState = async (): Promise<void> => {
     if(this.authStatus === 'pending') {
-      this.logger.verbose(`(AcsysClientBase) [${this.roleKind}] auth is in pending state, waiting`);
+      this.logger.verbose('auth is in pending state, waiting', { roleKind: this.roleKind });
       await spinWait(() => Promise.resolve(this.authStatus !== 'pending'), DefaultOperationTimeoutSec * 1000);
       if(this.authStatus === 'pending') {
-        this.logger.warn(`(AcsysClientBase) [${this.roleKind}] timeout while waiting for auth non-pending state`);
+        this.logger.warn('timeout while waiting for auth non-pending state', undefined, { roleKind: this.roleKind });
         throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'authentication timeout', 'error-stub');
       }
-      this.logger.verbose(`(AcsysClientBase) [${this.roleKind}] auth now in non-pending state ${this.authStatus}`);
+      this.logger.verbose('auth now in non-pending state', { roleKind: this.roleKind, authStatus: this.authStatus });
     }
   };
 
 
   dispatchAuthEvent = async (eventOptions: AuthEventOptions): Promise<void> => {
-    this.logger.verbose(`(AcsysClientBase) [${this.roleKind}] dispatching event ${eventOptions.kind.valueOf()}`);
+    this.logger.verbose('dispatching event', { kind: eventOptions.kind.valueOf(), roleKind: this.roleKind });
 
     const dispatchAttempAuth = async (): Promise<void> => {
       await this.waitForNonPendingState(); // in case of another outstanding auth requests
       if(this.authStatus === 'authenticated' && this.accessTokenInfo && !this.isExpirationTriggering(this.accessTokenInfo)) {
-        this.logger.debug(`(AcsysClientBase) [${this.roleKind}] skipping ${AuthEventEnum.AttempAuth} dispatch, already authenticated`);
+        this.logger.debug('skipping dispatch, already authenticated', { roleKind: this.roleKind, event: AuthEventEnum.AttempAuth });
         return;
       }
 
@@ -232,7 +234,7 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
       await this.waitForNonPendingState(); // in case of another outstanding auth requests
 
       if(this.refreshTokenInfo === undefined) {
-        this.logger.warn(`(AcsysClientBase) [${this.roleKind}] cannot refresh token as it is not initialized, obtaining another access token`);
+        this.logger.warn('cannot refresh token as it is not initialized, obtaining another access token', undefined, { roleKind: this.roleKind });
         await this.dispatchAuthEvent({ kind: AuthEventEnum.AttempAuth });
         return;
       }
@@ -275,15 +277,15 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
           await dispatchRefreshToken();
           break;
         default:
-          this.logger.error(`(AcsysClientBase) [${this.roleKind}] error unexpected event type ${(eventOptions as any).kind}`);
+          this.logger.error('error unexpected event type', undefined, { roleKind: this.roleKind, event: (eventOptions as any).kind });
           if(this.authStatus !== 'failed') {
             await this.dispatchAuthEvent({ kind: AuthEventEnum.AuthFailed });
           }
       }
 
-      this.logger.verbose(`(AcsysClientBase) [${this.roleKind}] dispatch ${eventOptions.kind.valueOf()} event completed`);
+      this.logger.verbose('dispatch event completed', { roleKind: this.roleKind, event: eventOptions.kind.valueOf() });
     } catch(err: any) {
-      this.logger.warn(`(AcsysClientBase) [${this.roleKind}] exception occured while dispatching event ${eventOptions.kind.valueOf()}`, err);
+      this.logger.warn('exception occured while dispatching', err, { roleKind: this.roleKind, event: eventOptions.kind.valueOf() });
       if(this.authStatus !== 'failed') {
         await this.dispatchAuthEvent({ kind: AuthEventEnum.AuthFailed });
       }
@@ -302,41 +304,41 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
   };
 
   refreshAuthTimerCallback = async (): Promise<void> => {
-    this.logger.debug(`(AcsysClientBase) [${this.roleKind}] refreshing auth status, current=${this.authStatus}`);
+    this.logger.debug('refreshing auth status', { roleKind: this.roleKind, current: this.authStatus });
     if(this.authStatus === 'pending') {
-      this.logger.debug(`(AcsysClientBase) [${this.roleKind}] skipping refresh because of pending auth status`);
+      this.logger.debug('skipping refresh because of pending auth status', { roleKind: this.roleKind });
       return;
     }
 
     try {
       if(!this.accessTokenInfo) {
-        this.logger.verbose(`(AcsysClientBase) [${this.roleKind}] access token not present, obtaining`);
+        this.logger.verbose('access token not present, obtaining', { roleKind: this.roleKind });
         await this.dispatchAuthEvent({ kind: AuthEventEnum.AttempAuth });
       }
       if(this.authStatus === 'failed') {
-        this.logger.debug(`(AcsysClientBase) [${this.roleKind}] in failed state, postpone status refresh`);
+        this.logger.debug('in failed state, postpone status refresh', { roleKind: this.roleKind });
         return;
       }
   
       if(!this.accessTokenInfo) {
-        this.logger.warn(`(AcsysClientBase) [${this.roleKind}] access token not initialized, postpone status refresh`);
+        this.logger.warn('access token not initialized, postpone status refresh', undefined, { roleKind: this.roleKind });
         return;
       }
       if(!this.isExpirationTriggering(this.accessTokenInfo)) {
-        this.logger.debug(`(AcsysClientBase) [${this.roleKind}] auth token checked, no expiration triggering`);
+        this.logger.debug('auth token checked, no expiration triggering', { roleKind: this.roleKind });
         return;
       }
-      this.logger.verbose(`(AcsysClientBase) [${this.roleKind}] auth token expiration triggering, refreshing`);
+      this.logger.verbose('auth token expiration triggering, refreshing', { roleKind: this.roleKind });
       await this.dispatchAuthEvent({ kind: AuthEventEnum.RefreshToken });
   
-      this.logger.debug(`(AcsysClientBase) [${this.roleKind}] auth status refreshed, result=${this.authStatus}`);
+      this.logger.debug('auth status refreshed', { roleKind: this.roleKind, result: this.authStatus });
     } catch(err: any) {
-      this.logger.warn(`(AcsysClientBase) [${this.roleKind}] exception occured while refreshing auth status in timer callback`, err);
+      this.logger.warn('exception occured while refreshing auth status in timer callback', err, { roleKind: this.roleKind });
     }
   };
   
   startAuthKeeper = () => {
-    this.logger.verbose(`(AcsysClientBase) [${this.roleKind}] starting auth keeper task`);
+    this.logger.verbose('starting auth keeper task', { roleKind: this.roleKind });
     scheduleTimer(this.refreshAuthTimerCallback, AuthKeeperTimerIntervalSec * 1000);
     this.refreshAuthTimerCallback();
   };
@@ -365,11 +367,12 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
       TReqSchema extends ObjectSchema<YupAnyObject> = ObjectSchema<YupAnyObject>>
     (fullPath: string, query: any, body: any, method: HTTPMethod, minimumUserRole: UserRoleEnum | undefined, withAuth: boolean | 'accept-pending-status', respType: ApiResponseTypes, bodyValidationSchema?: TReqSchema): Promise<TRes> => 
   {
-    this.logger.verbose(`(AcsysClientBase) [${this.roleKind}] fetch, path=${fullPath}, method=${method}, minRole=${minimumUserRole}, withAuth=${withAuth}, auth status=${this.authStatus}`, (isObject(body) && !(body instanceof FormData)) ? { query, body } : { query });
+    const logData = (isObject(body) && !(body instanceof FormData)) ? { query, body } : { query };
+    this.logger.verbose('fetch', { roleKind: this.roleKind, path: fullPath, method, minRole: minimumUserRole, withAuth, status: this.authStatus });
 
     const authorizationPassed = this.verifyMinimumUserRole(minimumUserRole);
     if(!authorizationPassed) {
-      this.logger.warn(`(AcsysClientBase) [${this.roleKind}] authorization check failed, path=${fullPath}, method=${method}, minRole=${minimumUserRole}, auth status=${this.authStatus}, `, (isObject(body) && !(body instanceof FormData)) ? { query, body } : { query });
+      this.logger.warn('authorization check failed', undefined, { roleKind: this.roleKind, path: fullPath, method, minRole: minimumUserRole, status: this.authStatus });
       throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'unexpected error', 'error-page');
     }
 
@@ -400,20 +403,22 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
 
     if(body) {
       if(!(body instanceof FormData) && bodyValidationSchema) {
-        this.logger.debug(`(AcsysClientBase) [${this.roleKind}] validating fetch body, path=${fullPath}, method=${method}`, isObject(body) ? { body } : {  });
+        const logData = isObject(body) ? { body } : {  };
+        this.logger.debug('validating fetch body', { roleKind: this.roleKind, path: fullPath, method });
         const validationError = await validateObject(body, bodyValidationSchema);
         if (validationError) {
-          this.logger.warn(`(AcsysClientBase) [${this.roleKind}] fetch body validation failed, path=${fullPath}, method=${method}, minRole=${minimumUserRole}, withAuth=${withAuth}, auth status=${this.authStatus}, msg=${validationError.message}, issues=${validationError.errors?.join('; ') ?? '[empty]'}]`, isObject(body) ? { query, body } : { query });
+          const logData = isObject(body) ? { query, body } : { query };
+          this.logger.warn('fetch body validation failed', undefined, { roleKind: this.roleKind, path: fullPath, method, minRole: minimumUserRole, withAuth, status: this.authStatus, msg: validationError.message });
           throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'invalid request parameters', 'error-stub');
         }
-        this.logger.debug(`(AcsysClientBase) [${this.roleKind}] fetch body validated, path=${fullPath}, method=${method}`, isObject(body) ? { body } : {  });
+        this.logger.debug('fetch body validated', { roleKind: this.roleKind, path: fullPath, method });
       }
 
       if(!(body instanceof FormData)) {
-        this.logger.debug(`(AcsysClientBase) [${this.roleKind}] sending body as JSON, path=${fullPath}, method=${method}`);
+        this.logger.debug('sending body as JSON', { roleKind: this.roleKind, path: fullPath, method });
         fetchParams.body = JSON.stringify(body);
       } else {
-        this.logger.debug(`(AcsysClientBase) [${this.roleKind}] sending body as FormData, path=${fullPath}, method=${method}`);
+        this.logger.debug('sending body as FormData', { roleKind: this.roleKind, path: fullPath, method });
         fetchParams.body = body;
       }
     }
@@ -422,31 +427,35 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
     const url = `${this.baseUrl}/${fullPath}${queryStr ? `?${queryStr}` : ''}`;
     const response = await fetch(url, fetchParams);
     if(!response.ok) {
-      this.logger.warn(`(AcsysClientBase) [${this.roleKind}] fetch failed, path=${fullPath}, method=${method}, minRole=${minimumUserRole}, withAuth=${withAuth}, auth status=${this.authStatus}, responseStatus=${response.status}, responseStatusText=${response.statusText}`, (isObject(body) && !(body instanceof FormData)) ? { query, body } : { query });
+      const logData = (isObject(body) && !(body instanceof FormData)) ? { query, body } : { query };
+      this.logger.warn('fetch failed', undefined, { roleKind: this.roleKind, path: fullPath, method, minRole: minimumUserRole, withAuth, status: this.authStatus, responseStatus: response.status, responseStatusText: response.statusText });
       throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'fetch failed', 'error-stub');
     }
 
     const parseBytesResponse = async (response: Response): Promise<FetchFileResponse> => {
-      this.logger.verbose(`(AcsysClientBase) [${this.roleKind}] parsing bytes response, path=${fullPath}, method=${method}, minRole=${minimumUserRole}`);
+      this.logger.verbose('parsing bytes response', { roleKind: this.roleKind, path: fullPath, method, minRole: minimumUserRole });
 
       const bytes = Buffer.from(await response.arrayBuffer());
 
       let lastModifiedUtc: Date;
       const lastModifiedUtcStr = response.headers.get(HeaderFileLastModifiedUtc);
       if(!lastModifiedUtcStr) {
-        this.logger.warn(`(AcsysClientBase) [${this.roleKind}] file response does not contain last modified time, path=${fullPath}, method=${method}, minRole=${minimumUserRole}, responseStatus=${response.status}, responseStatusText=${response.statusText}`, (isObject(body) && !(body instanceof FormData)) ? { query, body } : { query });
+        const logData = (isObject(body) && !(body instanceof FormData)) ? { query, body } : { query };
+        this.logger.warn('file response does not contain last modified time', undefined, { roleKind: this.roleKind, path: fullPath, method, minRole: minimumUserRole, responseStatus: response.status, responseStatusText: response.statusText });
         throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'Unexpected Acsys file response', 'error-stub');
       }
       try {
         lastModifiedUtc = dayjs().utc().toDate();
       } catch(err: any) {
-        this.logger.warn(`(AcsysClientBase) [${this.roleKind}] failed to parse file last modified time, value=${lastModifiedUtcStr}, path=${fullPath}, method=${method}, minRole=${minimumUserRole}, responseStatus=${response.status}, responseStatusText=${response.statusText}`, (isObject(body) && !(body instanceof FormData)) ? { query, body } : { query }, err);
+        const logData = (isObject(body) && !(body instanceof FormData)) ? { query, body } : { query };
+        this.logger.warn('failed to parse file last modified time', err, { ...(logData), ...{ roleKind: this.roleKind, value: lastModifiedUtcStr, path: fullPath, method, minRole: minimumUserRole, responseStatus: response.status, responseStatusText: response.statusText } });
         throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'Unexpected Acsys file last modified time value', 'error-stub');
       }
       
       const mimeType = response.headers.get(HeaderContentType);
       if(!mimeType) {
-        this.logger.warn(`(AcsysClientBase) [${this.roleKind}] file response does not contain mimie type, path=${fullPath}, method=${method}, minRole=${minimumUserRole}, responseStatus=${response.status}, responseStatusText=${response.statusText}`, (isObject(body) && !(body instanceof FormData)) ? { query, body } : { query });
+        const logData = (isObject(body) && !(body instanceof FormData)) ? { query, body } : { query };
+        this.logger.warn('file response does not contain mime type', undefined, { roleKind: this.roleKind, path: fullPath, method, minRole: minimumUserRole, responseStatus: response.status, responseStatusText: response.statusText });
         throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'Unexpected Acsys file response', 'error-stub');
       }
 
@@ -456,7 +465,7 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
         mimeType
       };
 
-      this.logger.verbose(`(AcsysClientBase) [${this.roleKind}] bytes response parsed, path=${fullPath}, method=${method}, minRole=${minimumUserRole}, size=${result.bytes.length}, mime=${result.mimeType}, lastModified=${lastModifiedUtc.toISOString()}`);
+      this.logger.verbose('bytes response parsed', { roleKind: this.roleKind, path: fullPath, method, minRole: minimumUserRole, size: result.bytes.length, mime: result.mimeType, lastModified: lastModifiedUtc.toISOString() });
       return result;
     };
 
@@ -475,7 +484,7 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
         throw new Error('Not implemented');
     }
 
-    this.logger.verbose(`(AcsysClientBase) [${this.roleKind}] fetch completed, path=${fullPath}, method=${method}, responseStatus=${response.status}, responseStatusText=${response.statusText}`);
+    this.logger.verbose('fetch completed', { roleKind: this.roleKind, path: fullPath, method, responseStatus: response.status, responseStatusText: response.statusText });
     return result;
   };
 
@@ -485,7 +494,7 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
 
   ensureAuthenticated = async (acceptPendingStatus?: boolean): Promise<void> => {
     acceptPendingStatus ??= false;
-    this.logger.debug(`(AcsysClientBase) [${this.roleKind}] ensure auth, acceptPendingStatus=${acceptPendingStatus}, current status=${this.authStatus}`);
+    this.logger.debug('ensure auth', { roleKind: this.roleKind, acceptPendingStatus, status: this.authStatus });
     switch(this.authStatus) {
       case 'initial':
       case 'failed':
@@ -497,11 +506,11 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
         await this.waitForNonPendingState(); // in case of another outstanding auth requests
       }
       if((this.authStatus as any) !== 'authenticated') {
-        this.logger.warn(`(AcsysClientBase) [${this.roleKind}] failed to ensure autheticated status`);
+        this.logger.warn('failed to ensure autheticated status', undefined, { roleKind: this.roleKind });
         throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'authentication failed', 'error-stub'); 
       }
     }
-    this.logger.debug(`(AcsysClientBase) [${this.roleKind}] authentication ensured, acceptPendingStatus=${acceptPendingStatus}, current status=${this.authStatus}`);
+    this.logger.debug('authentication ensured', { roleKind: this.roleKind, acceptPendingStatus, status: this.authStatus });
   };
 
   getClientType(): UserRoleEnum {
@@ -509,12 +518,12 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
   }
   
   isConnected = async (): Promise<boolean> => {
-    this.logger.debug(`(AcsysClientBase) [${this.roleKind}] check connected, current status=${this.authStatus}`);
+    this.logger.debug('check connected', { roleKind: this.roleKind, status: this.authStatus });
 
     const response = await this.fetch<ApiResponseTypes.text>(RouteIsConnected, undefined, undefined, 'GET', undefined, false, ApiResponseTypes.text);
     const isConnectedStatus = response.toLowerCase() === 'true';
     
-    this.logger.debug(`(AcsysClientBase) [${this.roleKind}] connected checked result=${isConnectedStatus}, current status=${this.authStatus}`);
+    this.logger.debug('connected checked', { roleKind: this.roleKind, result: isConnectedStatus, status: this.authStatus });
     return isConnectedStatus;
   };
 }

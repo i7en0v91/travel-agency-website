@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../helpers/components';
 import { AppPage, type Locale, CookiePolicyConsent, getI18nResName2 } from '@golobe-demo/shared';
 import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../helpers/dom';
 import SimpleButton from './forms/simple-button.vue';
@@ -6,7 +7,7 @@ import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { getCommonServices } from '../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 
 defineProps<IProps>();
@@ -16,10 +17,10 @@ const ConsentCookieValue = 'consent-given';
 const consentCookie = useCookie(CookiePolicyConsent, { path: '/', maxAge: 2147483640 /** "never" expire */ });
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'CookieBanner' });
 
 function onAcceptBtnClick () {
-  logger.info('(CookieBanner) accept button clicked');
+  logger.info('accept button clicked');
   if (!consentCookie.value) {
     consentCookie.value = ConsentCookieValue;
     setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
@@ -45,6 +46,6 @@ function onAcceptBtnClick () {
         </template>
       </i18n-t>
     </div>
-    <SimpleButton kind="accent" class="cookie-banner-accept-btn tabbable-group-cookie-banner" :ctrl-key="`${ctrlKey}-acceptBtn`" :label-res-name="getI18nResName2('cookieBanner', 'btnAccept')" @click="onAcceptBtnClick" />
+    <SimpleButton kind="accent" class="cookie-banner-accept-btn tabbable-group-cookie-banner" :ctrl-key="[...ctrlKey, 'Btn', 'Accept']" :label-res-name="getI18nResName2('cookieBanner', 'btnAccept')" @click="onAcceptBtnClick" />
   </section>
 </template>

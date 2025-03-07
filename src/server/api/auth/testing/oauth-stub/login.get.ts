@@ -1,4 +1,4 @@
-import { AppException, AppExceptionCodeEnum, AuthProvider, type EntityId } from '@golobe-demo/shared';
+import { AppException, AppExceptionCodeEnum, AuthProvider, type EntityId, type IAppLogger } from '@golobe-demo/shared';
 import { OAUTH_SECRET, OAUTH_TESTUSER_PROFILE as testUserProfile } from '../../../../../helpers/testing'; 
 import { sign } from 'jsonwebtoken';
 import type { H3Event } from 'h3';
@@ -14,45 +14,43 @@ declare type LoginResult = {
   }
 };
 
-async function ensureAppUser (): Promise<EntityId> {
-  const logger = getCommonServices().getLogger();
-  logger.info('(oauth-stub:login) setting up user TestLocal profile');
+async function ensureAppUser (logger: IAppLogger): Promise<EntityId> {
+  logger.info('setting up user TestLocal profile');
 
   const userLogic = getServerServices()!.getUserLogic();
   const userId = (await userLogic.ensureOAuthUser(AuthProvider.TestLocal, testUserProfile.sub, testUserProfile.firstName, testUserProfile.lastName, testUserProfile.email, true)).id;
-  logger.info(`(oauth-stub:login) test user exists in DB, userId=${userId}`);
+  logger.info('test user exists in DB', userId);
   return userId;
 }
 
-function buildRedirectUrl (event: H3Event): string {
+function buildRedirectUrl (logger: IAppLogger, event: H3Event): string {
   const requestQuery = getQuery(event);
-  const logger = getCommonServices().getLogger();
-  logger.verbose('(oauth-stub:login) building redirect uri');
+  logger.verbose('building redirect uri');
 
-  const { redirect_uri, response_type, state } = requestQuery;
-  if (!redirect_uri) {
-    logger.warn('(oauth-stub:login) redirect_uri was not specified');
-    throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'redirect_uri was not specified', 'error-page');
+  const { redirect_uri: redirectUri, response_type: responseType, state } = requestQuery;
+  if (!redirectUri) {
+    logger.warn('redirectUri was not specified');
+    throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'redirectUri was not specified', 'error-page');
   }
 
   if (!state) {
-    logger.warn(`(oauth-stub:login) state was not specified, redirect_uri=${redirect_uri}`);
-    throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'redirect_uri was not specified', 'error-page');
+    logger.warn('state was not specified', undefined, redirectUri);
+    throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'redirectUri was not specified', 'error-page');
   }
 
-  if (response_type !== 'code') {
-    logger.warn(`(oauth-stub:login) currently only [code] response type is supported, got response_type=${response_type}, redirect_uri=${redirect_uri}`);
-    throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'only response_type [code] is supported at them moment by TestLocal provider', 'error-page');
+  if (responseType !== 'code') {
+    logger.warn('currently only [code] response type is supported, got', undefined, { responseType, redirectUri });
+    throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'only responseType [code] is supported at them moment by TestLocal provider', 'error-page');
   }
 
-  const result = withQuery(redirect_uri as string, { response_type, state });
-  logger.verbose(`(oauth-stub:login) result redirect_uri, address=${redirect_uri}`);
+  const result = withQuery(redirectUri as string, { responseType, state });
+  logger.verbose('result redirectUri', { address: redirectUri });
   return result;
 }
 
 export default defineWebApiEventHandler(async (event: H3Event): Promise<LoginResult> => {
-  const logger = getCommonServices().getLogger();
-  logger.info('(oauth-stub:login) enter');
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
+  logger.info('enter');
 
   const expiresIn = 15;
   const refreshToken = Math.floor(Math.random() * (1000000000000000 - 1 + 1)) + 1;
@@ -61,7 +59,7 @@ export default defineWebApiEventHandler(async (event: H3Event): Promise<LoginRes
     ...testUserProfile
   };
 
-  const userId = await ensureAppUser();
+  const userId = await ensureAppUser(logger);
   user.id = userId.toString();
 
   const accessToken = sign({ ...user, scope: ['test', 'user'] }, OAUTH_SECRET, { expiresIn });
@@ -71,9 +69,9 @@ export default defineWebApiEventHandler(async (event: H3Event): Promise<LoginRes
   };
 
   setResponseStatus(event, 302);
-  setHeader(event, 'location', buildRedirectUrl(event));
+  setHeader(event, 'location', buildRedirectUrl(logger, event));
 
-  logger.info('(oauth-stub:login) exit');
+  logger.info('exit');
   return {
     token: {
       accessToken,

@@ -1,4 +1,4 @@
-import { type Theme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppConfig } from '@golobe-demo/shared';
+import { type IAppLogger, type Theme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppConfig } from '@golobe-demo/shared';
 import { DeviceSizeEnum, DeviceSizeBreakpointsMap } from './../helpers/constants';
 import orderBy from 'lodash-es/orderBy';
 import zip from 'lodash-es/zip';
@@ -10,10 +10,6 @@ import flatten from 'lodash-es/flatten';
 import { parseURL, stringifyParsedURL, stringifyQuery } from 'ufo';
 import set from 'lodash-es/set';
 import { getCommonServices } from './service-accessors';
-
-export function getLastSelectedOptionStorageKey (optionCtrlKey: string) {
-  return `lastOptBtn:${optionCtrlKey}`;
-}
 
 export function isInViewport (element: HTMLElement, includeVeticallyScrollableTo = false) {
   const rect = element.getBoundingClientRect();
@@ -182,7 +178,7 @@ function getPopperId (elem: HTMLElement): string | undefined {
  * If true - autodetects modal container and excludes all inner controls from indexation
  */
 function doUpdateTabIndices (excludeModalWindowElements: boolean = true) {
-  const logger = getCommonServices().getLogger();
+  const logger = getLogger();
   if (!document) {
     logger.verbose('tab indices - nothing to update');
     return;
@@ -219,7 +215,7 @@ function doUpdateTabIndices (excludeModalWindowElements: boolean = true) {
       }
     });
     unreachableElements.forEach((e) => { e.tabIndex = -1; });
-    logger.verbose(`tab indices - turned off in config, total elements = ${allPotentiallyTabbableElems.length}`);
+    logger.verbose('tab indices - turned off in config', { totalElements: allPotentiallyTabbableElems.length });
     return;
   }
 
@@ -328,7 +324,7 @@ function doUpdateTabIndices (excludeModalWindowElements: boolean = true) {
   }
   unreachableElements.forEach((e) => { e.tabIndex = -1; });
   const totalGroups = popperGroupingsByAnchor.length + allTabbableGroupingIds.length;
-  logger.verbose(`tab indices - total elements = ${tabbableElements.length}, groups = ${totalGroups}`);
+  logger.verbose('tab indices - total', { elements: tabbableElements.length, groups: totalGroups });
 }
 
 export const TabIndicesUpdateDefaultTimeout = 100;
@@ -360,4 +356,12 @@ export function getCurrentDeviceSize (): DeviceSizeEnum {
     }
   }
   return DeviceSizeEnum.XS;
+}
+
+let logger: IAppLogger | undefined;
+function getLogger(): IAppLogger {
+  if(!logger) {
+    logger = getCommonServices().getLogger().addContextProps({ component: 'DomHelper' });
+  }
+  return logger;
 }

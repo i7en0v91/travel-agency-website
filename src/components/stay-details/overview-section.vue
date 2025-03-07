@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { getI18nResName3, getI18nResName2, type EntityDataAttrsOnly, type IStayDescription, type Locale, getLocalizeableValue, getScoreClassResName } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import orderBy from 'lodash-es/orderBy';
@@ -8,7 +9,7 @@ import range from 'lodash-es/range';
 const { t, locale } = useI18n();
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   description?: EntityDataAttrsOnly<IStayDescription>[],
   numReviews?: number,
   reviewScore?: number
@@ -48,7 +49,7 @@ const reviewsCountText = computed(() => numReviews ? `${numReviews} ${t(getI18nR
       {{ getLocalizeableValue(mainStr, locale as Locale) }}
     </p>
     <ul v-if="featureStrs?.length ?? 0" class="stay-details-overview-features mt-xs-3">
-      <li v-for="(feature, idx) in featureStrs" :key="`${ctrlKey}-Feature-${idx}`" class="stay-details-overview-feature">
+      <li v-for="(feature, idx) in featureStrs" :key="`${toShortForm(ctrlKey)}-Feature-${idx}`" class="stay-details-overview-feature">
         <div class="stay-feature-checkmark brdr-1" />
         <div class="stay-feature-texting">
           <span class="stay-feature-caption">
@@ -96,7 +97,7 @@ const reviewsCountText = computed(() => numReviews ? `${numReviews} ${t(getI18nR
               -->
             </ClientOnly>
           </li>
-          <li v-for="(resName, idx) in highlightResNames" :key="`${ctrlKey}-Highlight-${idx}`" class="stay-details-highlight-item p-xs-3 brdr-3">
+          <li v-for="(resName, idx) in highlightResNames" :key="`${toShortForm(ctrlKey)}-Highlight-${idx}`" class="stay-details-highlight-item p-xs-3 brdr-3">
             <div class="stay-details-highlight-icon" />
             <div v-if="reviewScore" class="stay-details-highlight-text">
               {{ $t(getI18nResName3('stayDetailsPage', 'overviewHightlights', resName as any)) }}

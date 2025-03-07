@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 import { ImageCategory, getI18nResName2 } from '@golobe-demo/shared';
 import type { IBookingTicketGeneralProps } from './../../types';
 
@@ -12,14 +11,14 @@ defineProps<IBookingTicketGeneralProps>();
     <div class="booking-ticket-general-avatar-div mr-xs-3 mt-xs-1">
       <StaticImage
         v-if="avatar !== null"
-        :ctrl-key="`${ctrlKey}-Avatar`"
-        :show-stub="false"
+        :ctrl-key="[...ctrlKey, 'Avatar']"
+        :stub="false"
         class="booking-ticket-general-avatar"
-        img-class="booking-ticket-general-avatar-img"
-        :entity-src="avatar"
+        :ui="{ img: 'booking-ticket-general-avatar-img' }"
+        :src="avatar"
         :category="ImageCategory.UserAvatar"
         sizes="xs:30vw sm:20vw md:20vw lg:10vw xl:10vw"
-        :alt-res-name="getI18nResName2('ticket', 'avatarImgAlt')"
+        :alt="{ resName: getI18nResName2('ticket', 'avatarImgAlt') }"
       />
       <div v-else class="booking-ticket-general-avatar booking-ticket-general-avatar-default" />
     </div>

@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { AppPage, type Locale, getLocalizeableValue, getI18nResName2, type EntityDataAttrsOnly, type ICity, type ILocalizableValue, type OfferKind } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   offerKind?: OfferKind,
   city?: EntityDataAttrsOnly<ICity>,
   placeName?: ILocalizableValue

@@ -68,30 +68,29 @@ export class ElectronMainLogger extends AppWinstonLoggerBase<typeof MailFileLogg
 }
 
 export function installLoggingHooks(app: Electron.App, logger: ElectronMainLogger) {
-  logger.verbose('(Logging) installing logging hooks');
+  logger.verbose('installing logging hooks');
 
   app.on('session-created', () => {
-    logger.verbose('(Logging) session created');
+    logger.verbose('session created');
   });
 
   app.on('browser-window-created', () => {
-    logger.verbose('(Logging) browser window created');
+    logger.verbose('browser window created');
   });
 
   app.on('second-instance', () => {
-    logger.info('(Logging) second instance');
+    logger.info('second instance');
   });
 
   app.on('quit', () => { 
-    logger.info('(Logging) quit');
+    logger.info('quit');
   });
 
   process.on('uncaughtException', (err) => { 
-    const msg = 'FATAL error occured, process MAY terminate!';
     process.exitCode = 1;
     try {
-      consola.error(msg, err);
-      logger.error(`(Logging) ${msg}`, err);
+      consola.error('FATAL error occured, process MAY terminate!', err);
+      logger.error('FATAL error occured, process MAY terminate!', err);
     } catch(err: any) {
       consola.warn(err);
       //
@@ -101,8 +100,8 @@ export function installLoggingHooks(app: Electron.App, logger: ElectronMainLogge
   });
  
   process.on('uncaughtExceptionMonitor', (err: Error, origin: string) => { 
-    logger.warn(`(Logging) exception occured, origin=${origin}`, err);
+    logger.warn('exception occured', err, origin);
   });
 
-  logger.debug('(Logging) logging hooks installed');
+  logger.debug('logging hooks installed');
 }

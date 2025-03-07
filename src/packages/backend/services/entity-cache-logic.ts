@@ -8,14 +8,14 @@ export class EntityCacheLogic implements IEntityCacheLogic {
 
   public static inject = ['logger', 'dbRepository'] as const;
   constructor (logger: IAppLogger, dbRepository: PrismaClient) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'EntityCacheLogic' });
     this.dbRepository = dbRepository;
   }
 
   get = async <TEntityType extends CacheEntityType>(searchIds: EntityId[], searchSlugs: string[], type: TEntityType): Promise<GetEntityCacheItem<TEntityType>[]> => {
-    this.logger.verbose(`(EntityCacheLogic) find, searchIds=${JSON.stringify(searchIds)}, searchSlugs=${JSON.stringify(searchSlugs)}, type=${type}`);
+    this.logger.verbose('get', { searchIds, searchSlugs, type });
     if (searchIds.length === 0 && searchSlugs.length === 0) {
-      this.logger.verbose(`(EntityCacheLogic) find, searchIds=${JSON.stringify(searchIds)}, searchSlugs=${JSON.stringify(searchSlugs)}, type=${type}, result=[]`);
+      this.logger.verbose('get', { searchIds, searchSlugs, type });
       return [];
     }
 
@@ -39,7 +39,8 @@ export class EntityCacheLogic implements IEntityCacheLogic {
         }
       });
       if (entities.length !== (searchIds.length + searchSlugs.length)) {
-        this.logger.warn(`(EntityCacheLogic) not all requests cities have been found: expected searchIds=${JSON.stringify(searchIds)}, searchSlugs=${JSON.stringify(searchSlugs)}, found=${JSON.stringify(entities.map((e) => { return { id: e.id, slug: e.slug }; }))}`);
+        const found = entities.map((e) => { return { id: e.id, slug: e.slug }; });
+        this.logger.warn('not all requests cities have been found: expected', undefined, { searchIds, searchSlugs, found });
         throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'cities not found', 'error-stub');
       }
 
@@ -48,15 +49,16 @@ export class EntityCacheLogic implements IEntityCacheLogic {
           type,
           id: entity.id,
           slug: entity.slug,
-          displayName: mapLocalizeableValues((cityName: string, countryName: string) => { return `${cityName}, ${countryName}`; }, entity.nameStr, entity.country.nameStr)
+          displayName: mapLocalizeableValues((cityName: string, countryName: string) => { return `${cityName}, ${countryName}`; }, entity.nameStr, entity.country.nameStr),
+          expireAt: null
         };
       });
     } else {
-      this.logger.warn(`(EntityCacheLogic) unexpected entity type: searchIds=${JSON.stringify(searchIds)}, searchSlugs=${JSON.stringify(searchSlugs)}, type=${type}`);
+      this.logger.warn('unexpected entity type', undefined, { searchIds, searchSlugs, type });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected entity type', 'error-stub');
     }
 
-    this.logger.verbose(`(EntityCacheLogic) find, searchIds=${JSON.stringify(searchIds)}, searchSlugs=${JSON.stringify(searchSlugs)}, type=${type}, result=${result ? JSON.stringify(result) : 'none'}`);
+    this.logger.verbose('get', { searchIds, searchSlugs, type, result });
     return result;
   };
 }

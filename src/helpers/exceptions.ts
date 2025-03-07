@@ -2,8 +2,14 @@ import { isElectronBuild, getUsrMsgResName, mapAppExceptionToHttpStatus, AppExce
 import type { IUserNotificationParams } from './../stores/user-notification-store';
 import type { NuxtError } from 'nuxt/app';
 import { consola } from 'consola';
+import { getClientServices } from './service-accessors';
 
-export function defaultErrorHandler (err: any, nuxtApp?: ReturnType<typeof useNuxtApp>) {
+type DefaultErrorHandlerParams = {
+  userNotificationStore?: ReturnType<typeof useUserNotificationStore>,
+  nuxtApp?: ReturnType<typeof useNuxtApp>
+}
+
+export function defaultErrorHandler (err: any, params: DefaultErrorHandlerParams) {
   if (isNuxtError(err)) {
     // this means that createError has been called recently
     // and it can only happen from main error handling flow
@@ -20,7 +26,7 @@ export function defaultErrorHandler (err: any, nuxtApp?: ReturnType<typeof useNu
       'unhandled exception occured',
       'error-stub');
   }
-  defaultAppExceptionHandler(appException, nuxtApp);
+  defaultAppExceptionHandler(appException, params);
 }
 
 export function createNuxtError(appException: AppException): Partial<NuxtError> {
@@ -55,7 +61,7 @@ function addExceptionToErrorPageHandler(appException: AppException, nuxtApp?: Re
   nuxtApp.ssrContext.event.context.appException = appException;
 }
 
-function defaultAppExceptionHandler (appException: AppException, nuxtApp?: ReturnType<typeof useNuxtApp>) {
+function defaultAppExceptionHandler (appException: AppException, params: DefaultErrorHandlerParams) {
   if (appException.code === AppExceptionCodeEnum.UNAUTHENTICATED) {
     if(import.meta.server) {
       appException.code = AppExceptionCodeEnum.FORBIDDEN;
@@ -82,15 +88,19 @@ function defaultAppExceptionHandler (appException: AppException, nuxtApp?: Retur
       showError(createNuxtError(appException));
     } else {
       // showing stubs cannot be implemented here, so only notification is possible
-      const notification: IUserNotificationParams = {
-        level: UserNotificationLevel.ERROR,
-        resName: getUsrMsgResName(appException.code)
-      };
-      const userNotificationStore = useUserNotificationStore();
-      userNotificationStore.show(notification);
+      const notificationStore = params.userNotificationStore ?? getClientServices().userNotificationStore;
+      if(notificationStore) {
+        const notification: IUserNotificationParams = {
+          level: UserNotificationLevel.ERROR,
+          resName: getUsrMsgResName(appException.code)
+        };
+        notificationStore.show(notification);
+      } else {
+        consola.error(`app exception occured, code: ${appException.code}`);
+      }
     }
   } else {
-    addExceptionToErrorPageHandler(appException, nuxtApp);
+    addExceptionToErrorPageHandler(appException, params.nuxtApp);
     // KB: to prevent caching pages rendered with errors only redirection to error-page is used during SSR
     throw createNuxtError(appException);
   }

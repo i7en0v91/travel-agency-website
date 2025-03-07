@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 
 import { getI18nResName3 } from '@golobe-demo/shared';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 defineProps<IProps>();
 

@@ -152,6 +152,8 @@ $options-button-dropdown-icon-size: 20px;
 
       &.option-button-icon-menu {
         display: block;
+        min-width: markup-to-rem(24px);
+        min-height: markup-to-rem(24px);
         -webkit-mask-image: url('~/public/img/navbar-toggler-light.svg?raw&inline');
         mask-image: url('~/public/img/navbar-toggler-light.svg?raw&inline');
       }

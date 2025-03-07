@@ -6,12 +6,13 @@ import OfferDetailsBreadcrumbs from './../../components/common-page-components/o
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import dayjs from 'dayjs';
 import { getCommonServices } from '../../helpers/service-accessors';
+import type { ControlKey } from './../../helpers/components';
 
 const { d, locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
 const route = useRoute();
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'StayBook' });
 
 const isError = ref(false);
 
@@ -25,7 +26,7 @@ const reqEvent = import.meta.server ? useRequestEvent() : undefined;
 const stayBookOgImageQueryInfo = reqEvent?.context.cacheablePageParams as BookStayPageArgs;
 const serviceLevel = ((stayBookOgImageQueryInfo?.serviceLevel ?? route.query.serviceLevel)?.toString() ?? '').trim() as StayServiceLevel;
 if (!AvailableStayServiceLevel.includes(serviceLevel)) {
-  logger.warn(`(StayOfferBooking) failed to parse service level argument: serviceLevel=${serviceLevel}, offerId=${offerParam}`);
+  logger.warn('failed to parse service level argument', undefined, { serviceLevel, offerId: offerParam });
   throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'invalid service level argument', 'error-page');
 }
 
@@ -33,7 +34,7 @@ definePageMeta({
   title: { resName: getI18nResName2('stayBookingPage', 'title'), resArgs: undefined }
 });
 
-const CtrlKey = 'StayOfferBooking';
+const CtrlKey: ControlKey = ['Page', 'BookStay'];
 
 const PriceDecompositionWeights: { labelResName: I18nResName, amount: number }[] = [
   { labelResName: getI18nResName3('bookingCommon', 'pricingDecomposition', 'fare'), amount: 0.6 },
@@ -114,13 +115,13 @@ onMounted(() => {
   <div class="stay-book-page">
     <ErrorHelm :is-error="isError" class="stay-book-page-error-helm">
       <OfferDetailsBreadcrumbs
-        :ctrl-key="`${CtrlKey}-Breadcrumbs`"
+        :ctrl-key="[...CtrlKey, 'Breadcrumbs']"
         offer-kind="stays"
         :city="stayOffer?.stay?.city"
         :place-name="stayOffer?.stay?.name"
       />
       <OfferBooking
-        :ctrl-key="`${CtrlKey}-${offerId}`"
+        :ctrl-key="[...CtrlKey, 'OfferBooking']"
         :offer-id="offerId!"
         offer-kind="stays"
         :service-level="serviceLevel"
@@ -129,7 +130,7 @@ onMounted(() => {
       >
         <template #offer-card>
           <StayDetailsCard
-            :ctrl-key="`${CtrlKey}-StayCard`"
+            :ctrl-key="[...CtrlKey, 'Card']"
             :service-level="serviceLevel"
             :name="stayOffer?.stay.name"
             :price="pricePerNight"

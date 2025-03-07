@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { type Locale, getI18nResName3, getI18nResName2, type Timestamp, type StayServiceLevel, type EntityId, type Price, ImageCategory, AppPage, getPagePath } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import range from 'lodash-es/range';
@@ -18,7 +19,7 @@ interface IRoomInfo {
 }
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   offerId?: EntityId,
   rooms?: IRoomInfo[]
 }
@@ -43,16 +44,16 @@ defineProps<IProps>();
         class="stay-details-overview-highlights-scroll"
       >
         <ol class="available-rooms-list mt-xs-4 mt-s-5 pb-xs-2">
-          <li v-for="(room, idx) in rooms ?? (range(0, 4).map(_ => undefined))" :key="`${ctrlKey}-Room-${idx}`" class="available-room">
+          <li v-for="(room, idx) in rooms ?? (range(0, 4).map(_ => undefined))" :key="`${toShortForm(ctrlKey)}-Room-${idx}`" class="available-room">
             <div class="available-room-image-div">
               <StaticImage
-                :key="`${ctrlKey}-AvailableRoomImage-${idx}`"
-                :ctrl-key="`${ctrlKey}-AvailableRoomImage-${idx}`"
+                :key="`${toShortForm(ctrlKey)}-AvailableRoomImage-${idx}`"
+                :ctrl-key="[...ctrlKey, 'StaticImg', idx]"
                 class="available-room-image"
-                :entity-src="room?.image"
+                :src="room?.image"
                 :category="ImageCategory.HotelRoom"
                 sizes="xs:30vw sm:20vw md:20vw lg:10vw xl:10vw"
-                :alt-res-name="getI18nResName2('stayDetailsPage', 'stayServiceImageAlt')"
+                :alt="{ resName: getI18nResName2('stayDetailsPage', 'stayServiceImageAlt') }"
               />
             </div>
             <div class="available-room-description-div px-xs-3">

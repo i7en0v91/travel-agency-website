@@ -13,7 +13,7 @@ const defineBookOfferWebApiHandler = (offerKind: OfferKind) => defineWebApiEvent
 
   const offerIdParam = getRouterParams(event)?.id?.toString() ?? '';
   if (!offerIdParam) {
-    logger.warn(`(api:book-offer) offer id paramer was not speicifed: path=${event.path}, kind=${offerKind}`);
+    logger.warn('offer id paramer was not speicifed', undefined, { path: event.path, kind: offerKind });
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
       'offer id parameter was not specified',
@@ -23,7 +23,7 @@ const defineBookOfferWebApiHandler = (offerKind: OfferKind) => defineWebApiEvent
 
   const offerId: EntityId | undefined = offerIdParam;
   if(!offerId) {
-    logger.warn(`(api:book-offer) offer id parameter is not specified: param=${offerIdParam}`);
+    logger.warn('offer id parameter is not specified', undefined, { param: offerIdParam });
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
       'offer id parameter not specified',
@@ -35,7 +35,7 @@ const defineBookOfferWebApiHandler = (offerKind: OfferKind) => defineWebApiEvent
   if (offerKind === 'stays') {
     serviceLevel = ((getQuery(event).serviceLevel)?.toString() ?? '').trim() as StayServiceLevel;
     if (!AvailableStayServiceLevel.includes(serviceLevel)) {
-      logger.warn(`(api:book-offer) failed to parse service level query parameter: serviceLevel=${serviceLevel}, offerId=${offerId}`);
+      logger.warn('failed to parse service level query parameter', undefined, { serviceLevel, offerId });
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'invalid service level argument', 'error-stub');
     }
   }
@@ -43,7 +43,7 @@ const defineBookOfferWebApiHandler = (offerKind: OfferKind) => defineWebApiEvent
   const authSession = await getServerSession(event);
   const userId : EntityId | undefined = extractUserIdFromSession(authSession);
   if (!userId) {
-    logger.warn(`(api:book-offer) unauthorized attempt: offerId=${offerId}`);
+    logger.warn('unauthorized attempt', undefined, offerId);
     throw new AppException(
       AppExceptionCodeEnum.FORBIDDEN,
       'only authorized users can book offers',

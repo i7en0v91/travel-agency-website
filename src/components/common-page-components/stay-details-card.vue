@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { type Locale, getLocalizeableValue, getI18nResName2, getI18nResName3, type StayServiceLevel, type EntityDataAttrsOnly, type ICity, type ILocalizableValue } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   serviceLevel: StayServiceLevel,
   name?: ILocalizableValue,
   price?: number,

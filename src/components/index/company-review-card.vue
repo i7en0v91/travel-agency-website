@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { getI18nResName3, type ILocalizableValue, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
 import range from 'lodash-es/range';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   header?: ILocalizableValue,
   body?: ILocalizableValue,
   userName?: ILocalizableValue,
@@ -46,7 +47,7 @@ function toggleReviewText () {
             {{ $t(getI18nResName3('indexPage', 'companyReviewSection', expanded ? 'collapseBtn' : 'expandBtn')) }}
           </button>
           <div class="review-card-stars mt-xs-3">
-            <div v-for="i in range(0, 5)" :key="`${ctrlKey}-ReviewStar-${i}`" class="review-card-star" />
+            <div v-for="i in range(0, 5)" :key="`${toShortForm(ctrlKey)}-ReviewStar-${i}`" class="review-card-star" />
           </div>
           <div class="review-card-userinfo mt-xs-2 mt-s-4">
             <div :class="userName ? 'review-card-user-name' : 'data-loading-stub text-data-loading'">
@@ -58,12 +59,12 @@ function toggleReviewText () {
           </div>
           <StaticImage
             :ctrl-key="ctrlKey"
-            :entity-src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
+            :src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
             :category="ImageCategory.CompanyReview"
             sizes="xs:80vw sm:50vw md:50vw lg:50vw xl:40vw"
             class="review-card-img brdr-3"
-            :alt-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'imgAlt')"
-            :show-stub="true"
+            :alt="{ resName: getI18nResName3('indexPage', 'companyReviewSection', 'imgAlt') }"
+            stub="default"
           />
         </div>
       </PerfectScrollbar>

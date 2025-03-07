@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { clampTextLine, type Locale, AppPage, getPagePath, AppConfig, getI18nResName3, ImageCategory } from '@golobe-demo/shared';
-import { UserAccountTabAccount, UserAccountTabPayments, UserAccountOptionButtonGroup, UserAccountOptionButtonPayments, UserAccountOptionButtonAccount } from './../../helpers/constants';
-import { updateTabIndices, TabIndicesUpdateDefaultTimeout, getLastSelectedOptionStorageKey } from './../../helpers/dom';
+import { UserAccountOptionButtonAccount, UserAccountOptionButtonGroup, UserAccountTabAccount, UserAccountTabPayments, UserAccountOptionButtonPayments } from './../../helpers/constants';
+import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 import StaticImage from './../images/static-image.vue';
 import NavUserMenuItem from './nav-user-menu-item.vue';
@@ -10,7 +11,7 @@ import { getCommonServices } from '../../helpers/service-accessors';
 import { useSignOut } from '../../composables/sign-out';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 const { ctrlKey } = defineProps<IProps>();
 
@@ -18,8 +19,9 @@ const signOutHelper = useSignOut();
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'NavUser' });
 
+const controlValuesStore = useControlValuesStore();
 const userAccountStore = useUserAccountStore();
 const userAccount = await userAccountStore.getUserAccount();
 
@@ -50,30 +52,34 @@ const isCurrentlyOnAccountPage = () => useRoute().path.includes(`/${getPagePath(
 
 async function onPaymentsMenuItemClick (): Promise<void> {
   const onAccountPage = isCurrentlyOnAccountPage();
-  logger.debug(`(NavUser) payments menu item clicked: ctrlKey=${ctrlKey}, isAccountPage=${onAccountPage}`);
+  logger.debug('payments menu item clicked', { ctrlKey, isAccountPage: onAccountPage });
   onMenuItemClick();
 
   if(onAccountPage) {
     (document.querySelector(`[data-tab-name="${UserAccountTabPayments}"]`) as HTMLElement)?.click();
   } else {
     // set payment tab to be automatically selected on mount
-    const optionKey = getLastSelectedOptionStorageKey(UserAccountOptionButtonGroup);
-    localStorage.setItem(optionKey, UserAccountOptionButtonPayments);
+    await controlValuesStore.setValue<ControlKey>(
+      UserAccountOptionButtonGroup, 
+      UserAccountOptionButtonPayments
+    );
     await navigateTo(navLinkBuilder.buildPageLink(AppPage.Account, locale.value as Locale));
   }
 }
 
 async function onSettingsMenuItemClick (): Promise<void> {
   const onAccountPage = isCurrentlyOnAccountPage();
-  logger.debug(`(NavUser) settings menu item clicked: ctrlKey=${ctrlKey}, isAccountPage=${onAccountPage}`);
+  logger.debug('settings menu item clicked', { ctrlKey, isAccountPage: onAccountPage });
   onMenuItemClick();
 
   if(onAccountPage) {
     (document.querySelector(`[data-tab-name="${UserAccountTabAccount}"]`) as HTMLElement)?.click();
   } else {
     // set payment tab to be automatically selected on mount
-    const optionKey = getLastSelectedOptionStorageKey(UserAccountOptionButtonGroup);
-    localStorage.setItem(optionKey, UserAccountOptionButtonAccount);
+    await controlValuesStore.setValue<ControlKey>(
+      UserAccountOptionButtonGroup, 
+      UserAccountOptionButtonAccount
+    );
     await navigateTo(navLinkBuilder.buildPageLink(AppPage.Account, locale.value as Locale));
   }
 }
@@ -85,8 +91,8 @@ async function onSettingsMenuItemClick (): Promise<void> {
     <VDropdown
       ref="dropdown"
       v-floating-vue-hydration="{ tabIndex: 0 }"
-      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
-      :aria-id="`${ctrlKey}-DropDownWrapper`"
+      :ctrl-key="[...ctrlKey, 'Wrapper']"
+      :aria-id="`${toShortForm(ctrlKey)}-DropDownWrapper`"
       :distance="6"
       :hide-triggers="(triggers: any) => [...triggers, 'click']"
       placement="bottom"
@@ -99,14 +105,14 @@ async function onSettingsMenuItemClick (): Promise<void> {
     >
       <StaticImage
         v-if="userAccount.avatar"
-        ctrl-key="navUserAvatar"
-        :show-stub="false"
+        :ctrl-key="[...ctrlKey, 'Avatar']"
+        :stub="false"
         class="nav-user-avatar"
-        img-class="nav-user-avatar-img mb-xs-1"
-        :entity-src="{ slug: userAccount.avatar.slug, timestamp: userAccount.avatar.timestamp }"
+        :ui="{ img: 'nav-user-avatar-img mb-xs-1' }"
+        :src="{ slug: userAccount.avatar.slug, timestamp: userAccount.avatar.timestamp }"
         :category="ImageCategory.UserAvatar"
         sizes="xs:30vw sm:20vw md:20vw lg:10vw xl:10vw"
-        :alt-res-name="getI18nResName3('nav', 'userBox', 'navAvatarAlt')"
+        :alt="{ resName: getI18nResName3('nav', 'userBox', 'navAvatarAlt') }"
       />
       <span v-else class="nav-user-avatar nav-user-avatar-default" />
       <button id="nav-user-menu-anchor" class="btn-user-name brdr-1" type="button">
@@ -117,14 +123,14 @@ async function onSettingsMenuItemClick (): Promise<void> {
           <div class="nav-user-menu-header px-xs-5 pb-xs-3 pt-xs-2 py-s-4">
             <StaticImage
               v-if="userAccount.avatar"
-              ctrl-key="navUserMenuAvatar"
-              :show-stub="false"
+              :ctrl-key="[...ctrlKey, 'UserMenu', 'Avatar']"
+              :stub="false"
               class="nav-user-menu-avatar"
-              img-class="nav-user-menu-avatar-img"
-              :entity-src="{ slug: userAccount.avatar.slug, timestamp: userAccount.avatar.timestamp }"
+              :ui="{ img: 'nav-user-menu-avatar-img' }"
+              :src="{ slug: userAccount.avatar.slug, timestamp: userAccount.avatar.timestamp }"
               :category="ImageCategory.UserAvatar"
               sizes="xs:30vw sm:20vw md:20vw lg:10vw xl:10vw"
-              :alt-res-name="getI18nResName3('nav', 'userBox', 'navAvatarAlt')"
+              :alt="{ resName: getI18nResName3('nav', 'userBox', 'navAvatarAlt') }"
             />
             <div v-else class="nav-user-menu-avatar nav-user-menu-avatar-default" />
             <h4 class="nav-user-menu-name">
@@ -133,14 +139,14 @@ async function onSettingsMenuItemClick (): Promise<void> {
           </div>
           <div class="nav-user-menu-list">
             <div class="nav-user-menu-divisor mt-xs-1 mb-xs-1" role="separator"/>
-            <NavUserMenuItem ctrl-key="navUserMenuMyAccount" :text-res-name="getI18nResName3('nav', 'userBox', 'myAccount')" :to="navLinkBuilder.buildPageLink(AppPage.Account, locale as Locale)" icon="user" @click="onMenuItemClick" />
-            <NavUserMenuItem ctrl-key="navUserMenuFavourites" :text-res-name="getI18nResName3('nav', 'userBox', 'favourites')" :to="navLinkBuilder.buildPageLink(AppPage.Favourites, locale as Locale)" icon="heart" @click="onMenuItemClick" />
-            <NavUserMenuItem ctrl-key="navUserMenuPayments" :text-res-name="getI18nResName3('nav', 'userBox', 'payments')" icon="credit-card" @click="onPaymentsMenuItemClick" />
-            <NavUserMenuItem ctrl-key="navUserMenuSettings" :text-res-name="getI18nResName3('nav', 'userBox', 'settings')" icon="gear" @click="onSettingsMenuItemClick" />
+            <NavUserMenuItem :ctrl-key="[...ctrlKey, 'UserMenu', 'Account']" :text-res-name="getI18nResName3('nav', 'userBox', 'myAccount')" :to="navLinkBuilder.buildPageLink(AppPage.Account, locale as Locale)" icon="user" @click="onMenuItemClick" />
+            <NavUserMenuItem :ctrl-key="[...ctrlKey, 'UserMenu', 'Favourites']" :text-res-name="getI18nResName3('nav', 'userBox', 'favourites')" :to="navLinkBuilder.buildPageLink(AppPage.Favourites, locale as Locale)" icon="heart" @click="onMenuItemClick" />
+            <NavUserMenuItem :ctrl-key="[...ctrlKey, 'UserMenu', 'Payments']" :text-res-name="getI18nResName3('nav', 'userBox', 'payments')" icon="credit-card" @click="onPaymentsMenuItemClick" />
+            <NavUserMenuItem :ctrl-key="[...ctrlKey, 'UserMenu', 'Settings']" :text-res-name="getI18nResName3('nav', 'userBox', 'settings')" icon="gear" @click="onSettingsMenuItemClick" />
             <div class="nav-user-menu-divisor mt-xs-3 mb-xs-2" role="separator"/>
             <div class="nav-user-menu-divisor mt-xs-3 mb-xs-1" role="separator"/>
-            <NavUserMenuItem ctrl-key="navUserMenuSupport" :text-res-name="getI18nResName3('nav', 'userBox', 'support')" :to="`mailto:${AppConfig.contactEmail}`" icon="support" @click="onMenuItemClick" />
-            <NavUserMenuItem ctrl-key="navUserMenuLogout" :text-res-name="getI18nResName3('nav', 'userBox', 'logout')" icon="logout" @click="onSignOutClick" />
+            <NavUserMenuItem :ctrl-key="[...ctrlKey, 'UserMenu', 'Support']" :text-res-name="getI18nResName3('nav', 'userBox', 'support')" :to="`mailto:${AppConfig.contactEmail}`" icon="support" @click="onMenuItemClick" />
+            <NavUserMenuItem :ctrl-key="[...ctrlKey, 'UserMenu', 'Logout']" :text-res-name="getI18nResName3('nav', 'userBox', 'logout')" icon="logout" @click="onSignOutClick" />
           </div>
         </section>
       </template>

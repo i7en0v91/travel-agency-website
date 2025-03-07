@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { AppPage, type Locale, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   page: 'flights' | 'stays'
 }
 const { page } = defineProps<IProps>();
@@ -17,11 +18,11 @@ const navLinkBuilder = useNavLinkBuilder();
   <div class="search-page-image-link">
     <StaticImage
       :ctrl-key="ctrlKey"
-      :asset-src="{ filename: `image-link-${page}.webp`, width: 590, height: 550 }"
+      :src="{ filename: `image-link-${page}.webp`, width: 590, height: 550 }"
       sizes="xs:40vw sm:40vw md:40vw lg:40vw xl:40vw"
       class="image-link-img"
-      img-class="search-stays-page-link-img"
-      :alt-res-name="getI18nResName2('indexPage', 'imgLinkAlt')"
+      :ui="{ img: 'search-stays-page-link-img' }"
+      :alt="{ resName: getI18nResName2('indexPage', 'imgLinkAlt') }"
     />
     <section class="image-link-texting mb-xs-4">
       <h3 class="font-h2">{{ $t(getI18nResName3('indexPage', `${page}ImgLink`, 'title')) }}</h3>

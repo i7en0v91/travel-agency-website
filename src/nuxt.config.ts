@@ -77,7 +77,7 @@ const AcsysFilesGlobForWatchers = isDevEnv() ?
   [`**/${basename(AppConfig.acsys.execDir)}/**`, `**/externals/${basename(AppConfig.acsys.srcDir)}/**`] : [];
 
 export default defineNuxtConfig({
-  devtools: { enabled: false },
+  devtools: { enabled: isDevEnv() && !isElectronBuild() },
   
   ssr: !isElectronBuild(),
 
@@ -137,6 +137,12 @@ export default defineNuxtConfig({
       mode: 'client',
       order: 10,
       src: '~/plugins/startup.client.ts'
+    },
+    {
+      name: 'pinia-plugins',
+      mode: 'all',
+      order: 45,
+      src: '~/plugins/pinia-plugins.ts'
     },
     {
       name: 'custom-fetch',

@@ -1,88 +1,83 @@
 <script setup lang="ts">
+import { areCtrlKeysEqual, toShortForm, type ControlKey } from './../../helpers/components';
+import { AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import type { IOptionButtonGroupProps } from './../../types';
-import { getLastSelectedOptionStorageKey } from './../../helpers/dom';
 import OptionButton from './option-button.vue';
 import OtherOptionsButton from './other-options-button.vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 const { 
   ctrlKey, 
-  activeOptionCtrl, 
   options, 
   otherOptions, 
-  useAdaptiveButtonWidth = false 
+  useAdaptiveButtonWidth = false,
+  persistent = undefined,
+  defaultActiveOptionKey = undefined
 } = defineProps<IOptionButtonGroupProps>();
 
-const $emit = defineEmits<{(event: 'update:activeOptionCtrl', newActiveOptionCtrlKey: string, prevActiveOptionCtrlKey?: string): void}>();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'OptionButtonGroup' });
+const controlValuesStore = useControlValuesStore();
 
-const logger = getCommonServices().getLogger();
-
-function saveLastSelectedOption (lastSelectOption?: string) {
-  const storageKey = getLastSelectedOptionStorageKey(ctrlKey);
-  if (lastSelectOption) {
-    logger.debug(`(OptionButtonGroup) saving last active option: groupKey=${ctrlKey}, key=${storageKey}, option=${lastSelectOption ?? '[empty]'}`);
-    localStorage.setItem(storageKey, lastSelectOption);
-  } else {
-    logger.debug(`(OptionButtonGroup) removing last active option: groupKey=${ctrlKey}, key=${storageKey}`);
-    localStorage.removeItem(storageKey);
+const selectedOptionKey = defineModel<ControlKey | undefined>('activeOptionKey');
+const DefaultOption = computed(() => { 
+  if(!options?.length) {
+    logger.error('option button group empty', undefined, { ctrlKey });
+    throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'option button group empty', 'error-stub');
   }
-}
 
-function loadLastSelectedOption (): string | undefined {
-  const storageKey = getLastSelectedOptionStorageKey(ctrlKey);
-  logger.debug(`(OptionButtonGroup) loading last active option: groupKey=${ctrlKey}, key=${storageKey}`);
-  const result = localStorage.getItem(storageKey) ?? undefined;
-  logger.debug(`(OptionButtonGroup) last active option loaded: groupKey=${ctrlKey}, resuilt=${result}`);
-  return result;
-}
-
-function fireActiveOptionChange (newActiveOptionKey: string) {
-  const currentActiveOptionKey = activeOptionCtrl;
-  if (!currentActiveOptionKey || currentActiveOptionKey !== newActiveOptionKey) {
-    logger.debug(`(OptionButtonGroup) firing active option change: groupKey=${ctrlKey}, newActiveOption=${newActiveOptionKey}, prevActiveOption=${currentActiveOptionKey}`);
-    $emit('update:activeOptionCtrl', newActiveOptionKey);
-    saveLastSelectedOption(newActiveOptionKey);
+  if(defaultActiveOptionKey) {
+    return defaultActiveOptionKey;
   }
-}
 
-function onOptionButtonClick (ctrlKey: string) {
-  logger.debug(`(OptionButtonGroup) received option button click event: groupKey=${ctrlKey}, ctrlKey=${ctrlKey}`);
-  fireActiveOptionChange(ctrlKey);
-}
-
-function initActiveOption () {
-  if (!activeOptionCtrl) {
-    logger.debug(`(OptionButtonGroup) initializing active option: groupKey=${ctrlKey}`);
-    const savedOption = loadLastSelectedOption();
-    if (savedOption) {
-      logger.debug(`(OptionButtonGroup) last selected option has been read from storage: groupKey=${ctrlKey}, option=${savedOption}`);
-      if (options.some(x => x.ctrlKey === savedOption) || otherOptions?.variants.some(v => v.ctrlKey === savedOption)) {
-        fireActiveOptionChange(savedOption);
-        return;
-      } else {
-        logger.warn(`(OptionButtonGroup) last selected option has been read from storage, but respective button cannot be found: groupKey=${ctrlKey}, option=${savedOption}`);
-      }
-    }
-
-    const firstEnabledOption = options.find(o => o.enabled === true && (o.ctrlKey !== otherOptions?.ctrlKey || otherOptions!.variants.some(v => v.enabled)));
-    if (firstEnabledOption) {
-      if (firstEnabledOption.ctrlKey === otherOptions?.ctrlKey) {
-        const firstEnabledOtherOptionVariant = otherOptions!.variants.find(v => v.enabled === true)!;
-        logger.debug(`(OptionButtonGroup) setting other option variant active: groupKey=${ctrlKey}, optionKey=${firstEnabledOtherOptionVariant.ctrlKey}`);
-        fireActiveOptionChange(firstEnabledOtherOptionVariant.ctrlKey);
-      } else {
-        logger.debug(`(OptionButtonGroup) setting option active: groupKey=${ctrlKey}, optionKey=${firstEnabledOption.ctrlKey}`);
-        fireActiveOptionChange(firstEnabledOption.ctrlKey);
-      }
+  const firstEnabledOption = options.find(
+    o => o.enabled === true && (
+      !otherOptions?.ctrlKey || areCtrlKeysEqual(o.ctrlKey, otherOptions.ctrlKey) || 
+      otherOptions!.variants.some(v => v.enabled)
+    )
+  );
+  if (firstEnabledOption) {
+    if (otherOptions?.ctrlKey && areCtrlKeysEqual(firstEnabledOption.ctrlKey, otherOptions.ctrlKey)) {
+      const firstEnabledOtherOptionVariant = otherOptions!.variants.find(v => v.enabled === true)!;
+      logger.debug('making other option variant as default', { ctrlKey, optionKey: firstEnabledOtherOptionVariant.ctrlKey });
+      return firstEnabledOtherOptionVariant.ctrlKey;
     } else {
-      logger.verbose(`(OptionButtonGroup) all options are disabled, nothing to make active: groupKey=${ctrlKey}`);
+      logger.debug('making option as default', { ctrlKey, optionKey: firstEnabledOption.ctrlKey });
+      return firstEnabledOption.ctrlKey;
     }
+  } else {
+    logger.verbose('all options are disabled, using first as default', {  ctrlKey });
+    return options[0].ctrlKey;
   }
+});
+
+function onOptionButtonClick (optionKey: ControlKey) {
+  logger.debug('received option button click event', { ctrlKey, optionKey });
+  selectedOptionKey.value = optionKey;
 }
 
-onMounted(() => {
-  initActiveOption();
+const initialOverwrite = selectedOptionKey.value;
+logger.debug('acquiring store value ref', { ctrlKey, defaultValue: DefaultOption.value, initialOverwrite });
+const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<ControlKey>(ctrlKey, {
+  initialOverwrite,
+  defaultValue: DefaultOption.value,
+  persistent
 });
+
+watch(storeValueRef, () => {
+  logger.debug('store value watcher', { ctrlKey, modelValue: selectedOptionKey.value, storeValue: storeValueRef.value });
+  const newValue: ControlKey = storeValueRef.value ?? DefaultOption.value;
+  const changed = (!!newValue !== !!selectedOptionKey.value) || !areCtrlKeysEqual(newValue, selectedOptionKey.value!);
+  if(changed) {
+    selectedOptionKey.value = newValue;  
+  }
+}, { immediate: true });
+
+watch(selectedOptionKey, () => {
+  logger.debug('model value watcher', { ctrlKey, modelValue: selectedOptionKey.value, storeValue: storeValueRef.value });
+  if(!storeValueRef.value || !areCtrlKeysEqual(selectedOptionKey.value!, storeValueRef.value)) {
+    storeValueRef.value = selectedOptionKey.value ?? DefaultOption.value;
+  }
+}, { immediate: false });
 
 </script>
 
@@ -96,9 +91,9 @@ onMounted(() => {
   >
     <OptionButton
       v-for="o in options"
-      :key="o.ctrlKey"
+      :key="toShortForm(o.ctrlKey)"
       :ctrl-key="o.ctrlKey"
-      :is-active="(activeOptionCtrl && activeOptionCtrl === o.ctrlKey) ? true : false"
+      :is-active="(selectedOptionKey && areCtrlKeysEqual(o.ctrlKey, selectedOptionKey)) ? true : false /* currentActiveOption && areCtrlKeysEqual(o.ctrlKey, currentActiveOption) ? true : false */"
       :label-res-name="o.labelResName"
       :short-icon="o.shortIcon"
       :subtext-res-name="o.subtextResName"
@@ -106,11 +101,11 @@ onMounted(() => {
       :enabled="o.enabled"
       :tab-name="o.tabName"
       :role="role === 'radiogroup' ? { role: 'radio' } : { role: 'tab', tabPanelId: (o.role as any).tabPanelId }"
-      @click="onOptionButtonClick"
+      @click="() => onOptionButtonClick(o.ctrlKey)"
     />
     <OtherOptionsButton
       v-if="otherOptions"
-      :ctrl-key="`${ctrlKey}-otherOpts`"
+      :ctrl-key="[...ctrlKey, 'OtherOptions']"
       :default-res-name="otherOptions!.defaultResName"
       :selected-res-name="otherOptions!.selectedResName"
       :subtext-res-name="otherOptions!.subtextResName"
@@ -118,7 +113,7 @@ onMounted(() => {
       :variants="otherOptions!.variants.map(v => {
         return {
           ...v,
-          isActive: activeOptionCtrl === v.ctrlKey
+          isActive: selectedOptionKey && areCtrlKeysEqual(selectedOptionKey, v.ctrlKey)
         };
       })"
       :role="{ role: 'radio' }"

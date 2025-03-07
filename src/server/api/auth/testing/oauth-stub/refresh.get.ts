@@ -1,4 +1,4 @@
-import { AppException, AppExceptionCodeEnum, AuthProvider, type EntityId } from '@golobe-demo/shared';
+import { type IAppLogger, AppException, AppExceptionCodeEnum, AuthProvider, type EntityId } from '@golobe-demo/shared';
 import { OAUTH_SECRET, OAUTH_TESTUSER_PROFILE as testUserProfile } from '../../../../../helpers/testing';
 import { sign, verify } from 'jsonwebtoken';
 import type { H3Event } from 'h3';
@@ -15,31 +15,30 @@ interface JwtPayload extends User {
   exp: number;
 }
 
-async function ensureAppUser (): Promise<EntityId> {
-  const logger = getCommonServices().getLogger();
-  logger.info('(oauth-stub:refresh) setting up user TestLocal profile');
+async function ensureAppUser (logger: IAppLogger): Promise<EntityId> {
+  logger.info('setting up user TestLocal profile');
 
   const userLogic = getServerServices()!.getUserLogic();
   const userId = (await userLogic.ensureOAuthUser(AuthProvider.TestLocal, testUserProfile.sub, testUserProfile.firstName, testUserProfile.lastName, testUserProfile.email, true)).id;
-  logger.info(`(oauth-stub:refresh) test user exists in DB, userId=${userId}`);
+  logger.info('test user exists in DB', userId);
   return userId;
 }
 
 export default defineWebApiEventHandler(async (event: H3Event) => {
-  const logger = getCommonServices().getLogger();
-  logger.info('(oauth-stub:refresh) enter');
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
+  logger.info('enter');
 
   const body = await readBody<{ refreshToken: string }>(event);
 
   if (!body.refreshToken) {
-    logger.warn('(oauth-stub:login) Unauthenticated, no refreshToken in payload');
+    logger.warn('Unauthenticated, no refreshToken in payload');
     throw new AppException(AppExceptionCodeEnum.UNAUTHENTICATED, 'refreshToken was not specified', 'error-page');
   }
 
   const decoded = verify(body.refreshToken, OAUTH_SECRET) as JwtPayload | undefined;
 
   if (!decoded) {
-    logger.warn('(oauth-stub:login) Unauthenticated, refreshToken can`t be verified');
+    logger.warn('Unauthenticated, refreshToken can');
     throw new AppException(AppExceptionCodeEnum.UNAUTHENTICATED, 'refreshToken can`t be verified', 'error-page');
   }
 
@@ -49,7 +48,7 @@ export default defineWebApiEventHandler(async (event: H3Event) => {
     ...testUserProfile
   };
 
-  const userId = await ensureAppUser();
+  const userId = await ensureAppUser(logger);
   user.id = userId.toString();
 
   const accessToken = sign({ ...user, scope: ['test', 'user'] }, OAUTH_SECRET, {
@@ -59,7 +58,7 @@ export default defineWebApiEventHandler(async (event: H3Event) => {
     expiresIn: 60 * 60 * 24
   });
 
-  logger.info('(oauth-stub:refresh) exit');
+  logger.info('exit');
   return {
     token: {
       accessToken,

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { AppPage, type Locale, getI18nResName2 } from '@golobe-demo/shared';
 import type { ActivePageLink, NavBarMode } from './../../types';
 import ThemeSwitcher from './../../components/navbar/theme-switcher.vue';
@@ -7,14 +8,15 @@ import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   mode: NavBarMode,
   collapsed?: boolean,
   toggling?: boolean,
-  activePageLink?: ActivePageLink
+  activePageLink?: ActivePageLink,
+  hardLinks: boolean
 }
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'NavSearchPageLinks' });
 
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
@@ -27,17 +29,17 @@ function getClassName (collapsed: boolean, toggling: boolean) {
 }
 
 function onAnimationStart () {
-  logger.debug(`(NavSearchPageLink) animation started, ctrlKey=${ctrlKey}`);
+  logger.debug('animation started', ctrlKey);
   $emit('toggling');
 }
 
 function onAnimationEnd () {
-  logger.debug(`(NavSearchPageLink) animation ended, ctrlKey=${ctrlKey}`);
+  logger.debug('animation ended', ctrlKey);
   $emit('toggled');
 }
 
 function onLinkClicked () {
-  logger.debug(`(NavSearchPageLink) link clicked, ctrlKey=${ctrlKey}`);
+  logger.debug('link clicked', ctrlKey);
   $emit('linkClicked');
 }
 
@@ -59,20 +61,22 @@ const isErrorPage = useError().value;
       :class="getClassName(collapsed, toggling)"
     >
       <div v-if="!isErrorPage" class="nav-page-settings mb-xs-1 mt-xs-1">
-        <LocaleSwitcher ctrl-key="navPageSettingsLocaleSwitcher" @changed="onLinkClicked" />
-        <ThemeSwitcher ctrl-key="navPageSettingsThemeSwitcher" />
+        <LocaleSwitcher :ctrl-key="[...ctrlKey, 'Toggler', 'Locale']" @changed="onLinkClicked" />
+        <ThemeSwitcher :ctrl-key="[...ctrlKey, 'Toggler', 'Theme']" />
       </div>
       <NavLink
-        ctrl-key="navLinkFlights"
+        :ctrl-key="[...ctrlKey, 'NavLink', 'Flights']"
         :to="navLinkBuilder.buildPageLink(AppPage.Flights, locale as Locale)"
+        :hard-link="hardLinks"
         :text-res-name="getI18nResName2('nav', 'findFlights')"
         icon="airplane"
         :is-active="activePageLink === AppPage.Flights"
         @click="onLinkClicked"
       />
       <NavLink
-        ctrl-key="navLinkStays"
+        :ctrl-key="[...ctrlKey, 'NavLink', 'Stays']"
         :to="navLinkBuilder.buildPageLink(AppPage.Stays, locale as Locale)"
+        :hard-link="hardLinks"
         :text-res-name="getI18nResName2('nav', 'findStays')"
         icon="bed"
         :is-active="activePageLink === AppPage.Stays"

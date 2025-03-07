@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import type { I18nResName } from '@golobe-demo/shared';
 
 const inputField = useTemplateRef<HTMLInputElement>('input-field');
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   labelResName?: I18nResName,
   value: string | boolean,
   modelValue: any,

@@ -8,13 +8,13 @@ import type { H3Event } from 'h3';
 import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
   const staysLogic = getServerServices()!.getStaysLogic();
 
   const stayParam = getRouterParams(event)?.id?.toString() ?? '';
   const stayId: EntityId | undefined = stayParam;
   if(!(stayId?.length ?? 0)) {
-    logger.warn(`(api:stay-reviews-get) stay id parameter was not specified: param=${stayParam}`);
+    logger.warn('stay id parameter was not specified', undefined, { param: stayParam });
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
       'failed to parse stay id parameter',
@@ -27,10 +27,10 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   const authSession = await getServerSession(event);
   const userId = extractUserIdFromSession(authSession);
   if (userId) {
-    logger.debug(`(api:stay-reviews-post) checking user review: stayId=${stayId}, userId=${userId}`);
+    logger.debug('checking user review', { stayId, userId });
     const userReview = reviews.find(r => r.user.id === userId);
     if (userReview) {
-      logger.verbose(`(api:stay-reviews-post) moving user review to top: stayId=${stayId}, userId=${userId}, reviewId=${userReview.id}`);
+      logger.verbose('moving user review to top', { stayId, userId, reviewId: userReview.id });
       reviews.splice(reviews.indexOf(userReview), 1);
       reviews = [userReview, ...reviews];
     }

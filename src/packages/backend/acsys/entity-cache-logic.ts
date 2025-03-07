@@ -11,14 +11,14 @@ export class EntityCacheLogic implements IEntityCacheLogic {
 
   public static inject = ['entityCacheLogicPrisma',  'acsysDraftsEntitiesResolver', 'dbRepository', 'logger'] as const;
   constructor (prismaImplementation: IEntityCacheLogic, acsysDraftsEntitiesResolver: AcsysDraftEntitiesResolver, dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'EntityCacheLogic-Acsys' });
     this.prismaImplementation = prismaImplementation;
     this.dbRepository = dbRepository;
     this.acsysDraftsEntitiesResolver = acsysDraftsEntitiesResolver;
   }
 
   get = async <TEntityType extends CacheEntityType>(searchIds: EntityId[], searchSlugs: string[], type: TEntityType, previewMode: PreviewMode): Promise<GetEntityCacheItem<TEntityType>[]> => {
-    this.logger.debug(`(EntityCacheLogic-Acsys) find, searchIds=${JSON.stringify(searchIds)}, searchSlugs=${JSON.stringify(searchSlugs)}, type=${type}, previewMode=${previewMode}`);
+    this.logger.debug('find', { searchIds, searchSlugs, type, previewMode });
 
     let result: GetEntityCacheItem<TEntityType>[];
     if(previewMode) {
@@ -26,7 +26,7 @@ export class EntityCacheLogic implements IEntityCacheLogic {
         const cityIds = searchIds;
 
         if(searchSlugs.length > 0) {
-          this.logger.debug(`(EntityCacheLogic-Acsys) find cities - determining ids by slugs=[${searchSlugs.join('; ')}], previewMode=${previewMode}`);
+          this.logger.debug('find cities - determining ids by', { slugs: searchSlugs, previewMode });
           const draftCityIds = (await this.dbRepository.acsysDraftsCity.findMany({
             where: {
               slug: {
@@ -70,14 +70,14 @@ export class EntityCacheLogic implements IEntityCacheLogic {
           result = [];
         }
       } else {
-        this.logger.warn(`(EntityCacheLogic-Acsys) unexpected entity type: searchIds=${JSON.stringify(searchIds)}, searchSlugs=${JSON.stringify(searchSlugs)}, type=${type}`);
+        this.logger.warn('unexpected entity type', undefined, { searchIds, searchSlugs, type });
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected entity type', 'error-stub');
       }
     } else {
       result = await this.prismaImplementation.get<TEntityType>(searchIds, searchSlugs, type, previewMode);
     }
     
-    this.logger.debug(`(EntityCacheLogic-Acsys) find, searchIds=${JSON.stringify(searchIds)}, searchSlugs=${JSON.stringify(searchSlugs)}, type=${type}, previewMode=${previewMode}, result=${result ? JSON.stringify(result) : 'none'}`);
+    this.logger.debug('find', { searchIds, searchSlugs, type, previewMode, result });
     return result;
   };
 }

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-
+import type { ControlKey } from './../../helpers/components';
 import type { AuthProvider, I18nResName } from '@golobe-demo/shared';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   provider: AuthProvider,
   ariaLabelResName?: I18nResName,
   enabled: boolean

@@ -1,66 +1,75 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../helpers/components';
 import { getI18nResName2 } from '@golobe-demo/shared';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../helpers/dom';
 import throttle from 'lodash-es/throttle';
 import { getCommonServices } from '../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
-  collapseEnabled: boolean,
-  collapsed: boolean,
+  ctrlKey: ControlKey,
+  collapseable: boolean,
+  persistent?: boolean,
+  defaultCollapsed?: boolean,
   tabbableGroupId?: string,
-  showCollapsableButton?: boolean,
-  persistent?: boolean
+  showCollapsableButton?: boolean
 }
 
-const { ctrlKey, collapsed, collapseEnabled, showCollapsableButton = true, persistent = true } = defineProps<IProps>();
+const { 
+  ctrlKey, 
+  collapseable, 
+  defaultCollapsed = false,
+  showCollapsableButton = true, 
+  persistent = false 
+} = defineProps<IProps>();
 
-const sectionHtmlElId = ctrlKey;
+const logger = getCommonServices().getLogger().addContextProps({ component: 'CollapsableSection' });
+const controlValuesStore = useControlValuesStore();
 
-const controlSettingsStore = useControlSettingsStore();
-const controlSingleValueSetting = persistent ? controlSettingsStore.getControlValueSetting<'collapsed' | 'expanded' | undefined>(`${ctrlKey}-collapsed`, 'expanded', true) : undefined;
-
-const logger = getCommonServices().getLogger();
+const sectionHtmlElId = computed(() => toShortForm(ctrlKey));
+const collapsed = defineModel<boolean | null | undefined>('collapsed');
 const toggling = ref(false);
+const sectionHtmlElMaxHeight = ref('0px');
+
+defineExpose({
+  toggle,
+  expand,
+  collapse
+});
 
 function toggle () {
   if (!toggling.value) {
-    const newValue = !collapsed;
-    toggling.value = collapseEnabled && true;
-    if (controlSingleValueSetting) {
-      controlSingleValueSetting.value = newValue ? 'collapsed' : 'expanded';
-    }
-    if (!collapseEnabled) {
+    const newValue = !collapsed.value;
+    toggling.value = collapseable;
+    if (!collapseable) {
       setTimeout(updateSectionMaxHeightHtmlVar, 0);
     }
-    logger.debug(`(CollapsableSection) changing state, ctrlKey=${ctrlKey}, new toggled=${newValue}`);
-    $emit('update:collapsed', newValue);
+    logger.debug('changing state', { ctrlKey, toggled: newValue });
+    collapsed.value = newValue;
   }
 }
 
 function expand () {
-  if (collapsed) {
+  if (collapsed.value) {
     toggle();
   }
 }
 
 function collapse () {
-  if (!collapsed) {
+  if (!collapsed.value) {
     toggle();
   }
 }
 
-const sectionHtmlElMaxHeight = ref('0px');
 function onAnimationStart () {
-  if (collapseEnabled) {
+  if (collapseable) {
     toggling.value = true;
     setTimeout(updateSectionMaxHeightHtmlVar, 0);
   }
 }
 
 function updateSectionMaxHeightHtmlVar () {
-  logger.debug(`(CollapsableSection) updating section max height, ctrlKey=${ctrlKey}`);
-  const htmlElQuery = document.querySelectorAll(`#${sectionHtmlElId} .collapsable-section-content > *:first-child`);
+  logger.debug('updating section max height', ctrlKey);
+  const htmlElQuery = document.querySelectorAll(`#${sectionHtmlElId.value} .collapsable-section-content > *:first-child`);
   if (htmlElQuery.length === 0) {
     return;
   }
@@ -72,48 +81,56 @@ function updateSectionMaxHeightHtmlVar () {
 }
 
 function onAnimationEnd () {
-  if (collapseEnabled) {
+  if (collapseable) {
     toggling.value = false;
   }
   setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 }
-
-const $emit = defineEmits<{(event: 'update:collapsed', value?: boolean): void}>();
 
 const onWindowResize = () => setTimeout(throttle(function () {
   setTimeout(updateSectionMaxHeightHtmlVar, 0);
 }), 100);
 
 onMounted(() => {
-  let initiallyCollapsed = collapsed;
-  if (collapseEnabled) {
-    if (controlSingleValueSetting) {
-      const initValue = controlSingleValueSetting.value === 'collapsed';
-      if (initValue !== collapsed) {
-        logger.debug(`(CollapsableSection) initial collapsed state in settings differs from passed in props, ctrlKey=${ctrlKey}, props=${collapsed}, settings=${initValue}`);
-        initiallyCollapsed = initValue;
-        toggle();
-      }
-    }
+  if(persistent) {
+    const initialOverwrite = (collapsed.value !== null && collapsed.value !== undefined) ? collapsed.value : undefined;
+    logger.debug('acquiring store ref', { ctrlKey, defaultValue: defaultCollapsed, initialOverwrite });
+    const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<boolean | null>(ctrlKey, {
+      initialOverwrite,
+      defaultValue: defaultCollapsed,
+      persistent
+    });
 
-    window.addEventListener('resize', onWindowResize);
+    watch(storeValueRef, () => {
+      logger.debug('store value watcher', { ctrlKey, modelValue: collapsed.value, storeValue: storeValueRef.value });
+      const newValue: boolean = storeValueRef.value ?? defaultCollapsed;
+      const changed = storeValueRef.value !== collapsed.value;
+      if(changed) {
+        collapsed.value = newValue;  
+      }
+    }, { immediate: true });
+
+    watch(collapsed, () => {
+      logger.debug('model value watcher', { ctrlKey, modelValue: collapsed.value, storeValue: storeValueRef.value });
+      if(collapsed.value !== storeValueRef.value) {
+        storeValueRef.value = (collapsed.value !== null && collapsed.value !== undefined) ? collapsed.value : null;
+      }
+    }, { immediate: false });
   }
 
-  if (!initiallyCollapsed) {
+  if (!collapsed.value) {
     setTimeout(updateSectionMaxHeightHtmlVar, 0);
+  }
+
+  if (collapseable) {
+    window.addEventListener('resize', onWindowResize);
   }
 });
 
 onUnmounted(() => {
-  if (collapseEnabled) {
+  if (collapseable) {
     window.removeEventListener('resize', onWindowResize);
   }
-});
-
-defineExpose({
-  toggle,
-  expand,
-  collapse
 });
 
 </script>

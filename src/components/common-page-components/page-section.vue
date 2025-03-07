@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { type I18nResName, getI18nResName1, type Locale } from '@golobe-demo/shared';
 import type { Tooltip } from 'floating-vue';
 import { TooltipHideTimeout } from './../../helpers/constants';
@@ -6,7 +7,7 @@ import SimpleButton from './../../components/forms/simple-button.vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   headerResName: I18nResName,
   subtextResName?: I18nResName,
   linkUrl?: string,
@@ -56,7 +57,7 @@ function scheduleTooltipAutoHide () {
         no-auto-focus
         @apply-show="scheduleTooltipAutoHide"
       >
-        <SimpleButton :ctrl-key="`${ctrlKey}-Btn`" :label-res-name="btnTextResName" kind="support" class="page-section-button" />
+        <SimpleButton :ctrl-key="[...ctrlKey, 'Btn']" :label-res-name="btnTextResName" kind="support" class="page-section-button" />
         <template #popper>
           <div>
             {{ $t(getI18nResName1('notAvailableInDemo')) }}

@@ -14,6 +14,7 @@ export default defineNitroPlugin((nitroApp) => {
   }
 
   nitroApp.hooks.hook('beforeResponse', (event) => {
+    const logger: IAppLogger | undefined = getCommonServices()?.getLogger()?.addContextProps({ component: 'NitroCookiesResponseFilter' });
     if(!event.node.req.url?.includes(ApiAppEndpointPrefix)) {
       return;
     }
@@ -21,7 +22,7 @@ export default defineNitroPlugin((nitroApp) => {
     if (!event.headers) {
       return;
     }
-    const logger = getCommonServices()?.getLogger() as IAppLogger | undefined;
+    
     const allHeaders = event.node.res.getHeaders();
     const setCookieValues = allHeaders[HeaderSetCookie];
     if (!setCookieValues || setCookieValues.length === 0) {
@@ -32,10 +33,10 @@ export default defineNitroPlugin((nitroApp) => {
     const filteredOutAuthCookies = allCookies.filter(c => ![CookieAuthSessionToken, CookieAuthCallbackUrl, CookieAuthCsrfToken].some(ac => c.includes(ac)));
     if (filteredOutAuthCookies.length !== allCookies.length) {
       try {
-        logger?.debug(`(nitro:auth-cookies-response-filter) patching response cookies, path=${event.path}, count=${filteredOutAuthCookies.length}/${allCookies.length}]`);
+        logger?.debug('patching response cookies', { path: event.path, count: filteredOutAuthCookies.length });
         setResponseHeader(event, HeaderSetCookie, filteredOutAuthCookies);
       } catch (err: any) {
-        logger?.warn(`(nitro:auth-cookies-response-filter) failed to patch response cookies, path=${event.path}, count=${filteredOutAuthCookies.length}/${allCookies.length}]`, err);
+        logger?.warn('failed to patch response cookies', err, { path: event.path, count: filteredOutAuthCookies.length });
       }
     }
   });

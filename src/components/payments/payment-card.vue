@@ -1,17 +1,18 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { getI18nResName1, getI18nResName2, getI18nResName3, formatValidThruDate } from '@golobe-demo/shared';
 import { TooltipHideTimeout } from './../../helpers/constants';
 import type { Tooltip } from 'floating-vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   digits: string,
   dueDate: Date
 };
 const { ctrlKey } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'PaymentCard' });
 const tooltip = useTemplateRef<InstanceType<typeof Tooltip>>('tooltip');
 
 function scheduleTooltipAutoHide () {
@@ -19,7 +20,7 @@ function scheduleTooltipAutoHide () {
 }
 
 function onRemoveBtnClick () {
-  logger.debug(`(PaymentCard) remove btn clicked, ctrlKey=${ctrlKey}`);
+  logger.debug('remove btn clicked', ctrlKey);
 }
 
 const tooltipId = useId();
@@ -45,7 +46,7 @@ const tooltipId = useId();
         no-auto-focus
         @apply-show="scheduleTooltipAutoHide"
       >
-      <SimpleButton kind="default" class="payment-card-remove-btn" :ctrl-key="`${ctrlKey}-btnRemove`" icon="delete" :aria-label-res-name="getI18nResName2('ariaLabels', 'btnRemovePaymentCard')" @click="onRemoveBtnClick" />
+      <SimpleButton kind="default" class="payment-card-remove-btn" :ctrl-key="[...ctrlKey, 'Btn', 'Delete']" icon="delete" :aria-label-res-name="getI18nResName2('ariaLabels', 'btnRemovePaymentCard')" @click="onRemoveBtnClick" />
         <template #popper>
           <div>
             {{ $t(getI18nResName1('notAvailableInDemo')) }}

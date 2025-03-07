@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../../helpers/components';
 import { AppException, AppExceptionCodeEnum, getI18nResName2 } from '@golobe-demo/shared';
 import type { TravelDetailsImageStatus } from './../../../types';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
@@ -11,12 +12,13 @@ import TravelDetailsImage from './travel-details-image.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   bookKind: 'flight' | 'stay'
 };
 const { ctrlKey, bookKind } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'TravelDetails' });
+const userNotificationStore = useUserNotificationStore();
 const travelDetailsStore = useTravelDetailsStore();
 const isError = ref(false);
 
@@ -31,9 +33,9 @@ try {
   isError.value = storeInstance.isError;
 } catch (err: any) {
   if(import.meta.server && AppException.isAppException(err) && err.code === AppExceptionCodeEnum.OBJECT_NOT_FOUND) {
-    defaultErrorHandler(err);
+    defaultErrorHandler(err, { nuxtApp: useNuxtApp(), userNotificationStore });
   };
-  logger.warn(`(TravelDetails) failed to obtain travel details store, ctrlKey=${ctrlKey}`, err);
+  logger.warn('failed to obtain travel details store', err, ctrlKey);
   isError.value = true;
 }
 
@@ -44,11 +46,11 @@ function processCurrentStatusChanges () {
     return;
   }
 
-  logger.debug(`(TravelDetails) processCurrentStatusChanges, ctrlKey=${ctrlKey}`);
+  logger.debug('processCurrentStatusChanges', ctrlKey);
   const allImagesReady = imagesCurrentStatuses.every((s: Ref<TravelDetailsImageStatus | undefined>) => { return s.value === 'ready' || s.value === 'error'; });
   const initialFrame = imageComponents.value?.length && imageComponents.value!.every(f => f.isInitialFrame());
   if (allImagesReady && initialFrame) {
-    logger.info(`(TravelDetails) all inital images have been preRendered, ctrlKey=${ctrlKey}, current cityId=${storeInstance.current?.cityId}`);
+    logger.info('all inital images have been preRendered', { ctrlKey, cityId: storeInstance.current?.cityId });
     storeInstance.onPreRenderCompleted(storeInstance.current!.cityId);
   }
 }
@@ -58,28 +60,29 @@ function processUpcomingStatusChanges () {
     return;
   }
 
-  logger.debug(`(TravelDetails) processUpcomingStatusChanges, ctrlKey=${ctrlKey}`);
+  logger.debug('processUpcomingStatusChanges', ctrlKey);
   if (imagesUpcomingStatuses.every((s: Ref<TravelDetailsImageStatus | undefined>) => s.value === 'ready' || s.value === 'error')) {
     const frames = imageComponents.value!;
     const toBeDisplayedCityId = frames[0].getUpcomingCityId();
     if (toBeDisplayedCityId && toBeDisplayedCityId === storeInstance.upcoming?.cityId) {
-      logger.info(`(TravelDetails) all upcoming images have been preRendered, ctrlKey=${ctrlKey}, upcoming cityId=${toBeDisplayedCityId}, current cityId=${storeInstance.current?.cityId}`);
+      logger.info('all upcoming images have been preRendered', { ctrlKey, upcomingCityId: toBeDisplayedCityId, currentCityId: storeInstance.current?.cityId });
       for (let i = 0; i < frames.length; i++) {
         const imageFrame = frames[i];
         if (imageFrame.getUpcomingCityId() === toBeDisplayedCityId) {
           imageFrame.swapFrames();
         } else {
-          logger.warn(`(TravelDetails) image frame is out of sync, ctrlKey=${ctrlKey}, frame's upcoming cityId=${imageFrame.getUpcomingCityId()}, store's upcoming cityId=${toBeDisplayedCityId}`);
+          logger.warn('image frame is out of sync', undefined, { ctrlKey, frameCityId: imageFrame.getUpcomingCityId(), storeCityId: toBeDisplayedCityId });
         }
       }
       textingComponent.value!.swapFrames();
       storeInstance.onPreRenderCompleted(toBeDisplayedCityId);
       setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
     } else if (toBeDisplayedCityId) {
-      logger.debug(`(TravelDetails) processUpcomingStatusChanges, prerendered city is out of sync, ctrlKey=${ctrlKey}, preRendered cityId=${toBeDisplayedCityId}, store upcoming cityId=${storeInstance.upcoming?.cityId}`);
+      logger.debug('processUpcomingStatusChanges, prerendered city is out of sync', { ctrlKey, cityId: toBeDisplayedCityId, upcomingCityId: storeInstance.upcoming?.cityId });
     }
   } else {
-    logger.debug(`(TravelDetails) processUpcomingStatusChanges, not all of upcoming frames completed prerendering, ctrlKey=${ctrlKey}, statuses=${JSON.stringify(imagesUpcomingStatuses.map((s: { value: any; }) => s.value))}`);
+    const statuses = imagesUpcomingStatuses.map((s: { value: any; }) => s.value);
+    logger.debug('processUpcomingStatusChanges, not all of upcoming frames completed prerendering', { ctrlKey, statuses });
   }
 }
 
@@ -116,7 +119,7 @@ onMounted(() => {
 
 <template>
   <PageSection
-    :ctrl-key="`${ctrlKey}-TravelDetails`"
+    :ctrl-key="[...ctrlKey, 'TravelDetails']"
     :header-res-name="getI18nResName2('travelDetails', 'title')"
     :subtext-res-name="getI18nResName2('travelCities', 'subtext')"
     :btn-text-res-name="getI18nResName2('travelCities', 'btn')"
@@ -124,12 +127,12 @@ onMounted(() => {
     :is-error="isError"
   >
     <article class="travel-details">
-      <TravelDetailsTexting ref="texting-component" :ctrl-key="`${ctrlKey}-TravelDetailsTexting`" :book-kind="bookKind" />
+      <TravelDetailsTexting ref="texting-component" :ctrl-key="[...ctrlKey, 'TravelDetails', 'Texting']" :book-kind="bookKind" />
       <TravelDetailsImage
         v-for="(idx) in range(0, 4).map((i: any) => i)"
         ref="image-components"
-        :key="`${ctrlKey}-TravelDetailsImage-${idx}`"
-        :ctrl-key="`${ctrlKey}-TravelDetailsImage-${idx}`"
+        :key="`${toShortForm(ctrlKey)}-TravelDetailsImage-${idx}`"
+        :ctrl-key="[...ctrlKey, 'TravelDetails', 'StaticImg', idx]"
         :image-index="idx"
         @update:current-status="(status?: TravelDetailsImageStatus) => imagesCurrentStatuses[idx].value = status"
         @update:upcoming-status="(status?: TravelDetailsImageStatus) => imagesUpcomingStatuses[idx].value = status"

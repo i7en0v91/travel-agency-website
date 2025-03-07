@@ -7,12 +7,12 @@ import { getServerSession } from '#auth';
 import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
   const flightsLogic = getServerServices()!.getFlightsLogic();
 
   const offerParam = getRouterParams(event)?.id?.toString() ?? '';
   if (!offerParam) {
-    logger.warn(`(api:flight-favourite) flight offer id paramer was not speicifed: path=${event.path}`);
+    logger.warn('flight offer id paramer was not speicifed', undefined, { path: event.path });
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
       'offerId parameter was not specified',
@@ -24,7 +24,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   const authSession = await getServerSession(event);
   const userId = extractUserIdFromSession(authSession);
   if(!userId) {
-    logger.warn(`(api:flight-favourite) failed to parse user id: path=${event.path}`);
+    logger.warn('failed to parse user id', undefined, { path: event.path });
     throw new AppException(
       AppExceptionCodeEnum.UNKNOWN,
       'cannot obtain user id',

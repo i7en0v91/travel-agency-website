@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type EntityId, isPasswordSecure, type Locale, SecretValueMask, RecoverPasswordCompleteResultEnum, AppPage, getPagePath, getI18nResName2 } from '@golobe-demo/shared';
+import { type EntityId, isPasswordSecure, type Locale, RecoverPasswordCompleteResultEnum, AppPage, getPagePath, getI18nResName2 } from '@golobe-demo/shared';
 import { ApiEndpointPasswordRecoveryComplete, type IRecoverPasswordCompleteDto, type IRecoverPasswordCompleteResultDto } from './../server/api-definitions';
 import { post } from './../helpers/rest-utils';
 import { useVuelidate } from '@vuelidate/core';
@@ -11,6 +11,7 @@ import SimpleButton from './../components/forms/simple-button.vue';
 import AccountFormPhotos from './../components/account/form-photos.vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { getCommonServices } from '../helpers/service-accessors';
+import type { ControlKey } from './../helpers/components';
 
 const { t, locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
@@ -24,6 +25,8 @@ definePageMeta({
   title: { resName: getI18nResName2('forgotPasswordSetPage', 'title'), resArgs: undefined }
 });
 useOgImage();
+
+const CtrlKey: ControlKey = ['Page', 'ForgotPasswordSet'];
 
 const password = ref('');
 const confirmPassword = ref('');
@@ -43,7 +46,7 @@ const rules = computed(() => ({
 }));
 const v$ = useVuelidate(rules, { password, confirmPassword, $lazy: true });
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ForgotPasswordSet' });
 const route = useRoute();
 let tokenId: EntityId | undefined;
 let tokenValue = '';
@@ -51,7 +54,7 @@ try {
   tokenId = route.query.token_id?.toString() ?? '';
   tokenValue = route.query.token_value?.toString() ?? '';
 } catch (err: any) {
-  logger.info(`(ForgotPasswordSet) failed to parse token data: id=${tokenId}, value=${tokenValue ? SecretValueMask : '[empty]'}`);
+  logger.info('failed to parse token data', { id: tokenId, token: tokenValue });
   console.warn(err);
 }
 
@@ -85,7 +88,7 @@ function submitClick () {
 <template>
   <div class="set-password-page account-page no-hidden-parent-tabulation-check">
     <div class="set-password-page-content">
-      <NavLogo ctrl-key="setPasswordPageAppLogo" mode="inApp" />
+      <NavLogo :ctrl-key="[...CtrlKey, 'NavLogo']" mode="inApp" :hard-link="false"/>
       <h1 class="set-password-title font-h2">
         {{ t(getI18nResName2('forgotPasswordSetPage', 'title')) }}
       </h1>
@@ -95,7 +98,7 @@ function submitClick () {
       <form>
         <TextBox
           v-model="password"
-          ctrl-key="setPasswordPgPassword"
+          :ctrl-key="[...CtrlKey, 'TextBox', 'Password']"
           class="form-field set-password-form-field set-password-password-field"
           type="password"
           :caption-res-name="getI18nResName2('accountPageCommon', 'passwordLabel')"
@@ -108,7 +111,7 @@ function submitClick () {
         </div>
         <TextBox
           v-model="confirmPassword"
-          ctrl-key="setPasswordPgConfirmPassword"
+          :ctrl-key="[...CtrlKey, 'TextBox', 'ConfirmPassword']"
           class="form-field set-password-form-field set-password-confirm-password-field mt-xs-4"
           type="password"
           :caption-res-name="getI18nResName2('accountPageCommon', 'confirmPasswordLabel')"
@@ -120,8 +123,8 @@ function submitClick () {
           </div>
         </div>
       </form>
-      <SimpleButton ctrl-key="setPasswordSubmitBtn" class="set-password-btn mt-xs-2" :label-res-name="getI18nResName2('forgotPasswordSetPage', 'setPassword')" @click="submitClick" />
+      <SimpleButton :ctrl-key="[...CtrlKey, 'Btn', 'Submit']" class="set-password-btn mt-xs-2" :label-res-name="getI18nResName2('forgotPasswordSetPage', 'setPassword')" @click="submitClick" />
     </div>
-    <AccountFormPhotos ctrl-key="SetPasswordPhotos" class="set-password-account-forms-photos" />
+    <AccountFormPhotos :ctrl-key="[...CtrlKey, 'AccountFormPhotos']" class="set-password-account-forms-photos" />
   </div>
 </template>

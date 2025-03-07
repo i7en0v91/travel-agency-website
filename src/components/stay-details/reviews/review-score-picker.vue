@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../../helpers/components';
 import { getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import { VueFinalModal } from 'vue-final-modal';
 import range from 'lodash-es/range';
@@ -6,13 +7,13 @@ import SimpleButton from './../../forms/simple-button.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   setResultCallback: (result: number | 'cancel') => void
 }
 
 const { ctrlKey, setResultCallback } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ReviewScorePicker' });
 const hoveredScore = ref<number>();
 
 let resultSet = false;
@@ -20,7 +21,7 @@ let resultSet = false;
 const $emit = defineEmits(['update:modelValue']);
 
 function setResultAndClose (result: number | 'cancel') {
-  logger.debug(`(ReviewScorePicker) setResultAndClose, ctrlKey=${ctrlKey}, resultSet=${resultSet}`);
+  logger.debug('setResultAndClose', { ctrlKey, resultSet });
   if (!resultSet) {
     resultSet = true;
     setResultCallback(result);
@@ -29,7 +30,7 @@ function setResultAndClose (result: number | 'cancel') {
 }
 
 function onClosed () {
-  logger.debug(`(ReviewScorePicker) onClosed, ctrlKey=${ctrlKey}, resultSet=${resultSet}`);
+  logger.debug('onClosed', { ctrlKey, resultSet });
   if (!resultSet) {
     resultSet = true;
     setResultCallback('cancel');
@@ -38,17 +39,17 @@ function onClosed () {
 }
 
 function onPickerItemHovered (score: number) {
-  logger.debug(`(ReviewScorePicker) picker item hovered, ctrlKey=${ctrlKey}, score=${score}`);
+  logger.debug('picker item hovered', { ctrlKey, score });
   hoveredScore.value = score;
 }
 
 function onPickerItemUnhovered () {
-  logger.debug(`(ReviewScorePicker) picker item unhovered, ctrlKey=${ctrlKey}`);
+  logger.debug('picker item unhovered', ctrlKey);
   hoveredScore.value = 0;
 }
 
 function onPickerItemClicked (score: number) {
-  logger.debug(`(ReviewScorePicker) picker item clicked, ctrlKey=${ctrlKey}, score=${score}`);
+  logger.debug('picker item clicked', { ctrlKey, score });
   setResultAndClose(score);
 }
 
@@ -71,7 +72,7 @@ function onPickerItemClicked (score: number) {
       <div class="review-score-picker-div my-xs-5">
         <div
           v-for="(i) in range(0, 5)"
-          :key="`${ctrlKey}-ScorePickerItem-${i}`"
+          :key="`${toShortForm(ctrlKey)}-ScorePickerItem-${i}`"
           :class="`review-score-picker-item ${ hoveredScore ? (i < hoveredScore ? 'highlight' : '') : '' }`"
           :data-score="i"
           @mouseover="() => { onPickerItemHovered(i + 1); }"
@@ -80,7 +81,7 @@ function onPickerItemClicked (score: number) {
         />
       </div>
       <SimpleButton
-        :ctrl-key="`${ctrlKey}-btnCancel`"
+        :ctrl-key="[...ctrlKey, 'Btn', 'Cancel']"
         :label-res-name="getI18nResName2('confirmBox', 'btnCancel')"
         kind="support"
         icon="cross"

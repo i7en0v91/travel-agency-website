@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../../helpers/components';
 import { type Locale, getLocalizeableValue } from '@golobe-demo/shared';
 import isString from 'lodash-es/isString';
 import { SearchOffersFilterTabGroupId } from './../../../../helpers/constants';
@@ -6,7 +7,7 @@ import type { ISearchOffersFilterVariant } from './../../../../types';
 import { getCommonServices } from '../../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   variant: ISearchOffersFilterVariant,
   value: boolean
 }
@@ -14,12 +15,12 @@ interface IProps {
 const { ctrlKey, value } = defineProps<IProps>();
 
 const { locale } = useI18n();
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'FlowChecklistItem' });
 
 const $emit = defineEmits<{(event: 'update:value', value: boolean): void}>();
 
 function fireValueChangeEvent (value: boolean) {
-  logger.verbose(`(FlowChecklistItem) firing value change event, ctrlKey=${ctrlKey}, value=${value}`);
+  logger.verbose('firing value change event', { ctrlKey, value });
   $emit('update:value', value);
 }
 

@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { getI18nResName1, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import { TooltipHideTimeout } from './../../helpers/constants';
 import type { Tooltip } from 'floating-vue';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 };
 defineProps<IProps>();
 
@@ -33,7 +34,7 @@ const tooltipId = useId();
       @apply-show="scheduleTooltipAutoHide"
     >
       <SimpleButton
-        :ctrl-key="`${ctrlKey}-AddCardBtn`"
+        :ctrl-key="[...ctrlKey, 'Btn', 'Add']"
         class="payment-card-add-btn"
         kind="support"
         icon="add-card"

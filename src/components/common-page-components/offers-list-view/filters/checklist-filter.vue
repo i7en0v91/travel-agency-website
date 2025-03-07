@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey, type ArbitraryControlElementMarker } from './../../../../helpers/components';
 import { getI18nResName3, type Locale, getLocalizeableValue } from '@golobe-demo/shared';
 import isString from 'lodash-es/isString';
 import FlowChecklistItem from './flow-checklist-item.vue';
@@ -8,7 +9,7 @@ import type { ISearchOffersChecklistFilterProps, ISearchOffersFilterVariant, Sea
 import { getCommonServices } from '../../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   filterParams: ISearchOffersChecklistFilterProps,
   value: SearchOffersFilterVariantId[],
   maxCollapsedListItemsCount?: number
@@ -17,12 +18,12 @@ interface IProps {
 const { ctrlKey, value, filterParams, maxCollapsedListItemsCount } = defineProps<IProps>();
 
 const { locale } = useI18n();
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ChecklistFilter' });
 
 const $emit = defineEmits<{(event: 'update:value', value: SearchOffersFilterVariantId[]): void}>();
 
 function fireValueChangeEvent (value: SearchOffersFilterVariantId[]) {
-  logger.verbose(`(ChecklistFilter) firing value change event, ctrlKey=${ctrlKey}, values=[${value.join('; ')}]`);
+  logger.verbose('firing value change event', { ctrlKey, values: value });
   $emit('update:value', value);
 }
 
@@ -71,11 +72,11 @@ function toggleList () {
 <template>
   <div class="checklist-filter">
     <ol :class="filterParams.display === 'flow' ? 'flow-checklist' : 'list-checklist'">
-      <li v-for="(variant) in (listExpanded ? filterParams.variants : variantsToDisplay)" :key="`${ctrlKey}-${variant.id}`" class="checklist-filter-container">
+      <li v-for="(variant) in (listExpanded ? filterParams.variants : variantsToDisplay)" :key="`${toShortForm(ctrlKey)}-${variant.id}`" class="checklist-filter-container">
         <FlowChecklistItem
           v-if="filterParams.display === 'flow'"
           class="m-xs-2"
-          :ctrl-key="`${ctrlKey}-FlowVariant-${variant.id}`"
+          :ctrl-key="[...ctrlKey, 'FilterVariant', variant.id as ArbitraryControlElementMarker]"
           :value="value.includes(variant.id)"
           :variant="variant"
           @update:value="() => onVariantToggled(variant.id)"
@@ -83,7 +84,7 @@ function toggleList () {
         <CheckBox
           v-else
           :model-value="value.includes(variant.id)"
-          :ctrl-key="`${ctrlKey}-ListVariant-${variant.id}`"
+          :ctrl-key="[...ctrlKey, 'FilterVariant', variant.id as ArbitraryControlElementMarker]"
           class="list-checklist-item m-xs-2"
           :tabbable-group-id="SearchOffersFilterTabGroupId"
           :value="true"
@@ -96,7 +97,7 @@ function toggleList () {
     <SimpleButton
       v-if="numMoreVariantsToDisplay"
       class="list-checklist-toggler mb-xs-2 ml-xs-2"
-      :ctrl-key="`${ctrlKey}-ListToggler`"
+      :ctrl-key="[...ctrlKey, 'Toggler']"
       :label-res-name="listExpanded ? getI18nResName3('searchOffers', 'filters', 'checklistCollapseItems') : getI18nResName3('searchOffers', 'filters', 'checklistMoreItems')"
       :label-res-args="listExpanded ? undefined : numMoreVariantsToDisplay"
       :tabbable-group-id="SearchOffersFilterTabGroupId"

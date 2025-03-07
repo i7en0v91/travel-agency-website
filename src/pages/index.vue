@@ -10,13 +10,16 @@ import PopularCityCard from './../components/index/popular-city-card.vue';
 import CompanyReviewCard from './../components/index/company-review-card.vue';
 import { usePreviewState } from './../composables/preview-state';
 import { getCommonServices } from '../helpers/service-accessors';
+import type { ControlKey } from './../helpers/components';
 
 definePageMeta({
   title: { resName: getI18nResName2('indexPage', 'title'), resArgs: undefined }
 });
 useOgImage();
 
-const logger = getCommonServices().getLogger();
+const CtrlKey: ControlKey = ['Page', 'Index'];
+
+const logger = getCommonServices().getLogger().addContextProps({ component: 'Index' });
 
 const nuxtApp = useNuxtApp();
 const { enabled } = usePreviewState();
@@ -26,9 +29,9 @@ const citiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`, {
     cache: (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
     query: { drafts: enabled },
     transform: (response: IPopularCityDto[]) => {
-      logger.verbose('(indexPage) received popular cities list response');
+      logger.verbose('received popular cities list response');
       if (!response) {
-        logger.warn('(indexPage) popular cities list response is empty');
+        logger.warn('popular cities list response is empty');
         return range(0, 20, 1).map(_ => null); // error should be logged by fetchEx
       }
       return response;
@@ -45,9 +48,9 @@ const reviewsListFetch = await useFetch(`/${ApiEndpointCompanyReviewsList}`,
     query: { drafts: enabled },
     default: () => { return range(0, 10, 1).map(_ => null); },
     transform: (response: ICompanyReviewDto[]) => {
-      logger.verbose(`(indexPage) received company reviews list response: [${JSON.stringify(response)}]`);
+      logger.verbose('received company reviews list', response);
       if (!response) {
-        logger.warn('(indexPage) company review list response is empty');
+        logger.warn('company review list response is empty');
         return range(0, 10, 1).map(_ => null); // error should be logged by fetchEx
       }
       return response;
@@ -64,7 +67,7 @@ function onActiveSlideChanged () {
 <template>
   <div class="index-page-content no-hidden-parent-tabulation-check">
     <PageSection
-      ctrl-key="PerfectTripSection"
+      :ctrl-key="[...CtrlKey, 'PageSection', 'PerfectTrip']"
       :header-res-name="getI18nResName3('indexPage', 'perfectTripSection', 'title')"
       :subtext-res-name="getI18nResName3('indexPage', 'perfectTripSection', 'subtext')"
       :btn-text-res-name="getI18nResName3('indexPage', 'perfectTripSection', 'btn')"
@@ -76,7 +79,7 @@ function onActiveSlideChanged () {
         <PopularCityCard
           v-for="(city, idx) in citiesListFetch.data.value"
           :key="`popular-city-${idx}`"
-          :ctrl-key="`PopularCityCard-${idx}`"
+          :ctrl-key="[...CtrlKey, 'Card', 'PopularCity', idx]"
           search-kind="flight"
           :text="city ? mapLocalizeableValues((city: string, country: string) => `${city}, ${country}`, city.cityDisplayName, city.countryDisplayName) : undefined"
           :img-src="city ? { slug: city.imgSlug, timestamp: city.timestamp } : undefined"
@@ -89,13 +92,13 @@ function onActiveSlideChanged () {
     <div class="page-section search-page-image-link-section">
       <div class="page-section-content content-padded search-image-links-section-content">
         <div class="search-page-image-links">
-          <SearchPageImageLink ctrl-key="SearchFlightsImageLink" page="flights" />
-          <SearchPageImageLink ctrl-key="SearchHotelsImageLink" page="stays" />
+          <SearchPageImageLink :ctrl-key="[...CtrlKey, 'Flights', 'ImageLink']" page="flights" />
+          <SearchPageImageLink :ctrl-key="[...CtrlKey, 'Stays', 'ImageLink']" page="stays" />
         </div>
       </div>
     </div>
     <PageSection
-      ctrl-key="CompanyReviewSection"
+      :ctrl-key="[...CtrlKey, 'PageSection', 'CompanyReview']"
       class="company-reviews-section"
       :header-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'title')"
       :subtext-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'subtext')"
@@ -130,7 +133,7 @@ function onActiveSlideChanged () {
           :style="{width: 'auto'}"
         >
           <CompanyReviewCard
-            :ctrl-key="`CompanyReviewCard-${index}`"
+            :ctrl-key="[...CtrlKey, 'Card', 'CompanyReview', index]"
             class="ml-xs-1 mr-xs-2 mr-s-4"
             :header="review?.header ?? undefined"
             :body="review?.body ?? undefined"

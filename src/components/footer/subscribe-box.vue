@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { UserNotificationLevel, getI18nResName2 } from '@golobe-demo/shared';
 import { useVuelidate } from '@vuelidate/core';
 import * as validators from '@vuelidate/validators';
 import { email, required } from '@vuelidate/validators';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 defineProps<IProps>();
 
@@ -73,7 +74,7 @@ const emailId = useId();
         <SimpleButton
           class="subscribe-box-btn"
           kind="accent"
-          ctrl-key="subscribeBtn"
+          :ctrl-key="[...ctrlKey, 'Btn']"
           :label-res-name="getI18nResName2('subscribeBox', 'subscribeBtn')"
           @click="onSubscribeClick"
         />

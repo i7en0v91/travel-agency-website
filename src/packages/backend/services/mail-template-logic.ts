@@ -9,12 +9,12 @@ export class MailTemplateLogic implements IMailTemplateLogic {
 
   public static inject = ['logger', 'dbRepository'] as const;
   constructor (logger: IAppLogger, dbRepository: PrismaClient) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'MailTemplateLogic' });
     this.dbRepository = dbRepository;
   }
 
   async deleteTemplate(id: EntityId): Promise<void> {
-    this.logger.verbose(`(MailTemplateLogic) deleting template: id=${id}`);
+    this.logger.verbose('deleting template', id);
     await this.dbRepository.mailTemplate.update({
       where: {
         id,
@@ -25,11 +25,11 @@ export class MailTemplateLogic implements IMailTemplateLogic {
         version: { increment: 1 }
       }
     });
-    this.logger.verbose(`(MailTemplateLogic) template deleted: id=${id}`);
+    this.logger.verbose('template deleted', id);
   }
 
   async getTemplateMarkup (kind: EmailTemplateEnum, locale: Locale): Promise<string | undefined> {
-    this.logger.verbose(`(MailTemplateLogic) find template, kind=${kind}, locale=${locale}`);
+    this.logger.verbose('find template', { kind, locale });
 
     const templateEntity = await this.dbRepository.mailTemplate.findFirst({
       where: { kind: mapEnumDbValue(kind), isDeleted: false, templateStr: { isDeleted: false } },
@@ -47,17 +47,17 @@ export class MailTemplateLogic implements IMailTemplateLogic {
     });
 
     if (!templateEntity || !(Object.keys(LocaleEnum).some(x => (templateEntity.templateStr as any)[x.toLowerCase()]))) {
-      this.logger.warn(`(MailTemplateLogic) mail template not found: kind=${kind}, locale=${locale}`);
+      this.logger.warn('mail template not found', undefined, { kind, locale });
       return undefined;
     }
 
     const result = getLocalizeableValue(templateEntity.templateStr, locale);
-    this.logger.verbose(`(MailTemplateLogic) template found, kind=${kind}, locale=${locale}, length=${result?.length ?? 0}`);
+    this.logger.verbose('template found', { kind, locale, length: result?.length ?? 0 });
     return result;
   }
 
   async createTemplate (kind: EmailTemplateEnum, markup: ILocalizableValue): Promise<EntityId> {
-    this.logger.verbose(`(MailTemplateLogic) creating template, kind=${kind}`);
+    this.logger.verbose('creating template', kind);
 
     const mailTemplateId = ((await this.dbRepository.mailTemplate.create({
       data: {
@@ -78,7 +78,7 @@ export class MailTemplateLogic implements IMailTemplateLogic {
       }
     }))).id;
 
-    this.logger.verbose(`(MailTemplateLogic) template created, kind=${kind}, id=${mailTemplateId}`);
+    this.logger.verbose('template created', { kind, id: mailTemplateId });
     return mailTemplateId;
   }
 }

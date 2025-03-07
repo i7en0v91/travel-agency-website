@@ -50,7 +50,7 @@ export class ChangeDependencyTracker implements IChangeDependencyTracker {
   
   public static inject = ['dbRepository', 'logger'] as const;
   constructor (dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'ChangeDependencyTracker' });
     this.dbRepository = dbRepository;
 
     this.modelsMap = new Map(DomainModelDefinition.datamodel.models.map(m => [m.name as EntityModel, m]));
@@ -69,7 +69,7 @@ export class ChangeDependencyTracker implements IChangeDependencyTracker {
   };
 
   async loadEntityModifiedUtc(entity: EntityModel, id: EntityId | 'most-recent', includeDeleted: boolean): Promise<Date | UninitializedPageTimestamp> {
-    this.logger.debug(`(ChangeDependencyTracker) get modified utc, entity=${entity}, id=${id ?? ''}, includeDeleted=${includeDeleted}`);
+    this.logger.debug('get modified utc', { entity, id: id ?? '', includeDeleted });
 
     let result: Date | UninitializedPageTimestamp = 0;
     if(id === 'most-recent') {
@@ -92,14 +92,14 @@ export class ChangeDependencyTracker implements IChangeDependencyTracker {
       }
     }
 
-    this.logger.debug(`(ChangeDependencyTracker) get modified utc - completed, entity=${entity}, id=${id ?? ''}, includeDeleted=${includeDeleted}, result=${result === 0 ? result : result.toISOString()}`);
+    this.logger.debug('get modified utc - completed', { entity, id, includeDeleted, result });
     return result;
   };
 
   async loadEntitiesModifiedUtc(changedEntities: { entity: EntityModel, id: EntityId }[]): Promise<Map<EntityId, Date>> {
-    this.logger.debug(`(ChangeDependencyTracker) loading entities modified utc, totalCount=${changedEntities.length}`);
+    this.logger.debug('loading entities modified utc', { totalCount: changedEntities.length });
     if(changedEntities.length === 0) {
-      this.logger.debug(`(ChangeDependencyTracker) entities modified utc loaded, totalCount=${changedEntities.length}, result=[]`);
+      this.logger.debug('entities modified utc loaded', { totalCount: changedEntities.length });
       return new Map<EntityId, Date>([]);
     }
 
@@ -132,16 +132,16 @@ export class ChangeDependencyTracker implements IChangeDependencyTracker {
       }
     }
 
-    this.logger.debug(`(ChangeDependencyTracker) entities modified utc loaded, totalCount=${result.size}`);
+    this.logger.debug('entities modified utc loaded', { totalCount: result.size });
     return result;
   }
 
   async getChangedEntities(since: Date, maxCount: number): Promise<{ id: EntityId; entity: EntityModel; }[] | 'too-much'> {
-    this.logger.verbose(`(ChangeDependencyTracker) obtaining list of changed entities, since=${since.toISOString()}, maxCount=${maxCount}`);
+    this.logger.verbose('obtaining list of changed entities', { since: since.toISOString(), maxCount });
 
     const entityQueries: {sqlText: string, params: any}[] = [];
 
-    this.logger.debug(`(ChangeDependencyTracker) constructing table queries, since=${since.toISOString()}`);
+    this.logger.debug('constructing table queries', { since: since.toISOString() });
     const timestmapColumnName = ModifiedTimeColumnName;
 
     const models = Array.from(this.modelsMap.entries()).filter(m => m[1].fields.some(f => f.name === timestmapColumnName)).map(m => m[0]);
@@ -155,22 +155,23 @@ export class ChangeDependencyTracker implements IChangeDependencyTracker {
       entityQueries.push({ sqlText: timestampSql, params: formatSqlDateParam(since) });
     }
 
-    this.logger.debug(`(ChangeDependencyTracker) grouping queries, num sub-queries=${entityQueries.length}, since=${since.toISOString()}`);
+    this.logger.debug('grouping queries, num sub-', { queries: entityQueries.length, since: since.toISOString() });
     const modifiedSqlQuery = Prisma.raw(entityQueries.map(q => q.sqlText).join(' UNION '));
     modifiedSqlQuery.values.push(...entityQueries.map(q => q.params));
 
     const result: { id: EntityId; entity: EntityModel; }[] = [];
     const modifiedEntities = await this.dbRepository.$queryRaw<{ entity: EntityModel, id: EntityId }[]>(modifiedSqlQuery);
     if(modifiedEntities.length) {
-      this.logger.debug(`(ChangeDependencyTracker) modified entities query results count=${modifiedEntities.length}, since=${since.toISOString()}`);
+      this.logger.debug('modified entities query results', { count: modifiedEntities.length, since: since.toISOString() });
     }
     result.push(...(modifiedEntities).map(x => { return { entity: x.entity, id: x.id }; }));
     if(result.length > maxCount) {
-      this.logger.warn(`(ChangeDependencyTracker) too much changed entities, since=${since.toISOString()}, stats=[${JSON.stringify(this.getStatsByKeyForLogMessage(result, i => i.entity))}]`);
+      const logEntities = this.getStatsByKeyForLogMessage(result, i => i.entity);
+      this.logger.warn('too much changed entities', undefined, { since: since.toISOString() });
       return 'too-much';
     }
 
-    this.logger.verbose(`(ChangeDependencyTracker) list of changed entities obtained, count=${result.length}, since=${since.toISOString()}`);
+    this.logger.verbose('list of changed entities obtained', { count: result.length, since: since.toISOString() });
     return result;
   }
 
@@ -181,7 +182,7 @@ export class ChangeDependencyTracker implements IChangeDependencyTracker {
   getEntityModelDefOrThrow(name: EntityModel): EntityModelDef {
     const modelDef = this.modelsMap.get(name);
     if(!modelDef) {
-      this.logger.error(`(ChangeDependencyTracker) entity model not found, name=${name}`);
+      this.logger.error('entity model not found', undefined, name);
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown error', 'error-page');
     }
     return modelDef;
@@ -190,7 +191,7 @@ export class ChangeDependencyTracker implements IChangeDependencyTracker {
   getEntityFieldDefOrThrow(entityDef: EntityModelDef, fieldName: string): GetArrayItemType<EntityModelDef['fields']> {
     const fieldDef = entityDef.fields.find(f => f.name === fieldName);
     if(!fieldDef) {
-      this.logger.error(`(ChangeDependencyTracker) entity field not found, entity=${entityDef.name}, field=${fieldName}`);
+      this.logger.error('entity field not found', undefined, { entity: entityDef.name, field: fieldName });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown error', 'error-page');
     }
     return fieldDef;
@@ -199,7 +200,7 @@ export class ChangeDependencyTracker implements IChangeDependencyTracker {
   getEntityIdDbColumnOrThrow(entityModel: EntityModelDef): string {
     const idField = entityModel.fields.find(f => f.isId);
     if(!idField) {
-      this.logger.error(`(ChangeDependencyTracker) id field was not found for entity, name=${entityModel.name}`);
+      this.logger.error('id field was not found for entity', undefined, { name: entityModel.name });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown error', 'error-page');
     }
     return this.getDmmfItemDbName(idField);
@@ -218,9 +219,9 @@ export class ChangeDependencyTracker implements IChangeDependencyTracker {
    */
   async getDirectlyAffectedEntites(changedEntities: [EntityModel, Omit<ChangedEntityInfo, 'dependencyFlowMode'>[]][], dependencyFlowMode: DependencyFlowMode, includeDeleted: boolean): Promise<ChangedEntityInfo[]> {
     const totalCount = sumBy(changedEntities, e => e[1].length);
-    this.logger.debug(`(ChangeDependencyTracker) obtaining directly affected entities, totalCount=${totalCount}, dependencyFlowMode=${dependencyFlowMode}, includeDeleted=${includeDeleted}`);
+    this.logger.debug('obtaining directly affected entities', { totalCount, dependencyFlowMode, includeDeleted });
     if(!changedEntities.length) {
-      this.logger.debug(`(ChangeDependencyTracker) directly affected entities obtained - empty, dependencyFlowMode=${dependencyFlowMode}, includeDeleted=${includeDeleted}, result=[]`);
+      this.logger.debug('directly affected entities obtained - empty', { dependencyFlowMode, includeDeleted });
       return [];
     }
 
@@ -260,7 +261,7 @@ export class ChangeDependencyTracker implements IChangeDependencyTracker {
           if(fieldDef.relationFromFields?.length) {
             const fromFieldDbColumn = fieldDef.relationFromFields[0];
             if(!fieldDef.relationToFields?.length) {
-              this.logger.error(`(ChangeDependencyTracker) cannot obtain directly affected entities, expected relationTo field to be not empty, changedEntity=${changedEntity}, ids=${ids.join('; ')}, dependencyFlowMode=${dependencyFlowMode}, field=${fieldDef.name}, dbColumn=${fromFieldDbColumn}`);
+              this.logger.error('cannot obtain directly affected entities, expected relationTo field to be not empty', undefined, { changedEntity, ids, dependencyFlowMode, field: fieldDef.name, dbColumn: fromFieldDbColumn });
               throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown error', 'error-page');
             } 
             const toFieldDbColumn = fieldDef.relationToFields[0];
@@ -288,31 +289,32 @@ export class ChangeDependencyTracker implements IChangeDependencyTracker {
       } 
     }
 
-    this.logger.debug(`(ChangeDependencyTracker) executing affected entities query, num sub-queries=${fieldQueries.length}, totalCount=${totalCount}, dependencyFlowMode=${dependencyFlowMode}, includeDeleted=${includeDeleted}`);
+    this.logger.debug('executing affected entities query, num sub-', { queries: fieldQueries.length, totalCount, dependencyFlowMode, includeDeleted });
     const query = Prisma.raw(fieldQueries.map(q => q.selectSql).join(' UNION '));
 
     const affectedEntities = await this.dbRepository.$queryRaw<{ entity: EntityModel, dependencyFlowMode: DependencyFlowMode, id: EntityId, modifiedUtc: any }[]>(query);
     result.push(...(affectedEntities).map(x => { return { changedEntity: x.entity, id: x.id, dependencyFlowMode: x.dependencyFlowMode, modifiedUtc: this.convertDbDateValue(x.modifiedUtc) }; }));
 
-    this.logger.debug(`(ChangeDependencyTracker) directly affected entities obtained, totalCount=${totalCount}, dependencyFlowMode=${dependencyFlowMode}, includeDeleted=${includeDeleted}, resultCount=[${result.length}]`);
+    this.logger.debug('directly affected entities obtained', { totalCount, dependencyFlowMode, includeDeleted, resultCount: result.length });
     return result;
   };
 
   async getChangedEntityChain(changedEntities: { entity: EntityModel, id: EntityId }[], includeDeleted?: boolean): Promise<ChangedEntityInfo[]> {
     includeDeleted ??= false;
-    this.logger.verbose(`(ChangeDependencyTracker) get change chain, totalCount=${changedEntities.length}, includeDeleted=${includeDeleted}`);
+    this.logger.verbose('get change chain', { totalCount: changedEntities.length, includeDeleted });
 
     if(changedEntities.length === 0) {
-      this.logger.debug(`(ChangeDependencyTracker) change chain computed, totalCount=${changedEntities.length}, result=[]`);
+      this.logger.debug('change chain computed', { totalCount: changedEntities.length });
       return [];
     }
     
-    this.logger.debug(`(ChangeDependencyTracker) loading root entities modified utc, totalCount=${changedEntities.length}, grouping=${JSON.stringify(this.getStatsByKeyForLogMessage(changedEntities, e => e.entity))}`);
+    const groupingLog = this.getStatsByKeyForLogMessage(changedEntities, e => e.entity);
+    this.logger.debug('loading root entities modified utc', { totalCount: changedEntities.length, grouping: groupingLog });
 
     const rootEntitiesModifiedUtc = await this.loadEntitiesModifiedUtc(changedEntities);
     const notFoundRootEntities = changedEntities.filter(e => !rootEntitiesModifiedUtc.has(e.id));
     if(notFoundRootEntities.length) {
-      this.logger.verbose(`(ChangeDependencyTracker) some root entities were not found: ${JSON.stringify(notFoundRootEntities)}, includeDeleted=${includeDeleted}`);
+      this.logger.verbose('some root entities were not found', { entities: notFoundRootEntities, includeDeleted });
     }
 
     const entitiesByModel = toPairs(groupBy(changedEntities, x => x.entity)).map(p => { return { entity: p[0] as EntityModel, ids: p[1].map(i => i.id) }; });
@@ -350,7 +352,8 @@ export class ChangeDependencyTracker implements IChangeDependencyTracker {
     const MaxBatchPortionSize = AppConfig.caching.invalidation.batching.relatedEntitiesQueryBatch;
     let iterCounter = 0;
     while(iterationBatch.length && iterCounter < MaxIterationsCount) {
-      this.logger.debug(`(ChangeDependencyTracker) iterationNo=${iterCounter}, batch size=${sumBy(iterationBatch, e => e[1].length)}, includeDeleted=${includeDeleted}`);
+      const batchSizeLog = sumBy(iterationBatch, e => e[1].length);
+      this.logger.debug('', { iterationNo: iterCounter, batchSize: batchSizeLog, includeDeleted });
       const newBatchItemsMap = new Map<EntityModel, ChangedEntityInfo[]>([]);
 
       const batchByFlowMode = toPairs(groupBy(flatten(iterationBatch.map(x => x[1])), i => i.dependencyFlowMode));
@@ -359,7 +362,7 @@ export class ChangeDependencyTracker implements IChangeDependencyTracker {
         const batchItems = toPairs(groupBy(batchByFlowMode[i][1], i => i.changedEntity)) as [EntityModel, ChangedEntityInfo[]][];
         const itemsChunks = chunk(batchItems, MaxBatchPortionSize);
         for(let j = 0; j < itemsChunks.length; j++) {
-          this.logger.debug(`(ChangeDependencyTracker) iterationNo=${iterCounter}, obtaining affected entities for items chunk #${j}, includeDeleted=${includeDeleted}`);
+          this.logger.debug('obtaining affected entities for items', { chunk: j, iterationNo: iterCounter, includeDeleted });
           const chunkItems = itemsChunks[j];
           const affectedEntities = await this.getDirectlyAffectedEntites(chunkItems, dependencyFlowMode, includeDeleted);
 
@@ -370,7 +373,7 @@ export class ChangeDependencyTracker implements IChangeDependencyTracker {
               continue;
             }
 
-            this.logger.debug(`(ChangeDependencyTracker) new affected entity found iterationNo=${iterCounter}, chunk #${j}, affectedEntity=${affIterEntity.changedEntity}, affectedId=${affIterEntity.id}, affectedEntityFlowMode=${affIterEntity.dependencyFlowMode}, includeDeleted=${includeDeleted}`);
+            this.logger.debug('new affected entity found', { iterationNo: iterCounter, affectedEntity: affIterEntity.changedEntity, affectedId: affIterEntity.id, affectedEntityFlowMode: affIterEntity.dependencyFlowMode, includeDeleted });
             resultEntityChain.set(entityHash, affIterEntity);
             let newBatchItemsForEntity = newBatchItemsMap.get(affIterEntity.changedEntity);
             if(!newBatchItemsForEntity) {
@@ -394,10 +397,11 @@ export class ChangeDependencyTracker implements IChangeDependencyTracker {
     }
 
     const result = Array.from(resultEntityChain.values());
+    const groupingResultLog = entitiesByModel.map(p => [p.entity, p.ids.length]);
     if(iterCounter >= MaxIterationsCount) {
-      this.logger.error(`(ChangeDependencyTracker) maximum number of iterations exceeded, totalCount=${changedEntities.length}, grouping=${JSON.stringify(entitiesByModel.map(p => [p.entity, p.ids.length]))}, includeDeleted=${includeDeleted}`);  
+      this.logger.error('maximum number of iterations exceeded', undefined, { totalCount: changedEntities.length, grouping: groupingResultLog, includeDeleted });  
     } else {
-      this.logger.verbose(`(ChangeDependencyTracker) change chain computed, totalCount=${changedEntities.length}, grouping=${JSON.stringify(entitiesByModel.map(p => [p.entity, p.ids.length]))}, includeDeleted=${includeDeleted}, resultCount=[${result.length}]`);
+      this.logger.verbose('change chain computed', { totalCount: changedEntities.length, grouping: groupingResultLog, includeDeleted, resultCount: result.length });
     }
     return result;
   }

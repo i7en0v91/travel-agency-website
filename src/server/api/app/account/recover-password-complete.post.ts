@@ -6,11 +6,10 @@ import { getCommonServices, getServerServices } from '../../../../helpers/servic
 export default defineWebApiEventHandler(async (event) => {
   const recoverPasswordCompleteDto = await readBody(event) as IRecoverPasswordCompleteDto;
 
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
   if (!isPasswordSecure(recoverPasswordCompleteDto.password)) {
-    const msg = '(recover-password-complete) insecure password';
-    logger.warn(msg);
-    throw new AppException(AppExceptionCodeEnum.UNKNOWN, msg, 'error-page');
+    logger.warn('insecure password');
+    throw new AppException(AppExceptionCodeEnum.UNKNOWN, '(recover-password-complete) insecure password', 'error-page');
   }
 
   const tokenLogic = getServerServices()!.getTokenLogic();

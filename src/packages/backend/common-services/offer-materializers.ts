@@ -26,12 +26,12 @@ export class PrismaFlightOfferMaterializer implements IFlightOfferMaterializer {
   
   public static inject = ['dbRepository', 'logger'] as const;
   constructor (dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'OfferMaterializers' });
     this.dbRepository = dbRepository;
   }
 
   async createFlightsAndFillIds (flights: EntityDataAttrsOnly<IFlight>[]): Promise<void> {
-    this.logger.verbose(`(FlightsLogic) PrismaFlightOfferMaterializer - creating memory flights and filling IDs, count=${flights.length}`);
+    this.logger.verbose('PrismaFlightOfferMaterializer - creating memory flights and filling IDs', { count: flights.length });
 
     await executeInTransaction(async () => {
       for (let i = 0; i < flights.length; i++) {
@@ -59,11 +59,11 @@ export class PrismaFlightOfferMaterializer implements IFlightOfferMaterializer {
       }
     }, this.dbRepository);
 
-    this.logger.verbose(`(FlightsLogic) PrismaFlightOfferMaterializer - creating memory flights and filling IDs - completed, count=${flights.length}`);
+    this.logger.verbose('PrismaFlightOfferMaterializer - creating memory flights and filling IDs - completed', { count: flights.length });
   }
 
   async ensureFlightsInDatabase (flights: EntityDataAttrsOnly<IFlight>[]): Promise<void> {
-    this.logger.debug(`(FlightsLogic) PrismaFlightOfferMaterializer - ensuring flights in DB, count=${flights.length}`);
+    this.logger.debug('PrismaFlightOfferMaterializer - ensuring flights in DB', { count: flights.length });
 
     const memoryFlightsMap = new Map<string, EntityDataAttrsOnly<IFlight>>(
       flights.map(f => [buildFlightUniqueDataKey(f), f]));
@@ -98,16 +98,16 @@ export class PrismaFlightOfferMaterializer implements IFlightOfferMaterializer {
       await this.createFlightsAndFillIds(flightsToCreate);
     }
 
-    this.logger.debug(`(FlightsLogic) PrismaFlightOfferMaterializer - ensuring offers in DB - completed, count=${flights.length}, num identified=${identifiedCount}`);
+    this.logger.debug('PrismaFlightOfferMaterializer - ensuring offers in DB - completed', { count: flights.length, identified: identifiedCount });
   }
 
   async createOffersAndFillIds (offers: FlightOfferWithSortFactor[], flightIdsMap: Map<string, EntityId>): Promise<void> {
-    this.logger.verbose(`(FlightsLogic) PrismaFlightOfferMaterializer - creating memory offers and filling IDs, count=${offers.length}`);
+    this.logger.verbose('PrismaFlightOfferMaterializer - creating memory offers and filling IDs', { count: offers.length });
     if (offers.length === 0) {
       return;
     }
 
-    this.logger.debug('(FlightsLogic) PrismaFlightOfferMaterializer - running offer\'s create transaction');
+    this.logger.debug('PrismaFlightOfferMaterializer - running offers create transaction');
     await executeInTransaction(async () => {
       for (let i = 0; i < offers.length; i++) {
         const offer = offers[i];
@@ -133,16 +133,16 @@ export class PrismaFlightOfferMaterializer implements IFlightOfferMaterializer {
       }
     }, this.dbRepository);
 
-    this.logger.verbose(`(FlightsLogic) PrismaFlightOfferMaterializer - creating memory offers and filling IDs - completed, count=${offers.length}`);
+    this.logger.verbose('PrismaFlightOfferMaterializer - creating memory offers and filling IDs - completed', { count: offers.length });
   }
 
   async ensureOffersMaterialized (offers: FlightOfferWithSortFactor[], userId: EntityId | 'guest'): Promise<void> {
-    this.logger.debug(`(FlightsLogic) PrismaFlightOfferMaterializer - ensuring offers in DB, userId=${userId}, count=${offers.length}`);
+    this.logger.debug('PrismaFlightOfferMaterializer - ensuring offers in DB', { userId, count: offers.length });
 
     const memoryOffersMap = new Map<string, FlightOfferWithSortFactor>(
       offers.map(o => [buildFlightOfferUniqueDataKey(o), o]));
 
-    this.logger.debug('(FlightsLogic) PrismaFlightOfferMaterializer - preparing offer\'s flight IDs');
+    this.logger.debug('PrismaFlightOfferMaterializer - preparing offers flight IDs');
     const flightsDeduped = uniqBy(flatten(offers.map(o => [o.departFlight, o.arriveFlight])).filter(f => f).map((f) => { return { flight: f, dataHash: buildFlightUniqueDataKey(f!) }; }), f => f!.dataHash).map(f => f.flight!);
     await this.ensureFlightsInDatabase(flightsDeduped);
     const flightIdsMap = new Map<string, EntityId>(flightsDeduped.map(f => [buildFlightUniqueDataKey(f), f.id]));
@@ -179,7 +179,7 @@ export class PrismaFlightOfferMaterializer implements IFlightOfferMaterializer {
       await this.createOffersAndFillIds(offersToCreate, flightIdsMap);
     }
 
-    this.logger.debug(`(FlightsLogic) PrismaFlightOfferMaterializer - ensuring offers in DB - completed, userId=${userId}, count=${offers.length}, num identified=${identifiedCount}`);
+    this.logger.debug('PrismaFlightOfferMaterializer - ensuring offers in DB - completed', { userId, count: offers.length, identified: identifiedCount });
   }
 };
 
@@ -191,17 +191,17 @@ export class PrismaStayOfferMaterializer implements IStayOfferMaterializer {
   
   public static inject = ['dbRepository', 'logger'] as const;
   constructor (dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'OfferMaterializers' });
     this.dbRepository = dbRepository;
   }
 
   async createOffersAndFillIds (offers: StayOfferWithSortFactor[]): Promise<void> {
-    this.logger.verbose(`(StaysLogic) PrismaStayOfferMaterializer creating memory offers and filling IDs, count=${offers.length}`);
+    this.logger.verbose('PrismaStayOfferMaterializer creating memory offers and filling IDs', { count: offers.length });
     if (offers.length === 0) {
       return;
     }
 
-    this.logger.debug('(StaysLogic) PrismaStayOfferMaterializer running offer\'s create transaction');
+    this.logger.debug('PrismaStayOfferMaterializer running offers create transaction');
     await executeInTransaction(async () => {
       for (let i = 0; i < offers.length; i++) {
         const offer = offers[i];
@@ -229,11 +229,11 @@ export class PrismaStayOfferMaterializer implements IStayOfferMaterializer {
       }
     }, this.dbRepository);
 
-    this.logger.verbose(`(StaysLogic) PrismaStayOfferMaterializer creating memory offers and filling IDs - completed, count=${offers.length}`);
+    this.logger.verbose('PrismaStayOfferMaterializer creating memory offers and filling IDs - completed', { count: offers.length });
   }
 
   async ensureOffersMaterialized(offers: StayOfferWithSortFactor[], userId: EntityId | 'guest'): Promise<void> {
-    this.logger.debug(`(StaysLogic) PrismaStayOfferMaterializer ensuring offers in DB, userId=${userId}, count=${offers.length}`);
+    this.logger.debug('PrismaStayOfferMaterializer ensuring offers in DB', { userId, count: offers.length });
 
     const memoryOffersMap = new Map<string, StayOfferWithSortFactor>(
       offers.map(o => [buildStayOfferUniqueDataKey(o), o]));
@@ -270,7 +270,7 @@ export class PrismaStayOfferMaterializer implements IStayOfferMaterializer {
       await this.createOffersAndFillIds(offersToCreate);
     }
 
-    this.logger.debug(`(StaysLogic) PrismaStayOfferMaterializer ensuring offers in DB - completed, userId=${userId}, count=${offers.length}, num identified=${identifiedCount}`);
+    this.logger.debug('PrismaStayOfferMaterializer ensuring offers in DB - completed', { userId, count: offers.length, identified: identifiedCount });
   }  
 }
 

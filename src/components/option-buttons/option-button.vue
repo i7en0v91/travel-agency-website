@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import type { IOptionButtonProps } from './../../types';
 
 const { 
@@ -9,7 +10,7 @@ const {
   subtextResArgs = null 
 } = defineProps<IOptionButtonProps>();
 
-const $emit = defineEmits<{(event: 'click', ctrlKey: string): void}>();
+const $emit = defineEmits<{(event: 'click', ctrlKey: ControlKey): void}>();
 
 function onActivate () {
   $emit('click', ctrlKey);

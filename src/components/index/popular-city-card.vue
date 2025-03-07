@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { AppPage, type Locale, getI18nResName3, getI18nResName2, type ILocalizableValue, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   searchKind: 'flight' | 'stay',
   text?: ILocalizableValue,
   imgSrc?: IImageEntitySrc,
@@ -23,12 +24,12 @@ const navLinkBuilder = useNavLinkBuilder();
       <div class="popular-city-card-container p-xs-3 m-xs-5 brdr-3">
         <StaticImage
           :ctrl-key="ctrlKey"
-          :entity-src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
+          :src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
           :category="ImageCategory.CityCard"
           sizes="xs:40vw sm:20vw md:30vw lg:30vw xl:20vw"
           class="popular-city-card-img brdr-3"
-          :alt-res-name="getI18nResName3('indexPage', 'popularCity', 'imgAlt')"
-          :show-stub="true"
+          :alt="{ resName: getI18nResName3('indexPage', 'popularCity', 'imgAlt') }"
+          stub="default"
         />
         <div class="popular-city-info">
           <div :class="`pl-xs-2 pt-xs-2 ${text ? 'popular-city-name' : 'data-loading-stub text-data-loading m-xs-2'} font-h5`">

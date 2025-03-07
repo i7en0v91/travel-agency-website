@@ -1,13 +1,13 @@
-import { CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, HeaderCookies, type IAppLogger } from '@golobe-demo/shared';
+import { CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, HeaderCookies } from '@golobe-demo/shared';
 import { getRequestHeader } from 'h3';
 import flatten from 'lodash-es/flatten';
 import { getServerSession } from '#auth';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 export default defineEventHandler(async (event) => {
-  const logger = getCommonServices().getLogger() as IAppLogger;
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'ReadAuthCookies' });
   if((event.context.authCookies?.length ?? 0) > 0) {
-    logger.debug(`(read-auth-cookies) already added, count=${event.context.authCookies?.length ?? 0}`);
+    logger.debug('already added', { count: event.context.authCookies?.length ?? 0 });
     return;
   }
 
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if ((inputAuthCookies?.length ?? 0) === 0) {
-    logger.debug('(read-auth-cookies) not present');
+    logger.debug('not present');
     return;
   }
 
@@ -30,8 +30,8 @@ export default defineEventHandler(async (event) => {
   try {
     event.context.authenticated = !!(await getServerSession(event));
   } catch(err: any) {
-    logger.warn(`(read-auth-cookies) failed to obtain server session, url=${event.node.req.url}`, err);
+    logger.warn('failed to obtain server session', err, { url: event.node.req.url });
   } finally {
-    logger.debug(`(read-auth-cookies) added, count=${inputAuthCookies!.length}, isAuth=${event.context.authenticated}`);
+    logger.debug('added', { count: inputAuthCookies!.length, isAuth: event.context.authenticated });
   }
 });

@@ -2,6 +2,7 @@
 import { type Locale, getPagePath, AppPage, AppConfig, getI18nResName2 } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import AccountFormPhotos from './../components/account/form-photos.vue';
+import type { ControlKey } from './../helpers/components';
 
 definePageMeta({
   middleware: 'auth',
@@ -13,6 +14,8 @@ definePageMeta({
 });
 useOgImage();
 
+const CtrlKey: ControlKey = ['Page', 'SignupVerify'];
+
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
@@ -20,9 +23,9 @@ const navLinkBuilder = useNavLinkBuilder();
 
 <template>
   <div class="signup-verify-page account-page no-hidden-parent-tabulation-check">
-    <AccountFormPhotos ctrl-key="SignUpVerifyPhotos" class="signup-verify-account-forms-photos" />
+    <AccountFormPhotos :ctrl-key="[...CtrlKey, 'AccountFormPhotos']" class="signup-verify-account-forms-photos" />
     <div class="signup-verify-page-div">
-      <NavLogo ctrl-key="signupVerifyPageAppLogo" class="signup-verify-page-logo" mode="inApp" />
+      <NavLogo :ctrl-key="[...CtrlKey, 'NavLogo']" class="signup-verify-page-logo" mode="inApp" :hard-link="false"/>
       <div class="signup-verify-page-content">
         {{ $t(getI18nResName2('signUpVerifyPage', 'text'), { tokenExpirationHours: AppConfig.verificationTokenExpirationHours }) }}
         <NuxtLink class="btn btn-signup-verify-home mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">

@@ -6,7 +6,7 @@ export default defineNitroPlugin((nitroApp) => {
     if(checkNeedSuppressServerMsg(err.message, err)) {
       return;
     }
-    const logger = getCommonServices()?.getLogger();
-    logger?.error('(nitro:error) error occured', err);
+    const logger = getCommonServices()?.getLogger()?.addContextProps({ component: 'NitroError' });
+    logger?.error('error occured', err);
   });
 });

@@ -1,4 +1,4 @@
-import { OgImagePathSegment, isDevEnv } from '@golobe-demo/shared';
+import { type IAppLogger, OgImagePathSegment, isDevEnv } from '@golobe-demo/shared';
 import isArray from 'lodash-es/isArray';
 import isObject from 'lodash-es/isObject';
 import { parseURL } from 'ufo';
@@ -30,20 +30,20 @@ export default defineNitroPlugin((nitroApp) => {
   });
 
   nitroApp.hooks.hook('request', (event) => {
-    const logger = getCommonServices()?.getLogger();
+    const logger: IAppLogger | undefined = getCommonServices()?.getLogger()?.addContextProps({ component: 'OgImage' });
     const fullUrl = event.node.req.url;
     const parsedUrl = parseURL(fullUrl);
     if (parsedUrl.pathname.includes(OgImagePathSegment)) {
-      logger?.always(`(og-image) og image request received, url=${fullUrl}`);
+      logger?.always('og image request received', { url: fullUrl });
     };
   });
 
   nitroApp.hooks.hook('afterResponse', (event) => {
-    const logger = getCommonServices()?.getLogger();
+    const logger: IAppLogger | undefined = getCommonServices()?.getLogger()?.addContextProps({ component: 'OgImage' });
     const fullUrl = event.node.req.url;
     const parsedUrl = parseURL(fullUrl);
     if (parsedUrl.pathname.includes(OgImagePathSegment)) {
-      logger?.always(`(og-image) og image request completed, url=${fullUrl}`);
+      logger?.always('og image request completed', { url: fullUrl });
     };
   });
 

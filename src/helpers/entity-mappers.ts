@@ -212,18 +212,18 @@ export function createSearchFlightOfferResultLookup (resultDto: ISearchFlightOff
   resultDto.entities.airplanes.forEach(indexAirplane);
   resultDto.entities.airports.forEach(indexAirport);
 
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'Mappers' });
   const wrapThrowExceptionOnLookupFailed = <TResult>(innerFunc: (id: string) => TResult | undefined): (id: string) => TResult => {
-    const logger = getCommonServices().getLogger();
     const wrapper: (id: string) => TResult = (id: string): TResult => {
       try {
         const result = innerFunc(id);
         if (!result) {
-          logger.error(`(mappers) cannot lookup search flight result entity by id=${id}`, undefined, resultDto);
+          logger.error('cannot lookup search flight result entity by', undefined, { ...(resultDto), id });
           throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'error occured while processing search flight offers result', 'error-page');
         }
         return result;
       } catch (err: any) {
-        logger.error('(mappers) unexpected exception occured while processing search flight offers result', err, resultDto);
+        logger.error('unexpected exception occured while processing search flight offers result', err, resultDto);
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'error occured while processing search flight offers result', 'error-page');
       }
     };
@@ -246,18 +246,18 @@ export function createSearchStayOfferResultLookup (resultDto: ISearchStayOffersR
     }
   });
 
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'Mappers' });
   const wrapThrowExceptionOnLookupFailed = <TResult>(innerFunc: (id: string) => TResult | undefined): (id: string) => TResult => {
-    const logger = getCommonServices().getLogger();
     const wrapper: (id: string) => TResult = (id: string): TResult => {
       try {
         const result = innerFunc(id);
         if (!result) {
-          logger.error(`(mappers) cannot lookup search stay result entity by id=${id}`, undefined, resultDto);
+          logger.error('cannot lookup search stay result entity by', undefined, { ...(resultDto), id });
           throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'error occured while processing search stay offers result', 'error-page');
         }
         return result;
       } catch (err: any) {
-        logger.error('(mappers) unexpected exception occured while processing search stay offers result', err, resultDto);
+        logger.error('unexpected exception occured while processing search stay offers result', err, resultDto);
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'error occured while processing search stay offers result', 'error-page');
       }
     };

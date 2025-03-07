@@ -7,6 +7,8 @@ import toPairs from 'lodash-es/toPairs';
 import type { NitroRouteConfig } from 'nitropack';
 import { getCommonServices } from '../helpers/service-accessors';
 
+const CommonLogProps = { component: 'StartupServer' };
+
 async function checkOgImageConfiguration (logger: IAppLogger): Promise<void> {
   if (!process.env.PUBLISH) {
     logger.verbose('skipping OG images check for non-publish environment');
@@ -33,7 +35,7 @@ async function checkOgImageConfiguration (logger: IAppLogger): Promise<void> {
       try {
         await access(imgPath);
       } catch (err: any) {
-        logger.error(`og image was not found, page=${imgPath}`, err);
+        logger.error(`og image was not found`, err, { page: imgPath });
         throw new Error('OG image check failed');
       }
     }
@@ -43,11 +45,9 @@ async function checkOgImageConfiguration (logger: IAppLogger): Promise<void> {
 }
 
 const initApp = once(async () => {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps(CommonLogProps);
   try {
-    logger.always(`APP STARTING... (${import.meta.env.MODE})`); // use error level to be sure it is logged no matter which logging level is in config
-    
-
+    logger.always(`APP STARTING...`, { mode: import.meta.env.MODE}); // use error level to be sure it is logged no matter which logging level is in config
     await checkOgImageConfiguration(logger);
   } catch (e) {
     logger.error('app initialization failed', e);
@@ -56,10 +56,10 @@ const initApp = once(async () => {
 });
 
 const logRouteRulesOnce = once((routeRules: [string, NitroRouteConfig][]) => { 
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps(CommonLogProps);
   // remove notion of 'error' from message
   const filteredRoutes = routeRules.map(rr => `[${rr[0]}: ${JSON.stringify(rr[1])}]`).filter(t => !t.includes('error'));
-  logger.info(`Route rules config: ${JSON.stringify(filteredRoutes)}`);
+  logger.info(`Route rules config`, { routes: filteredRoutes });
 });
 
 export default defineNuxtPlugin({

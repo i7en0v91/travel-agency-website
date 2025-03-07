@@ -11,15 +11,16 @@ import TravelDetails from './../components/common-page-components/travel-details
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
 import { getCommonServices } from '../helpers/service-accessors';
+import type { ControlKey } from './../helpers/components';
 
 definePageMeta({
   title: { resName: getI18nResName2('staysPage', 'title'), resArgs: undefined }
 });
 useOgImage();
 
-const CtrlKey = 'StaysPage';
+const CtrlKey: ControlKey = ['Page', 'Stays'];
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'Stays' });
 
 const navLinkBuilder = useNavLinkBuilder();
 const { locale } = useI18n();
@@ -44,9 +45,9 @@ const searchHistoryFetch = await useFetch(`/${ApiEndpointStayOffersSearchHistory
     query: { drafts: enabled },
     default: () => { return range(0, MaxSearchHistorySize, 1).map(_ => null); },
     transform: (response: ISearchedCityHistoryDto[]) => {
-      logger.verbose(`(StaysPage) received search cities history list response, count=${response.length}`);
+      logger.verbose('received search cities history list response', { count: response.length });
       if (!response) {
-        logger.warn('(StaysPage) search cities history list response is empty');
+        logger.warn('search cities history list response is empty');
         return []; // error should be logged by fetchEx
       }
       return response;
@@ -60,7 +61,7 @@ const somePopularCity = computed(() => popularCitiesFetch.data?.value ? popularC
 const isError = ref(false);
 watch(searchHistoryFetch.status, () => {
   if (searchHistoryFetch.status.value === 'error') {
-    logger.warn('(StaysPage) failed to load search city history');
+    logger.warn('failed to load search city history');
     isError.value = true;
   }
 });
@@ -70,7 +71,7 @@ watch(searchHistoryFetch.status, () => {
 <template>
   <div class="stays-page no-hidden-parent-tabulation-check">
     <SearchPageHead
-      ctrl-key="SearchPageHeadStays"
+      :ctrl-key="[...CtrlKey, 'SearchPageHead']"
       class="stays-page-head"
       :image-entity-src="{ slug: StaysTitleSlug }"
       :category="ImageCategory.PageTitle"
@@ -78,21 +79,21 @@ watch(searchHistoryFetch.status, () => {
       overlay-class="search-stays-page-head-overlay"
       single-tab="stays"
     >
-      <HeadingText ctrl-key="StaysPageHeading" />
+      <HeadingText :ctrl-key="[...CtrlKey, 'SearchPageHead', 'Title']" />
     </SearchPageHead>
     <PageSection
-      ctrl-key="RecentSearches"
+      :ctrl-key="[...CtrlKey, 'RecentSearches']"
       :header-res-name="getI18nResName2('staysPage', 'recentSearchesTitle')"
       :is-error="isError"
       :content-padded="true"
     >
     <ClientOnly>
-      <ComponentWaitingIndicator v-if="showWaitingStub && !isError" :ctrl-key="`${CtrlKey}-WaiterIndicator`" />
+      <ComponentWaitingIndicator v-if="showWaitingStub && !isError" :ctrl-key="[...CtrlKey, 'Waiter']" />
       <ul v-if="searchHistoryFetch.data.value.length > 0" class="popular-city-grid p-xs-2 p-s-3  hidden-overflow-nontabbable">
         <PopularCityCard
           v-for="(city, idx) in searchHistoryFetch.data.value"
           :key="`popular-city-${idx}`"
-          :ctrl-key="`SearchCityHistoryCard-${idx}`"
+          :ctrl-key="[...CtrlKey, 'RecentSearches', 'Card', idx]"
           search-kind="stay"
           :text="city ? mapLocalizeableValues((city: string, country: string) => `${city}, ${country}`, city.cityDisplayName, city.countryDisplayName) : undefined"
           :img-src="city ? { slug: city.imgSlug, timestamp: city.timestamp } : undefined"
@@ -111,11 +112,11 @@ watch(searchHistoryFetch.status, () => {
         </i18n-t>
       </div>
       <template #fallback>
-        <ComponentWaitingIndicator :ctrl-key="`${CtrlKey}-ClientFallback`" />
+        <ComponentWaitingIndicator :ctrl-key="[...CtrlKey, 'ClientFallback']" />
       </template>
     </ClientOnly>
     </PageSection>
-    <TravelCities ctrl-key="StaysTravelCitiesSection" book-kind="stay" class="stays-page-travel-cities-section" />
-    <TravelDetails :id="TravelDetailsHtmlAnchor" ctrl-key="StaysTravelDetailsSection" book-kind="stay" />
+    <TravelCities :ctrl-key="[...CtrlKey, 'PageSection', 'TravelCities']" book-kind="stay" class="stays-page-travel-cities-section" />
+    <TravelDetails :id="TravelDetailsHtmlAnchor" :ctrl-key="[...CtrlKey, 'PageSection', 'TravelDetails']" book-kind="stay" />
   </div>
 </template>

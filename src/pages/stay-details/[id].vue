@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppConfig, type ReviewSummary, type IStayOfferDetails, type ILocalizableValue, ImageCategory, type EntityId, AppPage, getPagePath, type Locale, getLocalizeableValue, getI18nResName2 } from '@golobe-demo/shared';
+import { type IStayImageShort, AppConfig, type ReviewSummary, type IStayOfferDetails, type ILocalizableValue, ImageCategory, type EntityId, AppPage, getPagePath, type Locale, getLocalizeableValue, getI18nResName2 } from '@golobe-demo/shared';
 import { ApiEndpointStayOfferDetails, ApiEndpointStayOfferReviewSummary } from './../../server/api-definitions';
 import { mapStayOfferDetails, mapReviewSummary } from './../../helpers/entity-mappers';
 import range from 'lodash-es/range';
@@ -17,12 +17,14 @@ import { isRobot } from './../../composables/is-robot';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
+import { toShortForm } from './../../helpers/components';
+import type { ControlKey } from './../../helpers/components';
 
 const { d, locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
 const route = useRoute();
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'StayDetails' });
 
 const offerParam = useRoute().params?.id?.toString() ?? '';
 if (offerParam.length === 0) {
@@ -34,7 +36,7 @@ definePageMeta({
   title: { resName: getI18nResName2('stayDetailsPage', 'title'), resArgs: undefined }
 });
 
-const CtrlKey = 'StayOfferDetailsSummary';
+const CtrlKey: ControlKey = ['Page', 'StayDetails'];
 
 const nuxtApp = useNuxtApp();
 const { enabled } = usePreviewState();
@@ -55,7 +57,7 @@ const reviewSummaryFetch = await useFetch(`/${ApiEndpointStayOfferReviewSummary(
   transform: (response: IReviewSummaryDto): ReviewSummary | undefined => {
     const dto = response as IReviewSummaryDto;
     if (!dto) {
-      logger.warn('(StayDetails) fetch request for stay review summary returned data');
+      logger.warn('fetch request for stay review summary returned data');
       return undefined;
     }
     return mapReviewSummary(dto);
@@ -95,7 +97,7 @@ if (isSsr) {
 }
 
 function onReviewSummaryChanged (summary: ReviewSummary) {
-  logger.debug(`(StayDetails) review summary changed handler, ctrlKey=${CtrlKey}, score=${summary.score}, numReviews=${summary.numReviews}`);
+  logger.debug('review summary changed handler', { ctrlKey: CtrlKey, score: summary.score, numReviews: summary.numReviews });
   reviewSummary.value = summary;
 }
 
@@ -136,18 +138,18 @@ if (import.meta.server) {
 const mapComponentVisibility = ref<'visible' | 'wait'>((!AppConfig.maps && !isRobotRequest) ? 'visible' : 'wait');
 
 function onCaptchaVerified (token: string) {
-  logger.info(`(StayDetails) captcha verified, ctrlKey=${CtrlKey}`);
+  logger.info('captcha verified', { ctrlKey: CtrlKey });
   captchaToken.value!.onCaptchaVerified(token);
   mapComponentVisibility.value = 'visible';
 }
 
 function onCaptchaFailed (reason?: any) {
-  logger.info(`(StayDetails) captcha verification failed, ctrlKey=${CtrlKey}`);
+  logger.info('captcha verification failed', { ctrlKey: CtrlKey });
   captchaToken.value!.onCaptchaFailed(reason);
 }
 
 function startCaptchaVerification () {
-  logger.verbose(`(StayDetails) starting captcha verification, ctrlKey=${CtrlKey}`);
+  logger.verbose('starting captcha verification', { ctrlKey: CtrlKey });
   captchaToken.value = useCaptchaToken(captcha as any);
   captchaToken.value.requestToken();
 }
@@ -174,7 +176,7 @@ onMounted(() => {
   <article class="stay-details-page no-hidden-parent-tabulation-check">
     <ErrorHelm :is-error="stayDetailsFetch.status.value === 'error'" class="stay-details-page-error-helm">
       <OfferDetailsBreadcrumbs
-        :ctrl-key="`${CtrlKey}-Breadcrumbs`"
+        :ctrl-key="[...CtrlKey, 'Breadcrumbs']"
         offer-kind="stays"
         :city="stayOffer?.stay?.city"
         :place-name="stayOffer?.stay?.name"
@@ -194,29 +196,29 @@ onMounted(() => {
       />
       <section class="stay-images mt-xs-5">
         <StaticImage
-          v-for="(image, idx) in (stayOffer?.stay?.images ?? range(0, 5).map(_ => undefined))"
-          :key="`${CtrlKey}-StayImage-${idx}`"
-          :ctrl-key="`${CtrlKey}-StayImage-${idx}`"
+          v-for="(image, idx) in (stayOffer?.stay?.images ?? range(0, 5).map(() => undefined))"
+          :key="`${toShortForm(CtrlKey)}-StayImage-${idx}`"
+          :ctrl-key="[...CtrlKey, 'StaticImg', idx]"
           :class="`stay-image stay-image-${idx}`"
-          :entity-src="image"
+          :src="image"
           :category="idx === 0 ? ImageCategory.Hotel : ImageCategory.HotelRoom"
-          :is-high-priority="idx === 0"
+          :high-priority="idx === 0"
           :sizes="idx === 0 ? 'xs:100vw sm:100vw md:100vw lg:100vw xl:50vw' : 'xs:100vw sm:100vw md:50vw lg:50vw xl:30vw'"
-          :alt-res-name="idx === 0 ? getI18nResName2('stayDetailsPage', 'stayMainImageAlt') : getI18nResName2('stayDetailsPage', 'stayServiceImageAlt')"
+          :alt="{ resName: idx === 0 ? getI18nResName2('stayDetailsPage', 'stayMainImageAlt') : getI18nResName2('stayDetailsPage', 'stayServiceImageAlt') }"
         />
       </section>
       <hr class="stay-details-section-separator">
       <OverviewSection
-        ctrl-key="StayDetailsOverviewSection"
+        :ctrl-key="[...CtrlKey, 'StayDetailsSection', 'Overview']"
         :description="stayOffer?.stay?.description"
         :num-reviews="reviewSummary?.numReviews ?? undefined"
         :review-score="reviewSummary?.score ?? undefined"
       />
       <hr class="stay-details-section-separator">
       <AvailableRoomSection
-        ctrl-key="StayDetailsAvailableRoomsSection"
+        :ctrl-key="[...CtrlKey, 'StayDetailsSection', 'Rooms']"
         :offer-id="stayOffer?.id"
-        :rooms="stayOffer?.stay?.images.filter(i => i.serviceLevel).map(i => {
+        :rooms="stayOffer?.stay?.images.filter((i: IStayImageShort) => i.serviceLevel).map((i: IStayImageShort) => {
           return {
             serviceLevel: i.serviceLevel!,
             price: stayOffer!.prices[i.serviceLevel!],
@@ -228,13 +230,13 @@ onMounted(() => {
         }) ?? undefined"
       />
       <hr class="stay-details-section-separator">
-      <LocationMap :ctrl-key="`${CtrlKey}-Location`" :location="stayOffer?.stay?.geo" :city="stayOffer?.stay?.city" :visibility="mapComponentVisibility" />
+      <LocationMap :ctrl-key="[...CtrlKey, 'StayDetailsSection', 'Location']" :location="stayOffer?.stay?.geo" :city="stayOffer?.stay?.city" :visibility="mapComponentVisibility" />
       <hr class="stay-details-section-separator">
-      <AmenitiesSection :ctrl-key="`${CtrlKey}-Amenities`" />
+      <AmenitiesSection :ctrl-key="[...CtrlKey, 'StayDetailsSection', 'Amenities']"/>
       <hr class="stay-details-section-separator">
-      <ReviewSection v-if="stayOffer" :ctrl-key="`${CtrlKey}-Reviews`" :stay-id="stayOffer?.stay.id" :preloaded-summary-info="reviewSummary" @review-summary-changed="onReviewSummaryChanged" />
-      <ComponentWaitingIndicator v-else :ctrl-key="`${CtrlKey}-ReviewsWaiterFallback`" class="stay-reviews-waiting-indicator my-xs-5" />
-      <CaptchaProtection v-if="!!AppConfig.maps && !isRobotRequest" ref="captcha" ctrl-key="StayDetailsCaptchaProtection" @verified="onCaptchaVerified" @failed="onCaptchaFailed" />
+      <ReviewSection v-if="stayOffer" :ctrl-key="[...CtrlKey, 'StayDetailsSection', 'Reviews']" :stay-id="stayOffer?.stay.id" :preloaded-summary-info="reviewSummary" @review-summary-changed="onReviewSummaryChanged" />
+      <ComponentWaitingIndicator v-else :ctrl-key="[...CtrlKey, 'StayDetailsSection', 'Reviews', 'Waiter']" class="stay-reviews-waiting-indicator my-xs-5" />
+      <CaptchaProtection v-if="!!AppConfig.maps && !isRobotRequest" :ctrl-key="[...CtrlKey, 'Captcha']" ref="captcha" @verified="onCaptchaVerified" @failed="onCaptchaFailed" />
     </ErrorHelm>
   </article>
 </template>

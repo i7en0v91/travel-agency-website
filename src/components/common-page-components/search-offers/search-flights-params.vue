@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../../helpers/components';
 import { DefaultFlightClass, FlightMinPassengers, FlightMaxPassengers, type FlightClass, getI18nResName1, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
@@ -8,43 +9,50 @@ import SimpleButton from './../../forms/simple-button.vue';
 import SearchOffersCounter from './search-offers-counter.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
+interface IProps {
+  ctrlKey: ControlKey
+}
+
+const { ctrlKey } = defineProps<IProps>();
+
+const FlightClassDropdownClass = 'search-offers-dropdown-list-container';
+
+const logger = getCommonServices().getLogger().addContextProps({ component: 'SearchFlightsParams' });
+const controlValuesStore = useControlValuesStore();
+const { t } = useI18n();
+
 interface IFlightParams {
   passengers: number,
   class: FlightClass
 }
-
-interface IProps {
-  ctrlKey: string,
-  params?: IFlightParams,
-  initiallySelectedParams?: IFlightParams | null | undefined
-}
-
-const { ctrlKey, params, initiallySelectedParams } = defineProps<IProps>();
-
-const FlightClassDropdownClass = 'search-offers-dropdown-list-container';
+const paramsModel = defineModel<IFlightParams | null | undefined>('params');
+const selectedClass = ref<FlightClass>();
+const selectedPassengers = ref<number>();
 
 const openBtn = useTemplateRef<HTMLElement>('open-btn');
 const dropdownContainer = useTemplateRef<HTMLElement>('dropdown-container');
 const dropdown = useTemplateRef<InstanceType<typeof Dropdown>>('dropdown');
 const hasMounted = ref(false);
 
-const logger = getCommonServices().getLogger();
+const displayText = import.meta.client ? (
+  controlValuesStore.acquireValuesView(
+    (flightClassRef, numPassengersRef) => {
+      const flightClass = flightClassRef.value as FlightClass | null;
+      const numPassengers = numPassengersRef.value as number | null;
 
-const controlSettingsStore = useControlSettingsStore();
-const passengerControlValueSetting = controlSettingsStore.getControlValueSetting<number>(`${ctrlKey}-NumPassengers`, FlightMinPassengers, true);
-const classControlValueSetting = controlSettingsStore.getControlValueSetting<FlightClass>(`${ctrlKey}-FlightClass`, DefaultFlightClass, true);
-if (initiallySelectedParams) {
-  passengerControlValueSetting.value = initiallySelectedParams.passengers;
-  classControlValueSetting.value = initiallySelectedParams.class;
-} else if (initiallySelectedParams === null) {
-  passengerControlValueSetting.value = FlightMinPassengers;
-  classControlValueSetting.value = DefaultFlightClass;
-}
+      const passengersText = (numPassengers != undefined) ? `${numPassengers} ${t(getI18nResName2('searchFlights', 'passenger'), numPassengers)}` : undefined;
+      const flightClassResName = flightClass ? getI18nResName3('searchFlights', 'class', flightClass) : undefined;
+      if(!passengersText || !flightClassResName) {
+        return '';
+      }
 
-const selectedClass = ref<FlightClass | undefined>();
-const numPassengers = ref<number | undefined>();
-
-const { t } = useI18n();
+      const flightClassText = t(flightClassResName);
+      return hasMounted.value ? `${passengersText}, ${flightClassText}` : '';
+    }, 
+    [...ctrlKey, 'FlightClass', 'Dropdown'], 
+    [...ctrlKey, 'NumPassengers', 'Counter']
+  )
+) : computed(() => '');
 
 function onMenuShown () {
   setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
@@ -58,33 +66,8 @@ function hideDropdown () {
   dropdown.value?.hide();
 }
 
-const displayText = computed(() => {
-  if (!hasMounted.value) {
-    return '';
-  }
-
-  const passengersText = `${numPassengers.value} ${t(getI18nResName2('searchFlights', 'passenger'), numPassengers.value!)}`;
-  const flightClassResName = getI18nResName3('searchFlights', 'class', params?.class ?? classControlValueSetting.value!);
-  const flightClass = t(flightClassResName);
-
-  return `${passengersText}, ${flightClass}`;
-});
-
-const $emit = defineEmits<{(event: 'update:params', params?: IFlightParams | undefined): void}>();
-
-function updateParams (params: IFlightParams) {
-  logger.verbose(`(SearchFlightsParams) updating params: ctrlKey=${ctrlKey}, params=${JSON.stringify(params)}`);
-  passengerControlValueSetting.value = params?.passengers ?? FlightMinPassengers;
-  classControlValueSetting.value = params?.class ?? DefaultFlightClass;
-  $emit('update:params', params);
-  logger.verbose(`(SearchFlightsParams) selected params updated: ctrlKey=${ctrlKey}, params=${JSON.stringify(params)}`);
-}
-
-function onParamsChange () {
-  updateParams({
-    class: selectedClass.value ?? params?.class ?? DefaultFlightClass,
-    passengers: numPassengers.value ?? params?.passengers ?? FlightMinPassengers
-  });
+function onEscape () {
+  hideDropdown();
 }
 
 function isDropdownShown () {
@@ -114,23 +97,38 @@ function handleDocumentEvent (evt: Event) {
 onMounted(() => {
   document.addEventListener('click', handleDocumentEvent);
 
-  hasMounted.value = true;
-  numPassengers.value = passengerControlValueSetting.value!;
-  selectedClass.value = classControlValueSetting.value!;
+  watch([selectedClass, selectedPassengers], () => {
+    logger.debug('class or passengers control value watcher', { ctrlKey, selectedClass: selectedClass.value, modelClass: paramsModel.value?.class, selectedNumPassengers: selectedPassengers.value, modelNumPassengers: paramsModel.value?.passengers });
+    
+    const classChanged = selectedClass.value != paramsModel.value?.class;
+    const numPassengersChanged = selectedPassengers.value != paramsModel.value?.passengers;
+    const changed = classChanged || numPassengersChanged;
+    if(changed) {
+      paramsModel.value = { 
+        class: selectedClass.value ?? DefaultFlightClass,
+        passengers: selectedPassengers.value ?? FlightMinPassengers
+      };
+    }
+  }, { immediate: false });
 
-  updateParams({
-    passengers: numPassengers.value,
-    class: selectedClass.value
-  });
+  watch(paramsModel, () => {
+    logger.debug('model value watcher', { ctrlKey, selectedClass: selectedClass.value, modelClass: paramsModel.value?.class, selectedNumPassengers: selectedPassengers.value, modelNumPassengers: paramsModel.value?.passengers });
+    const classChanged = selectedClass.value != paramsModel.value?.class;
+    const numPassengersChanged = selectedPassengers.value != paramsModel.value?.passengers;
+    const changed = classChanged || numPassengersChanged;
+    if(changed) {
+      selectedClass.value = paramsModel.value?.class ?? DefaultFlightClass;
+      selectedPassengers.value = paramsModel.value?.passengers ?? FlightMinPassengers;
+    }
+  }, { immediate: false });
+
+  hasMounted.value = true;
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', handleDocumentEvent);
 });
 
-function onEscape () {
-  hideDropdown();
-}
 
 </script>
 
@@ -139,8 +137,8 @@ function onEscape () {
     <VDropdown
       ref="dropdown"
       v-floating-vue-hydration="{ tabIndex: -1 }"
-      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
-      :aria-id="`${ctrlKey}-DropDownWrapper`"
+      :ctrl-key="[...ctrlKey, 'Wrapper']"
+      :aria-id="`${toShortForm(ctrlKey)}-DropDownWrapper`"
       :distance="-6"
       :hide-triggers="[(triggers: any) => [...triggers, 'click']]"
       :auto-hide="false"
@@ -155,7 +153,7 @@ function onEscape () {
     >
       <FieldFrame :text-res-name="getI18nResName2('searchFlights', 'flightParamsCaption')" class="dropdown-list-field-frame">
         <button
-          :id="`flight-params-${ctrlKey}`"
+          :id="`flight-params-${toShortForm(ctrlKey)}`"
           ref="open-btn"
           class="brdr-1"
           type="button"
@@ -165,24 +163,21 @@ function onEscape () {
       </FieldFrame>
       <template #popper>
         <ClientOnly>
-          <div ref="dropdown-container" class="search-offers-dropdown-list-container flight-params-controls p-xs-2 p-s-3" :data-popper-anchor="`flight-params-${ctrlKey}`">
+          <div ref="dropdown-container" class="search-offers-dropdown-list-container flight-params-controls p-xs-2 p-s-3" :data-popper-anchor="`flight-params-${toShortForm(ctrlKey)}`">
             <SearchOffersCounter
-              v-model:value="numPassengers"
-              :ctrl-key="`${ctrlKey}-NumPassengers`"
+              v-model:value="selectedPassengers"
+              :ctrl-key="[...ctrlKey, 'NumPassengers', 'Counter']"
               :default-value="FlightMinPassengers"
               :min-value="FlightMinPassengers"
               :max-value="FlightMaxPassengers"
               :label-res-name="getI18nResName2('searchFlights', 'fieldPassengers')"
-              @update:value="onParamsChange"
             />
             <DropdownList
               v-model:selected-value="selectedClass"
-              :ctrl-key="`${ctrlKey}-FlightClass`"
+              :ctrl-key="[...ctrlKey, 'FlightClass', 'Dropdown']"
               :caption-res-name="getI18nResName2('searchFlights', 'fieldClass')"
-              :persistent="false"
               class="flight-params-class mt-xs-4"
               :list-container-class="FlightClassDropdownClass"
-              :default-value="classControlValueSetting.value ?? DefaultFlightClass"
               :items="[{
                 value: 'economy',
                 resName: getI18nResName3('searchFlights', 'class', 'economy')
@@ -193,11 +188,10 @@ function onEscape () {
                 value: 'business',
                 resName: getI18nResName3('searchFlights', 'class', 'business')
               }]"
-              @update:selected-value="onParamsChange"
             />
             <SimpleButton
               class="mr-xs-2 mt-xs-4 flight-params-close-dropdown-btn"
-              :ctrl-key="`${ctrlKey}-FlightPrmsClose`"
+              :ctrl-key="[...ctrlKey, 'Btn', 'Close']"
               kind="accent"
               :label-res-name="getI18nResName1('close')"
               @click="hideDropdown"

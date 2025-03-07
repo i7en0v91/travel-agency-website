@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { DataKeyImageDetails, PreviewModeParamEnabledValue, QueryPagePreviewModeParam, type IAppLogger, type I18nResName, type ImageCategory, ImageAuthRequiredCategories, type IImageEntitySrc, type CssPropertyList } from '@golobe-demo/shared';
-import { getObject } from './../../helpers/rest-utils';
-import { addPayload, getPayload } from './../../helpers/payload';
+import { toShortForm, type ControlKey } from './../../helpers/components';
+import { AppConfig, PreviewModeParamEnabledValue, QueryPagePreviewModeParam, type I18nResName, type ImageCategory, ImageAuthRequiredCategories, type IImageEntitySrc, type CssPropertyList } from '@golobe-demo/shared';
 import { ApiEndpointImageDetails, ApiEndpointImage } from './../../server/api-definitions';
 import fromPairs from 'lodash-es/fromPairs';
-import isString from 'lodash-es/isString';
 import ErrorHelm from './../error-helm.vue';
 import { stringifyParsedURL, stringifyQuery } from 'ufo';
 import set from 'lodash-es/set';
+import has from 'lodash-es/has';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
 
@@ -18,20 +17,39 @@ interface IPublicAssetSrc {
 }
 
 interface IProps {
-  ctrlKey: string,
-  assetSrc?: IPublicAssetSrc,
+  ctrlKey: ControlKey,
+  src?: IPublicAssetSrc | IImageEntitySrc,
   category?: ImageCategory,
-  entitySrc?: IImageEntitySrc,
-  sizes: string, // e.g. sm:100vw md:100vw lg:80vw xl:60vw xxl:40vw
-  imgClass?: string,
-  stubStyle?: CssPropertyList | 'default' | 'custom-if-configured', // false - do not show custom stub (use default)
+  /**
+   * Approximate portion of viewport width occupied by the image broken down by device sizes,
+   * e.g. sm:100vw md:100vw lg:80vw xl:60vw xxl:40vw. Used for html's srcset tag value
+   */
+  sizes: string,
+  /**
+   * Loading stub display variant:
+   * "default" - show default stub
+   * false - don't display, fallback to default browser behavior
+   * CssPropertyList object - use explicit css styling
+   * "custom-if-configured" - fetch styling from server ({@link ApiEndpointImageDetails}), if empty - fallback to default
+   */
+  stub?: CssPropertyList | 'default' | 'custom-if-configured' | false,
+  /**
+   * Inidicates that image may have specific display settings, e.g. inversion filter for dark theme and 
+   * additional fetch request ({@link ApiEndpointImageDetails}) is required
+   */
   requestExtraDisplayOptions?: boolean,
-  overlayClass?: string,
-  altResName?: I18nResName,
-  altResParams?: any,
-  showStub?: boolean,
-  imgIsClientOnly?: boolean,
-  isHighPriority?: boolean
+  /** Render image component only on client, fallback to stub server-side*/
+  clientOnly?: boolean,
+  /** Affects <img> fetchpriority tag */
+  highPriority?: boolean
+  ui?: {
+    img?: string,
+    overlay?: string
+  },
+  alt?: {
+    resName: I18nResName,
+    resParams?: any
+  }
 }
 
 declare interface IFetchedImageDetails {
@@ -41,136 +59,139 @@ declare interface IFetchedImageDetails {
 
 const { 
   ctrlKey,
-  assetSrc,
-  entitySrc,
+  src,
   category,
-  imgClass,
-  isHighPriority = false, 
-  imgIsClientOnly = false,
-  showStub = true, 
-  stubStyle = 'default', 
+  ui,
+  highPriority = false, 
+  clientOnly = false,
+  stub = 'default', 
   requestExtraDisplayOptions = false 
 } = defineProps<IProps>();
 
+const logger = getCommonServices().getLogger().addContextProps({ component: 'StaticImage' });
+const systemConfigurationStore = useSystemConfigurationStore();
+
+const nuxtApp = useNuxtApp();
 const { status, signIn, getSession } = useAuth();
 const { enabled } = usePreviewState();
-const nuxtApp = useNuxtApp();
-const systemConfigurationStore = useSystemConfigurationStore();
 
 const isError = ref(false);
 const loaded = ref(false);
+const nuxtImageComponent = useTemplateRef('image-component');
 
-// making it non-reactive assuming source image sizes won't change during properties update
-const imageSize = assetSrc ? { width: assetSrc.width, height: assetSrc.height } : (await systemConfigurationStore.getImageSrcSize(category!));
-const imgUrl = computed(() => {
-  if(assetSrc) {
+const DataKeyImageDetails = (ctrlKey: ControlKey, slug: string) => `ImageDetails-${toShortForm(ctrlKey)}-${slug}`;
+
+function isAssetSrc(src?: IPublicAssetSrc | IImageEntitySrc): src is IPublicAssetSrc {
+  return has(src as any, 'filename');
+}
+
+const imageUrl = computed(() => {
+  if(isAssetSrc(src)) {
     return stringifyParsedURL({
-      pathname: `/img/${assetSrc.filename}`,
+      pathname: `/img/${src.filename}`,
     });
-  }
-  if(entitySrc) {
-    if (!requestExtraDisplayOptions || imageDetails.value) {
-      return stringifyParsedURL({
-        pathname: `/${ApiEndpointImage}`,
-        search: stringifyQuery({
-          ...(entitySrc!.timestamp ? { t: entitySrc!.timestamp } : {}),
-          ...(enabled ? set({}, QueryPagePreviewModeParam, PreviewModeParamEnabledValue) : {}),
-          slug: entitySrc!.slug,
-          category: category!.valueOf()
-        })
-      });
-    }
+  } else if(src) {
+    return stringifyParsedURL({
+      pathname: `/${ApiEndpointImage}`,
+      search: stringifyQuery({
+        ...(src.timestamp ? { t: src.timestamp } : {}),
+        ...(enabled ? set({}, QueryPagePreviewModeParam, PreviewModeParamEnabledValue) : {}),
+        slug: src.slug,
+        category: category!.valueOf()
+      })
+    });
   }
   return undefined;
 });
 
-const logger = getCommonServices().getLogger();
-
-const imgComponent = useTemplateRef('image-component');
-
-const invertForDarkTheme = ref<boolean>(false);
-const finalStubStyle = shallowRef<CssPropertyList | undefined>(!isString(stubStyle) ? (stubStyle as CssPropertyList) : undefined);
-
-const imageDetails = ref<IFetchedImageDetails | undefined>();
-function updateImageStylingDetails () {
-  finalStubStyle.value = (!isString(stubStyle) ? (stubStyle as CssPropertyList) : undefined) ?? imageDetails.value?.stubCssStyle ?? undefined;
-  invertForDarkTheme.value = (requestExtraDisplayOptions ? (imageDetails.value?.invertForDarkTheme) : undefined) ?? false;
-  logger.verbose(`(StaticImage) applying stub custom css style, ctrlKey=${ctrlKey}, style=[${finalStubStyle.value ? JSON.stringify(finalStubStyle.value) : 'empty'}], invertForDarkTheme=${invertForDarkTheme.value}`);
-}
-watch(imageDetails, updateImageStylingDetails);
-if (imageDetails.value) {
-  updateImageStylingDetails();
-}
-if(entitySrc) {
-  if(import.meta.server) {
-    await fetchDisplayDetailsIfNeeded();
-  } else {
-    fetchDisplayDetailsIfNeeded();
-  }
-} else {
-  watch(() => entitySrc, fetchDisplayDetailsIfNeeded);
-}
-
-// no need to make it computed at the moment
-const stubCssClass = computed(() => {
-  const hasStaticStubData = finalStubStyle.value && JSON.stringify(finalStubStyle.value).length > 3;
-  return `${loaded.value ? 'img-loaded' : ''} ${hasStaticStubData ? '' : 'static-image-stub-animated'} ${!showStub ? 'static-image-stub-hidden' : ''}`;
+const imageMediaSize = computed(() => {
+  return isAssetSrc(src) ? { 
+      width: src.width, 
+      height: src.height 
+  } : systemConfigurationStore.imageCategories.find(x => x.kind === category!)!;
 });
 
-const imgCssClass = computed(() => {
-  return `static-image-img ${imgClass} ${(loaded.value && (!requestExtraDisplayOptions || imageDetails.value)) ? 'img-loaded' : ''} ${invertForDarkTheme.value ? 'dark-theme-invert' : ''}`;
+const imageDetailsFetchRequired = computed(() => {
+  if(!src || isAssetSrc(src)) {
+    return;
+  }
+
+  return stub === 'custom-if-configured' || requestExtraDisplayOptions;
 });
 
-async function fetchDisplayDetailsIfNeeded (): Promise<void> {
-  if (!!entitySrc && (stubStyle === 'custom-if-configured' || requestExtraDisplayOptions)) {
-    const payloadKey = DataKeyImageDetails(ctrlKey, entitySrc.slug);
-    let dto = (import.meta.client && nuxtApp.isHydrating) ? getPayload<IFetchedImageDetails>(nuxtApp, payloadKey) : undefined;
-    if(!dto) {
-      const query = { 
-        slug: entitySrc?.slug,
-        category,
-        drafts: enabled 
-      };
-      const cache = enabled ? 'no-cache' : 'default';
-      const reqEvent = import.meta.server ? nuxtApp.ssrContext?.event : undefined;
-      dto = await getObject<IFetchedImageDetails>(`/${ApiEndpointImageDetails}`, query, cache, true, reqEvent, 'default');
-      if(!!dto && !!nuxtApp.ssrContext) {
-        logger.debug(`(StaticImage) adding image details to payload, ctrlKey=${ctrlKey}, slug=${entitySrc.slug}`);
-        addPayload(nuxtApp, payloadKey, dto);
+const imageDetailsFetchQuery = ref(
+  (src as IImageEntitySrc)?.slug ? { 
+    slug: (src as IImageEntitySrc).slug!,
+    category,
+    drafts: enabled
+  } : undefined);
+const imageDetailsFetch = useFetch(`/${ApiEndpointImageDetails}`, {
+    server: true,
+    lazy: true,
+    query: imageDetailsFetchQuery,
+    immediate: false,
+    cache: (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
+    dedupe: 'defer',
+    key: DataKeyImageDetails(ctrlKey, (src as IImageEntitySrc)?.slug ?? ''),
+    default: () => null,
+    transform: (dto: IFetchedImageDetails) => {
+      const slug = (src as IImageEntitySrc).slug;
+      logger.verbose('image details fetched, transforming', { details: dto, ctrlKey, slug });
+      if (dto) {
+        let resultCssStyle: CssPropertyList | undefined;
+        if (dto.stubCssStyle) {
+          resultCssStyle = fromPairs(dto.stubCssStyle as any) as CssPropertyList;
+          logger.verbose('image details transformed', { style: resultCssStyle, ctrlKey, slug });
+        }
+        return { stubCssStyle: resultCssStyle, invertForDarkTheme: dto.invertForDarkTheme } as IFetchedImageDetails;
+      } else {
+        logger.warn('fetch request for image details returned empty data', undefined, { ctrlKey, slug });
+        return { stubCssStyle: undefined, invertForDarkTheme: false };
       }
-    } else {
-      logger.debug(`(StaticImage) adding image details to payload, ctrlKey=${ctrlKey}, slug=${entitySrc.slug}`);
-    }
-    
-    logger.verbose(`(StaticImage) image details obtained, ctrlKey=${ctrlKey}, slug=${entitySrc.slug}`);
-    if (dto) {
-      let resultCssStyle: CssPropertyList | undefined;
-      if (dto.stubCssStyle) {
-        resultCssStyle = fromPairs(dto.stubCssStyle as any) as CssPropertyList;
-        logger.verbose(`(StaticImage) stub custom css style fetched, style=[${JSON.stringify(resultCssStyle)}], ctrlKey=${ctrlKey}, slug=${entitySrc.slug}`);
-      }
-      imageDetails.value = { stubCssStyle: resultCssStyle, invertForDarkTheme: dto.invertForDarkTheme } as IFetchedImageDetails;
-    } else {
-      logger.warn(`(StaticImage) fetch request for image details returned empty data, ctrlKey=${ctrlKey}, slug=${entitySrc.slug}`);
-      imageDetails.value = { stubCssStyle: undefined, invertForDarkTheme: false };
-    }
+    },
+    $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-stub' })
+  });
+
+const stubCustomCssStyling = computed(() => {
+  if(!stub) {
+    return null;
   }
-}
+
+  if(typeof stub === 'object') {
+    return stub as CssPropertyList;
+  } else if(stub === 'custom-if-configured') {
+    return imageDetailsFetch.data?.value?.stubCssStyle ?? null;
+  }
+
+  return null;
+});
+
+const hasCustomCssStyling = computed(() => {
+  return stubCustomCssStyling.value && JSON.stringify(stubCustomCssStyling.value).length > 3;
+});
+
+const stubClasses = computed(() => {
+  return `${loaded.value ? 'img-loaded' : ''} ${!hasCustomCssStyling.value ? 'static-image-stub-animated' : ''} ${!stub ? 'static-image-stub-hidden' : ''}`;
+});
+
+const imgElementClasses = computed(() => {
+  return `static-image-img ${ui?.img ?? ''} ${(loaded.value && (!requestExtraDisplayOptions || hasCustomCssStyling.value)) ? 'img-loaded' : ''} ${imageDetailsFetch.data?.value?.invertForDarkTheme ? 'dark-theme-invert' : ''}`;
+});
 
 function onLoad () {
-  getLogger().verbose(`(StaticImage) image loaded, current url=${imgUrl.value}`);
+  logger.verbose('image loaded, current', { url: imageUrl.value });
   isError.value = false;
   loaded.value = true;
   $emit('imageReady');
 }
 
 async function onError (err: any) {
-  getLogger().warn(`(StaticImage) image load failed, current url=${imgUrl.value}`, err);
+  logger.warn('image load failed, current', err, { url: imageUrl.value });
 
   // check if this is auth issue
   if (category && ImageAuthRequiredCategories.includes(category!)) {
     if (status.value !== 'authenticated' || !(await getSession({ required: true }))) {
-      getLogger().info(`(StaticImage) image category requires authenticated access: url=${imgUrl.value}, category=${category!}`);
+      logger.info('image category requires authenticated access', { url: imageUrl.value, category: category! });
       signIn('credentials');
       return;
     }
@@ -182,19 +203,35 @@ async function onError (err: any) {
 
 const $emit = defineEmits(['imageReady', 'imageFailed']);
 
-function getLogger () : IAppLogger {
-  return getCommonServices().getLogger();
-}
-
 function fireIfLoadedImmediately () {
-  const elImg = imgComponent.value?.$el as HTMLImageElement;
+  const elImg = nuxtImageComponent.value?.$el as HTMLImageElement;
   if(elImg?.dataset['error'] === '1') {
-    getLogger().warn(`(StaticImage) detected image load failed, ctrlKey=${ctrlKey}, url=${imgUrl.value}, category=${category!}`);
+    logger.warn('detected image load failed', undefined, { ctrlKey, url: imageUrl.value, category: category! });
     onError(undefined);
   } else if (elImg?.complete) {
-    getLogger().debug(`(StaticImage) detected immediate image load, ctrlKey=${ctrlKey}, url=${imgUrl.value}, category=${category!}`);
+    logger.debug('detected immediate image load', { ctrlKey, url: imageUrl.value, category: category! });
     onLoad();
   }
+}
+
+if(import.meta.server && imageDetailsFetchRequired.value) {
+  await imageDetailsFetch.refresh();
+} else if(import.meta.client) {
+  watchEffect(() => {
+    if(imageDetailsFetchRequired.value === true) {
+      logger.debug('image details fetch refresh triggered', { ctrlKey, url: imageUrl.value, category: category! });
+      if(!imageDetailsFetchQuery.value) {
+        // updating query ref will trigger refresh
+        imageDetailsFetchQuery.value = { 
+          slug: (src as IImageEntitySrc).slug!,
+          category,
+          drafts: enabled
+        };
+      } else {
+        imageDetailsFetch.refresh();
+      }
+    }
+  });
 }
 
 onMounted(() => {
@@ -207,42 +244,42 @@ onMounted(() => {
   <div class="static-image" role="img">
     <ErrorHelm v-model:is-error="isError" :appearance="'error-stub'" :user-notification="false">
       <div class="static-image-div">
-        <div :class="`static-image-stub ${stubCssClass}`" :style="finalStubStyle" />
-        <ClientOnly v-if="imgIsClientOnly">
+        <div :class="`static-image-stub ${stubClasses}`" :style="stubCustomCssStyling" />
+        <ClientOnly v-if="clientOnly">
           <nuxt-img
-            v-if="imgUrl"
+            v-if="imageUrl"
             ref="image-component"
-            :src="imgUrl"
+            :src="imageUrl"
             fit="cover"
-            :width="imageSize.width"
-            :height="imageSize.height"
+            :width="imageMediaSize.width"
+            :height="imageMediaSize.height"
             :sizes="sizes"
-            :provider="entitySrc ? 'entity' : undefined"
-            :modifiers="entitySrc ? { imgSrcSize: imageSize } : {}"
-            :alt="altResName ? $t(altResName!, altResParams) : ''"
-            :class="imgCssClass"
-            :fetchpriority="isHighPriority ? 'high' : 'auto'"
+            :provider="!isAssetSrc(src) ? 'entity' : undefined"
+            :modifiers="!isAssetSrc(src) ? { imgSrcSize: imageMediaSize } : {}"
+            :alt="!!alt ? $t(alt.resName, alt.resParams) : ''"
+            :class="imgElementClasses"
+            :fetchpriority="highPriority ? 'high' : 'auto'"
             @load="onLoad"
             @error="onError"
           />
         </ClientOnly>
         <nuxt-img
-          v-else-if="imgUrl"
+          v-else-if="imageUrl"
           ref="image-component"
-          :src="imgUrl"
+          :src="imageUrl"
           fit="cover"
-          :width="imageSize.width"
-          :height="imageSize.height"
+          :width="imageMediaSize.width"
+          :height="imageMediaSize.height"
           :sizes="sizes"
-          :provider="entitySrc ? 'entity' : undefined"
-          :modifiers="entitySrc ? { imgSrcSize: imageSize } : {}"
-          :alt="altResName ? $t(altResName!, altResParams) : ''"
-          :class="imgCssClass"
-          :fetchpriority="isHighPriority ? 'high' : 'auto'"
+          :provider="!isAssetSrc(src) ? 'entity' : undefined"
+            :modifiers="!isAssetSrc(src) ? { imgSrcSize: imageMediaSize } : {}"
+            :alt="!!alt ? $t(alt.resName, alt.resParams) : ''"
+          :class="imgElementClasses"
+          :fetchpriority="highPriority ? 'high' : 'auto'"
           @load="onLoad"
           @error="onError"
         />
-        <div v-if="overlayClass" :class="`static-image-overlay ${overlayClass}`" />
+        <div v-if="ui?.overlay" :class="`static-image-overlay ${ui.overlay!}`" />
       </div>
     </ErrorHelm>
   </div>

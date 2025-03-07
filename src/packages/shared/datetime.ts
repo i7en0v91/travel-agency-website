@@ -24,7 +24,8 @@ export function convertTimeOfDay (timeOfDayMinutes: number): { hour24: number, m
 }
 
 export function getTimeOfDay (dateTimeUtc: Date, utcOffsetMinutes: number): number {
-  return (dateTimeUtc.getHours() * 60 + dateTimeUtc.getMinutes() + utcOffsetMinutes) % NumMinutesInDay;
+  const localDate = dayjs(dateTimeUtc).utcOffset(utcOffsetMinutes);
+  return localDate.hour() * 60 + localDate.minute();
 }
 
 export function getValueForTimeOfDayFormatting (dateTimeUtc: Date, utcOffsetMinutes: number): Date {

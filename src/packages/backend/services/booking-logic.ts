@@ -11,13 +11,13 @@ export class BookingLogic implements IBookingLogic {
 
   public static inject = ['staysLogic', 'dbRepository', 'logger'] as const;
   constructor (staysLogic: IStaysLogic, dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'BookingLogic' });
     this.dbRepository = dbRepository;
     this.staysLogic = staysLogic;
   }
 
   async deleteBooking(id: EntityId): Promise<void> {
-    this.logger.verbose(`(BookingLogic) deleting booking: id=${id}`);
+    this.logger.verbose('deleting booking', id);
     await executeInTransaction(async () => {
       await this.dbRepository.userStayOffer.updateMany({
         where: {
@@ -57,15 +57,15 @@ export class BookingLogic implements IBookingLogic {
       });
     }, this.dbRepository);
     
-    this.logger.verbose(`(BookingLogic) booking deleted: id=${id}`);
+    this.logger.verbose('booking deleted', id);
   };
 
   async createBooking (data: IOfferBookingData): Promise<EntityId> {
-    this.logger.verbose(`(BookingLogic) create booking, offerId=${data.offerId}, kind=${data.kind}, userId=${data.bookedUserId}`);
+    this.logger.verbose('create booking', { offerId: data.offerId, kind: data.kind, userId: data.bookedUserId });
 
     const entityId = await executeInTransaction(async () => {
       let userOfferId: EntityId | undefined;
-      this.logger.debug(`(BookingLogic) checking user offer record, offerId=${data.offerId}, kind=${data.kind}, userId=${data.bookedUserId}`);
+      this.logger.debug('checking user offer record', { offerId: data.offerId, kind: data.kind, userId: data.bookedUserId });
       if (data.kind === 'flights') {
         userOfferId = (await this.dbRepository.userFlightOffer.findFirst({
           where: {
@@ -79,7 +79,7 @@ export class BookingLogic implements IBookingLogic {
         }))?.id;
 
         if (!userOfferId) {
-          this.logger.debug(`(BookingLogic) user offer record doesn't exist, creating, offerId=${data.offerId}, kind=${data.kind}, userId=${data.bookedUserId}`);
+          this.logger.debug('user flight offer record doesn', { offerId: data.offerId, kind: data.kind, userId: data.bookedUserId });
           userOfferId = (await this.dbRepository.userFlightOffer.create({
             data: {
               id: newUniqueId(),
@@ -112,7 +112,7 @@ export class BookingLogic implements IBookingLogic {
         }))?.id;
 
         if (!userOfferId) {
-          this.logger.debug(`(BookingLogic) user offer record doesn't exist, creating, offerId=${data.offerId}, kind=${data.kind}, userId=${data.bookedUserId}`);
+          this.logger.debug('user stay offer record doesn', { offerId: data.offerId, kind: data.kind, userId: data.bookedUserId });
           userOfferId = (await this.dbRepository.userStayOffer.create({
             data: {
               id: newUniqueId(),
@@ -134,7 +134,7 @@ export class BookingLogic implements IBookingLogic {
         }
       }
 
-      this.logger.debug(`(BookingLogic) creating booking record, offerId=${data.offerId}, kind=${data.kind}, userId=${data.bookedUserId}, userOfferId=${userOfferId}`);
+      this.logger.debug('creating booking record', { offerId: data.offerId, kind: data.kind, userId: data.bookedUserId, userOfferId });
       return (await this.dbRepository.booking.create({
         data: {
           id: newUniqueId(),
@@ -154,12 +154,12 @@ export class BookingLogic implements IBookingLogic {
       })).id;
     }, this.dbRepository);
 
-    this.logger.verbose(`(BookingLogic) booking created, id=${entityId}`);
+    this.logger.verbose('booking created', { id: entityId });
     return entityId;
   }
 
   async getBooking (id: EntityId): Promise<IOfferBooking<IFlightOffer | IStayOfferDetails>> {
-    this.logger.verbose(`(BookingLogic) get booking, id=${id}`);
+    this.logger.verbose('get booking', id);
     const entity = await this.dbRepository.booking.findUnique({
       where: {
         isDeleted: false,
@@ -168,13 +168,13 @@ export class BookingLogic implements IBookingLogic {
       select: BookingInfoQuery.select
     });
     if (!entity) {
-      this.logger.warn(`(BookingLogic) booking not found, id=${id}`);
+      this.logger.warn('booking not found', undefined, id);
       throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'booking not found', 'error-page');
     }
 
     const result = MapBooking(entity);
     if (result.offer.kind === 'stays') {
-      this.logger.debug(`(BookingLogic) filling prices for stay offer details, bookingId=${id}, offerId=${result.offer.id}`);
+      this.logger.debug('filling prices for stay offer details', { bookingId: id, offerId: result.offer.id });
       let stayOffer = result.offer as EntityDataAttrsOnly<IStayOfferDetails>;
       stayOffer = {
         ...result.offer,
@@ -188,7 +188,7 @@ export class BookingLogic implements IBookingLogic {
       result.offer = stayOffer;
     }
 
-    this.logger.verbose(`(BookingLogic) booking found, id=${id}, offerId=${result.offer.id}, bookedUserId=${result.bookedUser.id}`);
+    this.logger.verbose('booking found', { id, offerId: result.offer.id, bookedUserId: result.bookedUser.id });
     return result;
   }
 }

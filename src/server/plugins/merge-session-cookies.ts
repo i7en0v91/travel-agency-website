@@ -1,7 +1,7 @@
-import { CookieSession, HeaderSetCookie } from '@golobe-demo/shared';
+import { CookieSession, HeaderSetCookie, type IAppLogger } from '@golobe-demo/shared';
 import { splitCookiesString } from 'h3';
 import flatten from 'lodash-es/flatten';
-import { getServerServices } from '../../helpers/service-accessors';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 // KB: temporary workaround for duplicated session data values sent in "set-session" header when using H3 session helpers
 export default defineNitroPlugin((nitroApp) => {
@@ -9,7 +9,7 @@ export default defineNitroPlugin((nitroApp) => {
     if (!event.headers) {
       return;
     }
-    const logger = getServerServices()?.getLogger();
+    const logger: IAppLogger | undefined = getCommonServices()?.getLogger()?.addContextProps({ component: 'NitroMergeSessionCookies' });
     const allHeaders = event.node.res.getHeaders();
     const setCookieValues = allHeaders[HeaderSetCookie];
     if (!setCookieValues || setCookieValues.length === 0) {
@@ -24,9 +24,9 @@ export default defineNitroPlugin((nitroApp) => {
         const adjustedCookieValues = allCookies.filter(c => !c.startsWith(`${CookieSession}`));
         adjustedCookieValues.push(golobeSessionCookies[golobeSessionCookies.length - 1]);
         setHeader(event, HeaderSetCookie, adjustedCookieValues);
-        logger?.warn(`(nitro:merge-session-cookies) got more that 1 session cookie value, count=${adjustedCookieValues.length}/${allCookies.length}, path=${event.path}`);
+        logger?.warn('got more that 1 session cookie value', undefined, { count: adjustedCookieValues.length, total: allCookies.length, path: event.path });
       } catch (err: any) {
-        logger?.warn(`(nitro:merge-session-cookies) failed to merge session cookie values, count=$${allCookies.length}, path=${event.path}`, err);
+        logger?.warn('failed to merge session cookie values', err, { count: allCookies.length, path: event.path });
       }
     }
   });

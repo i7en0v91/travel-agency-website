@@ -1,37 +1,48 @@
 <script setup lang="ts">
 import type { I18nResName } from '@golobe-demo/shared';
+import { toShortForm } from '../../helpers/components';
 import type { IDropdownListProps, IDropdownListItemProps, DropdownListValue } from './../../types';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 import FieldFrame from './../forms/field-frame.vue';
 import { getCommonServices } from '../../helpers/service-accessors';
+import type { ControlStoreValue } from '../../stores/control-values-store';
 
 const { 
-  selectedValue, 
+  ctrlKey,
   items, 
-  initiallySelectedValue, 
-  persistent, 
-  defaultValue, 
-  ctrlKey, 
+  persistent = undefined, 
+  defaultValue = undefined, 
+  placeholderResName,
   listContainerClass = '', 
   kind = 'primary' 
 } = defineProps<IDropdownListProps>();
 
+const logger = getCommonServices().getLogger().addContextProps({ component: 'DropdownList' });
+const controlValuesStore = useControlValuesStore();
+
+const { t } = useI18n();
+
+const modelValue = defineModel<string | null | undefined>('selectedValue');
 const openBtn = useTemplateRef<HTMLElement>('open-btn');
 const dropdown = useTemplateRef<InstanceType<typeof Dropdown>>('dropdown');
 const hasMounted = ref(false);
 
-const logger = getCommonServices().getLogger();
+const selectedItemDisplayName = computed(() => {
+  if(persistent && !hasMounted.value) {
+    return '';
+  }
+  const selectedItemResName = modelValue.value ? lookupValueResName(modelValue.value) : null;
+  return selectedItemResName ? t(selectedItemResName) : (placeholderResName ? t(placeholderResName) : '');
+});
 
-const controlSettingsStore = useControlSettingsStore();
-const controlValueSetting = controlSettingsStore.getControlValueSetting<DropdownListValue | undefined>(ctrlKey, defaultValue, persistent);
-const selectedItemResName = ref<I18nResName | undefined>();
-if (initiallySelectedValue) {
-  controlValueSetting.value = initiallySelectedValue;
-  selectedItemResName.value = lookupValueResName(controlValueSetting.value);
-} else if (initiallySelectedValue === null) {
-  controlValueSetting.value = defaultValue;
-  selectedItemResName.value = lookupValueResName(controlValueSetting.value);
+function lookupValueResName (value?: DropdownListValue | undefined) : I18nResName | undefined {
+  if (value) {
+    const itemProps = items.find(i => i.value === value);
+    return itemProps?.resName;
+  } else {
+    return undefined;
+  }
 }
 
 function onMenuShown () {
@@ -46,58 +57,58 @@ function hideDropdown () {
   dropdown.value?.hide();
 }
 
-function lookupValueResName (value?: DropdownListValue | undefined) : I18nResName | undefined {
-  if (value) {
-    const itemProps = items.find(i => i.value === value);
-    return itemProps?.resName;
-  } else {
-    return undefined;
-  }
-}
-
-const $emit = defineEmits<{(event: 'update:selectedValue', value?: DropdownListValue | undefined): void}>();
-
-function updateSelectedValue (value?: DropdownListValue | undefined) {
-  logger.verbose(`(DropdownList) updating selected value: ctrlKey=${ctrlKey}, value=${value}`);
-  controlValueSetting.value = value;
-  selectedItemResName.value = lookupValueResName(value);
-  $emit('update:selectedValue', value);
-  logger.verbose(`(DropdownList) selected value updated: ctrlKey=${ctrlKey}, value=${value}`);
-}
-
-function onActivate (item: IDropdownListItemProps) {
-  logger.verbose(`(DropdownList) list item activated: ctrlKey=${ctrlKey}, value=${item.value}`);
-  hideDropdown();
-  updateSelectedValue(item.value);
-}
-
 function onEscape () {
   hideDropdown();
 }
 
-onBeforeMount(() => {
-  selectedItemResName.value = lookupValueResName(controlValueSetting.value);
-});
+function updateSelectedValue (value?: DropdownListValue | undefined) {
+  logger.verbose('updating selected value', { ctrlKey, value });
+  modelValue.value = value?.toString() ?? null;
+}
+
+function onActivate (item: IDropdownListItemProps) {
+  logger.verbose('list item activated', { ctrlKey, value: item.value });
+  hideDropdown();
+  updateSelectedValue(item.value);
+}
+
 onMounted(() => {
-  hasMounted.value = true;
-  if (controlValueSetting.value || (initiallySelectedValue !== undefined)) {
-    $emit('update:selectedValue', controlValueSetting.value);
-  }
-  watch(() => selectedValue, () => {
-    updateSelectedValue(selectedValue);
+  const initialOverwrite = modelValue.value as ControlStoreValue;
+  logger.debug('acquiring store value ref', { ctrlKey, defaultValue, initialOverwrite });
+  const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef(ctrlKey, {
+    initialOverwrite,
+    defaultValue,
+    persistent
   });
+
+  watch(storeValueRef, () => {
+    logger.debug('store value watcher', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value });
+    const newValue: string | null = (storeValueRef.value as string) ?? null;
+    const changed = storeValueRef.value !== modelValue.value;
+    if(changed) {
+      modelValue.value = newValue;  
+    }
+  }, { immediate: true });
+
+  watch(modelValue, () => {
+    logger.debug('model value watcher', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value });
+    if(modelValue.value !== storeValueRef.value) {
+      storeValueRef.value = modelValue.value ?? null;
+    }
+  }, { immediate: false });
+
+  hasMounted.value = true;
 });
 
 </script>
 
 <template>
-  <!-- not using role="list" as w3c audit may fail because of "listitem" elements are not direct children, but instead is rendered in a separate floating-vue container -->
   <div class="dropdown-list" @keyup.escape="onEscape">
     <VDropdown
       ref="dropdown"
       v-floating-vue-hydration="{ tabIndex: 0 }"
-      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
-      :aria-id="`${ctrlKey}-DropDownWrapper`"
+      :ctrl-key="[...ctrlKey, 'Wrapper']"
+      :aria-id="`${toShortForm(ctrlKey)}-DropDownWrapper`"
       :distance="-6"
       :hide-triggers="(triggers: any) => [...triggers, 'click']"
       placement="bottom-end"
@@ -111,21 +122,21 @@ onMounted(() => {
     >
       <FieldFrame :text-res-name="captionResName" class="dropdown-list-field-frame">
         <button
-          :id="`dropdown-list-${ctrlKey}`"
+          :id="`dropdown-list-${toShortForm(ctrlKey)}`"
           ref="open-btn"
           class="dropdown-list-btn brdr-1"
           type="button"
           @keyup.escape="hideDropdown"
         >
-          {{ (hasMounted || !persistent) ? (selectedItemResName ? $t(selectedItemResName) : (placeholderResName ? $t(placeholderResName) : '')) : '' }}
+          {{ selectedItemDisplayName }}
         </button>
       </FieldFrame>
       <template #popper>
         <ClientOnly>
-          <ol :class="`dropdown-list ${listContainerClass}`" :data-popper-anchor="`dropdown-list-${ctrlKey}`">
+          <ol :class="`dropdown-list ${listContainerClass}`" :data-popper-anchor="`dropdown-list-${toShortForm(ctrlKey)}`">
             <li
               v-for="(item, idx) in items"
-              :key="`${ctrlKey}-v${idx}`"
+              :key="`${toShortForm(ctrlKey)}-v${idx}`"
               role="listitem"
               class="dropdown-list-item p-xs-1 brdr-1 tabbable"
               @onActivate="() => onActivate(item)"

@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="TOffer extends IFlightOffer | IStayOfferDetails">
+import type { ControlKey } from './../../helpers/components';
 import { type ILocalizableValue, ImageCategory, type StayServiceLevel, type EntityId, type EntityDataAttrsOnly, type IFlightOffer, type IStayOfferDetails, type OfferKind, AppPage, getPagePath, type Locale, AvailableLocaleCodes, UserNotificationLevel, type I18nResName, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import fromPairs from 'lodash-es/fromPairs';
 import PaymentController from './../payments/payment-controller.vue';
@@ -9,7 +10,7 @@ import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   offerKind: OfferKind,
   offerId: EntityId,
   serviceLevel: TOffer extends IStayOfferDetails ? StayServiceLevel : undefined,
@@ -17,7 +18,7 @@ interface IProps {
 };
 const { ctrlKey, offerId, offerKind, serviceLevel } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'OfferBooking' });
 
 const { t, locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
@@ -46,10 +47,10 @@ function getI18ResAsLocalizableValue (resName: I18nResName): ILocalizableValue {
 }
 
 async function onPay (): Promise<void> {
-  logger.debug(`(OfferBooking) pay handler, ctrlKey=${ctrlKey}, offerId=${offerId}, kind=${offerKind}`);
+  logger.debug('pay handler', { ctrlKey, offerId, kind: offerKind });
   
-  if(!await requestUserAction()) {
-    logger.verbose(`(OfferBooking) pay handler hasn't run - not allowed in preview mode, ctrlKey=${ctrlKey}, offerId=${offerId}, kind=${offerKind}`);
+  if(!await requestUserAction(userNotificationStore)) {
+    logger.verbose('pay handler hasn', { ctrlKey, offerId, kind: offerKind });
     return;
   }
 
@@ -57,9 +58,9 @@ async function onPay (): Promise<void> {
   try {
     const bookingId = await offerBookingStore.store();
     await navigateTo(navLinkBuilder.buildLink(`/${getPagePath(AppPage.BookingDetails)}/${bookingId}`, locale.value as Locale));
-    logger.debug(`(OfferBooking) pay handler completed, ctrlKey=${ctrlKey}, offerId=${offerId}, kind=${offerKind}`);
+    logger.debug('pay handler completed', { ctrlKey, offerId, kind: offerKind });
   } catch (err: any) {
-    logger.warn(`(OfferBooking) exception occured while executing book HTTP request, ctrlKey=${ctrlKey}, offerId=${offerId}, kind=${offerKind}`, err);
+    logger.warn('exception occured while executing book HTTP request', err, { ctrlKey, offerId, kind: offerKind });
     userNotificationStore.show({
       level: UserNotificationLevel.ERROR,
       resName: getI18nResName2('appErrors', 'unknown')
@@ -78,15 +79,15 @@ async function onPay (): Promise<void> {
     </div>
     <div class="payment-controller-div">
       <ClientOnly>    
-        <PaymentController :ctrl-key="`${ctrlKey}-Payments`" :payment-processing="paymentProcessing" :amount="offer?.totalPrice?.toNumber()" @pay="onPay" />
+        <PaymentController :ctrl-key="[...ctrlKey, 'Payments']" :payment-processing="paymentProcessing" :amount="offer?.totalPrice?.toNumber()" @pay="onPay" />
         <template #fallback>
-          <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-Payments-ClientFallback`"/>
+          <ComponentWaitingIndicator :ctrl-key="[...ctrlKey, 'Payments', 'ClientFallback']"/>
         </template>
       </ClientOnly>
     </div>
     <div class="pricing-details-div">
       <PricingDetails
-        :ctrl-key="`${ctrlKey}-PricingDetails`"
+        :ctrl-key="[...ctrlKey, 'PricingDetails']"
         :image-entity-src="offer ? (offerKind === 'flights' ?
           ((offer as EntityDataAttrsOnly<IFlightOffer>).departFlight.airplane.images.find(i => i.order === 0)!.image) :
           ((offer as EntityDataAttrsOnly<IStayOfferDetails>).stay.images.find(i => i.order === 0))

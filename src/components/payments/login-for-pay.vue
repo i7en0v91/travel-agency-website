@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { type Locale, AppPage, AuthProvider, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import { formatAuthCallbackUrl } from './../../helpers/dom';
 import OAuthProviderList from './../../components/account/oauth-providers-list.vue';
@@ -6,7 +7,7 @@ import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 };
 defineProps<IProps>();
 
@@ -42,9 +43,9 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
     <h2 class="login-for-pay-caption">
       {{ $t(getI18nResName3('payments', 'loginToPay', 'title')) }}
     </h2>
-    <OAuthProviderList :ctrl-key="`${ctrlKey}-OAuthLogin`" @click="onOAuthProviderClick" />
+    <OAuthProviderList :ctrl-key="[...ctrlKey, 'OauthProviders']" @click="onOAuthProviderClick" />
     <SimpleButton
-      :ctrl-key="`${ctrlKey}-EmailLogin`"
+      :ctrl-key="[...ctrlKey, 'Login', 'Email']"
       kind="support"
       icon="mail"
       class="email-login-btn py-xs-3 brdr-1 mt-xs-3"

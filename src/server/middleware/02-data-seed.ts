@@ -7,26 +7,27 @@ import fromPairs from 'lodash-es/fromPairs';
 import isBuffer from 'lodash-es/isBuffer';
 import { getCommonServices, getServerServices } from '../../helpers/service-accessors';
 
+const CommonLogProps = { component: 'DataSeed' };
+
 async function getTemplatesAssetsStorage (logger: IAppLogger): Promise<Storage<StorageValue>> {
   const result = (globalThis as any).$templatesStorage as Storage<StorageValue>;
   if (!result) {
-    logger.error('templates assets storage is not available');
+    logger.error('templates assets storage is not available', undefined);
     throw new Error('templates assets storage is not available');
   }
 
   return result;
 }
 
-async function executeDataSeeding(event: H3Event): Promise<void> {
-  const logger = getCommonServices().getLogger();
-  logger.info(`(data-seed) data seeding - start`);
+async function executeDataSeeding(logger: IAppLogger, event: H3Event): Promise<void> {
+  logger.info('data seeding - start');
   try {
     const dataSeedingLogic = getServerServices()!.getDataSeedingLogic();
     logger.lowerWarnsWithoutErrorLevel(true);
     await dataSeedingLogic.seed(event);
-    logger.info(`(data-seed) data seeding - completed`);
+    logger.info('data seeding - completed');
   } catch(err: any) {
-    logger.error(`(data-seed) data seeding - failed`, err);
+    logger.error('data seeding - failed', err);
     throw err;
   } finally {
     logger.lowerWarnsWithoutErrorLevel(false);
@@ -34,9 +35,8 @@ async function executeDataSeeding(event: H3Event): Promise<void> {
 }
 
 type InitialDataSeedingStatus = Awaited<ReturnType<(ReturnType<IServerServicesLocator['getDataSeedingLogic']>)['getInitialSeedingStatus']>>;
-async function waitForSeedingStatus(...desiredStatuses: InitialDataSeedingStatus[]): Promise<void> {
-  const logger = getCommonServices().getLogger();
-  logger.verbose(`(data-seed) starting to wait for db seeding, expected status in [${desiredStatuses.join(', ')}]`);
+async function waitForSeedingStatus(logger: IAppLogger, ...desiredStatuses: InitialDataSeedingStatus[]): Promise<void> {
+  logger.verbose('starting to wait for expecting status of db seeding', { desiredStatuses });
   
   const dataSeedingLogic = getServerServices()!.getDataSeedingLogic();
   const startedSuccessfully = await spinWait(async () => {
@@ -45,15 +45,15 @@ async function waitForSeedingStatus(...desiredStatuses: InitialDataSeedingStatus
   }, 15 * 60 * 1000); // 15 minutes for data seeding timeout
 
   if(!startedSuccessfully) {
-    logger.error(`(data-seed) timeout waiting for db seeding, expected status in [${desiredStatuses.join(', ')}]`);
+    logger.error('timeout waiting for expecting status of db seeding', undefined, { desiredStatuses });
     throw new Error('timeout while seeding database');
   }
 
-  logger.verbose(`(data-seed) wait for db seeding - completed`);
+  logger.verbose('wait for db seeding - completed');
 }
 
-async function sendTemplateHtml(isLoading: boolean, event: H3Event, logger: IAppLogger): Promise<void> {
-  logger.verbose(`(data-seed) sending page html template, isLoading=${isLoading}`);
+async function sendTemplateHtml(isLoading: boolean, logger: IAppLogger, event: H3Event): Promise<void> {
+  logger.verbose('sending page html template', { isLoading });
 
   const templatesStorage = await getTemplatesAssetsStorage(logger);
   const originalTemplateRaw = await templatesStorage.getItemRaw(LoadingStubFileName);
@@ -70,7 +70,7 @@ async function sendTemplateHtml(isLoading: boolean, event: H3Event, logger: IApp
   });
   await sendWebResponse(event, response);
 
-  logger.verbose(`(data-seed) page html template was sent, isLoading=${isLoading}`);
+  logger.verbose('page html template was sent', { isLoading });
 }
 
 let seedMethodExecuted = false;
@@ -80,40 +80,40 @@ export default defineEventHandler(async (event: H3Event) => {
     return;
   }
 
-  const logger = getCommonServices().getLogger() as IAppLogger;
+  const logger = getCommonServices().getLogger().addContextProps(CommonLogProps);
   const dataSeedingLogic = getServerServices()!.getDataSeedingLogic();
   const dbSeedStatus = await dataSeedingLogic.getInitialSeedingStatus();
   if(dbSeedStatus === 'completed') {
-    logger.debug(`(data-seed) status - completed. headers dump: [${JSON.stringify(event.headers)}]`);
+    logger.debug('status - completed', {  headers: event.headers });
     return;
   }
 
   const envAllowsSeeding = !isTestEnv();
   if (!envAllowsSeeding) {
-    logger.error(`(data-seed) initial data seeding is required, but current execution environment does not allow running it automatically`);
+    logger.error('initial data seeding is required, but current execution environment does not allow running it automatically');
     throw new Error('initial data seeding is required');
   }
 
-  logger.verbose(`(data-seed) current status=${dbSeedStatus}, url=${event.node.req.url}`);  
+  logger.verbose('check', { status: dbSeedStatus, url: event.node.req.url });  
   if(AppConfig.dataSeeding.customLoadingStub) {
     if(dbSeedStatus === 'required') {
       if (!seedMethodExecuted) {
         seedMethodExecuted = true;
-        executeDataSeeding(event);
+        executeDataSeeding(logger, event);
       }
     }
 
     try {
-      await sendTemplateHtml(true, event, logger);  
+      await sendTemplateHtml(true, logger, event);  
     } catch(err: any) {
-      logger.error(`(data-seed) failed to send page html template`, err);
+      logger.error('failed to send page html template', err);
     }
   } else {
     if (!seedMethodExecuted) {
       seedMethodExecuted = true;
-      await executeDataSeeding(event);
+      await executeDataSeeding(logger, event);
     } 
 
-    await waitForSeedingStatus('completed');
+    await waitForSeedingStatus(logger, 'completed');
   }
 });

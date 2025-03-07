@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { UserAccountTabAccount, UserAccountTabPayments, UserAccountTabHistory, UserAccountOptionButtonGroup, UserAccountOptionButtonAccount, UserAccountOptionButtonHistory, UserAccountOptionButtonPayments } from './../helpers/constants';
+import { UserAccountPageCtrlKey, UserAccountOptionButtonPayments, UserAccountOptionButtonHistory, UserAccountOptionButtonAccount, UserAccountOptionButtonGroup, UserAccountTabAccount, UserAccountTabHistory, UserAccountTabPayments } from './../helpers/constants';
 import AvatarBox from './../components/user-account/avatar-box.vue';
 import UserCover from './../components/user-account/user-cover.vue';
 import OptionButtonGroup from './../components/option-buttons/option-button-group.vue';
 import PageContent from './../components/user-account/page-content.vue';
 import ComponentWaitingIndicator from './../components/component-waiting-indicator.vue';
+import type { ControlKey } from './../helpers/components';
 
 definePageMeta({
   middleware: 'auth',
@@ -27,15 +28,17 @@ const primaryEmail = computed(() => {
     : undefined;
 });
 
-const activeOptionCtrl = ref<string | undefined>();
+const CtrlKey = UserAccountPageCtrlKey;
+
+const activeOptionCtrl = ref<ControlKey | undefined>();
 </script>
 
 <template>
   <ClientOnly>
     <div class="user-account-page no-hidden-parent-tabulation-check">
       <div class="profile-images">
-        <UserCover ctrl-key="userCover" />
-        <AvatarBox ctrl-key="avatarBox" class="ml-xs-2 ml-s-4 ml-m-0" />
+        <UserCover :ctrl-key="[...CtrlKey, 'UserCover']" />
+        <AvatarBox :ctrl-key="[...CtrlKey, 'Avatar']" class="ml-xs-2 ml-s-4 ml-m-0" />
       </div>
       <div class="user-account-contacts">
         <div class="user-name mt-xs-3 mt-s-4">
@@ -51,7 +54,7 @@ const activeOptionCtrl = ref<string | undefined>();
         </h1>
       </div>
       <OptionButtonGroup
-        v-model:active-option-ctrl="activeOptionCtrl"
+        v-model:active-option-key="activeOptionCtrl"
         class="user-account-page-tabs-control mt-xs-5"
         :ctrl-key="UserAccountOptionButtonGroup"
         role="tablist"
@@ -61,10 +64,10 @@ const activeOptionCtrl = ref<string | undefined>();
           { ctrlKey: UserAccountOptionButtonPayments, labelResName: getI18nResName3('accountPage', 'tabPayments', 'title'), shortIcon: 'payments', enabled: true, role: { role: 'tab', tabPanelId: paymentTabHtmlId }, tabName: UserAccountTabPayments }
         ]"
       />
-      <PageContent ctrl-key="accountPageContent" :active-option="activeOptionCtrl" :tab-panel-ids="{ payments: paymentTabHtmlId, account: accountTabHtmlId, history: historyTabHtmlId }" />
+      <PageContent :ctrl-key="[...CtrlKey, 'PageContent']" :active-option="activeOptionCtrl" :tab-panel-ids="{ payments: paymentTabHtmlId, account: accountTabHtmlId, history: historyTabHtmlId }" />
     </div>
     <template #fallback>
-      <ComponentWaitingIndicator ctrl-key="AccountPageClientFallback" class="my-xs-5"/>
+      <ComponentWaitingIndicator :ctrl-key="[...CtrlKey, 'ClientFallback']" class="my-xs-5"/>
     </template>
   </ClientOnly>
 </template>

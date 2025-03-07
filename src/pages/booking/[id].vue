@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { QueryInternalRequestParam, isElectronBuild, type BookingPageArgs, AppException, AppExceptionCodeEnum, clampTextLine, getLocalizeableValue, getValueForFlightDurationFormatting, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, extractAirportCode, ImageCategory, type ICity, type EntityDataAttrsOnly, type ILocalizableValue, type IFlightOffer, type IStayOfferDetails, type EntityId, type ReviewSummary, getI18nResName2, getI18nResName3, AppPage, type Locale, AvailableLocaleCodes, DefaultTheme } from '@golobe-demo/shared';
 import fromPairs from 'lodash-es/fromPairs';
 import type { IBookingTicketFlightGfxProps, IBookingTicketStayTitleProps, IBookingTicketProps } from './../../types';
@@ -21,7 +22,7 @@ const navLinkBuilder = useNavLinkBuilder();
 
 const route = useRoute();
 const { status } = useAuth();
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'Booking' });
 
 const reqEvent = import.meta.server ? useRequestEvent() : undefined;
 const isOgImageRequestMode = import.meta.server && !!reqEvent?.context.ogImageContext;
@@ -32,7 +33,7 @@ let authUserForbidden = false;
 const isAuthenticated = status.value === 'authenticated' || (import.meta.server && reqEvent?.context.authenticated);
 let isUnAuthOgImageRequestMode = isOgImageRequestMode && !isAuthenticated;
 
-logger.verbose(`(BookingDetails) route=${route.fullPath}`);
+logger.verbose('', { route: route.fullPath });
 
 const bookingParam = route.params?.id?.toString() ?? '';
 if (bookingParam.length === 0) {
@@ -44,7 +45,7 @@ definePageMeta({
   title: { resName: getI18nResName2('bookingPage', 'pageTitle'), resArgs: undefined }
 });
 
-const CtrlKey = `BookingDetails${bookingId}`;
+const CtrlKey: ControlKey = ['Page', 'BookingDetails'];
 
 const isError = ref(false);
 const theme = useThemeSettings();
@@ -57,7 +58,7 @@ let offerBookingStore: IOfferBookingStore<IFlightOffer | IStayOfferDetails> | un
 
 async function initializeVariables(): Promise<void> {
   if (!isUnAuthOgImageRequestMode) {
-    logger.debug(`(BookingDetails) using full booking store mode, route=${route.fullPath}`);
+    logger.debug('using full booking store mode', { route: route.fullPath });
     const offerBookingStoreFactory = await useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
     try {
       offerBookingStore = await offerBookingStoreFactory.getUserBooking(bookingId!, !!reqEvent?.context.ogImageContext, reqEvent);
@@ -65,7 +66,7 @@ async function initializeVariables(): Promise<void> {
       if (AppException.isAppException(err) && (err as AppException).code === AppExceptionCodeEnum.FORBIDDEN) {
         authUserForbidden = true;
         if (isOgImageRequestMode) {
-          logger.verbose(`(BookingDetails) authenticated user doesn't have access to booking, switching to unauthenticated og image request mode, route=${route.fullPath}`);
+          logger.verbose('authenticated user doesn', { route: route.fullPath });
           isUnAuthOgImageRequestMode = true;
         } else {
           throw err;
@@ -75,20 +76,20 @@ async function initializeVariables(): Promise<void> {
       }
     }
     if (offerBookingStore) {
-      logger.debug(`(BookingDetails) booking data ready, updating, route=${route.fullPath}, bookingId=${offerBookingStore?.booking?.id}, offerId=${offerBookingStore.booking?.offer?.id}`);
+      logger.debug('booking data ready, updating', { route: route.fullPath, bookingId: offerBookingStore?.booking?.id, offerId: offerBookingStore.booking?.offer?.id });
       offer = ref<EntityDataAttrsOnly<IFlightOffer | IStayOfferDetails> | undefined>(offerBookingStore.booking?.offer);
       offerDataAvailable = computed(() => offerBookingStore!.status === 'success' && offerBookingStore!.booking?.offer && !isError.value);
     }
   }
 
   if (isUnAuthOgImageRequestMode) {
-    logger.debug(`(BookingDetails) using unauthenticated og image request mode, route=${route.fullPath}`);
+    logger.debug('using unauthenticated og image request mode', { route: route.fullPath });
 
     const url = `/${ApiEndpointBookingOffer(bookingId!)}`;
     // no need to payload, as it's ogImage request
     const resultDto = await getObject<EntityDataAttrsOnly<IFlightOffer | IStayOfferDetails>>(url, undefined, 'default', true, reqEvent, 'default');
     if (!resultDto) {
-      logger.warn(`(BookingDetails) exception occured while fetching booking offer data, bookingId=${bookingId}`);
+      logger.warn('exception occured while fetching booking offer data', undefined, bookingId);
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
     }
 
@@ -97,7 +98,7 @@ async function initializeVariables(): Promise<void> {
       const reviewSummaryUrl = `/${ApiEndpointStayOfferReviewSummary(resultDto.id)}`;
       const reviewSummaryDto = await getObject<IReviewSummaryDto>(reviewSummaryUrl, undefined, 'default', false, reqEvent, 'default');
       if (!reviewSummaryDto) {
-        logger.warn(`(BookingDetails) exception occured while fetching stay offer review summary, bookingId=${bookingId}, offerId=${resultDto.id}`);
+        logger.warn('exception occured while fetching stay offer review summary', undefined, { bookingId, offerId: resultDto.id });
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
       }
       stayReviewSummary = mapReviewSummary(reviewSummaryDto);
@@ -107,7 +108,7 @@ async function initializeVariables(): Promise<void> {
       ? mapFlightOfferDetails(resultDto as any) as EntityDataAttrsOnly<IFlightOffer>
       : mapStayOfferDetails(resultDto as any, stayReviewSummary!) as EntityDataAttrsOnly<IStayOfferDetails>;
 
-    logger.verbose(`(BookingDetails) booking offer fetched, bookingId=${bookingId}, offerId=${offerData.id}, kind=${offerData.kind}`);
+    logger.verbose('booking offer fetched', { bookingId, offerId: offerData.id, kind: offerData.kind });
     offer = ref(offerData);
     offerDataAvailable = computed(() => true);
   }
@@ -121,9 +122,9 @@ function getLocalizableAirportText (city: EntityDataAttrsOnly<ICity>): ILocaliza
 const userName = computed(() => offerBookingStore?.booking ? `${clampTextLine(`${offerBookingStore.booking!.bookedUser!.firstName ?? ''}`, DisplayedUserNameMaxLength)} ${(offerBookingStore.booking!.bookedUser!.lastName ?? '').length > 0 ? `${offerBookingStore.booking!.bookedUser!.lastName!.substring(0, 1).toUpperCase()}.` : ''}` : undefined);
 const ticketProps = computed<IBookingTicketProps>(() => (offerDataAvailable?.value && offer?.value && offerBookingStore?.booking)
   ? ({
-      ctrlKey: `${CtrlKey}-Ticket`,
+      ctrlKey: [...CtrlKey, 'Ticket'] as ControlKey,
       generalInfo: {
-        ctrlKey: `${CtrlKey}-Ticket-General`,
+        ctrlKey: [...CtrlKey, 'Ticket', 'General'] as ControlKey,
         avatar: offerBookingStore.booking!.bookedUser!.avatar ?? null,
         texting: {
           name: userName.value!,
@@ -132,52 +133,52 @@ const ticketProps = computed<IBookingTicketProps>(() => (offerDataAvailable?.val
         classResName: getI18nResName3('ticket', 'class', (offer.value.kind === 'flights' ? (offer.value as EntityDataAttrsOnly<IFlightOffer>).class : (offerBookingStore.booking!.serviceLevel! === 'Base' ? 'base' : 'city')))
       },
       dates: {
-        ctrlKey: `${CtrlKey}-Ticket-Dates`,
+        ctrlKey: [...CtrlKey, 'Ticket', 'Dates'] as ControlKey,
         from: {
-          ctrlKey: `${CtrlKey}-Ticket-DatesFrom`,
+          ctrlKey: [...CtrlKey, 'Ticket', 'Dates', 'From'],
           label: offer.value.kind === 'flights' ? d(getValueForTimeOfDayFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.departAirport.city.utcOffsetMin), 'daytime') : d((offer.value as EntityDataAttrsOnly<IStayOfferDetails>).checkIn, 'day'),
           sub: offer.value.kind === 'flights' ? getLocalizableAirportText((offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.departAirport.city) : getI18nResName2('ticket', 'checkIn')
         },
         to: {
-          ctrlKey: `${CtrlKey}-Ticket-DatesTo`,
+          ctrlKey: [...CtrlKey, 'Ticket', 'Dates', 'To'] as ControlKey,
           label: offer.value.kind === 'flights' ? d(getValueForTimeOfDayFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.arriveTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.departAirport.city.utcOffsetMin), 'daytime') : d((offer.value as EntityDataAttrsOnly<IStayOfferDetails>).checkOut, 'day'),
           sub: offer.value.kind === 'flights' ? getLocalizableAirportText((offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.arriveAirport.city) : getI18nResName2('ticket', 'checkOut')
         }
       },
       details: {
-        ctrlKey: `${CtrlKey}-Ticket-Details`,
+        ctrlKey: [...CtrlKey, 'Ticket', 'Details'] as ControlKey,
         items: offer.value.kind === 'flights'
           ? ([
-              { ctrlKey: `${CtrlKey}-Ticket-Details-Date`, caption: getI18nResName3('ticket', 'details', 'date'), icon: 'calendar', text: d(getValueForFlightDayFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.departAirport.city.utcOffsetMin), 'day') },
-              { ctrlKey: `${CtrlKey}-Ticket-Details-Duration`, caption: getI18nResName3('ticket', 'details', 'duration'), icon: 'timer', text: t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.arriveTimeUtc)) },
-              { ctrlKey: `${CtrlKey}-Ticket-Details-Gate`, caption: getI18nResName3('ticket', 'details', 'gate'), icon: 'door', text: 'A12' },
-              { ctrlKey: `${CtrlKey}-Ticket-Details-Seat`, caption: getI18nResName3('ticket', 'details', 'seat'), icon: 'seat', text: '128' }
+              { ctrlKey: [...CtrlKey, 'Ticket', 'Details', 'Dates'] as ControlKey, caption: getI18nResName3('ticket', 'details', 'date'), icon: 'calendar', text: d(getValueForFlightDayFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.departAirport.city.utcOffsetMin), 'day') },
+              { ctrlKey: [...CtrlKey, 'Ticket', 'Details', 'Duration'] as ControlKey, caption: getI18nResName3('ticket', 'details', 'duration'), icon: 'timer', text: t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).departFlight.arriveTimeUtc)) },
+              { ctrlKey: [...CtrlKey, 'Ticket', 'Details', 'Gate'] as ControlKey, caption: getI18nResName3('ticket', 'details', 'gate'), icon: 'door', text: 'A12' },
+              { ctrlKey: [...CtrlKey, 'Ticket', 'Details', 'Seat'] as ControlKey, caption: getI18nResName3('ticket', 'details', 'seat'), icon: 'seat', text: '128' }
             ])
           : ([
-              { ctrlKey: `${CtrlKey}-Ticket-Details-CheckInTime`, caption: getI18nResName3('ticket', 'details', 'checkInTime'), icon: 'timer', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
-              { ctrlKey: `${CtrlKey}-Ticket-Details-CheckOutTime`, caption: getI18nResName3('ticket', 'details', 'checkOutTime'), icon: 'timer', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
-              { ctrlKey: `${CtrlKey}-Ticket-Details-Room`, caption: getI18nResName3('ticket', 'details', 'room'), icon: 'door', text: t(getI18nResName3('ticket', 'details', 'onArrival')) }
+              { ctrlKey: [...CtrlKey, 'Ticket', 'Details', 'CheckIn'] as ControlKey, caption: getI18nResName3('ticket', 'details', 'checkInTime'), icon: 'timer', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
+              { ctrlKey: [...CtrlKey, 'Ticket', 'Details', 'CheckOut'] as ControlKey, caption: getI18nResName3('ticket', 'details', 'checkOutTime'), icon: 'timer', text: d(new Date(2000, 1, 1, 12, 0, 0, 0), 'daytime') },
+              { ctrlKey: [...CtrlKey, 'Ticket', 'Details', 'Room'] as ControlKey, caption: getI18nResName3('ticket', 'details', 'room'), icon: 'door', text: t(getI18nResName3('ticket', 'details', 'onArrival')) }
             ])
       },
       titleOrGfx: offer.value.kind === 'flights'
         ? ({
-            ctrlKey: `${CtrlKey}-Ticket-Details-FlightGfx`,
+            ctrlKey: [...CtrlKey, 'Ticket', 'Details', 'FlightGfx']  as ControlKey,
             userName: userName.value!
           } as IBookingTicketFlightGfxProps)
         : ({
-            ctrlKey: `${CtrlKey}-Ticket-Details-StayTitle`,
+            ctrlKey: [...CtrlKey, 'Ticket', 'Details', 'Title']  as ControlKey,
             cityName: (offer.value as EntityDataAttrsOnly<IStayOfferDetails>).stay.city.name,
             stayName: (offer.value as EntityDataAttrsOnly<IStayOfferDetails>).stay.name
           } as IBookingTicketStayTitleProps),
       offerKind: offer.value.kind
     })
-  : { ctrlKey: `${CtrlKey}-Ticket` });
+  : { ctrlKey: [...CtrlKey, 'Ticket']  as ControlKey });
 
 const ticketReturnFlightProps = computed<IBookingTicketProps | undefined>(() => (offerDataAvailable?.value && offerBookingStore?.booking && offer?.value && offer.value.kind === 'flights' && !!(offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight)
   ? ({
-      ctrlKey: `${CtrlKey}-TicketReturnFlight`,
+      ctrlKey: [...CtrlKey, 'Ticket', 'ReturnFlight'],
       generalInfo: {
-        ctrlKey: `${CtrlKey}-TicketReturnFlight-General`,
+        ctrlKey: [...CtrlKey, 'Ticket', 'ReturnFlight', 'General'],
         avatar: offerBookingStore.booking!.bookedUser!.avatar ?? null,
         texting: {
           name: userName.value!,
@@ -186,29 +187,29 @@ const ticketReturnFlightProps = computed<IBookingTicketProps | undefined>(() => 
         classResName: getI18nResName3('ticket', 'class', (offer.value as EntityDataAttrsOnly<IFlightOffer>).class)
       },
       dates: {
-        ctrlKey: `${CtrlKey}-TicketReturnFlight-Dates`,
+        ctrlKey: [...CtrlKey, 'Ticket', 'ReturnFlight', 'Dates'],
         from: {
-          ctrlKey: `${CtrlKey}-TicketReturnFlight-DatesFrom`,
+          ctrlKey: [...CtrlKey, 'Ticket', 'ReturnFlight', 'Dates', 'From'],
           label: d(getValueForTimeOfDayFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.departAirport.city.utcOffsetMin), 'daytime'),
           sub: getLocalizableAirportText((offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.departAirport.city)
         },
         to: {
-          ctrlKey: `${CtrlKey}-TicketReturnFlight-DatesTo`,
+          ctrlKey: [...CtrlKey, 'Ticket', 'ReturnFlight', 'Dates', 'To'],
           label: d(getValueForTimeOfDayFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.arriveTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.departAirport.city.utcOffsetMin), 'daytime'),
           sub: getLocalizableAirportText((offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.arriveAirport.city)
         }
       },
       details: {
-        ctrlKey: `${CtrlKey}-TicketReturnFlight-Details`,
+        ctrlKey: [...CtrlKey, 'Ticket', 'ReturnFlight', 'Details'],
         items: ([
-          { ctrlKey: `${CtrlKey}-TicketReturnFlight-Details-Date`, caption: getI18nResName3('ticket', 'details', 'date'), icon: 'calendar', text: d(getValueForFlightDayFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.departAirport.city.utcOffsetMin), 'day') },
-          { ctrlKey: `${CtrlKey}-TicketReturnFlight-Details-Duration`, caption: getI18nResName3('ticket', 'details', 'duration'), icon: 'timer', text: t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.arriveTimeUtc)) },
-          { ctrlKey: `${CtrlKey}-TicketReturnFlight-Details-Gate`, caption: getI18nResName3('ticket', 'details', 'gate'), icon: 'door', text: 'A12' },
-          { ctrlKey: `${CtrlKey}-TicketReturnFlight-Details-Seat`, caption: getI18nResName3('ticket', 'details', 'seat'), icon: 'seat', text: '128' }
+          { ctrlKey: [...CtrlKey, 'Ticket', 'ReturnFlight', 'Details', 'Dates'], caption: getI18nResName3('ticket', 'details', 'date'), icon: 'calendar', text: d(getValueForFlightDayFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.departAirport.city.utcOffsetMin), 'day') },
+          { ctrlKey: [...CtrlKey, 'Ticket', 'ReturnFlight', 'Details', 'Duration'], caption: getI18nResName3('ticket', 'details', 'duration'), icon: 'timer', text: t(getI18nResName2('searchFlights', 'flightDuration'), getValueForFlightDurationFormatting((offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.departTimeUtc, (offer.value as EntityDataAttrsOnly<IFlightOffer>).arriveFlight!.arriveTimeUtc)) },
+          { ctrlKey: [...CtrlKey, 'Ticket', 'ReturnFlight', 'Details', 'Gate'], caption: getI18nResName3('ticket', 'details', 'gate'), icon: 'door', text: 'A12' },
+          { ctrlKey: [...CtrlKey, 'Ticket', 'ReturnFlight', 'Details', 'Seat'], caption: getI18nResName3('ticket', 'details', 'seat'), icon: 'seat', text: '128' }
         ])
       },
       titleOrGfx: ({
-        ctrlKey: `${CtrlKey}-TicketReturnFlight-Details-FlightGfx`,
+        ctrlKey: [...CtrlKey, 'Ticket', 'ReturnFlight', 'Details', 'FlightGfx'],
         userName: userName.value!
       } as IBookingTicketFlightGfxProps),
       offerKind: 'flights'
@@ -225,7 +226,7 @@ if (import.meta.server) {
     const theme = bookingOgImageQueryInfo?.theme ?? DefaultTheme;
     const isSecondPage = bookingOgImageQueryInfo?.isSecondPage === '1';
 
-    logger.debug(`(BookingDetails) internal booking ticket og image request using theme=${theme}, isSecondPage=${isSecondPage}, bookingId=${bookingId}`);
+    logger.debug('internal booking ticket og image request using', { theme, isSecondPage, bookingId });
     useOgImage({
       name: 'OgBookingTicket',
       props: {
@@ -306,9 +307,9 @@ if (import.meta.server) {
 
 onMounted(async () => {
   if (offerBookingStore) {
-    logger.debug(`(BookingDetails) starting status watcher, bookingId=${bookingId}`);
+    logger.debug('starting status watcher', bookingId);
     watch(() => offerBookingStore!.status, () => {
-      logger.debug(`(BookingDetails) status changed, bookingId=${bookingId}, status=${offerBookingStore!.status}`);
+      logger.debug('status changed', { bookingId, status: offerBookingStore!.status });
       if (offerBookingStore!.status === 'error') {
         isError.value = true;
       }
@@ -320,7 +321,7 @@ onMounted(async () => {
   }
 
   watch(locale, () => {
-    logger.debug(`(BookingDetails) locale changed, updating title, bookingId=${bookingId}, status=${offerBookingStore!.status}`);
+    logger.debug('locale changed, updating title', { bookingId, status: offerBookingStore!.status });
     updatePageTitle();
   });
 
@@ -329,9 +330,9 @@ onMounted(async () => {
 
 
 async function onDownloadBtnClick (): Promise<void> {
-  logger.debug(`(BookingDetails) download btn handler, bookingId=${bookingId}`);
+  logger.debug('download btn handler', bookingId);
   if (!offerBookingStore || !(offerDataAvailable.value && offerBookingStore.booking && offer?.value)) {
-    logger.warn(`(BookingDetails) cannot download document, data is not initialized, bookingId=${bookingId}`);
+    logger.warn('cannot download document, data is not initialized', undefined, bookingId);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected error', 'error-stub');
   }  
 
@@ -346,7 +347,7 @@ async function onDownloadBtnClick (): Promise<void> {
       <ErrorHelm :is-error="isError" class="booking-details-error-helm">
         <OfferDetailsBreadcrumbs
           v-if="!isDownloadFromElectron"
-          :ctrl-key="`${CtrlKey}-Breadcrumbs`"
+          :ctrl-key="[...CtrlKey, 'Breadcrumbs']"
           :offer-kind="offer?.kind"
           :city="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.departAirport.city : (offer as IStayOfferDetails).stay.city) : undefined"
           :place-name="offer ? (offer.kind === 'flights' ? (offer as IFlightOffer).departFlight.departAirport.name : (offer as IStayOfferDetails).stay.name) : undefined"
@@ -367,7 +368,7 @@ async function onDownloadBtnClick (): Promise<void> {
           @btn-click="onDownloadBtnClick"
         />
         <BookingTicket
-          :ctrl-key="`${CtrlKey}-Ticket`"
+          :ctrl-key="[...CtrlKey, 'Ticket']"
           :general-info="ticketProps?.generalInfo"
           :dates="ticketProps?.dates"
           :offer-kind="ticketProps?.offerKind"
@@ -377,7 +378,7 @@ async function onDownloadBtnClick (): Promise<void> {
         />
         <BookingTicket
           v-if="ticketReturnFlightProps"
-          :ctrl-key="`${CtrlKey}-TicketReturnFlight`"
+          :ctrl-key="[...CtrlKey, 'Ticket', 'ReturnFlight']"
           :general-info="ticketReturnFlightProps?.generalInfo"
           :dates="ticketReturnFlightProps?.dates"
           :offer-kind="ticketReturnFlightProps?.offerKind"
@@ -385,11 +386,11 @@ async function onDownloadBtnClick (): Promise<void> {
           :title-or-gfx="ticketReturnFlightProps?.titleOrGfx"
           class="mt-xs-5 mt-s-6"
         />
-        <TermsOfUse :ctrl-key="`${CtrlKey}-TermsOfUse`" />
+        <TermsOfUse :ctrl-key="[...CtrlKey, 'TermsOfUse']" />
       </ErrorHelm>
     </div>
     <template #fallback>
-      <ComponentWaitingIndicator ctrl-key="BookingPageClientFallback" class="my-xs-5"/>
+      <ComponentWaitingIndicator :ctrl-key="['Page', 'BookingDetails', 'ClientFallback']" class="my-xs-5"/>
     </template>
   </ClientOnly>
 </template>

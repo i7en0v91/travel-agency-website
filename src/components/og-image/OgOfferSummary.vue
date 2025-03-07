@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { AppExceptionCodeEnum, AppException, getI18nResName2, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, type Locale, DefaultLocale, getLocalizeableValue, getValueForFlightDayFormatting, type ImageCategory, type ILocalizableValue, type ICity, type EntityDataAttrsOnly, type IImageEntitySrc, type OfferKind } from '@golobe-demo/shared';
 import { ApiEndpointImage } from './../../server/api-definitions';
 import { withQuery } from 'ufo';
@@ -24,19 +25,19 @@ const { d, locale } = useI18n();
 const requestLocale = useRequestEvent()?.context.ogImageContext?.locale ?? DefaultLocale;
 locale.value = requestLocale;
 
-const logger = getCommonServices().getLogger();
-logger.verbose('(OgOfferSummary) component setup', image);
+const logger = getCommonServices().getLogger().addContextProps({ component: 'OgOfferSummary' });
+logger.verbose('component setup');
 
 const dateStr = kind === 'flights' ? d(getValueForFlightDayFormatting(new Date(dateUnixUtc), utcOffsetMin!), 'day') : d(new Date(dateUnixUtc), 'day');
 
-let imageSize: Awaited<ReturnType<ReturnType<typeof useSystemConfigurationStore>['getImageSrcSize']>>;
+const systemConfigurationStore = useSystemConfigurationStore();
 try {
-  const systemConfigurationStore = useSystemConfigurationStore();
-  imageSize = await systemConfigurationStore.getImageSrcSize(image.category);
+  await systemConfigurationStore.loadImageCategories();
 } catch (err: any) {
-  logger.warn('(OgOfferSummary) failed to detect image category size', err, image);
+  logger.warn('failed to detect image category size', err, image);
   throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to render offer summary image', 'error-page');
 }
+const imageSize = systemConfigurationStore.imageCategories.find(x => x.kind === image.category)!;
 
 const { enabled } = usePreviewState();
 const imgUrl = withQuery(`/${ApiEndpointImage}`, { 
@@ -46,7 +47,7 @@ const imgUrl = withQuery(`/${ApiEndpointImage}`, {
 });
 
 function onError (err: any) {
-  logger.warn('(OgOfferSummary) render exception', err);
+  logger.warn('render exception', err);
   throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to render offer summary image', 'error-page');
 }
 

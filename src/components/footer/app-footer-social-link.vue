@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import type { I18nResName } from '@golobe-demo/shared';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   icon: string,
   url: string,
   ariaLabelResName: I18nResName

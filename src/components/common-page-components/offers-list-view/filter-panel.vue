@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ArbitraryControlElementMarker, type ControlKey } from './../../../helpers/components';
 import { getI18nResName3, type OfferKind } from '@golobe-demo/shared';
 import type { ISearchOffersChecklistFilterProps, ISearchOffersRangeFilterProps } from './../../../types';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
@@ -13,7 +14,7 @@ import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   offersKind: OfferKind
 }
 const { ctrlKey, offersKind } = defineProps<IProps>();
@@ -21,7 +22,7 @@ const { ctrlKey, offersKind } = defineProps<IProps>();
 const searchOffersStoreAccessor = useSearchOffersStore();
 const searchOffersStore = await searchOffersStoreAccessor.getInstance(offersKind, true, true);
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'FilterPanel' });
 
 const isError = ref(false);
 const isCollapsed = ref(false);
@@ -34,15 +35,15 @@ const filters = reactive([] as {
 const searchResultsEmpty = computed(() => (searchOffersStore?.viewState.displayOptions.totalCount ?? 0) === 0);
 
 function refreshFilterParams () {
-  logger.debug(`(FilterPanel) refershing filter params, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.debug('refershing filter params', { ctrlKey, type: offersKind });
   if (!searchOffersStore || !searchOffersStore.viewState.currentSearchParams.filters) {
-    logger.debug(`(FilterPanel) filter params wont refresh, not initialized, ctrlKey=${ctrlKey}, type=${offersKind}`);
+    logger.debug('filter params wont refresh, not initialized', { ctrlKey, type: offersKind });
     return;
   }
 
   const filtersOrdered = orderBy(searchOffersStore.viewState.currentSearchParams.filters, ['displayOrder'], ['asc']);
   if (filters.length === 0) {
-    logger.verbose(`(FilterPanel) initializing filters list, ctrlKey=${ctrlKey}, type=${offersKind}, count=${filtersOrdered.length}`);
+    logger.verbose('initializing filters list', { ctrlKey, type: offersKind, count: filtersOrdered.length });
     for (let i = 0; i < filtersOrdered.length; i++) {
       const filterParams = filtersOrdered[i];
       if (filterParams.type === 'checklist') {
@@ -62,21 +63,21 @@ function refreshFilterParams () {
         throw new Error('unknown filter');
       }
     }
-    logger.verbose(`(FilterPanel) filters list initialized, ctrlKey=${ctrlKey}, type=${offersKind}, count=${filtersOrdered.length}`);
+    logger.verbose('filters list initialized', { ctrlKey, type: offersKind, count: filtersOrdered.length });
   } else {
     for (let i = 0; i < filtersOrdered.length; i++) {
       filters[i].params = filtersOrdered[i];
     }
   }
   setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-  logger.debug(`(FilterPanel) filter params refreshed, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.debug('filter params refreshed', { ctrlKey, type: offersKind });
 }
 if (import.meta.server) {
   refreshFilterParams();
 }
 
 onMounted(() => {
-  logger.verbose(`(FilterPanel) mounted, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.verbose('mounted', { ctrlKey, type: offersKind });
   watch(() => searchOffersStore?.viewState.currentSearchParams.filters, () => {
     refreshFilterParams();
   });
@@ -88,9 +89,9 @@ onMounted(() => {
 });
 
 function refetchIfNotLatestFilterValues () {
-  logger.debug(`(FilterPanel) checking for refetch if not latest filter values were used, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.debug('checking for refetch if not latest filter values were used', { ctrlKey, type: offersKind });
   if (searchOffersStore.resultState.status !== 'fetched' && searchOffersStore.resultState.status !== 'error') {
-    logger.debug(`(FilterPanel) checking for refetch skipped, as fetch is in progress, ctrlKey=${ctrlKey}, type=${offersKind}`);
+    logger.debug('checking for refetch skipped, as fetch is in progress', { ctrlKey, type: offersKind });
     return;
   }
 
@@ -100,50 +101,50 @@ function refetchIfNotLatestFilterValues () {
     const fetchUsedValue = searchOffersStore.resultState.usedSearchParams!.filters!.find(f => f.filterId === filterId)!.currentValue;
     const lastUserValue = searchOffersStore.viewState.currentSearchParams.filters!.find(f => f.filterId === filterId)!.currentValue;
     if (!isEqual(fetchUsedValue, lastUserValue)) {
-      logger.verbose(`(FilterPanel) filter values have been changed by user during fetch, ctrlKey=${ctrlKey}, type=${offersKind}, filterId=${filterId}, fetchValue=${JSON.stringify(fetchUsedValue)}, lastUserValue=${JSON.stringify(lastUserValue)}`);
+      logger.verbose('filter values have been changed by user during fetch', { ctrlKey, type: offersKind, filterId, fetchValue: fetchUsedValue, lastUserValue });
       filtersChanged = true;
     }
   }
 
   if (!filtersChanged) {
-    logger.debug(`(FilterPanel) checked for refetch - not needed, ctrlKey=${ctrlKey}, type=${offersKind}`);
+    logger.debug('checked for refetch - not needed', { ctrlKey, type: offersKind });
     return;
   }
   setTimeout(() => searchOffersStore.fetchData('filter-refetch'), 0);
 }
 
 function applyFiltersAndRefetchData () {
-  logger.debug(`(FilterPanel) applying filters, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.debug('applying filters', { ctrlKey, type: offersKind });
   for (let i = 0; i < filters.length; i++) {
     const inputState = filters[i];
     const storeState = searchOffersStore.viewState.currentSearchParams.filters!.find(f => f.filterId === inputState.params.filterId)!;
-    logger.debug(`(FilterPanel) setting filter value in store, ctrlKey=${ctrlKey}, filterId=${inputState.params.filterId}, value=${JSON.stringify(inputState.value)}`);
+    logger.debug('setting filter value in store', { ctrlKey, filterId: inputState.params.filterId, value: inputState.value });
     storeState.currentValue = inputState.value;
   }
   if (searchOffersStore.resultState.status !== 'fetched' && searchOffersStore.resultState.status !== 'error') {
-    logger.debug(`(FilterPanel) fetching data was postponed as fetch is in progress, ctrlKey=${ctrlKey}, type=${offersKind}`);
+    logger.debug('fetching data was postponed as fetch is in progress', { ctrlKey, type: offersKind });
     return;
   }
-  logger.debug(`(FilterPanel) fetching data with applied filters, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.debug('fetching data with applied filters', { ctrlKey, type: offersKind });
   setTimeout(() => searchOffersStore.fetchData('filter-refetch'), 0);
 }
 
 function onApplyBtnClick () {
-  logger.debug(`(FilterPanel) apply btn click, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.debug('apply btn click', { ctrlKey, type: offersKind });
   applyFiltersAndRefetchData();
 }
 
 function onResetBtnClick () {
-  logger.debug(`(FilterPanel) reset btn click, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.debug('reset btn click', { ctrlKey, type: offersKind });
   for (let i = 0; i < filters.length; i++) {
     const filter = searchOffersStore.viewState.currentSearchParams.filters!.find(f => f.filterId === filters[i].params.filterId)!;
     if (filter.type === 'range') {
       const rangeFilter = filter as ISearchOffersRangeFilterProps;
-      logger.debug(`(FilterPanel) resetting range filter value in store, ctrlKey=${ctrlKey}, filterId=${filter.filterId}, value=${JSON.stringify(rangeFilter.valueRange)}`);
+      logger.debug('resetting range filter value in store', { ctrlKey, filterId: filter.filterId, value: rangeFilter.valueRange });
       rangeFilter.currentValue = rangeFilter.valueRange;
     } else if (filter.type === 'checklist') {
       const checklistFilter = filter as ISearchOffersChecklistFilterProps;
-      logger.debug(`(FilterPanel) resetting checklist filter value in store, ctrlKey=${ctrlKey}, filterId=${filter.filterId}`);
+      logger.debug('resetting checklist filter value in store', { ctrlKey, filterId: filter.filterId });
       checklistFilter.currentValue = [];
     } else {
       throw new Error('unknown filter');
@@ -160,7 +161,7 @@ function onResetBtnClick () {
     <ErrorHelm v-model:is-error="isError">
       <ClientOnly>
         <!-- TODO: found SSR-aware UI components & remove ClientOnly -->
-        <CollapsableSection v-model:collapsed="isCollapsed" :ctrl-key="`${ctrlKey}-FilterPanelSection`" :collapse-enabled="true" :tabbable-group-id="SearchOffersFilterTabGroupId">
+        <CollapsableSection v-model:collapsed="isCollapsed" :ctrl-key="[...ctrlKey, 'CollapsableSection']" collapseable persistent :tabbable-group-id="SearchOffersFilterTabGroupId">
           <template #head>
             <h2 class="filter-panel-header">
               {{ $t(getI18nResName3('searchOffers', 'filters', 'panelHeader')) }}
@@ -180,13 +181,13 @@ function onResetBtnClick () {
                 <div class="filter-panel-content mx-xs-2 mx-m-0">
                   <FilterSection
                     v-for="(filter) in filters"
-                    :key="`${ctrlKey}-FilterSection-${filter.params.filterId}`"
-                    :ctrl-key="`${ctrlKey}-FilterSection-${filter.params.filterId}`"
+                    :key="`${toShortForm(ctrlKey)}FilterSection${filter.params.filterId}`"
+                    :ctrl-key="[...ctrlKey, filter.params.filterId as ArbitraryControlElementMarker]"
                     :caption-res-name="filter.params.captionResName"
                     :show-no-results-stub="searchResultsEmpty"
                   >
-                    <RangeFilter v-if="filter.params.type === 'range'" v-model:value="filter.value" :ctrl-key="`${ctrlKey}-${filter.params.filterId}`" :filter-params="filter.params" />
-                    <ChecklistFilter v-else-if="filter.params.type === 'checklist'" v-model:value="filter.value" :ctrl-key="`${ctrlKey}-${filter.params.filterId}`" :filter-params="filter.params" :max-collapsed-list-items-count="(filter.params.display === 'list' && (filter.params.variants?.length ?? 0) > 5) ? 4 : undefined" />
+                    <RangeFilter v-if="filter.params.type === 'range'" v-model:value="filter.value" :ctrl-key="[...ctrlKey, 'Filter', filter.params.filterId as ArbitraryControlElementMarker]" :filter-params="filter.params" />
+                    <ChecklistFilter v-else-if="filter.params.type === 'checklist'" v-model:value="filter.value" :ctrl-key="[...ctrlKey, 'Filter', filter.params.filterId as ArbitraryControlElementMarker]" :filter-params="filter.params" :max-collapsed-list-items-count="(filter.params.display === 'list' && (filter.params.variants?.length ?? 0) > 5) ? 4 : undefined" />
                   </FilterSection>
                 </div>
               </PerfectScrollbar>
@@ -194,7 +195,7 @@ function onResetBtnClick () {
                 <SimpleButton
                   kind="accent"
                   class="apply-filter-btn mt-xs-2 mt-s-3"
-                  :ctrl-key="`${ctrlKey}-applyFilterBtn`"
+                  :ctrl-key="[...ctrlKey, 'Btn', 'Apply']"
                   :tabbable-group-id="SearchOffersFilterTabGroupId"
                   icon="magnifier"
                   :label-res-name="getI18nResName3('searchFlights', 'filters', 'applyBtn')"
@@ -203,7 +204,7 @@ function onResetBtnClick () {
                 <SimpleButton
                   kind="default"
                   class="reset-filter-btn mt-xs-2 mt-s-3 px-xs-2"
-                  :ctrl-key="`${ctrlKey}-resetFilterBtn`"
+                  :ctrl-key="[...ctrlKey, 'Btn', 'Reset']"
                   :tabbable-group-id="SearchOffersFilterTabGroupId"
                   icon="cross"
                   :label-res-name="getI18nResName3('searchFlights', 'filters', 'resetBtn')"
@@ -214,7 +215,7 @@ function onResetBtnClick () {
           </template>
         </CollapsableSection>
         <template #fallback>
-          <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-FilterPanelClientFallback`" class="mb-xs-2 mb-m-5" />
+          <ComponentWaitingIndicator :ctrl-key="[...ctrlKey, 'ClientFallback']" class="mb-xs-2 mb-m-5" />
         </template>
       </ClientOnly>
     </ErrorHelm>

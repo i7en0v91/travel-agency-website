@@ -17,12 +17,12 @@ function sortResultByRequestOrder <TItem extends IEntityCacheItem>(items: TItem[
 }
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
   const entityCacheLogic = getServerServices()!.getEntityCacheLogic();
   const query = getQuery(event);
 
   if (!query) {
-    logger.warn(`(api:entity-cache) entity cache query is empty, url=${event.node.req.url}`, undefined, query);
+    logger.warn('entity cache query is empty', undefined, { url: event.node.req.url });
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
       'entity cache query parameters were not specified',
@@ -32,13 +32,13 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
 
   const validationError = await validateObject(omit(query, QueryPagePreviewModeParam), EntityCacheQuerySchema);
   if (validationError) {
-    logger.warn(`(api:entity-cache) entity cache query does not match schema, url=${event.node.req.url}, msg=${validationError.message}, issues=${validationError.errors?.join('; ') ?? '[empty]'}]`, undefined, query);
+    logger.warn('entity cache query does not match schema', undefined, { ...(query), ...{ url: event.node.req.url, msg: validationError.message } });
     throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'entity cache query arguments has invalid format', 'error-stub');
   }
 
   const requestParams = EntityCacheQuerySchema.cast(query);
   if (!requestParams.ids && !requestParams.slugs) {
-    logger.warn(`(api:entity-cache) entity cache query does not contain neither ID nor slug, url=${event.node.req.url}`, undefined, query);
+    logger.warn('entity cache query does not contain neither ID nor slug', undefined, { ...(query), ...{ url: event.node.req.url } });
     throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'entity cache query arguments has invalid format', 'error-stub');
   }
   requestParams.type = <CacheEntityType>startCase(requestParams.type);
@@ -52,7 +52,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     items = sortResultByRequestOrder(items, castArray(requestParams.ids), undefined);
   }
 
-  let httpCacheMaxAge = ((AppConfig.caching.clientRuntime.expirationsSeconds as any)[requestParams.type.toLowerCase()] as number) ?? AppConfig.caching.clientRuntime.expirationsSeconds.default;
+  let httpCacheMaxAge = ((AppConfig.caching.entities.expiration as any)[requestParams.type.toLowerCase()] as number) ?? AppConfig.caching.entities.expiration.default;
   httpCacheMaxAge = Math.round(httpCacheMaxAge * 2 / 3); // a bit lower cache time on server to prevent potentially unpredicted behavior at expiration boundary time
   handleCacheHeaders(event, !event.context.preview.mode ? { maxAge: httpCacheMaxAge} : { cacheControls: ['no-cache'] });
   setHeader(event, 'content-type', 'application/json');

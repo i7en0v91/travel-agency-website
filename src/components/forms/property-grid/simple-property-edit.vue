@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { maskLog, SecretValueMask, isPasswordSecure, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import type { SimplePropertyType, PropertyGridControlButtonType } from './../../../types';
@@ -11,7 +12,7 @@ import TextBox from './../../forms/text-box.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   validateAndSave: (value?: string) => Promise<I18nResName | 'success' | 'cancel'>,
   captionResName?: I18nResName,
   type: SimplePropertyType,
@@ -41,13 +42,15 @@ const props = withDefaults(defineProps<IProps>(), {
 
 const EmptyValuePlaceholder = '-';
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'SimplePropertyEdit' });
 
 const rootComponent = useTemplateRef('root-component');
 const isEditMode = ref(false);
 const customValidationErrMsgResName = ref<string | undefined>();
 const editValue = ref(props.value);
 
+const nuxtApp = useNuxtApp();
+const userNotificationStore = useUserNotificationStore();
 const { t } = useI18n();
 const { createI18nMessage } = validators;
 const withI18nMessage = createI18nMessage({ t });
@@ -78,13 +81,13 @@ function maskLogValue (value?: string) {
 }
 
 async function performValidateAndSave (value?: string) : Promise<boolean> {
-  logger.verbose(`(SimplePropertyEdit) validating and saving value, ctrlKey=${props.ctrlKey}, value=${maskLogValue(value)}`);
+  logger.verbose('validating and saving value', { ctrlKey: props.ctrlKey, value: maskLogValue(value) });
   customValidationErrMsgResName.value = undefined;
 
   v$.value.$touch();
   if (!v$.value.$error) {
     if ((value ?? '') === (props.value ?? '')) {
-      logger.debug(`(SimplePropertyEdit) value has not changed, ctrlKey=${props.ctrlKey}, newValue=${maskLogValue(editValue.value)}`);
+      logger.debug('value has not changed', { ctrlKey: props.ctrlKey, newValue: maskLogValue(editValue.value) });
       exitEditModeInternal();
       return false;
     }
@@ -97,18 +100,18 @@ async function performValidateAndSave (value?: string) : Promise<boolean> {
 
     if (!customValidationErrMsgResName.value) {
       try {
-        logger.verbose(`(SimplePropertyEdit) calling client save handler, ctrlKey=${props.ctrlKey}, value=${maskLogValue(value)}`);
+        logger.verbose('calling client save handler', { ctrlKey: props.ctrlKey, value: maskLogValue(value) });
         const validationResult = await props.validateAndSave(value);
         if (validationResult === 'cancel') {
-          logger.verbose(`(SimplePropertyEdit) client save handler cancelled, ctrlKey=${props.ctrlKey}, value=${maskLogValue(value)}`);
+          logger.verbose('client save handler cancelled', { ctrlKey: props.ctrlKey, value: maskLogValue(value) });
           return false;
         }
         customValidationErrMsgResName.value = validationResult === 'success' ? undefined : validationResult;
-        logger.verbose(`(SimplePropertyEdit) client save handler result, ctrlKey=${props.ctrlKey}, errMsgResName=${customValidationErrMsgResName.value}`);
+        logger.verbose('client save handler result', { ctrlKey: props.ctrlKey, errMsgResName: customValidationErrMsgResName.value });
       } catch (err: any) {
-        logger.warn(`(SimplePropertyEdit) client save handler failed, ctrlKey=${props.ctrlKey}, value=${maskLogValue(value)}`, err);
+        logger.warn('client save handler failed', err, { ctrlKey: props.ctrlKey, value: maskLogValue(value) });
         exitEditModeInternal();
-        defaultErrorHandler(err);
+        defaultErrorHandler(err, { nuxtApp, userNotificationStore });
         return false;
       }
     }
@@ -119,12 +122,12 @@ async function performValidateAndSave (value?: string) : Promise<boolean> {
   }
 
   const result = !v$.value.$error;
-  logger.verbose(`(SimplePropertyEdit) value validation result, ctrlKey=${props.ctrlKey}, value=${maskLogValue(value)}, result=${result}`);
+  logger.verbose('value validation result', { ctrlKey: props.ctrlKey, value: maskLogValue(value), result });
   return result;
 }
 
 async function onControlButtonClick (button: PropertyGridControlButtonType): Promise<void> {
-  logger.debug(`(SimplePropertyEdit) onControlButtonClick, ctrlKey=${props.ctrlKey}, button=${button}`);
+  logger.debug('onControlButtonClick', { ctrlKey: props.ctrlKey, button });
   switch (button) {
     case 'add':
     case 'change':
@@ -145,11 +148,11 @@ async function onControlButtonClick (button: PropertyGridControlButtonType): Pro
     case 'apply':
       if (props.autoTrim) {
         editValue.value = editValue.value?.trim();
-        logger.debug(`(SimplePropertyEdit) value trimmed, ctrlKey=${props.ctrlKey}, newValue=${maskLogValue(editValue.value)}`);
+        logger.debug('value trimmed', { ctrlKey: props.ctrlKey, newValue: maskLogValue(editValue.value) });
       }
 
       if (await performValidateAndSave(editValue.value)) {
-        logger.verbose(`(SimplePropertyEdit) value updated, ctrlKey=${props.ctrlKey}, value=${maskLogValue(editValue.value)}, prev=${props.value}`);
+        logger.verbose('value updated', { ctrlKey: props.ctrlKey, value: maskLogValue(editValue.value), prev: props.value });
         $emit('update:value', editValue.value);
         isEditMode.value = false;
         setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
@@ -165,7 +168,7 @@ async function onControlButtonClick (button: PropertyGridControlButtonType): Pro
 
 function exitEditMode () {
   if (isEditMode.value) {
-    logger.debug(`(SimplePropertyEdit) exiting edit mode, ctrlKey=${props.ctrlKey}`);
+    logger.debug('exiting edit mode', { ctrlKey: props.ctrlKey });
     editValue.value = props.value;
     isEditMode.value = false;
     v$.value.$reset();
@@ -179,7 +182,7 @@ function exitEditModeInternal () {
   }
 }
 
-const $emit = defineEmits<{(event: 'update:value', value: string | undefined): void, (event: 'enterEditMode', ctrlKey: string): void,
+const $emit = defineEmits<{(event: 'update:value', value: string | undefined): void, (event: 'enterEditMode', ctrlKey: ControlKey): void,
 (event: 'buttonClick', button: PropertyGridControlButtonType): void}>();
 
 defineExpose({
@@ -192,7 +195,7 @@ defineExpose({
   <PropertyGridRow
     ref="root-component"
     class="simple-property-edit"
-    :ctrl-key="`${props.ctrlKey}-row`"
+    :ctrl-key="[...ctrlKey, 'Row']"
     :first-control-section-buttons="firstSectionButtons"
     :last-control-section-buttons="lastSectionButtons"
     @button-click="onControlButtonClick"
@@ -201,7 +204,7 @@ defineExpose({
       <TextBox
         v-if="isEditMode"
         v-model:model-value="editValue"
-        :ctrl-key="`${props.ctrlKey}-input`"
+        :ctrl-key="[...ctrlKey, 'Input']"
         class="simple-property-input mr-xs-2 mr-s-4"
         :type="type"
         :placeholder-res-name="props.placeholderResName"

@@ -8,16 +8,16 @@ import type { H3Event } from 'h3';
 import { Decimal } from 'decimal.js';
 import { destr } from 'destr';
 import { getServerSession } from '#auth';
-import { getServerServices } from '../../../../helpers/service-accessors';
+import { getServerServices, getCommonServices } from '../../../../helpers/service-accessors';
 
 function performAdditionalDtoValidation (dto: ISearchStayOffersParamsDto, event : H3Event, logger: IAppLogger) {
   if (dto.price?.to && dto.price?.from && dto.price.from > dto.price.to) {
-    logger.warn(`(api:stay-search) search stay query price range is incorrect, url=${event.node.req.url}`, undefined, dto);
+    logger.warn('search stay query price range is incorrect', undefined, { ...(dto), ...{ url: event.node.req.url } });
     throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'search query arguments are incorrect', 'error-stub');
   }
 
   if (dto.checkIn && dto.checkOut && dto.checkIn.getTime() > dto.checkOut.getTime()) {
-    logger.warn(`(api:stay-search) search stay query date range is incorrect, url=${event.node.req.url}`, undefined, dto);
+    logger.warn('search stay query date range is incorrect', undefined, { ...(dto), ...{ url: event.node.req.url } });
     throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'search query arguments are incorrect', 'error-stub');
   }
 }
@@ -40,34 +40,34 @@ async function addCityToSearchHistory (citySlug: string | undefined, event: H3Ev
   const cityId = (await citiesLogic.getPopularCities(event.context.preview.mode)).find(x => x.slug === citySlug)?.id;
   if (cityId) {
     try {
-      logger.verbose(`(api:stay-search) adding popular city to search history, citySlug=${citySlug}, id=${cityId}`);
+      logger.verbose('adding popular city to search history', { citySlug, id: cityId });
 
       let searchHistory = destr<IStaySearchHistory | undefined>(await getUserSessionValue(event, SessionStaySearchHistory));
       if (!searchHistory) {
         searchHistory = { popularCityIds: [] };
       }
       if (searchHistory.popularCityIds.includes(cityId)) {
-        logger.debug(`(api:stay-search) wont add city to search history as it is already there, citySlug=${citySlug}, id=${cityId}`);
+        logger.debug('wont add city to search history as it is already there', { citySlug, id: cityId });
         return;
       }
       searchHistory.popularCityIds = [cityId, ...searchHistory.popularCityIds];
       if (searchHistory.popularCityIds.length > MaxSearchHistorySize) {
         searchHistory.popularCityIds.pop();
       }
-      logger.debug(`(api:stay-search) city search history updated, result=${JSON.stringify(searchHistory.popularCityIds)}`);
+      logger.debug('city search history updated', { result: searchHistory.popularCityIds });
       await setUserSessionValue(event, SessionStaySearchHistory, JSON.stringify(searchHistory));
     } catch (err: any) {
-      logger.warn(`(api:stay-search) failed to add popular city to search history, citySlug=${citySlug}, id=${cityId}`, err);
+      logger.warn('failed to add popular city to search history', err, { citySlug, id: cityId });
     }
   }
 }
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const serverServices = getServerServices()!;
-  const logger = serverServices.getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
   const staysLogic = serverServices.getStaysLogic();
 
-  logger.debug('(api:stay-search) parsing stay offers search query from HTTP body');
+  logger.debug('parsing stay offers search query from HTTP body');
   const searchParamsDto = SearchStayOffersParamsDtoSchema.cast(await readBody(event));
   performAdditionalDtoValidation(searchParamsDto, event, logger);
 

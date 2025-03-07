@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { AppPage, getPagePath, type Locale, getLocalizeableValue, getScoreClassResName, extractAirportCode, getValueForFlightDurationFormatting, getValueForTimeOfDayFormatting, getI18nResName2, getI18nResName3, type EntityDataAttrsOnly, type IFlightOffer, type OfferKind, ImageCategory, isElectronBuild } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { useUserFavouritesStore } from './../../../stores/user-favourites-store';
@@ -8,7 +9,7 @@ import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   offer: EntityDataAttrsOnly<IFlightOffer>
 }
 const { ctrlKey, offer } = defineProps<IProps>();
@@ -16,9 +17,10 @@ const { ctrlKey, offer } = defineProps<IProps>();
 const { status } = useAuth();
 const { locale, t } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
+const userNotificationStore = useUserNotificationStore();
 const { requestUserAction } = usePreviewState();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'SearchFlightsResultCard' });
 const userFavouritesStore = useUserFavouritesStore();
 
 const isError = ref(false);
@@ -33,18 +35,18 @@ const favouriteStatusWatcher = useOfferFavouriteStatus(offer.id, offer.kind);
 
 async function toggleFavourite (): Promise<void> {
   const offerId = offer.id;
-  logger.verbose(`(SearchFlightsResultCard) toggling favourite, offerId=${offerId}, current=${favouriteStatusWatcher.isFavourite}`);
-  if(!await requestUserAction()) {
-    logger.verbose(`(SearchFlightsResultCard) favourite hasn't been toggled - not allowed in preview mode, offerId=${offerId}`);
+  logger.verbose('toggling favourite', { offerId, current: favouriteStatusWatcher.isFavourite });
+  if(!await requestUserAction(userNotificationStore)) {
+    logger.verbose('favourite hasn', offerId);
     return;  
   }
   const store = await userFavouritesStore.getInstance();
   const result = await store.toggleFavourite(offerId, 'flights' as OfferKind, offer);
-  logger.verbose(`(SearchFlightsResultCard) favourite toggled, offerId=${offerId}, isFavourite=${result}`);
+  logger.verbose('favourite toggled', { offerId, isFavourite: result });
 }
 
 async function favouriteBtnClick (): Promise<void> {
-  logger.debug(`(SearchFlightsResultCard) favourite button clicked, ctrlKey=${ctrlKey}, current=${favouriteStatusWatcher.isFavourite}`);
+  logger.debug('favourite button clicked', { ctrlKey, current: favouriteStatusWatcher.isFavourite });
   await toggleFavourite();
 }
 
@@ -56,15 +58,15 @@ async function favouriteBtnClick (): Promise<void> {
       <div class="search-flights-result-card-grid">
         <div class="search-flights-card-company-logo">
           <StaticImage
-            :ctrl-key="`${ctrlKey}-CompanyLogo`"
-            :entity-src="offer.departFlight.airlineCompany.logoImage"
+            :ctrl-key="[...ctrlKey, 'CompanyLogo']"
+            :src="offer.departFlight.airlineCompany.logoImage"
             :category="ImageCategory.AirlineLogo"
             sizes="xs:60vw sm:40vw md:40vw lg:30vw xl:30vw"
             class="airline-company-logo"
-            img-class="airline-company-logo-img"
-            :show-stub="false"
+            :ui="{ img: 'airline-company-logo-img' }"
+            :stub="false"
             :request-extra-display-options="true"
-            :alt-res-name="getI18nResName2('searchFlights', 'airlineCompanyLogoAlt')"
+            :alt="{ resName: getI18nResName2('searchFlights', 'airlineCompanyLogoAlt') }"
             :title="airlineCompanyLogoTooltip"
           />
         </div>
@@ -132,7 +134,7 @@ async function favouriteBtnClick (): Promise<void> {
             <SimpleButton
               v-if="status === 'authenticated'"
               class="search-flights-card-btn-like"
-              :ctrl-key="`${ctrlKey}-LikeBtn`"
+              :ctrl-key="[...ctrlKey, 'Btn', 'Like']"
               :icon="`${favouriteStatusWatcher.isFavourite ? 'heart' : 'like'}`"
               kind="support"
               @click="favouriteBtnClick"

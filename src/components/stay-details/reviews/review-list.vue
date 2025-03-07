@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey, type ArbitraryControlElementMarker } from './../../../helpers/components';
 import { type EntityId, ImageCategory, type Locale, getLocalizeableValue, getScoreClassResName, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices, isPrefersReducedMotionEnabled } from './../../../helpers/dom';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
@@ -13,17 +14,18 @@ import { getCommonServices } from '../../../helpers/service-accessors';
 const { locale } = useI18n();
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   stayId: EntityId
 }
 
 const ReviewsPerSlidePage = 5;
 
 const { status } = useAuth();
+const userNotificationStore = useUserNotificationStore();
 const { requestUserAction } = usePreviewState();
 
 const { ctrlKey, stayId } = defineProps<IProps>();
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ReviewList' });
 
 const swiper = shallowRef<InstanceType<typeof Swiper>>();
 const isSwiperReady = ref(false);
@@ -33,22 +35,22 @@ const pagingState = ref<{ of: number, total: number } | undefined>();
 const slideAnimationEnabled = import.meta.client && !isPrefersReducedMotionEnabled();
 
 function refreshPagingState () {
-  logger.debug(`(ReviewList) refreshing paging state, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  logger.debug('refreshing paging state', { ctrlKey, stayId });
   const swiperInstance = swiper.value;
   if (!isSwiperReady.value || !swiperInstance) {
-    logger.debug(`(ReviewList) refreshing paging state - swiper not initialized, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+    logger.debug('refreshing paging state - swiper not initialized', { ctrlKey, stayId });
     return;
   }
 
   const of = swiperInstance.realIndex + 1;
   const total = Math.ceil(swiperInstance.slides.length / ReviewsPerSlidePage);
 
-  logger.debug(`(ReviewList) refreshing paging state completed, ctrlKey=${ctrlKey}, stayId=${stayId}, of=${of}, total=${total}`);
+  logger.debug('refreshing paging state completed', { ctrlKey, stayId, of, total });
   pagingState.value = { of, total };
 }
 
 function rewindToTop () {
-  logger.debug(`(ReviewList) rewind to top, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  logger.debug('rewind to top', { ctrlKey, stayId });
   if (isSwiperReady.value && swiper.value) {
     swiper.value.slideTo(0);
     refreshPagingState();
@@ -83,7 +85,7 @@ async function refreshUserAccount (): Promise<void> {
     try {
       userAccount.value = await userAccountStore.getUserAccount();
     } catch (err: any) {
-      logger.warn(`(ReviewList) failed to initialize user account info, ctrlKey=${ctrlKey}, stayId=${stayId}`, err);
+      logger.warn('failed to initialize user account info', err, { ctrlKey, stayId });
       userAccount.value = undefined;
     }
   } else {
@@ -101,19 +103,19 @@ function isTestUserReview (review: IStayReviewItem): boolean {
 }
 
 function onEditUserReviewBtnClick () {
-  logger.verbose(`(ReviewList) edit review btn click handler, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  logger.verbose('edit review btn click handler', { ctrlKey, stayId });
   $emit('editBtnClick');
 }
 
 async function onDeleteUserReviewBtnClick (): Promise<void> {
-  logger.verbose(`(ReviewList) delete review btn click handler, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  logger.verbose('delete review btn click handler', { ctrlKey, stayId });
 
-  if(!await requestUserAction()) {
-    logger.verbose(`(ReviewList) delete review btn click handler hasn't been run - not allowed in preview mode, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  if(!await requestUserAction(userNotificationStore)) {
+    logger.verbose('delete review btn click handler hasn', { ctrlKey, stayId });
     return;
   }
 
-  const result = await confirmBox.confirm(`${ctrlKey}-UserReview-DeleteConfirm`, ['yes', 'no'], getI18nResName3('stayDetailsPage', 'reviews', 'confirmDelete'));
+  const result = await confirmBox.confirm([...ctrlKey, 'UserReview', 'Delete', 'ConfirmBox'], ['yes', 'no'], getI18nResName3('stayDetailsPage', 'reviews', 'confirmDelete'));
   if (result === 'yes') {
     const deletingReview = await reviewStore.getUserReview()!;
     await reviewStore.deleteReview();
@@ -127,27 +129,27 @@ function refreshTabIndices () {
 }
 
 function onSwiperInit () {
-  logger.debug(`(ReviewList) swiper initialized, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  logger.debug('swiper initialized', { ctrlKey, stayId });
   swiper.value = (document.querySelector('.stay-reviews-swiper') as any).swiper as Swiper;
   isSwiperReady.value = true;
   nextTick(refreshPagingState);
 }
 
 function onSwiperSlideChanged () {
-  logger.debug(`(ReviewList) swiper slide changed, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  logger.debug('swiper slide changed', { ctrlKey, stayId });
   refreshPagingState();
   refreshTabIndices();
 }
 
 function onNavNextBtnClick () {
-  logger.debug(`(ReviewList) nav next btn clicked, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  logger.debug('nav next btn clicked', { ctrlKey, stayId });
   if (isSwiperReady.value && swiper.value) {
     swiper.value.slideNext();
   }
 }
 
 function onNavPrevBtnClick () {
-  logger.debug(`(ReviewList) nav next btn clicked, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  logger.debug('nav prev btn clicked', { ctrlKey, stayId });
   if (isSwiperReady.value && swiper.value) {
     swiper.value.slidePrev();
   }
@@ -179,7 +181,7 @@ function onNavPrevBtnClick () {
       >
         <SwiperSlide
           v-for="(review) in reviewStore.items "
-          :key="`${ctrlKey}-Review-${review.id}`"
+          :key="`${toShortForm(ctrlKey)}-Review-${review.id}`"
           class="stay-reviews-list-item"
         >
           <hr class="stay-details-section-separator review-item-separator">
@@ -187,14 +189,14 @@ function onNavPrevBtnClick () {
             <div class="stay-reviews-card-avatar">
               <StaticImage
                 v-if="review.user === 'current' ? !!(userAccount?.avatar) : !!(review.user.avatar)"
-                :ctrl-key="`${ctrlKey}-ReviewItem${review.id}-Avatar`"
-                :show-stub="false"
+                :ctrl-key="[...ctrlKey, 'ReviewItem', review.id as ArbitraryControlElementMarker, 'Avatar', 'StaticImg']"
+                :stub="false"
                 class="stay-reviews-card-avatar"
-                img-class="stay-reviews-card-avatar-img"
-                :entity-src="review.user === 'current' ? userAccount?.avatar : review.user.avatar"
+                :ui="{ img: 'stay-reviews-card-avatar-img' }"
+                :src="review.user === 'current' ? userAccount?.avatar : review.user.avatar"
                 :category="ImageCategory.UserAvatar"
                 sizes="xs:30vw sm:20vw md:20vw lg:10vw xl:10vw"
-                :alt-res-name="getI18nResName3('stayDetailsPage', 'reviews', 'avatarImgAlt')"
+                :alt="{ resName: getI18nResName3('stayDetailsPage', 'reviews', 'avatarImgAlt') }"
               />
               <div v-else class="stay-reviews-card-avatar stay-reviews-card-avatar-default" />
             </div>
@@ -232,7 +234,7 @@ function onNavPrevBtnClick () {
               <div v-if="review.user === 'current' || review.user.id === userAccount?.userId" class="stay-reviews-card-control-buttons">
                 <SimpleButton
                   class="stay-reviews-card-btn review-btn-delete no-hidden-parent-tabulation-check"
-                  :ctrl-key="`${ctrlKey}-UserReview-DeleteBtn`"
+                  :ctrl-key="[...ctrlKey, 'UserReview', 'Btn', 'Delete']"
                   :aria-label-res-name="getI18nResName2('ariaLabels', 'btnDeleteUserReview')"
                   :title-res-name="getI18nResName2('ariaLabels', 'btnDeleteUserReview')"
                   icon="delete"
@@ -241,7 +243,7 @@ function onNavPrevBtnClick () {
                 />
                 <SimpleButton
                   class="stay-reviews-card-btn review-btn-edit no-hidden-parent-tabulation-check"
-                  :ctrl-key="`${ctrlKey}-UserReview-EditBtn`"
+                  :ctrl-key="[...ctrlKey, 'UserReview', 'Btn', 'Change']"
                   :aria-label-res-name="getI18nResName2('ariaLabels', 'btnEditUserReview')"
                   :title-res-name="getI18nResName2('ariaLabels', 'btnEditUserReview')"
                   icon="change"
@@ -258,7 +260,7 @@ function onNavPrevBtnClick () {
         <SimpleButton
           kind="support"
           class="reviews-list-nav-btn btn-prev"
-          :ctrl-key="`${ctrlKey}-NavPrev`"
+          :ctrl-key="[...ctrlKey, 'Paging', 'Btn', 'Prev']"
           icon="nav-prev"
           @click="onNavPrevBtnClick"
         />
@@ -268,7 +270,7 @@ function onNavPrevBtnClick () {
         <SimpleButton
           kind="support"
           class="reviews-list-nav-btn btn-next"
-          :ctrl-key="`${ctrlKey}-NavNext`"
+          :ctrl-key="[...ctrlKey, 'Paging', 'Btn', 'Next']"
           icon="nav-next"
           @click="onNavNextBtnClick"
         />
@@ -276,7 +278,11 @@ function onNavPrevBtnClick () {
       <div v-if="showNoReviewStub" class="reviews-list-noitems-stub my-xs-3 my-s-5 px-xs-3">
         {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'noReviews')) }}
       </div>
-      <ComponentWaitingIndicator v-if="(reviewStore.status !== 'error' && reviewStore.items === undefined) || !isSwiperReady" :ctrl-key="`${ctrlKey}-ReviewListWaiterFallback`" class="stay-reviews-waiting-indicator my-xs-5" />
+      <ComponentWaitingIndicator 
+        v-if="(reviewStore.status !== 'error' && reviewStore.items === undefined) || !isSwiperReady" 
+        :ctrl-key="[...ctrlKey, 'ResultItemsList', 'Waiter']" 
+        class="stay-reviews-waiting-indicator my-xs-5" 
+      />
     </ErrorHelm>
   </div>
 </template>

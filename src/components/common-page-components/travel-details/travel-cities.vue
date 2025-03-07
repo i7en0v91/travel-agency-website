@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../../helpers/components';
 import { AppConfig, getI18nResName2 } from '@golobe-demo/shared';
 import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../../../helpers/dom';
 import { type IPopularCityDto, ApiEndpointPopularCitiesList } from './../../../server/api-definitions';
@@ -10,12 +11,12 @@ import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   bookKind: 'flight' | 'stay'
 };
 const { ctrlKey, bookKind } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'TravelCities' });
 
 const nuxtApp = useNuxtApp();
 const { enabled } = usePreviewState();
@@ -28,9 +29,9 @@ const popularCitiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`
     query: { drafts: enabled },
     default: () => { return range(0, 20, 1).map(_ => null); },
     transform: (response: IPopularCityDto[]) => {
-      logger.verbose(`(TravelCities) received popular cities list response: ctrlKey=${ctrlKey}`);
+      logger.verbose('received popular cities list response', ctrlKey);
       if (!response) {
-        logger.warn(`(TravelCities) popular cities list response is empty, ctrlKey=${ctrlKey}`);
+        logger.warn('popular cities list response is empty', undefined, ctrlKey);
         return range(0, 20, 1).map(_ => null); // error should be logged by fetchEx
       }
       return response;
@@ -50,7 +51,7 @@ watch(popularCitiesListFetch.status, () => {
 
 <template>
   <PageSection
-    :ctrl-key="`${ctrlKey}-TravelCities`"
+    :ctrl-key="[...ctrlKey, 'TravelCities']"
     :header-res-name="getI18nResName2('travelCities', 'title')"
     :subtext-res-name="getI18nResName2('travelCities', 'subtext')"
     :btn-text-res-name="getI18nResName2('travelCities', 'btn')"
@@ -80,11 +81,11 @@ watch(popularCitiesListFetch.status, () => {
     >
       <SwiperSlide
         v-for="(city, index) in popularCitiesListFetch.data.value"
-        :key="`${ctrlKey}-TravelCity-${index}`"
+        :key="`${toShortForm(ctrlKey)}-TravelCity-${index}`"
         :style="{width: 'auto'}"
       >
         <TravelCityCard
-          :ctrl-key="`${ctrlKey}-TravelCity-${index}`"
+          :ctrl-key="[...ctrlKey, 'TravelCities', index]"
           :book-kind="bookKind"
           :city-name="city?.cityDisplayName ?? undefined"
           :promo-line="city?.promoLine ?? undefined"

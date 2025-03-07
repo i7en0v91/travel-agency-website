@@ -12,6 +12,7 @@ import OAuthProviderList from './../components/account/oauth-providers-list.vue'
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
 import { getCommonServices } from '../helpers/service-accessors';
+import type { ControlKey } from './../helpers/components';
 
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
@@ -37,9 +38,11 @@ definePageMeta({
 });
 useOgImage();
 
+const CtrlKey: ControlKey = ['Page', 'Login'];
+
 const { signIn } = useAuth();
 const { enabled } = usePreviewState();
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'Login' });
 
 const username = ref('');
 const password = ref('');
@@ -63,13 +66,13 @@ function prepareCallbackUrl(originPathFromUrl: string | undefined): string {
   if(originPathFromUrl?.trim()) {
     callbackUrl = formatAuthCallbackUrl(originPathFromUrl, enabled);
     originPageCookie.value = callbackUrl;
-    logger.debug(`(Login) origin page obtained from route: ${callbackUrl}`);
+    logger.debug('origin page obtained from route', callbackUrl);
   } else if(originPageCookie.value?.trim()) {
     callbackUrl = formatAuthCallbackUrl(originPageCookie.value!, enabled);
-    logger.debug(`(Login) origin page obtained from cookie: ${callbackUrl}`);
+    logger.debug('origin page obtained from cookie', callbackUrl);
   } else {
     callbackUrl = formatAuthCallbackUrl(localePath(`/${getPagePath(AppPage.Index)}`), enabled);
-    logger.debug(`(Login) using default origin page: ${callbackUrl}`);
+    logger.debug('using default origin page', callbackUrl);
   }
   return callbackUrl;
 }
@@ -86,7 +89,7 @@ const mySignInHandler = async (username: string, password: string) => {
         return;
       }
 
-      logger.verbose(`(Login) credentials sign-in succeeded, navigating to callbackUrl=${callbackUrl}`);
+      logger.verbose('credentials sign-in succeeded, navigating to', callbackUrl);
       await navigateTo(callbackUrl, { external: false });
     } else {
       loginErrorMsgResName.value = getI18nResName2('loginPage', 'invalidCredentials');
@@ -132,7 +135,7 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
 <template>
   <div class="login-page account-page no-hidden-parent-tabulation-check">
     <div class="login-page-content no-hidden-parent-tabulation-check">
-      <NavLogo ctrl-key="loginPageAppLogo" mode="inApp" />
+      <NavLogo :ctrl-key="[...CtrlKey, 'NavLogo']" mode="inApp" :hard-link="false"/>
       <h1 class="login-title font-h2">
         {{ t(getI18nResName2('loginPage', 'title')) }}
       </h1>
@@ -142,7 +145,7 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
       <form class="no-hidden-parent-tabulation-check">
         <TextBox
           v-model="username"
-          ctrl-key="loginPgEmail"
+          :ctrl-key="[...CtrlKey, 'TextBox', 'Email']"
           class="form-field login-form-field login-email-field no-hidden-parent-tabulation-check"
           type="email"
           :caption-res-name="getI18nResName2('accountPageCommon', 'emailLabel')"
@@ -155,7 +158,7 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
         </div>
         <TextBox
           v-model="password"
-          ctrl-key="loginPgPassword"
+          :ctrl-key="[...CtrlKey, 'TextBox', 'Password']"
           class="form-field login-form-field login-password-field mt-xs-4 no-hidden-parent-tabulation-check"
           type="password"
           :caption-res-name="getI18nResName2('accountPageCommon', 'passwordLabel')"
@@ -173,15 +176,15 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
       <div v-if="loginErrorMsgResName?.length" class="form-error-msg mt-xs-3 mt-xs-5">
         {{ $t(loginErrorMsgResName) }}
       </div>
-      <SimpleButton ctrl-key="loginBtn" class="login-btn mt-xs-2" :label-res-name="getI18nResName2('accountPageCommon', 'login')" @click="loginClick" />
+      <SimpleButton :ctrl-key="[...CtrlKey, 'Btn', 'Login']" class="login-btn mt-xs-2" :label-res-name="getI18nResName2('accountPageCommon', 'login')" @click="loginClick" />
       <div class="having-account mt-xs-4">
         {{ $t(getI18nResName2('loginPage', 'havingAccount')) }}
         <span class="login-signup">
           <NuxtLink class="brdr-1" :to="navLinkBuilder.buildPageLink(AppPage.Signup, locale as Locale)">{{ $t(getI18nResName2('accountPageCommon', 'signUp')) }}</NuxtLink>
         </span>
       </div>
-      <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" @click="onOAuthProviderClick" />
+      <OAuthProviderList :ctrl-key="[...CtrlKey, 'OauthProviders']" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" @click="onOAuthProviderClick" />
     </div>
-    <AccountFormPhotos ctrl-key="LoginPhotos" class="login-account-forms-photos" />
+    <AccountFormPhotos :ctrl-key="[...CtrlKey, 'AccountFormPhotos']" class="login-account-forms-photos" />
   </div>
 </template>

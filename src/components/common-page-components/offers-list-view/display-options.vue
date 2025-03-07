@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { areCtrlKeysEqual, toKnownElement, type ControlKey } from './../../../helpers/components';
 import { type OfferKind, type StayOffersSortFactor, type FlightOffersSortFactor, StayOffersSortFactorEnum, convertTimeOfDay, getI18nResName3, DefaultStayOffersSorting, DefaultFlightOffersSorting } from '@golobe-demo/shared';
 import type { ISearchFlightOffersParams, ISearchStayOffersParams, ISearchStayOffersDisplayOptions, IDropdownListItemProps, OtherOptionButtonVariant, IOtherOptionsButtonGroupProps, IOptionButtonProps, ISearchFlightOffersDisplayOption, ISearchFlightOffersDisplayOptions, DropdownListValue } from './../../../types';
 import throttle from 'lodash-es/throttle';
 import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
-import { DeviceSizeEnum, SearchStayOffersDisplayOptions, SearchFlightOffersDisplayOptions } from './../../../helpers/constants';
+import { DeviceSizeEnum, SearchStaysOptionButtons, type SearchStaysOptionButtonKind } from './../../../helpers/constants';
 import { getCurrentDeviceSize } from './../../../helpers/dom';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
@@ -15,28 +16,28 @@ interface IOtherDisplayOptionButtonProps extends OtherOptionButtonVariant {
 }
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   offersKind: OfferKind
 }
 const { ctrlKey, offersKind } = defineProps<IProps>();
 
-const SearchStaysOptionButtons = ['hotels', 'motels', 'resorts'];
-
 const { t } = useI18n();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'DisplayOptions' });
 const searchOffersStoreAccessor = useSearchOffersStore();
 const searchOffersStore = await searchOffersStoreAccessor.getInstance(offersKind, true, true);
 const isError = ref(false);
-const activeOptionCtrl = ref<string | undefined>(getInitialActiveOptionCtrl());
+const activeOptionCtrl = ref<ControlKey | undefined>(getInitialActiveOptionCtrl());
 
-function getOptionCtrlKey (optionType: string): string {
-  return `${ctrlKey}-${offersKind}-${optionType}`;
+type SortOptionType = SearchStaysOptionButtonKind | FlightOffersSortFactor | StayOffersSortFactor;
+function getOptionCtrlKey (optionType: SortOptionType): ControlKey {
+  return [...ctrlKey, toKnownElement(offersKind), toKnownElement(optionType), 'Option'];
 }
 
-function getInitialActiveOptionCtrl () : string {
+function getInitialActiveOptionCtrl () : ControlKey {
   if (searchOffersStore.offersKind === 'flights') {
-    return getOptionCtrlKey((searchOffersStore.viewState.displayOptions as ISearchFlightOffersDisplayOptions)?.primaryOptions.find(x => x.isActive)?.type ?? DefaultFlightOffersSorting);
+    const optionType = (searchOffersStore.viewState.displayOptions as ISearchFlightOffersDisplayOptions)?.primaryOptions.find(x => x.isActive)?.type;
+    return getOptionCtrlKey(optionType ?? DefaultFlightOffersSorting);
   } else {
     return getOptionCtrlKey(SearchStaysOptionButtons[0]);
   }
@@ -63,7 +64,7 @@ function getOptionResName (optionType: string): string {
 }
 
 function buildSearchStayOffersButtonsProps (displayOptions: ISearchStayOffersDisplayOptions): IDisplayOptionButtonProps[] {
-  logger.debug(`(DisplayOptions) building search stay offers buttons props, ctrlKey=${ctrlKey}, displayOptions=${JSON.stringify(displayOptions)}`);
+  logger.debug('building search stay offers buttons props', { ctrlKey, displayOptions });
 
   const result: IDisplayOptionButtonProps[] = [];
   for (let i = 0; i < SearchStaysOptionButtons.length; i++) {
@@ -72,7 +73,7 @@ function buildSearchStayOffersButtonsProps (displayOptions: ISearchStayOffersDis
     result.push({
       ctrlKey: getOptionCtrlKey(label),
       enabled: true,
-      labelResName: getI18nResName3('searchStays', 'displayOptions', label as any),
+      labelResName: getI18nResName3('searchStays', 'displayOptions', label.toLowerCase() as any),
       shortIcon: undefined,
       isActive: activeOptionCtrl.value === getOptionCtrlKey(label),
       subtextResName: getI18nResName3('searchStays', 'displayOptions', 'btnSubtext'),
@@ -82,7 +83,7 @@ function buildSearchStayOffersButtonsProps (displayOptions: ISearchStayOffersDis
     });
   }
 
-  logger.debug(`(DisplayOptions) search stays offers buttons props built, ctrlKey=${ctrlKey}`);
+  logger.debug('search stays offers buttons props built', ctrlKey);
   return result;
 }
 
@@ -100,7 +101,7 @@ function buildFlightsDisplayOptionSummaryResArgs (displayOption: ISearchFlightOf
 }
 
 function buildSearchFlightOffersButtonsProps (displayOptions: ISearchFlightOffersDisplayOptions): IDisplayOptionButtonProps[] {
-  logger.debug(`(DisplayOptions) building search flight offers buttons props, ctrlKey=${ctrlKey}, displayOptions=${JSON.stringify(displayOptions)}`);
+  logger.debug('building search flight offers buttons props', { ctrlKey, displayOptions });
 
   const result: IDisplayOptionButtonProps[] = [];
   for (let i = 0; i < displayOptions.primaryOptions.length; i++) {
@@ -120,14 +121,14 @@ function buildSearchFlightOffersButtonsProps (displayOptions: ISearchFlightOffer
     });
   }
 
-  logger.debug(`(DisplayOptions) search flight offers buttons props built, ctrlKey=${ctrlKey}`);
+  logger.debug('search flight offers buttons props built', ctrlKey);
   return result;
 }
 
 function spliceOptionButtonsIntoOtherSortDropdown (buttonsProps: IDisplayOptionButtonProps[], count: number): IOtherOptionsButtonGroupProps | undefined {
-  logger.debug(`(DisplayOptions) splicing buttons into other sort dropdown, ctrlKey=${ctrlKey}, numButtonProps=${buttonsProps.length}, count=${count}`);
+  logger.debug('splicing buttons into other sort dropdown', { ctrlKey, numButtonProps: buttonsProps.length, count });
   if (count < 0 || count >= buttonsProps.length) {
-    logger.warn(`(DisplayOptions) out of range when splicing buttons into other sort dropdown, ctrlKey=${ctrlKey}, numButtonProps=${buttonsProps.length}, count=${count}`);
+    logger.warn('out of range when splicing buttons into other sort dropdown', undefined, { ctrlKey, numButtonProps: buttonsProps.length, count });
     count = count < 0 ? 0 : 1;
   }
   let result: IOtherOptionsButtonGroupProps | undefined;
@@ -144,7 +145,7 @@ function spliceOptionButtonsIntoOtherSortDropdown (buttonsProps: IDisplayOptionB
       };
     });
     result = {
-      ctrlKey: `${ctrlKey}-OtherSortOptions`,
+      ctrlKey: [...ctrlKey, 'OtherOptions'],
       defaultResName: offersKind === 'flights' ? getI18nResName3('searchFlights', 'displayOptions', 'other') : getI18nResName3('searchStays', 'displayOptions', 'other'),
       enabled: true,
       selectedResName: getI18nResName3('searchOffers', 'displayOptions', 'otherSelected'),
@@ -153,7 +154,7 @@ function spliceOptionButtonsIntoOtherSortDropdown (buttonsProps: IDisplayOptionB
     };
   }
 
-  logger.debug(`(DisplayOptions) completed splicing buttons into other sort dropdown, ctrlKey=${ctrlKey}, numButtonProps=${buttonsProps.length}, result count=${result?.variants.length ?? 0}`);
+  logger.debug('completed splicing buttons into other sort dropdown', { ctrlKey, numButtonProps: buttonsProps.length, count: result?.variants.length ?? 0 });
   return result;
 }
 
@@ -166,8 +167,8 @@ const secondarySort = ref<FlightOffersSortFactor | StayOffersSortFactor>();
 const isShowWaitingStubNeeded = () => !searchOffersStore || searchOffersStore.resultState.status === 'full-refetch' || searchOffersStore.resultState.status === 'filter-refetch' || searchOffersStore.resultState.status === 'error';
 const showWaitingStub = ref(isShowWaitingStubNeeded());
 
-function onActiveSecondaryOptionChanged (value?: DropdownListValue) {
-  logger.verbose(`(DisplayOptions) entered active secondary option change handler, ctrlKey=${ctrlKey}, new=${value}`);
+function onActiveSecondaryOptionChanged (value?: DropdownListValue | null) {
+  logger.verbose('entered active secondary option change handler', { ctrlKey, new: value });
 
   if (value) {
     let userSortingChanged = false;
@@ -189,26 +190,26 @@ function onActiveSecondaryOptionChanged (value?: DropdownListValue) {
     }
 
     if (userSortingChanged) {
-      logger.verbose(`(DisplayOptions) active secondary option change triggered sort refetch, ctrlKey=${ctrlKey}, new=${value}`);
+      logger.verbose('active secondary option change triggered sort refetch', { ctrlKey, new: value });
       if (searchOffersStore.offersKind === 'flights') {
-        activeOptionCtrl.value = getOptionCtrlKey(value as string); // KB: in current implementation keep in sync both sort modes
+        activeOptionCtrl.value = getOptionCtrlKey(value as SortOptionType); // KB: in current implementation keep in sync both sort modes
       }
       setTimeout(refreshResultListAsIfSortChanged, 0);
     }
   }
 
-  logger.debug(`(DisplayOptions) active secondary option change handler completed, ctrlKey=${ctrlKey}, new=${value}`);
+  logger.debug('active secondary option change handler completed', { ctrlKey, new: value });
 }
 
-function onActivePrimaryOptionChanged (newActiveOptionCtrlKey: string, prevActiveOptionCtrlKey?: string) {
-  logger.verbose(`(DisplayOptions) entered active primary option change handler, ctrlKey=${ctrlKey}, new=${newActiveOptionCtrlKey}, prev=${prevActiveOptionCtrlKey}`);
+function onActivePrimaryOptionChanged (newActiveOptionCtrlKey: ControlKey, prevActiveOptionCtrlKey?: ControlKey) {
+  logger.verbose('entered active primary option change handler', { ctrlKey, new: newActiveOptionCtrlKey, prev: prevActiveOptionCtrlKey });
 
   if (!newActiveOptionCtrlKey) {
     return;
   }
 
-  if (newActiveOptionCtrlKey === prevActiveOptionCtrlKey) {
-    logger.debug(`(DisplayOptions) active primary option hasn't change, ctrlKey=${ctrlKey}, new=${newActiveOptionCtrlKey}, prev=${prevActiveOptionCtrlKey}`);
+  if (prevActiveOptionCtrlKey && areCtrlKeysEqual(newActiveOptionCtrlKey, prevActiveOptionCtrlKey)) {
+    logger.debug('active primary option hasn', { ctrlKey, new: newActiveOptionCtrlKey, prev: prevActiveOptionCtrlKey });
     return;
   }
 
@@ -222,29 +223,34 @@ function onActivePrimaryOptionChanged (newActiveOptionCtrlKey: string, prevActiv
     }
   }, 0);
 
-  logger.debug(`(DisplayOptions) active primary option change handler completed, ctrlKey=${ctrlKey}, new=${newActiveOptionCtrlKey}, prev=${prevActiveOptionCtrlKey}`);
+  logger.debug('active primary option change handler completed', { ctrlKey, new: newActiveOptionCtrlKey, prev: prevActiveOptionCtrlKey });
 }
 
 function refreshResultListAsIfSortChanged () {
-  logger.verbose(`(DisplayOptions) refreshing result list (as if sorting changed), ctrlKey=${ctrlKey}, activePrimaryOptionCtrl=${activeOptionCtrl.value}`);
+  logger.verbose('refreshing result list (as if sorting changed', { ctrlKey, activePrimaryOptionCtrl: activeOptionCtrl.value });
 
   if (!searchOffersStore) {
-    logger.debug(`(DisplayOptions) won't refresh result list (as if sorting changed), store is not iniitalized, ctrlKey=${ctrlKey}`);
+    logger.debug('won', ctrlKey);
     return;
   }
 
   if (searchOffersStore.resultState.status !== 'error' && searchOffersStore.resultState.status !== 'fetched') {
-    logger.verbose(`(DisplayOptions) won't refresh result list (as if sorting changed), fetch currently in progress, ctrlKey=${ctrlKey}, status=${searchOffersStore.resultState.status}`);
+    logger.verbose('won', { ctrlKey, status: searchOffersStore.resultState.status });
     return;
   }
 
   if (searchOffersStore.offersKind === 'flights') {
-    const activatedPrimaryOptionType = (optionButtonsProps.value.find(p => p.ctrlKey === activeOptionCtrl.value)?.type ?? (otherSortDropdownProps.value?.variants.find(x => x.ctrlKey === activeOptionCtrl.value) as IOtherDisplayOptionButtonProps)?.type) ?? DefaultFlightOffersSorting;
+    const activatedPrimaryOptionType = (
+      activeOptionCtrl.value ? (
+        optionButtonsProps.value.find(p => areCtrlKeysEqual(p.ctrlKey, activeOptionCtrl.value!))?.type ?? 
+        (otherSortDropdownProps.value?.variants.find(x => areCtrlKeysEqual(x.ctrlKey, activeOptionCtrl.value!)) as IOtherDisplayOptionButtonProps)?.type
+      ) : undefined
+    ) ?? DefaultFlightOffersSorting;
     if (!activatedPrimaryOptionType) {
       throw new Error('cannot detect primary sort mode');
     }
 
-    logger.verbose(`(DisplayOptions) updating store display options, ctrlKey=${ctrlKey}, selected sort: primary=${activatedPrimaryOptionType}`);
+    logger.verbose('updating store display options', { ctrlKey, primary: activatedPrimaryOptionType });
     const resultSortingType = (searchOffersStore as ISearchOffersStoreInstance<ISearchFlightOffersParams>).resultState.usedSearchParams?.displayOptions.primaryOptions.find(x => x.isActive)?.type;
     let userSortingChanged = resultSortingType !== undefined && resultSortingType !== activatedPrimaryOptionType;
 
@@ -260,7 +266,7 @@ function refreshResultListAsIfSortChanged () {
     }
 
     if (!userSortingChanged) {
-      logger.verbose(`(DisplayOptions) no need to refresh results (as if sorting changed) - sort mode hasn't changed, ctrlKey=${ctrlKey}, primarySort=${activatedPrimaryOptionType}`);
+      logger.verbose('no need to refresh results (as if sorting changed) - sort mode hasn', { ctrlKey, primarySort: activatedPrimaryOptionType });
       return;
     }
 
@@ -273,7 +279,7 @@ function refreshResultListAsIfSortChanged () {
     const activatedSortType = secondarySort.value ?? DefaultStayOffersSorting;
     const userSortingChanged = resultSortingType !== undefined && resultSortingType !== activatedSortType;
     if (!userSortingChanged) {
-      logger.verbose(`(DisplayOptions) no need to refresh results (as if sorting changed) - sort mode hasn't changed, ctrlKey=${ctrlKey}, sort=${activatedSortType}`);
+      logger.verbose('no need to refresh results (as if sorting changed) - sort mode hasn', { ctrlKey, sort: activatedSortType });
       return;
     }
 
@@ -282,11 +288,11 @@ function refreshResultListAsIfSortChanged () {
   }
 
   setTimeout(() => searchOffersStore.fetchData('sort-refetch'), 0);
-  logger.debug(`(DisplayOptions) result list refresh (as if sorting changed) executed, ctrlKey=${ctrlKey}`);
+  logger.debug('result list refresh (as if sorting changed) executed', ctrlKey);
 }
 
 function refreshDisplayedOptionButtons () {
-  logger.debug(`(DisplayOptions) refreshing displayed option buttons, ctrlKey=${ctrlKey}, status=${searchOffersStore.resultState.status}`);
+  logger.debug('refreshing displayed option buttons', { ctrlKey, status: searchOffersStore.resultState.status });
   if (searchOffersStore.offersKind === 'flights') {
     const searchFlightsDisplayOptions = searchOffersStore.viewState.displayOptions as ISearchFlightOffersDisplayOptions;
     if (searchFlightsDisplayOptions) {
@@ -323,7 +329,7 @@ function refreshDisplayedOptionButtons () {
 }
 
 async function updateTabButtonsCount (): Promise<void> {
-  logger.debug(`(DisplayOptions) updating tab buttons count, ctrlKey=${ctrlKey}, current=${numTabButtons.value}`);
+  logger.debug('updating tab buttons count', { ctrlKey, current: numTabButtons.value });
 
   const deviceSize = getCurrentDeviceSize();
   let newTabButtonsCount = 1;
@@ -337,7 +343,7 @@ async function updateTabButtonsCount (): Promise<void> {
       break;
   };
   if (newTabButtonsCount !== numTabButtons.value) {
-    logger.verbose(`(DisplayOptions) tab buttons count changed, ctrlKey=${ctrlKey}, old=${numTabButtons.value}, new=${newTabButtonsCount}`);
+    logger.verbose('tab buttons count changed', { ctrlKey, old: numTabButtons.value, new: newTabButtonsCount });
     numTabButtons.value = newTabButtonsCount;
   }
 }
@@ -350,18 +356,21 @@ const updateWaitingStubValue = () => {
 };
 
 onMounted(() => {
-  logger.verbose(`(DisplayOptions) mounted, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.verbose('mounted', { ctrlKey, type: offersKind });
   updateTabButtonsCount();
 
   watch(searchOffersStore.viewState.displayOptions, () => {
-    setTimeout(refreshDisplayedOptionButtons, 0);
+    setTimeout(refreshDisplayedOptionButtons);
   });
+  watch(activeOptionCtrl, () => {
+    setTimeout(refreshResultListAsIfSortChanged);
+  }, { immediate: false });
   watch(numTabButtons, refreshDisplayedOptionButtons);
   window.addEventListener('resize', onWindowResize);
 
   watch(() => searchOffersStore.resultState.status, () => {
     if (searchOffersStore.resultState.status === 'error') {
-      logger.warn(`(DisplayOptions) exception while fetching items, ctrlKey=${ctrlKey}, type=${offersKind}`);
+      logger.warn('exception while fetching items', undefined, { ctrlKey, type: offersKind });
       isError.value = true;
     } else {
       isError.value = false;
@@ -384,13 +393,13 @@ onUnmounted(() => {
   <section
     class="display-options"
   >
-    <ComponentWaitingIndicator v-if="showWaitingStub && !isError" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="display-options-waiter" />
+    <ComponentWaitingIndicator v-if="showWaitingStub && !isError" :ctrl-key="[...ctrlKey, 'Waiter']" class="display-options-waiter" />
     <ErrorHelm v-model:is-error="isError">
       <OptionButtonGroup
         v-if="!showWaitingStub"
-        v-model:active-option-ctrl="activeOptionCtrl"
+        v-model:active-option-key="activeOptionCtrl"
         class="offers-list-display-options"
-        :ctrl-key="offersKind === 'flights' ? SearchFlightOffersDisplayOptions : SearchStayOffersDisplayOptions"
+        :ctrl-key="[...ctrlKey, offersKind === 'flights' ? 'FlightOffers' : 'StayOffers', 'OptionBtnGroup']"
         :options="optionButtonsProps"
         :other-options="otherSortDropdownProps"
         :use-adaptive-button-width="true"
@@ -414,8 +423,7 @@ onUnmounted(() => {
           </div>
           <DropdownList
             v-model:selected-value="secondarySort"
-            :initially-selected-value="secondarySort"
-            :ctrl-key="`${ctrlKey}-SecondarySort`"
+            :ctrl-key="[...ctrlKey, 'SecondarySort', 'Dropdown']"
             class="display-options-secondary-sort-dropdown"
             kind="secondary"
             :persistent="false"

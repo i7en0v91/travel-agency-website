@@ -12,20 +12,20 @@ export class GeoLogic implements IGeoLogic {
 
   public static inject = ['geoLogicPrisma', 'acsysDraftsEntitiesResolver', 'dbRepository', 'logger'] as const;
   constructor (prismaImplementation: IGeoLogic, acsysDraftsEntitiesResolver: AcsysDraftEntitiesResolver, dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'GeoLogic-Acsys' });
     this.dbRepository = dbRepository;
     this.acsysDraftsEntitiesResolver = acsysDraftsEntitiesResolver;
     this.prismaImplementation = prismaImplementation;
   }
 
   async deleteCountry(id: EntityId): Promise<void> {
-    this.logger.debug(`(GeoLogic-Acsys) deleting country: id=${id}`);
+    this.logger.debug('deleting country', id);
     await this.prismaImplementation.deleteCountry(id);
-    this.logger.debug(`(GeoLogic-Acsys) country deleted: id=${id}`);
+    this.logger.debug('country deleted', id);
   };
 
   async getAverageDistance (cityId: EntityId, allowCachedValue: boolean, previewMode: PreviewMode): Promise<DistanceUnitKm> {
-    this.logger.debug(`(GeoLogic-Acsys) get average distance, cityId=${cityId}, allowCachedValue=${allowCachedValue}, previewMode=${previewMode}`);
+    this.logger.debug('get average distance', { cityId, allowCachedValue, previewMode });
 
     let result: DistanceUnitKm;
     if(previewMode) {
@@ -34,19 +34,19 @@ export class GeoLogic implements IGeoLogic {
       result = await this.prismaImplementation.getAverageDistance(cityId, allowCachedValue, previewMode);
     }
     
-    this.logger.debug(`(GeoLogic-Acsys) average distance, cityId=${cityId}, allowCachedValue=${allowCachedValue}, previewMode=${previewMode}, distance=${result.toFixed(3)}`);
+    this.logger.debug('average distance', { cityId, allowCachedValue, previewMode, distance: result.toFixed(3) });
     return result;
   }
 
   async createCountry (data: ICountryData): Promise<EntityId> {
-    this.logger.debug(`(GeoLogic-Acsys) creating country, name=${data.name.en}`);
+    this.logger.debug('creating country', { name: data.name.en });
     const countryId = await this.prismaImplementation.createCountry(data);
-    this.logger.debug(`(GeoLogic-Acsys) country created, name=${data.name.en}, id=${countryId}`);
+    this.logger.debug('country created', { name: data.name.en, id: countryId });
     return countryId;
   }
 
   async createCity (data: ICityData, previewMode: PreviewMode): Promise<EntityId> {
-    this.logger.debug(`(GeoLogic-Acsys) creating city, name=${data.name.en}, countryId=${data.countryId}, previewMode=${previewMode}`);
+    this.logger.debug('creating city', { name: data.name.en, countryId: data.countryId, previewMode });
 
     let cityId: EntityId | undefined;
     if(previewMode) {
@@ -84,19 +84,19 @@ export class GeoLogic implements IGeoLogic {
       cityId = await this.prismaImplementation.createCity(data, previewMode);
     }
     
-    this.logger.debug(`(GeoLogic-Acsys) city created, name=${data.name.en}, countryId=${data.countryId}, id=${cityId}, previewMode=${previewMode}`);
+    this.logger.debug('city created', { name: data.name.en, countryId: data.countryId, id: cityId, previewMode });
     return cityId;
   }
 
   async getAllCountries (): Promise<ICountry[]> {
-    this.logger.debug(`(GeoLogic-Acsys) obtaining list of all countries`);
+    this.logger.debug('obtaining list of all countries');
     const result = await this.prismaImplementation.getAllCountries();
-    this.logger.debug(`(GeoLogic-Acsys) list of all countries obtained, size=${result.length}`);
+    this.logger.debug('list of all countries obtained', { size: result.length });
     return result;
   }
 
   async getAllCities (previewMode: PreviewMode): Promise<ICityShort[]> {
-    this.logger.debug(`(GeoLogic-Acsys) obtaining list of all cities, previewMode=${previewMode}`);
+    this.logger.debug('obtaining list of all cities', previewMode);
     let result: ICityShort[];
     if(previewMode) {
       const resolvedCities = await this.acsysDraftsEntitiesResolver.resolveCities({});
@@ -116,7 +116,7 @@ export class GeoLogic implements IGeoLogic {
       result = await this.prismaImplementation.getAllCities(previewMode);
     }
     
-    this.logger.debug(`(GeoLogic-Acsys) list of all cities obtained, size=${result.length}`);
+    this.logger.debug('list of all cities obtained', { size: result.length });
     return result;
   }
 }

@@ -26,29 +26,29 @@ defineProps<IBookingTicketProps>();
     >
       <article class="booking-ticket mb-xs-2 mb-m-0 brdr-4">
         <div class="booking-ticket-dates-div">
-          <BookingTicketDates :ctrl-key="`${ctrlKey}-Dates`" :from="dates?.from" :to="dates?.to" :offer-kind="offerKind" />
+          <BookingTicketDates :ctrl-key="[...ctrlKey, 'Dates']" :from="dates?.from" :to="dates?.to" :offer-kind="offerKind" />
         </div>
         <header class="booking-ticket-general-div">
           <BookingTicketGeneral
-            :ctrl-key="`${ctrlKey}-General`"
+            :ctrl-key="[...ctrlKey, 'General']"
             :avatar="generalInfo?.avatar"
             :texting="generalInfo?.texting"
             :class-res-name="generalInfo?.classResName"
           />
         </header>
         <div class="booking-ticket-details-div">
-          <BookingTicketDetails :ctrl-key="`${ctrlKey}-Details`" :items="details?.items" />
+          <BookingTicketDetails :ctrl-key="[...ctrlKey, 'Details']" :items="details?.items" />
         </div>
         <div class="booking-ticket-codes-div">
-          <BookingTicketCodes :ctrl-key="`${ctrlKey}-Codes`" />
+          <BookingTicketCodes :ctrl-key="[...ctrlKey, 'Codes']" />
         </div>
         <div class="booking-ticket-image-div">
           <ClientOnly>
             <BookingTicketFlightGfx v-if="offerKind === 'flights'" :ctrl-key="titleOrGfx!.ctrlKey" :user-name="(titleOrGfx as IBookingTicketFlightGfxProps).userName" />
             <BookingTicketStayTitle v-else-if="offerKind === 'stays'" :ctrl-key="titleOrGfx!.ctrlKey" :city-name="(titleOrGfx as IBookingTicketStayTitleProps).cityName" :stay-name="(titleOrGfx as IBookingTicketStayTitleProps).stayName" />
-            <ComponentWaitingIndicator v-else :ctrl-key="`${ctrlKey}-ImageWaiter`" class="booking-title-image-waiting-indicator" />
+            <ComponentWaitingIndicator v-else :ctrl-key="[...ctrlKey, 'Waiter']" class="booking-title-image-waiting-indicator" />
             <template #fallback>
-              <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-ImageWaiterClientFallback`" class="booking-title-image-waiting-indicator" />
+              <ComponentWaitingIndicator :ctrl-key="[...ctrlKey, 'ClientFallback']" class="booking-title-image-waiting-indicator" />
             </template>
           </ClientOnly>
         </div>

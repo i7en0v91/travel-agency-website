@@ -1,68 +1,54 @@
 <script setup lang="ts">
-import { AppConfig, eraseTimeOfDay, type I18nResName } from '@golobe-demo/shared';
+import { toShortForm, type ControlKey } from './../../../helpers/components';
+import { eraseTimeOfDay, type I18nResName } from '@golobe-demo/shared';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 import dayjs from 'dayjs';
 import FieldFrame from './../../forms/field-frame.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
-import type { DatePickerDate, DatePickerModel, DatePickerRangeObject } from 'v-calendar/dist/types/src/use/datePicker.js';
-import { datePickerValueToDate } from './../../../helpers/components';
-import isDate from 'lodash-es/isDate';
+import type { DatePickerModel } from 'v-calendar/dist/types/src/use/datePicker.js';
+import isArray from 'lodash-es/isArray';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   captionResName: I18nResName,
-  selectedDates: Date[],
-  initiallySelectedDates?: Date[] | null | undefined,
   mode: 'single' | 'range'
 }
 
-const { ctrlKey, mode, initiallySelectedDates } = defineProps<IProps>();
-
+const { ctrlKey, mode } = defineProps<IProps>();
 const { d, locale } = useI18n();
 
-const dateFrom = eraseTimeOfDay(dayjs().utc(true).toDate());
-const dateTo = eraseTimeOfDay(dayjs().utc(true).add(AppConfig.autoInputDatesRangeDays, 'day').toDate());
-const today = dateFrom;
-const rangeValue = ref({
-  start: dateFrom,
-  end: dateTo
-});
-const singleValue = ref(today);
-const hasMounted = ref(false);
+const Today = eraseTimeOfDay(dayjs().utc(true).toDate());
 
+const logger = getCommonServices().getLogger().addContextProps({ component: 'SearchFlightsDatePicker' });
+const controlValuesStore = useControlValuesStore();
+
+const modelValue = defineModel<Date[] | null | undefined>('selectedDates');
 const openBtn = useTemplateRef<HTMLElement>('open-btn');
 const dropdown = useTemplateRef<InstanceType<typeof Dropdown>>('dropdown');
-const calendar = useTemplateRef('calendar');
+const rangeValue = ref<{ start: Date, end: Date }>();
+const singleValue = ref<Date>();
 
-const logger = getCommonServices().getLogger();
-
-const controlSettingsStore = useControlSettingsStore();
-const controlSingleValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(`${ctrlKey}-single`, today.toISOString(), true);
-const controlRangeValueSetting = controlSettingsStore.getControlValueSetting<string[]>(`${ctrlKey}-range`, [dateFrom.toISOString(), dateTo.toISOString()], true);
-initialValuesFromSettings();
-
-function initialValuesFromSettings () {
-  if (initiallySelectedDates) {
-    if (initiallySelectedDates.length === 1) {
-      const initialDateFrom = initiallySelectedDates[0];
-      controlSingleValueSetting.value = dayjs(initialDateFrom).isBefore(today) ? today.toISOString() : initialDateFrom.toISOString();
-    } else {
-      const initialDateFrom = initiallySelectedDates[0];
-      const initialDateTo = initiallySelectedDates[1];
-      controlRangeValueSetting.value = dayjs(initialDateFrom).isBefore(today) ? [dateFrom.toISOString(), dateTo.toISOString()] : [initialDateFrom.toISOString(), initialDateTo.toISOString()];
-    }
-  } else if (initiallySelectedDates === null) {
-    controlSingleValueSetting.value = today.toISOString();
-    controlRangeValueSetting.value = [dateFrom.toISOString(), dateTo.toISOString()];
-  } else {
-    if (dayjs(controlSingleValueSetting.value).isBefore(today)) {
-      controlSingleValueSetting.value = today.toISOString();
-    }
-    if (dayjs(controlRangeValueSetting.value![0]).isBefore(today)) {
-      controlRangeValueSetting.value = [dateFrom.toISOString(), dateTo.toISOString()];
-    }
+function toUnary<T>(value: T | T[]): T | undefined {
+  if(value && isArray(value)) {
+    return value.length ? value[0] : undefined;
   }
+  return value;
+}
+
+function toArray<T>(value: T | T[] | null): T[] | null {
+  if(!value) {
+    return null;
+  }
+  if(isArray(value)) {
+    return value;
+  }
+  return [value];
+}
+
+function onValueSelected (value: DatePickerModel) {
+  logger.verbose('date selected', { ctrlKey, value });
+  hideDropdown();
 }
 
 function onMenuShown () {
@@ -77,58 +63,18 @@ function hideDropdown () {
   dropdown.value?.hide();
 }
 
-function fireSelectedDateChanged (date: Date | { start: Date, end: Date }) {
-  if (isDate(date)) {
-    logger.debug(`(SearchFlightsDatePicker) firing selected date change: ctrlKey=${ctrlKey}, value=${date}`);
-    $emit('update:selectedDates', [eraseTimeOfDay(date)]);
-  } else {
-    logger.debug(`(SearchFlightsDatePicker) firing selected dates change: ctrlKey=${ctrlKey}, value=${JSON.stringify(date)}`);
-    $emit('update:selectedDates', [eraseTimeOfDay(date.start), eraseTimeOfDay(date.end)]);
-  }
+function datesArrayEquals(arr1: Date[], arr2: Date[]) {
+  return arr1.length === arr2.length && arr1.every((v, idx) => v === arr2[idx]);
 }
 
-function emitModelUpdate() {
-  logger.debug(`(SearchFlightsDatePicker) emitting model update: ctrlKey=${ctrlKey}`);
-  if (mode === 'single') {
-    fireSelectedDateChanged(eraseTimeOfDay(singleValue.value));
-  } else {
-    fireSelectedDateChanged({
-      start: eraseTimeOfDay(rangeValue.value.start),
-      end: eraseTimeOfDay(rangeValue.value.end)
-    });
-  }
-}
-
-function onSelectedDateUpdated (date: Date | { start: Date, end: Date }) {
-  if (isDate(date)) {
-    logger.verbose(`(SearchFlightsDatePicker) updating selected date: ctrlKey=${ctrlKey}, value=${date}`);
-    controlSingleValueSetting.value! = eraseTimeOfDay(date).toISOString();
-  } else {
-    logger.verbose(`(SearchFlightsDatePicker) updating selected dates: ctrlKey=${ctrlKey}, value=${JSON.stringify([date.start, date.end])}`);
-    controlRangeValueSetting.value! = [eraseTimeOfDay(date.start).toISOString(), eraseTimeOfDay(date.end).toISOString()];
-  }
-  fireSelectedDateChanged(date);
-  logger.verbose(`(SearchFlightsDatePicker) selected date(s) updated: ctrlKey=${ctrlKey}`);
-}
-
-const $emit = defineEmits<{(event: 'update:selectedDates', dates: Date[]): void}>();
-
-function onValueSelected (value: DatePickerModel) {
-  logger.verbose(`(SearchFlightsDatePicker) date selected: ctrlKey=${ctrlKey}, value=${JSON.stringify(value)}`);
-  hideDropdown();
-
-  let selectedDate: Date | { start: Date, end: Date };
-  const locale = calendar.value?.locale;
-  if(mode === 'single') {
-    selectedDate = datePickerValueToDate(value as DatePickerDate, locale, logger) as Date;
-  } else {
-    const rangeValue = value as DatePickerRangeObject;
-    selectedDate = { 
-      start: datePickerValueToDate(rangeValue.start, locale, logger),
-      end: datePickerValueToDate(rangeValue.end, locale, logger)
-    };
-  }
-  onSelectedDateUpdated(selectedDate);
+function storeModelValuesDiffer(
+  storeValue: Date | Date[] | null, 
+  modelValue: Date[] | null | undefined, mode: 'single' | 'range'
+) {
+  return mode === 'single' ? 
+    (storeValue != ((modelValue?.length ?? 0) > 0 ? modelValue![0] : null)) :
+    (!datesArrayEquals(storeValue as Date[], (modelValue?.length ?? 0) > 0 ? (modelValue as Date[]) : [])
+  );
 }
 
 function onEscape () {
@@ -136,24 +82,94 @@ function onEscape () {
 }
 
 const datesDisplayText = computed(() => {
+  if(import.meta.server) {
+    return '';
+  }
+
   const displayFormat = 'numeric';
-  return hasMounted.value ? (mode === 'single' ? d(singleValue.value, displayFormat) : (`${d(rangeValue.value.start, displayFormat)} - ${d(rangeValue.value.end, displayFormat)}`)) : undefined;
+  return mode === 'single' ? 
+    (singleValue.value ? d(singleValue.value, displayFormat) : '') : 
+    (rangeValue.value ? `${d(rangeValue.value.start, displayFormat)} - ${d(rangeValue.value.end, displayFormat)}` : '');
 });
 
-onBeforeMount(() => {
-  if (controlSingleValueSetting.value) {
-    singleValue.value = eraseTimeOfDay(new Date(controlSingleValueSetting.value!));
-  }
-  if (controlRangeValueSetting.value) {
-    rangeValue.value = { start: eraseTimeOfDay(new Date(controlRangeValueSetting.value![0])), end: eraseTimeOfDay(new Date(controlRangeValueSetting.value![1])) };
-  }
-});
 onMounted(() => {
-  hasMounted.value = true;
-  emitModelUpdate();
-});
-watch(() => mode, () => {
-  emitModelUpdate();
+  const singleInitialOverwrite = modelValue.value?.length ? modelValue.value[0] : undefined;
+  logger.debug('acquiring value ref for single date', { ctrlKey, initialOverwrite: singleInitialOverwrite });
+  const { valueRef: singleStoreValueRef } = controlValuesStore.acquireValueRef<Date | null>(
+    [...ctrlKey, 'DatePicker'], {
+      initialOverwrite: singleInitialOverwrite
+    });
+    
+  const rangeInitialOverwrite = ((modelValue.value?.length ?? 0) >= 2) ? modelValue.value : undefined;
+  logger.debug('acquiring value ref for range dates', { ctrlKey, initialOverwrite: rangeInitialOverwrite });
+  const { valueRef: rangeStoreValueRef } = controlValuesStore.acquireValueRef<Date[] | null>(
+    [...ctrlKey, 'DateRangePicker'], {
+      initialOverwrite: rangeInitialOverwrite
+    });
+
+  watch([singleStoreValueRef, rangeStoreValueRef], () => {
+    const storeValue = (mode === 'single' ? singleStoreValueRef : rangeStoreValueRef).value;
+    logger.debug('store value watcher', { ctrlKey, modelValue: modelValue.value, storeValue, mode });
+    const newValue = mode === 'single' ? storeValue : (storeValue ?? []);
+    const changed = storeModelValuesDiffer(newValue, modelValue.value, mode);
+    if(changed) {
+      modelValue.value = newValue ? (isArray(newValue) ? newValue : [newValue]) : null;  
+    }
+  }, { immediate: true });
+
+  watch([singleValue, rangeValue], () => {
+    const newValue = mode === 'single' ? 
+      (singleValue.value ? [singleValue.value] : null) : 
+      (rangeValue.value ? [rangeValue.value!.start, rangeValue.value!.end] : null);
+    const storeValue = (mode === 'single' ? singleStoreValueRef : rangeStoreValueRef).value;
+    logger.debug('selected calendar value watcher', { ctrlKey, newValue, storeValue, mode });
+    
+    const changed = storeModelValuesDiffer(storeValue, newValue, mode);
+    if(changed) {
+      switch(mode) {
+        case 'single':
+          singleStoreValueRef.value = toUnary(singleValue.value) ?? null;
+          break;
+        default:
+          rangeStoreValueRef.value = newValue;
+      }
+    }
+  }, { immediate: false });
+
+  watch(modelValue, () => {
+    const storeValue = (mode === 'single' ? singleStoreValueRef : rangeStoreValueRef).value;
+    const outOfSyncUpdate = modelValue.value && (mode === 'single') !== (modelValue.value.length === 1);
+    if(outOfSyncUpdate) {
+      logger.debug('model value update for another mode', { ctrlKey, modelValue: modelValue.value, storeValue, mode });
+      return;
+    }
+    
+    logger.debug('model value watcher', { ctrlKey, modelValue: modelValue.value, storeValue, mode });
+    const changed = storeModelValuesDiffer(storeValue, modelValue.value, mode);
+    switch(mode) {
+      case 'single':
+        singleValue.value = modelValue.value ? 
+          (isArray(modelValue.value) ? modelValue.value[0] : modelValue.value) : undefined;
+        if(changed) {
+          singleStoreValueRef.value = toUnary(modelValue.value ?? null) as Date | null;
+        }
+        break;
+      default:
+        rangeValue.value = modelValue.value ? { start: modelValue.value[0], end: modelValue.value[1] } : undefined;
+        if(changed) {
+          rangeStoreValueRef.value = modelValue.value ?? null;
+        }
+    }
+  }, { immediate: false });
+
+  watch(() => mode, () => {
+    logger.verbose('mode changed, actualizing model value', { ctrlKey, mode });
+    if (mode === 'single') {
+      modelValue.value = toArray(singleStoreValueRef.value) ?? null;
+    } else {
+      modelValue.value = rangeStoreValueRef.value ? rangeStoreValueRef.value : null;
+    }
+  });
 });
 
 </script>
@@ -163,8 +179,8 @@ watch(() => mode, () => {
     <VDropdown
       ref="dropdown"
       v-floating-vue-hydration="{ tabIndex: 0 }"
-      :ctrl-key="`${ctrlKey}-DropDownWrapper`"
-      :aria-id="`${ctrlKey}-DropDownWrapper`"
+      :ctrl-key="[...ctrlKey, 'Wrapper']"
+      :aria-id="`${toShortForm(ctrlKey)}-DropDownWrapper`"
       :distance="-6"
       :hide-triggers="(triggers: any) => [...triggers, 'click']"
       placement="bottom"
@@ -176,7 +192,7 @@ watch(() => mode, () => {
     >
       <FieldFrame :text-res-name="captionResName" class="date-picker-field-frame">
         <button
-          :id="`search-flights-dates-${ctrlKey}`"
+          :id="`search-flights-dates-${toShortForm(ctrlKey)}`"
           ref="open-btn"
           class="date-picker-field-btn brdr-1"
           type="button"
@@ -195,7 +211,7 @@ watch(() => mode, () => {
             mode="date"
             class="calendar"
             color="golobe"
-            :min-date="today"
+            :min-date="Today"
             :locale="locale"
             @update:model-value="onValueSelected"
           />
@@ -205,7 +221,7 @@ watch(() => mode, () => {
             v-model.range="rangeValue"
             timezone="utc"
             mode="date"
-            :min-date="today"
+            :min-date="Today"
             class="calendar"
             color="golobe"
             :locale="locale"

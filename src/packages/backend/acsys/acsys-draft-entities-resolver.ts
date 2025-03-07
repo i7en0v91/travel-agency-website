@@ -53,7 +53,7 @@ export class AcsysDraftEntitiesResolver {
   public static inject = ['dbRepository', 'fileLogic', 'logger'] as const;
   constructor (dbRepository: PrismaClient, fileLogic: IFileLogic, logger: IAppLogger) {
     this.dbRepository = dbRepository;
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'AcsysDraftEntitiesResolver' });
     this.fileLogic = fileLogic;
   }
 
@@ -68,7 +68,7 @@ export class AcsysDraftEntitiesResolver {
   private validateAndPrepareResolveOptions(options: AcsysDraftEntitiesResolveOptions, idsMustBeSpecified: boolean) {
     // prevent accidently pulling entire table into memory - such a request is not expected and probably mistaken
     if(idsMustBeSpecified && options.idsFilter === undefined) {
-      this.logger.error(`(AcsysDraftEntitiesResolver) incorrect arguments - expected input list of ids to filter, ${this.formatResolveOptionsLog(options)}`);
+      this.logger.error('incorrect arguments - expected input list of ids to filter', undefined, { options: this.formatResolveOptionsLog(options) });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown server error', 'error-page');
     }
 
@@ -76,13 +76,13 @@ export class AcsysDraftEntitiesResolver {
     options.unresolvedEntityPolicy ??= (options.idsFilter === undefined ? UnresolvedEntityThrowingCondition.ThrowOnlyOnRequestedIdNotFound : UnresolvedEntityThrowingCondition.ThrowAnyNotFound);
     
     if(options.idsFilter === undefined && options.unresolvedEntityPolicy === UnresolvedEntityThrowingCondition.ThrowAnyNotFound) {
-      this.logger.error(`(AcsysDraftEntitiesResolver) incorrect arguments for resolving entities - ThrowAnyNotFound assumes input list of ids to filter, ${this.formatResolveOptionsLog(options)}`);
+      this.logger.error('incorrect arguments for resolving entities - ThrowAnyNotFound assumes input list of ids to filter', undefined, { options: this.formatResolveOptionsLog(options) });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown server error', 'error-page');
     }
 
     if(!options.exceptionFactory) {
       options.exceptionFactory = (args) => {
-        this.logger.warn('(AcsysDraftEntitiesResolver) some of entities not found while resolving', undefined, args);
+        this.logger.warn('some of entities not found while resolving', undefined, args);
         return new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'object not found', 'error-page');
       };
     }
@@ -162,10 +162,10 @@ export class AcsysDraftEntitiesResolver {
   };
 
   public async resolveLocalizeableValues(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<ILocalizableValue & IEntity>> {
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving localizeable values, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving localizeable values', { options: this.formatResolveOptionsLog(options) });
 
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) localizeable values resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('localizeable values resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, ILocalizableValue & IEntity>([]),
         notFoundIds: undefined
@@ -173,7 +173,7 @@ export class AcsysDraftEntitiesResolver {
     }
     this.validateAndPrepareResolveOptions(options, true);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving localizeable values - querying drafts`);
+    this.logger.debug('resolving localizeable values - querying drafts');
     const drafts = await this.dbRepository.acsysDraftsLocalizeableValue.findMany({
       where: this.buildWhereIdQueryFilter(options),
       select: {
@@ -185,7 +185,7 @@ export class AcsysDraftEntitiesResolver {
     });
     let published: (typeof drafts) | undefined;
     if(drafts.length !== options.idsFilter!.length) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) resolving localizeable values - querying published`);
+      this.logger.debug('resolving localizeable values - querying published');
       published = await this.dbRepository.localizeableValue.findMany({
         where: this.buildWhereIdQueryFilter(options),
         select: {
@@ -220,15 +220,15 @@ export class AcsysDraftEntitiesResolver {
     ];
     const result = this.buildResolveResult(options, itemList);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) localizeable values resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('localizeable values resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveImageCategories(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<IImageCategoryInfo & IEntity>> {
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving categories, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving categories', { options: this.formatResolveOptionsLog(options) });
 
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) categories resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('categories resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, IImageCategoryInfo & IEntity>([]),
         notFoundIds: undefined
@@ -236,7 +236,7 @@ export class AcsysDraftEntitiesResolver {
     }
     this.validateAndPrepareResolveOptions(options, false);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving categories - querying`);
+    this.logger.debug('resolving categories - querying');
     const queryResult = await this.dbRepository.imageCategory.findMany({
       where: {
         id: (options.idsFilter ? { in: options.idsFilter } : {})
@@ -260,15 +260,15 @@ export class AcsysDraftEntitiesResolver {
       });
     const result = this.buildResolveResult(options, itemList);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) image categories resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('image categories resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveFileInfos(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<IFileInfo>> {
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving file infos, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving file infos', { options: this.formatResolveOptionsLog(options) });
 
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) file infos resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('file infos resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, IFileInfo>([]),
         notFoundIds: undefined
@@ -280,15 +280,15 @@ export class AcsysDraftEntitiesResolver {
     this.throwOnRequestEntityNotFoundIfNeeded(options, 'File', [], fileInfos);
     const result = this.buildResolveResult(options, fileInfos);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) file infos resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('file infos resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveCountries(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<ICountry>> {
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving countries, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving countries', { options: this.formatResolveOptionsLog(options) });
     
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) countries resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('countries resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, ICity>([]),
         notFoundIds: undefined
@@ -296,7 +296,7 @@ export class AcsysDraftEntitiesResolver {
     }
     this.validateAndPrepareResolveOptions(options, false);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving countries - querying`);
+    this.logger.debug('resolving countries - querying');
     const queryResult = (await this.dbRepository.country.findMany({
       where: this.buildWhereIdQueryFilter(options),
       select: { 
@@ -312,7 +312,7 @@ export class AcsysDraftEntitiesResolver {
 
     const nameStrIds = allUnresolved.map(x => x.nameStrId);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving countries - names`);
+    this.logger.debug('resolving countries - names');
     const resolvedNames = await this.resolveLocalizeableValues(this.buildNestedEntitiesResolveOptions(nameStrIds, options));
     
     const itemList: ICountry[] = [];
@@ -334,15 +334,15 @@ export class AcsysDraftEntitiesResolver {
     }
     const result = this.buildResolveResult(options, itemList);
     
-    this.logger.debug(`(AcsysDraftEntitiesResolver) countries resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('countries resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveCities(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<ICity>> {
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving cities, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving cities', { options: this.formatResolveOptionsLog(options) });
     
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) cities resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('cities resolved, empty params', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, ICity>([]),
         notFoundIds: undefined
@@ -350,7 +350,7 @@ export class AcsysDraftEntitiesResolver {
     }
     this.validateAndPrepareResolveOptions(options, false);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving cities - querying drafts`);
+    this.logger.debug('resolving cities - querying drafts');
     const drafts = (await this.dbRepository.acsysDraftsCity.findMany({
       where: this.buildWhereIdQueryFilter(options),
       select: { 
@@ -362,7 +362,7 @@ export class AcsysDraftEntitiesResolver {
     }));
     let published: (typeof drafts) | undefined;
     if(options.idsFilter === undefined || drafts.length !== options.idsFilter.length) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) resolving cities - querying published`);
+      this.logger.debug('resolving cities - querying published');
       published = await this.dbRepository.city.findMany({
         where: this.buildWhereIdQueryFilter(options),
         select: { 
@@ -379,9 +379,9 @@ export class AcsysDraftEntitiesResolver {
     const nameStrIds = allUnresolved.map(x => x.nameStrId);
     const countryIds = allUnresolved.map(x => x.countryId);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving cities - names`);
+    this.logger.debug('resolving cities - names');
     const resolvedNames = await this.resolveLocalizeableValues(this.buildNestedEntitiesResolveOptions(nameStrIds, options));
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving cities - countries`);
+    this.logger.debug('resolving cities - countries');
     const resolvedCountries = await this.resolveCountries(this.buildNestedEntitiesResolveOptions(countryIds, options));
     
     const draftIds = new Set<EntityId>(drafts.map(d => d.id));
@@ -417,15 +417,15 @@ export class AcsysDraftEntitiesResolver {
     }
     const result = this.buildResolveResult(options, itemList);
     
-    this.logger.debug(`(AcsysDraftEntitiesResolver) cities resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('cities resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveImageFileInfos(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<IImageInfo>> {
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving image file infos, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving image file infos', { options: this.formatResolveOptionsLog(options) });
 
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) image file infos resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('image file infos resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, IImageInfo>([]),
         notFoundIds: undefined
@@ -433,7 +433,7 @@ export class AcsysDraftEntitiesResolver {
     }
     this.validateAndPrepareResolveOptions(options, true);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving image file infos - querying drafts`);
+    this.logger.debug('resolving image file infos - querying drafts');
     const drafts = await this.dbRepository.acsysDraftsImage.findMany({
       where: this.buildWhereIdQueryFilter(options),
       select: {
@@ -445,7 +445,7 @@ export class AcsysDraftEntitiesResolver {
     });
     let published: (typeof drafts) | undefined;
     if(drafts.length !== options.idsFilter!.length) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) resolving image file infos - querying published`);
+      this.logger.debug('resolving image file infos - querying published');
       published = await this.dbRepository.image.findMany({
         where: this.buildWhereIdQueryFilter(options),
         select: {
@@ -462,9 +462,9 @@ export class AcsysDraftEntitiesResolver {
     const fileIds = allUnresolved.map(x => x.fileId);
     const categoryIds = allUnresolved.map(x => x.categoryId);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving image file infos - files`);
+    this.logger.debug('resolving image file infos - files');
     const resolvedFiles = await this.resolveFileInfos(this.buildNestedEntitiesResolveOptions(fileIds, options));    
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving image file infos - categories`);
+    this.logger.debug('resolving image file infos - categories');
     const resolvedImageCategories = await this.resolveImageCategories(this.buildNestedEntitiesResolveOptions(categoryIds, options));
 
     const draftIds = new Set<EntityId>(drafts.map(d => d.id));
@@ -494,15 +494,15 @@ export class AcsysDraftEntitiesResolver {
     }
     const result = this.buildResolveResult(options, itemList);
    
-    this.logger.debug(`(AcsysDraftEntitiesResolver) image file infos resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('image file infos resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveAirports(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<IAirport>> {
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airports, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving airports', { options: this.formatResolveOptionsLog(options) });
     
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) airports resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('airports resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, IAirport>([]),
         notFoundIds: undefined
@@ -510,7 +510,7 @@ export class AcsysDraftEntitiesResolver {
     }
     this.validateAndPrepareResolveOptions(options, false);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airports - querying drafts`);
+    this.logger.debug('resolving airports - querying drafts');
     const drafts = (await this.dbRepository.acsysDraftsAirport.findMany({
       where: this.buildWhereIdQueryFilter(options),
       select: {
@@ -527,7 +527,7 @@ export class AcsysDraftEntitiesResolver {
 
     let published: (typeof drafts) | undefined;
     if(options.idsFilter === undefined || drafts.length !== options.idsFilter.length) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airports - querying published`);
+      this.logger.debug('resolving airports - querying published');
       published = await this.dbRepository.airport.findMany({
         where: this.buildWhereIdQueryFilter(options),
         select: {
@@ -548,9 +548,9 @@ export class AcsysDraftEntitiesResolver {
     const localizeableValueIds = allUnresolved.map(x => x.nameStrId);
     const cityIds = allUnresolved.map(x => x.cityId);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airports - names`);
+    this.logger.debug('resolving airports - names');
     const resolvedNames = await this.resolveLocalizeableValues(this.buildNestedEntitiesResolveOptions(localizeableValueIds, options));
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airports - cities`);
+    this.logger.debug('resolving airports - cities');
     const resolvedCities = await this.resolveCities(this.buildNestedEntitiesResolveOptions(cityIds, options));
     
     const draftIds = new Set<EntityId>(drafts.map(d => d.id));
@@ -584,15 +584,15 @@ export class AcsysDraftEntitiesResolver {
     }
     const result = this.buildResolveResult(options, itemList);
     
-    this.logger.debug(`(AcsysDraftEntitiesResolver) airports resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('airports resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveAirlineCompanies(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<IAirlineCompany>> {
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airline companies, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving airline companies', { options: this.formatResolveOptionsLog(options) });
     
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) airline companies resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('airline companies resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, IAirlineCompany>([]),
         notFoundIds: undefined
@@ -600,7 +600,7 @@ export class AcsysDraftEntitiesResolver {
     }
     this.validateAndPrepareResolveOptions(options, false);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airline companies - querying drafts`);
+    this.logger.debug('resolving airline companies - querying drafts');
     const drafts = (await this.dbRepository.acsysDraftsAirlineCompany.findMany({
       where: this.buildWhereIdQueryFilter(options),
       select: {
@@ -617,7 +617,7 @@ export class AcsysDraftEntitiesResolver {
     }));
     let published: (typeof drafts) | undefined;
     if(options.idsFilter === undefined || drafts.length !== options.idsFilter.length) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airline companies - querying published`);
+      this.logger.debug('resolving airline companies - querying published');
       published = await this.dbRepository.airlineCompany.findMany({
         where: this.buildWhereIdQueryFilter(options),
         select: {
@@ -640,11 +640,11 @@ export class AcsysDraftEntitiesResolver {
     const logoImageIds = allUnresolved.map(x => x.logoImageId);
     const cityIds = allUnresolved.map(x => x.cityId);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airline companies - names`);
+    this.logger.debug('resolving airline companies - names');
     const resolvedNames = await this.resolveLocalizeableValues(this.buildNestedEntitiesResolveOptions(localizeableValueIds, options));
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airline companies - logo images`);
+    this.logger.debug('resolving airline companies - logo images');
     const resolvedLogoImages = await this.resolveImageFileInfos(this.buildNestedEntitiesResolveOptions(logoImageIds, options));
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airline companies - cities`);
+    this.logger.debug('resolving airline companies - cities');
     const resolvedCities = await this.resolveCities(this.buildNestedEntitiesResolveOptions(cityIds, options));
     
     const draftIds = new Set<EntityId>(drafts.map(d => d.id));
@@ -684,15 +684,15 @@ export class AcsysDraftEntitiesResolver {
     }
     const result = this.buildResolveResult(options, itemList);
     
-    this.logger.debug(`(AcsysDraftEntitiesResolver) airline companies resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('airline companies resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveAirplaneImages(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<AirplaneImageResolveItem>> { 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airplane images, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving airplane images', { options: this.formatResolveOptionsLog(options) });
 
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) airplane images resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('airplane images resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, AirplaneImageResolveItem>([]),
         notFoundIds: undefined
@@ -705,7 +705,7 @@ export class AcsysDraftEntitiesResolver {
       ...(options.includeDeleted ? {} : { isDeleted: false })
     };
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airplane images - querying drafts`);
+    this.logger.debug('resolving airplane images - querying drafts');
     const drafts = (await this.dbRepository.acsysDraftsAirplaneImage.findMany({
       where: queryWhereFilter,
       select: {
@@ -719,7 +719,7 @@ export class AcsysDraftEntitiesResolver {
         isDeleted: true
       }
     }));
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airplane images - querying published`);
+    this.logger.debug('resolving airplane images - querying published');
     const published = await this.dbRepository.airplaneImage.findMany({
       where: queryWhereFilter,
       select: {
@@ -737,7 +737,7 @@ export class AcsysDraftEntitiesResolver {
     const allUnresolved = [...(drafts ?? []), ...(published ?? [])];
 
     const imageIds = allUnresolved.map(x => x.imageId);
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airplane images - Image entities`);
+    this.logger.debug('resolving airplane images - Image entities');
     const resolvedImages = await this.resolveImageFileInfos(this.buildNestedEntitiesResolveOptions(imageIds, options));
 
     const draftIds = new Set<EntityId>(drafts.map(d => d.id));
@@ -767,15 +767,15 @@ export class AcsysDraftEntitiesResolver {
     }
     const result = this.buildResolveResult(options, itemList);
     
-    this.logger.debug(`(AcsysDraftEntitiesResolver) airplane images resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('airplane images resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveAuthFormImages(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<IAuthFormImageInfo>> { 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving auth form images, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving auth form images', { options: this.formatResolveOptionsLog(options) });
 
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) auth form images resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('auth form images resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, IAuthFormImageInfo>([]),
         notFoundIds: undefined
@@ -783,7 +783,7 @@ export class AcsysDraftEntitiesResolver {
     }
     this.validateAndPrepareResolveOptions(options, false);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving auth form images - querying drafts`);
+    this.logger.debug('resolving auth form images - querying drafts');
     const drafts = (await this.dbRepository.acsysDraftsAuthFormImage.findMany({
       where: this.buildWhereIdQueryFilter(options),
       select: {
@@ -795,7 +795,7 @@ export class AcsysDraftEntitiesResolver {
         isDeleted: true
       }
     }));
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving auth form images - querying published`);
+    this.logger.debug('resolving auth form images - querying published');
     const published = await this.dbRepository.authFormImage.findMany({
       where: this.buildWhereIdQueryFilter(options),
       select: {
@@ -811,7 +811,7 @@ export class AcsysDraftEntitiesResolver {
     const allUnresolved = [...(drafts ?? []), ...(published ?? [])];
 
     const imageIds = allUnresolved.map(x => x.imageId);
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving auth form images - Image entities`);
+    this.logger.debug('resolving auth form images - Image entities');
     const resolvedImages = await this.resolveImageFileInfos(this.buildNestedEntitiesResolveOptions(imageIds, options));
 
     const draftIds = new Set<EntityId>(drafts.map(d => d.id));
@@ -839,15 +839,15 @@ export class AcsysDraftEntitiesResolver {
     }
     const result = this.buildResolveResult(options, itemList);
     
-    this.logger.debug(`(AcsysDraftEntitiesResolver) auth form images resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('auth form images resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveAirplanes(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<IAirplane>> {
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airplanes, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving airplanes', { options: this.formatResolveOptionsLog(options) });
 
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) airplanes resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('airplanes resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, IAirplane>([]),
         notFoundIds: undefined
@@ -855,7 +855,7 @@ export class AcsysDraftEntitiesResolver {
     }
     this.validateAndPrepareResolveOptions(options, false);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airplanes - querying drafts`);
+    this.logger.debug('resolving airplanes - querying drafts');
     const drafts = (await this.dbRepository.acsysDraftsAirplane.findMany({
       where: this.buildWhereIdQueryFilter(options),
       select: {
@@ -868,7 +868,7 @@ export class AcsysDraftEntitiesResolver {
     }));
     let published: (typeof drafts) | undefined;
     if(options.idsFilter === undefined || drafts.length !== options.idsFilter.length) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airplanes - querying published`);
+      this.logger.debug('resolving airplanes - querying published');
       published = await this.dbRepository.airplane.findMany({
         where: this.buildWhereIdQueryFilter(options),
         select: {
@@ -884,11 +884,11 @@ export class AcsysDraftEntitiesResolver {
     const allUnresolved = [...(drafts ?? []), ...(published ?? [])];
 
     const nameStrIds = allUnresolved.map(x => x.nameStrId);
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airplanes - names`);
+    this.logger.debug('resolving airplanes - names');
     const resolvedNames = await this.resolveLocalizeableValues(this.buildNestedEntitiesResolveOptions(nameStrIds, options));
 
     const airplaneIds = allUnresolved.map(x => x.id);
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving airplanes - airplane images`);
+    this.logger.debug('resolving airplanes - airplane images');
     const resolvedAirplaneImages = (await this.resolveAirplaneImages(this.buildNestedEntitiesResolveOptions(airplaneIds, options)));
     const airplaneImagesMap = new Map(toPairs(groupBy(
       Array.from(resolvedAirplaneImages.items.values()),
@@ -922,15 +922,15 @@ export class AcsysDraftEntitiesResolver {
     }
     const result = this.buildResolveResult(options, itemList);
     
-    this.logger.debug(`(AcsysDraftEntitiesResolver) airplanes resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('airplanes resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveCompanyReviews(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<ICompanyReview & IEntity>> {
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving company reviews, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving company reviews', { options: this.formatResolveOptionsLog(options) });
     
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) company reviews resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('company reviews resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, ICompanyReview>([]),
         notFoundIds: undefined
@@ -938,7 +938,7 @@ export class AcsysDraftEntitiesResolver {
     }
     this.validateAndPrepareResolveOptions(options, false);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving company reviews - querying drafts`);
+    this.logger.debug('resolving company reviews - querying drafts');
     const drafts = (await this.dbRepository.acsysDraftsCompanyReview.findMany({
       where: this.buildWhereIdQueryFilter(options),
       select: { 
@@ -952,7 +952,7 @@ export class AcsysDraftEntitiesResolver {
     }));
     let published: (typeof drafts) | undefined;
     if(options.idsFilter === undefined || drafts.length !== options.idsFilter.length) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) resolving company reviews - querying published`);
+      this.logger.debug('resolving company reviews - querying published');
       published = await this.dbRepository.companyReview.findMany({
         where: this.buildWhereIdQueryFilter(options),
         select: { 
@@ -971,9 +971,9 @@ export class AcsysDraftEntitiesResolver {
     const textingIds =  flatten(allUnresolved.map(x => [x.headerStrId, x.bodyStrId, x.personNameStrId]));
     const imageIds = allUnresolved.map(x => x.imageId);
   
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving company reviews - textings`);
+    this.logger.debug('resolving company reviews - textings');
     const resolvedTextings = await this.resolveLocalizeableValues(this.buildNestedEntitiesResolveOptions(textingIds, options));
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving company reviews - images`);
+    this.logger.debug('resolving company reviews - images');
     const resolvedImages = await this.resolveImageFileInfos(this.buildNestedEntitiesResolveOptions(imageIds, options));
     
     const draftIds = new Set<EntityId>(drafts.map(d => d.id));
@@ -1013,15 +1013,15 @@ export class AcsysDraftEntitiesResolver {
     }
     const result = this.buildResolveResult(options, itemList);
     
-    this.logger.debug(`(AcsysDraftEntitiesResolver) cities resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('company reviews resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
   
   public async resolveMailTemplates(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<ILocalizableValue & IEntity>> {
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving mail templates, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving mail templates', { options: this.formatResolveOptionsLog(options) });
     
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) mail templates resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('mail templates resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, ILocalizableValue & IEntity>([]),
         notFoundIds: undefined
@@ -1029,7 +1029,7 @@ export class AcsysDraftEntitiesResolver {
     }
     this.validateAndPrepareResolveOptions(options, false);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving mail templates - querying drafts`);
+    this.logger.debug('resolving mail templates - querying drafts');
     const drafts = (await this.dbRepository.acsysDraftsMailTemplate.findMany({
       where: this.buildWhereIdQueryFilter(options),
       select: { 
@@ -1040,7 +1040,7 @@ export class AcsysDraftEntitiesResolver {
     }));
     let published: (typeof drafts) | undefined;
     if(options.idsFilter === undefined || drafts.length !== options.idsFilter.length) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) resolving mail templates - querying published`);
+      this.logger.debug('resolving mail templates - querying published');
       published = await this.dbRepository.mailTemplate.findMany({
         where: this.buildWhereIdQueryFilter(options),
         select: { 
@@ -1054,7 +1054,7 @@ export class AcsysDraftEntitiesResolver {
     const allUnresolved = [...(drafts ?? []), ...(published ?? [])];
 
     const templateStrIds =  allUnresolved.map(x => x.templateStrId);
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving mail templates - template refs`);
+    this.logger.debug('resolving mail templates - template refs');
     const resolvedTemplateStrs = await this.resolveLocalizeableValues(this.buildNestedEntitiesResolveOptions(templateStrIds, options));
     
     const draftIds = new Set<EntityId>(drafts.map(d => d.id));
@@ -1075,15 +1075,15 @@ export class AcsysDraftEntitiesResolver {
     }
     const result = this.buildResolveResult(options, itemList);
     
-    this.logger.debug(`(AcsysDraftEntitiesResolver) mail templates resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('mail templates resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveFlights(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<IFlight>> {
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving flights, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving flights', { options: this.formatResolveOptionsLog(options) });
     
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) flights resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('flights resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, IFlight>([]),
         notFoundIds: undefined
@@ -1091,7 +1091,7 @@ export class AcsysDraftEntitiesResolver {
     }
     this.validateAndPrepareResolveOptions(options, true);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving flights - querying drafts`);
+    this.logger.debug('resolving flights - querying drafts');
     const drafts = (await this.dbRepository.acsysDraftsFlight.findMany({
       where: this.buildWhereIdQueryFilter(options),
       select: {
@@ -1110,7 +1110,7 @@ export class AcsysDraftEntitiesResolver {
     }));
     let published: (typeof drafts) | undefined;
     if(options.idsFilter === undefined || drafts.length !== options.idsFilter.length) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) resolving flights - querying published`);
+      this.logger.debug('resolving flights - querying published');
       published = await this.dbRepository.flight.findMany({
         where: this.buildWhereIdQueryFilter(options),
         select: {
@@ -1135,11 +1135,11 @@ export class AcsysDraftEntitiesResolver {
     const airplaneIds = uniq(allUnresolved.map(x => x.airplaneId));
     const airportIds = uniq(flatten([...allUnresolved.map(x => x.arrivalAirportId), allUnresolved.map(x => x.departmentAirportId)]));
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving flights - airline companies`);
+    this.logger.debug('resolving flights - airline companies');
     const resolvedAirlineCompanies = await this.resolveAirlineCompanies(this.buildNestedEntitiesResolveOptions(airlineCompanyIds, options));
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving flights - airplanes`);
+    this.logger.debug('resolving flights - airplanes');
     const resolvedAirplanes = await this.resolveAirplanes(this.buildNestedEntitiesResolveOptions(airplaneIds, options));
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving flights - airports`);
+    this.logger.debug('resolving flights - airports');
     const resolvedAirports = await this.resolveAirports(this.buildNestedEntitiesResolveOptions(airportIds, options));
     
     const draftIds = new Set<EntityId>(drafts.map(d => d.id));
@@ -1184,15 +1184,15 @@ export class AcsysDraftEntitiesResolver {
     }
     const result = this.buildResolveResult(options, itemList);
     
-    this.logger.debug(`(AcsysDraftEntitiesResolver) flights resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('flights resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveFlightOffers(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<IFlightOffer>> {
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving flight offers, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving flight offers', { options: this.formatResolveOptionsLog(options) });
     
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) flight offers resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('flight offers resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, IFlightOffer>([]),
         notFoundIds: undefined
@@ -1200,7 +1200,7 @@ export class AcsysDraftEntitiesResolver {
     }
     this.validateAndPrepareResolveOptions(options, true);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving flight offers - querying drafts`);
+    this.logger.debug('resolving flight offers - querying drafts');
     const drafts = (await this.dbRepository.acsysDraftsFlightOffer.findMany({
       where: this.buildWhereIdQueryFilter(options),
       select: {
@@ -1218,7 +1218,7 @@ export class AcsysDraftEntitiesResolver {
     }));
     let published: (typeof drafts) | undefined;
     if(options.idsFilter === undefined || drafts.length !== options.idsFilter.length) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) resolving flight offers - querying published`);
+      this.logger.debug('resolving flight offers - querying published');
       published = await this.dbRepository.flightOffer.findMany({
         where: this.buildWhereIdQueryFilter(options),
         select: {
@@ -1239,7 +1239,7 @@ export class AcsysDraftEntitiesResolver {
     const allUnresolved = [...(drafts ?? []), ...(published ?? [])];
 
     const flightIds = uniq([...allUnresolved.map(x => x.departFlightId), ...allUnresolved.filter(x=> !!x.returnFlightId).map(x => x.returnFlightId!)]);
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving flight offers - flights`);
+    this.logger.debug('resolving flight offers - flights');
     const resolvedFlights = await this.resolveFlights(this.buildNestedEntitiesResolveOptions(flightIds, options));
     
     const draftIds = new Set<EntityId>(drafts.map(d => d.id));
@@ -1279,15 +1279,15 @@ export class AcsysDraftEntitiesResolver {
     }
     const result = this.buildResolveResult(options, itemList);
     
-    this.logger.debug(`(AcsysDraftEntitiesResolver) flight offers resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('flight offers resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveStayImages(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<HotelImageResolveItem>> { 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stay images, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving stay images', { options: this.formatResolveOptionsLog(options) });
 
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) stay images resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('stay images resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, HotelImageResolveItem>([]),
         notFoundIds: undefined
@@ -1300,7 +1300,7 @@ export class AcsysDraftEntitiesResolver {
       ...(options.includeDeleted ? {} : { isDeleted: false })
     };
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stay images - querying drafts`);
+    this.logger.debug('resolving stay images - querying drafts');
     const drafts = (await this.dbRepository.acsysDraftsHotelImage.findMany({
       where: queryWhereFilter,
       select: {
@@ -1314,7 +1314,7 @@ export class AcsysDraftEntitiesResolver {
         isDeleted: true
       }
     }));
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stay images - querying published`);
+    this.logger.debug('resolving stay images - querying published');
     const published = await this.dbRepository.hotelImage.findMany({
       where: queryWhereFilter,
       select: {
@@ -1332,7 +1332,7 @@ export class AcsysDraftEntitiesResolver {
     const allUnresolved = [...(drafts ?? []), ...(published ?? [])];
 
     const imageIds = allUnresolved.map(x => x.imageId);
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stay images - Image entities`);
+    this.logger.debug('resolving stay images - Image entities');
     const resolvedImages = await this.resolveImageFileInfos(this.buildNestedEntitiesResolveOptions(imageIds, options));
 
     const draftIds = new Set<EntityId>(drafts.map(d => d.id));
@@ -1359,15 +1359,15 @@ export class AcsysDraftEntitiesResolver {
     }
     const result = this.buildResolveResult(options, itemList);
     
-    this.logger.debug(`(AcsysDraftEntitiesResolver) stay images resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('stay images resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveStayDescriptions(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<HoteDescriptionResolveItem>> { 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stay description, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving stay description', { options: this.formatResolveOptionsLog(options) });
 
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) stay description resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('stay description resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, HoteDescriptionResolveItem>([]),
         notFoundIds: undefined
@@ -1380,7 +1380,7 @@ export class AcsysDraftEntitiesResolver {
       ...(options.includeDeleted ? {} : { isDeleted: false })
     };
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stay description - querying drafts`);
+    this.logger.debug('resolving stay description - querying drafts');
     const drafts = (await this.dbRepository.acsysDraftsHotelDescription.findMany({
       where: queryWhereFilter,
       select: {
@@ -1394,7 +1394,7 @@ export class AcsysDraftEntitiesResolver {
         isDeleted: true
       }
     }));
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stay description - querying published`);
+    this.logger.debug('resolving stay description - querying published');
     const published = await this.dbRepository.hotelDescription.findMany({
       where: queryWhereFilter,
       select: {
@@ -1412,7 +1412,7 @@ export class AcsysDraftEntitiesResolver {
     const allUnresolved = [...(drafts ?? []), ...(published ?? [])];
 
     const textStrIds = allUnresolved.map(x => x.textStrId);
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stay description - texts`);
+    this.logger.debug('resolving stay description - texts');
     const resolvedTexts = await this.resolveLocalizeableValues(this.buildNestedEntitiesResolveOptions(textStrIds, options));
 
     const draftIds = new Set<EntityId>(drafts.map(d => d.id));
@@ -1439,15 +1439,15 @@ export class AcsysDraftEntitiesResolver {
     }
     const result = this.buildResolveResult(options, itemList);
     
-    this.logger.debug(`(AcsysDraftEntitiesResolver) stay description resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('stay description resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveStays(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<IStay>> {
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stays, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving stays', { options: this.formatResolveOptionsLog(options) });
     
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) stays resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('stays resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, IStay>([]),
         notFoundIds: undefined
@@ -1455,7 +1455,7 @@ export class AcsysDraftEntitiesResolver {
     }
     this.validateAndPrepareResolveOptions(options, false);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stays - querying drafts`);
+    this.logger.debug('resolving stays - querying drafts');
     const drafts = (await this.dbRepository.acsysDraftsHotel.findMany({
       where: this.buildWhereIdQueryFilter(options),
       select: {
@@ -1472,7 +1472,7 @@ export class AcsysDraftEntitiesResolver {
     }));
     let published: (typeof drafts) | undefined;
     if(options.idsFilter === undefined || drafts.length !== options.idsFilter.length) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stays - querying published`);
+      this.logger.debug('resolving stays - querying published');
       published = await this.dbRepository.hotel.findMany({
         where: this.buildWhereIdQueryFilter(options),
         select: {
@@ -1494,13 +1494,13 @@ export class AcsysDraftEntitiesResolver {
     const cityIds = uniq(allUnresolved.map(x => x.cityId));
     const nameStrIds = uniq(allUnresolved.map(x => x.nameStrId));
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stays - cities`);
+    this.logger.debug('resolving stays - cities');
     const resolvedCities = await this.resolveCities(this.buildNestedEntitiesResolveOptions(cityIds, options));
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stays - names`);
+    this.logger.debug('resolving stays - names');
     const resolvedNames = await this.resolveLocalizeableValues(this.buildNestedEntitiesResolveOptions(nameStrIds, options));
     const stayIds = allUnresolved.map(x => x.id);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stays - stay images`);
+    this.logger.debug('resolving stays - stay images');
     const resolveStayImages = (await this.resolveStayImages(this.buildNestedEntitiesResolveOptions(stayIds, options)));
     const stayImagesMap = new Map(toPairs(groupBy(
       Array.from(resolveStayImages.items.values()), 
@@ -1508,7 +1508,7 @@ export class AcsysDraftEntitiesResolver {
     )));
 
     const resolvedStayDescriptions = (await this.resolveStayDescriptions(this.buildNestedEntitiesResolveOptions(stayIds, options)));
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stays - stay descriptions`);
+    this.logger.debug('resolving stays - stay descriptions');
     const stayDescriptionsMap = new Map(toPairs(groupBy(
       Array.from(resolvedStayDescriptions.items.values()), 
       i => i.hotelId
@@ -1566,15 +1566,15 @@ export class AcsysDraftEntitiesResolver {
     }
     const result = this.buildResolveResult(options, itemList);
     
-    this.logger.debug(`(AcsysDraftEntitiesResolver) stays resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('stays resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 
   public async resolveStayOffers(options: AcsysDraftEntitiesResolveOptions): Promise<AcsysDraftEntitiesResolveResult<IStayOfferDetails>> {
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stay offers, ${this.formatResolveOptionsLog(options)}`);
+    this.logger.debug('resolving stay offers', { options: this.formatResolveOptionsLog(options) });
     
     if(!!options.idsFilter && options.idsFilter.length === 0) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) stay offers resolved, ${this.formatResolveOptionsLog(options)} - empty ids filter`);
+      this.logger.debug('stay offers resolved', { options: this.formatResolveOptionsLog(options) });
       return {
         items: new Map<EntityId, IStayOfferDetails>([]),
         notFoundIds: undefined
@@ -1582,7 +1582,7 @@ export class AcsysDraftEntitiesResolver {
     }
     this.validateAndPrepareResolveOptions(options, true);
 
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stay offers - querying drafts`);
+    this.logger.debug('resolving stay offers - querying drafts');
     const drafts = (await this.dbRepository.acsysDraftsStayOffer.findMany({
       where: this.buildWhereIdQueryFilter(options),
       select: {
@@ -1601,7 +1601,7 @@ export class AcsysDraftEntitiesResolver {
     }));
     let published: (typeof drafts) | undefined;
     if(options.idsFilter === undefined || drafts.length !== options.idsFilter.length) {
-      this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stay offers - querying published`);
+      this.logger.debug('resolving stay offers - querying published');
       published = await this.dbRepository.stayOffer.findMany({
         where: this.buildWhereIdQueryFilter(options),
         select: {
@@ -1623,7 +1623,7 @@ export class AcsysDraftEntitiesResolver {
     const allUnresolved = [...(drafts ?? []), ...(published ?? [])];
 
     const hotelIds = uniq(allUnresolved.map(x => x.hotelId));
-    this.logger.debug(`(AcsysDraftEntitiesResolver) resolving stay offers - hotels`);
+    this.logger.debug('resolving stay offers - hotels');
     const resolvedStays = await this.resolveStays(this.buildNestedEntitiesResolveOptions(hotelIds, options));
     
     const draftIds = new Set<EntityId>(drafts.map(d => d.id));
@@ -1637,7 +1637,7 @@ export class AcsysDraftEntitiesResolver {
       };
       const photo = hotel.images.find(x => x.order === 0);
       if(!photo) {
-        this.logger.warn(`(AcsysDraftEntitiesResolver) hotel does not contain main photo, hotelId=${hotel.id}, ${this.formatResolveOptionsLog(options)}`);
+        this.logger.warn('hotel does not contain main photo', undefined, { hotelId: hotel.id, options: this.formatResolveOptionsLog(options) });
         throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'hotel main photo not found', 'error-page');
       };
       
@@ -1679,7 +1679,7 @@ export class AcsysDraftEntitiesResolver {
     }
     const result = this.buildResolveResult(options, itemList);
     
-    this.logger.debug(`(AcsysDraftEntitiesResolver) stay offers resolved, ${this.formatResolveOptionsLog(options)}, ${this.formatResolveResultLog(options, result)}`);
+    this.logger.debug('stay offers resolved', { options: this.formatResolveOptionsLog(options) });
     return result;
   }
 }

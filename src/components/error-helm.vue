@@ -13,6 +13,9 @@ const {
   userNotification = false 
 } = defineProps<IProps>();
 
+const nuxtApp = useNuxtApp();
+const userNotificationStore = useUserNotificationStore();
+
 function onError (err: any) {
   if (err) {
     err.errorHelmed = true;
@@ -34,7 +37,7 @@ function onError (err: any) {
       appearance);
   }
 
-  defaultErrorHandler(appException);
+  defaultErrorHandler(appException, { nuxtApp, userNotificationStore });
 }
 
 const $emit = defineEmits(['update:isError']);

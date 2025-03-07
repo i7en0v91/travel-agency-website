@@ -1,5 +1,6 @@
 <!-- eslint-disable @typescript-eslint/unified-signatures -->
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { ImageCategory, getI18nResName2, type Timestamp, type EntityId } from '@golobe-demo/shared';
 import type { ITravelDetailsData, TravelDetailsImageStatus } from './../../../types';
 import type { WatchStopHandle } from 'vue';
@@ -7,14 +8,14 @@ import TravelDetailsImageFrame from './travel-details-image-frame.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   imageIndex: number, // from 0 to 3
   currentStatus?: TravelDetailsImageStatus,
   upcomingStatus?: TravelDetailsImageStatus
 };
 const { ctrlKey, imageIndex, currentStatus, upcomingStatus } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'TravelDetailsImage' });
 const activeFrame = ref<'initial' | 'A' | 'B'>('initial');
 const frameStatusA = ref<TravelDetailsImageStatus | undefined>();
 const frameStatusB = ref<TravelDetailsImageStatus | undefined>();
@@ -35,7 +36,7 @@ const $emit = defineEmits<{
 }>();
 
 function swapFrames () {
-  logger.debug(`(TravelDetailsImage) swapping frames: ctrlKey=${ctrlKey}, activeFrame=${activeFrame.value}, frameA status=${frameStatusA.value}, frameB status=${frameStatusB.value}`);
+  logger.debug('swapping frames', { ctrlKey, activeFrame: activeFrame.value, statusA: frameStatusA.value, statusB: frameStatusB.value });
   switch (activeFrame.value) {
     case 'initial':
       activeFrame.value = 'A';
@@ -89,14 +90,14 @@ const travelDetailsStore = useTravelDetailsStore();
 function fireStatusChange (kind: 'current' | 'upcoming', status: TravelDetailsImageStatus) {
   const propsStatus = kind === 'current' ? currentStatus : upcomingStatus;
   if (!propsStatus || status !== propsStatus) {
-    logger.debug(`(TravelDetailsImage) ${kind} status changed: ctrlKey=${ctrlKey}, new status=${status}, prev status=${propsStatus}`);
+    logger.debug('status changed', { ctrlKey, kind, newStatus: status, prevStatus: propsStatus });
     if (kind === 'current') {
       $emit('update:currentStatus', status);
     } else {
       $emit('update:upcomingStatus', status);
     }
   } else {
-    logger.debug(`(TravelDetailsImage) wont fire ${kind} status change as it is still the same: ctrlKey=${ctrlKey}, status=${status}`);
+    logger.debug('wont fire status change as it is still the same', { ctrlKey, kind, status });
   }
 }
 
@@ -113,7 +114,7 @@ if (storeInstance.current?.images && imageIndex < storeInstance.current.images.l
 }
 
 function onImageFrameStatusChanged () {
-  logger.debug(`(TravelDetailsImage) image frame status changed: ctrlKey=${ctrlKey}, activeFrame=${activeFrame.value}, frameA status=${frameStatusA.value}, frameB status=${frameStatusB.value}`);
+  logger.debug('image frame status changed', { ctrlKey, activeFrame: activeFrame.value, statusA: frameStatusA.value, statusB: frameStatusB.value });
   switch (activeFrame.value) {
     case 'initial':
       fireStatusChange('upcoming', frameStatusA.value ?? 'loading');
@@ -130,7 +131,7 @@ function onImageFrameStatusChanged () {
 }
 
 function onUpcomingDataChanged (data?: ITravelDetailsData | undefined) {
-  logger.verbose(`(TravelDetailsImage) upcoming data changed: ctrlKey=${ctrlKey}, activeFrame=${activeFrame.value}, frameA status=${frameStatusA.value}, frameB status=${frameStatusB.value}, cityId=${data?.cityId}, numImages=${data?.images?.length ?? 0}`);
+  logger.verbose('upcoming data changed', { ctrlKey, activeFrame: activeFrame.value, statusA: frameStatusA.value, statusB: frameStatusB.value, cityId: data?.cityId, numImages: data?.images?.length ?? 0 });
   if (data?.images) {
     if (imageIndex < data.images.length) {
       const receivingBuf = activeFrame.value !== 'A' ? dataBuf2 : dataBuf1;
@@ -143,11 +144,11 @@ function onUpcomingDataChanged (data?: ITravelDetailsData | undefined) {
         fireStatusChange('upcoming', 'loading');
       } else {
         const upcomingStatus = activeFrame.value !== 'A' ? frameStatusA.value : frameStatusB.value;
-        logger.debug(`(TravelDetailsImage) refiring upcoming status: ctrlKey=${ctrlKey}, upcomingStatus=${upcomingStatus}`);
+        logger.debug('refiring upcoming status', { ctrlKey, upcomingStatus });
         $emit('update:upcomingStatus', upcomingStatus);
       }
     } else {
-      logger.warn(`(TravelDetailsImage) image index exceeds number of images in received upcoming data: ctrlKey=${ctrlKey}, imgIdx=${imageIndex}, cityId=${data.cityId}`);
+      logger.warn('image index exceeds number of images in received upcoming data', undefined, { ctrlKey, imgIdx: imageIndex, cityId: data.cityId });
       fireStatusChange('upcoming', 'error');
     }
   } else if (data?.cityId) {
@@ -158,9 +159,9 @@ function onUpcomingDataChanged (data?: ITravelDetailsData | undefined) {
 }
 
 function onInitialDataReady (data: ITravelDetailsData) {
-  logger.verbose(`(TravelDetailsImage) initial data ready: ctrlKey=${ctrlKey}, activeFrame=${activeFrame.value}, frameA status=${frameStatusA.value}, frameB status=${frameStatusB.value}`);
+  logger.verbose('initial data ready', { ctrlKey, activeFrame: activeFrame.value, statusA: frameStatusA.value, statusB: frameStatusB.value });
   if (activeFrame.value !== 'initial' || dataBufInitial.value) {
-    logger.verbose(`(TravelDetailsImage) initial data has been already processed: ctrlKey=${ctrlKey}, activeFrame=${activeFrame.value}, frameA status=${frameStatusA.value}, frameB status=${frameStatusB.value}`);
+    logger.verbose('initial data has been already processed', { ctrlKey, activeFrame: activeFrame.value, statusA: frameStatusA.value, statusB: frameStatusB.value });
     return;
   }
 
@@ -173,14 +174,14 @@ function onInitialDataReady (data: ITravelDetailsData) {
       };
       fireStatusChange('current', 'loading');
     } else {
-      logger.warn(`(TravelDetailsImage) image index exceeds number of images in received initial data: ctrlKey=${ctrlKey}, imgIdx=${imageIndex}, cityId=${data.cityId}`);
+      logger.warn('image index exceeds number of images in received initial data', undefined, { ctrlKey, imgIdx: imageIndex, cityId: data.cityId });
       fireStatusChange('current', 'error');
     }
   }
 }
 
 async function startWatchingForDataChanges () : Promise<void> {
-  logger.verbose(`(TravelDetailsImage) starting to watch for data changes: ctrlKey=${ctrlKey}`);
+  logger.verbose('starting to watch for data changes', ctrlKey);
 
   const storeInstance = await (travelDetailsStore.getInstance());
   watches.push(watch([() => storeInstance.upcoming?.cityId, () => storeInstance.upcoming?.images], () => {
@@ -199,25 +200,25 @@ async function startWatchingForDataChanges () : Promise<void> {
 }
 
 function stopWatchingForDataChanges () {
-  logger.verbose(`(TravelDetailsImage) stopping to watch for data changes: ctrlKey=${ctrlKey}`);
+  logger.verbose('stopping to watch for data changes', ctrlKey);
   watches.forEach(sw => sw());
 }
 
 function onStaticImageReady () {
-  logger.debug(`(TravelDetailsImage) static image ready: ctrlKey=${ctrlKey}`);
+  logger.debug('static image ready', ctrlKey);
   if (activeFrame.value === 'initial') {
     fireStatusChange('current', 'ready');
   } else {
-    logger.debug(`(TravelDetailsImage) static image ready fired when static image was not acitve: ctrlKey=${ctrlKey}`);
+    logger.debug('static image ready fired when static image was not acitve', ctrlKey);
   }
 }
 
 function onStaticImageFailed () {
   if (activeFrame.value === 'initial') {
-    logger.warn(`(TravelDetailsImage) static image failed: ctrlKey=${ctrlKey}`);
+    logger.warn('static image failed', undefined, ctrlKey);
     fireStatusChange('current', 'error');
   } else {
-    logger.debug(`(TravelDetailsImage) static image failed fired when static image was not acitve: ctrlKey=${ctrlKey}`);
+    logger.debug('static image failed fired when static image was not acitve', ctrlKey);
   }
 }
 
@@ -233,14 +234,14 @@ onBeforeUnmount(() => {
       <div class="travel-details-frame-container">
         <StaticImage
           v-if="!staticImageHidden"
-          :ctrl-key="`${ctrlKey}-TravelDetailsImage-Initial`"
-          :entity-src="dataBufInitial?.slug ? { slug: dataBufInitial!.slug, timestamp: dataBufInitial!.timestamp } : undefined"
+          :ctrl-key="[...ctrlKey, 'TravelDetails', 'StaticImg', 1]"
+          :src="dataBufInitial?.slug ? { slug: dataBufInitial!.slug, timestamp: dataBufInitial!.timestamp } : undefined"
           :category="ImageCategory.TravelBlock"
           sizes="xs:100vw sm:50vw md:50vw lg:50vw xl:50vw"
           class="travel-details-frame"
           :style="{ display: 'block' }"
-          :alt-res-name="getI18nResName2('travelDetails','travelImgAlt')"
-          :show-stub="true"
+          :alt="{ resName: getI18nResName2('travelDetails','travelImgAlt') }"
+          stub="default"
           @image-ready="onStaticImageReady"
           @image-failed="onStaticImageFailed"
         />
@@ -248,7 +249,7 @@ onBeforeUnmount(() => {
           <TravelDetailsImageFrame
             v-show="activeFrame === 'A'"
             v-model:status="frameStatusA"
-            :ctrl-key="`${ctrlKey}-TravelDetailsImage-FrameA`"
+            :ctrl-key="[...ctrlKey, 'TravelDetails', 'StaticImg', 2]"
             :slug="dataBuf2?.slug"
             :timestamp="dataBuf2?.timestamp"
             :class="framesActivated ? 'frames-activated' : 'frames-not-activated'"
@@ -258,7 +259,7 @@ onBeforeUnmount(() => {
           <TravelDetailsImageFrame
             v-show="activeFrame === 'B'"
             v-model:status="frameStatusB"
-            :ctrl-key="`${ctrlKey}-TravelDetailsImage-FrameB`"
+            :ctrl-key="[...ctrlKey, 'TravelDetails', 'StaticImg', 3]"
             :slug="dataBuf1?.slug"
             :timestamp="dataBuf1?.timestamp"
           />

@@ -4,14 +4,16 @@ import { getCommonServices } from '../helpers/service-accessors';
 import { spinWait, type IAppLogger } from '@golobe-demo/shared';
 import { HashNavigationPageTimeout as AnchorNavigationTimeout } from './../helpers/constants';
 
+const CommonLogProps = { component: 'ScrollBehavior' };
+
 async function positionToAnchor(to: RouteLocationNormalizedGeneric, from: RouteLocationNormalizedGeneric, logger: IAppLogger) {
   const elementReady = await spinWait(() => Promise.resolve(!!document.querySelector(to.hash)), AnchorNavigationTimeout, 50);
   if(!elementReady) {
-    logger.warn(`(scroll-behavior) timeout while positioning to anchor, from=[${from.fullPath}], to=[${to.fullPath}]`);
+    logger.warn('timeout while positioning to anchor', undefined, { from: from.fullPath, to: to.fullPath });
     return false;
   }
   
-  logger.debug(`(scroll-behavior) positioning to anchor, from=[${from.fullPath}], to=[${to.fullPath}]`);
+  logger.debug('positioning to anchor', { from: from.fullPath, to: to.fullPath });
   return {
     el: to.hash,
     behavior: 'instant'
@@ -20,8 +22,8 @@ async function positionToAnchor(to: RouteLocationNormalizedGeneric, from: RouteL
 
 export default <RouterConfig> {
   scrollBehavior: (to, from, savedPosition) => {
-    const logger = getCommonServices().getLogger();
-    logger.verbose(`(scroll-behavior) from=[${from.fullPath}], to=[${to.fullPath}], savedTop=${savedPosition?.top}`);
+    const logger = getCommonServices().getLogger().addContextProps(CommonLogProps);
+    logger.verbose('enter', { from: from.fullPath, to: to.fullPath, savedTop: savedPosition?.top });
 
     if(to.hash?.length) {
       return positionToAnchor(to, from, logger);
@@ -33,7 +35,7 @@ export default <RouterConfig> {
     // after app is initialized (not when moving to new page) it will try to update scroll position according to it's rules
     // for this one-time case in the beginning we need to force scroll position to where use has scrolled
     const scrollPositionMayReset = !!nuxtApp.isHydrating;
-    logger.debug(`(scroll-behavior) from=[${from.fullPath}], to=[${to.fullPath}], scrollPositionMayReset=${scrollPositionMayReset}, savedPos=${JSON.stringify(savedPosition)}`);
+    logger.debug('currrent settings', { from: from.fullPath, to: to.fullPath, scrollPositionMayReset, savedPosition });
 
     return new Promise((resolve) => {
       setTimeout(() => {

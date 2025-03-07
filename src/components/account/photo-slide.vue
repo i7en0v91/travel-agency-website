@@ -1,9 +1,9 @@
 <script setup lang="ts">
-
+import type { ControlKey } from './../../helpers/components';
 import { type I18nResName, ImageCategory } from '@golobe-demo/shared';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   altResName: I18nResName,
   imgSlug: string
 }
@@ -13,14 +13,14 @@ defineProps<IProps>();
 
 <template>
   <StaticImage
-    :ctrl-key="`${ctrlKey}StaticImg`"
-    :show-stub="true"
-    :is-high-priority="true"
+    :ctrl-key="[...ctrlKey, 'StaticImg']"
+    stub="default"
     class="account-forms-photo"
-    img-class="account-forms-photo-img"
-    :entity-src="{ slug: imgSlug }"
+    :ui="{ img: 'account-forms-photo-img' }"
+    :src="{ slug: imgSlug }"
     :category="ImageCategory.AuthFormsImage"
     sizes="xs:0vw sm:50vw md:50vw lg:40vw xl:30vw"
-    :alt-res-name="altResName"
+    :alt="{ resName: altResName }"
+    high-priority
   />
 </template>

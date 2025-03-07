@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import type { PaymentMethodType, I18nResName } from '@golobe-demo/shared';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   selected: boolean,
   type: PaymentMethodType,
   headerResName: I18nResName,
@@ -12,12 +13,12 @@ interface IProps {
 };
 
 const { ctrlKey, selected, headerResName, textResName, textResArgs } = defineProps<IProps>();
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'PaymentMethodVariant' });
 
 const $emit = defineEmits<{(event: 'update:selected', value: boolean): void}>();
 
 function onClicked () {
-  logger.debug(`(PaymentMethodVariant) on click, ctrlKey=${ctrlKey}, selected=${selected}`);
+  logger.debug('on click', { ctrlKey, selected });
   if (selected) {
     return;
   }

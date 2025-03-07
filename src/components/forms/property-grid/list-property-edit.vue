@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../../helpers/components';
 import { AppException, AppExceptionCodeEnum, maskLog, MaxListPropertyElementsCount, UserNotificationLevel, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
 import type { SimplePropertyType, PropertyGridControlButtonType } from './../../../types';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
@@ -9,7 +10,7 @@ import { useConfirmBox } from './../../../composables/confirm-box';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   captionResName: I18nResName,
   type: Exclude<SimplePropertyType, 'password'>,
   validateAndSave: (newValues: (string | undefined)[], currentValues: (string | undefined)[], op: 'add' | 'change' | 'delete', propIdx: number | 'add', newValue?: string) => Promise<I18nResName | 'success' | 'cancel'>,
@@ -24,12 +25,12 @@ interface IProps {
 
 const { validateAndSave, values, ctrlKey, maxElementsCount, autoTrim = true, required = false, maxLength = 256 } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ListPropertyEdit' });
 const confirmBox = useConfirmBox();
 const userNotificationStore = useUserNotificationStore();
 
 if (maxElementsCount > MaxListPropertyElementsCount) {
-  logger.error(`(ListPropertyEdit) list property size exceeded maximum allowed, ctrlKey=${ctrlKey}, size=${maxElementsCount}`);
+  logger.error('list property size exceeded maximum allowed', undefined, { ctrlKey, size: maxElementsCount });
   throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'list property size exceeded maximum allowed', 'error-page');
 }
 const propList = useTemplateRef('prop-list');
@@ -54,7 +55,7 @@ function applyValuesOperation (currentValues: (string | undefined)[], op: 'add' 
         newValues = currentValues.slice(0, currentValues.length);
         newValues[propIdx!] = value;
       } else {
-        logger.warn(`(ListPropertyEdit) property index out of range, ctrlKey=${ctrlKey}, op=${op}, propIdx=${propIdx}, value=${maskLog(value)}`);
+        logger.warn('property index out of range (change', undefined, { ctrlKey, op, propIdx, value: maskLog(value) });
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'property index out of range', 'error-stub');
       }
       break;
@@ -65,31 +66,31 @@ function applyValuesOperation (currentValues: (string | undefined)[], op: 'add' 
       if (propIdx !== 'add' && propIdx < currentValues.length) {
         newValues.splice(propIdx!, 1);
       } else {
-        logger.warn(`(ListPropertyEdit) property index out of range, ctrlKey=${ctrlKey}, op=${op}, propIdx=${propIdx}, value=${maskLog(value)}`);
+        logger.warn('property index out of range (delete', undefined, { ctrlKey, op, propIdx, value: maskLog(value) });
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'property index out of range', 'error-stub');
       }
       break;
     default:
-      logger.error(`(ListPropertyEdit) unexpected operation type, ctrlKey=${ctrlKey}, op=${op}, propIdx=${propIdx}, value=${maskLog(value)}`);
+      logger.error('unexpected operation type', undefined, { ctrlKey, op, propIdx, value: maskLog(value) });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected operation type', 'error-page');
   }
   return newValues;
 }
 
 async function onValidateAndSave (op: 'add' | 'change' | 'delete', propIdx: number | 'add', value?: string): Promise<I18nResName | 'success' | 'cancel'> {
-  logger.verbose(`(ListPropertyEdit) calling client save handler: ctrlKey=${ctrlKey}, op=${op}, propIdx=${propIdx}, value=${maskLog(value)}`);
+  logger.verbose('calling client save handler', { ctrlKey, op, propIdx, value: maskLog(value) });
   const currentValues = values.slice(0, values.length);
   const newValues = applyValuesOperation(currentValues, op, propIdx, value);
   if (newValues.length > maxElementsCount) {
     return getI18nResName2('validations', 'maximumNumberOfRecordsReached');
   }
   const result = await validateAndSave(newValues, currentValues, op, propIdx, value);
-  logger.verbose(`(ListPropertyEdit) client save handler result: ctrlKey=${ctrlKey}, propIdx=${propIdx}, value=${maskLog(value)}, errMsgResName=${result}`);
+  logger.verbose('client save handler result', { ctrlKey, propIdx, value: maskLog(value), errMsgResName: result });
   return result;
 }
 
 function onPropertyEnterEditMode (propIdx: number | 'add') {
-  logger.debug(`(ListPropertyEdit) property entered edit mode: ctrlKey=${ctrlKey}, propIdx=${propIdx}`);
+  logger.debug('property entered edit mode', { ctrlKey, propIdx });
   for (let i = 0; i < maxElementsCount; i++) {
     if (propIdx === 'add' || i !== propIdx) {
       getPropertyComponent(i)?.exitEditMode();
@@ -102,7 +103,7 @@ function onPropertyEnterEditMode (propIdx: number | 'add') {
 }
 
 function handleItemValueChange (op: 'add' | 'delete' | 'change', propIdx: number | 'add', value?: string) {
-  logger.verbose(`(ListPropertyEdit) handling value change: ctrlKey=${ctrlKey}, op=${op}, propIdx=${propIdx}, value=${maskLog(value)}`);
+  logger.verbose('handling value change', { ctrlKey, op, propIdx, value: maskLog(value) });
   // to this moment everything has been already validated & saved by respective SimplePropertyEdit, here need just to trigger component rerender
   const currentValues = values.slice(0, values.length);
   const newValues = applyValuesOperation(currentValues, op, propIdx, value);
@@ -126,15 +127,15 @@ function handleItemValueChange (op: 'add' | 'delete' | 'change', propIdx: number
 }
 
 async function onControlButtonClick (button: PropertyGridControlButtonType, propIdx: number | 'add'): Promise<void> {
-  logger.debug(`(ListPropertyEdit) onControlButtonClick, ctrlKey=${ctrlKey}, button=${button}, propIdx=${propIdx}`);
+  logger.debug('onControlButtonClick', { ctrlKey, button, propIdx });
   if (button === 'delete') {
     if (propIdx === 'add') {
-      logger.error(`(ListPropertyEdit) invalid property index in control button click handler, ctrlKey=${ctrlKey}, button=${button}, propIdx=${propIdx}`);
+      logger.error('invalid property index in control button click handler', undefined, { ctrlKey, button, propIdx });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'invalid property index', 'error-stub');
     }
     onPropertyEnterEditMode(propIdx);
     const itemText = editValues[propIdx].value;
-    const result = await confirmBox.confirm(`${ctrlKey}-DeleteConfirm`, ['yes', 'no'], getI18nResName2('propertyGrid', 'deleteConfirmMsg'), { itemText });
+    const result = await confirmBox.confirm([...ctrlKey, 'Delete', 'ConfirmBox'], ['yes', 'no'], getI18nResName2('propertyGrid', 'deleteConfirmMsg'), { itemText });
     if (result === 'yes') {
       const result = await onValidateAndSave('delete', propIdx, undefined);
       if (result === 'success') {
@@ -161,7 +162,7 @@ function exitEditMode () {
   propAdd.value?.exitEditMode();
 }
 
-const $emit = defineEmits<{(event: 'update:values', values: (string | undefined)[]): void, (event: 'enterEditMode', ctrlKey: string): void}>();
+const $emit = defineEmits<{(event: 'update:values', values: (string | undefined)[]): void, (event: 'enterEditMode', ctrlKey: ControlKey): void}>();
 
 defineExpose({
   exitEditMode
@@ -170,13 +171,13 @@ defineExpose({
 </script>
 
 <template>
-  <PropertyGrid :ctrl-key="`${ctrlKey}-propGrid`" class="list-property-edit">
+  <PropertyGrid :ctrl-key="[...ctrlKey, 'PropGrid']" class="list-property-edit">
     <SimplePropertyEdit
       v-for="(v, idx) in values"
-      :key="`${ctrlKey}-v${idx}`"
+      :key="`${toShortForm(ctrlKey)}-v${idx}`"
       ref="prop-list"
       v-model:value="editValues[idx].value"
-      :ctrl-key="`${ctrlKey}-v${idx}`"
+      :ctrl-key="[...ctrlKey, 'PropGrid', 'PropEdit', idx]"
       :type="type"
       :caption-res-name="captionResName"
       :placeholder-res-name="placeholderResName"
@@ -193,10 +194,10 @@ defineExpose({
     />
     <SimplePropertyEdit
       v-if="values.length < maxElementsCount"
-      :key="`${ctrlKey}-Add`"
+      :key="`${toShortForm(ctrlKey)}-Add`"
       ref="prop-add"
       v-model:value="addingNewValue"
-      :ctrl-key="`${ctrlKey}-Add`"
+      :ctrl-key="[...ctrlKey, 'PropGrid', 'PropEdit', 'Add']"
       :type="type"
       class="list-property-edit-add"
       :caption-res-name="captionResName"

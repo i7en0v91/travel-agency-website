@@ -1,22 +1,20 @@
-import { UseWinstonOnClient, AppException, AppExceptionCodeEnum, isDevEnv, isElectronBuild, lookupPageByUrl, SystemPage, type IAppLogger } from '@golobe-demo/shared';
+import { type IAppLogger, UseWinstonOnClient, AppException, AppExceptionCodeEnum, isDevEnv, isElectronBuild, lookupPageByUrl, SystemPage } from '@golobe-demo/shared';
 import { Logger as ClientSimpleHttpLogger } from './../client/simple-http-logger';
 import { Logger as ClientWinstonLogger } from './../client/winston-logger';
 import { ElectronShell } from '../client/electron-shell';
-import { EntityCache } from '../client/entity-cache';
 import type { IClientServicesLocator } from '../types';
-import { SearchFlightOffersDisplayOptions, SearchStayOffersDisplayOptions, FavouritesOptionButtonGroup } from '../helpers/constants';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices, getLastSelectedOptionStorageKey } from './../helpers/dom';
+import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../helpers/dom';
 import { Scope, createInjector } from 'typed-inject';
 import once from 'lodash-es/once';
-import { createStorage, type Storage, type StorageValue } from 'unstorage';
 import installLoggingHooks from './logging-hooks';
 import { getClientServices, getCommonServices } from '../helpers/service-accessors';
 import { getDialogsFacade, getAppMenuFacade, getNavigationFacade, getSystemPreferencesFacade } from '../helpers/electron';
 import { buildNavProps } from './../helpers/electron';
 import { useNuxtApp } from 'nuxt/app';
 
-function installGlobalExceptionHandler () {
-  const logger = getCommonServices().getLogger();
+const CommonLogProps = { component: 'StartupClient' };
+
+function installGlobalExceptionHandler (logger: IAppLogger) {
   const prevHandler = window.onerror;
   window.onerror = function (event: Event | string, source?: string, lineno?: number, colno?: number, error?: Error) {
     try {
@@ -34,15 +32,14 @@ function installGlobalExceptionHandler () {
   });
 }
 
-function setupElectronShellIntegration() {
-  const logger = getCommonServices().getLogger();
-  logger.info('(ElectronShellIntegration) setting up');
+function setupElectronShellIntegration(logger: IAppLogger) {
+  logger.info('setting up');
   try {
     const nuxtApp = useNuxtApp();
     const router = useRouter();
 
     nuxtApp.hook('app:mounted', async () => {
-      logger.verbose('(ElectronShellIntegration) setting watchers for navbar refresh');
+      logger.verbose('setting watchers for navbar refresh');
       const { status } = useAuth();
       const i18n = nuxtApp.$i18n as ReturnType<typeof useI18n>;
       const t = i18n.t;
@@ -50,14 +47,14 @@ function setupElectronShellIntegration() {
       //const locale = i18n.locale;
       watch([ status /*, locale*/ ], async () => {
         const locale = await getSystemPreferencesFacade().getLocale();
-        logger.verbose(`(ElectronShellIntegration) refreshing navbar, auth=${status.value}, locale=${locale}`);
+        logger.verbose(`refreshing navbar`, { auth: status.value, locale });
         try {
           const navProps = buildNavProps(status.value === 'authenticated', t, locale);
           const appMenuFacade = getAppMenuFacade();
           appMenuFacade.notifyNavBarRefreshed(navProps);
-          logger.verbose(`(ElectronShellIntegration) navbar refreshed, auth=${status.value}, locale=${locale}`);
+          logger.verbose(`navbar refreshed`, { auth: status.value, locale });
         } catch(err: any) {
-          logger.error(`(ElectronShellIntegration) failed to refresh navbar, auth=${status.value}, locale=${locale}`, err);
+          logger.error(`failed to refresh navbar`, err, { auth: status.value, locale });
         }
       }, { immediate: true });
 
@@ -71,33 +68,33 @@ function setupElectronShellIntegration() {
     });
 
     router.afterEach((to, from) => {
-      logger.debug(`(ElectronShellIntegration) after each route handler, to=[${to.fullPath}], from=[${from.fullPath}]`);
+      logger.debug(`after each route handler`, { to: to.fullPath, from: from.fullPath });
 
       const pageFrom = lookupPageByUrl(from.fullPath);
       const pageTo = lookupPageByUrl(to.fullPath);
 
       if(!pageTo) {
-        logger.warn(`(ElectronShellIntegration) cannot detect page navigated to, url=[${to.fullPath}]`);
+        logger.warn(`cannot detect page navigated`, undefined, { to: to.fullPath });
         return;
       }
 
       if(pageTo === SystemPage.Drafts) {
-        logger.verbose(`(ElectronShellIntegration) navigated to system page, url=[${to.fullPath}], page=${pageTo.valueOf()}`);
+        logger.verbose(`navigated to system page`, { to: to.fullPath, page: pageTo });
         return;
       }
 
       if(pageTo === pageFrom) {
-        logger.debug(`(ElectronShellIntegration) navigated page hasn't changed, url=[${to.fullPath}], page=${pageTo.valueOf()}`);
+        logger.debug(`navigated page hasn't changed`, { to: to.fullPath, page: pageTo });
         return;
       }
 
       getNavigationFacade().notifyPageNavigated(pageTo);
-      logger.debug(`(ElectronShellIntegration) after each route handler completed, to=[${to.fullPath}], from=[${from.fullPath}]`);
+      logger.debug(`after each route handler completed`, { to: to.fullPath, from: from.fullPath });
     });
 
-    logger.verbose('(ElectronShellIntegration) setup completed');
+    logger.verbose('setup completed');
   } catch(err: any) {
-    logger.error('(ElectronShellIntegration) setup failed', err);
+    logger.error('setup failed', err);
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'Electron configuration failed', 'error-page');
   }
 }
@@ -105,9 +102,14 @@ function setupElectronShellIntegration() {
 let browserPageInitializationDone = false;
 function initializeBrowserPage () {
   if (!browserPageInitializationDone) {
-    const logger = getCommonServices().getLogger();
+    const logger = getCommonServices().getLogger().addContextProps(CommonLogProps);
     logger.verbose('installing global exception handlers');
-    installGlobalExceptionHandler();
+
+    installGlobalExceptionHandler(
+      logger.addContextProps({ 
+        component: 'GlobalHooks' 
+      })
+    );
 
     if(isElectronBuild()) {
       const error = useError()?.value;
@@ -117,16 +119,17 @@ function initializeBrowserPage () {
         dialogsFacade.showNotification('fatal', 'Unknown error');
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'app initialization failed', 'error-page');
       }
-      setupElectronShellIntegration();
+      setupElectronShellIntegration(
+        logger.addContextProps({ 
+          component: 'ElectronShellIntegration' 
+        })
+      );
     }
 
     browserPageInitializationDone = true;
   }
 }
 
-function createCache (): Storage<StorageValue> {
-  return createStorage();
-}
 
 /**
  * To use {@link winston} see comments in {@link WinstonEsmClientPlugin}
@@ -147,38 +150,21 @@ function buildServiceLocator () : IClientServicesLocator {
         .provideClass('logger', getLoggerClass(), Scope.Singleton)
         .provideValue('localizer', undefined as any)
         .provideValue('electronShell', undefined as any))
-    )
-    .provideValue('cache', createCache())
-    .provideClass('entityCache', EntityCache, Scope.Singleton);
+    );
 
   return {
     getLogger: () => provider.resolve('logger'),
     getElectronShell: () => isElectronBuild() ? provider.resolve('electronShell') : (undefined as any),
-    getEntityCache: () => provider.resolve('entityCache'),
     appMounted: false
   };
 }
 
-function resetSearchOffersFilterSettings (logger: IAppLogger) {
-  logger.verbose('resetting user filter settings');
-  localStorage.removeItem(getLastSelectedOptionStorageKey(SearchFlightOffersDisplayOptions));
-  localStorage.removeItem(getLastSelectedOptionStorageKey(SearchStayOffersDisplayOptions));
-}
-
-function resetFavouritesTabSettings (logger: IAppLogger) {
-  logger.verbose('resetting user favourites tab settings');
-  localStorage.removeItem(getLastSelectedOptionStorageKey(FavouritesOptionButtonGroup));
-}
-
 const initApp = once(() => {
-  const logger = new ClientSimpleHttpLogger(); // container has not built yet
+  const logger = new ClientSimpleHttpLogger().addContextProps(CommonLogProps); // container has not built yet
   try {
-    logger.info(`PAGE INITIALIZING... (${import.meta.env.MODE})`);
+    logger.info(`PAGE INITIALIZING...`, { mode: import.meta.env.MODE });
     const clientServicesLocator = (globalThis as any).CommonServicesLocator = (globalThis as any).ClientServicesLocator = buildServiceLocator();
     initializeBrowserPage();
-
-    resetSearchOffersFilterSettings(logger);
-    resetFavouritesTabSettings(logger);
 
     const nuxtApp = useNuxtApp();
     nuxtApp.hook('app:mounted', () => {
@@ -187,9 +173,9 @@ const initApp = once(() => {
     });
 
     window.addEventListener('resize', () => setTimeout(updateTabIndices, TabIndicesUpdateDefaultTimeout));
-  } catch (e) {
-    logger.error('app initialization failed', e);
-    throw e;
+  } catch (err) {
+    logger.error('app initialization failed', err);
+    throw err;
   }
 });
 

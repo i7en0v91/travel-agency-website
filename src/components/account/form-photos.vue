@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { AppConfig, getI18nResName1, HeaderAppVersion } from '@golobe-demo/shared';
 import { Pagination, Autoplay } from 'swiper/modules';
 import AuthFormsPhoto from './../../components/account/photo-slide.vue';
@@ -8,12 +9,12 @@ import type { Ref } from 'vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 defineProps<IProps>();
 
 const isError = ref(false);
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'FormPhotos' });
 
 const { enabled } = usePreviewState();
 
@@ -27,23 +28,23 @@ const { error, data } = await useFetch(authFormsImagesUrl,
     transform: (response: any) => {
       const dto = response as IImageDetailsDto[];
       if (!dto) {
-        logger.warn('(account-forms-photos) fetch request returned empty data');
+        logger.warn('fetch request returned empty data');
         return;
       }
       const slugs = dto.map(x => x.slug);
-      logger.verbose(`(account-forms-photos) received images details: [${slugs.join(', ') ?? 'empty'}]`);
+      logger.verbose('received images details', slugs);
       isError.value = false;
       return slugs;
     }
   });
 watch(error, () => {
   if (error.value) {
-    logger.warn('(account-forms-photos) fetch request failed', error.value);
+    logger.warn('fetch request failed (watch', error.value);
     isError.value = true;
   }
 });
 if (error.value) {
-  logger.warn('(account-forms-photos) fetch request failed', error.value);
+  logger.warn('fetch request failed (err value', error.value);
   isError.value = true;
 }
 const imageSlugs = data as Ref<string[] | undefined>;
@@ -80,7 +81,7 @@ watch(() => imageSlugs.value, () => {
           v-for="(slug, index) in imageSlugs"
           :key="index"
         >
-          <AuthFormsPhoto :ctrl-key="`${ctrlKey}-AuthPhoto-${index}`" :alt-res-name="getI18nResName1('authFormsPhotoAlt')" :img-slug="slug" />
+          <AuthFormsPhoto :ctrl-key="[...ctrlKey, 'AuthPhoto', index]" :alt-res-name="getI18nResName1('authFormsPhotoAlt')" :img-slug="slug" />
         </SwiperSlide>
       </Swiper>
     </ErrorHelm>

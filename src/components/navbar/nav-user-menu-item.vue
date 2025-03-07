@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import type { Locale, I18nResName } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
@@ -6,7 +7,7 @@ const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   textResName: I18nResName,
   to?: string,
   icon: string

@@ -6,7 +6,6 @@ import { showConfirmBox, showNotification, showExceptionDialog } from './app/dia
 import { getAppLocale } from './app/utils';
 import { updateNativeTheme } from './app/theme';
 import { Menu, type BrowserWindow, ipcMain, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron';
-import isArrayLike from 'lodash-es/isArrayLike';
 import bind from 'lodash-es/bind';
 import { buildMenu } from './app/menu';
 import { renderPageToImage } from './app/offscreen-render';
@@ -30,9 +29,9 @@ export class RendererClientBridge implements IRendererClientBridge {
       this.hooks = new Hookable();
       this.registerHooks();
   
-      this.logger.debug('(RendererClientBridge) ctor, exit');
+      this.logger.debug('ctor, exit');
     } catch(err: any) {
-      this.logger.error('(RendererClientBridge) ctor failed', err);
+      this.logger.error('ctor failed', err);
       throw new Error('failed to setup context bridge');
     }
   }
@@ -42,54 +41,54 @@ export class RendererClientBridge implements IRendererClientBridge {
   **/ 
   navigateToPage(page: AppPage): void {
     try {
-      this.logger.verbose(`(RendererClientBridge) sending navigate to page request, page=${page}`);
+      this.logger.verbose('sending navigate to page request', page);
       this.mainWindow.webContents.send('request:navigate-to-page', page);
-      this.logger.debug(`(RendererClientBridge) navigate to page request sent, page=${page}`);
+      this.logger.debug('navigate to page request sent', page);
     } catch(err: any) {
-      this.logger.warn(`(RendererClientBridge) navigate to page request failed, page=${page}`, err);
+      this.logger.warn('navigate to page request failed', err, page);
       showExceptionDialog('warning', this, this.logger);
     }
   }
 
   showExceptionDialog(type: 'warning' | 'error'): void {
     try {
-      this.logger.verbose(`(RendererClientBridge) sending show exception dialog request, type=${type}`);
+      this.logger.verbose('sending show exception dialog request', type);
       this.mainWindow.webContents.send('request:show-exception', type);
-      this.logger.debug(`(RendererClientBridge) show exception dialog request sent, type=${type}`);
+      this.logger.debug('show exception dialog request sent', type);
     } catch(err: any) {
-      this.logger.warn(`(RendererClientBridge) show exception dialog request failed, type=${type}`, err);
+      this.logger.warn('show exception dialog request failed', err, type);
     }
   }
 
   setTheme(theme: Theme): void {
     try {
-      this.logger.verbose(`(RendererClientBridge) sending set theme request, theme=${theme}`);
+      this.logger.verbose('sending set theme request', theme);
       this.mainWindow.webContents.send('request:set-theme', theme);
-      this.logger.debug(`(RendererClientBridge) set theme request sent, theme=${theme}`);
+      this.logger.debug('set theme request sent', theme);
     } catch(err: any) {
-      this.logger.warn(`(RendererClientBridge) set theme request failed, theme=${theme}`, err);
+      this.logger.warn('set theme request failed', err, theme);
       showExceptionDialog('warning', this, this.logger);
     }
   }
 
   setLocale(locale: Locale): void {
     try {
-      this.logger.verbose(`(RendererClientBridge) sending set locale request, locale=${locale}`);
+      this.logger.verbose('sending set locale request', locale);
       this.mainWindow.webContents.send('request:set-locale', locale);
-      this.logger.debug(`(RendererClientBridge) set locale request sent, locale=${locale}`);
+      this.logger.debug('set locale request sent', locale);
     } catch(err: any) {
-      this.logger.warn(`(RendererClientBridge) set locale request failed, locale=${locale}`, err);
+      this.logger.warn('set locale request failed', err, locale);
       showExceptionDialog('warning', this, this.logger);
     }
   }
 
   logout(): void {
     try {
-      this.logger.verbose('(RendererClientBridge) sending logout request');
+      this.logger.verbose('sending logout request');
       this.mainWindow.webContents.send('request:logout');
-      this.logger.debug('(RendererClientBridge) logout request sent');
+      this.logger.debug('logout request sent');
     } catch(err: any) {
-      this.logger.warn('(RendererClientBridge) logout request failed', err);
+      this.logger.warn('logout request failed', err);
       showExceptionDialog('warning', this, this.logger);
     }
   }
@@ -98,60 +97,60 @@ export class RendererClientBridge implements IRendererClientBridge {
   * From renderer to main
   **/ 
   onPageNavigated(page: AppPage): void {
-    this.logger.debug(`(RendererClientBridge) page navigated handler, page=${page}`);
+    this.logger.debug('page navigated handler', page);
   }
 
   onThemeChanged(theme: Theme): void {
-    this.logger.verbose(`(RendererClientBridge) on theme changed handler, theme=${theme}`);
+    this.logger.verbose('on theme changed handler', theme);
     updateNativeTheme(theme, this, this.logger);
-    this.logger.debug(`(RendererClientBridge) theme changed handler completed, theme=${theme}`);
+    this.logger.debug('theme changed handler completed', theme);
   }
 
   onNavBarRefreshed(nav: NavProps): void {
-    this.logger.verbose('(RendererClientBridge) on nav refreshed');
+    this.logger.verbose('on nav refreshed');
     const appMenu = buildMenu(nav, this.mainWindow, this, this.app, this.logger);
-    this.logger.verbose('(RendererClientBridge) applying new menu');
+    this.logger.verbose('applying new menu');
     Menu.setApplicationMenu(appMenu);
-    this.logger.debug('(RendererClientBridge) nav refreshed handler completed');
+    this.logger.debug('nav refreshed handler completed');
   }
 
   showMessageBox(type: 'info' | 'warning' | 'error', msg: string, title: string | undefined): void {
-    this.logger.verbose(`(RendererClientBridge) show message box, type=${type}, msg=${msg}, title=${title}`);
+    this.logger.verbose('show message box', { type, msg, title });
     showNotification(type, msg, title, this.logger, this.mainWindow);
-    this.logger.debug(`(RendererClientBridge) message box shown, type=${type}, msg=${msg}, title=${title}`);
+    this.logger.debug('message box shown', { type, msg, title });
   }
 
   async showConfirmBox<TButton>(msg: string, title: string, buttons: TButton[]): Promise<TButton | undefined> {
-    this.logger.verbose(`(RendererClientBridge) show confirm box, msg=${msg}, title=${title}, buttons=[${buttons.join(', ')}]`);
+    this.logger.verbose('show confirm box', { msg, title, buttons });
     const result = await showConfirmBox(msg, title, buttons, this.logger, this.mainWindow);
-    this.logger.debug(`(RendererClientBridge) show confirm box, msg=${msg}, title=${title}, result=${result}`);
+    this.logger.debug('show confirm box', { msg, title, result });
     return result;
   }
 
   showFatalErrorBox(msg: string): void {
-    this.logger.verbose('(RendererClientBridge) show fatal error box', msg);
+    this.logger.verbose('show fatal error box');
     showNotification('fatal', msg, undefined, this.logger, this.mainWindow);
-    this.logger.debug('(RendererClientBridge) fatal error box shown', msg);
+    this.logger.debug('fatal error box shown');
   }
 
   getCurrentUrl(): string {
-    this.logger.debug('(RendererClientBridge) get current url');
+    this.logger.debug('get current url');
     const currentUrl = this.mainWindow.webContents.getURL();
-    this.logger.debug(`(RendererClientBridge) current url returned, result=[${currentUrl}]`);
+    this.logger.debug('current url returned', { result: currentUrl });
     return currentUrl;
   }
 
   getAppLocale(): string {
-    this.logger.debug('(RendererClientBridge) get app locale');
+    this.logger.debug('get app locale');
     const appLocale = getAppLocale(this.app, this.logger);
-    this.logger.debug(`(RendererClientBridge) current app locale=${appLocale}`);
+    this.logger.debug('current app', { locale: appLocale });
     return appLocale;
   }
 
   async renderPageToImage(path: string): Promise<IpcByteArray> {
-    this.logger.debug(`(RendererClientBridge) render page, path=${path}`);
+    this.logger.debug('render page', path);
     const result = await renderPageToImage(path, this.logger);
-    this.logger.debug(`(RendererClientBridge) render page completed, path=${path}, result length=${result.length}`);
+    this.logger.debug('render page completed', { path, length: result.length });
     return result;
   }
 
@@ -164,28 +163,28 @@ export class RendererClientBridge implements IRendererClientBridge {
   async callHook<THook extends keyof RendererClientHooks = keyof RendererClientHooks>(name: THook, event: IpcMainEvent | IpcMainInvokeEvent, ...params: HookFnParameters<RendererClientHooks[THook]>): Promise<ReturnType<RendererClientHooks[THook]> | undefined> {
     const senderFrameUrl = event.senderFrame?.url;
     if(!senderFrameUrl?.length) {
-      this.logger.warn(`(RendererClientBridge) hook invocation exception - sender frame url validation failed, name=${name}, params=[${JSON.stringify(params)}], senderFrameUrl=[${event.senderFrame?.url}]`);
+      this.logger.warn('hook invocation exception - sender frame url validation failed', undefined, { name, params, senderFrameUrl: event.senderFrame?.url });
       throw new Error('invalid sender frame');
     }
     if ((new URL(senderFrameUrl)).host !== this.SiteHost) {
-      this.logger.warn(`(RendererClientBridge) hook invocation exception - invalid sender frame url, name=${name}, params=[${JSON.stringify(params)}], senderFrameUrl=[${event.senderFrame?.url}]`);
+      this.logger.warn('hook invocation exception - invalid sender frame url', undefined, { name, params, senderFrameUrl: event.senderFrame?.url });
       throw new Error('invalid sender frame');
     }
 
     try {
-      this.logger.verbose(`(RendererClientBridge) hook callback, name=${name}, params=[${JSON.stringify(params)}]`);
+      this.logger.verbose('hook callback', { name, params });
       const result = await this.hooks.callHook(name, ...params) as any;
-      this.logger.debug(`(RendererClientBridge) hook callback completed, name=${name}, params=[${JSON.stringify(params)}], result=${isArrayLike(result) ? result.length : JSON.stringify(result)}`);
+      this.logger.debug('hook callback completed', { name, params, result });
       return result;
     } catch(err: any) {
-      this.logger.warn(`(RendererClientBridge) hook callback failed, name=${name}`, err);
+      this.logger.warn('hook callback failed', err, name);
       showExceptionDialog('warning', this, this.logger);
       return undefined;
     }
   }
 
   registerHooks() {
-    this.logger.debug('(RendererClientBridge) registering hooks');
+    this.logger.debug('registering hooks');
 
     this.registerHook('on:page-navigated', this.onPageNavigated);
     ipcMain.on('on:page-navigated', (event: IpcMainEvent, page) => this.callHook('on:page-navigated', event, page as AppPage));
@@ -214,6 +213,6 @@ export class RendererClientBridge implements IRendererClientBridge {
     this.registerHook('on:nav-refreshed', this.onNavBarRefreshed);
     ipcMain.on('on:nav-refreshed', (event: IpcMainEvent, nav) => this.callHook('on:nav-refreshed', event, nav as NavProps));
 
-    this.logger.debug('(RendererClientBridge) hooks were registered');
+    this.logger.debug('hooks were registered');
   }
 }
