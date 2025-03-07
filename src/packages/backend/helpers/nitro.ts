@@ -73,19 +73,20 @@ export async function getPdfFontsAssetsStorage (logger?: IAppLogger): Promise<St
 }
 
 export function convertRawToBuffer(rawData: any, logger?: IAppLogger): Buffer {
-  logger?.debug('(AppAssetsProvider) converting data to buffer');
+  logger?.debug('converting data to buffer');
   let result: Buffer;
   if (isBuffer(rawData)) {
     result = rawData as Buffer;
-    logger?.debug('(AppAssetsProvider) data already has a buffer data type');
+    logger?.debug('data already has a buffer data type');
   } else if (isString(rawData)) {
     const strLen = (rawData as string).length;
-    logger?.debug(`(AppAssetsProvider) converting data from string, sample=${(rawData as string).substring(0, Math.min(strLen, 128))}`);
+    const sample = (rawData as string).substring(0, Math.min(strLen, 128));
+    logger?.debug('converting data from string', sample);
     result = Buffer.from(rawData as string, 'binary');
   } else {
-    logger?.debug('(AppAssetsProvider) converting data to buffer directly');
+    logger?.debug('converting data to buffer directly');
     result = Buffer.from(rawData as any);
   }
-  logger?.debug(`(AppAssetsProvider) data converted to buffer, size=${result.length}`);
+  logger?.debug('data converted to buffer', { size: result.length });
   return result;
 };

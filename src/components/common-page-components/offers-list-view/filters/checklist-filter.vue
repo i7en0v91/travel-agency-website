@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey, type ArbitraryControlElementMarker } from './../../../../helpers/components';
 import { getI18nResName3, type Locale, getLocalizeableValue } from '@golobe-demo/shared';
 import isString from 'lodash-es/isString';
 import type { ISearchOffersChecklistFilterProps, ISearchOffersFilterVariant, SearchOffersFilterVariantId } from './../../../../types';
 import { getCommonServices } from '../../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   filterParams: ISearchOffersChecklistFilterProps,
   maxCollapsedListItemsCount?: number
 }
@@ -14,12 +15,12 @@ const { ctrlKey, filterParams, maxCollapsedListItemsCount } = defineProps<IProps
 
 const modelValue = defineModel<SearchOffersFilterVariantId[]>('value', { required: true });
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ChecklistFilter' });
 const { locale } = useI18n();
 
 
 function fireValueChangeEvent (value: SearchOffersFilterVariantId[]) {
-  logger.verbose(`(ChecklistFilter) firing value change event, ctrlKey=${ctrlKey}, values=[${value.join('; ')}]`);
+  logger.verbose('firing value change event', { ctrlKey, values: value });
   modelValue.value = value;
 }
 
@@ -36,7 +37,7 @@ function getVariantDisplayText (variant: ISearchOffersFilterVariant, locale: Loc
 }
 
 function onVariantToggled (variantId: SearchOffersFilterVariantId) {
-  logger.verbose(`(ChecklistFilter) variant toggled, ctrlKey=${ctrlKey}, id=${variantId}, currentValue=[${modelValue.value.join(', ')}]`);
+  logger.verbose('variant toggled', { ctrlKey, id: variantId });
   const newValue = [...modelValue.value];
   if (newValue.includes(variantId)) {
     newValue.splice(newValue.indexOf(variantId), 1);
@@ -75,7 +76,7 @@ const uiStyling = {
 <template>
   <div class="px-2">
     <ol class="space-y-2">
-      <li v-for="(variant) in (listExpanded ? filterParams.variants : variantsToDisplay)" :key="`${ctrlKey}-${variant.id}`">
+      <li v-for="(variant) in (listExpanded ? filterParams.variants : variantsToDisplay)" :key="`${toShortForm(ctrlKey)}-${variant.id}`">
         <UCheckbox
           :model-value="modelValue.includes(variant.id)"
           :label="getVariantDisplayText(variant, locale as Locale)"

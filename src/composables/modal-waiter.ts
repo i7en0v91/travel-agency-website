@@ -8,10 +8,10 @@ export interface IModalWaiter {
 
 export function useModalWaiter (modalWaiterRef: Ref<ComponentInstance<typeof ModalWaitingIndicator>>, openRef: Ref<boolean>): IModalWaiter {
   const ctrlKey = modalWaiterRef.value.$props.ctrlKey; 
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'UseModalWaiter' });
   return {
     show: (isVisible: boolean) => {
-      const logger = getCommonServices().getLogger();
-      logger.verbose(`(modal-waiter) show: ctrlKey=${ctrlKey}, isVisible=${isVisible}, current=${openRef.value}`);
+      logger.verbose('show', { ctrlKey, isVisible, current: openRef.value });
       openRef.value = isVisible;
     }
   };

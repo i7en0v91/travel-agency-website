@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 
 import { AppPage, type Locale, getI18nResName3, AppConfig, type GeoPoint, type EntityDataAttrsOnly, type ICity } from '@golobe-demo/shared';
 import InteractiveMap from './../common-page-components/map/interactive-map.vue';
@@ -8,7 +9,7 @@ import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 const { t, locale } = useI18n();
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   visibility: 'wait' | 'visible',
   location?: GeoPoint,
   city?: EntityDataAttrsOnly<ICity>
@@ -32,11 +33,11 @@ const webUrl = ref<string>();
         {{ $t(getI18nResName3('stayDetailsPage', 'location', 'viewOnWebsite'), { webLink: t(AppConfig.maps.providerDisplayResName) }) }}
       </UButton>
     </div>
-    <ComponentWaitingIndicator v-if="!location || visibility === 'wait'" :ctrl-key="`${ctrlKey}-WaiterIndicator`" class="my-8" />
+    <ComponentWaitingIndicator v-if="!location || visibility === 'wait'" :ctrl-key="[...ctrlKey, 'Waiter']" class="my-8" />
     <InteractiveMap
       v-else
       v-model:web-url="webUrl"
-      :ctrl-key="`${ctrlKey}-InteractiveMap`"
+      :ctrl-key="[...ctrlKey, 'InteractiveMap']"
       :origin="location"
       :city="city"
       style-class="w-full !h-[450px] rounded-2xl [&:has(.fullscreen)]:rounded-none"

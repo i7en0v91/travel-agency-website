@@ -1,4 +1,4 @@
-import { type IAirplaneData, EntityChangeSubscribersOrder, DbVersionInitial, newUniqueId, type IAppLogger, type IAirplane, type EntityId } from '@golobe-demo/shared';
+import { type IAirplaneData, EntityChangeSubscribersOrder, DbVersionInitial, newUniqueId, type IAppLogger, type IAirplane, type EntityId, formatAppCacheKey } from '@golobe-demo/shared';
 import type { EntityChangeNotificationCallbackArgs, EntityChangeNotificationCallback, EntityChangeNotificationSubscriberId, IEntityChangeNotificationTask, IAirplaneLogic } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import { AllAirplanesCacheKey } from './../helpers/utils';
@@ -7,6 +7,8 @@ import { AirplaneInfoQuery, MapAirplane } from './queries';
 import { executeInTransaction } from './../helpers/db';
 
 export class AirplaneLogic implements IAirplaneLogic {
+  private readonly AirplanesCacheKey = formatAppCacheKey(AllAirplanesCacheKey);
+
   private readonly logger: IAppLogger;
   private readonly dbRepository: PrismaClient;
   private readonly cache: Storage<StorageValue>;
@@ -14,7 +16,7 @@ export class AirplaneLogic implements IAirplaneLogic {
 
   public static inject = ['dbRepository', 'entityChangeNotifications', 'cache', 'logger'] as const;
   constructor (dbRepository: PrismaClient, entityChangeNotifications: IEntityChangeNotificationTask, cache: Storage<StorageValue>, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'AirplaneLogic' });
     this.dbRepository = dbRepository;
     this.cache = cache;
     this.entityChangeNotifications = entityChangeNotifications;
@@ -25,7 +27,7 @@ export class AirplaneLogic implements IAirplaneLogic {
   }
 
   subscribeForEntityChanges = () => {
-    this.logger.verbose('(AirplaneLogic) subscribing for airplane entities changes');
+    this.logger.verbose('subscribing for airplane entities changes');
 
     const subscriberId = this.entityChangeNotifications.subscribeForChanges({
       target: [{
@@ -35,19 +37,19 @@ export class AirplaneLogic implements IAirplaneLogic {
       order: EntityChangeSubscribersOrder.AirplaneLogic
     }, this.entityChangeCallback);
 
-    this.logger.verbose(`(AirplaneLogic) subscribed for airplane entities changes, subscriberId=${subscriberId}`);
+    this.logger.verbose('subscribed for airplane entities changes', subscriberId);
   };
 
   entityChangeCallback: EntityChangeNotificationCallback = async (_: EntityChangeNotificationSubscriberId, args: EntityChangeNotificationCallbackArgs): Promise<void> => {
-    this.logger.debug('(AirplaneLogic) entities change callback');
+    this.logger.debug('entities change callback');
     if(args.target === 'too-much' || (args.target.find(x => x.entity === 'Airplane')?.ids.length ?? 0) > 0) {
       await this.clearAirplanesCache();
     }
-    this.logger.debug('(AirplaneLogic) entities change callback completed');
+    this.logger.debug('entities change callback completed');
   };
 
   async deleteAirplane(id: EntityId): Promise<void> {
-    this.logger.verbose(`(AirplaneLogic) deleting airplane: id=${id}`);
+    this.logger.verbose('deleting airplane', id);
     await executeInTransaction(async () => {
       await this.dbRepository.airplaneImage.updateMany({
         where: {
@@ -73,13 +75,13 @@ export class AirplaneLogic implements IAirplaneLogic {
       });
     }, this.dbRepository);
     await this.clearAirplanesCache();
-    this.logger.verbose(`(AirplaneLogic) airplane deleted: id=${id}`);
+    this.logger.verbose('airplane deleted', id);
   };
 
   async getAllAirplanes (allowCachedValue: boolean): Promise<IAirplane[]> {
-    this.logger.debug('(AirplaneLogic) get all airplanes');
+    this.logger.debug('get all airplanes');
 
-    let entries = allowCachedValue ? (await this.cache.getItem(AllAirplanesCacheKey) as IAirplane[]) : undefined;
+    let entries = allowCachedValue ? (await this.cache.getItem(this.AirplanesCacheKey) as IAirplane[]) : undefined;
     if(!entries) {
       entries = (await this.dbRepository.airplane.findMany({
         where: {
@@ -88,16 +90,16 @@ export class AirplaneLogic implements IAirplaneLogic {
         select: AirplaneInfoQuery.select
       })).map(MapAirplane);
 
-      this.logger.debug(`(AirplaneLogic) airplanes loaded - updating cache, count=${entries.length}, allowCachedValue=${allowCachedValue}`);
-      await this.cache.setItem(AllAirplanesCacheKey, entries);
+      this.logger.debug('airplanes loaded - updating cache', { count: entries.length, allowCachedValue });
+      await this.cache.setItem(this.AirplanesCacheKey, entries);
     }
 
-    this.logger.debug(`(AirplaneLogic) get all airplanes, count=${entries.length}`);
+    this.logger.debug('get all airplanes', { count: entries.length });
     return entries;
   }
 
   async createAirplane (data: IAirplaneData): Promise<EntityId> {
-    this.logger.verbose('(AirplaneLogic) creating airplane');
+    this.logger.verbose('creating airplane');
 
     const airplaneId = await executeInTransaction(async () => {
       const entityId = (await this.dbRepository.airplane.create({
@@ -137,12 +139,12 @@ export class AirplaneLogic implements IAirplaneLogic {
     }, this.dbRepository);
     await this.clearAirplanesCache();
 
-    this.logger.verbose(`(AirplaneLogic) creating airplane - completed, id=${airplaneId}`);
+    this.logger.verbose('creating airplane - completed', { id: airplaneId });
     return airplaneId;
   }
 
   async clearAirplanesCache(): Promise<void> {
-    this.logger.verbose('(AirplaneLogic) clearing airplanes cache');
-    await this.cache.removeItem(AllAirplanesCacheKey);
+    this.logger.verbose('clearing airplanes cache');
+    await this.cache.removeItem(this.AirplanesCacheKey);
   }
 }

@@ -6,8 +6,11 @@ import range from 'lodash-es/range';
 import CityOffersLinks from './city-offers-links.vue';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from './../../../helpers/service-accessors';
+import type { ControlKey } from '../../../helpers/components';
 
-const logger = getCommonServices().getLogger();
+const CtrlKey: ControlKey = ['CityOffers', 'ResultItemsList'];
+
+const logger = getCommonServices().getLogger().addContextProps({ component: 'CityOffersList' });
 
 const nuxtApp = useNuxtApp();
 
@@ -20,9 +23,9 @@ const citiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`, {
     cache: (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
     query: { drafts: enabled },
     transform: (response: IPopularCityDto[]) => {
-      logger.verbose('(CityOffersList) received popular cities list response');
+      logger.verbose('received popular cities list response');
       if (!response) {
-        logger.warn('(CityOffersList) popular cities list response is empty');
+        logger.warn('popular cities list response is empty');
         return range(0, 20, 1).map(_ => null); // error should be logged by fetchEx
       }
       return response;
@@ -38,7 +41,7 @@ const citiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`, {
     <ul class="p-2 sm:p-4 grid grid-flow-row grid-cols-citylinks grid-rows-5 md:grid-rows-3 auto-rows-[0px] overflow-clip -translate-y-[40px] justify-center">
       <li v-for="(city, idx) in citiesListFetch.data.value" :key="`popular-city-${idx}`" class="w-full city-offers-list-item">
         <CityOffersLinks
-          :ctrl-key="`CityOffersLinks-${idx}`"
+          :ctrl-key="[...CtrlKey, 'CityOffersLinks', idx]"
           search-kind="flight"
           :text="city ? mapLocalizeableValues((city: string, country: string) => `${city}, ${country}`, city.cityDisplayName, city.countryDisplayName) : undefined"
           :img-src="city ? { slug: city.imgSlug, timestamp: city.timestamp } : undefined"

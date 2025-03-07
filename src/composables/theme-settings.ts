@@ -12,15 +12,15 @@ let themeValue: Ref<Theme> | undefined;
 let instance: IThemeSettings | undefined;
 
 export function useThemeSettings (): IThemeSettings {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'UseThemeSettings' });
 
   const toggleTheme = () => {
     if (!instance) {
-      logger.warn('(useThemeSettings) cannot toggle theme, settings haven\'t been initialized properly');
+      logger.warn('cannot toggle theme, settings havent been initialized properly');
       return;
     }
     const targetValue: Theme = instance.currentTheme.value === 'light' ? 'dark' : 'light';
-    logger.verbose(`(useThemeSettings) toggling theme to ${targetValue}`);
+    logger.verbose('toggling theme to', { theme: targetValue });
 
     localStorage.setItem(SessionThemeKey, targetValue.toString());
     setCurrentThemeSettings(targetValue);
@@ -32,10 +32,10 @@ export function useThemeSettings (): IThemeSettings {
   };
 
   if (!instance) {
-    logger.verbose('(useThemeSettings) initializing theme settings');
+    logger.verbose('initializing theme settings');
     // this must be initialized in page-load.js script
     const initialValue: Theme = import.meta.client ? (getCurrentThemeSettings() ?? DefaultTheme) : 'light'; // TODO: fix initialization with undefined in Electron build
-    logger.verbose(`(useThemeSettings) theme settings initialized with: ${initialValue}`);
+    logger.verbose('theme settings initialized with', { theme: initialValue });
     themeValue = ref(initialValue);
     instance = {
       currentTheme: themeValue,

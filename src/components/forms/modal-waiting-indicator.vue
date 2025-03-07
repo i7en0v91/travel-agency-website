@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import type { I18nResName } from '@golobe-demo/shared';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
   labelResName?: I18nResName
 }
 
@@ -21,7 +22,7 @@ const uiStyling = {
 <template>
   <UModal v-model="open" fullscreen prevent-close :ui="uiStyling">
     <div class="w-full h-full flex flex-col gap-4 flex-nowrap items-center justify-center overflow-hidden">
-      <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-Waiter`" ui="w-32 h-32"/>
+      <ComponentWaitingIndicator :ctrl-key="[...ctrlKey, 'Waiter']" ui="w-32 h-32"/>
       <div v-if="labelResName" class="whitespace-normal text-center">
         {{ $t(labelResName) }}
       </div>

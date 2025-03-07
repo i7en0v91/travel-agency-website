@@ -68,7 +68,7 @@ const UiIinteractionDelayMs = 100; // user interaction delay
 const TestLocales: Locale[] = [DefaultLocale, 'ru'];
 
 async function performPageAction (page: AppPage, action: TestingPageCacheActionEnum, testId: EntityId | undefined, testToken: PageTestToken | undefined, authCookies: Cookie[] | undefined, logger: IAppLogger): Promise<ITestingPageCacheActionResultDto> {
-  logger.verbose(`performing page action, page=${page.valueOf()}, action=${action}, testId=${testId}, testToken=${testToken}, numAuthCookies=${authCookies?.length ?? 0}`);
+  logger.verbose('performing page action', { page: page.valueOf(), action, testId, testToken, numAuthCookies: authCookies?.length ?? 0 });
 
   const serializedAuthCookies = authCookies?.map(c => serializeCookie(c.name, c.value))?.join('; ');
   const outgoingHeaders: HeadersInit = {
@@ -87,12 +87,12 @@ async function performPageAction (page: AppPage, action: TestingPageCacheActionE
   const response = await fetch(joinURL(TestHostUrlWithProtocol, ApiEndpointTestingPageCacheAction), { body: JSON.stringify(reqBody), method: 'POST', headers: outgoingHeaders });
   const responseDto = await response.json();
   if(!response.ok) {
-    logger.warn(`perform page action request failed, page=${page.valueOf()}, action=${action}, testId=${testId}, testToken=${testToken}, headers=${JSON.stringify(outgoingHeaders)}, result=${JSON.stringify(responseDto)}, code=${response.status}, statusText=${response.statusText}`);
+    logger.warn('perform page action request failed', undefined, { page: page.valueOf(), action, testId, testToken, headers: outgoingHeaders, result: responseDto, code: response.status, statusText: response.statusText });
     throw new Error('failed to perform page action');
   };
   const result = destr<ITestingPageCacheActionResultDto>(responseDto);
 
-  logger.verbose(`page action performed, result testId=${result.testId}, page=${page.valueOf()}, action=${action}, testId=${testId}, testToken=${testToken}, numAuthCookies=${authCookies?.length ?? 0}`);
+  logger.verbose('page action performed, result', { testId: result.testId, page: page.valueOf(), action, testToken, numAuthCookies: authCookies?.length ?? 0 });
   return result;
 };
 
@@ -120,12 +120,12 @@ async function pingServer(logger: IAppLogger): Promise<boolean> {
 
 async function ensureServerStarted(helperParams: { htmlPageMetadata: HtmlPageMetadata }, logger: IAppLogger): Promise<void> {
   if(!await pingServer(logger)) {
-    logger.info(`starting server`);
+    logger.info('starting server');
     const serverStarter = new PageTestHelper('starting server', `/${getPagePath(AppPage.Index)}`, DefaultLocale, false, helperParams.htmlPageMetadata, logger);
     await serverStarter.start();
     await serverStarter.ensurePageHtmlLoaded();
     await serverStarter.stop();  
-    logger.info(`server started`);
+    logger.info('server started');
   }
 }
 
@@ -148,7 +148,7 @@ class PageTestHelper {
   private htmlPageMetadata: HtmlPageMetadata;
 
   constructor (testName: string, url: string, locale: Locale, requireAuth: boolean, htmlPageMetadata: HtmlPageMetadata, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'CacheCleanerTests' });
     this.testName = testName;
     this.requireAuth = requireAuth;
     this.isAuthUser = false;
@@ -217,7 +217,7 @@ class PageTestHelper {
       return;
     }
 
-    this.logger.debug(`auth cookies captured: current url=${await this.currentPage!.url()}`);
+    this.logger.debug('auth cookies captured', { currentUrl: await this.currentPage!.url() });
     this.authCookies = authCookies;
   };
 
@@ -244,9 +244,10 @@ class PageTestHelper {
       return;
     }
 
-    this.logger.verbose(`page response obtained: url=${url}, httpCode=${httpCode}, current url=${await this.currentPage!.url()}`);
+    this.logger.verbose('page response obtained', { url, httpCode, currentUrl: await this.currentPage!.url() });
     if(headers) {
-      this.logger.verbose(`page test headers: [${JSON.stringify(pick(headers, [HeaderLastModified, HeaderCacheControl, HeaderEtag, HeaderDate, HeaderContentType].map(h => h.toLowerCase())))}]`);
+      const testHeaderNames = pick(headers, [HeaderLastModified, HeaderCacheControl, HeaderEtag, HeaderDate, HeaderContentType].map(h => h.toLowerCase()));
+      this.logger.verbose('page test headers', { headerNames: testHeaderNames });
       const dateStr = headers[HeaderDate.toLowerCase()];
       const lastModifiedStr = headers[HeaderLastModified.toLowerCase()] ?? dateStr;
       const cacheControlStr = headers[HeaderCacheControl.toLowerCase()];
@@ -275,7 +276,7 @@ class PageTestHelper {
       ) as any;
     }
     
-    this.logger.verbose(`page response parsed: url=${url}, current url=${await this.currentPage!.url()}, loadingPageResponseState=${JSON.stringify(this.loadingPageResponseState)}`);
+    this.logger.verbose('page response parsed', { url, currentUrl: await this.currentPage!.url(), loadingPageResponseState: this.loadingPageResponseState });
   };
 
   requestHandler = (url: string, type: 'started' | 'finished', redirected: { fromUrl?: string, toUrl?: string } | undefined) => {
@@ -288,7 +289,7 @@ class PageTestHelper {
 
     // reset page state if redirected to another page (but ignore authentication flow urls)
     if(redirected?.toUrl && !(['auth' /*, 'login'*/].some(surl => /*!(redirected!.toUrl?.includes('redundantParam') ?? false) &&*/ redirected!.toUrl!.includes(surl)))) {
-      this.logger.verbose(`redirection response: fromUrl=${redirected.fromUrl}, toUrl=${redirected.toUrl}`);
+      this.logger.verbose('redirection response', { fromUrl: redirected.fromUrl, toUrl: redirected.toUrl });
       const parsedUrl = parseURL(redirected.toUrl);
       parsedUrl.host = parsedUrl.protocol = undefined;
       this.url = stringifyParsedURL(parsedUrl);
@@ -317,7 +318,7 @@ class PageTestHelper {
       }
     }
 
-    this.logger.debug(`user is ${result ? 'authenticated' : 'NOT authenticated'}, currentPage=${this.currentPage?.url()}`);
+    this.logger.debug('user auth check', { auth: result, currentPage: this.currentPage?.url() });
     return result;
   };
 
@@ -342,7 +343,7 @@ class PageTestHelper {
   };
 
   private logInWithCredentials = async (): Promise<void> => {
-    this.logger.verbose(`log-in, url=${this.url}, current url=${await this.currentPage!.url()}`);
+    this.logger.verbose('log-in', { url: this.url, currentUrl: await this.currentPage!.url() });
 
     const page = this.currentPage!;
 
@@ -350,18 +351,20 @@ class PageTestHelper {
     await page.locator(LocatorClasses.SignInPassword).fill(TEST_USER_PASSWORD);
     await delay(UiIinteractionDelayMs);
     await page.locator(LocatorClasses.SubmitBtn).click();
-    this.logger.debug(`sign in button clicked, currentPage=${this.currentPage?.url()}`);
+    let currentUrl = await this.currentPage?.url();
+    this.logger.debug('sign in button clicked', currentUrl);
 
     await spinWait(async () => {
       return await this.isAuthenticated(true);
     }, TestTimeout);
 
-    this.logger.verbose(`log-in completed, url=${this.url}, current url=${await this.currentPage!.url()}`);
+    currentUrl = await this.currentPage?.url();
+    this.logger.verbose('log-in completed', { url: this.url, currentUrl });
   };
 
   setupBrowserPage = async(url: string, query: any): Promise<void> => {
     const needLogin = this.requireAuth && !this.authCookies;
-    this.logger.verbose(`setting up new browser page context, url=${url}, query=${JSON.stringify(query)}, needLogin=${needLogin}`);
+    this.logger.verbose('setting up new browser page context', { url, query, needLogin });
 
     this.loadingPageResponseState = {  };
     this.outstandingRequestUrls.clear();
@@ -413,14 +416,14 @@ class PageTestHelper {
     };
 
     this.currentPage.on('close', () => {
-      this.logger.verbose(`received [Close] page event, test=${this.testName}`);
+      this.logger.verbose('received [Close] page event', { test: this.testName });
       this.currentPage = undefined;
       this.outstandingRequestUrls.clear();
     }).on('response', async (response) => {
       await runOnlyIfBrowserContextIsActive(async () => {
         const respHeaders = await response.allHeaders();
         const url = response.url();
-        this.logger.debug(`on response, url=${url}, page url=${this.url}`);
+        this.logger.debug('on response', { url, pageUrl: this.url, respHeaders });
         const contentTypeStr = respHeaders[HeaderContentType.toLowerCase()];      
         const html = (response.status() < 300 && contentTypeStr.includes('text/html')) ? await response.text() : false;
         await this.responseHandler(url, response.status(), respHeaders, html);
@@ -431,31 +434,32 @@ class PageTestHelper {
         const url = request.url();
         const redirectedFrom = request.redirectedFrom()?.url();
         const redirectedTo = request.redirectedTo()?.url();
-        this.logger.debug(`request started, url=${url}, redirectedFrom=${redirectedFrom}, redirectedTo=${redirectedTo}, reqHeaders=[${JSON.stringify(reqHeaders)}]`);
+        this.logger.debug('request started', { url, redirectedFrom, redirectedTo, reqHeaders });
         this.requestHandler(url, 'started', (redirectedFrom || redirectedTo) ? { fromUrl: redirectedFrom, toUrl: redirectedTo } : undefined);
       });
     })
     .on('requestfinished', async(request) => {
       await runOnlyIfBrowserContextIsActive(async () => {
         const url = request.url();
-        this.logger.debug(`request finished, url=${url}`);
+        this.logger.debug('request finished', url);
         this.requestHandler(url, 'finished', undefined);
       });
     })
     .on('requestfailed', async (request) => {
       await runOnlyIfBrowserContextIsActive(async () => {
         const url = request.url();
-        this.logger.warn(`request failed, url=${url}`);
+        this.logger.warn('request failed', undefined, url);
         this.requestHandler(url, 'finished', undefined);
       });
     });
     await this.currentPage.goto(joinURL(TestHostUrlWithProtocol, this.url));
 
-    this.logger.verbose(`browser page context set up, initial state: url=${this.url}, current url=${await this.currentPage!.url()}, cookies=${JSON.stringify(await this.currentPage!.context().cookies())}`);
+    const cookies = await this.currentPage!.context().cookies();
+    this.logger.verbose('browser page context set up, initial state', { url: this.url, currentUrl: await this.currentPage!.url(), cookies });
   };
 
   start = async (): Promise<void> => {
-    this.logger.info(`==== STARTING test ${this.testName} ====`);
+    this.logger.info('----- STARTING test -----');
 
     try {
       await this.setupBrowserPage(this.url, undefined);
@@ -477,7 +481,7 @@ class PageTestHelper {
       this.logger.verbose('current page has been closed');
     }
 
-    this.logger.info(`==== STOPPED test case ${this.testName} ====`);
+    this.logger.info('----- STOPPED test case -----');
   };
 
   timestamp2Str = (timestamp: PageChangeTimestamp) => {
@@ -485,22 +489,21 @@ class PageTestHelper {
   };
 
   ensurePageHtmlLoaded = async (): Promise<void> => {
-    this.logger.debug(`ensuring page html loaded, url=${this.url}, current url=${await this.currentPage!.url()}`);
+    this.logger.debug('ensuring page html loaded', { url: this.url, currentUrl: await this.currentPage!.url() });
     const loaded = await spinWait(() => {
       const isCurrentUrlRequestPending = this.outstandingRequestUrls.size && Array.from(this.outstandingRequestUrls.values()).some(u => this.testIsCurrentUrl(u));
       return Promise.resolve(!isCurrentUrlRequestPending && this.loadingPageResponseState.httpResponseDetails?.statusCode !== undefined);
     }, TestTimeout);
     if(!loaded) {
-      const msg = `timeout waiting for page html to load, url=${this.url}, current url=${await this.currentPage!.url()}`;
-      this.logger.warn(msg);
-      throw new Error(msg);
+      this.logger.warn('timeout waiting for page html to load', undefined, { url: this.url, currentUrl: await this.currentPage!.url() });
+      throw new Error('timeout waiting for page html to load');
     }
     
-    this.logger.debug(`page html loaded - ensured, url=${this.url}, current url=${await this.currentPage!.url()}`);
+    this.logger.debug('page html loaded - ensured', { url: this.url, currentUrl: await this.currentPage!.url() });
   };
 
   testPageResponse = async(testToken: PageTestToken, query: any, addRedundantParam: boolean | number, previewMode: PreviewMode | undefined, expectedErrorCode?: number | boolean | undefined): Promise<PageResponseTestResult> => {
-    this.logger.verbose(`testing page response, testToken=${testToken}, query=${JSON.stringify(query)}, addRedundantParam=${addRedundantParam}, previewMode=${previewMode ?? ''}, expectedErrorCode=${expectedErrorCode ?? ''}, current url=${await this.currentPage!.url()}`);
+    this.logger.verbose('testing page response', { testToken, query, addRedundantParam, previewMode: previewMode ?? '', expectedErrorCode: expectedErrorCode ?? '', currentUrl: await this.currentPage!.url() });
 
     const requestQuery = query === null ? null : (query ? clone(query) : {});
     if(addRedundantParam) {
@@ -523,7 +526,7 @@ class PageTestHelper {
     if(!statusCode || statusCode >= 400) {
       if(statusCode && expectedErrorCode) {
         if((isNumber(expectedErrorCode) && statusCode === expectedErrorCode) || isBoolean(expectedErrorCode)) {
-          this.logger.verbose(`page response test completed with error code (as expected), url=${this.url}, testToken=${testToken}, query=${JSON.stringify(query)}, addRedundantParam=${addRedundantParam}, statusCode=${statusCode}, expectedErrorCode=${expectedErrorCode ?? ''}`);
+          this.logger.verbose('page response test completed with error code (as expected', { url: this.url, testToken, query, addRedundantParam, statusCode, expectedErrorCode: expectedErrorCode ?? '' });
           return defu({ 
             httpResponseDetails: { 
               statusCode, html: this.loadingPageResponseState.httpResponseDetails?.html ?? false, 
@@ -545,32 +548,30 @@ class PageTestHelper {
         
       }
 
-      const msg = `got non-OK http status code=${statusCode}, url=${newUrl}, current url=${await this.currentPage!.url()}`;
-      this.logger.warn(msg);
-      throw new Error(msg);
+      this.logger.warn('got non-OK http status', undefined, { code: statusCode, url: newUrl, currentUrl: await this.currentPage!.url() });
+      throw new Error('got non-OK http status code');
     } else {
       if(expectedErrorCode) {
-        const msg = `page response test completed successfully while error code was expected, url=${this.url}, testToken=${testToken}, query=${JSON.stringify(query)}, addRedundantParam=${addRedundantParam}, statusCode=${statusCode}, expectedErrorCode=${expectedErrorCode ?? ''}`;
-        this.logger.warn(msg);
-        throw new Error(msg);
+        this.logger.warn('page response test completed successfully while error code was expected', undefined, { url: this.url, testToken, query, addRedundantParam, statusCode, expectedErrorCode: expectedErrorCode ?? '' });
+        throw new Error('page response test completed successfully while error code was expected');
       }
     }
 
     const html = this.loadingPageResponseState.httpResponseDetails?.html;
     if(!html) {
-      const msg = `got non-HTML response, url=${newUrl}, current url=${await this.currentPage!.url()}`;
-      this.logger.warn(msg);
-      throw new Error(msg);
+      this.logger.warn('got non-HTML response', undefined, { url: newUrl, currentUrl: await this.currentPage!.url() });
+      throw new Error('got non-HTML response');
     }
 
     this.loadingPageResponseState.tokenPresent = html.includes(testToken);
     const result = this.loadingPageResponseState as PageResponseTestResult;
-    this.logger.verbose(`page response test completed, url=${this.url} ${result.redirect?.fromUrl ? `(redirected from ${result.redirect.fromUrl})` : ''}, tokenPresent=${result.tokenPresent}, timestamp=${result.lastChanged ? this.timestamp2Str(result.lastChanged!) : ''}, testToken=${testToken}, query=${JSON.stringify(query)}, addRedundantParam=${addRedundantParam}, expectedErrorCode=${expectedErrorCode ?? ''}`);
+    const timestmapLog = result.lastChanged ? this.timestamp2Str(result.lastChanged!) : '';
+    this.logger.verbose('page response test completed', { url: this.url, redirectedFrom: result.redirect?.fromUrl, tokenPresent: result.tokenPresent, timestamp: timestmapLog, testToken, query, addRedundantParam, expectedErrorCode });
     return result;
   };
 
   testOgImageResponse = async(): Promise<OgImageResponseTestResult> => {
-    this.logger.verbose(`testing og image response, url=${this.url}, current url=${await this.currentPage!.url()}`);
+    this.logger.verbose('testing og image response', { url: this.url, currentUrl: await this.currentPage!.url() });
 
     const parsedUrl = parseURL(this.url);
     if(this.locale !== DefaultLocale) {
@@ -588,7 +589,7 @@ class PageTestHelper {
       ...(fromPairs([[HeaderAppVersion, AppConfig.versioning.appVersion]])),
       ...(authCookies ? [[HeaderCookies, authCookies]] : [])
     };
-    this.logger.debug(`fetching og image, src=${imageSrc}, headers=${JSON.stringify(outgoingHeaders)}, url=${this.url}, current url=${await this.currentPage!.url()}`);
+    this.logger.debug('fetching og image', { src: imageSrc, headers: outgoingHeaders, url: this.url, currentUrl: await this.currentPage!.url() });
 
     let result: OgImageResponseTestResult | undefined;
     const response = await $fetch(imageSrc,
@@ -600,7 +601,9 @@ class PageTestHelper {
         responseType: 'blob',
         parseResponse: undefined,
         onRequestError: (req) => {
-          this.logger.warn(`og image request error, src=${imageSrc}, statusCode=${req.response?.status}, statusText=${req.response?.statusText}, headers=${JSON.stringify(req.response?.headers?.entries())}, url=${this.url}`, req?.error);
+          const headers = req.response?.headers?.entries();
+          const err = req?.error;
+          this.logger.warn('og image request exception', err, { src: imageSrc, statusCode: req.response?.status, statusText: req.response?.statusText, headers, url: this.url });
           result = defu({ statusCode: req.response?.status ?? 500 }, result || { lastChanged: undefined, imageBytesHash: undefined });
           return;
         },
@@ -609,37 +612,39 @@ class PageTestHelper {
           const headers = resp.response.headers;
           result = defu({ statusCode }, result || { lastChanged: undefined, imageBytesHash: undefined });
           if(statusCode >= 400) {
-            this.logger.warn(`og image response failed, src=${imageSrc}, statusCode=${statusCode}, statusText=${resp.response.statusText}, headers=${JSON.stringify(headers.entries())}, url=${this.url}`);
+            this.logger.warn('og image response failed', undefined, { src: imageSrc, statusCode, statusText: resp.response.statusText, headers: headers.entries(), url: this.url });
             return;
           } else {
-            this.logger.debug(`og image response obtained - parsing, src=${imageSrc}, statusCode=${statusCode}, headers=${JSON.stringify(headers.entries())}, url=${this.url}`);
+            this.logger.debug('og image response obtained - parsing', { src: imageSrc, statusCode, headers: headers.entries(), url: this.url });
           }
           const lastModifiedStr = headers.get(HeaderLastModified.toLowerCase()) ?? headers.get(HeaderDate.toLowerCase());
           if(lastModifiedStr) {
             result.lastChanged = lastModifiedStr ? (dayjs(lastModifiedStr).toDate().getTime()) : undefined;
           }
-          this.logger.debug(`og image response parsed, src=${imageSrc}, url=${this.url}`);
+          this.logger.debug('og image response parsed', { src: imageSrc, url: this.url });
         },
         onResponseError: (resp) => {
-          this.logger.warn(`og image response error, src=${imageSrc}, statusCode=${resp.response?.status}, statusText=${resp.response?.statusText}, headers=${JSON.stringify(resp.response?.headers?.entries())}, url=${this.url}`, resp?.error);
+          const headersLog = resp.response?.headers?.entries();
+          const err = resp?.error;
+          this.logger.warn('og image response exception', err, { src: imageSrc, statusCode: resp.response?.status, statusText: resp.response?.statusText, headers: headersLog, url: this.url });
           result = defu({ statusCode: resp.response?.status ?? 500 }, result || { lastChanged: undefined, imageBytesHash: undefined });
           return;
         }
       });
     if(!result) {
-      this.logger.warn(`og image request ended, but result has not been parsed, src=${imageSrc}, url=${this.url}`);
+      this.logger.warn('og image request ended, but result has not been parsed', undefined, { src: imageSrc, url: this.url });
       throw new Error('og image request failed');
     }
     if(!response) {
-      this.logger.warn(`og image request returned empty response, src=${imageSrc}, url=${this.url}`);
+      this.logger.warn('og image request returned empty response', undefined, { src: imageSrc, url: this.url });
       throw new Error('og image response is empty');
     }
     const bytes = Buffer.from((await (response as Blob).arrayBuffer()));
     
-    this.logger.debug(`computing og image bytes hash, size=${bytes.length}, src=${imageSrc}, url=${this.url}, current url=${await this.currentPage!.url()}`);
+    this.logger.debug('computing og image bytes hash', { size: bytes.length, src: imageSrc, url: this.url, currentUrl: await this.currentPage!.url() });
     result.imageBytesHash = murmurHash(bytes);
      
-    this.logger.verbose(`og image response test completed: url=${this.url}, current url=${await this.currentPage!.url()}`);
+    this.logger.verbose('og image response test completed', { url: this.url, currentUrl: await this.currentPage!.url() });
     return result;
   };
 
@@ -648,13 +653,13 @@ class PageTestHelper {
   };
 
   downloadBookingDocument = async (bookingId: EntityId): Promise<BookingDocumentDownloadResult> => {
-    this.logger.verbose(`downloading booking document, bookingId=${bookingId}, url=${this.url}, current url=${await this.currentPage!.url()}`);
+    this.logger.verbose('downloading booking document', { bookingId, url: this.url, currentUrl: await this.currentPage!.url() });
 
     const bookingSrc = joinURL(TestHostUrlWithProtocol, ApiEndpointBookingDownload(bookingId));
 
     const authCookies = await this.getAuthCookies(joinURL(TestHostUrlWithProtocol, getPagePath(AppPage.BookingDetails), bookingId));
     if(!authCookies) {
-      this.logger.warn(`authentication is required to download booking, bookingId=${bookingId}, url=${this.url}, current url=${await this.currentPage!.url()}`);
+      this.logger.warn('authentication is required to download booking', undefined, { bookingId, url: this.url, currentUrl: await this.currentPage!.url() });
       throw new Error('authentication is required to download booking');
     }
     const cookieHeader = authCookies?.map(c => this.serializeRequestCookie(c))?.join('; ');
@@ -663,7 +668,7 @@ class PageTestHelper {
       ...(fromPairs([[HeaderAppVersion, AppConfig.versioning.appVersion]])),
       ...(cookieHeader ? fromPairs([[HeaderCookies, cookieHeader]]) : {})
     };
-    this.logger.debug(`download booking document, src=${bookingSrc}, headers=${JSON.stringify(outgoingHeaders)}, url=${this.url}, current url=${await this.currentPage!.url()}`);
+    this.logger.debug('download booking document', { src: bookingSrc, headers: outgoingHeaders, url: this.url, currentUrl: await this.currentPage!.url() });
 
     let result: BookingDocumentDownloadResult | undefined;
     const response = await $fetch(bookingSrc,
@@ -676,7 +681,7 @@ class PageTestHelper {
         responseType: 'blob',
         parseResponse: undefined,
         onRequestError: (req) => {
-          this.logger.warn(`booking document request error, src=${bookingSrc}, statusCode=${req.response?.status}, statusText=${req.response?.statusText}, headers=${JSON.stringify(req.response?.headers?.entries())}, url=${this.url}`, req?.error);
+          this.logger.warn('booking document request error', req?.error, { src: bookingSrc, statusCode: req.response?.status, statusText: req.response?.statusText, headers: req.response?.headers?.entries(), url: this.url });
           result = defu({ statusCode: req.response?.status ?? 500 }, result || { lastChanged: undefined, imageBytesHash: undefined });
           return;
         },
@@ -685,57 +690,57 @@ class PageTestHelper {
           const headers = resp.response.headers;
           result = defu({ statusCode }, result || { lastChanged: undefined, imageBytesHash: undefined });
           if(statusCode >= 400) {
-            this.logger.warn(`booking document download response failed, src=${bookingSrc}, statusCode=${statusCode}, statusText=${resp.response.statusText}, headers=${JSON.stringify(headers.entries())}, url=${this.url}`);
+            this.logger.warn('booking document download response failed', undefined, { src: bookingSrc, statusCode, statusText: resp.response.statusText, headers: headers.entries(), url: this.url });
             return;
           } else {
-            this.logger.debug(`booking document download response obtained - parsing, src=${bookingSrc}, statusCode=${statusCode}, headers=${JSON.stringify(headers.entries())}, url=${this.url}`);
+            this.logger.debug('booking document download response obtained - parsing', { src: bookingSrc, statusCode, headers: headers.entries(), url: this.url });
           }
         },
         onResponseError: (resp) => {
-          this.logger.warn(`booking document download response error, src=${bookingSrc}, statusCode=${resp.response?.status}, statusText=${resp.response?.statusText}, headers=${JSON.stringify(resp.response?.headers?.entries())}, url=${this.url}`, resp?.error);
+          this.logger.warn('booking document download response error', resp?.error, { src: bookingSrc, statusCode: resp.response?.status, statusText: resp.response?.statusText, headers: resp.response?.headers?.entries(), url: this.url });
           result = defu({ statusCode: resp.response?.status ?? 500 }, result || { lastChanged: undefined, imageBytesHash: undefined });
           return;
         }
       });
     if(!result) {
-      this.logger.warn(`booking document download request ended, but result has not been parsed, src=${bookingSrc}, url=${this.url}`);
+      this.logger.warn('booking document download request ended, but result has not been parsed', undefined, { src: bookingSrc, url: this.url });
       throw new Error('booking document download failed');
     }
     if(!response) {
-      this.logger.warn(`booking document download returned empty response, src=${bookingSrc}, url=${this.url}`);
+      this.logger.warn('booking document download returned empty response', undefined, { src: bookingSrc, url: this.url });
       throw new Error('booking document download response is empty');
     }
     const bytes = Buffer.from((await (response as Blob).arrayBuffer()));
     
-    this.logger.debug(`computing booking document bytes hash, size=${bytes.length}, src=${bookingSrc}, url=${this.url}, current url=${await this.currentPage!.url()}`);
+    this.logger.debug('computing booking document bytes hash', { size: bytes.length, src: bookingSrc, url: this.url, currentUrl: await this.currentPage!.url() });
     result.imageBytesHash = murmurHash(bytes);
      
-    this.logger.verbose(`booking document download completed: url=${this.url}, current url=${await this.currentPage!.url()}`);
+    this.logger.verbose('booking document download completed', { url: this.url, currentUrl: await this.currentPage!.url() });
     return result;
   };
 
   purgeCache = async (): Promise<void> => {
-    this.logger.verbose(`purging cache, url=${this.url}, current url=${await this.currentPage!.url()}`);
+    this.logger.verbose('purging cache', { url: this.url, currentUrl: await this.currentPage!.url() });
 
     const response = await fetch(joinURL(TestHostUrlWithProtocol, ApiEndpointPurgeCache), { method: 'POST', headers: [[HeaderContentType, 'application/json']] });
     if(!response.ok) {
-      this.logger.warn(`cache purge request failed, url=${this.url}, currentPage=${this.currentPage?.url()}, code=${response.status}, statusText=${response.statusText}`);
+      this.logger.warn('cache purge request failed', undefined, { url: this.url, currentPage: this.currentPage?.url(), code: response.status, statusText: response.statusText });
       throw new Error('failed to purge cache');
     };
 
-    this.logger.verbose(`cache purge completed, url=${this.url}, current url=${await this.currentPage!.url()}`);
+    this.logger.verbose('cache purge completed', { url: this.url, currentUrl: await this.currentPage!.url() });
   };
 
   runCacheCleanup = async (): Promise<void> => {
-    this.logger.verbose(`running cache cleanup, url=${this.url}, current url=${await this.currentPage!.url()}`);
+    this.logger.verbose('running cache cleanup', { url: this.url, currentUrl: await this.currentPage!.url() });
 
     const response = await fetch(joinURL(TestHostUrlWithProtocol, ApiEndpointTestingCacheCleanup), { method: 'POST', headers: [[HeaderContentType, 'application/json']] });
     if(!response.ok) {
-      this.logger.warn(`cache cleanup request failed, url=${this.url}, currentPage=${this.currentPage?.url()}, code=${response.status}, statusText=${response.statusText}`);
+      this.logger.warn('cache cleanup request failed', undefined, { url: this.url, currentPage: this.currentPage?.url(), code: response.status, statusText: response.statusText });
       throw new Error('failed to run cache cleanup');
     };
 
-    this.logger.verbose(`cache cleanup completed, url=${this.url}, current url=${await this.currentPage!.url()}`);
+    this.logger.verbose('cache cleanup completed', { url: this.url, currentUrl: await this.currentPage!.url() });
   };
 }
 
@@ -764,7 +769,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
         await testHelper.start();
         await testHelper.purgeCache();
 
-        logger.verbose(`${TestName1} - prepare page`);
+        logger.verbose('prepare index page', { testCase: TestName1 });
         let testId: string | undefined;
         const prepareResult = await testHelper.performPageAction(AppPage.Index, TestingPageCacheActionEnum.Prepare, testId, undefined);
         testId = prepareResult.testId;
@@ -773,7 +778,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
         assert(!pageTestResult.tokenPresent, 'expected token to be absent');
         const initialChangeTimestamp = pageTestResult.lastChanged;
 
-        logger.verbose(`${TestName1} - change page`);
+        logger.verbose('change page', { testCase: TestName1 });
         testToken = testHelper.generateNewToken();
         const changeResult = await testHelper.performPageAction(AppPage.Index, TestingPageCacheActionEnum.Change, testId, testToken);
         testId = changeResult.testId;
@@ -784,7 +789,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
         assert(pageTestResult.lastChanged === initialChangeTimestamp, 'expected page last changed time to be the same as on prepare stage');
         
         await delay(LastModifiedTimeHeaderPrecision);
-        logger.verbose(`${TestName1} - running cache cleanup`);
+        logger.verbose('running cache cleanup', { testCase: TestName1 });
         await testHelper.runCacheCleanup();
 
         pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, undefined);
@@ -793,7 +798,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
         assert(changedTimestamp > initialChangeTimestamp, 'expected page change timestamp to increase');
 
         await delay(LastModifiedTimeHeaderPrecision);
-        logger.verbose(`${TestName1} - running cache cleanup again`);
+        logger.verbose('running cache cleanup again no1', { testCase: TestName1 });
         await testHelper.runCacheCleanup();
         pageTestResult = await testHelper.testPageResponse(testToken, undefined, true, false);
         assert(pageTestResult.tokenPresent, 'expected token to present');
@@ -845,14 +850,14 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
         AppPage.EmailVerifyComplete
       ].includes(testPage);
 
-      const testPageName = `[/${getPagePath(testPage)}] (${locale}) - auth form image changes ${pageCachingMustBeDisabled ? '(caching must be disabled)' : ''}`;
-      test(testPageName, DefaultTestOptions, async () => {
-        const testHelper = new PageTestHelper(testPageName, pageUrl, locale, false, htmlPageMetadata, logger);
+      const testCaseName = `[/${getPagePath(testPage)}] (${locale}) - auth form image changes ${pageCachingMustBeDisabled ? '(caching must be disabled)' : ''}`;
+      test(testCaseName, DefaultTestOptions, async () => {
+        const testHelper = new PageTestHelper(testCaseName, pageUrl, locale, false, htmlPageMetadata, logger);
         try {
           await testHelper.start();
           await testHelper.purgeCache();
     
-          logger.verbose(`${testPageName} - prepare page`);
+          logger.verbose('prepare', { testCase: testCaseName });
           let testId: string | undefined;
           const prepareResult = await testHelper.performPageAction(testPage, TestingPageCacheActionEnum.Prepare, testId, undefined);
           testId = prepareResult.testId;
@@ -861,7 +866,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           assert(!pageTestResult.tokenPresent, 'expected token to be absent');
           const initialChangeTimestamp = pageTestResult.lastChanged;
     
-          logger.verbose(`${testPageName} - change page`);
+          logger.verbose('change', { testCase: testCaseName });
           testToken = testHelper.generateNewToken();
           const changeResult = await testHelper.performPageAction(testPage, TestingPageCacheActionEnum.Change, testId, testToken);
           testId = changeResult.testId;
@@ -874,7 +879,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           }
           
           await delay(LastModifiedTimeHeaderPrecision);
-          logger.verbose(`${testPageName} - running cache cleanup`);
+          logger.verbose('running cache cleanup no1', { testCase: testCaseName });
           await testHelper.runCacheCleanup();
     
           pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, undefined);
@@ -884,7 +889,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
     
           if(!pageCachingMustBeDisabled) {
             await delay(LastModifiedTimeHeaderPrecision);
-            logger.verbose(`${testPageName} - running cache cleanup again`);
+            logger.verbose('running cache cleanup again no2', { testCase: testCaseName });
             await testHelper.runCacheCleanup();
             pageTestResult = await testHelper.testPageResponse(testToken, undefined, true, false);
             assert(pageTestResult.tokenPresent, 'expected token to present');
@@ -903,14 +908,14 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
     for(let i = 0; i < Test3Pages.length; i++) {
       const testPage = Test3Pages[i];
       const pageUrl = localizePath(`/${getPagePath(testPage)}`, locale);
-      const testPageName = `[/${getPagePath(testPage)}] (${locale}) - caching must be disabled`;
-      test(testPageName, DefaultTestOptions, async () => {
-        const testHelper = new PageTestHelper(testPageName, pageUrl, locale, false, htmlPageMetadata, logger);
+      const testCaseName = `[/${getPagePath(testPage)}] (${locale}) - caching must be disabled`;
+      test(testCaseName, DefaultTestOptions, async () => {
+        const testHelper = new PageTestHelper(testCaseName, pageUrl, locale, false, htmlPageMetadata, logger);
         try {
           await testHelper.start();
           await testHelper.purgeCache();
 
-          logger.verbose(`${testPageName} - initial page open`);
+          logger.verbose('initial page open', { testCase: testCaseName });
           const testToken = testHelper.generateNewToken();
           let pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, undefined);
           const initialChangeTimestamp = pageTestResult.lastChanged;
@@ -931,15 +936,15 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
     for(let i = 0; i < Test4Pages.length; i++) {
       const testPage = Test4Pages[i];
       const pageUrl = localizePath(`/${getPagePath(testPage)}`, locale);
-      const testPageName = `[/${getPagePath(testPage)}] (${locale}) - personal data must not be cached`;
-      test(testPageName, DefaultTestOptions, async () => {
-        const testHelper = new PageTestHelper(testPageName, pageUrl, locale, true, htmlPageMetadata, logger);
+      const testCaseName = `[/${getPagePath(testPage)}] (${locale}) -Page personal data must not be cached`;
+      test(testCaseName, DefaultTestOptions, async () => {
+        const testHelper = new PageTestHelper(testCaseName, pageUrl, locale, true, htmlPageMetadata, logger);
           
         try {
           await testHelper.start();
           await testHelper.purgeCache();
 
-          logger.verbose(`${testPageName} - initial page open`);
+          logger.verbose('init page open', { testCase: testCaseName });
           const testToken = testHelper.generateNewToken();
           let pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, undefined);
           const initialChangeTimestamp = pageTestResult.lastChanged;
@@ -958,22 +963,22 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
     const locale = TestLocales[l];
     const Test5Pages = [AppPage.FlightDetails, AppPage.BookFlight];
     for(let i = 0; i < Test5Pages.length; i++) {
-      const testPage = Test5Pages[i];
-      const testPageName = `[/${getPagePath(testPage)}] (${locale}) - flight offer changes`;
+      const testCaseName = Test5Pages[i];
+      const testPageName = `[/${getPagePath(testCaseName)}] (${locale}) - flight offer changes`;
       test(testPageName, DefaultTestOptions, async () => {
         let testHelper: PageTestHelper | undefined;
         try {
           await ensureServerStarted({ htmlPageMetadata }, logger);
           
-          logger.verbose(`${testPage} - prepare page`);
+          logger.verbose('prepare flights page', { testCase: testCaseName });
           let flightOfferId: EntityId | undefined;
-          const prepareResult = await performPageAction(testPage, TestingPageCacheActionEnum.Prepare, flightOfferId, undefined, undefined, logger);
+          const prepareResult = await performPageAction(testCaseName, TestingPageCacheActionEnum.Prepare, flightOfferId, undefined, undefined, logger);
           flightOfferId = prepareResult.testId;
 
-          const pageUrl = localizePath(`/${getPagePath(testPage)}/${flightOfferId}`, locale);
+          const pageUrl = localizePath(`/${getPagePath(testCaseName)}/${flightOfferId}`, locale);
           testHelper = new PageTestHelper(testPageName, pageUrl, locale, false, htmlPageMetadata, logger);
 
-          let defaultQuery: any = undefined;
+          const defaultQuery: any = undefined;
 
           await testHelper.start();
           await testHelper.purgeCache();
@@ -991,9 +996,9 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           assert(ogImageTestResult.imageBytesHash, 'expected non-empty og image');
           const initialOgImageBytesHash = ogImageTestResult.imageBytesHash!;
 
-          logger.verbose(`${testPage} - change page`);
+          logger.verbose('change flights page', { testCase: testCaseName });
           testToken = testHelper.generateNewToken();
-          const changeResult = await testHelper.performPageAction(testPage, TestingPageCacheActionEnum.Change, flightOfferId, testToken);
+          const changeResult = await testHelper.performPageAction(testCaseName, TestingPageCacheActionEnum.Change, flightOfferId, testToken);
           flightOfferId = changeResult.testId;
           await delay(LastModifiedTimeHeaderPrecision);
           pageTestResult = await testHelper.testPageResponse(testToken, defaultQuery, false, undefined);
@@ -1008,7 +1013,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           assert(ogImageTestResult.imageBytesHash === initialOgImageBytesHash, 'expected og image content to be the same as on prepare stage');
           
           await delay(LastModifiedTimeHeaderPrecision);
-          logger.verbose(`${testPage} - running cache cleanup`);
+          logger.verbose('running cache cleanup no2', { testCase: testCaseName });
           await testHelper.runCacheCleanup();
 
           pageTestResult = await testHelper.testPageResponse(testToken, defaultQuery, false, undefined);
@@ -1025,7 +1030,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           
 
           await delay(LastModifiedTimeHeaderPrecision);
-          logger.verbose(`${testPage} - running cache cleanup again`);
+          logger.verbose('running cache cleanup again no3', { testCase: testCaseName });
           await testHelper.runCacheCleanup();
           pageTestResult = await testHelper.testPageResponse(testToken, defaultQuery, true, undefined);
           assert(pageTestResult.tokenPresent, 'expected token to present');
@@ -1047,19 +1052,19 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
     const locale = TestLocales[l];
     const Test6Pages = [AppPage.StayDetails, AppPage.BookStay];
     for(let i = 0; i < Test6Pages.length; i++) {
-      const testPage = Test6Pages[i];
-      const testPageName = `[/${getPagePath(testPage)}] (${locale}) - stay offer changes`;
+      const testCaseName = Test6Pages[i];
+      const testPageName = `[/${getPagePath(testCaseName)}] (${locale}) - stay offer changes`;
       test(testPageName, DefaultTestOptions, async () => {
         let testHelper: PageTestHelper | undefined;
         try {
           await ensureServerStarted({ htmlPageMetadata }, logger);
           
-          logger.verbose(`${testPage} - prepare page`);
+          logger.verbose('prepare stays page', { testCase: testCaseName });
           let stayOfferId: EntityId | undefined;
-          const prepareResult = await performPageAction(testPage, TestingPageCacheActionEnum.Prepare, stayOfferId, undefined, undefined, logger);
+          const prepareResult = await performPageAction(testCaseName, TestingPageCacheActionEnum.Prepare, stayOfferId, undefined, undefined, logger);
           stayOfferId = prepareResult.testId;
 
-          const pageUrl = localizePath(`/${getPagePath(testPage)}/${stayOfferId}`, locale);
+          const pageUrl = localizePath(`/${getPagePath(testCaseName)}/${stayOfferId}`, locale);
           testHelper = new PageTestHelper(testPageName, pageUrl, locale, false, htmlPageMetadata, logger);
 
           await testHelper.start();
@@ -1077,9 +1082,9 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           assert(ogImageTestResult.imageBytesHash, 'expected non-empty og image');
           const initialOgImageBytesHash = ogImageTestResult.imageBytesHash!;
 
-          logger.verbose(`${testPage} - change page`);
+          logger.verbose('change stays page', { testCase: testCaseName });
           testToken = testHelper.generateNewToken();
-          const changeResult = await testHelper.performPageAction(testPage, TestingPageCacheActionEnum.Change, stayOfferId, testToken);
+          const changeResult = await testHelper.performPageAction(testCaseName, TestingPageCacheActionEnum.Change, stayOfferId, testToken);
           stayOfferId = changeResult.testId;
           await delay(LastModifiedTimeHeaderPrecision);
           pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, false);
@@ -1094,7 +1099,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           assert(ogImageTestResult.imageBytesHash === initialOgImageBytesHash, 'expected og image content to be the same as on prepare stage');
           
           await delay(LastModifiedTimeHeaderPrecision);
-          logger.verbose(`${testPage} - running cache cleanup`);
+          logger.verbose('running cache cleanup no3', { testCase: testCaseName });
           await testHelper.runCacheCleanup();
 
           pageTestResult = await testHelper.testPageResponse(testToken, undefined, false, undefined);
@@ -1111,7 +1116,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           
 
           await delay(LastModifiedTimeHeaderPrecision);
-          logger.verbose(`${testPage} - running cache cleanup again`);
+          logger.verbose('running cache cleanup again no4', { testCase: testCaseName });
           await testHelper.runCacheCleanup();
           pageTestResult = await testHelper.testPageResponse(testToken, undefined, true, false);
           assert(pageTestResult.tokenPresent, 'expected token to present');
@@ -1135,9 +1140,9 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
     for(let i = 0; i < Test7Pages.length; i++) {
       const testPage = Test7Pages[i];
       const pageUrl = localizePath(`/${getPagePath(testPage)}`, locale);
-      const testPageName = `[/${getPagePath(testPage)}] (${locale}) - popular city changes, url varied by anyValue parameter (citySlug)`;
-      test(testPageName, DefaultTestOptions, async () => {
-        const testHelper = new PageTestHelper(testPageName, pageUrl, locale, false, htmlPageMetadata, logger);
+      const testCaseName = `[/${getPagePath(testPage)}] (${locale}) - popular city changes, url varied by anyValue parameter (citySlug)`;
+      test(testCaseName, DefaultTestOptions, async () => {
+        const testHelper = new PageTestHelper(testCaseName, pageUrl, locale, false, htmlPageMetadata, logger);
         try {
           await testHelper.start();
           await testHelper.purgeCache();
@@ -1145,7 +1150,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           const existingCitySlug = 'paris';
           const citySlugParamName = 'citySlug';
           
-          logger.verbose(`${testPageName} - prepare page`);
+          logger.verbose('- prepare page');
           let testId: string | undefined;
           const prepareResult = await testHelper.performPageAction(testPage, TestingPageCacheActionEnum.Prepare, testId, undefined);
           testId = prepareResult.testId;
@@ -1155,7 +1160,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           const emptyCityTimestamp = emptyCityPageTestResult.lastChanged;
 
           await delay(LastModifiedTimeHeaderPrecision);
-          logger.verbose(`${testPageName} - open page with existing city`);
+          logger.verbose('open page with existing city', { testCase: testCaseName });
           const existingCityQuery = set({}, citySlugParamName, existingCitySlug);
           let existingCityPageTestResult = await testHelper.testPageResponse(testToken, existingCityQuery, true, undefined);
           assert(!existingCityPageTestResult.tokenPresent, 'expected token to be absent');
@@ -1164,13 +1169,13 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
 
 
           await delay(LastModifiedTimeHeaderPrecision);
-          logger.verbose(`${testPageName} - try open page with non-existing city`);
+          logger.verbose('try open page with non-existing city', { testCase: testCaseName });
           const nonExistingCityQuery = set({}, citySlugParamName, random(10000).toString());
           const nonExistingCityPageTestResult = await testHelper.testPageResponse(testToken, nonExistingCityQuery, false, undefined, 404);
           assert(nonExistingCityPageTestResult.httpResponseDetails.statusCode === 404, 'expected not found respose');
 
           
-          logger.verbose(`${testPageName} - change page`);
+          logger.verbose('change page', { testCase: testCaseName });
           testToken = testHelper.generateNewToken();
           const changeResult = await testHelper.performPageAction(testPage, TestingPageCacheActionEnum.Change, testId, testToken);
           testId = changeResult.testId;
@@ -1185,7 +1190,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
 
           
           await delay(LastModifiedTimeHeaderPrecision);
-          logger.verbose(`${testPageName} - running cache cleanup`);
+          logger.verbose('running cache cleanup no4', { testCase: testCaseName });
           await testHelper.runCacheCleanup();
     
           emptyCityPageTestResult = await testHelper.testPageResponse(testToken, null, false, undefined);
@@ -1201,7 +1206,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
           assert(existingCityChangedTimestamp !== emptyCityChangedTimestamp, 'expected timestamps to differ');
     
           await delay(LastModifiedTimeHeaderPrecision);
-          logger.verbose(`${testPageName} - running cache cleanup again`);
+          logger.verbose('running cache cleanup again no5', { testCase: testCaseName });
           await testHelper.runCacheCleanup();
           emptyCityPageTestResult = await testHelper.testPageResponse(testToken, null, true, undefined);
           assert(emptyCityPageTestResult.tokenPresent, 'expected token to present');
@@ -1225,13 +1230,14 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
       try {
         await ensureServerStarted({ htmlPageMetadata }, logger);
 
-        logger.verbose(`${TestName8} - authenticating`); // auth required to book offer
+        // auth required to book offer
+        logger.verbose('authenticating', { testCase: TestName8 });
         testHelper = new PageTestHelper(AppPage.Index, localizePath(`${getPagePath(AppPage.Index)}`, locale), locale,  true, htmlPageMetadata, logger);
         await testHelper.start();
         await testHelper.purgeCache();
         let authCookies = await testHelper.getAuthCookies(joinURL(TestHostUrlWithProtocol, getPagePath(AppPage.Index)));
         
-        logger.verbose(`${TestName8} - prepare page`);
+        logger.verbose('prepare booking page', { testCase: TestName8 });
         let bookingId: EntityId | undefined;
         const prepareResult = await performPageAction(AppPage.BookingDetails, TestingPageCacheActionEnum.Prepare, bookingId, undefined, authCookies, logger);
         bookingId = prepareResult.testId!;
@@ -1254,7 +1260,7 @@ describe('e2e:page-cache-cleaner rendered HTML page & OG Image cache invalidatio
         assert(ogImageTestResult.imageBytesHash, 'expected non-empty og image');
         const initialOgImageBytesHash = ogImageTestResult.imageBytesHash!;
 
-        logger.verbose(`${AppPage.BookingDetails} - change page`);
+        logger.verbose('change page', { testCase: TestName8 });
         const changeResult = await performPageAction(AppPage.BookingDetails, TestingPageCacheActionEnum.Change, bookingId, dummyToken, authCookies, logger);
         bookingId = changeResult.testId!;
 

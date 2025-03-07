@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { type Locale, getI18nResName3, getI18nResName2, type Timestamp, type StayServiceLevel, type EntityId, type Price, ImageCategory, AppPage, getPagePath } from '@golobe-demo/shared';
 import range from 'lodash-es/range';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
@@ -17,7 +18,7 @@ interface IRoomInfo {
 }
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   offerId?: EntityId,
   rooms?: IRoomInfo[]
 }
@@ -33,16 +34,16 @@ defineProps<IProps>();
     </h2>
     <div class="w-full overflow-x-auto h-auto">
       <ol class="mt-6 sm:mt-8 pb-2 w-full grid grid-flow-row grid-cols-stayroomsxs sm:grid-cols-stayroomssm items-center gap-4">
-        <li v-for="(room, idx) in rooms ?? (range(0, 4).map(_ => undefined))" :key="`${ctrlKey}-Room-${idx}`" class="contents">
+        <li v-for="(room, idx) in rooms ?? (range(0, 4).map(_ => undefined))" :key="`${toShortForm(ctrlKey)}-Room-${idx}`" class="contents">
           <div class="w-full h-auto block">
             <StaticImage
-              :key="`${ctrlKey}-AvailableRoomImage-${idx}`"
-              :ctrl-key="`${ctrlKey}-AvailableRoomImage-${idx}`"
+              :key="`${toShortForm(ctrlKey)}-AvailableRoomImage-${idx}`"
+              :ctrl-key="[...ctrlKey, 'StaticImg', idx]"
               :ui="{ wrapper: 'w-12 h-12 rounded', img: 'rounded', stub: 'rounded' }"
-              :entity-src="room?.image"
+              :src="room?.image"
               :category="ImageCategory.HotelRoom"
               sizes="xs:30vw sm:20vw md:20vw lg:10vw xl:10vw"
-              :alt-res-name="getI18nResName2('stayDetailsPage', 'stayServiceImageAlt')"
+              :alt="{ resName: getI18nResName2('stayDetailsPage', 'stayServiceImageAlt') }"
             />
           </div>
           <div class="w-full h-full flex flex-row flex-wrap items-center text-gray-600 dark:text-gray-300">

@@ -8,7 +8,7 @@ import { getServerSession } from '#auth';
 import { getCommonServices, getServerServices } from '../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
   const serverServices = getServerServices()!;
   const imageProcessor = serverServices.getImageProcessor(); 
   const imageProvider = serverServices.getImageProvider();
@@ -97,11 +97,11 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
 
   if (isSatori && !image.mimeType.includes('jpeg')) {
     try {
-      logger.info(`(api:img) converting image to satori acceptable format (JPEG), slug=${slug}, mime=${image.mimeType}`);
+      logger.info('converting image to satori acceptable format (JPEG', { slug, mime: image.mimeType });
       image.mimeType = 'image/jpeg';
       image.bytes = await imageProcessor.convert(image.bytes, 'jpeg');
     } catch (err: any) {
-      logger.warn(`(api:img) failed to convert image to satori acceptable format (JPEG), slug=${slug}, mime=${image.mimeType}`, err);
+      logger.warn('failed to convert image to satori acceptable format (JPEG', err, { slug, mime: image.mimeType });
       throw err;
     }
   }

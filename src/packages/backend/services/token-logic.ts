@@ -10,12 +10,12 @@ export class TokenLogic implements ITokenLogic {
 
   public static inject = ['logger', 'dbRepository'] as const;
   constructor (logger: IAppLogger, dbRepository: PrismaClient) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'TokenLogic' });
     this.dbRepository = dbRepository;
   }
 
   deleteToken =  async (id: EntityId): Promise<void> => {
-    this.logger.verbose(`(TokenLogic) deleting token: id=${id}`);
+    this.logger.verbose('deleting token', id);
     await this.dbRepository.verificationToken.update({
       where: {
         id,
@@ -26,14 +26,14 @@ export class TokenLogic implements ITokenLogic {
         version: { increment: 1 }
       }
     });
-    this.logger.verbose(`(TokenLogic) token deleted: id=${id}`);
+    this.logger.verbose('token deleted', id);
   };
 
   onTokenConsumeAction = async (kind: TokenKind, tokenId: EntityId, userId?: EntityId | undefined): Promise<void> => {
-    this.logger.verbose(`(TokenLogic) performing token consume action: kind=${kind}, tokenId=${tokenId}, userId=${userId}`);
+    this.logger.verbose('performing token consume action', { kind, tokenId, userId });
 
     if (kind === TokenKind.RegisterAccount) {
-      this.logger.info(`(TokenLogic) marking user email for token as verified: kind=${kind}, tokenId=${tokenId}, userId=${userId}`);
+      this.logger.info('marking user email for register token as verified', { kind, tokenId, userId });
       const updateResult = (await this.dbRepository.userEmail.updateMany({
         where: { verificationTokenId: tokenId, isDeleted: false },
         data: { 
@@ -42,11 +42,11 @@ export class TokenLogic implements ITokenLogic {
         }
       }));
       if (updateResult.count === 0) {
-        this.logger.warn(`(TokenLogic) cannot find email to mark verified: kind=${kind}, tokenId=${tokenId}, userId=${userId}`);
+        this.logger.warn('cannot find email to mark registration verified', undefined, { kind, tokenId, userId });
         return;
       }
     } else if (kind === TokenKind.EmailVerify) {
-      this.logger.info(`(TokenLogic) marking user email for token as verified: kind=${kind}, tokenId=${tokenId}, userId=${userId}`);
+      this.logger.info('marking user email for email token as verified', { kind, tokenId, userId });
       await executeInTransaction(async () => {
         let updateResult = (await this.dbRepository.userEmail.update({
           where: { verificationTokenId: tokenId, isDeleted: false },
@@ -60,14 +60,14 @@ export class TokenLogic implements ITokenLogic {
           }
         }));
         if (!(updateResult?.id ?? 0)) {
-          this.logger.warn(`(TokenLogic) cannot find email to mark verified: kind=${kind}, tokenId=${tokenId}, userId=${userId}`);
+          this.logger.warn('cannot find email to mark verified', undefined, { kind, tokenId, userId });
           throw new Error('cannot find email to verify');
         }
 
         const verifiedEmailId = updateResult.id;
         let changedEmailId = updateResult.changedEmailId ?? undefined;
         while (changedEmailId) {
-          this.logger.info(`(TokenLogic) deleting edited emails in chain of verified email: kind=${kind}, tokenId=${tokenId}, verifiedEmailId=${verifiedEmailId}, editedEmailId=${changedEmailId}`);
+          this.logger.info('deleting edited emails in chain of verified email', { kind, tokenId, verifiedEmailId, editedEmailId: changedEmailId });
           updateResult = (await this.dbRepository.userEmail.update({
             where: { id: changedEmailId },
             data: { 
@@ -85,16 +85,15 @@ export class TokenLogic implements ITokenLogic {
     } else if (kind === TokenKind.PasswordRecovery) {
       // nothing special for this
     } else {
-      const msg = `(TokenLogic) token consume action - unexpected token kind: kind=${kind}, tokenId=${tokenId}, userId=${userId}`;
-      this.logger.warn(msg);
-      throw new AppException(AppExceptionCodeEnum.UNKNOWN, msg, 'error-page');
+      this.logger.warn('token consume action - unexpected token kind', undefined, { kind, tokenId, userId });
+      throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'token consume action - unexpected token kind', 'error-page');
     }
 
-    this.logger.verbose(`(TokenLogic) token consume action done: kind=${kind}, tokenId=${tokenId}, userId=${userId}`);
+    this.logger.verbose('token consume action done', { kind, tokenId, userId });
   };
 
   issueToken = async (kind: TokenKind, userId?: EntityId | undefined, expirePrevious?: boolean | undefined): Promise<ITokenIssueResult> => {
-    this.logger.verbose(`(TokenLogic) issuing new token: kind=${kind}, userId=${userId}, expirePrevious=${expirePrevious}`);
+    this.logger.verbose('issuing new token', { kind, userId, expirePrevious });
 
     const tokenValue = generateNewTokenValue();
     let tokenEntity: { id: EntityId };
@@ -128,7 +127,7 @@ export class TokenLogic implements ITokenLogic {
             version: { increment: 1 }
           }
         });
-        this.logger.verbose(`(TokenLogic) expired previous tokens: kind=${kind}, userId=${userId}, count=${updated.count}`);
+        this.logger.verbose('expired previous tokens', { kind, userId, count: updated.count });
       }
 
       tokenEntity = await this.dbRepository.verificationToken.create({
@@ -155,12 +154,12 @@ export class TokenLogic implements ITokenLogic {
       value: tokenValue.value
     };
 
-    this.logger.verbose(`(TokenLogic) token issued: kind=${kind}, userId=${userId}, expirePrevious=${expirePrevious}, id=${result.id}`);
+    this.logger.verbose('token issued', { kind, userId, expirePrevious, id: result.id });
     return result;
   };
 
   consumeToken = async (id: EntityId, value: string): Promise<TokenConsumeResult> => {
-    this.logger.verbose(`(TokenLogic) consuming token: id=${id}`);
+    this.logger.verbose('consuming token', id);
 
     const tokenEntity = await this.dbRepository.verificationToken.findUnique({
       where: {
@@ -177,22 +176,22 @@ export class TokenLogic implements ITokenLogic {
       }
     });
     if (!tokenEntity) {
-      this.logger.info(`(TokenLogic) token not found: id=${id}`);
+      this.logger.info('token not found', id);
       return { code: 'not-found', userId: undefined };
     }
 
     const activeStatus = isTokenActive(tokenEntity.isDeleted, tokenEntity.attemptsMade, tokenEntity.createdUtc);
     switch (activeStatus) {
       case 'token-expired':
-        this.logger.info(`(TokenLogic) maximum number of consume attempts has been reached: id=${id}`);
+        this.logger.info('maximum number of consume attempts has been reached', id);
         return { code: 'token-expired', userId: tokenEntity.userId ?? undefined };
       case 'already-consumed':
-        this.logger.info(`(TokenLogic) token has been already consumed: id=${id}`);
+        this.logger.info('token has been already consumed', id);
         return { code: 'already-consumed', userId: tokenEntity.userId ?? undefined };
     }
 
     if (!verifyTokenValue(value, tokenEntity.hash)) {
-      this.logger.info(`(TokenLogic) token consume failed: id=${id}`);
+      this.logger.info('token consume failed', id);
       await this.dbRepository.verificationToken.update({
         where: {
           id
@@ -206,7 +205,7 @@ export class TokenLogic implements ITokenLogic {
     } else {
       await this.onTokenConsumeAction(lookupValueOrThrow(TokenKind, tokenEntity.kind), id, tokenEntity.userId ?? undefined);
 
-      this.logger.info(`(TokenLogic) token consumed: id=${id}`);
+      this.logger.info('token consumed', id);
       await this.dbRepository.verificationToken.update({
         where: {
           id

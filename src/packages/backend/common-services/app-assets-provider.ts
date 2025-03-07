@@ -17,43 +17,43 @@ export class AppAssetsProvider implements IAppAssetsProvider {
       localesAssetsStorage: Storage<StorageValue>, 
       logger: IAppLogger
   ) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'AppAssetsProvider' });
     this.appAssetsStorage = appAssetsStorage;
     this.localesAssetsStorage = localesAssetsStorage;
     this.pdfFontsAssetsStorage = pdfFontsAssetsStorage;
   }
 
   getPdfFont = async (filename: string): Promise<Buffer> => {
-    this.logger.verbose(`(AppAssetsProvider) accessing pdf font, filename=${filename}`);
+    this.logger.verbose('accessing pdf font', filename);
     const fileContent = (await this.pdfFontsAssetsStorage.getItemRaw(filename));
     if (!fileContent) {
-      this.logger.warn(`(AppAssetsProvider) font is not available, , filename=${filename}`);
+      this.logger.warn('font is not available', undefined, filename);
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'cannot obtain font', 'error-stub');
     }
     const result = convertRawToBuffer(fileContent);
-    this.logger.verbose(`(AppAssetsProvider) pdf font accessed, filename=${filename}, size=${result ? result.length : 'not found'}`);
+    this.logger.verbose('pdf font accessed', { filename, size: result?.length });
     return result;
   };
 
   getAppData = async (filename: string): Promise<NonNullable<unknown>> => {
-    this.logger.verbose(`(AppAssetsProvider) accessing app data, filename=${filename}`);
+    this.logger.verbose('accessing app data', filename);
     const result = destr<any>(await this.appAssetsStorage.getItem(filename));
     if (!result) {
-      this.logger.warn(`(AppAssetsProvider) app data is not available, , filename=${filename}`);
+      this.logger.warn('app data is not available', undefined, filename);
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'cannot obtain app resource', 'error-stub');
     }
-    this.logger.verbose(`(AppAssetsProvider) accessing app data, filename=${filename}, result=${result ? 'ok' : 'not found'}`);
+    this.logger.verbose('accessing app data', { filename, result: !!result });
     return result;
   };
 
   getLocalization = async (locale: Locale): Promise<NonNullable<unknown>> => {
-    this.logger.verbose(`(AppAssetsProvider) accessing localization, locale=${locale}`);
+    this.logger.verbose('accessing localization', locale);
     const result = destr<any>(await this.localesAssetsStorage.getItem(`${locale.toLocaleLowerCase()}.json`));
     if (!result) {
-      this.logger.warn(`(AppAssetsProvider) localization is not available, locale=${locale}`);
+      this.logger.warn('localization is not available', undefined, locale);
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'cannot obtain localization', 'error-page');
     }
-    this.logger.verbose(`(AppAssetsProvider) accessing localization, locale=${locale}, result=${result ? 'ok' : 'not found'}`);
+    this.logger.verbose('accessing localization', { locale, result: !!result });
     return result;
   };
 }

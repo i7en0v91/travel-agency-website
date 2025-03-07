@@ -8,12 +8,12 @@ import { getCommonServices, getServerServices } from '../../../../../helpers/ser
 
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
   const staysLogic = getServerServices()!.getStaysLogic();
 
   const offerParam = getRouterParams(event)?.id?.toString() ?? '';
   if (!offerParam) {
-    logger.warn(`(api:stay-favourite) stay offer id paramer was not speicifed: path=${event.path}`);
+    logger.warn('stay offer id paramer was not speicifed', undefined, { path: event.path });
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
       'offerId parameter was not specified',
@@ -25,7 +25,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   const authSession = await getServerSession(event);
   const userId = await extractUserIdFromSession(authSession);
   if(!userId) {
-    logger.warn('(api:stay-favourite) failed to obtain user id');
+    logger.warn('failed to obtain user id');
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
       'failed to obtain user id',

@@ -12,14 +12,14 @@ export class MailTemplateLogic implements IMailTemplateLogic {
 
   public static inject = ['mailTemplateLogicPrisma', 'acsysDraftsEntitiesResolver', 'dbRepository', 'logger'] as const;
   constructor (prismaImplementation: IMailTemplateLogic, acsysDraftsEntitiesResolver: AcsysDraftEntitiesResolver, dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'MailTemplateLogic-Acsys' });
     this.prismaImplementation = prismaImplementation;
     this.dbRepository = dbRepository;
     this.acsysDraftsEntitiesResolver = acsysDraftsEntitiesResolver;
   }
 
   async deleteTemplate (id: EntityId): Promise<void> {
-    this.logger.debug(`(MailTemplateLogic-Acsys) deleting template: id=${id}`);
+    this.logger.debug('deleting template', id);
 
     const deleted = (await this.dbRepository.acsysDraftsAirport.updateMany({
       where: {
@@ -32,15 +32,15 @@ export class MailTemplateLogic implements IMailTemplateLogic {
       }
     })).count > 0;
     if(!deleted) {
-      this.logger.debug(`(MailTemplateLogic-Acsys) no templates have been deleted in drafts table, proceeding to the main table: id=${id}`);
+      this.logger.debug('no templates have been deleted in drafts table, proceeding to the main table', id);
       await this.prismaImplementation.deleteTemplate(id);
     }
 
-    this.logger.debug(`(MailTemplateLogic-Acsys) template deleted: id=${id}`);
+    this.logger.debug('template deleted', id);
   };
 
   async getTemplateMarkup (kind: EmailTemplateEnum, locale: Locale, previewMode: PreviewMode): Promise<string | undefined> {
-    this.logger.debug(`(MailTemplateLogic-Acsys) find template, kind=${kind}, locale=${locale}, previewMode=${previewMode}`);
+    this.logger.debug('find template', { kind, locale, previewMode });
 
     let result: string | undefined;
     if(previewMode) {
@@ -60,16 +60,16 @@ export class MailTemplateLogic implements IMailTemplateLogic {
       }
     }
     if(!result) {
-      this.logger.debug(`(MailTemplateLogic-Acsys) no templates have been deleted in drafts table, proceeding to the main table: kind=${kind}, locale=${locale}, previewMode=${previewMode}`);
+      this.logger.debug('no templates have been deleted in drafts table, proceeding to the main table', { kind, locale, previewMode });
       result = await this.prismaImplementation.getTemplateMarkup(kind, locale, previewMode);
     }
     
-    this.logger.debug(`(MailTemplateLogic-Acsys) template found, kind=${kind}, locale=${locale}, previewMode=${previewMode}, length=${result?.length ?? 0}`);
+    this.logger.debug('template found', { kind, locale, previewMode, length: result?.length ?? 0 });
     return result;
   }
 
   async createTemplate (kind: EmailTemplateEnum, markup: ILocalizableValue, previewMode: PreviewMode): Promise<EntityId> {
-    this.logger.debug(`(MailTemplateLogic-Acsys) creating template, kind=${kind}, previewMode=${previewMode}`);
+    this.logger.debug('creating template', { kind, previewMode });
     
     let mailTemplateId: EntityId;
     if(previewMode) {
@@ -102,7 +102,7 @@ export class MailTemplateLogic implements IMailTemplateLogic {
       mailTemplateId = await this.prismaImplementation.createTemplate(kind, markup, previewMode);
     }
     
-    this.logger.debug(`(MailTemplateLogic-Acsys) template created, kind=${kind}, previewMode=${previewMode}, id=${mailTemplateId}`);
+    this.logger.debug('template created', { kind, previewMode, id: mailTemplateId });
     return mailTemplateId;
   }
 }

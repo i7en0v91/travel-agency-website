@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { getI18nResName3, type ILocalizableValue, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
 import range from 'lodash-es/range';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   header?: ILocalizableValue,
   body?: ILocalizableValue,
   userName?: ILocalizableValue,
@@ -64,7 +65,7 @@ const uiStyling = {
         </UButton>
 
         <div class="flex flex-row flex-wrap gap-[12px] mt-[8px]">
-          <UIcon v-for="i in range(0, 5)" :key="`${ctrlKey}-ReviewStar-${i}`" name="i-material-symbols-star" class="w-6 h-6 max-w-[32px] bg-yellow-400" />
+          <UIcon v-for="i in range(0, 5)" :key="`${toShortForm(ctrlKey)}-ReviewStar-${i}`" name="i-material-symbols-star" class="w-6 h-6 max-w-[32px] bg-yellow-400" />
         </div>
         <div class="mt-[8px] sm:mt-[20px]">
           <div v-if="userName" class="font-bold text-black dark:text-white">
@@ -78,7 +79,7 @@ const uiStyling = {
 
         <StaticImage
           :ctrl-key="ctrlKey"
-          :entity-src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
+          :src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
           :category="ImageCategory.CompanyReview"
           sizes="xs:80vw sm:50vw md:50vw lg:50vw xl:40vw"
           :class="expanded ? 'mt-[40px]' : 'mt-2'"
@@ -88,8 +89,8 @@ const uiStyling = {
             img: 'rounded-xl',
             errorStub: '!h-[200px]'
           }"
-          :alt-res-name="getI18nResName3('indexPage', 'companyReviewSection', 'imgAlt')"
-          :show-stub="true"
+          :alt="{ resName: getI18nResName3('indexPage', 'companyReviewSection', 'imgAlt') }"
+          stub="default"
         />
       </div>
     </UCard>

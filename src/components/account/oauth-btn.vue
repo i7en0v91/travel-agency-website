@@ -1,10 +1,10 @@
 <script setup lang="ts">
-
+import type { ControlKey } from './../../helpers/components';
 import { AuthProvider, type I18nResName } from '@golobe-demo/shared';
 import { LocatorClasses } from '../../helpers/constants';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   provider: AuthProvider,
   ariaLabelResName?: I18nResName,
   ui?: string,

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { ImageCategory, type Timestamp, getI18nResName2 } from '@golobe-demo/shared';
 import type { TravelDetailsImageStatus } from './../../../types';
 import { formatImageUrl } from './../../../helpers/dom';
@@ -6,14 +7,14 @@ import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   slug?: string,
   timestamp?: Timestamp,
   status?: TravelDetailsImageStatus
 };
 const { ctrlKey, timestamp, slug, status = 'loading' } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'TravelDetailsImageFrame' });
 
 const systemConfigurationStore = useSystemConfigurationStore();
 const { enabled } = usePreviewState();
@@ -23,10 +24,10 @@ const $emit = defineEmits<{(event: 'update:status', status?: TravelDetailsImageS
 
 function fireStatusChange (newStatus: TravelDetailsImageStatus) {
   if (!status || newStatus !== status) {
-    logger.debug(`(TravelDetailsImageFrame) status changed: ctrlKey=${ctrlKey}, new status=${newStatus}, prev status=${status}`);
+    logger.debug('status changed', { ctrlKey, newStatus, prevStatus: status });
     $emit('update:status', newStatus);
   } else {
-    logger.debug(`(TravelDetailsImageFrame) wont fire status change as it is still the same: ctrlKey=${ctrlKey}, status=${newStatus}`);
+    logger.debug('wont fire status change as it is still the same', { ctrlKey, status: newStatus });
   }
 }
 
@@ -53,25 +54,25 @@ const styleClass = computed(() => {
 });
 
 function onLoad () {
-  logger.debug(`(TravelDetailsImageFrame) image loaded, current url=${imgUrl.value}`);
+  logger.debug('image loaded, current', { url: imgUrl.value });
   fireStatusChange('ready');
 }
 
 function onError (err: any) {
-  logger.warn(`(TravelDetailsImageFrame) image load failed, current url=${imgUrl.value}`, err);
+  logger.warn('image load failed, current', err, { url: imgUrl.value });
   fireStatusChange('error');
 }
 
 watch(() => slug, () => {
   const newUrl = getImgUrl(slug, timestamp);
   if (!newUrl || newUrl !== image.value?.src) {
-    logger.debug(`(TravelDetailsImageFrame) image url changed, new url=${newUrl}, prev url=${image.value?.src}`);
+    logger.debug('image url changed', { newUrl, prevUrl: image.value?.src });
     fadeIn.value = false;
     fireStatusChange('loading');
   }
 });
 
-const imageSize = await systemConfigurationStore.getImageSrcSize(ImageCategory.TravelBlock);
+const imageSize = systemConfigurationStore.imageCategories.find(x => x.kind === ImageCategory.TravelBlock)!;
 
 </script>
 

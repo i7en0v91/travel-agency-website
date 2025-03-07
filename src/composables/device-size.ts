@@ -7,23 +7,23 @@ export interface IDeviceSize {
 }
 
 export function useDeviceSize (): IDeviceSize {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'UseDeviceSize' });
 
   if(import.meta.server) {
-    logger.verbose('(device-size) assuming desktop size for server side');
+    logger.verbose('assuming desktop size for server side');
     return {
       current: computed(() => DeviceSizeEnum.XXL)
     };
   }
 
   const deviceSize = ref<DeviceSizeEnum>(getCurrentDeviceSize());
-  logger.verbose(`(device-size) initializing with ${deviceSize.value}`);
+  logger.verbose('initializing', { size: deviceSize.value });
 
   const actualizeDeviceSize = () => 
     setTimeout(() => {
       const currentDeviceSize = getCurrentDeviceSize();
       if(deviceSize.value !== currentDeviceSize) {
-        logger.verbose(`(device-size) device size changed, new=${currentDeviceSize}, prev=${deviceSize.value}`);
+        logger.verbose('device size changed', { new: currentDeviceSize, prev: deviceSize.value });
         deviceSize.value = currentDeviceSize;
       }
     }, 0);

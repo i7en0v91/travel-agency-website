@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../../helpers/components';
 import { AppPage, getPagePath, type Locale, getLocalizeableValue, getScoreClassResName, getI18nResName2, getI18nResName3, type EntityDataAttrsOnly, type IStayOffer, type OfferKind, ImageCategory, isElectronBuild } from '@golobe-demo/shared';
 import range from 'lodash-es/range';
 import { useUserFavouritesStore } from './../../../stores/user-favourites-store';
@@ -9,7 +10,7 @@ import { getCommonServices } from '../../../helpers/service-accessors';
 import { IconSvgCustomizers } from './../../../helpers/components';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   offer: EntityDataAttrsOnly<IStayOffer>,
   variant?: 'landscape-xl' | 'landscape-lg'
 }
@@ -18,9 +19,10 @@ const { ctrlKey, offer, variant = 'landscape-xl' } = defineProps<IProps>();
 const { status } = useAuth();
 const { locale, t } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
+const userNotificationStore = useUserNotificationStore();
 const { requestUserAction } = usePreviewState();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'SearchStaysResultCard' });
 
 const isError = ref(false);
 
@@ -33,18 +35,18 @@ const favouriteStatusWatcher = useOfferFavouriteStatus(offer.id, offer.kind);
 
 async function toggleFavourite (): Promise<void> {
   const offerId = offer.id;
-  logger.verbose(`(SearchStayResultCard) toggling favourite, offerId=${offerId}, current=${favouriteStatusWatcher.isFavourite}`);
-  if(!await requestUserAction()) {
-    logger.verbose(`(SearchStayResultCard) favourite hasn't been toggled - not available in preview mode, offerId=${offerId}, current=${favouriteStatusWatcher.isFavourite}`);
+  logger.verbose('toggling favourite', { offerId, current: favouriteStatusWatcher.isFavourite });
+  if(!await requestUserAction(userNotificationStore)) {
+    logger.verbose('favourite hasn', { offerId, current: favouriteStatusWatcher.isFavourite });
     return;
   }
   const store = await userFavouritesStore.getInstance();
   const result = await store.toggleFavourite(offerId, 'stays' as OfferKind, offer);
-  logger.verbose(`(SearchStayResultCard) favourite toggled, offerId=${offerId}, isFavourite=${result}`);
+  logger.verbose('favourite toggled', { offerId, isFavourite: result });
 }
 
 async function favouriteBtnClick (): Promise<void> {
-  logger.debug(`(SearchStayResultCard) favourite button clicked, ctrlKey=${ctrlKey}, current=${favouriteStatusWatcher.isFavourite}`);
+  logger.debug('favourite button clicked', { ctrlKey, current: favouriteStatusWatcher.isFavourite });
   await toggleFavourite();
 }
 
@@ -79,8 +81,8 @@ const uiStyling = {
 
         <div :class="`w-full h-full row-start-1 row-end-2 col-start-1 col-end-3 xl:row-end-4 xl:col-end-2 ${variant === 'landscape-lg' ? 'lg:row-end-4 lg:col-end-2' : ''}`">
           <StaticImage
-            :ctrl-key="`${ctrlKey}-StayPhoto`"
-            :entity-src="offer.stay.photo"
+            :ctrl-key="[...ctrlKey, 'StayPhoto']"
+            :src="offer.stay.photo"
             :category="ImageCategory.Hotel"
             sizes="xs:85vw sm:85vw md:85vw lg:75vw xl:30vw"
             :ui="{ 
@@ -88,8 +90,8 @@ const uiStyling = {
               stub: `rounded-t-xl xl:rounded-t-none xl:rounded-l-xl ${ variant === 'landscape-lg' ? 'lg:rounded-t-none lg:rounded-l-xl' : '' } `,
               img: `aspect-square object-cover rounded-t-xl xl:rounded-l-xl xl:rounded-tr-none ${ variant === 'landscape-lg'  ? 'lg:rounded-l-xl lg:rounded-tr-none' : ''}` 
             }"
-            :show-stub="true"
-            :alt-res-name="getI18nResName2('searchStays', 'hotelPhotoAlt')"
+            stub="default"
+            :alt="{ resName: getI18nResName2('searchStays', 'hotelPhotoAlt') }"
           />
         </div>
                       
@@ -121,7 +123,7 @@ const uiStyling = {
             <div class="flex-initial flex flex-row flex-nowrap items-center gap-[2px]">
               <UIcon 
                 v-for="i in range(0, 5)" 
-                :key="`${ctrlKey}-HotelStar-${i}`" 
+                :key="`${toShortForm(ctrlKey)}-HotelStar-${i}`" 
                 name="i-material-symbols-star" 
                 mode="svg" 
                 class="w-5 h-5 inline-block" 

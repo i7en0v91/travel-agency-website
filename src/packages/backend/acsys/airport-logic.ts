@@ -16,7 +16,7 @@ export class AirportLogic implements IAirportLogic {
 
   public static inject = ['airportLogicPrisma', 'citiesLogic', 'acsysDraftsEntitiesResolver', 'dbRepository', 'logger'] as const;
   constructor (prismaImplementation: IAirportLogic, citiesLogic: ICitiesLogic, acsysDraftsEntitiesResolver: AcsysDraftEntitiesResolver, dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'AirportLogic-Acsys' });
     this.prismaImplementation = prismaImplementation;
     this.citiesLogic = citiesLogic;
     this.dbRepository = dbRepository;
@@ -24,7 +24,7 @@ export class AirportLogic implements IAirportLogic {
   }
   
   deleteAirport =  async (id: EntityId): Promise<void> => {
-    this.logger.debug(`(AirportLogic-Acsys) deleting airport: id=${id}`);
+    this.logger.debug('deleting airport', id);
 
     const deleted = (await this.dbRepository.acsysDraftsAirport.updateMany({
       where: {
@@ -37,15 +37,15 @@ export class AirportLogic implements IAirportLogic {
       }
     })).count > 0;
     if(!deleted) {
-      this.logger.debug(`(AirportLogic-Acsys) no airports have been deleted in drafts table, proceeding to the main table: id=${id}`);
+      this.logger.debug('no airports have been deleted in drafts table, proceeding to the main table', id);
       await this.prismaImplementation.deleteAirport(id);
     }
 
-    this.logger.debug(`(AirportLogic-Acsys) airport deleted: id=${id}`);
+    this.logger.debug('airport deleted', id);
   };
 
   async getAirportsForSearch (citySlugs: string[], addPopular: boolean, previewMode: PreviewMode): Promise<EntityDataAttrsOnly<IAirport>[]> {
-    this.logger.debug(`(AirportLogic-Acsys) get airports for search, city slugs=[${citySlugs.join(', ')}], addPopular=${addPopular}, previewMode=${previewMode}`);
+    this.logger.debug('get airports for search, city', { slugs: citySlugs, addPopular, previewMode });
     let result: EntityDataAttrsOnly<IAirport>[] | undefined;
     if(previewMode) {
       if (addPopular) {
@@ -55,11 +55,11 @@ export class AirportLogic implements IAirportLogic {
       }
   
       if (citySlugs.length === 0) {
-        this.logger.debug('(AirportLogic-Acsys) get airports for search, empty city slug list');
+        this.logger.debug('get airports for search, empty city slug list');
         return [];
       }
 
-      this.logger.debug(`(AirportLogic-Acsys) get airports for search - determining airport ids by city slugs=[${citySlugs.join('; ')}]`);
+      this.logger.debug('get airports for search - determining airport ids by city', { slugs: citySlugs });
       const draftCityIds = (await this.dbRepository.acsysDraftsCity.findMany({
         where: {
           slug: {
@@ -98,7 +98,7 @@ export class AirportLogic implements IAirportLogic {
       })).map(i => i.id);
       const airportIds = [...draftAirportIds, ...publishedAirportIds];
 
-      this.logger.debug(`(AirportLogic-Acsys) get airports for search - resolving entity refs, count=${airportIds.length}`);      
+      this.logger.debug('get airports for search - resolving entity refs', { count: airportIds.length });      
 
       const resolvedAirports = (await this.acsysDraftsEntitiesResolver.resolveAirports({ idsFilter: airportIds }));
       const resolveResult = Array.from(resolvedAirports.items.values());
@@ -109,18 +109,18 @@ export class AirportLogic implements IAirportLogic {
       result = await this.prismaImplementation.getAirportsForSearch(citySlugs, addPopular, previewMode);
     }
     
-    this.logger.debug(`(AirportLogic-Acsys) get airports for search, city slugs=[${citySlugs.join(', ')}], addPopular=${addPopular}, previewMode=${previewMode}, count=${result.length}`);
+    this.logger.debug('get airports for search, city', { slugs: citySlugs, addPopular, previewMode, count: result.length });
     return result;
   }
 
   async getAirport (id: EntityId, previewMode: PreviewMode): Promise<IAirport> {
-    this.logger.debug(`(AirportLogic-Acsys) get, airportId=${id}, previewMode=${previewMode}`);
+    this.logger.debug('get', { airportId: id, previewMode });
 
     let result: IAirport;
     if(previewMode) {
       const resolveResult = await this.acsysDraftsEntitiesResolver.resolveAirports({ idsFilter:  [ id ] });
       if(resolveResult.notFoundIds?.length) {
-        this.logger.warn(`(AirportLogic-Acsys) airport not found, airportId=${id}`);
+        this.logger.warn('airport not found', undefined, { airportId: id });
         throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'airport not found', 'error-stub');
       }
       result = Array.from(resolveResult.items.values())[0];
@@ -128,12 +128,12 @@ export class AirportLogic implements IAirportLogic {
       result = await this.prismaImplementation.getAirport(id, previewMode);
     }
     
-    this.logger.debug(`(AirportLogic-Acsys) get, airportId=${id}, previewMode=${previewMode}, result=${result.name.en}`);
+    this.logger.debug('get', { airportId: id, previewMode, result: result.name.en });
     return result;
   }
 
   async getAllAirportsShort (previewMode: PreviewMode): Promise<IAirportShort[]> {
-    this.logger.debug(`(AirportLogic-Acsys) listing all airports (short), previewMode=${previewMode}`);
+    this.logger.debug('listing all airports (short', previewMode);
 
     let result: IAirportShort[];
     if(previewMode) {
@@ -148,12 +148,12 @@ export class AirportLogic implements IAirportLogic {
     } else {
       result = await this.prismaImplementation.getAllAirportsShort(previewMode);
     }
-    this.logger.debug(`(AirportLogic-Acsys) all airports listed (short), previewMode=${previewMode}, result=${result.length}`);
+    this.logger.debug('all airports listed (short', { previewMode, result: result.length });
     return result;
   }
 
   async createAirport (data: IAirportData, previewMode: PreviewMode): Promise<EntityId> {
-    this.logger.debug(`(AirportLogic-Acsys) creating airport, name=${data.name.en}, previewMode=${previewMode}`);
+    this.logger.debug('creating airport', { name: data.name.en, previewMode });
 
     let airportId: EntityId;
     if(previewMode) {
@@ -189,7 +189,7 @@ export class AirportLogic implements IAirportLogic {
       airportId = await this.prismaImplementation.createAirport(data, previewMode);
     }
     
-    this.logger.debug(`(AirportLogic-Acsys) airport created, name=${data.name.en}, previewMode=${previewMode}, id=${airportId}`);
+    this.logger.debug('airport created', { name: data.name.en, previewMode, id: airportId });
     return airportId;
   }
 }

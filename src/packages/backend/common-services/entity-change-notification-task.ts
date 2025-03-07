@@ -29,7 +29,7 @@ export class EntityChangeNotificationTask implements IEntityChangeNotificationTa
 
   public static inject = ['changeDependencyTracker', 'logger'] as const;
   constructor (changeDependencyTracker: IChangeDependencyTracker, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'EntityChangeNotificationTask' });
     this.changeDependencyTracker = changeDependencyTracker;
     this.taskStatus = 'idle';
     this.lastChangedPagesRevision = dayjs().toDate();
@@ -37,11 +37,11 @@ export class EntityChangeNotificationTask implements IEntityChangeNotificationTa
   }
 
   subscribeForChanges = (options: EntityChangeNotificationSubscriptionOptions, callback: EntityChangeNotificationCallback): EntityChangeNotificationSubscriberId => {
-    this.logger.verbose(`(EntityChangeNotificationTask) registering new subscriber, options=${JSON.stringify(options)}`);
+    this.logger.verbose('registering new subscriber', options);
 
     const orderIsUsed = Array.from(this.subscriptionsBySubscribers.values()).some(s => s.options.order === options.order);
     if(orderIsUsed) {
-      this.logger.warn(`(EntityChangeNotificationTask) failed to register new subsriber, order is already in use, order=${options.order}, options=${JSON.stringify(options)}`);
+      this.logger.warn('failed to register new subsriber, order is already in use', undefined, { order: options.order, options });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown server error', 'error-page');
     };
 
@@ -53,47 +53,47 @@ export class EntityChangeNotificationTask implements IEntityChangeNotificationTa
     };
     this.subscriptionsBySubscribers.set(subscriberId, subscription);
 
-    this.logger.verbose(`(EntityChangeNotificationTask) new subscriber registered, id=${subscriberId}, options=${JSON.stringify(options)}`);
+    this.logger.verbose('new subscriber registered', { id: subscriberId, options });
     return subscriberId;
   };
   
   unsubscribeFromChanges = (subscriberId: EntityChangeNotificationSubscriberId): void => {
-    this.logger.verbose(`(EntityChangeNotificationTask) removing subscriber, id=${subscriberId}`);
+    this.logger.verbose('removing subscriber', { id: subscriberId });
     if(this.subscriptionsBySubscribers.delete(subscriberId)) {
-      this.logger.verbose(`(EntityChangeNotificationTask) subscriber removed, id=${subscriberId}`);
+      this.logger.verbose('subscriber removed', { id: subscriberId });
     } else {
-      this.logger.warn(`(EntityChangeNotificationTask) subscriber was not found, id=${subscriberId}`);
+      this.logger.warn('subscriber was not found', undefined, { id: subscriberId });
     }
   };
 
   initialize = async (): Promise<void> => {
-    this.logger.verbose('(EntityChangeNotificationTask) starting in background...');
+    this.logger.verbose('starting in background');
     this.startTaskTimerLoop(AppConfig.caching.invalidation);
-    this.logger.verbose('(EntityChangeNotificationTask) started');
+    this.logger.verbose('started');
   };
 
   startTaskTimerLoop = (options: NotificationOptions) => {
-    this.logger.verbose(`(EntityChangeNotificationTask) starting notification task timer loop`, options);
+    this.logger.verbose('starting notification task timer loop');
     if(options.intervalSeconds > MaxTimerIntervalSec) {
-      this.logger.warn(`(EntityChangeNotificationTask) too large interval value speficified - ${options.intervalSeconds}, max allowed = ${MaxTimerIntervalSec}`);
+      this.logger.warn('too large interval value speficified', undefined, { interval: options.intervalSeconds, maxInterval: MaxTimerIntervalSec });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'incorrect server configuration', 'error-page');
     }
     scheduleTimer(() => this.notificationTimerCallback(options), options.intervalSeconds * 1000);
   };
 
   notificationTimerCallback = async (options: NotificationOptions): Promise<void> => {
-    this.logger.verbose(`(EntityChangeNotificationTask) notification timer callback, current status=${this.taskStatus}`);
+    this.logger.verbose('notification timer callback, current', { status: this.taskStatus });
     if(this.taskStatus === 'in-progress') {
-      this.logger.verbose(`(EntityChangeNotificationTask) skipping notification callback iteration - still in progress`);
+      this.logger.verbose('skipping notification callback iteration - still in progress');
       return;  
     }
     await this.runNotificationTaskOnce(options);
-    this.logger.verbose(`(EntityChangeNotificationTask) notification timer callback completed, current status=${this.taskStatus}`);
+    this.logger.verbose('notification timer callback completed, current', { status: this.taskStatus });
   };
 
   runNotificationTaskOnce = async (options: NotificationOptions): Promise<void> => {
     const since = this.lastChangedPagesRevision;
-    this.logger.verbose(`(EntityChangeNotificationTask) running notification task, current status=${this.taskStatus}, since=${since.toISOString()}`);
+    this.logger.verbose('running notification task, current', { status: this.taskStatus, since: since.toISOString() });
     this.taskStatus = 'in-progress';
 
     try {
@@ -103,27 +103,27 @@ export class EntityChangeNotificationTask implements IEntityChangeNotificationTa
       const newLastRevision = now;
 
       const changedEntities = await this.changeDependencyTracker.getChangedEntities(since, MaxChangeEntitiesCount);
-      this.logger.debug(`(EntityChangeNotificationTask) list of changed entities obtained, since=${since.toString()}, count=${changedEntities.length}`);
+      this.logger.debug('list of changed entities obtained', { since: since.toString(), count: changedEntities.length });
 
       await this.executeNotificationCallbacks(changedEntities);
 
       const elapsedSecs = dayjs().diff(dayjs(now), 'second');
       this.lastChangedPagesRevision = newLastRevision;
-      const logMsg = `(EntityChangeNotificationTask) notification task ran, elapsed ${elapsedSecs} secs., set revision=${newLastRevision.toISOString()}`;
       if(elapsedSecs > CleanTaskWarnTimeoutSecs) {
-        this.logger.warn(logMsg);
+        this.logger.warn('notification task ran', undefined, { elapsedSec: elapsedSecs, revision: newLastRevision.toISOString() });
       } else {
-        this.logger.verbose(logMsg);
+        this.logger.verbose('notification task ran', { elapsedSec: elapsedSecs, revision: newLastRevision.toISOString() });
       }
     } catch(err: any) {
-      this.logger.warn(`(EntityChangeNotificationTask) unexpected exception occured during notification task run, last revision=${this.lastChangedPagesRevision.toISOString()}`, err);
+      this.logger.warn('unexpected exception occured during notification task run, last', err, { revision: this.lastChangedPagesRevision.toISOString() });
     } finally {
       this.taskStatus = 'idle';
     }
   };
 
   executeNotificationCallbacks = async (changedEntities: Awaited<ReturnType<IChangeDependencyTracker['getChangedEntities']>>): Promise<void> => {
-    this.logger.debug(`(EntityChangeNotificationTask) executing notification callbacks, numChanges=${isString(changedEntities) ? changedEntities : changedEntities.length}`);
+    const numChanges = isString(changedEntities) ? changedEntities : changedEntities.length;
+    this.logger.debug('executing notification callbacks', numChanges);
 
     const allSubscriptions = orderBy(Array.from(this.subscriptionsBySubscribers.values()), s => s.options.order.valueOf());
     if(changedEntities == 'too-much') {
@@ -134,10 +134,10 @@ export class EntityChangeNotificationTask implements IEntityChangeNotificationTa
             target: 'too-much'
           });
         } catch(err: any) {
-          this.logger.warn(`(EntityChangeNotificationTask) got exception while executing callback for subscriber, subscriberId=${subscription.subscriberId}, order=${subscription.options.order}`, err);
+          this.logger.warn('got exception while executing callback for subscriber', err, { subscriberId: subscription.subscriberId, order: subscription.options.order });
         }
       }
-      this.logger.debug(`(EntityChangeNotificationTask) notification callbacks executed, numChanges=${changedEntities}`);
+      this.logger.debug('notification callbacks executed', { numChanges: changedEntities });
       return;
     }
 
@@ -152,7 +152,7 @@ export class EntityChangeNotificationTask implements IEntityChangeNotificationTa
       const subscription = allSubscriptions[i];
       try {
         if(subscription.options.target === 'all') {
-          this.logger.debug(`(EntityChangeNotificationTask) executing callback for subscription with [all] target, subscriberId=${subscription.subscriberId}, order=${subscription.options.order}, numChanges=${changedEntities.length}`);
+          this.logger.debug('executing callback for subscription with [all] target', { subscriberId: subscription.subscriberId, order: subscription.options.order, numChanges: changedEntities.length });
           await subscription.callback(subscription.subscriberId, {
             target: changesByEntity
           });
@@ -185,16 +185,16 @@ export class EntityChangeNotificationTask implements IEntityChangeNotificationTa
         }
 
         if(subscriptionChanges.some(s => s.ids.length > 0)) {
-          this.logger.debug(`(EntityChangeNotificationTask) executing callback for subscription with matched ids, subscriberId=${subscription.subscriberId}, order=${subscription.options.order}, stats=${JSON.stringify(subscriptionChanges.map(s => [s.entity, s.ids.length]))}, numChanges=${changedEntities.length}`);
+          this.logger.debug('executing callback for subscription with matched ids', { subscriberId: subscription.subscriberId, order: subscription.options.order, numChanges: changedEntities.length });
           await subscription.callback(subscription.subscriberId, {
             target: subscriptionChanges
           });
         }
       } catch(err: any) {
-        this.logger.warn(`(EntityChangeNotificationTask) got exception while executing subscription callback, subscriberId=${subscription.subscriberId}, order=${subscription.options.order}, numChanges=${changedEntities.length}`, err);
+        this.logger.warn('got exception while executing subscription callback', err, { subscriberId: subscription.subscriberId, order: subscription.options.order, numChanges: changedEntities.length });
       }
     }
 
-    this.logger.debug(`(EntityChangeNotificationTask) notification callbacks executed, numChanges=${isString(changedEntities) ? changedEntities : changedEntities.length}`);
+    this.logger.debug('notification callbacks executed', numChanges);
   };
 }

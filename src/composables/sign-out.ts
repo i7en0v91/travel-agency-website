@@ -10,7 +10,7 @@ export interface ISignOut {
 }
 
 async function getBookingPageSignOutUrl (logger: IAppLogger, navLinkBuilder: INavLinkBuilder, locale: Locale): Promise<string> {
-  logger.debug(`(sign-out) obtaining booking signout url: locale=${locale}`);
+  logger.debug('obtaining booking signout url', locale);
   try {
     const route = useRoute();
 
@@ -25,28 +25,28 @@ async function getBookingPageSignOutUrl (logger: IAppLogger, navLinkBuilder: INa
     const parsedRoute = parseURL(route.fullPath);
     parsedRoute.pathname = urlPath;
     const url = stringifyParsedURL(parsedRoute);
-    logger.debug(`(sign-out) using booking signout url: bookingId=${bookingId}, url=${url}`);
+    logger.debug('using booking signout url', { bookingId, url });
     return url;
   } catch (err: any) {
-    logger.warn(`(sign-out) failed to obtain booking signout url: locale=${locale}`, err);
+    logger.warn('failed to obtain booking signout url', err, locale);
     return navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale);
   }
 }
 
 
 export function useSignOut (linkBuilder?: INavLinkBuilder): ISignOut {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'UseSignOut' });
   const { signOut: nuxtAuthSignOut, status } = useAuth();
   const navLinkBuilder = linkBuilder ?? useNavLinkBuilder();
   const { enabled } = usePreviewState();
   
   async function signOut(): Promise<void> {
     if(status.value !== 'authenticated') {
-      logger.verbose('(sign-out) ignoring sign out request, user is not authenticated');
+      logger.verbose('ignoring sign out request, user is not authenticated');
       return;
     }
 
-    logger.info('(sign-out) signing out');
+    logger.info('signing out');
     const route = useRoute();
     const locale = getLocaleFromUrl(route.fullPath);
     
@@ -57,7 +57,7 @@ export function useSignOut (linkBuilder?: INavLinkBuilder): ISignOut {
     callbackUrl = formatAuthCallbackUrl(callbackUrl, enabled);
   
     nuxtAuthSignOut({ callbackUrl, redirect: true });
-    logger.verbose('(sign-out) signing out compeleted');
+    logger.verbose('signing out compeleted');
   }
   
   return {

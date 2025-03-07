@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type OfferKind, AppException, AppExceptionCodeEnum, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { FavouritesTabStays, FavouritesTabGroup, FavouritesTabFlights } from './../helpers/constants';
 import { defaultErrorHandler } from './../helpers/exceptions';
 import TabsGroup from '../components/forms/tabs-group.vue';
 import FlightsListItemCard from './../components/common-page-components/offers-list-view/search-flights-result-card.vue';
@@ -8,6 +7,7 @@ import StaysListItemCard from './../components/common-page-components/offers-lis
 import { useUserFavouritesStore } from './../stores/user-favourites-store';
 import ComponentWaitingIndicator from '../components/forms/component-waiting-indicator.vue';
 import { getCommonServices } from '../helpers/service-accessors';
+import type { ControlKey } from './../helpers/components';
 
 definePageMeta({
   middleware: 'auth',
@@ -16,22 +16,29 @@ definePageMeta({
 });
 useOgImage();
 
-const logger = getCommonServices().getLogger();
+const CtrlKey: ControlKey = ['Page', 'Favourites'];
+const FavouritesTabControl: ControlKey = [...CtrlKey, 'TabGroup'];
+const FavouritesTabFlights: ControlKey = [...FavouritesTabControl, 'Flights', 'Tab'];
+const FavouritesTabStays: ControlKey = [...FavouritesTabControl, 'Stays', 'Tab'];
+
+const nuxtApp = useNuxtApp();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'Favourites' });
 const isError = ref(false);
 
+const userNotificationStore = useUserNotificationStore();
 const userFavouritesStore = useUserFavouritesStore();
 let userFavourites: Awaited<ReturnType<typeof userFavouritesStore.getInstance>> | undefined;
 try {
   userFavourites = await userFavouritesStore.getInstance();
 } catch (err: any) {
-  logger.warn('(Favourites) failed to initialized user favourites store', err);
+  logger.warn('failed to initialized user favourites store', err);
   isError.value = true;
 }
 
 const flightsTabHtmlId = useId();
 const staysTabHtmlId = useId();
 
-const activeTabKey = ref<string | undefined>();
+const activeTabKey = ref<ControlKey | undefined>();
 
 const displayedItems = computed(() => {
   return userFavourites
@@ -60,7 +67,7 @@ const tabProps = computed(() => OfferKinds.map(offerKind => {
 
 onMounted(() => {
   watch(() => userFavourites?.status, () => {
-    logger.debug(`(Favourites) handling favourites store status change, status=${userFavourites!.status}`);
+    logger.debug('handling favourites store status change', { status: userFavourites!.status });
     switch (userFavourites!.status) {
       case 'success':
         isError.value = false;
@@ -75,7 +82,7 @@ onMounted(() => {
     defaultErrorHandler(new AppException(
       AppExceptionCodeEnum.UNKNOWN,
       'unhandled exception occured',
-      'error-stub'));
+      'error-stub'), { nuxtApp, userNotificationStore });
   }
 });
 
@@ -91,7 +98,7 @@ onMounted(() => {
       <ErrorHelm v-model:is-error="isError">
         <TabsGroup
           v-model:active-tab-key="activeTabKey"
-          :ctrl-key="FavouritesTabGroup"
+          :ctrl-key="FavouritesTabControl"
           :tabs="tabProps"
           variant="split"
           :ui="{
@@ -118,7 +125,7 @@ onMounted(() => {
 
           <template v-for="(slotName) in OfferKinds" #[`${slotName}List`] :key="`FavouritesPage-TabContent-${slotName}`">
             <OfferTabbedView
-              ctrl-key="favouritesList" 
+              :ctrl-key="[...CtrlKey, 'OfferTabView']" 
               :selected-kind="slotName" 
               :tab-panel-ids="{ flights: flightsTabHtmlId, stays: staysTabHtmlId }" 
               :displayed-items="displayedItems"
@@ -135,7 +142,7 @@ onMounted(() => {
       </ErrorHelm>
 
       <template #fallback>
-        <ComponentWaitingIndicator ctrl-key="FavouritesPageClientFallback" class="my-8"/>
+        <ComponentWaitingIndicator :ctrl-key="[...CtrlKey, 'ClientFallback']" class="my-8"/>
       </template>
     </ClientOnly>
   </div>

@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { AppConfig, type GeoPoint, type EntityDataAttrsOnly, type ICity, getI18nResName2, type Locale, getLocalizeableValue } from '@golobe-demo/shared';
 import ComponentWaitingIndicator from '../../forms/component-waiting-indicator.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   origin: GeoPoint,
   styleClass?: string,
   webUrl?: string,
@@ -14,18 +15,18 @@ interface IProps {
 const { ctrlKey, origin } = defineProps<IProps>();
 
 const { locale } = useI18n();
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'InteractiveMap' });
 const isError = ref(false);
 
 const $emit = defineEmits(['update:webUrl']);
 
 function onWebUrlChange (value: string) {
-  logger.verbose(`(InteractiveMap) web url changed, ctrlKey=${ctrlKey}, value=${value}`);
+  logger.verbose('web url changed', { ctrlKey, value });
   $emit('update:webUrl', value);
 }
 
 function onMapError (err: any) {
-  logger.warn(`(InteractiveMap) got exception from map component, ctrlKey=${ctrlKey}`, err);
+  logger.warn('got exception from map component', err, ctrlKey);
   isError.value = true;
 }
 
@@ -42,7 +43,7 @@ const MapComponent = AppConfig.maps ? resolveComponent(AppConfig.maps.mapControl
             :is="MapComponent"
             :style-class="styleClass"
             :origin="origin"
-            :ctrl-key="`${ctrlKey}-MapCtrl`"
+            :ctrl-key="[...ctrlKey, 'InteractiveMap']"
             @update:web-url="onWebUrlChange"
             @onerror="onMapError"
           />
@@ -56,7 +57,7 @@ const MapComponent = AppConfig.maps ? resolveComponent(AppConfig.maps.mapControl
         <USkeleton v-else class="w-10 h-3" />
       </div>
       <template #fallback>
-        <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-MapWaiterFallback`" class="mt-8" />
+        <ComponentWaitingIndicator :ctrl-key="[...ctrlKey, 'InteractiveMap', 'ClientFallback']" class="mt-8" />
       </template>
     </ClientOnly>
     <div v-else class="w-full h-auto whitespace-normal text-gray-600 dark:text-gray-300">

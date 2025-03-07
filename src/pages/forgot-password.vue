@@ -11,6 +11,7 @@ import OAuthProviderList from './../components/account/oauth-providers-list.vue'
 import CaptchaProtection from './../components/forms/captcha-protection.vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
+import type { ControlKey } from './../helpers/components';
 
 definePageMeta({
   middleware: 'auth',
@@ -22,12 +23,14 @@ definePageMeta({
 });
 useOgImage();
 
+const CtrlKey: ControlKey = ['Page', 'ForgotPassword'];
+
 const { signIn } = useAuth();
 const localePath = useLocalePath();
 const { enabled } = usePreviewState();
 const themeSettings = useThemeSettings();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ForgotPassword' });
 
 const { t, locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
@@ -72,7 +75,7 @@ function onCaptchaVerified (captchaToken: string) {
 }
 
 function onSubmit () {
-  logger.verbose('(ForgotPassword) submit handler triggered');
+  logger.verbose('submit handler triggered');
   serverValidationErrorResName.value = undefined;
   captcha.value!.startVerification();
 }
@@ -108,7 +111,7 @@ const uiStyling = {
 </script>
 
 <template>
-  <AccountPageContainer ctrl-key="ForgotPassword">
+  <AccountPageContainer :ctrl-key="[...CtrlKey, 'PageContent']">
     <div class="w-full h-auto">
       <UButton size="md" :ui="uiStyling" icon="i-heroicons-chevron-left-20-solid" class="w-fit flex flex-row flex-nowrap items-center border-none ring-0 dark:hover:bg-transparent" variant="outline" color="gray" :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)" :external="false">
         {{ $t(getI18nResName2('accountPageCommon', 'backToLogin')) }}
@@ -133,8 +136,8 @@ const uiStyling = {
         </UButton>
       </UForm>
 
-      <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" class="mt-7 md:mt-10" @click="onOAuthProviderClick" />
-      <CaptchaProtection ref="captcha" ctrl-key="ForgotPasswordCaptchaProtection" @verified="onCaptchaVerified" />
+      <OAuthProviderList :ctrl-key="[...CtrlKey, 'OauthProviders']" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" class="mt-7 md:mt-10" @click="onOAuthProviderClick" />
+      <CaptchaProtection ref="captcha" :ctrl-key="[...CtrlKey, 'Captcha']" @verified="onCaptchaVerified" />
     </div>
   </AccountPageContainer>
 </template>

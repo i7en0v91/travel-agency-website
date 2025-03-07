@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { AppPage, type Locale, getI18nResName3, getI18nResName2, type ILocalizableValue, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from '../../../composables/nav-link-builder';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   searchKind: 'flight' | 'stay',
   text?: ILocalizableValue,
   imgSrc?: IImageEntitySrc,
@@ -22,12 +23,12 @@ const navLinkBuilder = useNavLinkBuilder();
     <div class="dark:bg-gray-900 flex flex-row flex-nowrap items-center gap-[16px] w-auto h-full overflow-hidden shadow-md dark:shadow-lg dark:shadow-gray-800 p-4 m-8 rounded-xl">
       <StaticImage
         :ctrl-key="ctrlKey"
-        :entity-src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
+        :src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
         :category="ImageCategory.CityCard"
         :ui="{ wrapper: 'w-[90px] h-[90px] max-w-[90px] max-h-[90px] flex-grow flex-shrink-0 basis-auto rounded-xl', img: 'object-cover rounded-xl bg-cover' }"
         sizes="xs:40vw sm:20vw md:30vw lg:30vw xl:20vw"
-        :alt-res-name="getI18nResName3('indexPage', 'popularCity', 'imgAlt')"
-        :show-stub="true"
+        :alt="{ resName: getI18nResName3('indexPage', 'popularCity', 'imgAlt') }"
+        stub="default"
       />
       <div class="w-fit h-max flex-grow-0 flex-shrink basis-auto">
         <div v-if="text" class="ml-1 text-gray-400 dark:text-gray-500 w-fit h-auto overflow-hidden line-clamp-2 whitespace-pre-wrap font-semibold">

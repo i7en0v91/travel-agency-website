@@ -6,19 +6,19 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     return;
   }
 
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'TrackNavFromPage' });
   if(from.redirectedFrom) {
-    logger.debug(`(track-nav-from-page) ignoring from redirects, from=${from.fullPath}, to=${to.fullPath}`);
+    logger.debug('ignoring from redirects', { from: from.fullPath, to: to.fullPath });
     return;
   }
 
   const fromPage = lookupPageByUrl(from.path);
   if(!fromPage) {
-    logger.verbose(`(track-nav-from-page) ignoring unknown from pages, from=${from.fullPath}, to=${to.fullPath}`);
+    logger.verbose('ignoring unknown from pages', { from: from.fullPath, to: to.fullPath });
     return;
   }
 
-  logger.debug(`(track-nav-from-page) updating navigated page state, page=${fromPage}, from=${from.fullPath}, to=${to.fullPath}`);
+  logger.debug('updating navigated page state', { page: fromPage, from: from.fullPath, to: to.fullPath });
   const appState = getClientServices().state;
   appState.navigatedFromPage = fromPage;
 });

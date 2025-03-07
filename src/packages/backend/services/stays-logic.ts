@@ -22,13 +22,13 @@ export class StaysLogic implements IStaysLogic {
 
   public static inject = ['dbRepository', 'stayOfferMaterializer', 'logger'] as const;
   constructor (dbRepository: PrismaClient, offerMaterializer: IStayOfferMaterializer, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'StaysLogic' });
     this.dbRepository = dbRepository;
     this.offerMaterializer = offerMaterializer;
   }
 
   async deleteStayOffer(id: EntityId): Promise<void> {
-    this.logger.verbose(`(StaysLogic) deleting stay offer: id=${id}`);
+    this.logger.verbose('deleting stay offer', id);
     await executeInTransaction(async () => {
       await this.dbRepository.booking.updateMany({
         where: {
@@ -65,11 +65,11 @@ export class StaysLogic implements IStaysLogic {
         }
       });
     }, this.dbRepository);
-    this.logger.verbose(`(StaysLogic) stay offer deleted: id=${id}`);
+    this.logger.verbose('stay offer deleted', id);
   };
 
   async deleteStay(stayId: EntityId): Promise<void> {
-    this.logger.verbose(`(StaysLogic) deleting stay: id=${stayId}`);
+    this.logger.verbose('deleting stay', { id: stayId });
     await this.dbRepository.hotel.update({
       where: {
         id: stayId,
@@ -80,11 +80,11 @@ export class StaysLogic implements IStaysLogic {
         version: { increment: 1 }
       }
     });
-    this.logger.verbose(`(StaysLogic) stay deleted: id=${stayId}`);
+    this.logger.verbose('stay deleted', { id: stayId });
   };
 
   async createStay (data: IStayData): Promise<EntityId> {
-    this.logger.verbose(`(StaysLogic) creating stay, slug=${data.slug}`);
+    this.logger.verbose('creating stay', { slug: data.slug });
 
     const stayId = await executeInTransaction(async () => {
       const entityId = (await this.dbRepository.hotel.create({
@@ -189,12 +189,12 @@ export class StaysLogic implements IStaysLogic {
       return entityId;
     }, this.dbRepository);
 
-    this.logger.verbose(`(StaysLogic) stay created, slug=${data.slug}, id=${stayId}`);
+    this.logger.verbose('stay created', { slug: data.slug, id: stayId });
     return stayId;
   }
 
   async findStay (idOrSlug: EntityId | string): Promise<IStay | undefined> {
-    this.logger.verbose(`(StaysLogic) loading stay, id=${idOrSlug}`);
+    this.logger.verbose('loading stay', { id: idOrSlug });
     const entity = await this.dbRepository.hotel.findFirst({
       where: {
         isDeleted: false,
@@ -204,16 +204,16 @@ export class StaysLogic implements IStaysLogic {
       select: StayInfoQuery.select
     });
     if (!entity) {
-      this.logger.warn(`(StaysLogic) cannot found stay, id=${idOrSlug}`);
+      this.logger.warn('cannot found stay', undefined, idOrSlug);
       return undefined;
     }
 
-    this.logger.verbose(`(StaysLogic) stay found, id=${entity.id}, slug=${entity.slug}, numDescriptions=${entity.description.length}, numReviews=${entity.reviews.length}, numImages=${entity.images.length}`);
+    this.logger.verbose('stay found', { id: entity.id, slug: entity.slug, numDescriptions: entity.description.length, numReviews: entity.reviews.length, numImages: entity.images.length });
     return MapStay(entity);
   }
 
   async getStayOffer (id: EntityId, userId: EntityId | 'guest'): Promise<IStayOfferDetails> {
-    this.logger.verbose(`(StaysLogic) get stay offer, id=${id}, userId=${userId}`);
+    this.logger.verbose('get stay offer', { id, userId });
 
     const entity = await this.dbRepository.stayOffer.findFirst({
       where: {
@@ -223,11 +223,11 @@ export class StaysLogic implements IStaysLogic {
       select: StayOfferInfoQuery(userId).select
     });
     if (!entity) {
-      this.logger.warn(`(StaysLogic) stay offer was not found, id=${id}, userId=${userId}`);
+      this.logger.warn('stay offer was not found', undefined, { id, userId });
       throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'stay offer not found', 'error-page');
     }
 
-    this.logger.verbose(`(StaysLogic) get stay offer - found, id=${id}, userId=${userId}, modifiedUtc=${entity.modifiedUtc}, price=${entity.totalPrice}`);
+    this.logger.verbose('get stay offer - found', { id, userId, modifiedUtc: entity.modifiedUtc, price: entity.totalPrice });
     const offerDetails = MapStayOfferDetails(entity);
     return {
       ...offerDetails,
@@ -241,7 +241,7 @@ export class StaysLogic implements IStaysLogic {
   }
 
   async getAllStays (): Promise<(IStayShort & { reviewSummary: ReviewSummary })[]> {
-    this.logger.debug('(StaysLogic) obtaining list of stays');
+    this.logger.debug('obtaining list of stays');
 
     const stayEntities = await this.dbRepository.hotel.findMany({
       where: {
@@ -265,12 +265,12 @@ export class StaysLogic implements IStaysLogic {
       };
     });
 
-    this.logger.debug(`(StaysLogic) list of stays obtained, count=${result.length}`);
+    this.logger.debug('list of stays obtained', { count: result.length });
     return result;
   }
 
   async toggleFavourite (offerId: EntityId, userId: EntityId): Promise<boolean> {
-    this.logger.verbose(`(StaysLogic) toggling favourite offer, id=${offerId}, userId=${userId}`);
+    this.logger.verbose('toggling favourite offer', { id: offerId, userId });
 
     const entity = await this.dbRepository.userStayOffer.findFirst({
       where: {
@@ -287,7 +287,7 @@ export class StaysLogic implements IStaysLogic {
     let result: boolean;
     if (entity) {
       result = !entity.isFavourite;
-      this.logger.debug(`(StaysLogic) toggling existing favourite record, id=${offerId}, userId=${userId}, favouriteId=${entity.id}, isFavourite=${result}`);
+      this.logger.debug('toggling existing favourite record', { id: offerId, userId, favouriteId: entity.id, isFavourite: result });
       await this.dbRepository.userStayOffer.update({
         where: {
           id: entity.id
@@ -298,7 +298,7 @@ export class StaysLogic implements IStaysLogic {
         }
       });
     } else {
-      this.logger.debug(`(StaysLogic) creating favourite record, id=${offerId}, userId=${userId}`);
+      this.logger.debug('creating favourite record', { id: offerId, userId });
       result = true;
       await this.dbRepository.userStayOffer.create({
         data: {
@@ -311,17 +311,17 @@ export class StaysLogic implements IStaysLogic {
       });
     }
 
-    this.logger.verbose(`(StaysLogic) favourite offer toggled, id=${offerId}, userId=${userId}, result=${result}`);
+    this.logger.verbose('favourite offer toggled', { id: offerId, userId, result });
     return result;
   }
 
   async searchOffers (filter: IStayOffersFilterParams, userId: EntityId | 'guest', sorting: ISorting<StayOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean, previewMode: PreviewMode, availableStays: (IStayShort & { reviewSummary: ReviewSummary })[] | undefined = undefined): Promise<ISearchStayOffersResult> {
-    this.logger.verbose(`(StaysLogic) search offers, filter=${JSON.stringify(filter)}, userId=${userId}, sorting=${JSON.stringify(sorting)}, pagination=${JSON.stringify(pagination)}, narrowFilterParams=${narrowFilterParams}, previewMode=${previewMode}, availableStays=${availableStays ? (availableStays.length) : ''}`);
+    this.logger.verbose('search offers', { filter, userId, sorting, pagination, narrowFilterParams, previewMode, availableStays });
 
     try {
       const sortFactor = sorting.factor ?? DefaultStayOffersSorting;
       let variants = await this.generateStayOffersFull(filter, userId, sortFactor, availableStays);
-      this.logger.debug(`(StaysLogic) sorting stay offer variants, userId=${userId}, previewMode=${previewMode}, availableStays=${availableStays ? (availableStays.length) : ''}`);
+      this.logger.debug('sorting stay offer variants', { userId, previewMode, availableStays });
       variants = orderBy(variants, ['sortFactor'], [sorting.direction]);
       let filterParams : ISearchStayOffersResultFilterParams | undefined;
       if (narrowFilterParams) {
@@ -332,7 +332,7 @@ export class StaysLogic implements IStaysLogic {
 
       const take = pagination.skip >= variants.length ? 0 : (Math.min(variants.length - pagination.skip, pagination.take));
       const skip = pagination.skip;
-      this.logger.debug(`(StaysLogic) applying pagination to stay offers, userId=${userId}, skip=${skip}, take=${take}, previewMode=${previewMode}, availableStays=${availableStays ? (availableStays.length) : ''}`);
+      this.logger.debug('applying pagination to stay offers', { userId, skip, take, previewMode, availableStays });
       if (pagination.skip >= variants.length) {
         variants = [];
       } else {
@@ -345,16 +345,16 @@ export class StaysLogic implements IStaysLogic {
         paramsNarrowing: filterParams,
         totalCount
       };
-      this.logger.verbose(`(StaysLogic) search offers - completed, filter=${JSON.stringify(filter)}, userId=${userId}, previewMode=${previewMode}, availableStays=${availableStays ? (availableStays.length) : ''}, count=${variants.length}`);
+      this.logger.verbose('search offers - completed', { filter, userId, previewMode, availableStays, count: variants.length });
       return result;
     } catch (err: any) {
-      this.logger.warn('(StaysLogic) exception occured while searching offers', err, { filter, pagination, userId, previewMode, availableStays });
+      this.logger.warn('exception occured while searching offers', err, { filter, pagination, userId, previewMode, availableStays });
       throw err;
     }
   }
 
   async getUserFavouriteOffers (userId: EntityId): Promise<ISearchStayOffersResult<IStayOffer & { addDateUtc: Date; }>> {
-    this.logger.verbose(`(StaysLogic) get user favourite offers, userId=${userId}`);
+    this.logger.verbose('get user favourite offers', userId);
 
     const userOffers = await this.dbRepository.userStayOffer.findMany({
       where: {
@@ -377,12 +377,12 @@ export class StaysLogic implements IStaysLogic {
       totalCount: mappedItems.length
     };
 
-    this.logger.verbose(`(StaysLogic) get user favourite offers completed, userId=${userId}, count=${result.totalCount}`);
+    this.logger.verbose('get user favourite offers completed', { userId, count: result.totalCount });
     return result;
   }
 
   async getUserTickets(userId: EntityId): Promise<ISearchStayOffersResult<IStayOffer & { bookingId: EntityId, bookDateUtc: Date; }>> {
-    this.logger.verbose(`(StaysLogic) get user tickets, userId=${userId}`);
+    this.logger.verbose('get user tickets', userId);
 
     const userOffers = await this.dbRepository.userStayOffer.findMany({
       where: {
@@ -412,15 +412,15 @@ export class StaysLogic implements IStaysLogic {
       totalCount: mappedItems.length
     };
 
-    this.logger.verbose(`(StaysLogic) get user tickets completed, userId=${userId}, count=${result.totalCount}`);
+    this.logger.verbose('get user tickets completed', { userId, count: result.totalCount });
     return result;
   }
 
   async createOrUpdateReview (stayId: EntityId, textOrHtml: string, score: number, userId: EntityId): Promise<EntityId> {
-    this.logger.verbose(`(StaysLogic) create/update review, stayId=${stayId}, textOrHtml=${textOrHtml}, score=${score}, userId=${userId}`);
+    this.logger.verbose('create/update review', { stayId, textOrHtml, score, userId });
 
     if ((textOrHtml ?? '').length === 0) {
-      this.logger.warn(`(StaysLogic) create/update review - cannot create review with empty text, stayId=${stayId}, textOrHtml=${textOrHtml}, userId=${userId}`);
+      this.logger.warn('create/update review - cannot create review with empty text', undefined, { stayId, textOrHtml, userId });
       throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'review text is empty', 'error-stub');
     }
 
@@ -434,24 +434,24 @@ export class StaysLogic implements IStaysLogic {
       }
     })).id > 0;
     if (!stayExists) {
-      this.logger.warn(`(StaysLogic) create/update review - stay was not found, stayId=${stayId}, textOrHtml=${textOrHtml}, userId=${userId}`);
+      this.logger.warn('create/update review - stay was not found', undefined, { stayId, textOrHtml, userId });
       throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'stay not found', 'error-stub');
     }
 
     let textOrHtmlSanitized: string;
-    this.logger.debug(`(StaysLogic) create/update review - sanitizing input, stayId=${stayId}, userId=${userId}`);
+    this.logger.debug('create/update review - sanitizing input', { stayId, userId });
     try {
       textOrHtmlSanitized = sanitize(textOrHtml);
     } catch (err: any) {
-      this.logger.warn(`(StaysLogic) create/update review - failed to sanitize input, stayId=${stayId}, textOrHtml=${textOrHtml}, userId=${userId}`, err);
+      this.logger.warn('create/update review - failed to sanitize input', err, { stayId, textOrHtml, userId });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'text processing error', 'error-stub');
     }
     if (!textOrHtmlSanitized) {
-      this.logger.warn(`(StaysLogic) create/update review - resulted sanitize input empty, stayId=${stayId}, textOrHtml=${textOrHtml}, userId=${userId}`);
+      this.logger.warn('create/update review - resulted sanitize input empty', undefined, { stayId, textOrHtml, userId });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'text processing error', 'error-stub');
     }
     if (textOrHtmlSanitized.replace(/\s/g, '').replace(/\c/g, '') !== textOrHtml.replace(/\s/g, '').replace(/\c/g, '')) {
-      this.logger.warn(`(StaysLogic) create/update review - sanitization detected potential issues, stayId=${stayId}, userId=${userId}, textOrHtml=${textOrHtml}, sanitized=${textOrHtmlSanitized}`);
+      this.logger.warn('create/update review - sanitization detected potential issues', undefined, { stayId, userId, textOrHtml, sanitized: textOrHtmlSanitized });
     }
 
     let reviewId = (await this.dbRepository.hotelReview.findFirst({
@@ -522,12 +522,12 @@ export class StaysLogic implements IStaysLogic {
       })).id;
     }
 
-    this.logger.verbose(`(StaysLogic) create/update review, stayId=${stayId}, score=${score}, userId=${userId}, reviewId=${reviewId}, op=${resOp}`);
+    this.logger.verbose('create/update review', { stayId, score, userId, reviewId, op: resOp });
     return reviewId;
   }
 
   async deleteReview (stayId: EntityId, userId: EntityId): Promise<EntityId | undefined> {
-    this.logger.verbose(`(StaysLogic) delete review, stayId=${stayId}, userId=${userId}`);
+    this.logger.verbose('delete review', { stayId, userId });
 
     const reviewId = (await this.dbRepository.hotelReview.findFirst({
       where: {
@@ -555,19 +555,19 @@ export class StaysLogic implements IStaysLogic {
         }
       }))?.id;
       if (deleted) {
-        this.logger.verbose(`(StaysLogic) delete review - done, stayId=${stayId}, userId=${userId}, reviewId=${reviewId}`);
+        this.logger.verbose('delete review - done', { stayId, userId, reviewId });
       } else {
-        this.logger.warn(`(StaysLogic) delete review - done, but seems like concurrent modification occured, stayId=${stayId}, userId=${userId}, reviewId=${reviewId}`);
+        this.logger.warn('delete review - done, but seems like concurrent modification occured', undefined, { stayId, userId, reviewId });
       }
       return reviewId;
     } else {
-      this.logger.debug(`(StaysLogic) delete review - already deleted, stayId=${stayId}, userId=${userId}`);
+      this.logger.debug('delete review - already deleted', { stayId, userId });
       return undefined;
     }
   }
 
   async getStayReviews (stayId: EntityId): Promise<EntityDataAttrsOnly<IStayReview>[]> {
-    this.logger.verbose(`(StaysLogic) get reviews, stayId=${stayId}`);
+    this.logger.verbose('get reviews', stayId);
 
     const reviewEntities = await this.dbRepository.hotelReview.findMany({
       where: {
@@ -578,12 +578,12 @@ export class StaysLogic implements IStaysLogic {
     });
 
     const result: EntityDataAttrsOnly<IStayReview>[] = reviewEntities.map(MapStayReview);
-    this.logger.verbose(`(StaysLogic) get reviews - completed, stayId=${stayId}, count=${result.length}`);
+    this.logger.verbose('get reviews - completed', { stayId, count: result.length });
     return result;
   }
 
   filterStayOffers (offers: OfferWithSortFactor<IStayOffer>[], filter: IStayOffersFilterParams, userId: EntityId | 'guest'): OfferWithSortFactor<IStayOffer>[] {
-    this.logger.debug(`(StaysLogic) filtering stay offer variants, filter=${JSON.stringify(filter)}, userId=${userId}, count=${offers.length}`);
+    this.logger.debug('filtering stay offer variants', { filter, userId, count: offers.length });
 
     const isMatch = (offer: OfferWithSortFactor<IStayOffer>): boolean => {
       if (filter.price?.from || filter.price?.to) {
@@ -609,12 +609,12 @@ export class StaysLogic implements IStaysLogic {
 
     const result = offers.filter(isMatch);
 
-    this.logger.debug(`(StaysLogic) stay offers filtered, userId=${userId}, count=${result.length}`);
+    this.logger.debug('stay offers filtered', { userId, count: result.length });
     return result;
   }
 
   computeStayOffersFilterParams (offers: OfferWithSortFactor<IStayOffer>[], userId: EntityId | 'guest'): ISearchStayOffersResultFilterParams {
-    this.logger.debug(`(StaysLogic) computing stay offer filter params, userId=${userId}, count=${offers.length}`);
+    this.logger.debug('computing stay offer filter params', { userId, count: offers.length });
 
     let result: ISearchStayOffersResultFilterParams = {};
     if (offers.length > 0) {
@@ -626,7 +626,7 @@ export class StaysLogic implements IStaysLogic {
       };
     }
 
-    this.logger.debug(`(StaysLogic) stay offer filter params computed, userId=${userId}, count=${offers.length}, result=${JSON.stringify(result)}`);
+    this.logger.debug('stay offer filter params computed', { userId, count: offers.length, result });
     return result;
   }
 
@@ -671,13 +671,13 @@ export class StaysLogic implements IStaysLogic {
       case 'score':
         return offer.stay.reviewSummary!.numReviews + offer.stay.reviewSummary!.score * 8 + offer.totalPrice.toNumber() / 10;
       default:
-        this.logger.warn(`(StaysLogic) unexpected stay offer sort factor: ${factor}`);
+        this.logger.warn('unexpected stay offer sort', undefined, factor);
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected sorting', 'error-stub');
     }
   };
 
   async generateStayOffersFull (filter: IStayOffersFilterParams, userId: EntityId | 'guest', sortFactor: StayOffersSortFactor, availableStays: (IStayShort & { reviewSummary: ReviewSummary })[] | undefined): Promise<OfferWithSortFactor<IStayOffer>[]> {
-    this.logger.debug(`(StaysLogic) generating full stay offer variants, userId=${userId}`);
+    this.logger.debug('generating full stay offer variants', userId);
 
     const varyDate = (date: Date): Date[] => {
       const result: Date[] = [];
@@ -699,7 +699,7 @@ export class StaysLogic implements IStaysLogic {
         checkInDateVariants.push(checkOutDateVariants[0]);
       }
     }
-    this.logger.debug(`(StaysLogic) generating full stay offer variants, userId=${userId}, using date variants: from=[${checkInDateVariants.map(d => d.toISOString()).join(', ')}], to=[${checkOutDateVariants?.map(d => d.toISOString()).join(', ') ?? '(none)'}]`);
+    this.logger.debug('generating full stay offer variants', { userId, from: checkInDateVariants, to: checkOutDateVariants });
 
     let stayVariants = [] as (IStayShort & { reviewSummary: ReviewSummary })[];
     if (filter.citySlug) {
@@ -709,7 +709,7 @@ export class StaysLogic implements IStaysLogic {
       stayVariants = availableStays ?? (await this.getAllStays());
     }
 
-    this.logger.debug(`(StaysLogic) generating full stay offer variants, userId=${userId}, stay variants count=${stayVariants.length}`);
+    this.logger.debug('generating full stay offer variants', { userId, count: stayVariants.length });
 
     const numGuests = filter.numGuests ?? StaysMinGuestsCount;
     const numRooms = filter.numRooms ?? StaysMinRoomsCount;
@@ -748,7 +748,7 @@ export class StaysLogic implements IStaysLogic {
             usedDataHashes.add(dataHash);
 
             if (result.length > MaxOfferGenerationMemoryBufferItems) {
-              this.logger.warn(`(StaysLogic) maximum number of stay offer items in memory buffer reached, stopping generation with current values, filter=${JSON.stringify(filter)}, userId=${userId}`);
+              this.logger.warn('maximum number of stay offer items in memory buffer reached, stopping generation with current values', undefined, { filter, userId });
               break;
             }
           }
@@ -756,7 +756,7 @@ export class StaysLogic implements IStaysLogic {
       }
     }
 
-    this.logger.debug(`(StaysLogic) generating full stay offer variants, userId=${userId}, result count=${result.length}`);
+    this.logger.debug('generating full stay offer variants', { userId, count: result.length });
     return result;
   }
 }

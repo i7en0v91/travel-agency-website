@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { maskLog, buildParamsLogData, getI18nResName2, AppConfig, UserNotificationLevel } from '@golobe-demo/shared';
 import { useThemeSettings } from './../../composables/theme-settings';
-import type { VueRecaptcha } from './../../.nuxt/components';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 const recaptcha = useTemplateRef('recaptcha');
@@ -10,17 +10,17 @@ const { locale } = useI18n();
 const userNotificationStore = useUserNotificationStore();
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 const { ctrlKey } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'CaptchaProtection' });
 let verificationRequested = false;
 
 function doStartVerification () {
-  logger.verbose(`(captcha-protection) starting reCaptcha verification, ctrl-key=${ctrlKey}`);
+  logger.verbose('starting reCaptcha verification', ctrlKey);
   if (!recaptcha.value) {
-    logger.warn(`(captcha-protection) cannot start reCaptcha verification, not initialized, ctrl-key=${ctrlKey}`);
+    logger.warn('cannot start reCaptcha verification, not initialized', undefined, ctrlKey);
     verificationRequested = false;
     userNotificationStore.show({
       level: UserNotificationLevel.ERROR,
@@ -31,7 +31,7 @@ function doStartVerification () {
   }
 
   if (!(window as any).grecaptcha?.execute) {
-    logger.debug(`(captcha-protection) grecaptcha has not been initialized yet, rescheduling, ctrl-key=${ctrlKey}`);
+    logger.debug('grecaptcha has not been initialized yet, rescheduling', ctrlKey);
     setTimeout(doStartVerification, 100);
     return;
   }
@@ -41,25 +41,25 @@ function doStartVerification () {
 
 function startVerification () {
   if (verificationRequested) {
-    logger.warn(`(captcha-protection) ignoring verification request, already requested, ctrl-key=${ctrlKey}`);
+    logger.warn('ignoring verification request, already requested', undefined, ctrlKey);
     return;
   }
   verificationRequested = true;
 
   if (AppConfig.reCaptcha.enabled) {
-    logger.verbose(`(captcha-protection) requesting verification, ctrl-key=${ctrlKey}`);
+    logger.verbose('requesting verification', ctrlKey);
     if (recaptcha.value) {
       doStartVerification();
       return;
     }
-    logger.verbose(`(captcha-protection) reCaptcha is not initialized, waiting, ctrl-key=${ctrlKey}`);
+    logger.verbose('reCaptcha is not initialized, waiting', ctrlKey);
     watch(recaptcha, () => {
       if (recaptcha.value) {
         doStartVerification();
       }
     });
   } else {
-    logger.verbose(`(captcha-protection) reCaptcha disabled, returning immediately, ctrl-key=${ctrlKey}`);
+    logger.verbose('reCaptcha disabled, returning immediately', ctrlKey);
     verificationRequested = false;
     $emit('verified', '');
   }
@@ -73,17 +73,17 @@ defineExpose({
 function onVerify (recaptchaToken?: string): void {
   verificationRequested = false;
   if (recaptchaToken) {
-    logger.info(`(captcha-protection) acquired reCaptcha client verification token, ctrl-key=${ctrlKey}, token=${maskLog(recaptchaToken)}`);
+    logger.info('acquired reCaptcha client verification token', { ctrlKey, token: maskLog(recaptchaToken) });
     $emit('verified', recaptchaToken);
   } else {
-    logger.warn(`(captcha-protection) reCaptcha returned empty token, ctrl-key=${ctrlKey}`);
+    logger.warn('reCaptcha returned empty token', undefined, ctrlKey);
     recaptcha.value!.reset();
     $emit('failed');
   }
 }
 
 function onError (reason: any) {
-  logger.warn(`(captcha-protection) got reCaptcha client exception, ctrl-key=${ctrlKey}`, reason);
+  logger.warn('got reCaptcha client exception', undefined, { ctrlKey, reason });
   verificationRequested = false;
   userNotificationStore.show({
     level: UserNotificationLevel.ERROR,
@@ -93,14 +93,14 @@ function onError (reason: any) {
 }
 
 function onExpire (...args: any[]): any {
-  logger.info(`(captcha-protection) reCaptcha expired, ctrl-key=${ctrlKey}`, buildParamsLogData(args));
+  logger.info('reCaptcha expired', ctrlKey);
   verificationRequested = false;
   recaptcha.value!.reset();
   $emit('failed');
 }
 
 function onFail (...args: any[]): any {
-  logger.info(`(captcha-protection) reCaptcha client verification failed, ctrl-key=${ctrlKey}`, buildParamsLogData(args));
+  logger.info('reCaptcha client verification failed', ctrlKey);
   verificationRequested = false;
   userNotificationStore.show({
     level: UserNotificationLevel.ERROR,

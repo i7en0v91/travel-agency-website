@@ -1,4 +1,4 @@
-import { AppException, AppExceptionCodeEnum, isElectronBuild, type I18nResName } from '@golobe-demo/shared';
+import { AppException, AppExceptionCodeEnum, type IAppLogger, isElectronBuild, type I18nResName } from '@golobe-demo/shared';
 import type { ConfirmBoxButton } from './../types';
 import { getCommonServices } from '../helpers/service-accessors';
 import type { ComponentInstance, Ref } from 'vue';
@@ -8,13 +8,19 @@ interface IModalDialogResult<TResult> {
   show: () => Promise<TResult>
 }
 
-function useConfirmBoxElectron(localizer: (ReturnType<typeof useI18n>)['t'] | undefined, buttons: ConfirmBoxButton[], defaultResult: ConfirmBoxButton, msgResName: I18nResName, msgResArgs?: any): IModalDialogResult<ConfirmBoxButton> {
+function useConfirmBoxElectron(
+  localizer: (ReturnType<typeof useI18n>)['t'] | undefined, 
+  buttons: ConfirmBoxButton[], 
+  defaultResult: ConfirmBoxButton, 
+  logger: IAppLogger,
+  msgResName: I18nResName, 
+  msgResArgs?: any
+): IModalDialogResult<ConfirmBoxButton> {
   const dialogsFacade = getDialogsFacade(localizer);
 
   return {
     show: async (): Promise<ConfirmBoxButton> => {
-      const logger = getCommonServices().getLogger();
-      logger.verbose(`(user-confirm-box) opening confirm box: buttons=${JSON.stringify(buttons)}, msgResName=${msgResName}`);
+      logger.verbose('opening confirm box', { buttons, msgResName });
       const msg = localizer(msgResName, msgResArgs);
       const result = await dialogsFacade.showConfirmBox(msg, buttons);
       return result === 'cancel' ? defaultResult : result;
@@ -27,35 +33,35 @@ function useConfirmBoxComponent<TResult>(modalRef: Ref<ComponentInstance<any>>,
     open: Ref<boolean>, 
     result: Ref<TResult | undefined> 
   },
-  defaultResult: TResult
+  defaultResult: TResult,
+  logger: IAppLogger
 ) {
   const result = ref<TResult | undefined>();
-
   const ctrlKey = modalRef.value.$props.ctrlKey;
-  
+
   return {
     show: (): Promise<TResult> => {
-      const logger = getCommonServices().getLogger();
-      logger.verbose(`(modal-dialog-result) show: ctrlKey=${ctrlKey}`);
+      
+      logger.verbose('show', ctrlKey);
       if(refs.open.value) {
-        logger.warn(`(modal-dialog-result) cannot open another modal dialog: ctrlKey=${ctrlKey}`);
+        logger.warn('cannot open another modal dialog', undefined, ctrlKey);
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to open modal window', 'error-stub');
       }
       result.value = defaultResult;
 
       return new Promise((resolve) => {
-        logger.debug(`(modal-dialog-result) opening modal: ctrlKey=${ctrlKey}`);
+        logger.debug('opening modal', ctrlKey);
         refs.open.value = true;
 
         const disposeWatch = watch([refs.open, refs.result], () => {
-          logger.debug(`(modal-dialog-result) state changed: ctrlKey=${ctrlKey}, open=${refs.open.value}, result=${refs.result.value}`);
+          logger.debug('state changed', { ctrlKey, open: refs.open.value, result: refs.result.value });
           if(!refs.open.value) {
-            logger.verbose(`(modal-dialog-result) closed: ctrlKey=${ctrlKey}, open=${refs.open.value}, result=${refs.result.value}`);
+            logger.verbose('closed', { ctrlKey, open: refs.open.value, result: refs.result.value });
             try {
               let modalResult = refs.result.value;
               if(!modalResult) {
                 modalResult = defaultResult;
-                logger.debug(`(modal-dialog-result) result was not set, default will be used: ctrlKey=${ctrlKey}, open=${refs.open.value}, result=${refs.result.value}`);
+                logger.debug('result was not set, default will be used', { ctrlKey, open: refs.open.value, result: refs.result.value });
               }
               resolve(modalResult);
             } finally {
@@ -76,7 +82,8 @@ export function useModalDialogResult<TResult> (
   },
   defaultResult: TResult
 ): IModalDialogResult<TResult> {
-  return useConfirmBoxComponent(modalRef, refs, defaultResult);
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'UseModalDialogResult' });
+  return useConfirmBoxComponent(modalRef, refs, defaultResult, logger);
 }
 
 export function useConfirmDialogResult(
@@ -90,10 +97,11 @@ export function useConfirmDialogResult(
   msgResName: I18nResName, 
   msgResArgs?: any
 ): IModalDialogResult<ConfirmBoxButton> {
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'UseModalDialogResult' });
   if(!isElectronBuild()) {
-    return useConfirmBoxComponent(modalRef, refs, defaultResult);
+    return useConfirmBoxComponent(modalRef, refs, defaultResult, logger);
   } else {
     const localizer = (useNuxtApp().$i18n as any).t;
-    return useConfirmBoxElectron(localizer, buttons, defaultResult, msgResName, msgResArgs);
+    return useConfirmBoxElectron(localizer, buttons, defaultResult, logger, msgResName, msgResArgs);
   }
 }

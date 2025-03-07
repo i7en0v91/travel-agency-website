@@ -14,9 +14,9 @@ export async function showNotification(type: 'info' | 'warning' | 'error' | 'fat
   if(type === 'fatal' || type === 'error') {   
     try {
       if(type === 'fatal') {
-        consola.error(`FATAL error occured, msg=${msg}, process WILL terminate`);
+        consola.error(`FATAL error occured, process WILL terminate, msg=${msg}`);
       }
-      logger.verbose(`(Dialogs) showing notification, type=${type}, msg=[${msg}], win=${!!win}`);
+      logger.verbose('showing error or fatal notification', { type, win: !!win });
 
       const msgBoxOptions: MessageBoxSyncOptions = {
         message: msg,
@@ -35,7 +35,7 @@ export async function showNotification(type: 'info' | 'warning' | 'error' | 'fat
     }
   } else {
     try {
-      logger.verbose(`(Dialogs) showing notification, type=${type}, msg=[${msg}], win=${!!win}`);
+      logger.verbose('showing notification', { type, win: !!win });
       if(type === 'warning' || !Notification.isSupported()) {
         const msgBoxOptions: MessageBoxSyncOptions = {
           message: msg,
@@ -51,7 +51,7 @@ export async function showNotification(type: 'info' | 'warning' | 'error' | 'fat
         new Notification({ title: AppName, body: msg }).show();
       }
     } catch(err: any) {
-      logger.warn(`(Dialogs) exception occured while showing notification, type=${type}, msg=[${msg}], win=${!!win}`, err);
+      logger.warn('exception occured while showing notification', err, { type, win: !!win });
     }
   }
 }
@@ -63,9 +63,8 @@ export function showExceptionDialog(type: 'warning' | 'error', bridge: IRenderer
   try {
     bridge.showExceptionDialog(type);
   } catch(err: any) {
-    const msg = 'failed to show exception dialog';
-    consola.error(msg);
-    logger.warn(`(Dialogs) ${msg}, type=${type}`, err);
+    consola.error('failed to show exception dialog');
+    logger.warn('', err, type);
   }
 }
 
@@ -73,7 +72,7 @@ export function showExceptionDialog(type: 'warning' | 'error', bridge: IRenderer
  * Prompts user with native confirm box dialog and returns result (selected button)
  */
 export async function showConfirmBox<TButton>(msg: string, title: string, buttons: TButton[], logger: ElectronMainLogger, win?: BrowserWindow): Promise<TButton | undefined> {
-  logger.verbose(`(Dialogs) showing confirm box, msg=[${msg}], title=[${title}], buttons=[${buttons.join(', ')}]`);
+  logger.verbose('showing confirm box', { msg, title, buttons });
   const CancelId = -1;
   const msgBoxOptions: MessageBoxOptions = {
     message: msg,
@@ -92,6 +91,6 @@ export async function showConfirmBox<TButton>(msg: string, title: string, button
   if(resultIndex > CancelId && resultIndex < buttons.length) {
     result = buttons[resultIndex];
   }
-  logger.verbose(`(Dialogs) show confirm box result=${result ?? 'canceled'}, msg=[${msg}], title=[${title}], buttons=[${buttons.join(', ')}]`);
+  logger.verbose('show confirm box', { result: result ?? 'canceled', msg, title, buttons });
   return result;
 }

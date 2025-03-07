@@ -4,13 +4,13 @@ import { type ITestLocalProfile, OAUTH_TESTUSER_PROFILE as testUserProfile } fro
 import { getCommonServices, getServerServices } from '../helpers/service-accessors';
 
 async function getTestUserId () : Promise<EntityId> {
-  const logger = getCommonServices().getLogger();
-  logger.verbose('(OAuthLocalProvider) loading test user id from DB');
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'OAuthLocalProvider' });
+  logger.verbose('loading test user id from DB');
 
   const userLogic = getServerServices()!.getUserLogic();
   const user = await userLogic.findUser(AuthProvider.TestLocal, testUserProfile.sub, 'minimal');
   if (!user) {
-    logger.warn('(OAuthLocalProvider) test user was not found in DB');
+    logger.warn('test user was not found in DB');
     throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'test user was not found', 'error-page');
   }
   return user.id;

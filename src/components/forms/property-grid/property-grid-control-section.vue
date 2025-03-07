@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { toShortForm, toKnownElement, type ControlKey } from './../../../helpers/components';
 import { getI18nResName3 } from '@golobe-demo/shared';
 import type { PropertyGridControlButtonType } from './../../../types';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   buttons: PropertyGridControlButtonType[]
 }
 const { ctrlKey } = defineProps<IProps>();
@@ -17,10 +18,10 @@ const ButtonIconTypeMap: { [P in PropertyGridControlButtonType]: string } = {
   'delete': 'i-heroicons-trash'
 };
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'PropertyGridControlSection' });
 
 function onControlButtonClick (button: PropertyGridControlButtonType) {
-  logger.debug(`(ProperyGridControlSection) onControlButtonClick, ctrlKey=${ctrlKey}, button=${button}`);
+  logger.debug('onControlButtonClick', { ctrlKey, button });
   $emit('click', button);
 }
 
@@ -43,7 +44,7 @@ const uiStyling = {
 
 <template>
   <div>
-    <UButton v-for="b in buttons" :key="`${ctrlKey}-${b}`" size="xl" variant="outline" color="primary" :ui="uiStyling" :icon="ButtonIconTypeMap[b]" @click="() => onControlButtonClick(b)">
+    <UButton v-for="b in buttons" :key="`${toShortForm(ctrlKey)}-${b}`" size="xl" variant="outline" color="primary" :ui="uiStyling" :icon="ButtonIconTypeMap[b]" @click="() => onControlButtonClick(b)">
       {{ $t(getI18nResName3('propertyGrid', 'controlButtons', b)) }}
     </UButton>
   </div>

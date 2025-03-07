@@ -1,7 +1,8 @@
-import type { TripType, CacheEntityType, ICommonServicesLocator, AppPage, I18nResName, GeoPoint, Price, StayOffersSortFactor, FlightOffersSortFactor, FlightClass, OfferKind, Timestamp, ILocalizableValue, EntityId, IImageEntitySrc, GetEntityCacheItem, SystemPage } from '@golobe-demo/shared';
+import type { CacheEntityType, TripType, ICommonServicesLocator, AppPage, I18nResName, GeoPoint, Price, StayOffersSortFactor, FlightOffersSortFactor, FlightClass, OfferKind, Timestamp, ILocalizableValue, EntityId, IImageEntitySrc, SystemPage } from '@golobe-demo/shared';
 import type * as config from './node_modules/@nuxt/ui/dist/runtime/ui.config/index.js';
 import type  { DeepPartial } from './node_modules/@nuxt/ui/dist/runtime/types/index.js';
 import type { IElectronShell } from './electron/interfaces';
+import type { ControlKey } from './helpers/components';
 
 export type SimplePropertyType = 'text' | 'email' | 'password';
 export type PropertyGridControlButtonType = 'change' | 'apply' | 'cancel' | 'delete' | 'add';
@@ -21,12 +22,6 @@ export interface IAppState {
   navigatedFromPage: AppPage | SystemPage | undefined
 }
 
-/** Client - entity cache */
-export interface IEntityCache {
-  set: <TEntityType extends CacheEntityType>(item: GetEntityCacheItem<TEntityType>, expireInSeconds: number | undefined) => Promise<void>,
-  remove: <TEntityType extends CacheEntityType>(id: EntityId | undefined, slug: string | undefined, type: TEntityType) => Promise<void>,
-  get: <TEntityType extends CacheEntityType>(ids: EntityId[], slugs: string[], type: TEntityType, fetchOnCacheMiss: false | { expireInSeconds: number | undefined }) => Promise<GetEntityCacheItem<TEntityType>[] | undefined>
-}
 
 /** Component - static image */
 export interface IStaticImageUiProps {
@@ -45,7 +40,7 @@ export interface IAccordionItemProps {
 }
 
 export interface IAccordionProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   // collapseEnabled: boolean,
   // collapsed: boolean,
   // showCollapsableButton?: boolean,
@@ -55,7 +50,7 @@ export interface IAccordionProps {
 
 /** Components - tabs */
 export interface ITabProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   enabled: boolean,
   isActive?: boolean,
   slotName?: string,
@@ -63,7 +58,7 @@ export interface ITabProps {
     resName: I18nResName,
     shortIcon?: string
   } | { slotName: string },
-  tabName?: string
+  tabName?: ControlKey
 }
 
 export type TabGroupOtherOptions = Omit<ITabProps, 'label'> & { label: { resName: I18nResName } };
@@ -75,24 +70,27 @@ export interface ITabGroupMenuProps extends Omit<ITabProps, 'isActive' | 'label'
 }
 
 export interface ITabGroupProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   tabs: ITabProps[],
   menu?: ITabGroupMenuProps,
-  activeTabKey?: string,
+  activeTabKey?: ControlKey,
+  defaultActiveTabKey?: ControlKey,
+  persistent?: boolean,
   variant?: 'solid' | 'split',
   ui?: DeepPartial<typeof config['tabs']>
 }
 
 /** Components - dropdown lists */
-export type DropdownListValue = string | number;
+export type DropdownListValue = string | ControlKey;
 export interface IDropdownListItemProps {
   value: DropdownListValue,
   resName: I18nResName
 }
 export interface IDropdownListProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   captionResName?: I18nResName,
-  persistent: boolean,
+  persistent?: boolean,
+  selectedValue?: DropdownListValue,
   defaultValue?: DropdownListValue,
   placeholderResName?: I18nResName,
   items: IDropdownListItemProps[],
@@ -118,11 +116,11 @@ export interface ITravelDetailsData {
 }
 
 /** Components - search lists (with autocomplete) */
-export type SearchListItemType = 'destination';
+export type SearchListItemType = CacheEntityType;
 export interface ISearchListItem {
   id: EntityId,
   slug?: string,
-  displayName: ILocalizableValue | string
+  displayName: ILocalizableValue
 }
 
 /** Components - search offers */
@@ -175,8 +173,8 @@ export interface ISearchOffersFilterParams {
 
 // Search parameters
 export interface ISearchFlightOffersMainParams {
-  fromCity: ISearchListItem,
-  toCity: ISearchListItem,
+  fromCityId: EntityId,
+  toCityId: EntityId,
   tripType: TripType,
   dateFrom: Date,
   dateTo: Date,
@@ -185,7 +183,7 @@ export interface ISearchFlightOffersMainParams {
 }
 
 export interface ISearchStayOffersMainParams {
-  city: ISearchListItem,
+  cityId: EntityId,
   checkIn: Date,
   checkOut: Date,
   numRooms: number,
@@ -218,7 +216,7 @@ export interface ISearchStayOffersDisplayOptions extends ISearchOffersCommonDisp
 
 /** Components - maps */
 export interface IMapControlProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   origin: GeoPoint,
   styleClass?: string,
   webUrl?: string
@@ -229,7 +227,7 @@ export type ReviewEditorButtonType = 'bold' | 'italic' | 'strikethrough' | 'unde
 
 /** Components - booking ticket */
 export interface IBookingTicketGeneralProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   avatar?: IImageEntitySrc | null | undefined,
   texting?: {
     name: string,
@@ -239,43 +237,43 @@ export interface IBookingTicketGeneralProps {
 }
 
 export interface IBookingTicketDatesItemProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   label?: string,
   sub?: ILocalizableValue | I18nResName
 }
 
 export interface IBookingTicketDatesProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   from?: IBookingTicketDatesItemProps,
   to?: IBookingTicketDatesItemProps,
   offerKind?: OfferKind
 }
 
 export interface IBookingTicketDetailsItemProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   icon: string,
   caption: I18nResName,
   text?: I18nResName
 }
 
 export interface IBookingTicketDetailsProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   items?: IBookingTicketDetailsItemProps[]
 }
 
 export interface IBookingTicketStayTitleProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   stayName: ILocalizableValue,
   cityName: ILocalizableValue
 }
 
 export interface IBookingTicketFlightGfxProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   userName: string
 }
 
 export interface IBookingTicketProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   offerKind?: OfferKind,
   generalInfo?: IBookingTicketGeneralProps,
   dates?: Omit<IBookingTicketDatesProps, 'offerKind'>,
@@ -285,6 +283,10 @@ export interface IBookingTicketProps {
 
 export interface IClientServicesLocator extends ICommonServicesLocator {
   state: IAppState,
-  getEntityCache(): IEntityCache,
+  // KB: helps withs attempts to resolve some objects too early when it's dependencies haven't been initialized yet (in this case app initialization fails)
+  lazy: {
+    userNotificationStore?: ReturnType<typeof useUserNotificationStore>,
+    controlValuesStore?: ReturnType<typeof useControlValuesStore>,
+  },
   getElectronShell(): IElectronShell
 }

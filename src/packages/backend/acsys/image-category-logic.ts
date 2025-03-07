@@ -7,34 +7,34 @@ export class ImageCategoryLogic implements IImageCategoryLogic {
 
   public static inject = ['imageCategoryLogicPrisma', 'logger'] as const;
   constructor (prismaImplementation: IImageCategoryLogic, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'ImageCategoryLogic-Acsys' });
     this.prismaImplementation = prismaImplementation;
   }
 
   async initialize(): Promise<void> {
-    this.logger.debug('(ImageCategoryLogic-Acsys) initializing');
+    this.logger.debug('initializing');
     await this.prismaImplementation.initialize();
-    this.logger.debug('(ImageCategoryLogic-Acsys) initialized');
+    this.logger.debug('initialized');
   }
 
   async findCategory (type: ImageCategory): Promise<IImageCategoryInfo | undefined> {
-    this.logger.debug(`(ImageCategoryLogic-Acsys) finding category, type=${type}`);
+    this.logger.debug('finding category', type);
     const result = await this.prismaImplementation.findCategory(type);
-    this.logger.debug(`(ImageCategoryLogic-Acsys) category found, type=${type}, id=${result}`);
+    this.logger.debug('category found', { type, id: result });
     return result;
   }
 
   async createCategory (type: ImageCategory, width: number, height: number): Promise<EntityId> {
-    this.logger.debug(`(ImageCategoryLogic-Acsys) creating category, type=${type}, width=${width}, height=${height}`);
+    this.logger.debug('creating category', { type, width, height });
     const result = await this.prismaImplementation.createCategory(type, width, height);
-    this.logger.debug(`(ImageCategoryLogic-Acsys) category created, type=${type}, id=${result}`);
+    this.logger.debug('category created', { type, id: result });
     return result;
   }
 
   async getImageCategoryInfos (allowCachedValue: boolean): Promise<ReadonlyMap<ImageCategory, IImageCategoryInfo>> {
-    this.logger.debug(`(ImageCategoryLogic-Acsys) accessing image category infos, allowCachedValue=${allowCachedValue}`);
+    this.logger.debug('accessing image category infos', allowCachedValue);
     const result = await this.prismaImplementation.getImageCategoryInfos(allowCachedValue);
-    this.logger.debug(`(ImageCategoryLogic-Acsys) image category infos count=${result.size}, allowCachedValue=${allowCachedValue}`);
+    this.logger.debug('image category infos', { count: result.size, allowCachedValue });
     return result;
   }
 }

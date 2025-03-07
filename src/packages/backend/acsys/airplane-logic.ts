@@ -13,19 +13,19 @@ export class AirplaneLogic implements IAirplaneLogic {
   public static inject = ['airplaneLogicPrisma', 'acsysDraftsEntitiesResolver', 'dbRepository', 'logger'] as const;
   constructor (prismaImplementation: IAirplaneLogic, acsysDraftsEntitiesResolver: AcsysDraftEntitiesResolver, dbRepository: PrismaClient, logger: IAppLogger) {
     this.prismaImplementation = prismaImplementation;
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'AirplaneLogic-Acsys' });
     this.dbRepository = dbRepository;
     this.acsysDraftsEntitiesResolver = acsysDraftsEntitiesResolver;
   }
 
   async initialize(): Promise<void> {
-    this.logger.debug('(AirplaneLogic-Acsys) initializing');
+    this.logger.debug('initializing');
     await this.prismaImplementation.initialize();
-    this.logger.debug('(AirplaneLogic-Acsys) initialized');
+    this.logger.debug('initialized');
   };
 
   async deleteAirplane (id: EntityId): Promise<void> {
-    this.logger.debug(`(AirplaneLogic-Acsys) deleting airplane: id=${id}`);
+    this.logger.debug('deleting airplane', id);
 
     const deleted = (await this.dbRepository.acsysDraftsAirplane.updateMany({
       where: {
@@ -38,15 +38,15 @@ export class AirplaneLogic implements IAirplaneLogic {
       }
     })).count > 0;
     if(!deleted) {
-      this.logger.debug(`(AirlineCompanyLogic-Acsys) no airplanes have been deleted in drafts table, proceeding to the main table: id=${id}`);
+      this.logger.debug('no airplanes have been deleted in drafts table, proceeding to the main table', id);
       await this.prismaImplementation.deleteAirplane(id);
     }
     
-    this.logger.debug(`(AirplaneLogic-Acsys) airplane deleted: id=${id}`);
+    this.logger.debug('airplane deleted', id);
   };
 
   async getAllAirplanes (allowCachedValue: boolean, previewMode: PreviewMode): Promise<IAirplane[]> {
-    this.logger.debug(`(AirplaneLogic-Acsys) get all airplanes, allowCachedValue=${allowCachedValue}, previewMode=${previewMode}`);
+    this.logger.debug('get all airplanes', { allowCachedValue, previewMode });
     let result: IAirplane[];
     if(previewMode) {
       const resolvedAirplanes = (await this.acsysDraftsEntitiesResolver.resolveAirplanes({}));
@@ -54,12 +54,12 @@ export class AirplaneLogic implements IAirplaneLogic {
     } else {
       result = await this.prismaImplementation.getAllAirplanes(allowCachedValue, previewMode);
     }
-    this.logger.debug(`(AirplaneLogic-Acsys) get all airplanes, count=${result.length}, allowCachedValue=${allowCachedValue}, previewMode=${previewMode}`);
+    this.logger.debug('get all airplanes', { count: result.length, allowCachedValue, previewMode });
     return result;
   }
 
   async createAirplane (data: IAirplaneData, previewMode: PreviewMode): Promise<EntityId> {
-    this.logger.debug(`(AirplaneLogic-Acsys) creating airplane, previewMode=${previewMode}`);
+    this.logger.debug('creating airplane', previewMode);
 
     let airplaneId: EntityId;
     if(previewMode) {
@@ -109,7 +109,7 @@ export class AirplaneLogic implements IAirplaneLogic {
       airplaneId = await this.prismaImplementation.createAirplane(data, previewMode);
     }
 
-    this.logger.debug(`(AirplaneLogic-Acsys) creating airplane - completed, id=${airplaneId}, previewMode=${previewMode}`);
+    this.logger.debug('creating airplane - completed', { id: airplaneId, previewMode });
     return airplaneId;
   }
 }

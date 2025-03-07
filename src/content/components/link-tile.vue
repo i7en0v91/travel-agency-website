@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { AppPage, SystemPage, type Locale, lookupPageByUrl } from '@golobe-demo/shared';
 import PageImageLink from '../../components/common-page-components/page-image-link.vue';
+import type { ArbitraryControlElementMarker } from '../../helpers/components';
 
 interface IProps {
   imageName: 'flights' | 'stays',
@@ -25,7 +26,7 @@ const to = computed(() => {
 </script>
 
 <template>
-  <PageImageLink :ctrl-key="`ImageLink-${imageName}`" :btn-label="btnLabel" :link-url="to" :image-name="imageName" :external="false">
+  <PageImageLink :ctrl-key="['ImageLink', imageName as ArbitraryControlElementMarker]" :btn-label="btnLabel" :link-url="to" :image-name="imageName" :external="false">
     <template #title>
       <slot name="title" />
     </template>

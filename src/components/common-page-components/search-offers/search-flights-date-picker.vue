@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { AppConfig, eraseTimeOfDay, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
+import type { ControlKey } from './../../../helpers/components';
+import { eraseTimeOfDay, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
 import dayjs from 'dayjs';
-import isEqual from 'lodash-es/isEqual';
 import InputFieldFrame from '../../forms/input-field-frame.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
-import { DatePicker as VCalendarDatePicker } from 'v-calendar';
 import './../../../node_modules/v-calendar/dist/style.css';
 import { useDeviceSize } from '../../../composables/device-size';
 import { DeviceSizeEnum } from '../../../helpers/constants';
+import isArray from 'lodash-es/isArray';
+import { useControlValuesStore } from './../../../stores/control-values-store';
+import { DatePicker as VCalendarDatePicker } from 'v-calendar';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   captionResName: I18nResName,
   mode: 'single' | 'range',
   ui?: {
@@ -20,127 +22,61 @@ interface IProps {
 }
 
 const { ctrlKey, mode } = defineProps<IProps>();
-const modelRef = defineModel<Date[] | null | undefined>('selectedDates');
+
+
+const logger = getCommonServices().getLogger().addContextProps({ component: 'SearchFlightsDatePicker' });
+const controlValuesStore = useControlValuesStore();
 
 const { d, locale } = useI18n();
 const { current: deviceSize } = useDeviceSize();
 
-const dateFrom = eraseTimeOfDay(dayjs().utc(true).toDate());
-const dateTo = eraseTimeOfDay(dayjs().utc(true).add(AppConfig.autoInputDatesRangeDays, 'day').toDate());
-const today = dateFrom;
-const rangeValue = ref({
-  start: dateFrom,
-  end: dateTo
-});
-const singleValue = ref(today);
-const hasMounted = ref(false);
+const Today = eraseTimeOfDay(dayjs().utc(true).toDate());
+
+const modelValue = defineModel<Date[] | null | undefined>('selectedDates');
+const rangeValue = ref<{ start: Date, end: Date }>();
+const singleValue = ref<Date>();
 const open = ref(false);
 
-const logger = getCommonServices().getLogger();
-
-const controlSettingsStore = useControlSettingsStore();
-const controlSingleValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(`${ctrlKey}-single`, today.toISOString(), true);
-const controlRangeValueSetting = controlSettingsStore.getControlValueSetting<string[]>(`${ctrlKey}-range`, [dateFrom.toISOString(), dateTo.toISOString()], true);
-
-function saveInitialValuesToSettings () {
-  const initiallySelectedDates = modelRef.value;
-  if (initiallySelectedDates?.length) {
-    if (initiallySelectedDates!.length === 1) {
-      const initialDateFrom = initiallySelectedDates[0];
-      controlSingleValueSetting.value = dayjs(initialDateFrom).isBefore(today) ? today.toISOString() : initialDateFrom.toISOString();
-    } else {
-      const initialDateFrom = initiallySelectedDates[0];
-      const initialDateTo = initiallySelectedDates[1];
-      controlRangeValueSetting.value = dayjs(initialDateFrom).isBefore(today) ? [dateFrom.toISOString(), dateTo.toISOString()] : [initialDateFrom.toISOString(), initialDateTo.toISOString()];
-    }
-  } else if (initiallySelectedDates === null) {
-    controlSingleValueSetting.value = today.toISOString();
-    controlRangeValueSetting.value = [dateFrom.toISOString(), dateTo.toISOString()];
-  } else {
-    if (dayjs(controlSingleValueSetting.value).isBefore(today)) {
-      controlSingleValueSetting.value = today.toISOString();
-    }
-    if (dayjs(controlRangeValueSetting.value![0]).isBefore(today)) {
-      controlRangeValueSetting.value = [dateFrom.toISOString(), dateTo.toISOString()];
-    }
+function toUnary<T>(value: T | T[]): T | undefined {
+  if(value && isArray(value)) {
+    return value.length ? value[0] : undefined;
   }
+  return value;
 }
 
-function updateModelValue() {
-  logger.debug(`(SearchFlightsDatePicker) starting model value update: ctrlKey=${ctrlKey}, current=${JSON.stringify(modelRef.value)}`);
-  
-  let isSameValue = false;
-  let newValue: Date[] | null;
-  if (mode === 'single') {
-    const newDate = singleValue.value ? eraseTimeOfDay(singleValue.value) : null;
-    isSameValue = ((modelRef.value?.length ?? 0) === 0 && !newDate) || (!!modelRef.value?.length && modelRef.value[0].getTime() === newDate?.getTime());
-    newValue = newDate ? [newDate!] : null;
-  } else {
-    newValue = rangeValue.value ? ([eraseTimeOfDay(rangeValue.value.start), eraseTimeOfDay(rangeValue.value.end)]) : null;
-    isSameValue = ((modelRef.value?.length ?? 0) === 0 && (newValue?.length ?? 0) === 0) || isEqual(modelRef.value, newValue);
+function toArray<T>(value: T | T[] | null): T[] | null {
+  if(!value) {
+    return null;
   }
-
-  if(isSameValue) {
-    logger.debug(`(SearchFlightsDatePicker) skipping model value update, value is the same: ctrlKey=${ctrlKey}, current=${JSON.stringify(modelRef.value)}, new=${JSON.stringify(newValue)}`);
-    return;
+  if(isArray(value)) {
+    return value;
   }
-
-  logger.verbose(`(SearchFlightsDatePicker) updating model value: ctrlKey=${ctrlKey}, current=${JSON.stringify(modelRef.value)}, new=${JSON.stringify(newValue)}`);
-  modelRef.value = newValue;
+  return [value];
 }
 
-function onCalendarValueChanged () {
-  if (mode === 'single') {
-    logger.verbose(`(SearchFlightsDatePicker) updating selected date: ctrlKey=${ctrlKey}, newValue=${singleValue.value}, modelValue=${modelRef.value}`);
-    if(!singleValue.value) {
-      singleValue.value = modelRef.value![0];
-    }
-    const value = singleValue.value;
-    controlSingleValueSetting.value = eraseTimeOfDay(value).toISOString();
-  } else {
-    logger.verbose(`(SearchFlightsDatePicker) updating selected dates: ctrlKey=${ctrlKey}, newValue=${JSON.stringify([rangeValue.value.start, rangeValue.value.end])}, modelValue=${JSON.stringify(modelRef.value)}`);
-    if(!rangeValue.value?.start || !rangeValue.value?.end) {
-      rangeValue.value = { start: modelRef.value![0], end: modelRef.value![1] };
-    }
-    const value = [rangeValue.value.start, rangeValue.value.end];
-    controlRangeValueSetting.value = [eraseTimeOfDay(value![0]).toISOString(), eraseTimeOfDay(value![1]).toISOString()];
-  }
-  updateModelValue();
-  logger.verbose(`(SearchFlightsDatePicker) selected date(s) updated: ctrlKey=${ctrlKey}`);
+function datesArrayEquals(arr1: Date[], arr2: Date[]) {
+  return arr1.length === arr2.length && arr1.every((v, idx) => v === arr2[idx]);
 }
 
-function onDateSelected () {
-  onCalendarValueChanged();
-  open.value = false;
+function storeModelValuesDiffer(
+  storeValue: Date | Date[] | null, 
+  modelValue: Date[] | null | undefined, mode: 'single' | 'range'
+) {
+  return mode === 'single' ? 
+    (storeValue != ((modelValue?.length ?? 0) > 0 ? modelValue![0] : null)) :
+    (!datesArrayEquals(storeValue as Date[], (modelValue?.length ?? 0) > 0 ? (modelValue as Date[]) : [])
+  );
 }
 
 const datesDisplayText = computed(() => {
+  if(import.meta.server) {
+    return '';
+  }
+
   const displayFormat = 'numeric';
-  return hasMounted.value ? (mode === 'single' ? d(singleValue.value, displayFormat) : (`${d(rangeValue.value.start, displayFormat)} - ${d(rangeValue.value.end, displayFormat)}`)) : undefined;
-});
-
-onBeforeMount(() => {
-  saveInitialValuesToSettings();
-
-  if (controlSingleValueSetting.value) {
-    singleValue.value = eraseTimeOfDay(new Date(controlSingleValueSetting.value!));
-  }
-  if (controlRangeValueSetting.value) {
-    rangeValue.value = { start: eraseTimeOfDay(new Date(controlRangeValueSetting.value![0])), end: eraseTimeOfDay(new Date(controlRangeValueSetting.value![1])) };
-  }
-});
-
-onMounted(() => {
-  watch(() => mode, () => {
-    updateModelValue();
-  });
-
-  watch(singleValue, onDateSelected);
-  watch(rangeValue, onDateSelected);
-
-  updateModelValue();
-
-  hasMounted.value = true;
+  return mode === 'single' ? 
+    (singleValue.value ? d(singleValue.value, displayFormat) : '') : 
+    (rangeValue.value ? `${d(rangeValue.value.start, displayFormat)} - ${d(rangeValue.value.end, displayFormat)}` : '');
 });
 
 const numColumnsForDevice = computed(() => 
@@ -154,7 +90,7 @@ const calendarAttrs = computed(() => {
     transparent: true,
     borderless: false,
     color: 'primary',
-    minDate: today,
+    minDate: Today,
     locale: locale.value,
     'is-dark': { selector: 'html', darkClass: 'dark' },
     timezone: 'utc',
@@ -166,11 +102,91 @@ defineShortcuts({
   'ESCAPE': () => open.value = false
 });
 
+onMounted(() => {
+  const singleInitialOverwrite = modelValue.value?.length ? modelValue.value[0] : undefined;
+  logger.debug('acquiring value ref for single date', { ctrlKey, initialOverwrite: singleInitialOverwrite });
+  const { valueRef: singleStoreValueRef } = controlValuesStore.acquireValueRef<Date | null>(
+    [...ctrlKey, 'DatePicker'], {
+      initialOverwrite: singleInitialOverwrite
+    });
+    
+  const rangeInitialOverwrite = ((modelValue.value?.length ?? 0) >= 2) ? modelValue.value : undefined;
+  logger.debug('acquiring value ref for range dates', { ctrlKey, initialOverwrite: rangeInitialOverwrite });
+  const { valueRef: rangeStoreValueRef } = controlValuesStore.acquireValueRef<Date[] | null>(
+    [...ctrlKey, 'DateRangePicker'], {
+      initialOverwrite: rangeInitialOverwrite
+    });
+
+  watch([singleStoreValueRef, rangeStoreValueRef], () => {
+    const storeValue = (mode === 'single' ? singleStoreValueRef : rangeStoreValueRef).value;
+    logger.debug('store value watcher', { ctrlKey, modelValue: modelValue.value, storeValue, mode });
+    const newValue = mode === 'single' ? storeValue : (storeValue ?? []);
+    const changed = storeModelValuesDiffer(newValue, modelValue.value, mode);
+    if(changed) {
+      modelValue.value = newValue ? (isArray(newValue) ? newValue : [newValue]) : null;  
+    }
+  }, { immediate: true });
+
+  watch([singleValue, rangeValue], () => {
+    const newValue = mode === 'single' ? 
+      (singleValue.value ? [singleValue.value] : null) : 
+      (rangeValue.value ? [rangeValue.value!.start, rangeValue.value!.end] : null);
+    const storeValue = (mode === 'single' ? singleStoreValueRef : rangeStoreValueRef).value;
+    logger.debug('selected calendar value watcher', { ctrlKey, newValue, storeValue, mode });
+    
+    const changed = storeModelValuesDiffer(storeValue, newValue, mode);
+    if(changed) {
+      switch(mode) {
+        case 'single':
+          singleStoreValueRef.value = toUnary(singleValue.value) ?? null;
+          break;
+        default:
+          rangeStoreValueRef.value = newValue;
+      }
+    }
+  }, { immediate: false });
+
+  watch(modelValue, () => {
+    const storeValue = (mode === 'single' ? singleStoreValueRef : rangeStoreValueRef).value;
+    const outOfSyncUpdate = modelValue.value && (mode === 'single') !== (modelValue.value.length === 1);
+    if(outOfSyncUpdate) {
+      logger.debug('model value update for another mode', { ctrlKey, modelValue: modelValue.value, storeValue, mode });
+      return;
+    }
+    
+    logger.debug('model value watcher', { ctrlKey, modelValue: modelValue.value, storeValue, mode });
+    const changed = storeModelValuesDiffer(storeValue, modelValue.value, mode);
+    switch(mode) {
+      case 'single':
+        singleValue.value = modelValue.value ? 
+          (isArray(modelValue.value) ? modelValue.value[0] : modelValue.value) : undefined;
+        if(changed) {
+          singleStoreValueRef.value = toUnary(modelValue.value ?? null) as Date | null;
+        }
+        break;
+      default:
+        rangeValue.value = modelValue.value ? { start: modelValue.value[0], end: modelValue.value[1] } : undefined;
+        if(changed) {
+          rangeStoreValueRef.value = modelValue.value ?? null;
+        }
+    }
+  }, { immediate: false });
+
+  watch(() => mode, () => {
+    logger.verbose('mode changed, actualizing model value', { ctrlKey, mode });
+    if (mode === 'single') {
+      modelValue.value = toArray(singleStoreValueRef.value) ?? null;
+    } else {
+      modelValue.value = rangeStoreValueRef.value ? rangeStoreValueRef.value : null;
+    }
+  });
+});
+
 </script>
 
 <template>
   <UPopover v-model:open="open" :popper="{ placement: 'bottom' }"  :class="ui?.wrapper">
-    <InputFieldFrame :text-res-name="getI18nResName2('searchFlights', 'destinationCaption')" class="w-full">
+    <InputFieldFrame :text-res-name="getI18nResName2('searchFlights', mode === 'single' ? 'dateSingle' : 'dateRange')" class="w-full">
       <UButton icon="i-heroicons-calendar-days-20-solid" :class="`w-full dark:hover:bg-transparent ${ui?.input ?? ''} pl-[12px]`" variant="outline" color="gray">
         <span class="overflow-hidden line-clamp-1 text-wrap text-start">{{ datesDisplayText }}</span>
       </UButton>

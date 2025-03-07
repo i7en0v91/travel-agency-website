@@ -10,17 +10,17 @@ import { getCommonServices, getServerServices } from '../../../../helpers/servic
 
 function performAdditionalDtoValidation (dto: ISearchFlightOffersParamsDto, event : H3Event, logger: IAppLogger) {
   if (dto.price?.to && dto.price?.from && dto.price.from > dto.price.to) {
-    logger.warn(`(api:flight-search) search flights query price range is incorrect, url=${event.node.req.url}`, undefined, dto);
+    logger.warn('search flights query price range is incorrect', undefined, { ...(dto), ...{ url: event.node.req.url } });
     throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'search query arguments are incorrect', 'error-stub');
   }
 
   if (dto.dateFrom && dto.dateTo && dto.dateFrom.getTime() > dto.dateTo.getTime()) {
-    logger.warn(`(api:flight-search) search flights query date range is incorrect, url=${event.node.req.url}`, undefined, dto);
+    logger.warn('search flights query date range is incorrect', undefined, { ...(dto), ...{ url: event.node.req.url } });
     throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'search query arguments are incorrect', 'error-stub');
   }
 
   if (dto.departureTimeOfDay?.to && dto.departureTimeOfDay?.from && dto.departureTimeOfDay.from > dto.departureTimeOfDay.to) {
-    logger.warn(`(api:flight-search) search flights query departure time of day range is incorrect, url=${event.node.req.url}`, undefined, dto);
+    logger.warn('search flights query departure time of day range is incorrect', undefined, { ...(dto), ...{ url: event.node.req.url } });
     throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'search query arguments are incorrect', 'error-stub');
   }
 }
@@ -39,10 +39,10 @@ function getSortDirection (sort: FlightOffersSortFactor): 'asc' | 'desc' {
 }
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
   const flightsLogic = getServerServices()!.getFlightsLogic();
 
-  logger.debug('(api:flight-search) parsing flight offers search query from HTTP body');
+  logger.debug('parsing flight offers search query from HTTP body');
   const searchParamsDto = SearchFlightOffersParamsDtoSchema.cast(await readBody(event));
   performAdditionalDtoValidation(searchParamsDto, event, logger);
 

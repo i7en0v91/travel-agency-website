@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import type { PaymentMethodType, I18nResName } from '@golobe-demo/shared';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   selected: boolean,
   type: PaymentMethodType,
   headerResName: I18nResName,

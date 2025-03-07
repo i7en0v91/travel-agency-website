@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../../helpers/components';
 import { type Locale, getLocalizeableValue } from '@golobe-demo/shared';
 import isString from 'lodash-es/isString';
 import type { ISearchOffersChoiceFilterProps, ISearchOffersFilterVariant, SearchOffersFilterVariantId } from './../../../../types';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   filterParams: ISearchOffersChoiceFilterProps
 }
 

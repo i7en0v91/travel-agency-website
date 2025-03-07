@@ -15,7 +15,7 @@ withDefaults(defineProps<IProps>(), {
   contentParams: null
 });
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'AppPageMdc' });
 const route = useRoute();
 
 const contentPage = computed<AppPage | undefined>(() => {
@@ -43,13 +43,13 @@ if(import.meta.client && !isHydrating) {
   const navFromPage = getClientServices().state.navigatedFromPage;
   if(navFromPage && navFromPage !== SystemPage.Drafts) {
     if(ContentPages.fromRoutesRequiringMount.includes(navFromPage)) {
-      logger.verbose(`(AppPageMdc) mdc renderer will wait for mount, path=${route.fullPath}, page=${navFromPage}`); 
+      logger.verbose('mdc renderer will wait for mount', { path: route.fullPath, page: navFromPage }); 
       waitingForMount.value = true;
     } else {
-      logger.debug(`(AppPageMdc) page being navigated from doesnt require waiting for mount, path=${route.fullPath}, page=${navFromPage}`);  
+      logger.debug('page being navigated from doesnt require waiting for mount', { path: route.fullPath, page: navFromPage });  
     }
   } else {
-    logger.verbose(`(AppPageMdc) page being navigated from was not indetified, wont wait for mount, path=${route.fullPath}`);
+    logger.verbose('page being navigated from was not indetified, wont wait for mount', { path: route.fullPath });
   }
 }
 
@@ -68,10 +68,10 @@ onMounted(() => {
         :components="ProseStyling"
       >
         <template #empty>
-          <ComponentWaitingIndicator ctrl-key="PageContentEmptyWaitingInidicator" class="my-5"/>
+          <ComponentWaitingIndicator :ctrl-key="['PageContent', 'Waiter']" class="my-5"/>
         </template>
       </ContentRenderer>
     </template>
   </ContentDoc>
-  <ComponentWaitingIndicator v-else-if="contentPage" ctrl-key="PageContentInitializingInidicator" class="my-5"/>
+  <ComponentWaitingIndicator v-else-if="contentPage" :ctrl-key="['PageContent', 'Waiter']" class="my-5"/>
 </template>

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import TicketBarcode from '~/public/img/ticket-barcode.svg';
+import type { ControlKey } from './../../helpers/components';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 };
 defineProps<IProps>();
 

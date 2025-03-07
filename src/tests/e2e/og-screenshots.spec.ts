@@ -54,7 +54,7 @@ class PageScreenshoter {
   currentPage: Page | undefined;
 
   constructor (url: string, locale: Locale, screenshotDir: string, fileName: string, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'OgScreenshotsTests' });
     this.url = url;
     this.screenshotDir = screenshotDir;
     this.fileName = fileName;
@@ -62,7 +62,7 @@ class PageScreenshoter {
   }
 
   private localizePath = (path: string, locale: Locale): string => {
-    this.logger.debug(`localizing path, currentPage=${this.currentPage?.url()}, path=${path}, locale=${locale}`);
+    this.logger.debug('localizing path', { currentPage: this.currentPage?.url(), path, locale });
 
     const localePrefix = AvailableLocaleCodes.filter(l => l !== DefaultLocale && path.startsWith(`/${l}`));
     if (localePrefix.length > 0) {
@@ -76,12 +76,12 @@ class PageScreenshoter {
       result = joinURL(`/${locale}`, path);
     }
 
-    this.logger.debug(`path localized, currentPage=${this.currentPage?.url()}, path=${path}, locale=${locale}, result=${result}`);
+    this.logger.debug('path localized', { currentPage: this.currentPage?.url(), path, locale, result });
     return result;
   };
 
   private saveScreenshotToFile = async (): Promise<void> => {
-    this.logger.debug(`taking current page screenshot, currentPage=${this.currentPage?.url()}`);
+    this.logger.debug('taking current page screenshot', { currentPage: this.currentPage?.url() });
     if (!this.currentPage) {
       return;
     }
@@ -90,21 +90,21 @@ class PageScreenshoter {
 
     await page.screenshot({ path: filePath, type: OgImageExt });
 
-    this.logger.debug(`current page screenshot was taken, currentPage=${this.currentPage!.url()}, fileName=${this.fileName}`);
+    this.logger.debug('current page screenshot was taken', { currentPage: this.currentPage!.url(), fileName: this.fileName });
   };
 
   private acceptCookies = async (): Promise<void> => {
-    this.logger.debug(`accepting cookies, currentPage=${this.currentPage?.url()}`);
+    this.logger.debug('accepting cookies', { currentPage: this.currentPage?.url() });
 
     await this.currentPage!.locator(`button.${LocatorClasses.CookieBannerBtn}`).click();
     await delay(100);
 
-    this.logger.debug(`cookies accepted, currentPage=${this.currentPage?.url()}`);
+    this.logger.debug('cookies accepted', { currentPage: this.currentPage?.url() });
   };
 
   private waitPageReady = async (timeoutSecs?: number): Promise<void> => {
     timeoutSecs ??= TestTimeout;
-    this.logger.debug(`waiting for page is ready, currentPage=${this.currentPage?.url()}, timeoutSecs=${timeoutSecs}`);
+    this.logger.debug('waiting for page is ready', { currentPage: this.currentPage?.url(), timeoutSecs });
     const page = this.currentPage;
     if (!page) {
       this.logger.warn('current page is undefined');
@@ -116,7 +116,7 @@ class PageScreenshoter {
 
   takeScreenshot = async (): Promise<void> => {
     try {
-      this.logger.verbose(`taking screenshot, url=${this.url}, locale=${this.locale}, fileName=${this.fileName}, dir=[${this.screenshotDir}]`);
+      this.logger.verbose('taking screenshot', { url: this.url, locale: this.locale, fileName: this.fileName });
 
       const localeCookie = {
         name: CookieI18nLocale,
@@ -138,9 +138,9 @@ class PageScreenshoter {
         locale: this.locale
       });
       this.currentPage.on('response', (response) => {
-        this.logger.debug(`got page response, url=${response.url()}`);
+        this.logger.debug('got page response', { url: response.url() });
       }).on('request', (request) => {
-        this.logger.debug(`page request started, url=${request.url()}, redirectedFrom=${request.redirectedFrom()?.url()}, redirectedTo=${request.redirectedTo()?.url()}`);
+        this.logger.debug('page request started', { url: request.url(), redirectedFrom: request.redirectedFrom()?.url(), redirectedTo: request.redirectedTo()?.url() });
       });
 
       await this.waitPageReady();
@@ -148,9 +148,9 @@ class PageScreenshoter {
 
       await this.currentPage.close();
 
-      this.logger.verbose(`screenshot was taken, url=${this.url}, locale=${this.locale}, fileName=${this.fileName}`);
+      this.logger.verbose('screenshot was taken', { url: this.url, locale: this.locale, fileName: this.fileName });
     } catch (err: any) {
-      this.logger.warn(`failed to take screenshot, url=${this.url}, locale=${this.locale}`, err);
+      this.logger.warn('failed to take screenshot', err, { url: this.url, locale: this.locale });
       throw err;
     }
   };
@@ -159,7 +159,7 @@ class PageScreenshoter {
 // KB: screenshots were built with Chromium 127.0.6533.17
 describe('og:image screenshots generation', async () => {
   const logger = createLogger('(og-screenshots)');
-  logger.info('>>>>>>>>>>>>> NEW TEST RUN <<<<<<<<<<<<<<<<<<');
+  logger.info('-------------- NEW TEST RUN --------------');
 
   beforeAll(() => startWatchingTestFiles(logger), TestTimeout);
   afterAll(async () => await stopWatchingTestFiles(logger), TestTimeout);
@@ -183,15 +183,14 @@ describe('og:image screenshots generation', async () => {
     }
     const ogImageDir = join(publicAssetsDir, 'img', 'og');
 
-    logger.info(`starting og image generation, num pages=${imgPages.length}, screenshotDir=[${ogImageDir}]`);
+    logger.info('starting og image generation, num', { pages: imgPages.length });
     for (let i = 0; i < imgPages.length; i++) {
       for (let j = 0; j < AvailableLocaleCodes.length; j++) {
         const page = imgPages[i];
         const pageUrl = pageUrls.get(page);
         if (!isString(pageUrl)) {
-          const msg = `screenshot generation FAILED - url was not found for page: ${page}`;
-          logger.error(msg);
-          throw new Error(msg);
+          logger.error('screenshot generation FAILED - url was not found', undefined, page);
+          throw new Error('screenshot generation FAILED - url was not found');
         }
 
         const locale = AvailableLocaleCodes[j] as Locale;
@@ -201,6 +200,6 @@ describe('og:image screenshots generation', async () => {
         await screenshoter.takeScreenshot();
       }
     }
-    logger.info(`image generation completed, num pages=${imgPages.length}`);
+    logger.info('image generation completed, num', { pages: imgPages.length });
   });
 });

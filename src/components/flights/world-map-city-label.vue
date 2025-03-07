@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { getI18nResName3, type ILocalizableValue, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
 import { WorldMapCityLabelFlipX } from './../../helpers/constants';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   slug: string,
   cityName: ILocalizableValue,
   countryName: ILocalizableValue,
@@ -38,8 +39,8 @@ onMounted(() => {
     }"
   >
     <StaticImage
-      :ctrl-key="ctrlKey"
-      :entity-src="{ slug: imgSrc.slug, timestamp: imgSrc.timestamp }"
+      :ctrl-key="[...ctrlKey, 'StaticImg']"
+      :src="{ slug: imgSrc.slug, timestamp: imgSrc.timestamp }"
       :category="ImageCategory.CityCard"
       sizes="xs:30vw sm:20vw md:10vw lg:10vw xl:10vw"
       :ui="{ 
@@ -47,8 +48,8 @@ onMounted(() => {
         stub: 'rounded',
         img: 'rounded object-cover'
       }"
-      :alt-res-name="getI18nResName3('flightsPage', 'worldMap', 'cityImgAlt')"
-      :show-stub="true"
+      :alt="{ resName: getI18nResName3('flightsPage', 'worldMap', 'cityImgAlt') }"
+      stub="default"
     />
     <div class="w-full h-auto">
       <ULink :external="false" :replace="true" :to="cityUrl" class="text-gray-400 dark:text-gray-500 font-semibold" :aria-label="$t(getI18nResName3('flightsPage', 'worldMap', 'cityTravelInfoAria'))">

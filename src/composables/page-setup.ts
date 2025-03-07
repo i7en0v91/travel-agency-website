@@ -1,11 +1,18 @@
-import { getCommonServices } from '../helpers/service-accessors';
+import { getClientServices, getCommonServices } from '../helpers/service-accessors';
 
 export async function usePageSetup(): Promise<void> {
-  const logger = getCommonServices().getLogger();
-  logger.verbose('(page-setup) entered');
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'PageSetup' });
+  logger.verbose('entered');
   
+  if(import.meta.client) {
+    getClientServices().lazy = {
+      userNotificationStore: useUserNotificationStore(),
+      controlValuesStore: useControlValuesStore()
+    };
+  }
   const systemConfigurationStore = useSystemConfigurationStore();
-  await systemConfigurationStore.initialize();
+  await systemConfigurationStore.loadImageCategories();
+  useEntityCacheStore();
 
-  logger.verbose('(page-setup) completed');
+  logger.verbose('completed');
 }

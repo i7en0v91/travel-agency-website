@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { AppConfig, type EntityId, type OfferKind, type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, eraseTimeOfDay, getValueForFlightDayFormatting, getI18nResName3, type I18nResName } from '@golobe-demo/shared';
 import { HistoryTabGroup, HistoryTabFlights, HistoryTabStays } from './../../../helpers/constants';
 import TabsGroup from '../../forms/tabs-group.vue';
@@ -15,20 +16,18 @@ declare type TimeRangeFilter = 'upcoming' | 'passed';
 const DefaultTimeRangeFilter: TimeRangeFilter = 'upcoming';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   ready: boolean
 }
 const { ctrlKey } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'TabHistory' });
 const isError = ref(false);
 
-const controlSettingsStore = useControlSettingsStore();
-const timeRangeControlValueSetting = controlSettingsStore.getControlValueSetting<TimeRangeFilter>(`${ctrlKey}-TimeRangeFilter`, DefaultTimeRangeFilter, true);
-const timeRangeFilter = ref<TimeRangeFilter>(timeRangeControlValueSetting.value ?? DefaultTimeRangeFilter);
+const timeRangeFilter = ref<TimeRangeFilter>();
 const timeRangeFilterDropdownItems: {value: TimeRangeFilter, resName: I18nResName}[] = (['upcoming', 'passed'] as TimeRangeFilter[]).map(f => { return { value: f, resName: getI18nResName3('accountPage', 'tabHistory', f) }; });
 
-const activeTabKey = ref<string | undefined>();
+const activeTabKey = ref<ControlKey | undefined>();
 
 const $emit = defineEmits(['update:ready']);
 
@@ -47,9 +46,9 @@ const userTicketsFetch = await useFetch(`/${ApiEndpointUserTickets}`,
   },
   cache: (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
   transform: (response: IUserTicketsResultDto) => {
-    logger.verbose(`(TabHistory) received user tickets response, ctrlKey=${ctrlKey}`);
+    logger.verbose('received user tickets response', ctrlKey);
     if (!response) {
-      logger.warn(`(TabHistory) user tickets response is empty, ctrlKey=${ctrlKey}`);
+      logger.warn('user tickets response is empty', undefined, ctrlKey);
       return []; // error should be logged by fetchEx
     }
     return mapUserTicketsResult(response);
@@ -57,12 +56,17 @@ const userTicketsFetch = await useFetch(`/${ApiEndpointUserTickets}`,
   $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-page' })
 });
 
-const filterCheckpointDate = dayjs(eraseTimeOfDay(dayjs().local().toDate()));
+const now = dayjs().toDate();
+const localUtcOffset = dayjs().local().utcOffset();
+const filterCheckpointDates = {
+  flights: dayjs(now),
+  stays: dayjs(eraseTimeOfDay(getValueForFlightDayFormatting(now, localUtcOffset)))
+};
 const displayedItems = ref(getDisplayedItems());
 function getDisplayedItems() {
   return (userTicketsFetch.status.value === 'success' && userTicketsFetch.data.value !== null) ? {
-    flights: userTicketsFetch.data.value.filter(o => o.kind === 'flights' && (filterCheckpointDate.isAfter(getValueForFlightDayFormatting((o as EntityDataAttrsOnly<IFlightOffer>).departFlight.departTimeUtc, (o as EntityDataAttrsOnly<IFlightOffer>).departFlight.departAirport.city.utcOffsetMin)) === (timeRangeFilter.value === 'passed'))),
-    stays: userTicketsFetch.data.value.filter(o => o.kind === 'stays' && (filterCheckpointDate.isAfter((o as EntityDataAttrsOnly<IStayOffer>).checkIn) === (timeRangeFilter.value === 'passed')))
+    flights: userTicketsFetch.data.value.filter(o => o.kind === 'flights' && (filterCheckpointDates.flights.isAfter((o as EntityDataAttrsOnly<IFlightOffer>).departFlight.departTimeUtc) === (timeRangeFilter.value === 'passed'))),
+    stays: userTicketsFetch.data.value.filter(o => o.kind === 'stays' && (filterCheckpointDates.stays.isAfter((o as EntityDataAttrsOnly<IStayOffer>).checkIn) === (timeRangeFilter.value === 'passed')))
   } : {
     flights: undefined,
     stays: undefined
@@ -84,13 +88,13 @@ const tabProps = computed(() => OfferKinds.map(offerKind => {
 }));
 
 onMounted(() => {
-  logger.verbose(`(TabHistory) mounted, fetching tickets: ctrlKey=${ctrlKey}`);
+  logger.verbose('mounted, fetching tickets', ctrlKey);
 
   watch([userTicketsFetch.status, timeRangeFilter], () => { 
-    logger.debug(`(TabHistory) tickets fetch status changed: ctrlKey=${ctrlKey}, status=${userTicketsFetch.status.value}`);
+    logger.debug('tickets fetch status changed', { ctrlKey, status: userTicketsFetch.status.value });
     displayedItems.value = getDisplayedItems();
     if(userTicketsFetch.status.value === 'error') {
-      logger.warn(`(TabHistory) got failed tickets fetch status: ctrlKey=${ctrlKey}`);
+      logger.warn('got failed tickets fetch status', undefined, ctrlKey);
       isError.value = true;
     } else if(userTicketsFetch.status.value === 'success') {
       isError.value = false;
@@ -118,7 +122,7 @@ onMounted(() => {
         <template v-for="(slotName) in OfferKinds" #[slotName] :key="`FavouritesPage-TabContent-${slotName}`">
           <DropdownList
             v-model:selected-value="timeRangeFilter"
-            :ctrl-key="`${ctrlKey}-TimeRangeFilter`"
+            :ctrl-key="[...ctrlKey, 'TimeRangeFilter', 'Dropdown']"
             variant="none"
             class="ml-auto w-fit"
             :ui="{ input: 'w-auto' }"
@@ -128,7 +132,7 @@ onMounted(() => {
           />
 
           <OfferTabbedView
-            :ctrl-key="`${ctrlKey}-OfferTabView`" 
+            :ctrl-key="[...ctrlKey, 'OfferTabView']" 
             :selected-kind="slotName" 
             :tab-panel-ids="{ flights: flightsTabHtmlId, stays: staysTabHtmlId }" 
             :displayed-items="displayedItems"

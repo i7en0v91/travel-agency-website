@@ -47,7 +47,7 @@ export class Logger extends AppLoggerBase<typeof ClientLoggingOptions> {
 
   async sendLogData (logData: { level: LogLevel | (typeof LogAlwaysLevel) }) {
     try {
-      if(getClientServices()?.appMounted || logData.level === 'error') {
+      if(getClientServices()?.state.mounted || logData.level === 'error') {
         const headers = [[HeaderAppVersion, AppConfig.versioning.appVersion.toString()]] as [string, string][];
         await post(AppConfig.logging.client.path, undefined, logData, headers, false, undefined, 'default');
       }

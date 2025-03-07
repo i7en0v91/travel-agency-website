@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../../helpers/components';
 import { AppConfig } from '@golobe-demo/shared';
 import { type IPopularCityDto, ApiEndpointPopularCitiesList } from './../../../server/api-definitions';
 import range from 'lodash-es/range';
@@ -10,12 +11,12 @@ import type { UCarousel } from './../../../.nuxt/components';
 
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   bookKind: 'flight' | 'stay'
 };
 const { ctrlKey, bookKind } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'TravelCities' });
 
 const nuxtApp = useNuxtApp();
 const { enabled } = usePreviewState();
@@ -31,9 +32,9 @@ const popularCitiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`
     query: { drafts: enabled },
     default: () => { return range(0, 20, 1).map(_ => null); },
     transform: (response: IPopularCityDto[]) => {
-      logger.verbose(`(TravelCities) received popular cities list response: ctrlKey=${ctrlKey}`);
+      logger.verbose('received popular cities list response', ctrlKey);
       if (!response) {
-        logger.warn(`(TravelCities) popular cities list response is empty, ctrlKey=${ctrlKey}`);
+        logger.warn('popular cities list response is empty', undefined, ctrlKey);
         return range(0, 20, 1).map(_ => null); // error should be logged by fetchEx
       }
       return response;
@@ -56,7 +57,7 @@ const popularCitiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`
       :indicators="false" 
     >
     <TravelCityCard
-      :ctrl-key="`${ctrlKey}-TravelCity-${city?.id}`"
+      :ctrl-key="[...ctrlKey, 'TravelCities', city?.id ?? 0]"
       :book-kind="bookKind"
       :city-name="city?.cityDisplayName ?? undefined"
       :promo-line="city?.promoLine ?? undefined"

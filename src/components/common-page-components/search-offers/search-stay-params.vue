@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { getI18nResName1, getI18nResName2, StaysMinRoomsCount, StaysMaxRoomsCount, StaysMinGuestsCount, StaysMaxGuestsCount } from '@golobe-demo/shared';
 import InputFieldFrame from '../../forms/input-field-frame.vue';
 import SearchOffersCounter from './search-offers-counter.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
+import { useControlValuesStore } from './../../../stores/control-values-store';
 
 interface IStayParams {
   numRooms: number,
@@ -10,7 +12,7 @@ interface IStayParams {
 }
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   ui?: {
     wrapper?: string,
     input?: string
@@ -19,104 +21,50 @@ interface IProps {
 
 const { ctrlKey } = defineProps<IProps>();
 
-const modelRef = defineModel<IStayParams | null | undefined>('params');
+const modelRef = defineModel<IStayParams | undefined>('params');
 const hasMounted = ref(false);
 const open = ref(false);
 
-const logger = getCommonServices().getLogger();
-
-const controlSettingsStore = useControlSettingsStore();
-const roomsValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(`${ctrlKey}-Rooms`, StaysMinRoomsCount.toString(), true);
-const guestsValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(`${ctrlKey}-Guests`, StaysMinGuestsCount.toString(), true);
+const logger = getCommonServices().getLogger().addContextProps({ component: 'SearchStayParams' });
+const controlValuesStore = useControlValuesStore();
 
 const numRooms = ref<number | undefined>();
 const numGuests = ref<number | undefined>();
 
 const { t } = useI18n();
 
-function saveInitialValuesToSettingsIfNotEmpty () {
-  const initiallySelectedParams = modelRef.value;
-  if (initiallySelectedParams) {
-    roomsValueSetting.value = initiallySelectedParams.numRooms.toString();
-    guestsValueSetting.value = initiallySelectedParams.numGuests.toString();
-  } else if (initiallySelectedParams === null) {
-    roomsValueSetting.value = StaysMinRoomsCount.toString();
-    guestsValueSetting.value = StaysMinGuestsCount.toString();
-  }
-}
-
-function readParamsFromSettings(): IStayParams {
-  logger.debug(`(SearchStayParams) parsing params from settings, ctrlKey=${ctrlKey}`);
-  let numRooms = StaysMinRoomsCount;
-  if(roomsValueSetting.value?.length) {
-    try {
-      numRooms = parseInt(roomsValueSetting.value);
-      if(numRooms === undefined || numRooms === null) {
-        logger.warn(`(SearchStayParams) parsing num rooms from settings resulted into empty number, ctrlKey=${ctrlKey}, value=[${JSON.stringify(roomsValueSetting.value)}]`);
-        numRooms = StaysMinRoomsCount;
+const displayText = import.meta.client ? (
+  controlValuesStore.acquireValuesView(
+    (numRoomsRef, numGuestsRef) => {
+      if(!hasMounted.value) {
+        return '';
       }
-    } catch(err: any) {
-      logger.warn(`(SearchStayParams) failed to parse num rooms from settings, ctrlKey=${ctrlKey}, value=[${JSON.stringify(roomsValueSetting.value)}]`, err);
-    }    
-  }
 
-  let numGuests = StaysMinGuestsCount;
-  if(guestsValueSetting.value?.length) {
-    try {
-      numGuests = parseInt(guestsValueSetting.value);
-      if(numGuests === undefined || numGuests === null) {
-        logger.warn(`(SearchStayParams) parsing num guests from settings resulted into empty number, ctrlKey=${ctrlKey}, value=[${JSON.stringify(guestsValueSetting.value)}]`);
-        numGuests = StaysMinGuestsCount;
+      const numRooms = numRoomsRef.value as number;
+      const numGuests = numGuestsRef.value as number;
+      if([numRooms, numGuests].some(v => v === undefined || v === null)) {
+        return '';
       }
-    } catch(err: any) {
-      logger.warn(`(SearchStayParams) failed to parse num guests from settings, ctrlKey=${ctrlKey}, value=[${JSON.stringify(guestsValueSetting.value)}]`, err);
-    }    
-  }
 
-  const result = {
-    numRooms,
-    numGuests
-  };
-  logger.debug(`(SearchStayParams) params parsed from settings, ctrlKey=${ctrlKey}, result=${JSON.stringify(result)}`);
-  return result;
-}
+      const numRoomsText = `${numRooms} ${t(getI18nResName2('searchStays', 'numRooms'), numRooms)}`;
+      const numGuestsText = `${numGuests} ${t(getI18nResName2('searchStays', 'numGuests'), numGuests)}`;
 
-const displayText = computed(() => {
-  if (!hasMounted.value) {
-    return '';
-  }
-
-  const numRoomsText = `${numRooms.value} ${t(getI18nResName2('searchStays', 'numRooms'), numRooms.value!)}`;
-  const numGuestsText = `${numGuests.value} ${t(getI18nResName2('searchStays', 'numGuests'), numGuests.value!)}`;
-
-  return `${numRoomsText}, ${numGuestsText}`;
-});
-
-
-function updateParams (params: IStayParams) {
-  logger.verbose(`(SearchStayParams) updating params: ctrlKey=${ctrlKey}, params=${JSON.stringify(params)}`);
-  roomsValueSetting.value = (params.numRooms ?? StaysMinRoomsCount).toString();
-  guestsValueSetting.value = (params.numGuests ?? StaysMinGuestsCount).toString();
-  modelRef.value = params;
-  logger.verbose(`(SearchStayParams) selected params updated: ctrlKey=${ctrlKey}, params=${JSON.stringify(params)}`);
-}
-
-function onParamsChange () {
-  updateParams({
-    numRooms: numRooms.value ?? modelRef.value?.numRooms ?? StaysMinRoomsCount,
-    numGuests: numGuests.value ?? modelRef.value?.numGuests ?? StaysMinGuestsCount
-  });
-}
-
-onBeforeMount(() => {
-  saveInitialValuesToSettingsIfNotEmpty();
-  const stayParams = readParamsFromSettings();
-  numRooms.value = stayParams.numRooms;
-  numGuests.value = stayParams.numGuests;
-  updateParams(stayParams);
-});
+      return `${numRoomsText}, ${numGuestsText}`;
+    }, 
+    [...ctrlKey, 'Guests', 'Counter'],
+    [...ctrlKey, 'Rooms', 'Counter']
+  )
+) : computed(() => '');
 
 onMounted(() => {
+  watch([numRooms, numGuests], () => {
+    logger.debug('search params watch handler', ctrlKey);
+    modelRef.value = {
+      numRooms: numRooms.value ?? modelRef.value?.numRooms ?? StaysMinRoomsCount,
+      numGuests: numGuests.value ?? modelRef.value?.numGuests ?? StaysMinGuestsCount
+    };
+  }, { immediate: true });
+
   hasMounted.value = true;  
 });
 
@@ -138,22 +86,20 @@ defineShortcuts({
       <div class="w-full p-4">
         <SearchOffersCounter
           v-model:value="numRooms"
-          :ctrl-key="`${ctrlKey}-Rooms`"
+          :ctrl-key="[...ctrlKey, 'Rooms', 'Counter']"
           :default-value="StaysMinRoomsCount"
           :min-value="StaysMinRoomsCount"
           :max-value="StaysMaxRoomsCount"
           :label-res-name="getI18nResName2('searchStays', 'numberOfRooms')"
-          @update:value="onParamsChange"
         />
         <SearchOffersCounter
           v-model:value="numGuests"
-          :ctrl-key="`${ctrlKey}-Guests`"
+          :ctrl-key="[...ctrlKey, 'Guests', 'Counter']"
           class="mt-4"
           :default-value="StaysMinGuestsCount"
           :min-value="StaysMinGuestsCount"
           :max-value="StaysMaxGuestsCount"
           :label-res-name="getI18nResName2('searchStays', 'numberOfGuests')"
-          @update:value="onParamsChange"
         />
         <UButton
           class="mt-6 w-full justify-center"

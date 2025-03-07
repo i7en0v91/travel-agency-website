@@ -10,7 +10,7 @@ declare type NavUserMenuItemOptions = Omit<MenuItemConstructorOptions, 'id'> & {
 declare type ItemClickHandlerRole = MenuItemConstructorOptions['role'] | NavSubItemRole;
 function handleItemClick(role: ItemClickHandlerRole, win: BrowserWindow, bridge: IRendererClientBridge, app: App, logger: ElectronMainLogger) {
   try {
-    logger.verbose(`(AppMenu) item click handler, role=${role}`);
+    logger.verbose('item click handler', role);
 
     switch(role) {
       case 'flights':
@@ -73,9 +73,9 @@ function handleItemClick(role: ItemClickHandlerRole, win: BrowserWindow, bridge:
         break;
     }
 
-    logger.debug(`(AppMenu) item click handler completed, role=${role}`);
+    logger.debug('item click handler completed', role);
   } catch(err: any) {
-    logger.warn(`(AppMenu) exception occured inside item click handler, role=${role}`, err);
+    logger.warn('exception occured inside item click handler', err, role);
     showExceptionDialog('warning', bridge, logger);
   }
 };
@@ -85,7 +85,7 @@ function lookupMenuItemByRole(menu: Electron.Menu, role: NonNullable<MenuItem['r
 }
 
 function mergeUserNavMenuItems(navUserMenuItems: NavUserMenuItemOptions[], menuRole: NonNullable<MenuItem['role']>, defaultMenu: MenuItem | null, logger: ElectronMainLogger): MenuItem {
-  logger.debug(`(AppMenu) merging user navbar items, menuRole=${menuRole}, count=${navUserMenuItems.length}`);
+  logger.debug('merging user navbar items', { menuRole, count: navUserMenuItems.length });
 
   let result: MenuItem;
   const isDefaultMenuEmpty = !defaultMenu?.submenu?.items?.length;
@@ -94,12 +94,12 @@ function mergeUserNavMenuItems(navUserMenuItems: NavUserMenuItemOptions[], menuR
     const isMinimumMenuReset = !navUserMenuItems.length;
     if(!isMinimumMenuReset) {
       if(!alreadyFilled) {
-        logger.debug(`(AppMenu) detected navbar menu has been already filled, menuRole=${menuRole}`);
+        logger.debug('detected navbar menu has been already filled', menuRole);
         defaultMenu.submenu!.insert(0, new MenuItem({
           type: 'separator'
         }));
       } else {
-        logger.debug(`(AppMenu) navbar menu will be populated with new items, menuRole=${menuRole}`);
+        logger.debug('navbar menu will be populated with new items', menuRole);
       }
     }
 
@@ -111,7 +111,7 @@ function mergeUserNavMenuItems(navUserMenuItems: NavUserMenuItemOptions[], menuR
           // menu item label cannot be changed dynamically
           // existingMenuItem.label = navUserMenuItem.label!;
         } else {
-          logger.warn(`(AppMenu) cannot find navbar menu item to update, menuRole=${menuRole}, id=${navUserMenuItem.id}`);
+          logger.warn('cannot find navbar menu item to update', undefined, { menuRole, id: navUserMenuItem.id });
           const menuItem = new MenuItem(navUserMenuItem);
           menuItem.id = navUserMenuItem.id;
           defaultMenu.submenu!.insert(0, menuItem);  
@@ -124,24 +124,24 @@ function mergeUserNavMenuItems(navUserMenuItems: NavUserMenuItemOptions[], menuR
     }
     result = defaultMenu;
   } else {
-    logger.debug(`(AppMenu) default menu is empty, menuRole=${menuRole}`);
+    logger.debug('default menu is empty', menuRole);
     result = new MenuItem({ 
       role: menuRole,
       submenu: navUserMenuItems
     });
   }
 
-  logger.debug(`(AppMenu) user navbar items merged, menuRole=${menuRole}, count=${navUserMenuItems.length}`);
+  logger.debug('user navbar items merged', { menuRole, count: navUserMenuItems.length });
   return result;
 }
 
 function buildFileMenu(defaultAppMenu: Electron.Menu, userNav: NavProps, win: BrowserWindow, bridge: IRendererClientBridge, app: App, logger: ElectronMainLogger): MenuItem | null {
-  logger.debug('(AppMenu) building file menu');
+  logger.debug('building file menu');
 
   const defaultFileMenuItem = lookupMenuItemByRole(defaultAppMenu, 'fileMenu');
   const isDefaultMenuEmpty = !defaultFileMenuItem?.submenu?.items?.length;
   if(isDefaultMenuEmpty) {
-    logger.warn('(AppMenu) failed to obtain default file menu');
+    logger.warn('failed to obtain default file menu');
     showExceptionDialog('warning', bridge, logger);
   }
 
@@ -156,23 +156,23 @@ function buildFileMenu(defaultAppMenu: Electron.Menu, userNav: NavProps, win: Br
     searchSiteNavItem ? { id: 'search-site' as const, label: searchSiteNavItem.label, click: () => handleItemClick('search-site', win, bridge, app, logger) } : undefined
   ].filter(i => !!i));
   if(!navSubmenus.length && isDefaultMenuEmpty) {
-    logger.warn('(AppMenu) file menu doesnt contain any items');  
+    logger.warn('file menu doesnt contain any items');  
     showExceptionDialog('warning', bridge, logger);
     return null;
   }
   const result = mergeUserNavMenuItems(navSubmenus, 'fileMenu', defaultFileMenuItem, logger);
 
-  logger.debug('(AppMenu) file menu built');
+  logger.debug('file menu built');
   return result;
 }
 
 function buildViewMenu(defaultAppMenu: Electron.Menu, userNav: NavProps, win: BrowserWindow, bridge: IRendererClientBridge, app: App, logger: ElectronMainLogger): MenuItem | null {
-  logger.debug('(AppMenu) building view menu');
+  logger.debug('building view menu');
 
   const defaultViewMenuItem = lookupMenuItemByRole(defaultAppMenu, 'viewMenu');
   const isDefaultMenuEmpty = !defaultViewMenuItem?.submenu?.items?.length;
   if(isDefaultMenuEmpty) {
-    logger.warn('(AppMenu) failed to obtain default view menu');
+    logger.warn('failed to obtain default view menu');
     showExceptionDialog('warning', bridge, logger);
   }
 
@@ -204,25 +204,25 @@ function buildViewMenu(defaultAppMenu: Electron.Menu, userNav: NavProps, win: Br
     goNextNavItem ? { id: 'go-next' as const, label: goNextNavItem.label, click: () => handleItemClick('go-next', win, bridge, app, logger) } : undefined
   ].filter(i => !!i));
   if(!navSubmenus.length && isDefaultMenuEmpty) {
-    logger.warn('(AppMenu) view menu doesnt contain any items');  
+    logger.warn('view menu doesnt contain any items');  
     showExceptionDialog('warning', bridge, logger);
     return null;
   }
 
   const result = mergeUserNavMenuItems(navSubmenus, 'viewMenu', defaultViewMenuItem, logger);
 
-  logger.debug('(AppMenu) view menu built');
+  logger.debug('view menu built');
   return result;
 }
 
 function buildAccountMenu(userNav: NavProps, win: BrowserWindow, bridge: IRendererClientBridge, app: App, logger: ElectronMainLogger): MenuItem | null {
-  logger.debug('(AppMenu) building account menu');
+  logger.debug('building account menu');
 
   const accountMenuGroupItem = userNav.find(i => i.role === 'account');
   if(!accountMenuGroupItem) {
     const isMinimumMenuReset = !userNav.length;
     if(!isMinimumMenuReset) {
-      logger.warn('(AppMenu) account menu group item is missed');
+      logger.warn('account menu group item is missed');
       showExceptionDialog('warning', bridge, logger);
     }
     return null;
@@ -242,7 +242,7 @@ function buildAccountMenu(userNav: NavProps, win: BrowserWindow, bridge: IRender
     ...(signoutNavItem ? [{ type: 'separator' as const }, { label: signoutNavItem.label, click: () => handleItemClick('logout', win, bridge, app, logger) }] : [])
   ].filter(i => !!i));
   if(!navSubmenus.length) {
-    logger.warn('(AppMenu) account menu doesnt contain any items');  
+    logger.warn('account menu doesnt contain any items');  
     showExceptionDialog('warning', bridge, logger);
     return null;
   }
@@ -252,12 +252,12 @@ function buildAccountMenu(userNav: NavProps, win: BrowserWindow, bridge: IRender
     submenu: navSubmenus
   });
 
-  logger.debug('(AppMenu) account menu built');
+  logger.debug('account menu built');
   return accountMenu;
 }
 
 function buildHelpMenu(userNav: NavProps, win: BrowserWindow, bridge: IRendererClientBridge, app: App, logger: ElectronMainLogger): MenuItem | null {
-  logger.debug('(AppMenu) building help menu');
+  logger.debug('building help menu');
 
   const contactNavItem = userNav.find(i => i.role === 'help')?.subItems.find(i => i.role === 'contact-us');
   const helpMenu: MenuItem = new MenuItem({
@@ -268,26 +268,26 @@ function buildHelpMenu(userNav: NavProps, win: BrowserWindow, bridge: IRendererC
     ]
   });
 
-  logger.debug('(AppMenu) help menu built');
+  logger.debug('help menu built');
   return helpMenu;
 }
 
 function buildWindowMenu(defaultAppMenu: Electron.Menu, win: BrowserWindow, bridge: IRendererClientBridge, app: App, logger: ElectronMainLogger): MenuItem | null {
-  logger.debug('(AppMenu) building window menu');
+  logger.debug('building window menu');
 
   const windowMenu = lookupMenuItemByRole(defaultAppMenu, 'windowMenu');
   if(!windowMenu) {
-    logger.warn('(AppMenu) failed to obtain window menu');  
+    logger.warn('failed to obtain window menu');  
     showExceptionDialog('warning', bridge, logger);
   }
 
-  logger.debug('(AppMenu) window menu built');
+  logger.debug('window menu built');
   return windowMenu;
 }
 
 export function buildMenu(userNav: NavProps, win: BrowserWindow, bridge: IRendererClientBridge, app: App, logger: ElectronMainLogger): Menu {
   try {
-    logger.verbose('(AppMenu) building app menu');
+    logger.verbose('building app menu');
 
     const defaultAppMenu = Menu.getApplicationMenu();
     if(!defaultAppMenu) {
@@ -303,10 +303,10 @@ export function buildMenu(userNav: NavProps, win: BrowserWindow, bridge: IRender
     const menuItems = [fileMenu, accountMenu, viewMenu, windowMenu, helpMenu].filter(i => !!i);
     const result = Menu.buildFromTemplate(menuItems);
 
-    logger.verbose(`(AppMenu) app menu built, num tabs=${result.items.length}`);
+    logger.verbose('app menu built, num', { tabs: result.items.length });
     return result;
   } catch(err: any) {
-    logger.error('(AppMenu) failed to build app menu', err);
+    logger.error('failed to build app menu', err);
     showNotification('fatal', 'failed to initialize app', undefined, logger);
     throw err;
   }

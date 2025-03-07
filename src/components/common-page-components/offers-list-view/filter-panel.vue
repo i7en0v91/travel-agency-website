@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ArbitraryControlElementMarker, type ControlKey } from './../../../helpers/components';
 import { getI18nResName3, type OfferKind } from '@golobe-demo/shared';
 import type { IAccordionItemProps, ISearchOffersChecklistFilterProps, ISearchOffersChoiceFilterProps, ISearchOffersRangeFilterProps } from './../../../types';
 import orderBy from 'lodash-es/orderBy';
@@ -11,7 +12,7 @@ import MyAccordion from '../../forms/my-accordion.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   offersKind: OfferKind
 }
 const { ctrlKey, offersKind } = defineProps<IProps>();
@@ -20,7 +21,7 @@ const themeSettings = useThemeSettings();
 const searchOffersStoreAccessor = useSearchOffersStore();
 const searchOffersStore = await searchOffersStoreAccessor.getInstance(offersKind, true, true);
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'FilterPanel' });
 
 const isError = ref(false);
 
@@ -43,15 +44,15 @@ const accordionItems = computed(() => {
 });
 
 function refreshFilterParams () {
-  logger.debug(`(FilterPanel) refershing filter params, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.debug('refershing filter params', { ctrlKey, type: offersKind });
   if (!searchOffersStore || !searchOffersStore.viewState.currentSearchParams.filters) {
-    logger.debug(`(FilterPanel) filter params wont refresh, not initialized, ctrlKey=${ctrlKey}, type=${offersKind}`);
+    logger.debug('filter params wont refresh, not initialized', { ctrlKey, type: offersKind });
     return;
   }
 
   const filtersOrdered = orderBy(searchOffersStore.viewState.currentSearchParams.filters, ['displayOrder'], ['asc']);
   if (filters.length === 0) {
-    logger.verbose(`(FilterPanel) initializing filters list, ctrlKey=${ctrlKey}, type=${offersKind}, count=${filtersOrdered.length}`);
+    logger.verbose('initializing filters list', { ctrlKey, type: offersKind, count: filtersOrdered.length });
     for (let i = 0; i < filtersOrdered.length; i++) {
       const filterParams = filtersOrdered[i];
       if (filterParams.type === 'checklist' || filterParams.type === 'choice') {
@@ -73,7 +74,7 @@ function refreshFilterParams () {
         throw new Error('unknown filter');
       }
     }
-    logger.verbose(`(FilterPanel) filters list initialized, ctrlKey=${ctrlKey}, type=${offersKind}, count=${filtersOrdered.length}`);
+    logger.verbose('filters list initialized', { ctrlKey, type: offersKind, count: filtersOrdered.length });
   } else {
     for (let i = 0; i < filtersOrdered.length; i++) {
       filters[i].params = filtersOrdered[i];
@@ -83,14 +84,14 @@ function refreshFilterParams () {
           filterType === 'checklist' ? [] : undefined);
     }
   }
-  logger.debug(`(FilterPanel) filter params refreshed, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.debug('filter params refreshed', { ctrlKey, type: offersKind });
 }
 if (import.meta.server) {
   refreshFilterParams();
 }
 
 onMounted(() => {
-  logger.verbose(`(FilterPanel) mounted, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.verbose('mounted', { ctrlKey, type: offersKind });
   watch(() => searchOffersStore?.viewState.currentSearchParams.filters, () => {
     refreshFilterParams();
   }, { immediate: true });
@@ -101,9 +102,9 @@ onMounted(() => {
 });
 
 function refetchIfNotLatestFilterValues () {
-  logger.debug(`(FilterPanel) checking for refetch if not latest filter values were used, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.debug('checking for refetch if not latest filter values were used', { ctrlKey, type: offersKind });
   if (searchOffersStore.resultState.status !== 'fetched' && searchOffersStore.resultState.status !== 'error') {
-    logger.debug(`(FilterPanel) checking for refetch skipped, as fetch is in progress, ctrlKey=${ctrlKey}, type=${offersKind}`);
+    logger.debug('checking for refetch skipped, as fetch is in progress', { ctrlKey, type: offersKind });
     return;
   }
 
@@ -113,62 +114,62 @@ function refetchIfNotLatestFilterValues () {
     const fetchUsedValue = searchOffersStore.resultState.usedSearchParams!.filters!.find(f => f.filterId === filterId)!.currentValue;
     const lastUserValue = searchOffersStore.viewState.currentSearchParams.filters!.find(f => f.filterId === filterId)!.currentValue;
     if (!isEqual(fetchUsedValue, lastUserValue)) {
-      logger.verbose(`(FilterPanel) filter values have been changed by user during fetch, ctrlKey=${ctrlKey}, type=${offersKind}, filterId=${filterId}, fetchValue=${JSON.stringify(fetchUsedValue)}, lastUserValue=${JSON.stringify(lastUserValue)}`);
+      logger.verbose('filter values have been changed by user during fetch', { ctrlKey, type: offersKind, filterId, fetchValue: fetchUsedValue, lastUserValue });
       filtersChanged = true;
     }
   }
 
   if (!filtersChanged) {
-    logger.debug(`(FilterPanel) checked for refetch - not needed, ctrlKey=${ctrlKey}, type=${offersKind}`);
+    logger.debug('checked for refetch - not needed', { ctrlKey, type: offersKind });
     return;
   }
   setTimeout(() => searchOffersStore.fetchData('filter-refetch'), 0);
 }
 
 function applyFiltersAndRefetchData () {
-  logger.debug(`(FilterPanel) applying filters, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.debug('applying filters', { ctrlKey, type: offersKind });
   for (let i = 0; i < filters.length; i++) {
     const filterId = filters[i].params.filterId;
     const inputValue = editValues[i].value;
     const storeState = searchOffersStore.viewState.currentSearchParams.filters!.find(f => f.filterId === filterId)!;
-    logger.debug(`(FilterPanel) setting filter value in store, ctrlKey=${ctrlKey}, filterId=${filterId}, value=${JSON.stringify(inputValue)}`);
+    logger.debug('setting filter value in store', { ctrlKey, filterId, value: inputValue });
     storeState.currentValue = inputValue;
   }
   if (searchOffersStore.resultState.status !== 'fetched' && searchOffersStore.resultState.status !== 'error') {
-    logger.debug(`(FilterPanel) fetching data was postponed as fetch is in progress, ctrlKey=${ctrlKey}, type=${offersKind}`);
+    logger.debug('fetching data was postponed as fetch is in progress', { ctrlKey, type: offersKind });
     return;
   }
-  logger.debug(`(FilterPanel) fetching data with applied filters, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.debug('fetching data with applied filters', { ctrlKey, type: offersKind });
   setTimeout(() => searchOffersStore.fetchData('filter-refetch'), 0);
 }
 
 function onApplyBtnClick () {
-  logger.debug(`(FilterPanel) apply btn click, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.debug('apply btn click', { ctrlKey, type: offersKind });
   applyFiltersAndRefetchData();
 }
 
 function onResetBtnClick () {
-  logger.debug(`(FilterPanel) reset btn click, ctrlKey=${ctrlKey}, type=${offersKind}`);
+  logger.debug('reset btn click', { ctrlKey, type: offersKind });
   for (let i = 0; i < filters.length; i++) {
     const filter = searchOffersStore.viewState.currentSearchParams.filters!.find(f => f.filterId === filters[i].params.filterId)!;
     if (filter.type === 'range') {
       const rangeFilter = filter as ISearchOffersRangeFilterProps;
-      logger.debug(`(FilterPanel) resetting range filter value in store, ctrlKey=${ctrlKey}, filterId=${filter.filterId}, value=${JSON.stringify(rangeFilter.valueRange)}`);
+      logger.debug('resetting range filter value in store', { ctrlKey, filterId: filter.filterId, value: rangeFilter.valueRange });
       rangeFilter.currentValue = rangeFilter.valueRange;
     } else if (filter.type === 'checklist') {
       const checklistFilter = filter as ISearchOffersChecklistFilterProps;
-      logger.debug(`(FilterPanel) resetting checklist filter value in store, ctrlKey=${ctrlKey}, filterId=${filter.filterId}`);
+      logger.debug('resetting checklist filter value in store', { ctrlKey, filterId: filter.filterId });
       checklistFilter.currentValue = [];
     } else if (filter.type === 'choice') {
       const choiceFilter = filter as ISearchOffersChoiceFilterProps;
-      logger.debug(`(FilterPanel) resetting choice filter value in store, ctrlKey=${ctrlKey}, filterId=${filter.filterId}`);
+      logger.debug('resetting choice filter value in store', { ctrlKey, filterId: filter.filterId });
       choiceFilter.currentValue = undefined;
     } else {
       throw new Error('unknown filter');
     }
     
     const idx = filters.findIndex(f => f.params.filterId === filter.filterId)!;
-    logger.debug(`(FilterPanel) resetting range filter edit value, ctrlKey=${ctrlKey}, filterId=${filter.filterId}, currentValue=${JSON.stringify(editValues[idx].value)}, resetValue=${JSON.stringify(filter.currentValue)}`);
+    logger.debug('resetting range filter edit value', { ctrlKey, filterId: filter.filterId, currentValue: editValues[idx].value, resetValue: filter.currentValue });
     editValues[idx].value = filter.currentValue;
   }
   setTimeout(() => searchOffersStore.fetchData('filter-refetch'), 0);
@@ -195,7 +196,7 @@ const uiFilterSectionStyling = {
       <ErrorHelm v-model:is-error="isError" :ui="{ stub: 'max-h-[50vh]' }">
         <ClientOnly>
           <MyAccordion
-            :ctrl-key="`${ctrlKey}-FilterPanelSection`"
+            :ctrl-key="ctrlKey"
             :items="[{
               labelResName: getI18nResName3('searchOffers', 'filters', 'panelHeader'),
               slotName: 'filterSection'
@@ -205,16 +206,16 @@ const uiFilterSectionStyling = {
             persistent
           >
             <template #filterSection>
-              <MyAccordion :ctrl-key="`${ctrlKey}-FiltersList`" :items="accordionItems" v-bind="uiCommonStyling" persistent>
+              <MyAccordion :ctrl-key="[...ctrlKey, 'FilterSection']" :items="accordionItems" v-bind="uiCommonStyling" persistent>
                 <template
                   v-for="(filter, idx) in filters"
                   #[filter.params.filterId]
-                  :key="`${ctrlKey}-FilterSection-${filter.params.filterId}`"
+                  :key="`${toShortForm(ctrlKey)}FilterSection${filter.params.filterId}`"
                 >
                   <div v-if="!searchResultsEmpty">
-                    <RangeFilter v-if="filter.params.type === 'range'" v-model:value="editValues[idx].value" :ctrl-key="`${ctrlKey}-${filter.params.filterId}`" :filter-params="filter.params" />
-                    <ChecklistFilter v-else-if="filter.params.type === 'checklist'" v-model:value="editValues[idx].value" :ctrl-key="`${ctrlKey}-${filter.params.filterId}`" :filter-params="filter.params" :max-collapsed-list-items-count="((filter.params.variants?.length ?? 0) > 5) ? 4 : undefined" />
-                    <ChoiceFilter v-else v-model:value="editValues[idx].value" :ctrl-key="`${ctrlKey}-${filter.params.filterId}`" :filter-params="filter.params" />
+                    <RangeFilter v-if="filter.params.type === 'range'" v-model:value="editValues[idx].value" :ctrl-key="[...ctrlKey, 'Filter', filter.params.filterId as ArbitraryControlElementMarker]" :filter-params="filter.params" />
+                    <ChecklistFilter v-else-if="filter.params.type === 'checklist'" v-model:value="editValues[idx].value" :ctrl-key="[...ctrlKey, 'Filter', filter.params.filterId as ArbitraryControlElementMarker]" :filter-params="filter.params" :max-collapsed-list-items-count="((filter.params.variants?.length ?? 0) > 5) ? 4 : undefined" />
+                    <ChoiceFilter v-else v-model:value="editValues[idx].value" :ctrl-key="[...ctrlKey, 'Filter', filter.params.filterId as ArbitraryControlElementMarker]" :filter-params="filter.params" />
                   </div>
                   <div v-else class="w-full text-center mt-2">
                     {{ $t(getI18nResName3('searchOffers', 'filters', 'noResultsStub')) }}
@@ -249,7 +250,7 @@ const uiFilterSectionStyling = {
           </MyAccordion>
 
           <template #fallback>
-            <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-FilterPanelClientFallback`" class="my-2 md:my-8" />
+            <ComponentWaitingIndicator :ctrl-key="[...ctrlKey, 'ClientFallback']" class="my-2 md:my-8" />
           </template>
         </ClientOnly>
       </ErrorHelm>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue, SessionLocaleKey } from '@golobe-demo/shared';
 import { getCommonServices } from './../../helpers/service-accessors';
 import { LocatorClasses } from './../../helpers/constants';
@@ -12,12 +13,12 @@ const { locale, locales } = useI18n();
 const { enabled } = usePreviewState();
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 const { ctrlKey } = defineProps<IProps>();
 const dropdownOpen = ref(false);
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'LocaleSwitcher' });
 
 type LocaleObject = {
   code: string,
@@ -46,7 +47,7 @@ if (import.meta.client) {
   });
 
   watch(dropdownOpen, () => {
-    logger.debug(`(LocaleSwitcher) dropdown opened state changed, ctrlKey=${ctrlKey}, open=${dropdownOpen.value}`);
+    logger.debug('dropdown opened state changed', { ctrlKey, open: dropdownOpen.value });
     switchClicked();
   });
 }

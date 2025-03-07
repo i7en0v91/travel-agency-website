@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { type EntityId, AppConfig, SecretValueMask, HeaderAppVersion, type Locale, SignUpCompleteResultEnum, AppPage, getPagePath, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { type EntityId, AppConfig, HeaderAppVersion, type Locale, SignUpCompleteResultEnum, AppPage, getPagePath, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import { type ISignUpCompleteResultDto, ApiEndpointSignUpComplete } from './../server/api-definitions';
 import AccountPageContainer from './../components/account/page-container.vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
 import { getCommonServices } from '../helpers/service-accessors';
+import type { ControlKey } from './../helpers/components';
 
 definePageMeta({
   middleware: 'auth',
@@ -16,12 +17,14 @@ definePageMeta({
 });
 useOgImage();
 
+const CtrlKey: ControlKey = ['Page', 'SignupComplete'];
+
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 const { enabled } = usePreviewState();
 const completionResult = ref<SignUpCompleteResultEnum | undefined>(undefined);
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'SignupComplete' });
 
 const route = useRoute();
 let tokenId: EntityId | undefined;
@@ -30,12 +33,12 @@ try {
   tokenId = route.query.token_id?.toString() ?? '';
   tokenValue = route.query.token_value?.toString() ?? '';
 } catch (err: any) {
-  logger.info(`(SignUpComplete) failed to parse token data: id=${tokenId}, value=${tokenValue ? SecretValueMask : '[empty]'}`);
+  logger.info('failed to parse token data', { id: tokenId, token: tokenValue });
   console.warn(err);
 }
 
 if (!tokenId || !tokenValue) {
-  logger.info(`(SignUpComplete) link doesnt contain token data: id=${tokenId}, value=${tokenValue ? SecretValueMask : '[empty]'}`);
+  logger.info('link doesnt contain token data', { id: tokenId, token: tokenValue });
   completionResult.value = SignUpCompleteResultEnum.LINK_INVALID;
 } else {
   const { data, error } = await useFetch(`/${ApiEndpointSignUpComplete}`,
@@ -53,16 +56,16 @@ if (!tokenId || !tokenValue) {
       transform: (response: any) => {
         const dto = response as ISignUpCompleteResultDto;
         if (!dto) {
-          logger.warn(`(SignUpComplete) signup completion request returned empty data: id=${tokenId}`);
+          logger.warn('signup completion request returned empty data', undefined, { id: tokenId });
           return;
         }
-        logger.verbose(`(SignUpComplete) received signup completion result: id=${tokenId}, code=${dto.code}`);
+        logger.verbose('received signup completion result', { id: tokenId, code: dto.code });
         return dto.code;
       }
     });
   watch(error, () => {
     if (error.value) {
-      logger.warn(`(SignUpComplete) signup completion request failed: id=${tokenId}`, error.value);
+      logger.warn('signup completion request failed', error.value, { id: tokenId });
     }
   });
   if (data.value) {
@@ -115,7 +118,7 @@ const displayParams = (() => {
 </script>
 
 <template>
-  <AccountPageContainer ctrl-key="SignUpCompleted" :ui="{ wrapper: 'md:flex-row-reverse',height: '!h-[72rem]' }">
+  <AccountPageContainer :ctrl-key="[...CtrlKey, 'PageContent']" :ui="{ wrapper: 'md:flex-row-reverse',height: '!h-[72rem]' }">
     <div class="w-full h-auto">
       <div class="flex flex-col flex-nowrap gap-6 md:gap-8 items-start text-gray-600 dark:text-gray-400">
         {{ $t(displayParams.msgResName) }}

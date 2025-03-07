@@ -7,27 +7,27 @@ export class TokenLogic implements ITokenLogic {
 
   public static inject = ['tokenLogicPrisma', 'logger'] as const;
   constructor (prismaImplementation: ITokenLogic, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'TokenLogic-Acsys' });
     this.prismaImplementation = prismaImplementation;
   }
 
   deleteToken =  async (id: EntityId): Promise<void> => {
-    this.logger.debug(`(TokenLogic-Acsys) deleting token: id=${id}`);
+    this.logger.debug('deleting token', id);
     await this.prismaImplementation.deleteToken(id);
-    this.logger.debug(`(TokenLogic-Acsys) token deleted: id=${id}`);
+    this.logger.debug('token deleted', id);
   };
 
   issueToken = async (kind: TokenKind, userId?: EntityId | undefined, expirePrevious?: boolean | undefined): Promise<ITokenIssueResult> => {
-    this.logger.debug(`(TokenLogic-Acsys) issuing new token: kind=${kind}, userId=${userId}, expirePrevious=${expirePrevious}`);
+    this.logger.debug('issuing new token', { kind, userId, expirePrevious });
     const result = await this.prismaImplementation.issueToken(kind, userId, expirePrevious);
-    this.logger.debug(`(TokenLogic-Acsys) token issued: kind=${kind}, userId=${userId}, expirePrevious=${expirePrevious}, id=${result.id}`);
+    this.logger.debug('token issued', { kind, userId, expirePrevious, id: result.id });
     return result;
   };
 
   consumeToken = async (id: EntityId, value: string): Promise<TokenConsumeResult> => {
-    this.logger.debug(`(TokenLogic-Acsys) consuming token: id=${id}`);
+    this.logger.debug('consuming token', id);
     const result = this.prismaImplementation.consumeToken(id, value);
-    this.logger.debug(`(TokenLogic-Acsys) token consumed: id=${id}`);
+    this.logger.debug('token consumed', id);
     return result;
   };
 }

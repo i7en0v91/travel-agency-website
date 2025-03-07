@@ -3,6 +3,7 @@ import { AppPage, getPagePath, RecoverPasswordCompleteResultEnum, type Locale, g
 import AccountPageContainer from './../components/account/page-container.vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { getCommonServices } from '../helpers/service-accessors';
+import type { ControlKey } from './../helpers/components';
 
 definePageMeta({
   middleware: 'auth',
@@ -14,10 +15,12 @@ definePageMeta({
 });
 useOgImage();
 
+const CtrlKey: ControlKey = ['Page', 'ForgotPasswordComplete'];
+
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ForgotPasswordComplete' });
 const completionResult = ref(RecoverPasswordCompleteResultEnum.LINK_INVALID);
 const route = useRoute();
 const resultParam = route.query.result?.toString();
@@ -26,10 +29,10 @@ if (resultParam) {
   if (resultCode) {
     completionResult.value = resultCode;
   } else {
-    logger.warn(`(forgot-password-complete) unexpected result: ${resultParam}`);
+    logger.warn('unexpected result', undefined, { result: resultParam });
   }
 } else {
-  logger.warn('(forgot-password-complete) result is empty');
+  logger.warn('result is empty');
 }
 
 const displayParams = (() => {
@@ -72,7 +75,7 @@ const displayParams = (() => {
 </script>
 
 <template>
-  <AccountPageContainer ctrl-key="CompletePassword">
+  <AccountPageContainer :ctrl-key="[...CtrlKey, 'PageContent']">
     <div class="w-full h-auto">
       <div class="flex flex-col flex-nowrap gap-6 md:gap-8 items-start text-gray-600 dark:text-gray-400">
         {{ $t(displayParams.msgResName) }}

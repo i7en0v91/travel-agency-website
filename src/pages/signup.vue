@@ -12,6 +12,7 @@ import OAuthProviderList from './../components/account/oauth-providers-list.vue'
 import CaptchaProtection from './../components/forms/captcha-protection.vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { usePreviewState } from './../composables/preview-state';
+import type { ControlKey } from './../helpers/components';
 
 definePageMeta({
   middleware: 'auth',
@@ -23,13 +24,15 @@ definePageMeta({
 });
 useOgImage();
 
+const CtrlKey: ControlKey = ['Page', 'Signup'];
+
 const { t, locale } = useI18n();
 const localePath = useLocalePath();
 const navLinkBuilder = useNavLinkBuilder();
 const { signIn } = useAuth();
 const { enabled } = usePreviewState();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'Signup' });
 
 const themeSettings = useThemeSettings();
 const userNotificationStore = useUserNotificationStore();
@@ -65,7 +68,7 @@ const state = reactive<any>({
 const emailIsNotTakenByOtherUsers = ref(true);
 
 function onSubmit (): void {
-  logger.verbose('(SignUp) submit handler triggered');
+  logger.verbose('submit handler triggered');
   emailIsNotTakenByOtherUsers.value = true;
   captcha.value!.startVerification();
 }
@@ -130,7 +133,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <AccountPageContainer ctrl-key="Signup" :ui="{ wrapper: 'md:flex-row-reverse', height: '!h-[72rem]' }">
+  <AccountPageContainer :ctrl-key="[...CtrlKey, 'PageContent']" :ui="{ wrapper: 'md:flex-row-reverse', height: '!h-[72rem]' }">
     <div class="w-full h-auto">
       <h1 class="text-gray-600 dark:text-gray-300 text-5xl font-normal mt-4 max-w-[90vw] break-words">
         {{ $t(getI18nResName2('signUpPage', 'title')) }}
@@ -189,8 +192,8 @@ onMounted(() => {
         <ULink class="text-orange-500 dark:text-orange-400" color="orange" :to="navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)" :external="false">{{ $t(getI18nResName2('accountPageCommon', 'login')) }}</ULink>
       </div>
 
-      <OAuthProviderList ctrl-key="LoginProviders" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" class="mt-7 md:mt-10" @click="onOAuthProviderClick" />
-      <CaptchaProtection ref="captcha" ctrl-key="SignUpCaptchaProtection" @verified="onCaptchaVerified" />
+      <OAuthProviderList :ctrl-key="[...CtrlKey, 'OauthProviders']" :divisor-label-res-name="getI18nResName2('accountPageCommon', 'loginWith')" class="mt-7 md:mt-10" @click="onOAuthProviderClick" />
+      <CaptchaProtection ref="captcha" :ctrl-key="[...CtrlKey, 'Captcha']" @verified="onCaptchaVerified" />
     </div>
   </AccountPageContainer>
 </template>

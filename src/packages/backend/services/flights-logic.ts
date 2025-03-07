@@ -1,6 +1,6 @@
-import { type ISearchFlightOffersResult, type ISearchFlightOffersResultFilterParams,type ITopFlightOfferInfo, CachedResultsInAppServicesEnabled, type IFlightOffersFilterParams, normalizePrice, AppException, AppExceptionCodeEnum, AppConfig, FlightTimeOfDayIntervalMinutes, MaxOfferGenerationRouteCompaniesCount, MaxOfferGenerationRouteFlightsCount, MaxOfferGenerationMemoryBufferItems, SearchOffersPrimeOfferIterator, MaxOfferGenerationCityPairCount, DefaultFlightOffersSorting, DbVersionInitial, TemporaryEntityId, calculateDistanceKm, getTimeOfDay, newUniqueId, type IAppLogger, type ICity, type FlightOffersSortFactor, type IPagination, type ISorting, type Price, type EntityId, type IFlight, type IAirlineCompany, type IAirplane, type DistanceUnitKm, type IFlightOffer, type FlightClass, type EntityDataAttrsOnly, type TripType, type IAirport, type PreviewMode } from '@golobe-demo/shared';
+import { DefaultFlightTripType, formatAppCacheKey, type ISearchFlightOffersResult, type ISearchFlightOffersResultFilterParams,type ITopFlightOfferInfo, CachedResultsInAppServicesEnabled, type IFlightOffersFilterParams, normalizePrice, AppException, AppExceptionCodeEnum, AppConfig, FlightTimeOfDayIntervalMinutes, MaxOfferGenerationRouteCompaniesCount, MaxOfferGenerationRouteFlightsCount, MaxOfferGenerationMemoryBufferItems, SearchOffersPrimeOfferIterator, MaxOfferGenerationCityPairCount, DefaultFlightOffersSorting, DbVersionInitial, TemporaryEntityId, calculateDistanceKm, getTimeOfDay, newUniqueId, type IAppLogger, type ICity, type FlightOffersSortFactor, type IPagination, type ISorting, type Price, type EntityId, type IFlight, type IAirlineCompany, type IAirplane, type DistanceUnitKm, type IFlightOffer, type FlightClass, type EntityDataAttrsOnly, type TripType, type IAirport, type PreviewMode, DefaultFlightClass, FlightMinPassengers } from '@golobe-demo/shared';
 import type { IAirplaneLogic, IAirportLogic, IAirlineCompanyLogic, IFlightsLogic, IGeoLogic } from './../types';
-import { buildFlightUniqueDataKey, buildFlightOfferUniqueDataKey } from './../helpers/utils';
+import { NearestCityAirlineCompaniesCacheKey, buildFlightUniqueDataKey, buildFlightOfferUniqueDataKey } from './../helpers/utils';
 import type { PrismaClient } from '@prisma/client';
 import type { Storage, StorageValue } from 'unstorage';
 import { Decimal } from 'decimal.js';
@@ -26,7 +26,7 @@ export class FlightsLogic implements IFlightsLogic {
 
   public static inject = ['dbRepository', 'cache', 'geoLogic', 'airportLogic', 'airplaneLogic', 'airlineCompanyLogic', 'flightOfferMaterializer', 'logger'] as const;
   constructor (dbRepository: PrismaClient, cache: Storage<StorageValue>, geoLogic: IGeoLogic, airportLogic: IAirportLogic, airplaneLogic: IAirplaneLogic, airlineCompanyLogic: IAirlineCompanyLogic, flightOfferMaterializer: IFlightOfferMaterializer, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'FlightsLogic' });
     this.geoLogic = geoLogic;
     this.airlineCompanyLogic = airlineCompanyLogic;
     this.airportLogic = airportLogic;
@@ -37,7 +37,7 @@ export class FlightsLogic implements IFlightsLogic {
   }
 
   async deleteFlightOffer(id: EntityId): Promise<void> {
-    this.logger.verbose(`(FlightsLogic) deleting flight offer: id=${id}`);
+    this.logger.verbose('deleting flight offer', id);
     await executeInTransaction(async () => {
       await this.dbRepository.booking.updateMany({
         where: {
@@ -74,11 +74,11 @@ export class FlightsLogic implements IFlightsLogic {
         }
       });
     }, this.dbRepository);
-    this.logger.verbose(`(FlightsLogic) flight offer deleted: id=${id}`);
+    this.logger.verbose('flight offer deleted', id);
   };
 
   async deleteFlight(id: EntityId): Promise<void> {
-    this.logger.verbose(`(FlightsLogic) deleting flight: id=${id}`);
+    this.logger.verbose('deleting flight', id);
     await this.dbRepository.flight.update({
       where: {
         id,
@@ -89,11 +89,11 @@ export class FlightsLogic implements IFlightsLogic {
         version: { increment: 1 }
       }
     });
-    this.logger.verbose(`(FlightsLogic) flight deleted: id=${id}`);
+    this.logger.verbose('flight deleted', id);
   };
 
   async getFlightOffer (id: EntityId, userId: EntityId | 'guest'): Promise<IFlightOffer> {
-    this.logger.verbose(`(FlightsLogic) get flight offer, id=${id}, userId=${userId}`);
+    this.logger.verbose('get flight offer', { id, userId });
     const entity = await this.dbRepository.flightOffer.findFirst({
       where: {
         isDeleted: false,
@@ -102,16 +102,16 @@ export class FlightsLogic implements IFlightsLogic {
       select: FlightOfferInfoQuery(userId).select
     });
     if (!entity) {
-      this.logger.warn(`(FlightsLogic) flight offer was not found, id=${id}, userId=${userId}`);
+      this.logger.warn('flight offer was not found', undefined, { id, userId });
       throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'flight offer not found', 'error-page');
     }
 
-    this.logger.verbose(`(FlightsLogic) get flight offer - found, id=${id}, userId=${userId}, modifiedUtc=${entity.modifiedUtc}, price=${entity.totalPrice}`);
+    this.logger.verbose('get flight offer - found', { id, userId, modifiedUtc: entity.modifiedUtc, price: entity.totalPrice });
     return MapFlightOffer(entity);
   }
 
   async toggleFavourite (offerId: EntityId, userId: EntityId): Promise<boolean> {
-    this.logger.verbose(`(FlightsLogic) toggling favourite offer, id=${offerId}, userId=${userId}`);
+    this.logger.verbose('toggling favourite offer', { id: offerId, userId });
 
     const entity = await this.dbRepository.userFlightOffer.findFirst({
       where: {
@@ -128,7 +128,7 @@ export class FlightsLogic implements IFlightsLogic {
     let result: boolean;
     if (entity) {
       result = !entity.isFavourite;
-      this.logger.debug(`(FlightsLogic) toggling existing favourite record, id=${offerId}, userId=${userId}, favouriteId=${entity.id}, isFavourite=${result}`);
+      this.logger.debug('toggling existing favourite record', { id: offerId, userId, favouriteId: entity.id, isFavourite: result });
       await this.dbRepository.userFlightOffer.update({
         where: {
           id: entity.id
@@ -139,7 +139,7 @@ export class FlightsLogic implements IFlightsLogic {
         }
       });
     } else {
-      this.logger.debug(`(FlightsLogic) creating favourite record, id=${offerId}, userId=${userId}`);
+      this.logger.debug('creating favourite record', { id: offerId, userId });
       result = true;
       await this.dbRepository.userFlightOffer.create({
         data: {
@@ -152,7 +152,7 @@ export class FlightsLogic implements IFlightsLogic {
       });
     }
 
-    this.logger.verbose(`(FlightsLogic) favourite offer toggled, id=${offerId}, userId=${userId}, result=${result}`);
+    this.logger.verbose('favourite offer toggled', { id: offerId, userId, result });
     return result;
   }
 
@@ -198,25 +198,25 @@ export class FlightsLogic implements IFlightsLogic {
   }
 
   async getFlightPromoPrice (cityId: EntityId, previewMode: PreviewMode): Promise<Price> {
-    this.logger.debug(`(FlightsLogic) get promo price, cityId=${cityId}, previewMode=${previewMode}`);
+    this.logger.debug('get promo price', { cityId, previewMode });
 
     const company = await this.airlineCompanyLogic.getNearestCompany(CachedResultsInAppServicesEnabled);
     const distance = await this.geoLogic.getAverageDistance(cityId, CachedResultsInAppServicesEnabled, previewMode);
     const flightClass: FlightClass = 'economy';
     const result = normalizePrice(this.calculateFlightPrice(company, undefined, undefined, distance, 120, flightClass), 1);
 
-    this.logger.debug(`(FlightsLogic) promo price, cityId=${cityId}, result=${result}, previewMode=${previewMode}`);
+    this.logger.debug('promo price', { cityId, result, previewMode });
     return result;
   }
 
   async searchOffers (filter: IFlightOffersFilterParams, userId: EntityId | 'guest', primarySorting: ISorting<FlightOffersSortFactor>, secondarySorting: ISorting<FlightOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean, topOffersStats: boolean, previewMode: boolean = false): Promise<ISearchFlightOffersResult> {
-    this.logger.verbose(`(FlightsLogic) search offers, filter=${JSON.stringify(filter)}, userId=${userId}, primarySorting=${JSON.stringify(primarySorting)}, secondarySorting=${JSON.stringify(secondarySorting)}, pagination=${JSON.stringify(pagination)}, narrowFilterParams=${narrowFilterParams}, topOffersStats=${topOffersStats}, previewMode=${previewMode}`);
+    this.logger.verbose('search offers', { filter, userId, primarySorting, secondarySorting, pagination, narrowFilterParams, topOffersStats, previewMode });
 
     try {
       const primarySortFactor = primarySorting.factor ?? DefaultFlightOffersSorting;
       const secondarySortFactor = secondarySorting.factor ?? DefaultFlightOffersSorting;
       let variants = await this.generateFlightOffersFull(filter, userId, primarySortFactor, secondarySortFactor, previewMode);
-      this.logger.debug(`(FlightsLogic) sorting flight offer variants, userId=${userId}, previewMode=${previewMode}`);
+      this.logger.debug('sorting flight offer variants', { userId, previewMode });
       variants = orderBy(variants, ['primarySortFactor', 'secondarySortFactor'], [primarySorting.direction, secondarySorting.direction]);
       let filterParams : ISearchFlightOffersResultFilterParams | undefined;
       let topOffers: ITopFlightOfferInfo[] | undefined;
@@ -231,7 +231,7 @@ export class FlightsLogic implements IFlightsLogic {
 
       const take = pagination.skip >= variants.length ? 0 : (Math.min(variants.length - pagination.skip, pagination.take));
       const skip = pagination.skip;
-      this.logger.debug(`(FlightsLogic) applying pagination to flight offer, userId=${userId}, skip=${skip}, take=${take}, previewMode=${previewMode}`);
+      this.logger.debug('applying pagination to flight offer', { userId, skip, take, previewMode });
       if (pagination.skip >= variants.length) {
         variants = [];
       } else {
@@ -245,16 +245,16 @@ export class FlightsLogic implements IFlightsLogic {
         topOffers,
         totalCount
       };
-      this.logger.verbose(`(FlightsLogic) search offers - completed, filter=${JSON.stringify(filter)}, userId=${userId}, count=${variants.length}, previewMode=${previewMode}`);
+      this.logger.verbose('search offers - completed', { filter, userId, count: variants.length, previewMode });
       return result;
     } catch (err: any) {
-      this.logger.warn('(FlightsLogic) exception occured while searching offers', err, { filter, pagination, userId, previewMode });
+      this.logger.warn('exception occured while searching offers', err, { filter, pagination, userId, previewMode });
       throw err;
     }
   }
 
   async getUserFavouriteOffers (userId: EntityId): Promise<ISearchFlightOffersResult<IFlightOffer & { addDateUtc: Date }>> {
-    this.logger.verbose(`(FlightsLogic) get user favourite offers, userId=${userId}`);
+    this.logger.verbose('get user favourite offers', userId);
 
     const userOffers = await this.dbRepository.userFlightOffer.findMany({
       where: {
@@ -278,12 +278,12 @@ export class FlightsLogic implements IFlightsLogic {
       totalCount: mappedItems.length
     };
 
-    this.logger.verbose(`(FlightsLogic) get user favourite offers completed, userId=${userId}, count=${result.totalCount}`);
+    this.logger.verbose('get user favourite offers completed', { userId, count: result.totalCount });
     return result;
   }
 
   async getUserTickets(userId: EntityId): Promise<ISearchFlightOffersResult<IFlightOffer & { bookingId: EntityId, bookDateUtc: Date; }>> {
-    this.logger.verbose(`(FlightsLogic) get user tickets, userId=${userId}`);
+    this.logger.verbose('get user tickets', userId);
 
     const userOffers = await this.dbRepository.userFlightOffer.findMany({
       where: {
@@ -314,12 +314,12 @@ export class FlightsLogic implements IFlightsLogic {
       totalCount: mappedItems.length
     };
 
-    this.logger.verbose(`(FlightsLogic) get user tickets completed, userId=${userId}, count=${result.totalCount}`);
+    this.logger.verbose('get user tickets completed', { userId, count: result.totalCount });
     return result;
   }
   
   computeFlightOffersFilterParams (offers: OfferWithSortFactors<IFlightOffer>[], userId: EntityId | 'guest'): ISearchFlightOffersResultFilterParams {
-    this.logger.debug(`(FlightsLogic) computing flight offer filter params, userId=${userId}, count=${offers.length}`);
+    this.logger.debug('computing flight offer filter params', { userId, count: offers.length });
 
     let result: ISearchFlightOffersResultFilterParams = {};
     if (offers.length > 0) {
@@ -336,7 +336,7 @@ export class FlightsLogic implements IFlightsLogic {
       };
     }
 
-    this.logger.debug(`(FlightsLogic) flight offer filter params computed, userId=${userId}, count=${offers.length}, result=${JSON.stringify(result)}`);
+    this.logger.debug('flight offer filter params computed', { userId, count: offers.length, result });
     return result;
   }
 
@@ -358,16 +358,16 @@ export class FlightsLogic implements IFlightsLogic {
       case 'score':
         return this.getFlightOfferSortFactorValue(offer, 'duration') * this.getFlightOfferSortFactorValue(offer, 'price') * this.getFlightOfferSortFactorValue(offer, 'rating');
       default:
-        this.logger.warn(`(FlightsLogic) unexpected flight offer sort factor: ${factor}`);
+        this.logger.warn('unexpected flight offer sort factor', undefined, { sort: factor });
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected sorting', 'error-stub');
     }
   };
 
   computeTopFlightOffersInfo (offers: OfferWithSortFactors<IFlightOffer>[], userId: EntityId | 'guest'): ITopFlightOfferInfo[] | undefined {
-    this.logger.debug(`(FlightsLogic) computing top flight offer values, userId=${userId}, count=${offers.length}`);
+    this.logger.debug('computing top flight offer values', { userId, count: offers.length });
 
     if (offers.length === 0) {
-      this.logger.debug(`(FlightsLogic) returning empty top flight offer values, userId=${userId}`);
+      this.logger.debug('returning empty top flight offer values', userId);
       return undefined;
     }
 
@@ -409,12 +409,12 @@ export class FlightsLogic implements IFlightsLogic {
       factor: v.factor
     });
 
-    this.logger.debug(`(FlightsLogic) flight offer filter params computed, userId=${userId}, count=${offers.length}, result=${JSON.stringify(result)}`);
+    this.logger.debug('top flight offer filter params computed', { userId, count: offers.length, result });
     return result;
   }
 
   filterFlightOffers (offers: OfferWithSortFactors<IFlightOffer>[], filter: IFlightOffersFilterParams, userId: EntityId | 'guest'): OfferWithSortFactors<IFlightOffer>[] {
-    this.logger.debug(`(FlightsLogic) filtering flight offer variants, filter=${JSON.stringify(filter)}, userId=${userId}, count=${offers.length}`);
+    this.logger.debug('filtering flight offer variants', { filter, userId, count: offers.length });
 
     const isMatch = (offer: OfferWithSortFactors<IFlightOffer>): boolean => {
       if ((filter.airlineCompanyIds?.length ?? 0) > 0) {
@@ -458,12 +458,12 @@ export class FlightsLogic implements IFlightsLogic {
 
     const result = offers.filter(isMatch);
 
-    this.logger.debug(`(FlightsLogic) flight offers filtered, userId=${userId}, count=${result.length}`);
+    this.logger.debug('flight offers filtered', { userId, count: result.length });
     return result;
   }
 
   async generateFlightOffersFull (filter: IFlightOffersFilterParams, userId: EntityId | 'guest', primarySortFactor: FlightOffersSortFactor, secondarySortFactor: FlightOffersSortFactor, previewMode: boolean): Promise<OfferWithSortFactors<IFlightOffer>[]> {
-    this.logger.debug(`(FlightsLogic) generating full flight offer variants, userId=${userId}, previewMode=${previewMode}`);
+    this.logger.debug('generating full flight offer variants', { userId, previewMode });
 
     const varyDate = (date: Date): Date[] => {
       const result: Date[] = [];
@@ -476,19 +476,19 @@ export class FlightsLogic implements IFlightsLogic {
     // construct date variants
     const flexibleDates = filter.flexibleDates ?? false;
     let dateFromVariants = filter.dateFrom ? (flexibleDates ? varyDate(filter.dateFrom) : [filter.dateFrom]) : varyDate(dayjs().toDate());
-    const dateToVariants = (filter.tripType ?? 'oneway') === 'return' ? (filter.dateTo ? (flexibleDates ? varyDate(filter.dateTo) : [filter.dateTo]) : varyDate(dayjs(filter.dateFrom ?? dayjs().toDate()).add(AppConfig.autoInputDatesRangeDays, 'day').toDate())) : undefined;
+    const dateToVariants = (filter.tripType ?? DefaultFlightTripType) === 'return' ? (filter.dateTo ? (flexibleDates ? varyDate(filter.dateTo) : [filter.dateTo]) : varyDate(dayjs(filter.dateFrom ?? dayjs().toDate()).add(AppConfig.autoInputDatesRangeDays, 'day').toDate())) : undefined;
     if (dateToVariants) {
       dateFromVariants = dateFromVariants.filter(d => d.getTime() < dateToVariants[0].getTime());
       if (!dateFromVariants.length) {
         dateFromVariants.push(dateToVariants[0]);
       }
     }
-    this.logger.debug(`(FlightsLogic) generating full flight offer variants, userId=${userId}, previewMode=${previewMode}, using date variants: from=[${dateFromVariants.map(d => d.toISOString()).join(', ')}], to=[${dateToVariants?.map(d => d.toISOString()).join(', ') ?? '(none)'}]`);
+    this.logger.debug('generating full flight offer variants', { userId, previewMode, from: dateFromVariants, to: dateToVariants });
 
     // construct airport variants
     const cityAirports = await this.airportLogic.getAirportsForSearch([filter.fromCitySlug, filter.toCitySlug].filter(x => (x?.length ?? 0) > 0) as string[], !filter.fromCitySlug || !filter.toCitySlug, previewMode);
     if (cityAirports.length === 0) {
-      this.logger.warn(`(FlightsLogic) got empty list of airports to search, filter=${JSON.stringify(filter)}, userId=${userId}, previewMode=${previewMode}`);
+      this.logger.warn('got empty list of airports to search', undefined, { filter, userId, previewMode });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'airports data not found', 'error-stub');
     }
 
@@ -505,11 +505,11 @@ export class FlightsLogic implements IFlightsLogic {
       const toAirport = cityAirports.find(x => x.city.slug === toCitySlug)!;
       cityAirportVariants.push({ from: fromAirport, to: toAirport });
     }
-    this.logger.debug(`(FlightsLogic) generating full flight offer variants, userId=${userId}, previewMode=${previewMode}, city variants count=${cityAirportVariants.length}`);
+    this.logger.debug('generating full flight offer variants', { userId, previewMode, count: cityAirportVariants.length });
 
-    const tripType = filter.tripType ?? 'oneway';
-    const numPassengers = filter.numPassengers ?? 1;
-    const flightClass = filter.class ?? 'economy';
+    const tripType = filter.tripType ?? DefaultFlightTripType;
+    const numPassengers = filter.numPassengers ?? FlightMinPassengers;
+    const flightClass = filter.class ?? DefaultFlightClass;
 
     const result: OfferWithSortFactors<IFlightOffer>[] = [];
     for (let i = 0; i < dateFromVariants.length; i++) {
@@ -522,14 +522,14 @@ export class FlightsLogic implements IFlightsLogic {
           result.push(...offers);
 
           if (result.length > MaxOfferGenerationMemoryBufferItems) {
-            this.logger.warn(`(FlightsLogic) maximum number of flight offer items in memory buffer reached, stopping generation with current values, filter=${JSON.stringify(filter)}, userId=${userId}, previewMode=${previewMode}`);
+            this.logger.warn('maximum number of flight offer items in memory buffer reached, stopping generation with current values', undefined, { filter, userId, previewMode });
             break;
           }
         }
       }
     }
 
-    this.logger.debug(`(FlightsLogic) generating full flight offer variants, userId=${userId}, previewMode=${previewMode}, result count=${result.length}`);
+    this.logger.debug('generating full flight offer variants', { userId, previewMode, count: result.length });
     return result;
   }
 
@@ -577,19 +577,21 @@ export class FlightsLogic implements IFlightsLogic {
   }
 
   getNearestCompaniesCacheKey (cityId: EntityId, previewMode: PreviewMode): string {
-    return `NearestCompanies${previewMode ? 'Preview' : ''}-${cityId}`;
+    return previewMode ? 
+      formatAppCacheKey(NearestCityAirlineCompaniesCacheKey, 'preview', cityId.toString()) : 
+      formatAppCacheKey(NearestCityAirlineCompaniesCacheKey, cityId.toString());
   }
 
   async getNearestCompanies (city: EntityDataAttrsOnly<ICity>, previewMode: PreviewMode): Promise<EntityDataAttrsOnly<IAirlineCompany>[]> {
-    this.logger.debug(`(FlightsLogic) filtering nearest companies, cityId=${city.id}, previewMode=${previewMode}`);
+    this.logger.debug('filtering nearest companies', { cityId: city.id, previewMode });
 
     const cacheKey = this.getNearestCompaniesCacheKey(city.id, previewMode);
     let result = (await this.cache.getItem<EntityDataAttrsOnly<IAirlineCompany>[]>(cacheKey));
     if(!result) {
-      this.logger.debug(`(FlightsLogic) nearest companies cache miss, computing, cityId=${city.id}, previewMode=${previewMode}`);
+      this.logger.debug('nearest companies cache miss, computing', { cityId: city.id, previewMode });
       const allAirlineCompanies = await this.airlineCompanyLogic.getAllAirlineCompanies(CachedResultsInAppServicesEnabled, previewMode);
       if ((allAirlineCompanies?.length ?? 0) === 0) {
-        this.logger.debug(`(FlightsLogic) no airline companies found, returning empty list, cityId=${city.id}, previewMode=${previewMode}`);
+        this.logger.debug('no airline companies found, returning empty list', { cityId: city.id, previewMode });
         return [];
       }
 
@@ -599,7 +601,7 @@ export class FlightsLogic implements IFlightsLogic {
       await this.cache.setItem(cacheKey, result);
     }
 
-    this.logger.debug(`(FlightsLogic) nearest companies filtered, cityId=${city.id}, previewMode=${previewMode}, count=${result.length}`);
+    this.logger.debug('nearest companies filtered', { cityId: city.id, previewMode, count: result.length });
     return result;
   }
 
@@ -608,13 +610,13 @@ export class FlightsLogic implements IFlightsLogic {
 
     const airlineCompanies = await this.getNearestCompanies(fromAirport.city, previewMode);
     if ((airlineCompanies?.length ?? 0) === 0) {
-      this.logger.warn(`(FlightsLogic) cannot generate flight variants, got empty list of airline companies, date=${date}, fromCitySlug=${fromAirport.city.slug}, toCitySlug=${toAirport.city.slug}, previewMode=${previewMode}`);
+      this.logger.warn('cannot generate flight variants, got empty list of airline companies', undefined, { date, fromCitySlug: fromAirport.city.slug, toCitySlug: toAirport.city.slug, previewMode });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'airline companies data not found', 'error-stub');
     }
 
     const allAirplanes = await this.airplaneLogic.getAllAirplanes(CachedResultsInAppServicesEnabled, previewMode);
     if (allAirplanes.length === 0) {
-      this.logger.warn(`(FlightsLogic) cannot generate flight variants, got empty list of airplanes, date=${date}, fromCitySlug=${fromAirport.city.slug}, toCitySlug=${toAirport.city.slug}, previewMode=${previewMode}`);
+      this.logger.warn('cannot generate flight variants, got empty list of airplanes', undefined, { date, fromCitySlug: fromAirport.city.slug, toCitySlug: toAirport.city.slug, previewMode });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'airplanes data not found', 'error-stub');
     }
 

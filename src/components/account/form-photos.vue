@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ArbitraryControlElementMarker, ControlKey } from './../../helpers/components';
 import { AppConfig, getI18nResName1, HeaderAppVersion } from '@golobe-demo/shared';
 import PhotoSlide from './../../components/account/photo-slide.vue';
 import { type IImageDetailsDto, ApiEndpointAuthFormPhotos } from './../../server/api-definitions';
@@ -10,7 +11,7 @@ import type { UCarousel } from '../../.nuxt/components';
 import { useCarouselPlayer } from '../../composables/carousel-player';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   ui?: {
     wrapper?: string,
     image?: IStaticImageUiProps
@@ -19,7 +20,7 @@ interface IProps {
 defineProps<IProps>();
 
 const isError = ref(false);
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'FormPhotos' });
 
 const { enabled } = usePreviewState();
 
@@ -36,23 +37,23 @@ const { error, data } = await useFetch(authFormsImagesUrl,
     transform: (response: any) => {
       const dto = response as IImageDetailsDto[];
       if (!dto) {
-        logger.warn('(account-forms-photos) fetch request returned empty data');
+        logger.warn('fetch request returned empty data');
         return;
       }
       const slugs = dto.map(x => x.slug);
-      logger.verbose(`(account-forms-photos) received images details: [${slugs.join(', ') ?? 'empty'}]`);
+      logger.verbose('received images details', slugs);
       isError.value = false;
       return slugs;
     }
   });
 watch(error, () => {
   if (error.value) {
-    logger.warn('(account-forms-photos) fetch request failed', error.value);
+    logger.warn('fetch request failed (watch', error.value);
     isError.value = true;
   }
 });
 if (error.value) {
-  logger.warn('(account-forms-photos) fetch request failed', error.value);
+  logger.warn('fetch request failed (err value', error.value);
   isError.value = true;
 }
 const imageSlugs = data as Ref<string[] | undefined>;
@@ -80,7 +81,7 @@ watch(() => imageSlugs.value, () => {
             inactive: 'bg-white dark:bg-white' 
           } 
         }" class="w-[386px] min-w-[386px] lg:w-[486px] lg:min-w-[486px]" indicators>
-        <PhotoSlide :ctrl-key="`${ctrlKey}-AuthPhoto-${imgSlug}`" :alt-res-name="getI18nResName1('authFormsPhotoAlt')" :img-slug="imgSlug" :ui=" { image: ui?.image, wrapper: `w-full h-full` }"/>
+        <PhotoSlide :ctrl-key="[...ctrlKey, 'AuthPhoto', imgSlug as ArbitraryControlElementMarker]" :alt-res-name="getI18nResName1('authFormsPhotoAlt')" :img-slug="imgSlug" :ui=" { image: ui?.image, wrapper: `w-full h-full` }"/>
       </UCarousel>
     </ErrorHelm>
   </div>

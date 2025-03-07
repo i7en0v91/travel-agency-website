@@ -47,7 +47,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
 
   public static inject = ['entityChangeNotifications', 'changeDependencyTracker', 'htmlPageModelMetadata', 'nitroCache', 'dbRepository', 'logger'] as const;
   constructor (entityChangeNotifications: IEntityChangeNotificationTask, changeDependencyTracker: IChangeDependencyTracker, htmlPageModelMetadata: IHtmlPageModelMetadata, nitroCache: Storage<StorageValue>, dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'HtmlPageCacheCleaner' });
     this.nitroCache = nitroCache;
     this.changeDependencyTracker = changeDependencyTracker;
     this.pageMetadata = htmlPageModelMetadata;
@@ -65,7 +65,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
   }
 
   subscribeForEntityChanges = () => {
-    this.logger.verbose('(HtmlPageCacheCleaner) subscribing for entity changes');
+    this.logger.verbose('subscribing for entity changes');
 
     const subscriberId = this.entityChangeNotifications.subscribeForChanges({
       target: AllEntityModels.map(e => { 
@@ -77,7 +77,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
       order: EntityChangeSubscribersOrder.HtmlPageCleaner
     }, this.entityChangeCallback);
 
-    this.logger.verbose(`(HtmlPageCacheCleaner) subscribed entity changes, subscriberId=${subscriberId}`);
+    this.logger.verbose('subscribed entity changes', subscriberId);
   };
 
   isCachingEnabled = () => AppConfig.caching.intervalSeconds;
@@ -85,12 +85,12 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
   joinRunningCleanup = async(): Promise<boolean> => {
     const CLEANUP_TIMEOUT_SEC = 5 * 60;
     if(this.taskStatus === 'in-progress') {
-      this.logger.debug(`(HtmlPageCacheCleaner) joining currently running cleanup`);
+      this.logger.debug('joining currently running cleanup');
       const completed = await spinWait(() => {
         return Promise.resolve(this.taskStatus === 'idle');
       }, CLEANUP_TIMEOUT_SEC * 1000);
       if(!completed) {
-        this.logger.warn(`(HtmlPageCacheCleaner) timeout waiting for cleanup to complete, current status=${this.taskStatus}`);
+        this.logger.warn('timeout waiting for cleanup to complete', undefined, { status: this.taskStatus });
       }
       return true;
     }
@@ -98,7 +98,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
   };
 
   performCleanup = async(): Promise<void> => {
-    this.logger.verbose(`(HtmlPageCacheCleaner) cleanup requested, current status=${this.taskStatus}`);
+    this.logger.verbose('cleanup requested, current', { status: this.taskStatus });
     if(!this.isCachingEnabled()) {
       return;
     }
@@ -110,14 +110,14 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
     const maxCount = AppConfig.caching.invalidation.maxChangedPagesForPurge * AverageEntityTypesPerPage;
     const since = this.lastChangedPagesRevision;
     const changedEntities = await this.changeDependencyTracker.getChangedEntities(since, maxCount);
-    this.logger.debug(`(HtmlPageCacheCleaner) list of changed entities obtained, since=${since.toISOString()}, count=${changedEntities.length}`);
+    this.logger.debug('list of changed entities obtained', { since: since.toISOString(), count: changedEntities.length });
 
     if(await this.joinRunningCleanup()) {
       return;
     }
 
     await this.invalidatePagesOnEntityChanges(changedEntities, AppConfig.caching.invalidation!);
-    this.logger.verbose(`(HtmlPageCacheCleaner) cleanup request completed, current status=${this.taskStatus}`);
+    this.logger.verbose('cleanup request completed, current', { status: this.taskStatus });
   };
 
   date2Timestamp = (date: Date): Timestamp => date.getTime();
@@ -133,7 +133,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
   };
 
   entityChangeCallback: EntityChangeNotificationCallback = async (_: EntityChangeNotificationSubscriberId, args: EntityChangeNotificationCallbackArgs): Promise<void> => {
-    this.logger.verbose('(HtmlPageCacheCleaner) entity change callback');
+    this.logger.verbose('entity change callback');
 
     const changedEntities: {entity: EntityModel, id: EntityId}[] | 'too-much' = 
       args.target === 'too-much' ? 'too-much' : 
@@ -145,11 +145,11 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
         })));
     await this.invalidatePagesOnEntityChanges(changedEntities, AppConfig.caching.invalidation);
 
-    this.logger.verbose('(HtmlPageCacheCleaner) entity change callback completed');
+    this.logger.verbose('entity change callback completed');
   };
 
   invalidatePagesOnEntityChanges = async (changedEntities: {entity: EntityModel, id: EntityId}[] | 'too-much', options: NonNullable<IAppConfig['caching']['invalidation']>): Promise<void> => {
-    this.logger.verbose(`(HtmlPageCacheCleaner) invalidating pages on entity on changes, current status=${this.taskStatus}, numChanges=${isString(changedEntities) ? changedEntities : changedEntities.length}`);
+    this.logger.verbose('invalidating pages on entity on changes, current', { status: this.taskStatus, numChanges: changedEntities });
     const now = dayjs().toDate();
     this.taskStatus = 'in-progress';
 
@@ -171,7 +171,8 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
           needPurge = true;
         }
       } catch(err: any) {
-        this.logger.warn(`(HtmlPageCacheCleaner) exception occured while trying to obtain list of recently changed pages, numChanges=${isString(changedEntities) ? changedEntities : changedEntities.length}`, err);
+        const numChanges = isString(changedEntities) ? changedEntities : changedEntities.length;
+        this.logger.warn('exception occured while trying to obtain list of recently changed pages', err, numChanges);
         newLastRevision = this.lastChangedPagesRevision;
       }
       if(itemsToProcess.length > options.maxChangedPagesForPurge) {
@@ -179,7 +180,8 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
       }
       
       if(needPurge) {
-        this.logger.warn(`(HtmlPageCacheCleaner) too much pages have been changed, cache purge will be performed, last revision=${this.lastChangedPagesRevision.toISOString()}, numChanges=${isString(changedEntities) ? changedEntities : changedEntities.length}`);
+        const numChanges = isString(changedEntities) ? changedEntities : changedEntities.length;
+        this.logger.warn('too much pages have been changed, cache purge will be performed, last', undefined, { revision: this.lastChangedPagesRevision.toISOString(), numChanges });
         const timestamp = now;
         await this.doPurge(timestamp, false);
         newLastRevision = now;
@@ -202,21 +204,22 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
 
       this.lastChangedPagesRevision = newLastRevision;
       const elapsedSecs = dayjs().diff(dayjs(now), 'second');
-      const logMsg = `(HtmlPageCacheCleaner) pages invalidation on entity changes completed, elapsed ${elapsedSecs} secs., count: ${needPurge ? 'purge' : itemsToProcess.length}, set revision=${newLastRevision.toISOString()}`;
+      const logCount = needPurge ? 'purge' : itemsToProcess.length;
       if(elapsedSecs > CleanTaskWarnTimeoutSecs || needPurge) {
-        this.logger.warn(logMsg);
+        this.logger.warn('pages invalidation on entity changes completed', undefined, { elapsedSec: elapsedSecs, count: logCount, revision: newLastRevision.toISOString() });
       } else {
-        this.logger.verbose(logMsg);
+        this.logger.verbose('pages invalidation on entity changes completed', { elapsedSec: elapsedSecs, count: logCount, revision: newLastRevision.toISOString() });
       }
     } catch(err: any) {
-      this.logger.warn(`(HtmlPageCacheCleaner) unexpected exception occured during pages invalidation on entity changes, last revision=${this.lastChangedPagesRevision.toISOString()}, numChanges=${isString(changedEntities) ? changedEntities : changedEntities.length}`, err);
+      const numChanges = isString(changedEntities) ? changedEntities : changedEntities.length;
+      this.logger.warn('unexpected exception occured during pages invalidation on entity changes, last', err, { revision: this.lastChangedPagesRevision.toISOString(), numChanges });
     } finally {
       this.taskStatus = 'idle';
     }
   };
 
   getAffectedPagesOnEntityChanges = async(changedEntities: {entity: EntityModel, id: EntityId}[], maxCount: number): Promise<{ pages: ScheduledItem[] } | 'too-much'> => {
-    this.logger.verbose(`(HtmlPageCacheCleaner) obtaining list of recently changed pages, num changes=${changedEntities.length}, maxCount=${maxCount}`);
+    this.logger.verbose('obtaining list of recently changed pages, num', { changes: changedEntities.length, maxCount });
 
     const resultMap = new Map<string, ScheduledItem>([]);
     const affectedPages = await this.getAffectedPagesOnChange(changedEntities);
@@ -229,18 +232,20 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
       resultMap.set(affectedPageKey, affectedPage);
       if(resultMap.size > maxCount) {
         const result = Array.from(resultMap.entries()).map(e => e[1]);
-        this.logger.warn(`(HtmlPageCacheCleaner) too much pages have changed, maxCount=${maxCount}, affected pages=[${JSON.stringify(this.getStatsByKeyForLogMessage(result, i => i.page.valueOf()))}], num changes=${changedEntities.length}`);
+        const affectedPages = this.getStatsByKeyForLogMessage(result, i => i.page.valueOf());
+        this.logger.warn('too much pages have changed', undefined, { maxCount, pages: affectedPages, numChanges: changedEntities.length });
         return 'too-much';
       }
     }
     
     const result = Array.from(resultMap.values());
-    this.logger.verbose(`(HtmlPageCacheCleaner) list of recently changed pages obtained, count=${result.length}, maxCount=${maxCount}, num changes=${changedEntities.length}`);
+    this.logger.verbose('list of recently changed pages obtained', { count: result.length, maxCount, changes: changedEntities.length });
     return { pages: result };
   };
 
   async getAffectedPagesOnChange(changedEntities: {entity: EntityModel, id: EntityId}[]): Promise<AffectedPageInfo[]> {
-    this.logger.debug(`(HtmlPageCacheCleaner) get affected pages, totalCount=${changedEntities.length}, stats=${JSON.stringify(this.getStatsByKeyForLogMessage(changedEntities, e => e.entity))}`);
+    const statsLog = this.getStatsByKeyForLogMessage(changedEntities, e => e.entity);
+    this.logger.debug('get affected pages', { totalCount: changedEntities.length, stats: statsLog });
 
     const changedEntityChain = await this.changeDependencyTracker.getChangedEntityChain(changedEntities);
 
@@ -271,7 +276,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
             return;
           }
 
-          this.logger.verbose(`(HtmlPageCacheCleaner) new affected page found, page=${page.valueOf()}, pageId=${pageId ?? ''}, modifiedUtc=${ip.modifiedUtc.toISOString()}, related entity=${relatedEntityType}, related entity id=${ip.id}`);
+          this.logger.verbose('new affected page found', { page: page.valueOf(), pageId: pageId ?? '', modifiedUtc: ip.modifiedUtc.toISOString(), entity: relatedEntityType, id: ip.id });
           const affectedPageInfo: AffectedPageInfo = {
             page,
             id: pageId,
@@ -283,7 +288,8 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
     }
 
     const result = Array.from(resultMap.values());
-    this.logger.debug(`(HtmlPageCacheCleaner) affected pages obtained, totalCount=${changedEntities.length}, result=[${JSON.stringify(this.getStatsByKeyForLogMessage(result, i => i.page.valueOf()))}]`);
+    const affectedPages = this.getStatsByKeyForLogMessage(result, i => i.page);
+    this.logger.debug('affected pages obtained', { totalCount: changedEntities.length, result: affectedPages });
     return result;
   };
 
@@ -296,7 +302,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
   };
 
   touchPageTimestamps = async (timestamp: Date, throwOnError: boolean): Promise<void> => {
-    this.logger.verbose(`(HtmlPageCacheCleaner) touching page timestamps, timestamp=${timestamp.toISOString()}`);
+    this.logger.verbose('touching page timestamps', { timestamp: timestamp.toISOString() });
 
     try {
       const count = await this.dbRepository.htmlPageTimestamp.updateMany({
@@ -306,9 +312,9 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
         }
       });
 
-      this.logger.verbose(`(HtmlPageCacheCleaner) touching page timestamps - completed, timestamp=${timestamp.toISOString()}, count=${count}`);
+      this.logger.verbose('touching page timestamps - completed', { timestamp: timestamp.toISOString(), count });
     } catch(err: any) {
-      this.logger.warn(`(HtmlPageCacheCleaner) failed to touch page timestamps, timestamp=${timestamp.toISOString()}`, err);
+      this.logger.warn('failed to touch page timestamps', err, { timestamp: timestamp.toISOString() });
       if(throwOnError) {
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to touch page timestamps', 'error-page');
       }
@@ -316,18 +322,18 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
   };
 
   calculatePageTimestamp = async (page: AppPage, id: EntityId | undefined, pageMetadata: HtmlPageModel<typeof page>): Promise<Date | UninitializedPageTimestamp> => {
-    this.logger.verbose(`(HtmlPageCacheCleaner) calculating page timestamp, page=${page}, id=${id ?? ''}`);
+    this.logger.verbose('calculating page timestamp', { page, id: id ?? '' });
 
     let result: Date | UninitializedPageTimestamp = 0;
     if(pageMetadata.identity) {
-      this.logger.debug(`(HtmlPageCacheCleaner) loading page identity entity modified utc, page=${page}, id=${id ?? ''}, entity=${pageMetadata.identity}`);
+      this.logger.debug('loading page identity entity modified utc', { page, id: id ?? '', entity: pageMetadata.identity });
       result = await this.changeDependencyTracker.loadEntityModifiedUtc(pageMetadata.identity, id ?? 'most-recent', false);
     }
 
     if((pageMetadata.associatedWith?.length ?? 0) > 0) {
       for(let i = 0; i < pageMetadata.associatedWith!.length; i++) {
         const associatedEntity = pageMetadata.associatedWith![i];
-        this.logger.debug(`(HtmlPageCacheCleaner) loading page associated entity most recent modified utc, page=${page}, id=${id ?? ''}, entity=${associatedEntity}`);
+        this.logger.debug('loading page associated entity most recent modified utc', { page, id: id ?? '', entity: associatedEntity });
         const modifiedUtc = await this.changeDependencyTracker.loadEntityModifiedUtc(associatedEntity, 'most-recent', false);
         if(modifiedUtc === 0) {
           continue;
@@ -338,17 +344,17 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
       }
     }
 
-    this.logger.verbose(`(HtmlPageCacheCleaner) page timestamp calculated, page=${page}, id=${id ?? ''}, result=${result === 0 ? result : result.toISOString()}`);
+    this.logger.verbose('page timestamp calculated', { page, id, result });
     return result;
   };
 
   getPageTimestamp = async (page: AppPage, id: EntityId | undefined, initializeIfNotExists: boolean): Promise<Date | UninitializedPageTimestamp | (Exclude<PageCacheVaryOptions, 'UseEntityChangeTimestamp'>)> => {
-    this.logger.debug(`(HtmlPageCacheCleaner) obtaining page current timestamp, page=${page}, id=${id ?? ''}, initializeIfNotExists=${initializeIfNotExists}`);
+    this.logger.debug('obtaining page current timestamp', { page, id: id ?? '', initializeIfNotExists });
 
     const pageMetadata = this.pageMetadata.getMetadata(this.htmlPage2Type(page)) as HtmlPageModel<typeof page>;
     const cacheVaryOptions = pageMetadata.getCacheVaryOptions();
     if(cacheVaryOptions !== 'UseEntityChangeTimestamp') {
-      this.logger.debug(`(HtmlPageCacheCleaner) obtaining page current timestamp - not applicable, page=${page}, id=${id ?? ''}, initializeIfNotExists=${initializeIfNotExists}, vary=${cacheVaryOptions}`);
+      this.logger.debug('obtaining page current timestamp - not applicable', { page, id: id ?? '', initializeIfNotExists, vary: cacheVaryOptions });
       return cacheVaryOptions;
     }
 
@@ -361,7 +367,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
       }
     }))?.timestamp;
     if(!timestamp) {
-      this.logger.debug(`(HtmlPageCacheCleaner) obtaining page current timestamp - no timestamp stored, page=${page}, id=${id ?? ''}, initializeIfNotExists=${initializeIfNotExists}`);
+      this.logger.debug('obtaining page current timestamp - no timestamp stored', { page, id: id ?? '', initializeIfNotExists });
       if(initializeIfNotExists) {
         timestamp = await this.calculatePageTimestamp(page, id, pageMetadata);
         if(timestamp !== 0) {
@@ -374,17 +380,17 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
     }
 
     if(timestamp === 0) {
-      this.logger.warn(`(HtmlPageCacheCleaner) cannot calculate page timestamp, page=${page}, id=${id ?? ''}, initializeIfNotExists=${initializeIfNotExists}, result=${timestamp}`);
+      this.logger.warn('cannot calculate page timestamp', undefined, { page, id: id ?? '', initializeIfNotExists, result: timestamp });
       throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'failed to calculate page timestamp', 'error-page');
     } else {
-      this.logger.debug(`(HtmlPageCacheCleaner) page current timestamp - obtained, page=${page}, id=${id ?? ''}, initializeIfNotExists=${initializeIfNotExists}, result=${timestamp.toISOString()}`);
+      this.logger.debug('page current timestamp - obtained', { page, id: id ?? '', initializeIfNotExists, result: timestamp.toISOString() });
     }
     
     return timestamp;
   };
 
   updatePageTimestamps = async (timestamps: {page: AppPage, id: EntityId | undefined, timestamp: Date}[], throwOnError: boolean): Promise<void> => {
-    this.logger.verbose(`(HtmlPageCacheCleaner) updating page timestamps, size=${timestamps.length}`);
+    this.logger.verbose('updating page timestamps', { size: timestamps.length });
     if(timestamps.length) {
       const isBatchingSupported = true; // may depend on DB provider 
       if(isBatchingSupported) {
@@ -393,11 +399,11 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
         await this.updatePageTimestampsOneByOne(timestamps, throwOnError);
       }
     }
-    this.logger.verbose(`(HtmlPageCacheCleaner) page timestamps update completed, size=${timestamps.length}`);
+    this.logger.verbose('page timestamps update completed', { size: timestamps.length });
   };
 
   updatePageTimestampsWithBatches = async (timestamps: {page: AppPage, id: EntityId | undefined, timestamp: Date}[], throwOnError: boolean): Promise<void> => {
-    this.logger.debug(`(HtmlPageCacheCleaner) updating page timestamps (in batches), count=${timestamps.length}`);
+    this.logger.debug('updating page timestamps (in batches', { count: timestamps.length });
 
     let succeeded = 0;
     let failed = 0;
@@ -422,7 +428,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
   
         const createList = chunkItems.filter(c => !existingIds.has(this.getPageTimestampDbId(c.page, c.id)));
         if(createList.length) {
-          this.logger.debug(`(HtmlPageCacheCleaner) creating new timestamps (in batches), chunk #${i} count=${createList.length}`);
+          this.logger.debug('creating new timestamps (in batches', { chunk: i, count: createList.length });
           const numCreated = (await this.dbRepository.htmlPageTimestamp.createMany({
             data: createList.map(c => {
               return {
@@ -439,14 +445,14 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
 
         const updateList = chunkItems.filter(c => existingIds.has(this.getPageTimestampDbId(c.page, c.id)));
         if(updateList.length) {
-          this.logger.debug(`(HtmlPageCacheCleaner) updating existing timestamps, chunk #${i} count=${updateList.length}`);
+          this.logger.debug('updating existing timestamps', { chunk: i, count: updateList.length });
           // TODO: find safe way to update multiple timestamps in one request
           await this.updatePageTimestampsOneByOne(updateList, throwOnError);
           chunkSucceeded += updateList.length;
           chunkFailed -= updateList.length;
         }
       } catch(err: any) {
-        this.logger.warn(`(HtmlPageCacheCleaner) failed to update existing timestamps, count=${timestamps.length}`, err);
+        this.logger.warn('failed to update existing timestamps', err, { count: timestamps.length });
         if(throwOnError) {
           throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to update existing page timestamps', 'error-page');
         }
@@ -456,11 +462,11 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
       }
     }
 
-    this.logger.debug(`(HtmlPageCacheCleaner) page timestamps updated (in batches), succeeded=${succeeded}, failed=${failed}`);
+    this.logger.debug('page timestamps updated (in batches', { succeeded, failed });
   };
 
   updatePageTimestampsOneByOne = async (timestamps: {page: AppPage, id: EntityId | undefined, timestamp: Date}[], throwOnError: boolean): Promise<void> => {
-    this.logger.debug(`(HtmlPageCacheCleaner) updating page timestamps (one-by-one), count=${timestamps.length}`);
+    this.logger.debug('updating page timestamps (one-by-one', { count: timestamps.length });
     
     let succeeded = 0;
     let failed = 0;
@@ -483,7 +489,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
         });
         succeeded++;
       } catch(err: any) {
-        this.logger.warn(`(HtmlPageCacheCleaner) failed to update all page timestamps (one-by-one), page=${pageUpdateData.page}, id=${pageUpdateData.id}, timestamp=${pageUpdateData.timestamp.toISOString()}`, err);
+        this.logger.warn('failed to update all page timestamps (one-by-one', err, { page: pageUpdateData.page, id: pageUpdateData.id, timestamp: pageUpdateData.timestamp.toISOString() });
         if(throwOnError) {
           throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to update page timestamp', 'error-page');
         } else {
@@ -492,11 +498,11 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
       }
     };
 
-    this.logger.debug(`(HtmlPageCacheCleaner) page timestamps updated (one-by-one), succeeded=${succeeded}, failed=${failed}`);
+    this.logger.debug('page timestamps updated (one-by-one', { succeeded, failed });
   };
 
   doInvalidatePage = async (allKeys: string[], page: AppPage, id: EntityId | undefined, options: NonNullable<IAppConfig['caching']['invalidation']>, cacheVaryOptions: PageCacheVaryOptions, queryVariants: any[], throwOnError: boolean): Promise<void> => {
-    this.logger.verbose(`(HtmlPageCacheCleaner) invalidating..., page=${page.valueOf()}, id=${id ?? ''}, numAllKeys=${allKeys.length}`);
+    this.logger.verbose('invalidating', { page: page.valueOf(), id: id ?? '', numAllKeys: allKeys.length });
 
     if(!queryVariants.length && cacheVaryOptions === 'VaryByIdAndSystemParamsOnly') {
       queryVariants.push({});
@@ -505,17 +511,17 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
     let attempCount = 0;
     while(++attempCount <= options.retries.attemptsCount) {
       try {
-        this.logger.debug(`(HtmlPageCacheCleaner) page invalidation attemptNo=${attempCount}, page=${page.valueOf()}, id=${id ?? ''}, numAllKeys=${allKeys.length}`);
+        this.logger.debug('page invalidation', { attemptNo: attempCount, page: page.valueOf(), id: id ?? '', numAllKeys: allKeys.length });
         const keys = await this.getMatchedKeys(allKeys, page, id, cacheVaryOptions, queryVariants);
       
         for(let i = 0; i < keys.length; i++) {
           const key = keys[i];
-          this.logger.verbose(`(HtmlPageCacheCleaner) removing key=${key}, page=${page.valueOf()}, id=${id ?? ''}, numAllKeys=${allKeys.length}`);
+          this.logger.verbose('removing', { key, page: page.valueOf(), id: id ?? '', numAllKeys: allKeys.length });
           await this.nitroCache.removeItem(key);
         }
         break;  
       } catch(err: any) {
-        this.logger.warn(`(HtmlPageCacheCleaner) failed to invalidate page cache, page=${page.valueOf()}, id=${id ?? ''}, attemptNo=${attempCount}, numAllKeys=${allKeys.length}`, err);
+        this.logger.warn('failed to invalidate page cache', err, { page: page.valueOf(), id: id ?? '', attemptNo: attempCount, numAllKeys: allKeys.length });
         if(attempCount === options.retries.attemptsCount) {
           if(throwOnError) {
             throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to invalidate page cache', 'error-page');
@@ -528,7 +534,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
       }
     }
 
-    this.logger.verbose(`(HtmlPageCacheCleaner) invalidation completed, page=${page.valueOf()}, id=${id ?? ''}, numAllKeys=${allKeys.length}`);
+    this.logger.verbose('invalidation completed', { page: page.valueOf(), id: id ?? '', numAllKeys: allKeys.length });
   };
 
   invalidatePage = async (mode: 'schedule' | 'immediate', page: AppPage, id: EntityId | undefined): Promise<void> => {
@@ -536,7 +542,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
       return;
     }
 
-    this.logger.debug(`(HtmlPageCacheCleaner) invalidate page, mode=${mode}, page=${page.valueOf()}, id=${id ?? ''}`);
+    this.logger.debug('invalidate page', { mode, page: page.valueOf(), id: id ?? '' });
 
     const timestamp = new Date();
     if(mode === 'immediate') {
@@ -560,7 +566,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
       });
     }
 
-    this.logger.debug(`(HtmlPageCacheCleaner) invalidate page - exit, mode=${mode}, page=${page.valueOf()}, id=${id ?? ''}`);
+    this.logger.debug('invalidate page - exit', { mode, page: page.valueOf(), id: id ?? '' });
   };
   
   escapeKey = (key: string | string[]): string => {
@@ -607,7 +613,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
 
 
   getPossibleKeyPathParts = (page: AppPage, id: EntityId | undefined, cacheVaryOptions: PageCacheVaryOptions, queryVariants: any[]): string[] => {
-    this.logger.debug(`(HtmlPageCacheCleaner) get possible key path parts, page=${page.valueOf()}, id=${id ?? ''}, cacheVaryOptions=${cacheVaryOptions}, numQueryVariants=${queryVariants.length}`);
+    this.logger.debug('get possible key path parts', { page: page.valueOf(), id: id ?? '', cacheVaryOptions, numQueryVariants: queryVariants.length });
 
     const paths = [];
     const result = [];
@@ -643,12 +649,12 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
       }
     }
 
-    this.logger.debug(`(HtmlPageCacheCleaner) possible key path parts computed, page=${page.valueOf()}, id=${id ?? ''}, cacheVaryOptions=${cacheVaryOptions}, numQueryVariants=${queryVariants.length}, urls=[${paths.join('; ')}], result=[${result.join('; ')}]`);
+    this.logger.debug('possible key path parts computed', { page: page.valueOf(), id: id ?? '', cacheVaryOptions, numQueryVariants: queryVariants.length });
     return result;    
   };
 
   getMatchedKeys = async (allKeys: string[], page: AppPage, id: EntityId | undefined, cacheVaryOptions: PageCacheVaryOptions, queryVariants: any[]): Promise<string[]> => {
-    this.logger.debug(`(HtmlPageCacheCleaner) get matched keys, page=${page.valueOf()}, id=${id ?? ''}, numAllKeys=${allKeys.length}, cacheVaryOptions=${cacheVaryOptions}, numQueryVariants=${queryVariants.length}`);
+    this.logger.debug('get matched keys', { page: page.valueOf(), id: id ?? '', numAllKeys: allKeys.length, cacheVaryOptions, numQueryVariants: queryVariants.length });
     const possibleKeyParts = this.getPossibleKeyPathParts(page, id, cacheVaryOptions, queryVariants);
 
     let matchedKeys: string[] = [];
@@ -657,18 +663,18 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
     }
     matchedKeys = uniq(matchedKeys);
 
-    this.logger.debug(`(HtmlPageCacheCleaner) matched keys obtained, page=${page.valueOf()}, id=${id ?? ''}, numAllKeys=${allKeys.length}, cacheVaryOptions=${cacheVaryOptions}, numQueryVariants=${queryVariants.length}, result=[${matchedKeys.join('; ')}]`);
+    this.logger.debug('matched keys obtained', { page: page.valueOf(), id: id ?? '', numAllKeys: allKeys.length, cacheVaryOptions, numQueryVariants: queryVariants.length });
     return matchedKeys;
   };
 
   private doPurge = async (htmlPageTimestamp: Date, throwOnError: boolean): Promise<void> => {
-    this.logger.info(`(HtmlPageCacheCleaner) purge, timestamp=${htmlPageTimestamp.toISOString()}`);
+    this.logger.info('purge', { timestamp: htmlPageTimestamp.toISOString() });
 
     let allKeys: string[] = [];
     try {
       allKeys = await this.getAllKeysInCache();
     } catch(err: any) {
-      this.logger.error(`(HtmlPageCacheCleaner) failed to list all cache keys, timestamp=${htmlPageTimestamp.toISOString()}`, err);
+      this.logger.error('failed to list all cache keys', err, { timestamp: htmlPageTimestamp.toISOString() });
       if(throwOnError) {
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to purge nitro cache', 'error-page');
       } else {
@@ -680,7 +686,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
       try {
         await this.nitroCache.removeItem(allKeys[i]);
       } catch(err: any) {
-        this.logger.warn(`(HtmlPageCacheCleaner) failed to remove item from cache, timestamp=${htmlPageTimestamp.toISOString()}`, err);
+        this.logger.warn('failed to remove item from cache', err, { timestamp: htmlPageTimestamp.toISOString() });
         if(throwOnError) {
           throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to purge nitro cache', 'error-page');
         }
@@ -689,7 +695,7 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
 
     await this.touchPageTimestamps(htmlPageTimestamp, throwOnError);
     
-    this.logger.info(`(HtmlPageCacheCleaner) purge completed, timestamp=${htmlPageTimestamp.toISOString()}, num keys=${allKeys.length}`);
+    this.logger.info('purge completed', { timestamp: htmlPageTimestamp.toISOString(), keys: allKeys.length });
   };
 
   purge = async (): Promise<void> => {
@@ -697,12 +703,12 @@ export class HtmlPageCacheCleaner implements IHtmlPageCacheCleaner {
       return;
     }
 
-    this.logger.verbose(`(HtmlPageCacheCleaner) purge - enter`);
+    this.logger.verbose('purge - enter');
 
     const htmlPageTimestamp = new Date();
     await this.doPurge(htmlPageTimestamp, true);
 
-    this.logger.verbose(`(HtmlPageCacheCleaner) purge - exit`);
+    this.logger.verbose('purge - exit');
   };
 
   getStatsByKeyForLogMessage = <TItem>(items: TItem[], keySelector: (item: TItem) => string): [EntityModel, number][] => toPairs(groupBy(items, e => keySelector(e))).map(p => [p[0] as EntityModel, p[1].length]);

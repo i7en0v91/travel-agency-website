@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { formatValidThruDate } from '@golobe-demo/shared';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   selected: boolean,
   digits: string,
   dueDate: Date

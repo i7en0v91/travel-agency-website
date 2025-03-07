@@ -2,6 +2,7 @@
 import { AppConfig, getPagePath, AppPage, type Locale, getI18nResName2 } from '@golobe-demo/shared';
 import AccountPageContainer from './../components/account/page-container.vue';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
+import type { ControlKey } from './../helpers/components';
 
 definePageMeta({
   middleware: 'auth',
@@ -13,13 +14,15 @@ definePageMeta({
 });
 useOgImage();
 
+const CtrlKey: ControlKey = ['Page', 'ForgotPasswordVerify'];
+
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
 </script>
 
 <template>
-  <AccountPageContainer ctrl-key="ForgotPasswordVerify">
+  <AccountPageContainer :ctrl-key="[...CtrlKey, 'PageContent']">
     <div class="w-full h-auto">
       <div class="flex flex-col flex-nowrap gap-6 md:gap-8 items-start text-gray-600 dark:text-gray-400">
         {{ $t(getI18nResName2('forgotPasswordVerifyPage', 'text'), { tokenExpirationHours: AppConfig.verificationTokenExpirationHours }) }}

@@ -1,3 +1,4 @@
+import type { ControlKey } from './components';
 import { AppPage, MimeTypeWebp } from '@golobe-demo/shared';
 
 export enum DeviceSizeEnum {
@@ -37,30 +38,39 @@ export const SiteSearchMaxMatchLength: { [P in keyof typeof DeviceSizeEnum]: num
   XXL: 60
 };
 export const HashNavigationPageTimeout = 3000;
+export const StoreOperationTimeout = 30000;
 
-export const UserAccount = 'account';
-export const UserHistory = 'history';
-export const UserPayments = 'payments';
-export const UserAccountTabGroup = 'UserAccount-TabControl';
-export const UserAccountTabAccount = `${UserAccountTabGroup}-${UserAccount}`;
-export const UserAccountTabHistory = `${UserAccountTabGroup}-${UserHistory}`;
-export const UserAccountTabPayments = `${UserAccountTabGroup}-${UserPayments}`;
+export const UserAccount = 'Account';
+export const UserHistory = 'History';
+export const UserPayments = 'Payments';
+export const UserAccountPageCtrlKey: ControlKey = ['Page', 'Account'];
+export const UserAccountTabGroup: ControlKey = [...UserAccountPageCtrlKey, 'TabGroup'];
+export const UserAccountTabAccount: ControlKey = [...UserAccountTabGroup, 'Account', 'Tab'];
+export const UserAccountTabHistory: ControlKey = [...UserAccountTabGroup, 'History', 'Tab'];
+export const UserAccountTabPayments: ControlKey = [...UserAccountTabGroup, 'Payments', 'Tab'];
 
-export const SearchFlightOffersDisplayOptions = 'searchFlightOffers-DisplayOptions';
-export const SearchStayOffersDisplayOptions = 'searchStayOffers-DisplayOptions';
-
-export const FavouritesTabGroup = 'tabFavouritesGrp';
-export const FavouritesTabFlights = `${FavouritesTabGroup}-Flights`;
-export const FavouritesTabStays = `${FavouritesTabGroup}-Stays`;
-
-export const HistoryTabGroup = 'tabHistoryGrp';
-export const HistoryTabFlights = `${HistoryTabGroup}-Flights`;
-export const HistoryTabStays = `${HistoryTabGroup}-Stays`;
+export const HistoryTabGroup: ControlKey = [...UserAccountTabHistory, 'TabGroup'];
+export const HistoryTabFlights: ControlKey = [...HistoryTabGroup, 'Flights', 'Tab'];
+export const HistoryTabStays: ControlKey = [...HistoryTabGroup, 'Stays', 'Tab'];
 
 export const SearchOffersFilterTabGroupId = 'search-offers-filter-panel-gid';
+enum SearchStaysOptionButtonEnum { hotels = 'hotels', motels = 'motels', resorts = 'resorts' };
+export type SearchStaysOptionButtonKind = keyof typeof SearchStaysOptionButtonEnum;
+export const SearchStaysOptionButtons: SearchStaysOptionButtonKind[] = [
+  SearchStaysOptionButtonEnum.hotels, 
+  SearchStaysOptionButtonEnum.motels, 
+  SearchStaysOptionButtonEnum.resorts
+];
 
 export const WorldMapCityLabelFlipX = 0.85;
 export const TravelDetailsHtmlAnchor = 'travelDetails';
+export enum StoreKindEnum {
+  SystemConfiguration = 'system-configuration',
+  UserNotification = 'user-notification',
+  ControlValues = 'control-values',
+  EntityCache = 'entity-cache'
+}
+
 export const StayReviewEditorHtmlAnchor = 'stayReviewEditor';
 export const StayReviewSectionHtmlAnchor = 'stayReviewSection';
 

@@ -1,129 +1,173 @@
-import { CachedResultsInAppServicesEnabled, lookupValueOrThrow, DataKeyImageSrcSizes, TemporaryEntityId, ImageCategory, type IImageCategoryInfo } from '@golobe-demo/shared';
-import { getPayload, addPayload } from './../helpers/payload';
-import { getObject } from './../helpers/rest-utils';
-import { destr } from 'destr';
+import { AppConfig, AvailableImageCategories, CachedResultsInAppServicesEnabled, TemporaryEntityId, type ImageCategory, type IImageCategoryInfo, type IAppLogger, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import { StoreKindEnum } from './../helpers/constants';
 import { getCommonServices, getServerServices } from '../helpers/service-accessors';
 import { ApiEndpointImageCategories, type IImageCategoryDto } from '../server/api-definitions';
+import { buildStoreDefinition, getStoreLoggingPrefix } from './../helpers/stores/pinia';
 
 type CategoryInfo = Omit<IImageCategoryInfo, 'createdUtc' | 'modifiedUtc'>;
-type CategoryInfoPayload = [string, CategoryInfo];
+type CategoryInfoArray = CategoryInfo[];
 
-export interface ISystemConfigurationStore {
-  initialize(): Promise<void>;
-  getImageSrcSize(category: ImageCategory): Promise<CategoryInfo>;
+declare type State = {
+  s_imagesConfig: CategoryInfo[]
+};
+
+const StoreId = StoreKindEnum.SystemConfiguration;
+const CommonLogProps =  { component: getStoreLoggingPrefix(StoreId) };
+
+async function buildImageCategoryInfos (logger: IAppLogger): Promise<CategoryInfoArray> {
+  logger.verbose(`building image category infos`);
+
+  const imageCategoryLogic = getServerServices()!.getImageCategoryLogic();
+  const result: CategoryInfoArray = 
+    Array.from((await imageCategoryLogic.getImageCategoryInfos(CachedResultsInAppServicesEnabled)).entries())
+      .map(e => { 
+        return { 
+          id: e[1].id,
+          width: e[1].width, 
+          height: e[1].height, 
+          kind: e[1].kind 
+        }; 
+      });
+
+  logger.verbose(`image category infos built`, { size: result.length });
+  return result;
 }
 
-export const useSystemConfigurationStore = defineStore('systemConfigurationStore', () => {
-  const logger = getCommonServices().getLogger();
-  let initialized = false;
-  let imageCategoryInfosMap: ReadonlyMap<ImageCategory, CategoryInfo> | undefined;
-  let imageCategoryInfosPayload: CategoryInfoPayload[] | undefined;
-
-  async function buildImageCategoryInfoPayload (): Promise<CategoryInfoPayload[]> {
-    try {
-      logger.verbose('(systemConfigurationStore) building image category infos payload');
-      const result: CategoryInfoPayload[] = [];
-
-      const imageCategoryLogic = getServerServices()!.getImageCategoryLogic();
-      const allCategoryInfos = Array.from((await imageCategoryLogic.getImageCategoryInfos(CachedResultsInAppServicesEnabled)).entries());
-      for (let i = 0; i < allCategoryInfos.length; i++) {
-        const category = allCategoryInfos[i][0];
-        const categoryInfo = allCategoryInfos[i][1];
-        result.push([category, { width: categoryInfo.width, height: categoryInfo.height, id: categoryInfo.id, kind: categoryInfo.kind }]);
-      }
-      logger.verbose(`(systemConfigurationStore) image category infos payload built, size=${result.length}`);
-      return result;
-    } catch (err: any) {
-      logger.warn('(systemConfigurationStore) exception while building image category infos payload', err);
-      return [];
-    }
+function buildFallbackImageCategoriesConfig() {
+  const result: CategoryInfo[] = [];
+  for(const c of AvailableImageCategories) {
+    result.push({ width: 1, height: 1, id: TemporaryEntityId, kind: c as ImageCategory });
   }
+  return result;
+}
+const FallbackImageCategories = buildFallbackImageCategoriesConfig();
 
-  function createImageCategoryInfosMap (payload?: CategoryInfoPayload[]) : ReadonlyMap<ImageCategory, CategoryInfo> {
-    if(!payload) {
-      logger.warn('(systemConfigurationStore) cannot build image category infos map from empty data, fallback sizes will be used');
-      return new Map<ImageCategory, CategoryInfo>([]);
-    }
-
-    try {
-      logger.verbose('(systemConfigurationStore) building image category infos map');
-      const result = new Map<ImageCategory, CategoryInfo>([]);// = new Map<ImageCategory, CategoryInfo>(payload);
-      for (let i = 0; i < payload.length; i++) {
-        const category = lookupValueOrThrow(ImageCategory, payload[i][0]) as ImageCategory;
-        const size = destr<CategoryInfo>(payload[i][1]);
-        result.set(category, size);
+const StoreDef = buildStoreDefinition(StoreId, 
+  (clientSideOptions) => { 
+    // TODO: uncomment preview state
+    // const { enabled } = usePreviewState();
+    const enabled = false;
+    return {
+      fallbackImageCategories: FallbackImageCategories,
+      imageCategoriesFetch:
+        useFetch(`/${ApiEndpointImageCategories}`, {
+          server: false,
+          lazy: false,
+          immediate: false,
+          cache: (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
+          dedupe: 'defer',
+          default: () => [],
+          transform: (response: IImageCategoryDto[]) => {
+            const logger = getCommonServices()?.getLogger();
+            logger?.verbose(`image categories fetched, transforming`, { ...CommonLogProps, response });
+            
+            const result: CategoryInfoArray = response?.map(item => {
+              return {
+                id: item.id,
+                kind: item.kind,
+                width: item.width,
+                height: item.height
+              };
+            });
+            
+            logger?.verbose(`image categories transformed`, { ...CommonLogProps, response });
+            return result;
+          },
+          $fetch: clientSideOptions!.fetchEx({ defautAppExceptionAppearance: 'error-page' })
+        })
+      };
+  },
+  {
+    state: (): State => {
+      return { 
+        s_imagesConfig: []
+      };
+    },
+    getters: {
+      /**
+       * Properties of every image type available in system.
+       * It is usually assumed to be initialized for any page component due to {@link loadImageCategories} called upon app startup
+       */
+      imageCategories(): CategoryInfo[] {
+        if(!this.s_imagesConfig?.length) {
+          const logger = getCommonServices()?.getLogger();
+          logger?.warn(`access to uninitialized image categories field`, undefined, CommonLogProps);
+          return FallbackImageCategories;
+        }
+        return this.s_imagesConfig!;
       }
-      logger.verbose(`(systemConfigurationStore) image category infos  map build, size=${result.size}`);
-      return result;
-    } catch (err: any) {
-      logger.warn('(systemConfigurationStore) failed to build image category infos map, fallback sizes will be used', err);
-      return new Map<ImageCategory, CategoryInfo>([]);
-    }
-  }
+    },
+    actions: {
+      /**
+       * (Re-)loads image categories configuration using either fetch from server
+       * @param ifNotLoaded do nothing if configuration has beed already loaded. 
+       * True by default as the method is used only during app startup for setting initial values
+       */
+      async loadImageCategories(ifNotLoaded = true): Promise<void> {
+        const logger = getCommonServices().getLogger();        
+        if(this.s_imagesConfig?.length && ifNotLoaded) {
+          logger.debug(`image categories already loaded`);
+          return;
+        }
 
-  async function fetchFromServer(): Promise<IImageCategoryDto[]> {
-    logger.debug('(systemConfigurationStore) fetching categories from server');
-    const dtos = await getObject<IImageCategoryDto[]>(`/${ApiEndpointImageCategories}`, undefined, 'default', false, undefined, 'default');
-    logger.debug(`(systemConfigurationStore) categories fetched: [${JSON.stringify(dtos)}]`);
-    return dtos!;
-  };
+        let categoryInfos: CategoryInfoArray | undefined;
+        if(import.meta.client) {
+          try {
+            const imageCategoriesFetch = await this.clientSetupVariables().imageCategoriesFetch!;
+            await imageCategoriesFetch!.refresh();
+            categoryInfos = imageCategoriesFetch!.data.value;
 
-  async function initialize (): Promise<void> {
-    if (!initialized) {
-      logger.verbose('(systemConfigurationStore) initializing');
-
-      if (!imageCategoryInfosPayload) {
-        const nuxtApp = useNuxtApp();
-        if (import.meta.client) {
-          imageCategoryInfosPayload = getPayload<CategoryInfoPayload[]>(nuxtApp, DataKeyImageSrcSizes) ?? undefined;
-          if(!imageCategoryInfosPayload) {
-            logger.verbose('(systemConfigurationStore) image category infos payload missed, fetching from server');
-            try {
-              imageCategoryInfosPayload = (await fetchFromServer()).map(item => {
-                return [item.kind, {
-                  id: item.id,
-                  kind: item.kind,
-                  width: item.width,
-                  height: item.height
-                }];
-              });
-            } catch(err: any) {
-              logger.warn('(systemConfigurationStore) failed to fecth image category infos from server', err);
-            }  
+            const err = imageCategoriesFetch.error.value;
+            if(categoryInfos?.length && !err) {
+              this.categoriesLoaded(categoryInfos);
+            } else {
+              this.categoriesLoadFailed(err);
+            }
+          } catch(err: any) {
+            this.categoriesLoadFailed(err);
+            return;
           }
         } else {
-          imageCategoryInfosPayload = await buildImageCategoryInfoPayload();
-          addPayload(nuxtApp, DataKeyImageSrcSizes, imageCategoryInfosPayload);
+          try {
+            categoryInfos = await buildImageCategoryInfos(logger);
+            if(!categoryInfos?.length) {
+              throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'image categories data empty', 'error-page');
+            } 
+
+            this.categoriesLoaded(categoryInfos);
+          } catch (err: any) {
+            this.categoriesLoadFailed(err);
+            return;
+          }
         }
       }
+    },
+    patches: {
+      categoriesLoaded(categoryInfos: CategoryInfoArray): void {
+        const values: CategoryInfo[] = categoryInfos;
+        this.$patch({
+          s_imagesConfig: values
+        });
+      },
 
-      if (!imageCategoryInfosMap) {
-        imageCategoryInfosMap = createImageCategoryInfosMap(imageCategoryInfosPayload);
+      categoriesLoadFailed(err: any): void {
+        const logger = getCommonServices()?.getLogger();
+        if(import.meta.client) {
+          logger?.warn(`failed to to load image categories`, err, CommonLogProps);
+          if(this.s_imagesConfig?.length) {
+            throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to load image categories', 'error-stub');
+          } else {
+            this.$patch({
+              s_imagesConfig: FallbackImageCategories
+            });
+          }
+        } else {
+          logger?.error(`failed to initialize image categories`, err, CommonLogProps);
+        }
+        throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to initialize image categories', 'error-page');
       }
-
-      initialized = true;
-      logger.verbose('(systemConfigurationStore) initialization completed');
     }
   }
+);
 
-  async function getImageSrcSize (category: ImageCategory): Promise<CategoryInfo> {
-    logger.verbose(`(systemConfigurationStore) accessing image source size, category=${category}`);
-
-    await initialize();
-
-    let info = imageCategoryInfosMap!.get(category);
-    if (!info) {
-      logger.warn(`(systemConfigurationStore) unexpected category: ${category}, fallback size will be used`);
-      info = { width: 1, height: 1, id: TemporaryEntityId, kind: category };
-    }
-
-    logger.verbose(`(systemConfigurationStore) image source size for category=${category} is {width: ${info.width}, height: ${info.height}}`);
-    return info;
-  };
-
-  const istore: ISystemConfigurationStore = {
-    getImageSrcSize,
-    initialize
-  };
-  return istore;
-});
+export const useSystemConfigurationStore = defineStore(StoreId, StoreDef);

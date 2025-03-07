@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { type I18nResName, getI18nResName2 } from '@golobe-demo/shared';
 import type { ConfirmBoxButton } from '../../types';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   buttons: ConfirmBoxButton[],
   msgResName: I18nResName,
   msgResArgs?: any
@@ -16,7 +17,7 @@ defineShortcuts({
     handler: () => { 
       const closeResultBtn = buttons.includes('cancel') ? 'cancel' : (buttons.includes('no') ? 'no' : undefined);
       if(!closeResultBtn) {
-        logger.debug(`(ConfirmBox) ignoring escape btn close, no cancel result is not expected: ctrlKey=${ctrlKey}`);
+        logger.debug('ignoring escape btn close, no cancel result is not expected', ctrlKey);
         return;
       }
       setResultAndClose(closeResultBtn);
@@ -26,7 +27,7 @@ defineShortcuts({
 
 const { ctrlKey, buttons, msgResName, msgResArgs } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ConfirmBox' });
 
 const open = defineModel<boolean>('open');
 const result = defineModel<ConfirmBoxButton | undefined>('result');
@@ -46,7 +47,7 @@ function onClosed () {
 }
 
 function onButtonClick (button: ConfirmBoxButton) {
-  logger.verbose(`(ConfirmBox) button clicked: ctrlKey=${ctrlKey}, button=${button}`);
+  logger.verbose('button clicked', { ctrlKey, button });
   setResultAndClose(button);
 }
 

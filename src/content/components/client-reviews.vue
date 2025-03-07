@@ -4,5 +4,5 @@ import CompanyReviews from './../../components/index/company-reviews.vue';
 
 
 <template>
-  <CompanyReviews ctrl-key="CompanyReviews"/>
+  <CompanyReviews :ctrl-key="['CompanyReviews']"/>
 </template>

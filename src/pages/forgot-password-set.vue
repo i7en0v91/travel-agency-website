@@ -6,6 +6,7 @@ import { post } from './../helpers/rest-utils';
 import { createPasswordSchema } from './../helpers/forms';
 import { useNavLinkBuilder } from './../composables/nav-link-builder';
 import { getCommonServices } from '../helpers/service-accessors';
+import type { ControlKey } from './../helpers/components';
 
 const { t, locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
@@ -20,6 +21,8 @@ definePageMeta({
 });
 useOgImage();
 
+const CtrlKey: ControlKey = ['Page', 'ForgotPasswordSet'];
+
 const schema = computed(() => {
   return createPasswordSchema({
     required: t(getI18nResName2('validations', 'required')),
@@ -33,7 +36,7 @@ const state = reactive<any>({
   confirmPassword: undefined
 });
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ForgotPasswordSet' });
 const route = useRoute();
 let tokenId: EntityId | undefined;
 let tokenValue = '';
@@ -41,13 +44,13 @@ try {
   tokenId = route.query.token_id?.toString() ?? '';
   tokenValue = route.query.token_value?.toString() ?? '';
 } catch (err: any) {
-  logger.info(`(ForgotPasswordSet) failed to parse token data: id=${tokenId}, value=${tokenValue ? SecretValueMask : '[empty]'}`);
+  logger.info('failed to parse token data', { id: tokenId, token: tokenValue });
   console.warn(err);
 }
 
 const callServerPasswordSet = async (password: string) => {
   if (tokenId && tokenValue) {
-    logger.verbose('(ForgotPasswordSet) sending set password request');
+    logger.verbose('sending set password request');
     const postBody: IRecoverPasswordCompleteDto = {
       id: tokenId,
       value: tokenValue,
@@ -60,7 +63,7 @@ const callServerPasswordSet = async (password: string) => {
       await navigateTo(navLinkBuilder.buildPageLink(AppPage.ForgotPasswordComplete, locale.value as Locale, { result: resultCode }));
     }
   } else {
-    logger.verbose('(ForgotPasswordSet) wont send set password request, token params are empty');
+    logger.verbose('wont send set password request, token params are empty');
     await navigateTo(navLinkBuilder.buildPageLink(AppPage.ForgotPasswordComplete, locale.value as Locale, { result: RecoverPasswordCompleteResultEnum.LINK_INVALID }));
   }
 };
@@ -72,7 +75,7 @@ function onSubmit () {
 </script>
 
 <template>
-  <AccountPageContainer ctrl-key="ForgotPasswordSet">
+  <AccountPageContainer :ctrl-key="[...CtrlKey, 'PageContent']">
     <div class="w-full h-auto">
       <h1 class="text-gray-600 dark:text-gray-300 text-5xl max-w-[90vw] break-words font-normal mt-4">
         {{ $t(getI18nResName2('forgotPasswordSetPage', 'title')) }}

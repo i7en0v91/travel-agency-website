@@ -12,20 +12,20 @@ export class CompanyReviewLogic implements ICompanyReviewsLogic {
 
   public static inject = ['companyReviewsLogicPrisma', 'acsysDraftsEntitiesResolver', 'dbRepository', 'logger'] as const;
   constructor (prismaImplementation: ICompanyReviewsLogic, acsysDraftsEntitiesResolver: AcsysDraftEntitiesResolver, dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'CompanyReviewLogic-Acsys' });
     this.prismaImplementation = prismaImplementation;
     this.dbRepository = dbRepository;
     this.acsysDraftsEntitiesResolver = acsysDraftsEntitiesResolver;
   }
 
   async deleteReview (id: EntityId): Promise<void> {
-    this.logger.debug(`(CompanyReviewLogic-Acsys) deleting review: id=${id}`);
+    this.logger.debug('deleting review', id);
     await this.prismaImplementation.deleteReview(id);
-    this.logger.debug(`(CompanyReviewLogic-Acsys) review deleted: id=${id}`);
+    this.logger.debug('review deleted', id);
   };
 
   async createReview (data: CompanyReviewData, previewMode: PreviewMode): Promise<EntityId> {
-    this.logger.debug(`(CompanyReviewLogic-Acsys) creating review, header=${data.header.en}, previewMode=${previewMode}`);
+    this.logger.debug('creating review', { header: data.header.en, previewMode });
 
     let reviewId: EntityId;
     if(previewMode) {
@@ -83,12 +83,12 @@ export class CompanyReviewLogic implements ICompanyReviewsLogic {
     } else {
       reviewId = await this.prismaImplementation.createReview(data, previewMode);
     }
-    this.logger.debug(`(CompanyReviewLogic-Acsys) review created, header=${data.header.en}, id=${reviewId}, previewMode=${previewMode}`);
+    this.logger.debug('review created', { header: data.header.en, id: reviewId, previewMode });
     return reviewId;
   }
 
   async getReviews (previewMode: PreviewMode): Promise<ICompanyReview[]> {
-    this.logger.debug(`(CompanyReviewLogic-Acsys) obtaining list of company reviews, previewMode=${previewMode}`);
+    this.logger.debug('obtaining list of company reviews', previewMode);
 
     let result: ICompanyReview[];
     if(previewMode) {
@@ -98,7 +98,7 @@ export class CompanyReviewLogic implements ICompanyReviewsLogic {
       result = await this.prismaImplementation.getReviews(previewMode);
     }
     
-    this.logger.debug(`(CompanyReviewLogic-Acsys) returning list of company reviews, count=${result.length}, previewMode=${previewMode}`);
+    this.logger.debug('returning list of company reviews', { count: result.length, previewMode });
     return result;
   }
 }

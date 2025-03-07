@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   ui?: string
 }
 const { ui = '' } = defineProps<IProps>();

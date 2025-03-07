@@ -55,7 +55,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
   
   public static inject = ['logger'] as const;
   constructor (logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'HtmlPageModelMetadata' });
   }
 
   
@@ -77,7 +77,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
   };
 
   private createCachingQueryVariants = <TCacheableParamOptions extends Record<any, CachePageParamOptions>>(cacheableParamOptions: TCacheableParamOptions): GetCachePageParamListObj<TCacheableParamOptions>[] => {
-    this.logger.debug(`(HtmlPageModelMetadata) creating caching query variants, params=${JSON.stringify(cacheableParamOptions)}`);
+    this.logger.debug('creating caching query variants', { params: cacheableParamOptions });
 
     const params = toPairs(cacheableParamOptions);
     const variedParams: { name: string, values: any[] }[] = [];
@@ -85,7 +85,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
       const paramName = params[i][0];
       const paramOptions = params[i][1];
       if(!isArray(paramOptions.acceptableValues)) {
-        this.logger.error(`(HtmlPageModelMetadata) cannot create caching query variants, expected query parameter to have an array type with limited number of possible values, paramName=${paramName}`);
+        this.logger.error('cannot create caching query variants, expected query parameter to have an array type with limited number of possible values', undefined, paramName);
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'internal server error', 'error-page');
       }
       variedParams.push({
@@ -95,7 +95,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
     }
     const result = this.cartesianParams(...variedParams);
 
-    this.logger.debug(`(HtmlPageModelMetadata) caching query variants created, params=${JSON.stringify(cacheableParamOptions)}, count=${result.length}, variants=[${result.map((x: any) => JSON.stringify(x)).join('; ')}]`);
+    this.logger.debug('caching query variants created', { params: cacheableParamOptions, count: result.length });
     return result;
   };
 
@@ -107,7 +107,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
     allowedParamsOptions: TAddAllowedParamsOptions,
     cacheParamsOptions: TCacheParamsOptions
   ): ({ success: false, error: ParseQueryCacheError } | { success: true, query: NormalizedQueryResult<TVaryMode, TAddAllowedParamsOptions, TCacheParamsOptions> }) => {
-    this.logger.debug(`(HtmlPageModelMetadata) parsing variant-values query: url=${url}`);
+    this.logger.debug('parsing variant-values query', url);
     const allowedParamNames = allowedParamsOptions ? keys(allowedParamsOptions) : [];
     const cacheParamNames = cacheParamsOptions ? keys(cacheParamsOptions) : [];
     const allPageParamNames = [ ...allowedParamNames, ...cacheParamNames ];
@@ -122,7 +122,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
       const paramName = paramTuple[0];
       const paramValue = paramTuple[1];
       if(isArray(paramValue)) {
-        this.logger.info(`(HtmlPageModelMetadata) got issues while parsing variant-values query because of array param value (not supported): url=${url}, invalid paramName=[${paramName}], paramValue=[${paramValue.join('; ')}]]`);
+        this.logger.info('got issues while parsing variant-values query because of array param value', { url, paramName, paramValue });
         const result = {
           success: false as const,
           error: {
@@ -135,7 +135,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
       };
       const paramOptions = cacheParamsOptions[paramName] ?? allowedParamsOptions[paramName];
       if(paramValue && (paramOptions.acceptableValues !== 'anyValue' && !paramOptions.acceptableValues.includes(paramValue))) {
-        this.logger.info(`(HtmlPageModelMetadata) got issues while parsing variant-values query because of invalid param value: url=${url}, invalid paramName=[${paramName}], paramValue=[${paramValue}], allowedValues=[${paramOptions.acceptableValues.join('; ')}]`);
+        this.logger.info('got issues while parsing variant-values query because of invalid param value', { url, invalidParam: paramName, paramValue, allowedValues: paramOptions.acceptableValues });
         const result = {
           success: false as const,
           error: {
@@ -151,7 +151,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
     // check for redundant parameters
     const redundantParamNames = queryParamNames.filter(p => !allPageParamNames.includes(p));
     if(redundantParamNames.length > 0) {
-      this.logger.info(`(HtmlPageModelMetadata) got variant-values query parsing issues because of redundant params: url=${url}, redundant param names=[${redundantParamNames.join('; ')}]`);
+      this.logger.info('got variant-values query parsing issues because of redundant params', { url, redundantParams: redundantParamNames });
       const result = {
         success: false as const,
         error: {
@@ -170,7 +170,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
     ]);
     const missedParamNames = requiredParamNames.filter(p => !queryParamNames.includes(p));
     if(missedParamNames.length > 0) {
-      this.logger.verbose(`(HtmlPageModelMetadata) parsing variant-values query detected missed required params: url=${url}, missed param names=[${missedParamNames.join('; ')}]`);
+      this.logger.verbose('parsing variant-values query detected missed required params', { url, paramNames: missedParamNames });
       const allOptions = {
         ...allowedParamsOptions,
         ...cacheParamsOptions,
@@ -194,7 +194,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
       return result;
     }
 
-    this.logger.debug(`(HtmlPageModelMetadata) variant-values query parsed: url=${url}, result=[${JSON.stringify(query)}]`);
+    this.logger.debug('variant-values query parsed', url);
     return {
       success: true as const,
       query: query as NormalizedQueryResult<TVaryMode, TAddAllowedParamsOptions, TCacheParamsOptions>
@@ -205,7 +205,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
     <TAllowedAndCacheParamsOptions extends Record<any, CachePageParamOptions>>(allowedAndCacheParamsOptions: TAllowedAndCacheParamsOptions): (
       (url: ParseCacheQueryParamsArgs) => ParseQueryCacheError | ParseQueryCacheSuccess<CacheParamsVariedByValueRanges<TAllowedAndCacheParamsOptions>>
   ) => {
-    this.logger.verbose(`(HtmlPageModelMetadata) creating value ranges parser, cacheParamOptions=${JSON.stringify(allowedAndCacheParamsOptions)}`);
+    this.logger.verbose('creating value ranges parser', { cacheParamOptions: allowedAndCacheParamsOptions });
 
     const allQueryOptions = {
       ...allowedAndCacheParamsOptions,
@@ -253,7 +253,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
       };
     });
 
-    this.logger.verbose(`(HtmlPageModelMetadata) value ranges parser created, cacheParamOptions=${JSON.stringify(allowedAndCacheParamsOptions)}`);
+    this.logger.verbose('value ranges parser created', { cacheParamOptions: allowedAndCacheParamsOptions });
     return resultParser;
   };
 
@@ -261,7 +261,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
     <TQueryParamsOptions extends Record<any, CachePageParamOptions>>(queryParamsOptions: TQueryParamsOptions): (
       (url: ParseCacheQueryParamsArgs) => ParseQueryCacheError | ParseQueryCacheSuccess<CacheParamsVariedBySystemParamsOnly<TQueryParamsOptions>>
   ) => {
-    this.logger.verbose(`(HtmlPageModelMetadata) creating id & system params -varied parser, cacheParamOptions=${JSON.stringify(queryParamsOptions)}`);
+    this.logger.verbose('creating id & system params -varied parser', { cacheParamOptions: queryParamsOptions });
 
     const resultParser = ((url: ParseCacheQueryParamsArgs): ParseQueryCacheError | ParseQueryCacheSuccess<CacheParamsVariedBySystemParamsOnly<TQueryParamsOptions>> => 
     {
@@ -304,7 +304,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
       };
     });
 
-    this.logger.verbose(`(HtmlPageModelMetadata) id & system params -varied parser created, cacheParamOptions=${JSON.stringify(queryParamsOptions)}`);
+    this.logger.verbose('id & system params -varied parser created', { cacheParamOptions: queryParamsOptions });
     return resultParser;
   };
 
@@ -312,7 +312,7 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
     <TQueryParamsOptions extends Record<any, CachePageParamOptions>>(queryParamsOptions: TQueryParamsOptions): (
       (url: ParseCacheQueryParamsArgs) => ParseQueryCacheError | ParseQueryCacheSuccess<CacheByPageTimestamp<TQueryParamsOptions>>
   ) => {
-    this.logger.verbose(`(HtmlPageModelMetadata) creating entity timestamp-based parser, cacheParamOptions=${JSON.stringify(queryParamsOptions)}`);
+    this.logger.verbose('creating entity timestamp-based parser', { cacheParamOptions: queryParamsOptions });
 
     const resultParser = ((url: ParseCacheQueryParamsArgs): ParseQueryCacheError | ParseQueryCacheSuccess<CacheByPageTimestamp<TQueryParamsOptions>> => 
     {
@@ -357,12 +357,12 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
       };
     });
 
-    this.logger.verbose(`(HtmlPageModelMetadata) entity timestamp-based parser created, cacheParamOptions=${JSON.stringify(queryParamsOptions)}`);
+    this.logger.verbose('entity timestamp-based parser created', { cacheParamOptions: queryParamsOptions });
     return resultParser;
   };
 
   getMetadata(page: keyof typeof AppPage): HtmlPageModel<typeof page> {
-    this.logger.debug(`(HtmlPageModelMetadata) get metdata, page=${page}`);
+    this.logger.debug('get metdata', page);
 
     let result: HtmlPageModel<typeof page>;
     if(page === 'Index') {
@@ -600,12 +600,12 @@ export class HtmlPageModelMetadata implements IHtmlPageModelMetadata {
       };
       result = typedResult;
     } else {
-      this.logger.warn(`(HtmlPageModelMetadata) unexpected page type, page=${(page as any)?.toString() ?? ''}`);
+      this.logger.warn('unexpected page type', undefined, page);
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected exception occured', 'error-page');
     }
 
     if(!result.identity && !(result.associatedWith?.length ?? 0) && result.getCacheVaryOptions() === 'UseEntityChangeTimestamp') {
-      this.logger.warn(`(HtmlPageModelMetadata) page has ${<PageCacheVaryOptions>'UseEntityChangeTimestamp'}, but it does not have any related entity. Another cache variation option must be chosen, page=${(page as any).valueOf()}`);
+      this.logger.warn('page has UseEntityChangeTimestamp, but it does not have any related entity. Another cache variation option must be chosen', undefined, page);
     }
     return result;
   }

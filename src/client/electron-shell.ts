@@ -3,7 +3,6 @@ import type { IMainWorldExports, IElectronShell, ElectronShellHooks, HookFnParam
 import { getDialogsFacade } from './../helpers/electron';
 import { nextTick as vueNextTick } from 'vue';
 import { withQuery, parseURL, parseQuery } from 'ufo';
-import isArrayLike from 'lodash-es/isArray';
 import set from 'lodash-es/set';
 import bind from 'lodash-es/bind';
 import { Hookable } from 'hookable';
@@ -14,6 +13,8 @@ declare type HtmlPage = AppPage | SystemPage;
 declare type NavInfo = { page: HtmlPage, locale: Locale, preview: boolean };
 
 export class ElectronShell implements IElectronShell {
+  private readonly CommonLogProps = { component: 'ElectronShell' };
+
   private readonly logger: IAppLogger;
   private readonly electronApi: IMainWorldExports;
   private readonly localizer: (ReturnType<typeof useI18n>)['t'];
@@ -21,91 +22,91 @@ export class ElectronShell implements IElectronShell {
 
   public static inject = ['logger', 'localizer'] as const;
   constructor (logger: IAppLogger, localizer: (ReturnType<typeof useI18n>)['t']) {
-    this.logger = logger;
+    this.logger = logger.addContextProps(this.CommonLogProps);
     this.localizer = localizer;
 
-    this.logger.verbose('(ElectronShell) ctor, checking Electron Api');
+    this.logger.verbose('ctor, checking Electron Api');
     this.electronApi = (window as any).electronApi as IMainWorldExports;
     if(!this.electronApi) {
-      this.logger.error(`(ElectronShell) Electron Api is not initialized`);  
+      this.logger.error('Electron Api is not initialized');  
       throw new AppException(AppExceptionCodeEnum.ELECTRON_INTEGRATION_ERROR, 'Electron Api is not initialized', 'error-page');
     }
 
     this.hooks = new Hookable();
     this.registerHooks();
 
-    this.logger.debug('(ElectronShell) ctor, exit');
+    this.logger.debug('ctor, exit');
   }
 
   async getCurrentUrl(): Promise<string> {
     try {
-      this.logger.debug('(ElectronShell) get current url');
+      this.logger.debug('get current url');
       const result = await this.electronApi.getCurrentUrl();
-      this.logger.debug(`(ElectronShell) get current url, result=[${result}]`);
+      this.logger.debug(`get current url`, { result });
       return result;
     } catch(err: any) {
-      this.logger.warn(`(ElectronShell) exception while obtaining current url`, err);
+      this.logger.warn('exception while obtaining current url', err);
       throw new AppException(AppExceptionCodeEnum.ELECTRON_INTEGRATION_ERROR, 'unknown error', 'error-stub');
     }
   }
 
   async getAppLocale(): Promise<string> {
     try {
-      this.logger.debug('(ElectronShell) get app locale');
+      this.logger.debug('get app locale');
       const result = await this.electronApi.getAppLocale();
-      this.logger.debug(`(ElectronShell) get app locale, result=${result}`);
+      this.logger.debug('get app locale', { result });
       return result;
     } catch(err: any) {
-      this.logger.warn('(ElectronShell) exception while obtaining app locale', err);
+      this.logger.warn('exception while obtaining app locale', err);
       return DefaultLocale;
     }
   }
 
   async renderPageToImage(path: string): Promise<IpcByteArray> {
     try {
-      this.logger.debug(`(ElectronShell) rendering page to image, path=${path}`);
+      this.logger.debug('rendering page to image', { path });
       const result = await this.electronApi.renderPageToImage(path);
       if(!result?.length) {
         throw new Error('page rendering failed');
       }
 
-      this.logger.debug(`(ElectronShell) rendering page to image, path=${path}, result length=${result.length}`);
+      this.logger.debug('rendering page to image completed', { path, result });
       return result;
     } catch(err: any) {
-      this.logger.warn(`(ElectronShell) exception while rendering page to image, path=${path}`, err);
+      this.logger.warn('exception while rendering page to image', err, { path });
       throw new AppException(AppExceptionCodeEnum.ELECTRON_INTEGRATION_ERROR, 'failed to render page', 'error-stub');
     }
   }
 
   showMessageBox(type: 'info' | 'warning' | 'error', msg: string, title: string | undefined) {
     try {
-      this.logger.debug(`(ElectronShell) show message box, type=${type}, msg=${msg}`);
+      this.logger.debug('show message box', { type, msg });
       this.electronApi.showMessageBox(type, msg, title);
     } catch(err: any) {
-      this.logger.warn(`(ElectronShell) exception showing message box, type=${type}, msg=${msg}`, err);
+      this.logger.warn('exception showing message box', err, { type, msg });
     }
   }
 
   async showConfirmBox<TButton>(msg: string, title: string, buttons: TButton[]): Promise<TButton | undefined> {
     try {
-      this.logger.debug(`(ElectronShell) show confirm box, msg=${msg}, buttons=[${buttons.join(', ')}]`);
+      this.logger.debug('show confirm box', { msg, buttons });
       const result = await this.electronApi.showConfirmBox(msg, title, buttons);
-      this.logger.debug(`(ElectronShell) show confirm box, msg=${msg}, result=${result}`);
+      this.logger.debug('show confirm box', { msg, result });
       return result;
     } catch(err: any) {
-      this.logger.warn(`(ElectronShell) exception showing confirm box, msg=${msg}, buttons=[${buttons.join(', ')}]`, err);
+      this.logger.warn('exception showing confirm box', err, { msg, buttons });
       return undefined;
     }
   }
 
   showFatalErrorBox(msg: string) {
     try {
-      this.logger.debug(`(ElectronShell) show fatal error box, msg=${msg}`);
+      this.logger.debug('show fatal error box', { msg });
       this.electronApi.showFatalErrorBox(msg);
     } catch(err: any) {
-      consola.error(`(exception showing) FATAL error, msg=${msg}`, err);
+      consola.error('FATAL error', err, { msg });
       try {
-        this.logger.error(`(ElectronShell) exception showing fatal error box, msg=${msg}`, err);
+        this.logger.error('exception showing fatal error box', err, { msg });
       } finally {
         process.exit(1);
       }
@@ -114,36 +115,36 @@ export class ElectronShell implements IElectronShell {
 
   notifyPageNavigated(page: AppPage): void {
     try {
-      this.logger.verbose(`(ElectronShell) notify page navigated, page=${page}`);
+      this.logger.verbose('notify page navigated', { page });
       this.electronApi.notifyPageNavigated(page);
     } catch(err: any) {
-      this.logger.warn(`(ElectronShell) exception while notifying page navigated`, err);
+      this.logger.warn('exception while notifying page navigated', err);
       throw new AppException(AppExceptionCodeEnum.ELECTRON_INTEGRATION_ERROR, 'unknown error', 'error-stub');
     }
   }
 
   notifyThemeChanged(theme: Theme): void {
     try {
-      this.logger.verbose(`(ElectronShell) notify theme changed, theme=${theme}`);
+      this.logger.verbose('notify theme changed', { theme });
       this.electronApi.notifyThemeChanged(theme);
     } catch(err: any) {
-      this.logger.warn(`(ElectronShell) exception while notifying theme changed`, err);
+      this.logger.warn('exception while notifying theme changed', err);
       throw new AppException(AppExceptionCodeEnum.ELECTRON_INTEGRATION_ERROR, 'unknown error', 'error-stub');
     }
   }
 
   notifyNavBarRefreshed(nav: NavProps): void {
     try {
-      this.logger.verbose('(ElectronShell) notify nav bar refreshed');
+      this.logger.verbose('notify nav bar refreshed');
       this.electronApi.notifyNavBarRefreshed(nav);
     } catch(err: any) {
-      this.logger.warn(`(ElectronShell) exception while notifying nav bar refreshed`, err);
+      this.logger.warn('exception while notifying nav bar refreshed', err);
       throw new AppException(AppExceptionCodeEnum.ELECTRON_INTEGRATION_ERROR, 'unknown error', 'error-stub');
     }
   }
   
   getCurrentNavInfo(router: ReturnType<typeof useRouter>): NavInfo | undefined {
-    this.logger.debug(`(ElectronShell) get current nav info`);
+    this.logger.debug('get current nav info');
   
     let result: NavInfo;
   
@@ -153,7 +154,7 @@ export class ElectronShell implements IElectronShell {
     try {
       page = lookupPageByUrl(currentUrl);
       if(!page) {
-        this.logger.warn(`(ElectronShell) failed to get current nav info - unknown page, currentUrl=[${currentUrl}]`);
+        this.logger.warn('failed to get current nav info - unknown page', undefined, { currentUrl });
         return undefined;
       }
   
@@ -166,50 +167,50 @@ export class ElectronShell implements IElectronShell {
         preview
       };
     } catch(err: any) {
-      this.logger.warn(`(ElectronShell) exception while obtaining current nav info, currentUrl=[${currentUrl}]`, err);
+      this.logger.warn('exception while obtaining current nav info', err, { currentUrl });
       return undefined;
     }
     
-    this.logger.debug(`(ElectronShell) current nav info obtained, result=${JSON.stringify(result)}`);
+    this.logger.debug('current nav info obtained', { result });
     return result;
   }
 
   onRequestShowExceptionDialog(type: 'warning' | 'error') {
     try {
-      this.logger.verbose(`(ElectronShell) on request to show exception dialog, type=${type}`);
+      this.logger.verbose('on request to show exception dialog', { type });
       const dialogsFacade = getDialogsFacade(this.localizer);
       const msg = this.localizer(getI18nResName2('appErrors', 'unknown'));
       dialogsFacade.showNotification(type, msg);
     } catch(err: any) {
-      this.logger.warn(`(ElectronShell) exception while executing request to show exception dialog, type=${type}`, err);
+      this.logger.warn('exception while executing request to show exception dialog', err, { type });
     }
   }
 
   onRequestNavigateToPage(page: AppPage) {  
     try {
-      this.logger.verbose(`(ElectronShell) on request to navigate to new page, page=${page.valueOf()}`);
+      this.logger.verbose('on request to navigate to new page', { page });
 
       const router = useRouter();
       const nav = this.getCurrentNavInfo(router);
       if(!nav) {
-        this.logger.warn(`(ElectronShell) failed to navigate to page - cannot obtain current nav info, page=${page.valueOf()}`);
+        this.logger.warn('failed to navigate to page - cannot obtain current nav info', undefined, { page });
         return;
       }
   
-      const pathname = withQuery(
+      const route = withQuery(
         localizePath(page === AppPage.Index ? '/' : getPagePath(page), nav.locale), 
         nav.preview ? (set({}, QueryPagePreviewModeParam, PreviewModeParamEnabledValue)) : {}
       );
       
-      this.logger.verbose(`(ElectronShell) pushing route, route=[${pathname}]`);
-      router.push(pathname)
+      this.logger.verbose('pushing route', { route });
+      router.push(route)
         .then(() => {
-          this.logger.verbose(`(ElectronShell) on request to navigate to new page completed, page=${page.valueOf()}`);
+          this.logger.verbose('on request to navigate to new page completed', { page });
         }).catch((err) => {
-          this.logger.warn(`(ElectronShell) failed to navigate to page - unknown exception, page=${page.valueOf()}`, err);
+          this.logger.warn('failed to navigate to page - unknown exception', err, { page });
         });
     } catch(err: any) {
-      this.logger.warn(`(ElectronShell) exception while executing request to navigate to new page handler, page=${page}`, err);
+      this.logger.warn('exception while executing request to navigate to new page handler', err, { page });
       throw new AppException(AppExceptionCodeEnum.ELECTRON_INTEGRATION_ERROR, 'page navigation failed', 'error-stub');
     }
   }
@@ -217,20 +218,20 @@ export class ElectronShell implements IElectronShell {
   onRequestSetLocale(locale: Locale) {
     vueNextTick(async () => {
       try {
-        this.logger.verbose(`(ElectronShell) locale switch request, locale=${locale}`);
+        this.logger.verbose('locale switch request', { locale });
 
         const route = useRoute();
         const updatedLocation = useLocaleRoute()(route, locale);
         if(!updatedLocation) {
-          this.logger.warn(`(ElectronShell) updated location locale is empty, locale=${locale}, location=${route}`);
+          this.logger.warn('updated location locale is empty', undefined, { locale, route });
           this.onRequestShowExceptionDialog('warning');
           return;
         }
         await navigateTo(updatedLocation, { external: false });
         
-        this.logger.verbose(`(ElectronShell) locale switch request completed, locale=${locale}`);
+        this.logger.verbose('locale switch request completed', { locale });
       } catch(err: any) {
-        this.logger.warn(`(ElectronShell) exception while executing locale switch request, locale=${locale}`, err);
+        this.logger.warn('exception while executing locale switch request', err, { locale });
         throw new AppException(AppExceptionCodeEnum.ELECTRON_INTEGRATION_ERROR, 'failed to set locale', 'error-stub');
       }
     });
@@ -239,16 +240,16 @@ export class ElectronShell implements IElectronShell {
   onRequestSetTheme(theme: Theme) {
     vueNextTick(() => {
       try {
-        this.logger.verbose(`(ElectronShell) theme switch request, theme=${theme}`);
+        this.logger.verbose('theme switch request', { theme });
         const { currentTheme, toggleTheme } = useThemeSettings();
         if(currentTheme.value === theme) {
-          this.logger.verbose(`(ElectronShell) requested theme is the same as current, ignoring, theme=${theme}`);
+          this.logger.verbose('requested theme is the same as current, ignoring', { theme });
           return;
         }
-        this.logger.verbose(`(ElectronShell) switching to new theme, theme=${theme}`);
+        this.logger.verbose('switching to new theme', { theme });
         toggleTheme();
       } catch(err: any) {
-        this.logger.warn(`(ElectronShell) exception while executing theme switch request, theme=${theme}`, err);
+        this.logger.warn('exception while executing theme switch request', err, { theme });
         throw new AppException(AppExceptionCodeEnum.ELECTRON_INTEGRATION_ERROR, 'failed to toggle theme', 'error-stub');
       }
     });
@@ -257,12 +258,12 @@ export class ElectronShell implements IElectronShell {
   onRequestLogout() {
     vueNextTick(async () => {
       try {
-        this.logger.verbose('(ElectronShell) on request to logout');
+        this.logger.verbose('on request to logout');
         const signOutHelper = useSignOut((globalThis as any).$navLinkBuilder);
-        this.logger.verbose('(ElectronShell) logging out');
+        this.logger.verbose('logging out');
         await signOutHelper.signOut();
       } catch(err: any) {
-        this.logger.warn('(ElectronShell) exception while executing request to logout', err);
+        this.logger.warn('exception while executing request to logout', err);
         throw new AppException(AppExceptionCodeEnum.ELECTRON_INTEGRATION_ERROR, 'failed to logout', 'error-stub');
       }
     });
@@ -275,18 +276,18 @@ export class ElectronShell implements IElectronShell {
 
   async callHook<THook extends keyof ElectronShellHooks = keyof ElectronShellHooks>(name: THook, ...params: HookFnParameters<ElectronShellHooks[THook]>): Promise<ReturnType<ElectronShellHooks[THook]> | undefined> {
     try {
-      this.logger.verbose(`(ElectronShell) hook callback, name=${name}, params=[${JSON.stringify(params)}], winTitle=[${document.title}]`);
+      this.logger.verbose('hook callback', { name, params, winTitle: document.title });
       const result = await this.hooks.callHook(name, ...params) as any;
-      this.logger.debug(`(ElectronShell) hook callback completed, name=${name}, params=[${JSON.stringify(params)}], result=${isArrayLike(result) ? result.length : JSON.stringify(result)}, winTitle=[${document.title}]`);
+      this.logger.debug('hook callback completed', { name, params, winTitle: document.title, result });
       return result;
     } catch(err: any) {
-      this.logger.warn(`(ElectronShell) hook callback failed, name=${name}, winTitle=[${document.title}]`, err);
+      this.logger.warn('hook callback failed', err, { name, params, winTitle: document.title });
       throw new AppException(AppExceptionCodeEnum.ELECTRON_INTEGRATION_ERROR, 'unknown error', 'error-stub');
     }
   }
   
   registerHooks() {
-    this.logger.debug('(ElectronShell) registering hooks');
+    this.logger.debug('registering hooks');
     
     this.registerHook('request:navigate-to-page', this.onRequestNavigateToPage);
     this.electronApi.onRequestNavigateToPage((_, page) => {
@@ -313,6 +314,6 @@ export class ElectronShell implements IElectronShell {
       this.callHook('request:logout');
     });
 
-    this.logger.debug('(ElectronShell) hooks were registered');
+    this.logger.debug('hooks were registered');
   }
 }

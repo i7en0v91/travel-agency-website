@@ -14,18 +14,18 @@ export class AuthFormImageLogic implements IAuthFormImageLogic {
   public static inject = ['imageLogic', 'dbRepository', 'logger'] as const;
   constructor (imageLogic: IImageLogic, dbRepository: PrismaClient, logger: IAppLogger) {
     this.imageLogic = imageLogic;
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'AuthFormImageLogic' });
     this.dbRepository = dbRepository;
   }
 
   async createImage(imageData: AuthFormImageData | EntityId, order: number): Promise<EntityId> {
-    this.logger.verbose(`(AuthFormImageLogic) creating auth form image, order=${order}`, imageData);
+    this.logger.verbose('creating auth form image', order);
 
     const resultId = newUniqueId();
     let imgId: EntityId;
     if(isString(imageData)) {
       imgId = imageData;
-      this.logger.debug(`(AuthFormImageLogic) saving auth form image entity, imageId=${imgId}`);
+      this.logger.debug('saving auth form image entity', { imageId: imgId });
       await this.dbRepository.authFormImage.create({
         data: {
           id: resultId,
@@ -54,7 +54,7 @@ export class AuthFormImageLogic implements IAuthFormImageLogic {
         const image = (await this.imageLogic.createImage(imgParams, undefined, false));
         imgId = image.id;
     
-        this.logger.debug(`(AuthFormImageLogic) saving auth form image entity, i${resultId}`, imageData);
+        this.logger.debug('saving auth form image entity', { id: resultId });
         await this.dbRepository.authFormImage.create({
           data: {
             id: resultId,
@@ -71,12 +71,12 @@ export class AuthFormImageLogic implements IAuthFormImageLogic {
       }, this.dbRepository);
     }
     
-    this.logger.verbose(`(AuthFormImageLogic) auth form image created, id=${resultId}, order=${order}, imageId=${imgId!}`);
+    this.logger.verbose('auth form image created', { id: resultId, order, imageId: imgId! });
     return resultId;
   };
 
   async getAllImages(event: H3Event): Promise<IAuthFormImageInfo[]> {
-    this.logger.debug(`(AuthFormImageLogic) get all auth form images`);
+    this.logger.debug('get all auth form images');
 
     const authFormImageInfoMap = new Map<EntityId, IAuthFormImageInfo>((await this.dbRepository.authFormImage.findMany({
       where: {
@@ -104,7 +104,7 @@ export class AuthFormImageLogic implements IAuthFormImageLogic {
     const allAuthFormImageInfos = await this.imageLogic.getAllImagesByCategory(ImageCategory.AuthFormsImage, false, false);
     const allAuthFormImages = await this.imageLogic.resolveImageFiles(allAuthFormImageInfos, event, false);
 
-    this.logger.debug(`(AuthFormImageLogic) mapping images info, count=${allAuthFormImages.length}`);
+    this.logger.debug('mapping images info', { count: allAuthFormImages.length });
     const result: IAuthFormImageInfo[] = orderBy(allAuthFormImages.filter(i => authFormImageInfoMap.has(i.id)).map(e => {
       const authImageInfo = authFormImageInfoMap.get(e.id)!;
       return {
@@ -116,12 +116,12 @@ export class AuthFormImageLogic implements IAuthFormImageLogic {
       };
     }), i => i.order, ['asc']);
 
-    this.logger.debug(`(AuthFormImageLogic) returning all auth form images, count=${result.length}`);
+    this.logger.debug('returning all auth form images', { count: result.length });
     return result;
   };
 
   async deleteImage(id: EntityId): Promise<void> {
-    this.logger.verbose(`(AuthFormImageLogic) deleting auth form image, id=${id}`);
+    this.logger.verbose('deleting auth form image', id);
 
     await executeInTransaction(async () => {
       await this.dbRepository.image.updateMany({
@@ -148,6 +148,6 @@ export class AuthFormImageLogic implements IAuthFormImageLogic {
       });
     }, this.dbRepository);
 
-    this.logger.verbose(`(AuthFormImageLogic) auth form image deleted, id=${id}`);
+    this.logger.verbose('auth form image deleted', id);
   }
 }

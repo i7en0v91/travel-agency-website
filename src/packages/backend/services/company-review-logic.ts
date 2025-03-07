@@ -8,12 +8,12 @@ export class CompanyReviewLogic implements ICompanyReviewsLogic {
 
   public static inject = ['logger', 'dbRepository'] as const;
   constructor (logger: IAppLogger, dbRepository: PrismaClient) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'CompanyReviewLogic' });
     this.dbRepository = dbRepository;
   }
 
   deleteReview = async (id: EntityId): Promise<void> => {
-    this.logger.verbose(`(CompanyReviewLogic) deleting review: id=${id}`);
+    this.logger.verbose('deleting review', id);
     await this.dbRepository.companyReview.update({
       where: {
         id,
@@ -24,11 +24,11 @@ export class CompanyReviewLogic implements ICompanyReviewsLogic {
         version: { increment: 1 }
       }
     });
-    this.logger.verbose(`(CompanyReviewLogic) review deleted: id=${id}`);
+    this.logger.verbose('review deleted', id);
   };
 
   async createReview (data: CompanyReviewData): Promise<EntityId> {
-    this.logger.verbose(`(CompanyReviewLogic) creating review, header=${data.header.en}`);
+    this.logger.verbose('creating review', { header: data.header.en });
 
     const reviewId = (await this.dbRepository.companyReview.create({
       data: {
@@ -67,12 +67,12 @@ export class CompanyReviewLogic implements ICompanyReviewsLogic {
       }
     })).id;
 
-    this.logger.verbose(`(CompanyReviewLogic) review created, header=${data.header.en}, id=${reviewId}`);
+    this.logger.verbose('review created', { header: data.header.en, id: reviewId });
     return reviewId;
   }
 
   async getReviews (): Promise<ICompanyReview[]> {
-    this.logger.verbose('(CompanyReviewLogic) obtaining list of company reviews');
+    this.logger.verbose('obtaining list of company reviews');
 
     const reviewEntities = await this.dbRepository.companyReview.findMany({
       where: {
@@ -103,7 +103,7 @@ export class CompanyReviewLogic implements ICompanyReviewsLogic {
       };
     });
 
-    this.logger.verbose(`(CompanyReviewLogic) returning list of company reviews, count=${result.length}`);
+    this.logger.verbose('returning list of company reviews', { count: result.length });
     return result;
   }
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { type Locale, type AppPage, getI18nResName2, UserNotificationLevel, extractSurroundingText, type EntityId, getI18nResName3, lookupPageByUrl, getLocaleFromUrl, type I18nResName, SystemPage } from '@golobe-demo/shared';
 import { getCommonServices } from '../../helpers/service-accessors';
 import { useDeviceSize } from '../../composables/device-size';
@@ -14,7 +15,7 @@ import uniqBy from 'lodash-es/uniqBy';
 import { parseURL, withFragment } from 'ufo';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 defineProps<IProps>();
 const $emit = defineEmits(['close']);
@@ -78,7 +79,7 @@ const searchResultsContextLength = computed(() => {
 
 const matchedPages = computed<ParsedSearchItem[]>(() => {
   const searchResponse = searchResultsRef.value;
-  logger.debug(`(SiteSearch) updating search result items list, itemsCount=${searchResultsRef.value?.length ?? 0}, searchTerm=[${searchUserInput.value}]`);
+  logger.debug('updating search result items list', { itemsCount: searchResultsRef.value?.length ?? 0, searchTerm: searchUserInput.value });
 
   const currentLocale = locale.value as Locale;
   const resultsForCurrentLocale = searchResponse.filter(r => getLocaleFromUrl(r.id) === currentLocale);
@@ -87,7 +88,7 @@ const matchedPages = computed<ParsedSearchItem[]>(() => {
     return uniqBy(resultsForCurrentLocale, i => lookupPageByUrl(i.id)).map(i => {
       const page = lookupPageByUrl(i.id);
       if(!page) {
-        logger.warn(`(SiteSearch) failed to detect result item page for wildcard search, id=${i.id}`);
+        logger.warn('failed to detect result item page for wildcard search', undefined, { id: i.id });
         return undefined;
       }
 
@@ -119,15 +120,15 @@ const matchedPages = computed<ParsedSearchItem[]>(() => {
   });
 });
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'SiteSearch' });
 const userNotificationStore = useUserNotificationStore();
 
 function formatSearchResultItem(resultItem: SearchResultItem): ParsedSearchItem[] {
   try {
-    logger.debug(`(SiteSearch) parsing search result item, id=${resultItem.id}, score=${resultItem.score}, terms=[${resultItem.terms.join(', ')}], matches=[${keys(resultItem.match).join(',')}]`);
+    logger.debug('parsing search result item', { id: resultItem.id, score: resultItem.score, terms: resultItem.terms, matches: keys(resultItem.match) });
     const page = lookupPageByUrl(resultItem.id);
     if(!page || page === SystemPage.Drafts) {
-      logger.debug(`(SiteSearch) matched non-app page, id=${resultItem.id}, score=${resultItem.score}, term=${t}, id=${resultItem.id}`);
+      logger.debug('matched non-app page', { id: resultItem.id, score: resultItem.score, term: t });
       return [];
     }
 
@@ -135,7 +136,7 @@ function formatSearchResultItem(resultItem: SearchResultItem): ParsedSearchItem[
     const parsed = resultItem.terms.map((t, idx) => {
       const textFieldNames = resultItem.match[t].filter(f => ['title', 'content'].includes(f));
       if(!textFieldNames.length) {
-        logger.debug(`(SiteSearch) matched fields array does not contain expected field names, id=${resultItem.id}, score=${resultItem.score}, term=${t}, fieldNames=${[resultItem.match[t].join(', ')]}`);
+        logger.debug('matched fields array does not contain expected field names', { id: resultItem.id, score: resultItem.score, term: t, fieldNames: resultItem.match[t] });
         return undefined;
       }
 
@@ -147,17 +148,17 @@ function formatSearchResultItem(resultItem: SearchResultItem): ParsedSearchItem[
       let phrase: { text: string, phraseIdx: number } | undefined;
       try {
         if(isString(matchedFieldText) && matchedFieldText.trim().length) {
-          logger.debug(`(SiteSearch) extracting surrounding text, id=${resultItem.id}, field=${textFieldName}, matchedTerm=${matchedTerm}, fieldTextLength=${matchedFieldText.length}`);
+          logger.debug('extracting surrounding text', { id: resultItem.id, field: textFieldName, matchedTerm, fieldTextLength: matchedFieldText.length });
           phrase = extractSurroundingText(matchedFieldText, matchedTerm, maxMatchLenght);
         }
 
         if(!phrase?.text.length) {
-          logger.warn(`(SiteSearch) failed to extract surrounding text, id=${resultItem.id}, field=${textFieldName}, matchedTerm=${matchedTerm}, fieldTextLength=${matchedFieldText.length}`);
+          logger.warn('failed to extract surrounding text', undefined, { id: resultItem.id, field: textFieldName, matchedTerm, fieldTextLength: matchedFieldText.length });
           return undefined;
         }
-        logger.debug(`(SiteSearch) surrounding text extracted, id=${resultItem.id}, field=${textFieldName}, matchedTerm=${matchedTerm}, fieldTextLength=${matchedFieldText.length}, result=[${phrase.text}]`);
+        logger.debug('surrounding text extracted', { id: resultItem.id, field: textFieldName, matchedTerm, fieldTextLength: matchedFieldText.length, result: phrase.text });
       } catch(err: any) {
-        logger.warn(`(SiteSearch) exception occured while extracting surrounding text, id=${resultItem.id}, field=${textFieldName}, matchedTerm=${matchedTerm}, fieldTextLength=${matchedFieldText.length}`, err);
+        logger.warn('exception occured while extracting surrounding text', err, { id: resultItem.id, field: textFieldName, matchedTerm, fieldTextLength: matchedFieldText.length });
         return undefined;
       }
 
@@ -181,10 +182,10 @@ function formatSearchResultItem(resultItem: SearchResultItem): ParsedSearchItem[
         }
       } as ParsedSearchItem;
     }).filter(i => !!i);
-    logger.debug(`(SiteSearch) search result item parsed, id=${resultItem.id}, score=${resultItem.score}, terms=[${resultItem.terms.join(', ')}]`, parsed);
+    logger.debug('search result item parsed', { id: resultItem.id, score: resultItem.score, terms: resultItem.terms });
     return parsed;
   } catch(err: any) {
-    logger.warn('(SiteSearch) exception occured while parsing search result item', err, resultItem);
+    logger.warn('exception occured while parsing search result item', err, resultItem);
     userNotificationStore.show({
       level: UserNotificationLevel.ERROR,
       resName: getI18nResName2('appErrors', 'unknown')
@@ -194,12 +195,12 @@ function formatSearchResultItem(resultItem: SearchResultItem): ParsedSearchItem[
 }
 
 onMounted(() => {
-  logger.debug('(SiteSearch) mounted');
+  logger.debug('mounted');
   inputRef.value?.$el?.querySelector('input')?.focus();
 });
 
 onUnmounted(() => {
-  logger.debug('(SiteSearch) unmounted');
+  logger.debug('unmounted');
 });
 
 </script>

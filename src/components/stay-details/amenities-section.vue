@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { getI18nResName3, type I18nResName } from '@golobe-demo/shared';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 
 defineProps<IProps>();
@@ -49,7 +50,7 @@ const uiStyling = {
       {{ $t(getI18nResName3('stayDetailsPage', 'amenities', 'title')) }}
     </h2>
     <ul class="w-full h-auto grid grid-flow-row auto-rows-auto grid-cols-1 sm:grid-cols-stayamenitiessm gap-4 overflow-x-hidden items-center justify-start mt-8 pb-2">
-      <li v-for="(amenity, idx) in (listExpanded ? amenities : amenities.slice(0, CollapsedListSize))" :key="`${ctrlKey}-${idx}`" class="w-full h-min overflow-hidden flex flex-row flex-nowrap items-center">
+      <li v-for="(amenity, idx) in (listExpanded ? amenities : amenities.slice(0, CollapsedListSize))" :key="`${toShortForm(ctrlKey)}-${idx}`" class="w-full h-min overflow-hidden flex flex-row flex-nowrap items-center">
         <UIcon :name="amenity.icon" :class="`w-6 h-6 inline-block mr-2 bg-gray-900 dark:bg-white self-start`"/>
         <span class="w-fit h-full inline-block break-words text-primary-900 dark:text-white font-normal">
           {{ $t(amenity.resName) }}

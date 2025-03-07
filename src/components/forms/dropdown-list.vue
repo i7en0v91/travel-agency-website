@@ -1,82 +1,78 @@
 <script setup lang="ts">
+import type { I18nResName } from '@golobe-demo/shared';
 import type { IDropdownListProps, IDropdownListItemProps, DropdownListValue } from './../../types';
 import InputFieldFrame from './input-field-frame.vue';
 import { getCommonServices } from '../../helpers/service-accessors';
+import { useControlValuesStore } from '../../stores/control-values-store';
 
 const {
   items, 
-  persistent, 
-  defaultValue, 
+  persistent = undefined, 
+  defaultValue = undefined,
+  placeholderResName,
   ctrlKey, 
   variant = 'default' 
 } = defineProps<IDropdownListProps>();
-const modelRef = defineModel<DropdownListValue | null | undefined>('selectedValue');
-const selectedMenuItem = ref<IDropdownListItemProps | undefined>();
 
+const logger = getCommonServices().getLogger().addContextProps({ component: 'DropdownList' });
+const controlValuesStore = useControlValuesStore();
 const { t } = useI18n();
 
-const logger = getCommonServices().getLogger();
-
-const controlSettingsStore = useControlSettingsStore();
-const controlValueSetting = controlSettingsStore.getControlValueSetting<DropdownListValue | null | undefined>(ctrlKey, defaultValue, persistent);
-if(modelRef.value !== undefined) {
-  controlValueSetting.value = modelRef.value;
-  selectedMenuItem.value = modelRef.value ? lookupItemByValue(modelRef.value) : undefined;
-}
-
-function lookupItemByValue (value: DropdownListValue) : IDropdownListItemProps | undefined {
-  const result = items.find(i => i.value === value);
-  if(!result) {
-    logger.warn(`(DropdownList) failed to lookup item by value: ctrlKey=${ctrlKey}, value=${value}`);
-  }
-  return result;
-}
-
-function setSelectedValue (item?: IDropdownListItemProps | undefined) {
-  logger.verbose(`(DropdownList) setting selected value: ctrlKey=${ctrlKey}, value=${item?.value}`);
-  controlValueSetting.value = item?.value;
-  selectedMenuItem.value = item;
-  modelRef.value = item?.value;
-  logger.verbose(`(DropdownList) selected value was set: ctrlKey=${ctrlKey}, value=${item?.value}`);
-}
-
-function saveInitialValuesToSettings() {
-  if (modelRef.value) {
-    controlValueSetting.value = modelRef.value;
-  } else if (modelRef.value === null) {
-    controlValueSetting.value = defaultValue;
-  }
-}
-
+const modelValue = defineModel<DropdownListValue | null | undefined>('selectedValue');
+const selectedMenuItem = ref<IDropdownListItemProps | undefined>();
 const hasMounted = ref(false);
 
-onMounted(() => {
-  saveInitialValuesToSettings();
-  
-  if(selectedMenuItem.value === undefined) {
-    let lookedUpValue: IDropdownListItemProps | undefined;
-    if(controlValueSetting.value) {
-      lookedUpValue = lookupItemByValue(controlValueSetting.value);
-    }
-    if(lookedUpValue) {
-      selectedMenuItem.value = lookedUpValue;
-    }
+const selectedItemDisplayName = computed(() => {
+  if(persistent && !hasMounted.value) {
+    return '';
   }
-  
-  watch(selectedMenuItem, () => {
-    logger.debug(`(DropdownList) selected menu value change handler: ctrlKey=${ctrlKey}, value=${selectedMenuItem.value}`);
-    setSelectedValue(selectedMenuItem.value);
+  const selectedItemResName = modelValue.value ? lookupValueResName(modelValue.value) : null;
+  return selectedItemResName ? t(selectedItemResName) : (placeholderResName ? t(placeholderResName) : '');
+});
+
+function lookupValueResName (value?: DropdownListValue | undefined) : I18nResName | undefined {
+  if (value) {
+    const itemProps = items.find(i => i.value === value);
+    return itemProps?.resName;
+  } else {
+    return undefined;
+  }
+}
+
+function updateSelectedValue (value?: DropdownListValue | undefined) {
+  logger.verbose('updating selected value', { ctrlKey, value });
+  modelValue.value = value?.toString() ?? null;
+}
+
+onMounted(() => {
+  const initialOverwrite = modelValue.value;
+  logger.debug('acquiring store value ref', { ctrlKey, defaultValue, initialOverwrite });
+  const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef(ctrlKey, {
+    initialOverwrite,
+    defaultValue,
+    persistent
+  });
+
+  watch(storeValueRef, () => {
+    logger.debug('store value watcher', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value });
+    const newValue: string | null = (storeValueRef.value as string) ?? null;
+    const changed = storeValueRef.value !== modelValue.value;
+    if(changed) {
+      modelValue.value = newValue;  
+    }
   }, { immediate: true });
 
-  watch(modelRef, () => {
-    if((!!modelRef.value && modelRef.value === selectedMenuItem.value?.value) || (!modelRef.value && selectedMenuItem.value === undefined)) {
-      return;
+  watch(modelValue, () => {
+    logger.debug('model value watcher', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value });
+    if(modelValue.value !== storeValueRef.value) {
+      storeValueRef.value = modelValue.value ?? null;
     }
+  }, { immediate: false });
 
-    const valueItem = modelRef.value ? lookupItemByValue(modelRef.value) : undefined;
-    logger.debug(`(DropdownList) selected value changed, setting selected menu item: ctrlKey=${ctrlKey}, value=${modelRef.value}, displayName=${valueItem ? t(valueItem.resName) : undefined}`);
-    setSelectedValue(valueItem);
-  });
+  watch(selectedMenuItem, () => {
+    logger.debug('selected menu item watcher', { ctrlKey, value: selectedMenuItem.value });
+    updateSelectedValue(selectedMenuItem.value?.value);
+  }, { immediate: false });
 
   hasMounted.value = true;
 });
@@ -101,8 +97,7 @@ onMounted(() => {
       :ui-menu="{ width: 'min-w-fit' }"
     >
       <template #label>
-        <span v-if="(selectedMenuItem !== undefined && selectedMenuItem !== null) && (hasMounted || !persistent)" class="truncate">{{ $t(selectedMenuItem.resName) }}</span>
-        <span v-else>{{ placeholderResName ? t(placeholderResName) : undefined }}</span>
+        {{ selectedItemDisplayName }}
       </template>
 
       <template #option="{ option: item }">

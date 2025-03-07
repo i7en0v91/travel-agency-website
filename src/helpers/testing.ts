@@ -1,11 +1,11 @@
-import { lookupParentDirectory, type IAppLogger } from '@golobe-demo/shared';
+import { type LogAlwaysLevel, AppConfig, AppLoggerBase, lookupParentDirectory, type IAppLogger, type LogLevel } from '@golobe-demo/shared';
 import type { IAuthUserDto } from '../server/api-definitions';
 import { EOL } from 'os';
 import { appendFileSync } from 'fs';
 import { cp, access, readdir, stat } from 'fs/promises';
-import { consola } from 'consola';
 import { join, resolve } from 'pathe';
 import { type FSWatcher, watch } from 'chokidar';
+import omit from 'lodash-es/omit';
 
 const LogFilePath = resolve('./testrun.log');
 export const ScreenshotDir = '.nuxt/screenshots';
@@ -15,8 +15,6 @@ export const TEST_SERVER_PORT = 43321;
 export const OAUTH_SECRET = 'dummy';
 export const OAUTH_TOKEN_TYPE = 'Bearer';
 
-let consoleLogger: IAppLogger | undefined;
-let fileLogger: IAppLogger | undefined;
 let lastTestRunDirPath: string | undefined;
 let testFilesWatcher: FSWatcher | undefined;
 let testFilesWatchCallbackIsRunning = false;
@@ -39,93 +37,64 @@ export const OAUTH_TESTUSER_PROFILE: ITestLocalProfile = {
   email: 'localoauthuser@localhost.test'
 };
 
-function createFileLogger (prefix: string) : IAppLogger {
-  if (!fileLogger) {
-    let lowerWarnsToInfo = false;
-    const ts = () => new Date().toISOString();
-    fileLogger = {
-      lowerWarnsWithoutErrorLevel: (useInfoLevel: boolean) => {
-        lowerWarnsToInfo = useInfoLevel;
-      },
-      debug: function (msg: string, data?: any): void {
-        appendFileSync(LogFilePath, `[${prefix}] DEBUG ${ts()} ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
-      },
-      verbose: function (msg: string, data?: object | undefined): void {
-        appendFileSync(LogFilePath, `[${prefix}] VERBOSE ${ts()} ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
-      },
-      info: function (msg: string, data?: object | undefined): void {
-        appendFileSync(LogFilePath, `[${prefix}] INFO ${ts()} ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
-      },
-      warn: function (msg: string, err?: any, data?: object | undefined): void {
-        const level = (lowerWarnsToInfo && !err) ? 'INFO' : 'WARN';
-        appendFileSync(LogFilePath, `[${prefix}] ${level} ${ts()} ${msg}, err=${JSON.stringify(err)} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
-      },
-      error: function (msg: string, err?: any, data?: object | undefined): void {
-        appendFileSync(LogFilePath, `[${prefix}] ERROR ${ts()} ${msg}, err=${JSON.stringify(err)} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
-      },
-      always: function (msg: string, data?: object | undefined): void {
-        appendFileSync(LogFilePath, `[${prefix}] INFO ${ts()} ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
-      }
+class TestConsoleLogger extends AppLoggerBase<typeof AppConfig['logging']['common']> {
+  override getLogDestinations(): { local: boolean; outside: boolean; } {
+    return {
+      local: true,
+      outside: false
     };
   }
-  return fileLogger;
+  override logOutside(): void {
+    throw new Error('Method not implemented.');
+  }
 }
 
-function createConsoleLogger (prefix: string) : IAppLogger {
-  if (!consoleLogger) {
-    let lowerWarnsToInfo = false;
-    const log = consola.log;
-    consoleLogger = {
-      lowerWarnsWithoutErrorLevel: (useInfoLevel: boolean) => {
-        lowerWarnsToInfo = useInfoLevel;
-      },
-      debug: function (msg: string, data?: any): void {
-        log(consola.debug(`[${prefix}] DEBUG ${msg}`), data);
-      },
-      verbose: function (msg: string, data?: object | undefined): void {
-        log(consola.verbose(`[${prefix}] VERBOSE ${msg}`), data);
-      },
-      info: function (msg: string, data?: object | undefined): void {
-        log(consola.info(`[${prefix}] INFO ${msg}`), data);
-      },
-      warn: function (msg: string, err?: any, data?: object | undefined): void {
-        if(lowerWarnsToInfo && !err) {
-          consola.info(`[${prefix}] INFO ${msg}, err=${JSON.stringify(err)}`, data);
-        } else {
-          consola.warn(`[${prefix}] WARN ${msg}, err=${JSON.stringify(err)}`, data);
-        }        
-      },
-      error: function (msg: string, err?: any, data?: object | undefined): void {
-        log(consola.error(`[${prefix}] ERROR ${msg}, err=${JSON.stringify(err)}`), data);
-      },
-      always: function (msg: string, data?: object | undefined): void {
-        log(consola.info(`[${prefix}] ALWAYS ${msg}`), data);
-      }
+class TestFileLogger extends AppLoggerBase<typeof AppConfig['logging']['common']> {
+  ts = () => new Date().toISOString();
+
+  override getLogDestinations(): { local: boolean; outside: boolean; } {
+    return {
+      local: false,
+      outside: true
     };
   }
-  return consoleLogger;
+
+  override logOutside(logData: { msg: string; level: LogLevel | (typeof LogAlwaysLevel); }): void {
+    appendFileSync(LogFilePath, `${logData.level} ${this.ts()} ${logData.msg}, data=${JSON.stringify(omit(logData, 'msg', 'level'))}${EOL}`);
+  }
 }
 
-export function createLogger (prefix: string, preferFile?: boolean) : IAppLogger {
+function createFileLogger (testCase: string) : IAppLogger {
+  const result = new TestFileLogger(AppConfig.logging.common);
+  return result.addContextProps({ prefix: testCase });
+}
+
+function createConsoleLogger (testCase: string) : IAppLogger {
+  const result = new TestConsoleLogger(AppConfig.logging.common);
+  return result.addContextProps({ prefix: testCase });
+}
+
+
+export function createLogger (testCase: string, preferFile?: boolean) : IAppLogger {
   preferFile ??= true;
   if (!!(globalThis as any).window && !preferFile) {
-    return createConsoleLogger(prefix);
+    return createConsoleLogger(testCase);
   } else {
-    return createFileLogger(prefix);
+    return createFileLogger(testCase);
   }
 }
 
 async function getLastTestRunDirPath(logger: IAppLogger, forceRecompute: boolean = false): Promise<string | undefined> {
   if(!forceRecompute && lastTestRunDirPath) {
-    logger.debug(`using cached test run directory path [${lastTestRunDirPath}]`);
+    logger.debug('using cached test run directory path', lastTestRunDirPath);
     return lastTestRunDirPath;
   }
 
   const testsDir = resolve('./.nuxt/test');
-  logger.verbose(`detecting last test run directory path, tests=[${testsDir}]`);
+  logger.verbose('detecting last test run directory path', testsDir);
   const testDirEntries = (await readdir(testsDir, { withFileTypes: true })).filter(e => e.isDirectory());
 
-  logger.debug(`num test run dirs = ${testDirEntries.length}`);
+  logger.debug('num test run', { numTestDirEntries: testDirEntries.length });
   if(!testDirEntries.length) {
     logger.warn('cannot detect last test run directory, tests dir is empty');
     return undefined;
@@ -133,7 +102,7 @@ async function getLastTestRunDirPath(logger: IAppLogger, forceRecompute: boolean
 
   let mostRecentlyCreatedDirPath = join(testsDir, testDirEntries[0].name);
   let mostRecentCtime = (await stat(mostRecentlyCreatedDirPath)).ctime;
-  logger.debug(`currently most recent test dir is ${testDirEntries[0].name} (ctime=${mostRecentCtime.toISOString()})`);
+  logger.debug('current most recent test', { dir: testDirEntries[0].name, ctime: mostRecentCtime.toISOString() });
   for(let i = 0; i < testDirEntries.length; i++) {
     const testDirEntry = testDirEntries[i];
     const dirPath = join(testsDir, testDirEntry.name);
@@ -141,23 +110,23 @@ async function getLastTestRunDirPath(logger: IAppLogger, forceRecompute: boolean
     if(dirStat.ctime.getTime() > mostRecentCtime.getTime()) {
       mostRecentlyCreatedDirPath = dirPath;
       mostRecentCtime = dirStat.ctime;
-      logger.debug(`new most recent test dir is ${testDirEntry.name} (ctime=${mostRecentCtime.toISOString()})`);
+      logger.debug('new most recent test', { dir: testDirEntry.name, ctime: mostRecentCtime.toISOString() });
     }
   }
 
   lastTestRunDirPath = mostRecentlyCreatedDirPath;
-  logger.verbose(`detected last test run directory path - [${lastTestRunDirPath}] (ctime=${mostRecentCtime.toISOString()})`);
+  logger.verbose('detected last test run directory path', { dir: lastTestRunDirPath, ctime: mostRecentCtime.toISOString() });
 
   return mostRecentlyCreatedDirPath;
 }
 
 async function copySharpDependencies(testRunDir: string, nodeModulesDir: string, logger: IAppLogger): Promise<void> {
-  logger.verbose('copying [sharp] dependencies...');
+  logger.verbose('copying [sharp] dependencies');
 
   const sharpSrcDir = join(nodeModulesDir, 'sharp');
   const sharpTargetDir = join(testRunDir, 'node_modules', 'sharp');
     
-  logger.debug(`copying [sharp] dependencies, src=[${sharpSrcDir}], dst=[${sharpTargetDir}]`);
+  logger.debug('copying [sharp] dependencies', { src: sharpSrcDir, dst: sharpTargetDir });
   await cp(sharpSrcDir, sharpTargetDir, { recursive: true, force: false, errorOnExist: false });
 
   logger.verbose('[sharp] dependencies copied');
@@ -206,12 +175,12 @@ export function startWatchingTestFiles(logger: IAppLogger) {
   }
 
   const testDirs = resolve(join('./', '.nuxt', 'test'));
-  logger.info(`creating test files watcher, tests dir=[${testDirs}]`);
+  logger.info('creating test files watcher, tests', { dir: testDirs });
   testFilesWatcher = watch(testDirs, { depth: 4, ignoreInitial: false, interval: 500 });
   testFilesWatcher.on('addDir', () => testFilesWatchCallback(logger));
   testFilesWatcher.on('add', () => testFilesWatchCallback(logger));
   testFilesWatcher.on('change', () => testFilesWatchCallback(logger));
-  logger.info(`test files watcher created`);
+  logger.info('test files watcher created');
 }
 
 export async function stopWatchingTestFiles(logger: IAppLogger): Promise<void> {

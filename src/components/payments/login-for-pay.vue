@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { AuthProvider, getI18nResName3 } from '@golobe-demo/shared';
 import { formatAuthCallbackUrl } from './../../helpers/dom';
 import OAuthProviderList from './../../components/account/oauth-providers-list.vue';
 import { usePreviewState } from './../../composables/preview-state';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 };
 defineProps<IProps>();
 
@@ -35,6 +36,6 @@ async function onOAuthProviderClick (provider: AuthProvider): Promise<void> {
     <h2 class="w-full h-auto text-gray-600 dark:text-gray-300 font-semibold text-xl">
       {{ $t(getI18nResName3('payments', 'loginToPay', 'title')) }}
     </h2>
-    <OAuthProviderList :ctrl-key="`${ctrlKey}-OAuthLogin`" email-option @click="onOAuthProviderClick"/>
+    <OAuthProviderList :ctrl-key="[...ctrlKey, 'OauthProviders']" email-option @click="onOAuthProviderClick"/>
   </div>
 </template>

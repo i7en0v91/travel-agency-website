@@ -10,12 +10,12 @@ export class CitiesLogic implements ICitiesLogic {
 
   public static inject = ['dbRepository', 'logger'] as const;
   constructor (dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'CitiesLogic' });
     this.dbRepository = dbRepository;
   }
 
   async deleteCity(id: EntityId): Promise<void> {
-    this.logger.verbose(`(CitiesLogic) deleting city: id=${id}`);
+    this.logger.verbose('deleting city', id);
     await this.dbRepository.city.update({
       where: {
         id,
@@ -26,11 +26,11 @@ export class CitiesLogic implements ICitiesLogic {
         version: { increment: 1 }
       }
     });
-    this.logger.verbose(`(CitiesLogic) city deleted: id=${id}`);
+    this.logger.verbose('city deleted', id);
   };
 
   async getCity (slug: string): Promise<ICity> {
-    this.logger.verbose(`(CitiesLogic) loading city, slug=${slug}`);
+    this.logger.verbose('loading city', slug);
 
     const cityEntity = await this.dbRepository.city.findFirst({
       where: {
@@ -40,7 +40,7 @@ export class CitiesLogic implements ICitiesLogic {
       select: CityInfoQuery.select
     });
     if (!cityEntity) {
-      this.logger.warn(`(CitiesLogic) city not found: slug=${slug}`);
+      this.logger.warn('city not found', undefined, slug);
       throw new AppException(
         AppExceptionCodeEnum.OBJECT_NOT_FOUND,
         'City not found',
@@ -49,12 +49,12 @@ export class CitiesLogic implements ICitiesLogic {
 
     const result: ICity = MapCity(cityEntity);
 
-    this.logger.verbose(`(CitiesLogic) city loaded, slug=${slug}, id=${result.id}`);
+    this.logger.verbose('city loaded', { slug, id: result.id });
     return result;
   }
 
   async makeCityPopular (data: IPopularCityData): Promise<void> {
-    this.logger.verbose(`(CitiesLogic) adding popular city data, cityId=${data.cityId}`);
+    this.logger.verbose('adding popular city data', { cityId: data.cityId });
 
     await executeInTransaction(async () => {
       await this.dbRepository.popularCity.create({
@@ -108,11 +108,11 @@ export class CitiesLogic implements ICitiesLogic {
       }
     }, this.dbRepository);
 
-    this.logger.verbose(`(CitiesLogic) popular city data added, cityId=${data.cityId}`);
+    this.logger.verbose('popular city data added', { cityId: data.cityId });
   }
 
   async getTravelDetails (cityId: EntityId): Promise<Omit<ITravelDetails, 'price'>> {
-    this.logger.verbose(`(CitiesLogic) city travel details requested, cityId=${cityId}`);
+    this.logger.verbose('city travel details requested', cityId);
 
     const popularCityEntity = await this.dbRepository.popularCity.findFirst({
       where: {
@@ -145,7 +145,7 @@ export class CitiesLogic implements ICitiesLogic {
     });
 
     if (!popularCityEntity) {
-      this.logger.warn(`(CitiesLogic) popular city not found: cityId=${cityId}`);
+      this.logger.warn('popular city not found', undefined, cityId);
       throw new AppException(
         AppExceptionCodeEnum.OBJECT_NOT_FOUND,
         'City not found',
@@ -159,12 +159,12 @@ export class CitiesLogic implements ICitiesLogic {
       city: MapCity(popularCityEntity.city)
     };
 
-    this.logger.verbose(`(CitiesLogic) city travel details loaded, cityId=${cityId}, numImages=${result.images.length}, lastModified=${result.city.modifiedUtc}`);
+    this.logger.verbose('city travel details loaded', { cityId, numImages: result.images.length, lastModified: result.city.modifiedUtc });
     return result;
   }
 
   async setPopularCityImages (id: EntityId, images: { id: EntityId, order: number }[]): Promise<void> {
-    this.logger.verbose(`(CitiesLogic) setting popular city images, cityId=${id}, images=${JSON.stringify(images)}`);
+    this.logger.verbose('setting popular city images', { cityId: id, images });
 
     await executeInTransaction(async () => {
       const popularCityId = (await this.dbRepository.popularCity.findFirst({
@@ -179,14 +179,14 @@ export class CitiesLogic implements ICitiesLogic {
         }
       }))?.id;
       if (!popularCityId) {
-        this.logger.warn(`(CitiesLogic) popular city not found: cityId=${id}`);
+        this.logger.warn('popular city not found', undefined, { cityId: id });
         throw new AppException(
           AppExceptionCodeEnum.OBJECT_NOT_FOUND,
           'City not found',
           'error-stub');
       }
 
-      this.logger.debug(`(CitiesLogic) deleting previous popular city image links, cityId=${id}`);
+      this.logger.debug('deleting previous popular city image links', { cityId: id });
       await this.dbRepository.popularCityImage.deleteMany({
         where: {
           popularCity: {
@@ -198,7 +198,7 @@ export class CitiesLogic implements ICitiesLogic {
         }
       });
 
-      this.logger.debug(`(CitiesLogic) creating popular city image links, cityId=${id}`);
+      this.logger.debug('creating popular city image links', { cityId: id });
       for (let i = 0; i < images.length; i++) {
         const image = images[i];
         await this.dbRepository.popularCityImage.create({
@@ -214,11 +214,11 @@ export class CitiesLogic implements ICitiesLogic {
       }
     }, this.dbRepository);
 
-    this.logger.verbose(`(CitiesLogic) popular city images have been set, id=${id}, images=${JSON.stringify(images)}`);
+    this.logger.verbose('popular city images have been set', { id, images });
   }
 
   async getPopularCities (): Promise<IPopularCityItem[]> {
-    this.logger.debug('(CitiesLogic) obtaining list of popular cities');
+    this.logger.debug('obtaining list of popular cities');
 
     const cityEntities = await this.dbRepository.popularCity.findMany({
       where: {
@@ -291,12 +291,12 @@ export class CitiesLogic implements ICitiesLogic {
       };
     });
 
-    this.logger.debug(`(CitiesLogic) list of popular cities obtained, count=${result.length}`);
+    this.logger.debug('list of popular cities obtained', { count: result.length });
     return result;
   }
 
   async search (params: CitiesSearchParams): Promise<ICitySearchItem[]> {
-    this.logger.verbose(`(CitiesLogic) searching cities: locale=${params.locale}, size=${params.size}, term=${params.searchTerm}, includeCountry=${params.includeCountry}`);
+    this.logger.verbose('searching cities', { locale: params.locale, size: params.size, term: params.searchTerm, includeCountry: params.includeCountry });
 
     const matchedEntities = await this.dbRepository.city.findMany({
       where: {
@@ -331,7 +331,7 @@ export class CitiesLogic implements ICitiesLogic {
     });
 
     const result: ICitySearchItem[] = matchedEntities.map(e => <ICitySearchItem>{ id: e.id, slug: e.slug!, displayName: mapLocalizeableValues((city: string, country: string) => `${city}, ${country}`, e.nameStr, e.country.nameStr) });
-    this.logger.verbose(`(CitiesLogic) cities search result: locale=${params.locale}, term=${params.searchTerm}, count=${result.length}`);
+    this.logger.verbose('cities search result', { locale: params.locale, term: params.searchTerm, count: result.length });
 
     return result;
   }

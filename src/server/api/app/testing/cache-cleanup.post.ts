@@ -3,10 +3,10 @@ import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
 import { getCommonServices, getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
   const cacheCleanerLogic = getServerServices()!.getHtmlPageCacheCleaner();
 
-  logger.debug('(api:testing:cache-cleanup) running cache cleanup');
+  logger.debug('running cache cleanup');
   await cacheCleanerLogic.performCleanup();
   
   handleCacheHeaders(event, {

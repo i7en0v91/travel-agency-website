@@ -4,6 +4,7 @@ import { useNavLinkBuilder } from '../../composables/nav-link-builder';
 
 interface IProps {
   httpCode: number,
+  hardLink: boolean,
   msgResName: I18nResName,
   msgResParams?: any
 }
@@ -28,7 +29,7 @@ const httpCodeResName = httpCode === 404 ? '404' : '500';
           <p> {{ $t(msgResName, msgResParams) }} </p>
         </div>
       </div>
-      <UButton :to="navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)" :label="t(getI18nResName2('errorBox', 'homeLink'))" class="block w-fit" variant="solid" color="primary" size="xl" :external="false"/>
+      <UButton :to="navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)" :label="t(getI18nResName2('errorBox', 'homeLink'))" class="block w-fit" variant="solid" color="primary" size="xl" :external="hardLink"/>
     </div>
   </div>
 </template>

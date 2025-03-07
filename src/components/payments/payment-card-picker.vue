@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import dayjs from 'dayjs';
 import PaymentCardVariant from './payment-card-variant.vue';
 import AddNewCard from './add-new-card.vue';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 };
 defineProps<IProps>();
 
@@ -45,8 +46,8 @@ const uiStyling = {
     >
       <template #label="{ option: item, selected }">
         <PaymentCardVariant
-          :key="`${ctrlKey}-Card-${item.props.id}`"
-          :ctrl-key="`${ctrlKey}-Card-${item.props.id}`"
+          :key="`${toShortForm(ctrlKey)}-Card-${item.props.id}`"
+          :ctrl-key="[...ctrlKey, 'Card', item.props.id]"
           :selected="selected"
           :digits="item.props.digits"
           :due-date="item.props.dueDate"
@@ -54,6 +55,6 @@ const uiStyling = {
         />
       </template>
     </URadioGroup>
-    <AddNewCard :ctrl-key="`${ctrlKey}-AddNewCard`" class="mt-4 h-48 max-w-[90vw]"/>
+    <AddNewCard :ctrl-key="[...ctrlKey, 'Card', 'Add']" class="mt-4 h-48 max-w-[90vw]"/>
   </div>
 </template>

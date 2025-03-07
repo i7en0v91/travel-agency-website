@@ -1,4 +1,4 @@
-import { maskLog, buildParamsLogData, DefaultLocale, SecretValueMask, AppConfig, AppException, AppExceptionCodeEnum, EmailTemplateEnum, AppPage, getPagePath, type IAppLogger } from '@golobe-demo/shared';
+import { buildParamsLogData, DefaultLocale, AppConfig, AppException, AppExceptionCodeEnum, EmailTemplateEnum, AppPage, getPagePath, type IAppLogger } from '@golobe-demo/shared';
 import type { IEmailParams, IEmailSender } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import { createTransport } from 'nodemailer';
@@ -6,6 +6,9 @@ import type { Logger as MailLogger } from 'nodemailer/lib/shared';
 import template from 'lodash-es/template';
 import { withQuery, joinURL } from 'ufo';
 import juice from 'juice';
+
+const CommonLogProps = { component: 'EmailSender' };
+const CommonMailerLogProps = { component: 'Mailer' };
 
 interface IMailSettings {
   host: string,
@@ -34,17 +37,17 @@ export class EmailSender implements IEmailSender {
 
   public static inject = ['logger', 'dbRepository'] as const;
   constructor (logger: IAppLogger, dbRepository: PrismaClient) {
-    this.logger = logger;
+    this.logger = logger.addContextProps(CommonLogProps);
     this.dbRepository = dbRepository;
   }
 
   throwEmailNotConfigured = () => {
-    this.logger.error('(EmailSender) cannot perform operation as emailing disabled');
+    this.logger.error('cannot perform operation as emailing disabled', undefined);
     throw new AppException(AppExceptionCodeEnum.EMAILING_DISABLED, 'emailing disabled', 'error-page');
   };
 
   initialize = async (): Promise<void> => {
-    this.logger.info('(EmailSender) initialize - verifying setup');
+    this.logger.info('initialize - verifying setup');
 
     if (AppConfig.email) {
       this.smtpTransporter = this.createNodeMailer();
@@ -56,22 +59,21 @@ export class EmailSender implements IEmailSender {
 
       const result = await this.smtpTransporter?.verify();
       if (!result) {
-        const msg = 'setup verification failed';
-        this.logger.warn('(EmailSender) ' + msg);
-        throw new Error(msg);
+        this.logger.warn('setup verification failed', undefined);
+        throw new Error('setup verification failed');
       }
     } else if (process.env.PUBLISH) {
-      this.logger.error('Emailing is not configured!');
+      this.logger.error('Emailing is not configured!', undefined);
       throw new Error('Emailing is not configured!');
     } else {
       this.logger.info('skipping email infrastructure check as it is disabled');
     }
 
-    this.logger.info('(EmailSender) setup verification completed');
+    this.logger.info('setup verification completed');
   };
 
   getMailSettingsOrThrow = (): IMailSettings => {
-    this.logger.verbose('(EmailSender) accessing mail settings');
+    this.logger.verbose('accessing mail settings');
     if (!AppConfig.email) {
       this.throwEmailNotConfigured();
     }
@@ -80,14 +82,15 @@ export class EmailSender implements IEmailSender {
   };
 
   createMailLogger = (): MailLogger => {
+    const mailLogger = this.logger.addContextProps(CommonMailerLogProps);
     return {
       level: () => {},
-      trace: (...params: any[]) => { this.logger.debug('(MailLogger) trace ', buildParamsLogData(params)); },
-      debug: (...params: any[]) => { this.logger.verbose('(MailLogger) debug ', buildParamsLogData(params)); },
-      info: (...params: any[]) => { this.logger.info('(MailLogger) info ', buildParamsLogData(params)); },
-      warn: (...params: any[]) => { this.logger.warn('(MailLogger) warn ', buildParamsLogData(params)); },
-      error: (...params: any[]) => { this.logger.warn('(MailLogger) exception ', buildParamsLogData(params)); },
-      fatal: (...params: any[]) => { this.logger.warn('(MailLogger) fatal ', buildParamsLogData(params)); }
+      trace: (...params: any[]) => { mailLogger.debug(`trace`, { params: buildParamsLogData(params) }); },
+      debug: (...params: any[]) => { mailLogger.debug(`debug`, { params: buildParamsLogData(params) }); },
+      info: (...params: any[]) => { mailLogger.info(`info`, { params: buildParamsLogData(params) }); },
+      warn: (...params: any[]) => { mailLogger.warn(`warn`, undefined, { params: buildParamsLogData(params) }); },
+      error: (...params: any[]) => { mailLogger.error(`exception`, undefined, { params: buildParamsLogData(params) }); },
+      fatal: (...params: any[]) => { mailLogger.error(`fatal`, undefined, { params: buildParamsLogData(params) }); }
     };
   };
 
@@ -95,7 +98,7 @@ export class EmailSender implements IEmailSender {
     if (!this.smtpTransporter) {
       const mailSettings = this.getMailSettingsOrThrow();
 
-      this.logger.info(`(EmailSender) initializing node mailer transporter: host=${`${mailSettings.host}:${mailSettings.port}`}, secure=${mailSettings.secure}`);
+      this.logger.info(`initializing node mailer transporter`, { host: `${mailSettings.host}:${mailSettings.port}`, secure: mailSettings.secure });
       this.smtpTransporter = createTransport({
         host: mailSettings.host,
         port: mailSettings.port,
@@ -115,7 +118,7 @@ export class EmailSender implements IEmailSender {
   };
 
   createMailTemplateParams = async (kind: EmailTemplateEnum, params: IEmailParams): Promise<IMailTemplateParams> => {
-    this.logger.verbose(`(EmailSender) creating mail template params, kind=${kind}, subject=${params.subject}, to=${params.to}, userId=${params.userId}, theme=${params.theme}, locale=${params.locale}`);
+    this.logger.verbose(`creating mail template params`, { kind, ...params });
 
     const mailSettings = this.getMailSettingsOrThrow();
 
@@ -157,26 +160,26 @@ export class EmailSender implements IEmailSender {
       theme: params.theme
     };
 
-    this.logger.verbose(`(EmailSender) mail template params created, kind=${kind}, subject=${params.subject}, to=${params.to}, userId=${params.userId}, locale=${params.locale}`);
+    this.logger.verbose(`mail template params created`, { kind, ...params });
     return result;
   };
 
   buildMailHtml = async (kind: EmailTemplateEnum, mailTemplateMarkup: string, params: IEmailParams): Promise<string> => {
-    this.logger.verbose(`(EmailSender) building mail html, kind=${kind}, subject=${params.subject}, to=${params.to}, userId=${params.userId}, locale=${params.locale}`);
+    this.logger.verbose(`building mail html`, { kind, ...params });
     const compiled = template(mailTemplateMarkup);
-    this.logger.debug(`(EmailSender) preparing template params, kind=${kind}, subject=${params.subject}, to=${params.to}`);
+    this.logger.debug(`preparing template params`, { kind, ...params });
     const templateParams = await this.createMailTemplateParams(kind, params);
-    this.logger.debug(`(EmailSender) executing template, kind=${kind}, subject=${params.subject}, to=${params.to}`);
+    this.logger.debug(`executing template`, { kind, ...params });
     let mailHtml = compiled(templateParams);
-    this.logger.debug(`(EmailSender) postprocessing template, kind=${kind}, subject=${params.subject}, to=${params.to}`);
+    this.logger.debug(`postprocessing template`, { kind, ...params });
     mailHtml = juice(mailHtml);
 
-    this.logger.verbose(`(EmailSender) mail html built, kind=${kind}, subject=${params.subject}, to=${params.to}, userId=${params.userId}, locale=${params.locale}, size=${mailHtml.length}`);
+    this.logger.verbose(`mail html built`, { kind, ...params, size: mailHtml.length });
     return mailHtml;
   };
 
   sendEmail = async (kind: EmailTemplateEnum, template: string, params: IEmailParams): Promise<void> => {
-    this.logger.info(`(EmailSender) sending mail, kind=${kind}, subject=${params.subject}, to=${params.to}, token=${params.token ? SecretValueMask : '[empty]'}, userId=${params.userId}, locale=${params.locale}`);
+    this.logger.info(`sending mail`, { kind, ...params });
 
     const mailSettings = this.getMailSettingsOrThrow();
     try {
@@ -188,7 +191,7 @@ export class EmailSender implements IEmailSender {
         html: mailHtml
       });
     } catch (err: any) {
-      this.logger.warn(`(EmailSender) failed to send email kind=${kind}, subject=${params.subject}, to=${maskLog(params.to)}, token=${params.token ? SecretValueMask : '[empty]'}, userId=${params.userId}, locale=${params.locale}`, err);
+      this.logger.warn(`failed to send email`, err, { kind, ...params });
       if (AppException.isAppException(err)) {
         throw err;
       } else {
@@ -196,6 +199,6 @@ export class EmailSender implements IEmailSender {
       }
     }
 
-    this.logger.info(`(EmailSender) mail sent, kind=${kind}, subject=${params.subject}, to=${params.to}`);
+    this.logger.info(`mail sent`, { kind, ...params });
   };
 }

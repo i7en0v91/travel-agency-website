@@ -5,17 +5,17 @@ import type { H3Event } from 'h3';
 import { getCommonServices, getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
   const cacheCleanerLogic = getServerServices()!.getHtmlPageCacheCleaner();
 
   const isPreviewMode = event.context.preview.mode;
   if(isPreviewMode) {
     // KB: pages & responses not being cached for preview mode requests
-    logger.debug('(api:testing:invalidate-page) skipping invalidate page request as preview mode is enabled');
+    logger.debug('skipping invalidate page request as preview mode is enabled');
     return;  
   }
 
-  logger.debug('(api:testing:invalidate-page) parsing cache invalidation request from HTTP body');
+  logger.debug('parsing cache invalidation request from HTTP body');
   const invalidateCacheDto: ITestingInvalidateCacheDto = TestingInvalidateCacheDtoSchema.cast(await readBody(event));
 
   const items: { page: AppPage, id?: EntityId }[] = [];

@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { type Locale, AppPage, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
 import type { ITravelDetailsTextingData } from './../../../types';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   bookKind: 'flight' | 'stay',
   texting?: ITravelDetailsTextingData,
   isInitial?: boolean

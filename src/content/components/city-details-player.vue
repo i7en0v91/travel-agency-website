@@ -18,5 +18,5 @@ switch(page) {
 </script>
 
 <template>
-  <TravelDetails :id="TravelDetailsHtmlAnchor" :ctrl-key="bookKind === 'flight' ? 'FlightsTravelDetailsSection' : 'StaysTravelDetailsSection'" :book-kind="bookKind" />
+  <TravelDetails :id="TravelDetailsHtmlAnchor" :ctrl-key="['PageSection', 'TravelDetails', bookKind === 'flight' ? 'Flights' : 'Stays']" :book-kind="bookKind" />
 </template>

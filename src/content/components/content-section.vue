@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { lookupPageByUrl } from '@golobe-demo/shared';
 import PageSection from './../../components/common-page-components/page-section.vue';
+import type { ControlKey } from '../../helpers/components';
 
 interface IProps {
   btnLabel?: string,
@@ -13,7 +14,7 @@ const { btnLabel, padded = true, spaced = true, centered = false } = defineProps
 
 const route = useRoute();
 const currentPage = lookupPageByUrl(route.path)!;
-const ctrlKey = `${currentPage.valueOf()}-${(btnLabel ?? '').replace(/\s/g,'')}Section`;
+const ctrlKey: ControlKey = [currentPage, 'MdcContentSection'];
 
 </script>
 

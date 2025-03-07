@@ -66,13 +66,13 @@ async function extractErrorDtoFromResponse (response: FetchResponse<any>, logger
       return JSON.stringify(data);
     }
   } catch (err: any) {
-    logger.warn(`(fetch-ex) failed to obtain error response data, url=${response.url.toString()}`, err);
+    logger.warn('failed to obtain error response data', err, { url: response.url.toString() });
   }
 }
 
-export function createFetch(options: FetchExOptions, nuxtApp: ReturnType<typeof useNuxtApp>, logger: IAppLogger) {
+export function createFetch(options: FetchExOptions, nuxtApp: ReturnType<typeof useNuxtApp>, logger: () => IAppLogger) {
   return $fetch.create({
-    baseURL: nuxtApp.$nuxtSiteConfig.url!,
+    baseURL: AppConfig.siteUrl,
     onRequest(ctx: FetchContext) {
       if(ctx.options.headers) {
         addHeader(ctx.options.headers, HeaderAppVersion, AppConfig.versioning.appVersion.toString());  
@@ -81,26 +81,26 @@ export function createFetch(options: FetchExOptions, nuxtApp: ReturnType<typeof 
       }
     },
     onRequestError (ctx) {
-      logger.warn(`(fetch-ex) fetch exception occured in fetch request, url=${ctx.request.toString()}`, ctx.error);
+      logger().warn('fetch exception occured in fetch request', ctx.error, { url: ctx.request.toString() });
       const caughtAppException = createAppException(undefined, options.defautAppExceptionAppearance);
       ctx.error = caughtAppException;
-      defaultErrorHandler(caughtAppException, nuxtApp);
+      defaultErrorHandler(caughtAppException, { nuxtApp });
     },
     async onResponseError (ctx) {
-      const errorInfo = await extractErrorDtoFromResponse(ctx.response, logger);
+      const errorInfo = await extractErrorDtoFromResponse(ctx.response, logger());
       let caughtAppException: AppException | undefined;
       if (!errorInfo) {
-        logger.warn(`(fetch-ex) fetch exception occured in fetch response, url=${ctx.request.toString()}, status=${ctx.response.status}, text=${ctx.response.statusText}`, ctx.error);
+        logger().warn('fetch exception occured in fetch response', ctx.error, { url: ctx.request.toString(), status: ctx.response.status, text: ctx.response.statusText });
         caughtAppException = createAppException(undefined, options.defautAppExceptionAppearance!);
       } else if (isString(errorInfo)) {
-        logger.warn(`(fetch-ex) fetch exception occured in fetch response, url=${ctx.request.toString()}, status=${ctx.response.status}, text=${ctx.response.statusText}, msg=${errorInfo}`, ctx.error);
+        logger().warn('fetch exception occured in fetch response', ctx.error, { url: ctx.request.toString(), status: ctx.response.status, text: ctx.response.statusText, msg: errorInfo });
         caughtAppException = createAppException(undefined, options.defautAppExceptionAppearance!);
       } else {
         const apiErrorDto = errorInfo as IApiErrorDto;
-        logger.warn(`(fetch-ex) fetch exception occured in fetch response, url=${ctx.request.toString()}, status=${ctx.response.status} text=${ctx.response.statusText}`, ctx.error, apiErrorDto);
+        logger().warn('fetch exception occured in fetch response', ctx.error, { ...(apiErrorDto), ...{ url: ctx.request.toString(), status: ctx.response.status, text: ctx.response.statusText } });
         caughtAppException = createAppException(apiErrorDto, options.defautAppExceptionAppearance!);
       }
-      defaultErrorHandler(caughtAppException, nuxtApp);
+      defaultErrorHandler(caughtAppException, { nuxtApp });
     }
   });
 }

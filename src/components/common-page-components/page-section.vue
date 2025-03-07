@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { getI18nResName1, type Locale } from '@golobe-demo/shared';
 import { TooltipHideTimeout } from './../../helpers/constants';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   btnLabel?: string,
   linkUrl?: string,
   padded?: boolean,

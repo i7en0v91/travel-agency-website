@@ -41,7 +41,7 @@ export const useUserAccountStore = defineStore('userAccountStore', () => {
   const fetchUserAccountData = async(): Promise<IUserAccount> => {
     const dto = await getObject<IUserAccountDto>(`/${ApiEndpointUserAccount}`, undefined, 'no-store', true, nuxtApp?.ssrContext?.event, 'throw');
     if (!dto) {
-      logger.warn('(user-account-store) server didnt return user account dto');
+      // logger.warn('(user-account-store) server didnt return user account dto');
       return {}; // error should have been logged inside fetch
     }
     return mapUserAccountDto(dto);       
@@ -62,18 +62,18 @@ export const useUserAccountStore = defineStore('userAccountStore', () => {
           if (status.value === 'authenticated') {
             const userId = (data.value as any)?.id;
             try {
-              logger.info(`(user-account-store) initializing user account data, fetching, userId=${userId}`);
+              // logger.info(`(user-account-store) initializing user account data, fetching, userId=${userId}`);
               const userData = await fetchUserAccountData();
               assign(userAccountValue, userData);
               accountInitStatus = 'initialized';
-              logger.verbose(`(user-account-store) user account data fetched, userId=${userId}`);
+              // logger.verbose(`(user-account-store) user account data fetched, userId=${userId}`);
             } catch(err: any) {
-              logger.warn(`(user-account-store) exception during initialization of user account data, setting empty, userId=${userId}`, err);
+              // logger.warn(`(user-account-store) exception during initialization of user account data, setting empty, userId=${userId}`, err);
               accountInitStatus = 'not-initialized';
               setUserAccountEmptyValues();
             }
           } else {
-            logger.info('(user-account-store) initializing user account data - user is unauthenticated');
+            // logger.info('(user-account-store) initializing user account data - user is unauthenticated');
             accountInitStatus = 'not-initialized';
             setUserAccountEmptyValues();
           }
@@ -93,7 +93,7 @@ export const useUserAccountStore = defineStore('userAccountStore', () => {
   };
 
   watch(status, async () => {
-    logger.info(`(user-account-store) auth status changed, current=${status.value}`);
+    // logger.info(`(user-account-store) auth status changed, current=${status.value}`);
     if (accountInitStatus !== 'initialized') {
       return;
     }
@@ -106,7 +106,7 @@ export const useUserAccountStore = defineStore('userAccountStore', () => {
   });
 
   const notifyUserAccountChanged = (data: Partial<IUserAccount>) => {
-    logger.debug('(user-account-store) notifying components about user account data changes');
+    // logger.debug('(user-account-store) notifying components about user account data changes');
     if (data.avatar) {
       userAccountValue.avatar = data.avatar;
     }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { AppConfig, getI18nResName2, StaysMinGuestsCount, StaysMinRoomsCount } from '@golobe-demo/shared';
-import type { ISearchListItem, ISearchStayOffersMainParams, ISearchStayOffersParams } from './../../../types';
+import type { ControlKey } from './../../../helpers/components';
+import { type EntityId, getI18nResName2, StaysMinGuestsCount, StaysMinRoomsCount } from '@golobe-demo/shared';
+import type { ISearchStayOffersMainParams, ISearchStayOffersParams } from './../../../types';
 import { ApiEndpointCitiesSearch } from './../../../server/api-definitions';
 import dayjs from 'dayjs';
 import SearchListInput from './../../../components/forms/search-list-input.vue';
@@ -10,18 +11,21 @@ import SearchStayParams from './search-stay-params.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   takeInitialValuesFromUrlQuery?: boolean
 }
 const { ctrlKey, takeInitialValuesFromUrlQuery = false } = defineProps<IProps>();
-const logger = getCommonServices().getLogger();
 
-const destinationCity: Ref<ISearchListItem | null | undefined> = ref();
-const checkInDate = ref<Date | null | undefined>();
-const checkOutDate = ref<Date | null | undefined>();
-const stayParams: Ref<{ numRooms: number, numGuests: number } | null | undefined> = ref();
+const Today = eraseTimeOfDay(dayjs().toDate());
 
+const logger = getCommonServices().getLogger().addContextProps({ component: 'SearchStayOffers' });
 const searchOffersStoreAccessor = useSearchOffersStore();
+
+const destinationCityId = ref<EntityId>();
+const checkInDate = ref<Date>();
+const checkOutDate = ref<Date>();
+const stayParams: Ref<{ numRooms: number, numGuests: number } | undefined> = ref();
+const hasMounted = ref(false);
 
 let searchOffersStore: Awaited<ReturnType<typeof searchOffersStoreAccessor.getInstance<ISearchStayOffersParams>>> | undefined;
 let displayedSearchParams: ComputedRef<Partial<ISearchStayOffersMainParams>> | undefined;
@@ -33,28 +37,18 @@ defineExpose({
 if (takeInitialValuesFromUrlQuery) {
   searchOffersStore = await searchOffersStoreAccessor.getInstance('stays', true, false);
   displayedSearchParams = computed<Partial<ISearchStayOffersMainParams>>(() => { return searchOffersStore!.viewState.currentSearchParams; });
-  destinationCity.value = displayedSearchParams.value?.city ?? null;
-  checkInDate.value = displayedSearchParams.value?.checkIn ?? null;
-  checkOutDate.value = displayedSearchParams.value?.checkOut ?? null;
+  destinationCityId.value = displayedSearchParams.value?.cityId;
+  checkInDate.value = displayedSearchParams.value?.checkIn;
+  checkOutDate.value = displayedSearchParams.value?.checkOut;
   stayParams.value = (displayedSearchParams.value?.numGuests && displayedSearchParams.value?.numRooms) ? 
     { 
       numGuests: displayedSearchParams.value?.numGuests ?? StaysMinGuestsCount, 
       numRooms: displayedSearchParams.value?.numRooms ?? StaysMinRoomsCount
-    } : null
+    } : undefined
   ;
-
-  watch([destinationCity, checkInDate, checkOutDate, stayParams], () => {
-    logger.debug(`(SearchStayOffers) search params watch handler, ctrlKey=${ctrlKey}`);
-    const inputParams = getSearchParamsFromInputControls();
-    $emit('change', inputParams);
-  });
 } else {
   searchOffersStore = await searchOffersStoreAccessor.getInstance('stays', false, false);
   displayedSearchParams = computed<Partial<ISearchStayOffersMainParams>>(getSearchParamsFromInputControls);
-  watch(displayedSearchParams, () => {
-    logger.debug(`(SearchStayOffers) search params change handler, ctrlKey=${ctrlKey}`);
-    $emit('change', displayedSearchParams!.value);
-  });
 }
 
 function getSearchParamsFromInputControls (): Partial<ISearchStayOffersMainParams> {
@@ -62,36 +56,42 @@ function getSearchParamsFromInputControls (): Partial<ISearchStayOffersMainParam
     type: 'stays',
     checkIn: checkInDate.value,
     checkOut: checkOutDate.value,
-    city: destinationCity.value,
-    numGuests: stayParams.value?.numGuests,
-    numRooms: stayParams.value?.numRooms
+    cityId: destinationCityId.value,
+    numGuests: stayParams.value?.numGuests ?? StaysMinGuestsCount,
+    numRooms: stayParams.value?.numRooms ?? StaysMinRoomsCount
   } as Partial<ISearchStayOffersMainParams>;
 }
 
-const hasMounted = ref(false);
-
-function onCalendarDataChanged () {
-  if (!hasMounted.value) {
-    return;
-  }
-
-  if (!checkOutDate.value || !checkInDate.value) {
-    return;
-  }
-
-  if (checkOutDate.value!.getTime() < checkInDate.value!.getTime()) {
-    checkOutDate.value = checkInDate.value;
-  }
+function eraseTimeOfDay (dateTime: Date): Date {
+  const totalMs = dateTime.getTime();
+  return new Date(totalMs - totalMs % (1000 * 60 * 60 * 24));
 }
 
 onMounted(() => {
-  hasMounted.value = true;
-});
+  watch([checkInDate, checkOutDate], () => {
+    if (!checkOutDate.value || !checkInDate.value) {
+      return;
+    }
 
-watch(checkInDate, () => {
-  if (checkInDate.value && checkOutDate.value && checkOutDate.value.getTime() < checkInDate.value.getTime()) {
-    checkOutDate.value = checkInDate.value;
+    if (checkOutDate.value!.getTime() < checkInDate.value!.getTime()) {
+      checkOutDate.value = checkInDate.value;
+    }
+  }, { immediate: true });
+
+  if (takeInitialValuesFromUrlQuery) {
+    watch([destinationCityId, checkInDate, checkOutDate, stayParams], () => {
+      logger.debug('search params watch handler', ctrlKey);
+      const inputParams = getSearchParamsFromInputControls();
+      $emit('change', inputParams);
+    });
+  } else {
+    watch(displayedSearchParams, () => {
+      logger.debug('search params change handler', ctrlKey);
+      $emit('change', displayedSearchParams!.value);
+    });
   }
+
+  hasMounted.value = true;
 });
 
 const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMainParams>): void}>();
@@ -103,15 +103,14 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
     <InputFieldFrame :text-res-name="getI18nResName2('searchStays', 'destinationCaption')" class="flex-grow-[4] flex-shrink-[4] basis-auto w-full">
       <div class="min-h-[3.25rem] max-h-[3.25rem] block w-full rounded ring-1 ring-inset ring-gray-500 dark:ring-gray-400 text-gray-500 dark:text-gray-400 font-medium pl-[16px]">
         <SearchListInput
-          v-model:selected-value="destinationCity"
-          :ctrl-key="`${ctrlKey}-DestinationCity`"
+          v-model:selected-value="destinationCityId"
+          :ctrl-key="[...ctrlKey, 'Destination', 'SearchList']"
           class="w-full min-h-[3.25rem] max-h-[3.25rem]"
           :item-search-url="`/${ApiEndpointCitiesSearch}`"
           :additional-query-params="{ includeCountry: true }"
-          type="destination"
-          :persistent="true"
-          :placeholder-res-name="getI18nResName2('searchStays', 'destinationPlaceholder')"
+          type="City"
           :min-suggestion-input-chars="2"
+          :placeholder-res-name="getI18nResName2('searchStays', 'destinationPlaceholder')"
           :aria-label-res-name="getI18nResName2('ariaLabels', 'ariaLabelDestination')"
         />
       </div>
@@ -119,23 +118,19 @@ const $emit = defineEmits<{(event: 'change', params: Partial<ISearchStayOffersMa
     <div class="flex-grow-[5] flex-shrink-[3] basis-auto w-full flex flex-col sm:flex-row flex-nowrap gap-x-[16px] gap-y-4 sm:gap-x-[24px] sm:gap-y-6">
       <DatePicker
         v-model:selected-date="checkInDate"
-        :ctrl-key="`${ctrlKey}-CheckIn`"
+        :ctrl-key="[...ctrlKey, 'CheckIn', 'DatePicker']"
         :ui="{ wrapper: 'w-full min-h-[3.25rem] max-h-[3.25rem]', input: 'min-h-[3.25rem] max-h-[3.25rem]' }"
         :caption-res-name="getI18nResName2('searchStays', 'checkInCaption')"
-        :persistent="true"
-        @update:selected-date="onCalendarDataChanged()"
+        :min-date="Today"
       />
       <DatePicker
         v-model:selected-date="checkOutDate"
-        :ctrl-key="`${ctrlKey}-CheckOut`"
+        :ctrl-key="[...ctrlKey, 'CheckOut', 'DatePicker']"
         :ui="{ wrapper: 'w-full min-h-[3.25rem] max-h-[3.25rem]', input: 'min-h-[3.25rem] max-h-[3.25rem]' }"
         :caption-res-name="getI18nResName2('searchStays', 'checkOutCaption')"
-        :persistent="true"
-        :default-date="dayjs().utc(true).add(AppConfig.autoInputDatesRangeDays, 'day').toDate()"
-        :min-date="checkInDate ?? undefined"
-        @update:selected-date="onCalendarDataChanged()"
+        :min-date="checkInDate"
       />
     </div>
-    <SearchStayParams v-model:params="stayParams" :ui="{ wrapper: 'flex-grow-[2] flex-shrink-[4] basis-auto w-full min-h-[3.25rem] max-h-[3.25rem]', input: 'min-h-[3.25rem] max-h-[3.25rem]' }" :ctrl-key="`${ctrlKey}-StayParams`" />    
+    <SearchStayParams v-model:params="stayParams" :ui="{ wrapper: 'flex-grow-[2] flex-shrink-[4] basis-auto w-full min-h-[3.25rem] max-h-[3.25rem]', input: 'min-h-[3.25rem] max-h-[3.25rem]' }" :ctrl-key="[...ctrlKey, 'StayParams']" />    
   </div>
 </template>

@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { AppConfig, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import range from 'lodash-es/range';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 };
 defineProps<IProps>();
 
@@ -22,7 +23,7 @@ const LiBullet = 'before:content-["•"]';
         {{ $t(getI18nResName3('bookingTnC', 'payments', 'title')) }}
       </h3>
       <ul class="table text-gray-600 dark:text-gray-300">
-        <li v-for="(i) in range(0, 3)" :key="`${ctrlKey}-PaymentTerm${i}`" class="table-row">
+        <li v-for="(i) in range(0, 3)" :key="`${toShortForm(ctrlKey)}-PaymentTerm${i}`" class="table-row">
           <div :class="`table-cell pt-4 px-2 before:inline-block ${LiBullet}`"/>
           <div class="table-cell pt-4 w-fit">
             {{ $t(getI18nResName3('bookingTnC', 'payments', `paragraph${i + 1}` as any), { companyName: AppConfig.booking.companyName }) }}

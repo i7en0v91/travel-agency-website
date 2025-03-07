@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { validateObjectSync, UserNotificationLevel, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
 import { object, string } from 'yup';
 import { getCommonServices } from '../../helpers/service-accessors';
 import MailBoxSvg from '~/public/img/mailbox.svg';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 defineProps<IProps>();
 
@@ -17,7 +18,7 @@ const state = reactive({
   email: undefined
 });
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'SubscribeBox' });
 const userNotificationStore = useUserNotificationStore();
 
 const showRequiredError = ref(false);
@@ -33,7 +34,7 @@ const validationErrorResName = computed(() => {
   }
 
   if(errMsgResName) {
-    logger.verbose(`(SubscribeBox) input values validation failed, msg=[${errMsgResName}]`);
+    logger.verbose('input values validation failed', { msg: errMsgResName });
     return errMsgResName;
   }
 
@@ -43,16 +44,16 @@ const validationErrorResName = computed(() => {
 async function onSubscribeClick () {
   if(!state.email) {
     showRequiredError.value = true;
-    logger.verbose(`(SubscribeBox) preventing subscription attempt for empty email, msg=[${validationErrorResName.value}]`);
+    logger.verbose('preventing subscription attempt for empty email', { msg: validationErrorResName.value });
     return;
   }
 
   if(validationErrorResName.value?.length) {
-    logger.verbose(`(SubscribeBox) preventing subscription attempt for incorrect email, msg=[${validationErrorResName.value}]`);
+    logger.verbose('preventing subscription attempt for incorrect email', { msg: validationErrorResName.value });
     return;
   }
   
-  logger.verbose(`(SubscribeBox) showing subscription notification`);
+  logger.verbose('showing subscription notification');
   userNotificationStore.show({
     level: UserNotificationLevel.INFO,
     resName: getI18nResName2('subscribeBox', 'subscribeNotification')

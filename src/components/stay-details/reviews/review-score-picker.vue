@@ -1,16 +1,17 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../../helpers/components';
 import { getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import range from 'lodash-es/range';
 import { getCommonServices } from '../../../helpers/service-accessors';
 import StarSvg from '~/public/img/star.svg';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 
 const { ctrlKey } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ReviewScorePicker' });
 const hoveredScore = ref<number>();
 
 const result = defineModel<number | 'cancel'>('result');
@@ -26,7 +27,7 @@ defineShortcuts({
 });
 
 function setResultAndClose (value: number | 'cancel') {
-  logger.debug(`(ReviewScorePicker) setResultAndClose, ctrlKey=${ctrlKey}, resultSet=${value}`);
+  logger.debug('setResultAndClose', { ctrlKey, resultSet: value });
   if (!value) {
     value = 'cancel';
   }
@@ -35,17 +36,17 @@ function setResultAndClose (value: number | 'cancel') {
 }
 
 function onPickerItemHovered (score: number) {
-  logger.debug(`(ReviewScorePicker) picker item hovered, ctrlKey=${ctrlKey}, score=${score}`);
+  logger.debug('picker item hovered', { ctrlKey, score });
   hoveredScore.value = score;
 }
 
 function onPickerItemUnhovered () {
-  logger.debug(`(ReviewScorePicker) picker item unhovered, ctrlKey=${ctrlKey}`);
+  logger.debug('picker item unhovered', ctrlKey);
   hoveredScore.value = 0;
 }
 
 function onPickerItemClicked (score: number) {
-  logger.debug(`(ReviewScorePicker) picker item clicked, ctrlKey=${ctrlKey}, score=${score}`);
+  logger.debug('picker item clicked', { ctrlKey, score });
   setResultAndClose(score);
 }
 
@@ -72,7 +73,7 @@ const uiStyling = {
       <div class="w-full h-auto flex flex-row flex-nowrap items-center justify-center gap-2 sm:gap-4 my-8">
         <StarSvg
           v-for="(i) in range(0, 5)"
-          :key="`${ctrlKey}-ScorePickerItem-${i}`"
+          :key="`${toShortForm(ctrlKey)}-ScorePickerItem-${i}`"
           :class="`block !w-[50px] !h-[50px] sm:!w-[70px] sm:!h-[70px] flex-initial cursor-pointer ${ hoveredScore ? (i < hoveredScore ? '' : 'grayscale') : 'grayscale' }`"
           :data-score="i"
           filled

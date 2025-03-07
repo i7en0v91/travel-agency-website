@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { AppPage, getPagePath, type Locale, getI18nResName2, getI18nResName3, type EntityId, type IStayOffer, type IFlightOffer, type EntityDataAttrsOnly, isElectronBuild } from '@golobe-demo/shared';
 import { getCommonServices } from '../../../helpers/service-accessors';
 import type ModalWaitingIndicator from '../../forms/modal-waiting-indicator.vue';
@@ -6,13 +7,13 @@ import { useDocumentDownloader, type IDocumentDownloader } from './../../../comp
 import { useModalWaiter, type IModalWaiter } from './../../../composables/modal-waiter';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   bookingId: EntityId,
   offer: EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>
 };
 const { ctrlKey, bookingId, offer } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'TicketCardContainer' });
 const navLinkBuilder = useNavLinkBuilder();
 
 const { locale } = useI18n();
@@ -28,7 +29,7 @@ let documentDownloader: IDocumentDownloader | undefined;
 const userAccountStore = useUserAccountStore();
 
 async function onBtnClick(): Promise<void> {
-  logger.verbose(`(TicketCardContainer) download btn clicked, ctrlKey=${ctrlKey}, bookingId=${bookingId}`);
+  logger.verbose('download btn clicked', { ctrlKey, bookingId });
 
   let firstName: string | undefined;
   let lastName: string | undefined;
@@ -37,7 +38,7 @@ async function onBtnClick(): Promise<void> {
     firstName = userAccount.firstName;
     lastName = userAccount.lastName;
   } catch (err: any) {
-    logger.warn(`(TicketCardContainer) failed to initialize user account info, ctrlKey=${ctrlKey}`, err);
+    logger.warn('failed to initialize user account info', err, ctrlKey);
   }
 
   await documentDownloader!.download(bookingId, offer, firstName, lastName, locale.value as Locale, theme.currentTheme.value);
@@ -65,6 +66,6 @@ onMounted(() => {
         <UButton size="lg" class="w-min flex-initial" icon="i-heroicons-chevron-right-20-solid" :ui="{ base: 'justify-center' }" variant="outline" color="gray" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.BookingDetails)}/${bookingId}`, locale as Locale)" :external="false"  :target="isElectronBuild() ? '_blank' : undefined"/>
       </div>
     </div>
-    <ModalWaitingIndicator ref="modal-waiter" v-model:open="modalWaiterOpen" :ctrl-key="`${ctrlKey}-Waiter`" :label-res-name="getI18nResName2('bookingCommon', 'generatingDoc')"/>
+    <ModalWaitingIndicator ref="modal-waiter" v-model:open="modalWaiterOpen" :ctrl-key="[...ctrlKey, 'Waiter']" :label-res-name="getI18nResName2('bookingCommon', 'generatingDoc')"/>
   </article>
 </template>

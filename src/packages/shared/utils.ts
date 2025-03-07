@@ -1,6 +1,12 @@
-import destr from 'destr';
 import isNumber from 'lodash-es/isNumber';
 import Mime from 'mime';
+import { hash } from 'ohash';
+import isArray from 'lodash-es/isArray';
+
+const CacheDirSeparator = ":";
+const CachePrefix = ['cache', 'app'].join(CacheDirSeparator);
+
+export type ControlKey<TControlKeyPart extends string | number = string | number> = TControlKeyPart[];
 
 function compareLookupValues(entryValue: any, lookupValue: string, ignoreCase: boolean): boolean {
   if (!entryValue) {
@@ -65,18 +71,49 @@ export function lookupValueOrThrow<TVal extends string | number, TObj extends Re
   return object[lookupKeyByValueOrThrow(object, value, ignoreCase)];
 }
 
-export function stringifyClone(obj: any): any {
-  if(!obj) {
-    return undefined;
-  }
-
-  return destr(JSON.stringify(obj));
-}
-
 export function detectMimeType(fileName: string): string {
   const mime = Mime.getType(fileName);
   if(!mime) {
     throw new Error('Cannot detect MIME type');
   }
   return mime;
+}
+
+export function formatAppCacheKey(...itemKeyParts: string[]) {
+  if(!itemKeyParts) {
+    throw new Error('empty key');
+  }
+
+  if(!itemKeyParts.length || itemKeyParts.every(i => !i)) {
+    throw new Error('empty key');
+  }
+
+  return [CachePrefix, ...itemKeyParts].join(CacheDirSeparator);
+}
+
+export function areCtrlKeysEqual(key1: ControlKey, key2: ControlKey): boolean {
+  return key1.length === key2.length && key1.every((v, idx) => v === key2[idx]);
+}
+
+export function toShortForm<TControlKeyPart extends string | number>(key: ControlKey<TControlKeyPart>): string {
+  if(!key) {
+    throw new Error('empty control key');
+  }
+
+  if(!isArray(key) || !key.length) {
+    throw new Error(`invalid key [${JSON.stringify(key)}]`);
+  }
+
+  if(key.length === 1) {
+    return key[0].toString();
+  } else if(key.length === 2) {
+    return `${key[0]}-${key[1]}`;
+  } else {
+    const firstPart = key[1];
+    const keyHash = hash(key);
+    const hashPart = keyHash.substring(0, Math.min(keyHash.length, 4));
+    const lastPartIdx = key.findLastIndex(v => typeof v === 'string');
+    const lastPart = lastPartIdx > 0 ? key.slice(lastPartIdx).join('-') : null;
+    return lastPart ? `${firstPart}-${lastPart}-${hashPart}` : `${firstPart}-${hashPart}`;
+  }
 }

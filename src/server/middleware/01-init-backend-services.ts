@@ -4,16 +4,16 @@ import { defineEventHandler, type H3Event } from 'h3';
 import once from 'lodash-es/once';
 import { getCommonServices } from '../../helpers/service-accessors';
 
-const LoggingPrefix = '(init-backend-services)';
+const CommonLogProps = { component: 'InitBackendServices' };
 
 const initServices = once(async (event: H3Event, logger: IAppLogger) => {  
   try {
-    logger.info(`${LoggingPrefix} initializing services container`);
+    logger.info('initializing services container');
     (globalThis as any).CommonServicesLocator = (globalThis as any).ServerServicesLocator = await buildBackendServicesLocator(logger);
-    logger.info(`${LoggingPrefix} services container initialized`);
-  } catch (e) {
-    logger.error(`${LoggingPrefix} services container initialization failed`, e);
-    throw e;
+    logger.info('services container initialized');
+  } catch (err) {
+    logger.error('services container initialization failed', err);
+    throw err;
   }
 });
 
@@ -24,11 +24,11 @@ export default defineEventHandler(async (event: H3Event) => {
     return;
   }
   
-  const logger = createBackendLogger(); // container has not built yet
+  const logger = createBackendLogger().addContextProps(CommonLogProps); // container has not built yet
   try {
     await initServices(event, logger);
   } catch(err: any) {
-    logger.error(`${LoggingPrefix} exception during services container initialization`, err);
+    logger.error('exception during services container initialization', err);
     throw err;
   }
 });

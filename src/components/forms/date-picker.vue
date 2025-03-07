@@ -1,16 +1,15 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import type { I18nResName } from '@golobe-demo/shared';
-import type { DatePickerDate, DatePickerModel } from 'v-calendar/dist/types/src/use/datePicker.js';
-import dayjs from 'dayjs';
 import InputFieldFrame from './input-field-frame.vue';
 import { DatePicker as VCalendarDatePicker } from 'v-calendar';
 import { getCommonServices } from '../../helpers/service-accessors';
-import { datePickerValueToDate } from './../../helpers/components';
+import { useControlValuesStore } from './../../stores/control-values-store';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   captionResName: I18nResName,
-  persistent: boolean,
+  persistent?: boolean,
   defaultDate?: Date,
   minDate?: Date,
   ui?: {
@@ -19,90 +18,51 @@ interface IProps {
   }
 }
 
-const { persistent, ctrlKey, defaultDate, minDate } = defineProps<IProps>();
+const { 
+  ctrlKey, 
+  persistent = undefined, 
+  defaultDate = undefined, 
+  minDate 
+} = defineProps<IProps>();
 
-
+const logger = getCommonServices().getLogger().addContextProps({ component: 'DatePicker' });
+const controlValuesStore = useControlValuesStore();
 const { d, locale } = useI18n();
 
-const today = eraseTimeOfDay(dayjs().utc(true).toDate());
-let defaultValue = defaultDate ? eraseTimeOfDay(defaultDate) : today;
-if (dayjs(defaultValue).isBefore(today)) {
-  defaultValue = today;
-}
-const controlSettingsStore = useControlSettingsStore();
-const controlValueSetting = controlSettingsStore.getControlValueSetting<string | undefined>(ctrlKey, defaultValue.toISOString(), persistent);
-
-const logger = getCommonServices().getLogger();
-
-const modelRef = defineModel<Date  | null | undefined>('selectedDate');
-const open = ref(false);
-const calendar = useTemplateRef('calendar');
-
-const selectedValue = ref<Date>(today);
-
+const modelValue = defineModel<Date  | null | undefined>('selectedDate');
 const hasMounted = ref(false);
-
-function eraseTimeOfDay (dateTime: Date): Date {
-  const totalMs = dateTime.getTime();
-  return new Date(totalMs - totalMs % (1000 * 60 * 60 * 24));
-}
-
-function fireSelectedDateChange (date: Date) {
-  logger.debug(`(DatePicker) date changed: ctrlKey=${ctrlKey}, date=${date}`);
-  $emit('update:selectedDate', eraseTimeOfDay(date));
-}
-
-function onSelectedDateUpdated (date: Date) {
-  logger.verbose(`(DatePicker) calendar date updated: ctrlKey=${ctrlKey}, date=${date}`);
-  controlValueSetting.value! = eraseTimeOfDay(date).toISOString();
-  fireSelectedDateChange(date);
-  open.value = false;
-  logger.verbose(`(DatePicker) selected date(s) updated: ctrlKey=${ctrlKey}`);
-}
-
-const $emit = defineEmits<{(event: 'update:selectedDate', date: Date): void}>();
-
-function onValueSelected (value: DatePickerModel) {
-  logger.verbose(`(SearchFlightsDatePicker) value selected: ctrlKey=${ctrlKey}, value=${JSON.stringify(value)}`);
-  onSelectedDateUpdated(datePickerValueToDate(value as DatePickerDate, calendar.value?.locale, logger));
-}
-
-function setupInitialValue() {
-  if (dayjs(controlValueSetting.value).isBefore(today)) {
-    controlValueSetting.value = today.toISOString();
-  }
-
-  let initialValue = today;
-  if(modelRef.value) {
-    initialValue = modelRef.value;
-  } else if(modelRef.value === null) {
-    initialValue = defaultValue ?? today;
-  } else {
-    initialValue = eraseTimeOfDay(new Date(controlValueSetting.value!));
-  }  
-  if (dayjs(initialValue).isBefore(today)) {
-    initialValue = today;
-  }
-
-  controlValueSetting.value = initialValue.toISOString();
-  selectedValue.value = eraseTimeOfDay(new Date(controlValueSetting.value!));
-  modelRef.value = initialValue;
-}
+const open = ref(false);
 
 const datesDisplayText = computed(() => {
-  return hasMounted.value ? d(selectedValue.value!, 'short') : undefined;
+  return hasMounted.value ? (modelValue.value ? d(modelValue.value!, 'short') : '') : '';
 });
 
-onBeforeMount(() => {
-  setupInitialValue();
-});
 onMounted(() => {
-  hasMounted.value = true;
-  fireSelectedDateChange(selectedValue.value);
-});
+  const initialOverwrite = modelValue.value as Date;
+  logger.debug('acquiring store value ref', { ctrlKey, defaultValue: defaultDate, initialOverwrite });
+  const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<Date | null>(ctrlKey, {
+    initialOverwrite,
+    defaultValue: defaultDate,
+    persistent
+  });
 
-watch(modelRef, () => {
-  selectedValue.value = modelRef.value ?? defaultValue;
+  watch(storeValueRef, () => {
+    logger.debug('store value watcher', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value });
+    const newValue: Date | null = storeValueRef.value ?? null;
+    const changed = storeValueRef.value !== modelValue.value;
+    if(changed) {
+      modelValue.value = newValue;  
+    }
+  }, { immediate: true });
+
+  watch(modelValue, () => {
+    logger.debug('model value watcher', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value });
+    if(modelValue.value !== storeValueRef.value) {
+      storeValueRef.value = modelValue.value ?? null;
+    }
+  }, { immediate: false });
+
+  hasMounted.value = true;
 });
 
 defineShortcuts({
@@ -122,6 +82,7 @@ const calendarAttrs = computed(() => {
   };
 });
 
+
 </script>
 
 <template>
@@ -135,11 +96,10 @@ const calendarAttrs = computed(() => {
     <template #panel="{ close }">
       <VCalendarDatePicker
         ref="calendar"
-        v-model="selectedValue"
+        v-model="modelValue"
         :columns="1"
         is-required
         v-bind="calendarAttrs"
-        @update:model-value="onValueSelected"
         @close="close" 
       />
     </template>

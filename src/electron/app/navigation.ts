@@ -12,12 +12,12 @@ declare type NavInfo = { page: HtmlPage, locale: Locale, preview: boolean };
 export function getWindowNavInfo(win: BrowserWindow, bridge: IRendererClientBridge, logger: ElectronMainLogger): NavInfo | undefined {
   let currentUrl: string = '';
   try {
-    logger.debug(`(Navigation) get window nav info, win=[${win.title}]`);
+    logger.debug('get window nav info', { win: win.title });
     currentUrl = win.webContents.getURL();
 
     const page = lookupPageByUrl(currentUrl);
     if(!page) {
-      logger.warn(`(Navigation) failed to get window nav info - unknown page, win=[${win.title}], currentUrl=[${currentUrl}]`);
+      logger.warn('failed to get window nav info - unknown page', undefined, { win: win.title, currentUrl });
       showExceptionDialog('warning', bridge, logger);
       return undefined;
     }
@@ -31,10 +31,10 @@ export function getWindowNavInfo(win: BrowserWindow, bridge: IRendererClientBrid
       preview
     };
 
-    logger.debug(`(Navigation) window nav info obtained, win=[${win.title}], result=${JSON.stringify(result)}`);
+    logger.debug('window nav info obtained', { win: win.title, result });
     return result;
   } catch(err: any) {
-    logger.warn(`(Navigation) exception while obtaining window nav info, win=[${win.title}], currentUrl=[${currentUrl}]`, err);
+    logger.warn('exception while obtaining window nav info', err, { win: win.title, currentUrl });
     showExceptionDialog('warning', bridge, logger);
     return undefined;
   }
@@ -48,7 +48,7 @@ export function buildNavUrl(nav: NavInfo, bridge: IRendererClientBridge, logger:
     );
     return joinURL(AppConfig.siteUrl, pathname);
   } catch(err: any) {
-    logger.warn(`(Navigation) failed to construct nav url, nav=[${JSON.stringify(nav)}]`, err);
+    logger.warn('failed to construct nav url', err, nav);
     showExceptionDialog('warning', bridge, logger);
     return '/';
   }
@@ -56,11 +56,11 @@ export function buildNavUrl(nav: NavInfo, bridge: IRendererClientBridge, logger:
 
 export function navigateTo(page: AppPage, win: BrowserWindow, bridge: IRendererClientBridge, logger: ElectronMainLogger) {
   try {
-    logger.info(`(Navigation) navigating to page=${page.valueOf()}, win=[${win.title}]`);
+    logger.info('navigating to', { page: page.valueOf(), win: win.title });
     bridge.navigateToPage(page);
-    logger.debug(`(Navigation) navigation request called, page=${page.valueOf()}, win=[${win.title}]`);
+    logger.debug('navigation request called', { page: page.valueOf(), win: win.title });
   } catch(err: any) {
-    logger.warn(`(Navigation) navigation failed, page=${page.valueOf()}, win=[${win.title}]`, err);
+    logger.warn('navigation failed', err, { page: page.valueOf(), win: win.title });
     showExceptionDialog('warning', bridge, logger);
   }
 }

@@ -1,42 +1,27 @@
-import type { IAppLogger } from '@golobe-demo/shared';
+import { type LogAlwaysLevel, AppConfig, AppLoggerBase, type IAppLogger, type LogLevel } from '@golobe-demo/shared';
 import { EOL } from 'os';
 import { appendFileSync } from 'fs';
 import { resolve } from 'pathe';
+import omit from 'lodash-es/omit';
 
 const LogFilePath = resolve('./testrun.log');
 
-let fileLogger: IAppLogger | undefined;
-function createFileLogger (prefix: string) : IAppLogger {
-  if (!fileLogger) {
-    let lowerWarnsToInfo = false;
-    fileLogger = {
-      lowerWarnsWithoutErrorLevel: (useInfoLevel: boolean) => {
-        lowerWarnsToInfo = useInfoLevel;
-      },
-      debug: function (msg: string, data?: any): void {
-        appendFileSync(LogFilePath, `[${prefix}] DEBUG ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
-      },
-      verbose: function (msg: string, data?: object | undefined): void {
-        appendFileSync(LogFilePath, `[${prefix}] VERBOSE ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
-      },
-      info: function (msg: string, data?: object | undefined): void {
-        appendFileSync(LogFilePath, `[${prefix}] INFO ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
-      },
-      warn: function (msg: string, err?: any, data?: object | undefined): void {
-        const level = (lowerWarnsToInfo && !err) ? 'INFO' : 'WARN';
-        appendFileSync(LogFilePath, `[${prefix}] ${level} ${msg}, err=${JSON.stringify(err)} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
-      },
-      error: function (msg: string, err?: any, data?: object | undefined): void {
-        appendFileSync(LogFilePath, `[${prefix}] ERROR ${msg}, err=${JSON.stringify(err)} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
-      },
-      always: function (msg: string, data?: object | undefined): void {
-        appendFileSync(LogFilePath, `[${prefix}] INFO ${msg} ${data ? `, data=${JSON.stringify(data)}` : ''}${EOL}`);
-      }
+class TestFileLogger extends AppLoggerBase<typeof AppConfig['logging']['common']> {
+  ts = () => new Date().toISOString();
+
+  override getLogDestinations(): { local: boolean; outside: boolean; } {
+    return {
+      local: false,
+      outside: true
     };
   }
-  return fileLogger;
+
+  override logOutside(logData: { msg: string; level: LogLevel | (typeof LogAlwaysLevel); }): void {
+    appendFileSync(LogFilePath, `${logData.level} ${this.ts()} ${logData.msg}, data=${JSON.stringify(omit(logData, 'msg', 'level'))}${EOL}`);
+  }
 }
 
-export function createLogger (prefix: string) : IAppLogger {
-  return createFileLogger(prefix);
+export function createLogger (testCase: string) : IAppLogger {
+  const result = new TestFileLogger(AppConfig.logging.common);
+  return result.addContextProps({ prefix: testCase });
 }

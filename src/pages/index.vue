@@ -2,18 +2,21 @@
 import { ImageCategory, MainTitleSlug, getI18nResName2 } from '@golobe-demo/shared';
 import HeadingText from './../components/index/main-heading-text.vue';
 import AppPageMdc from './../components/common-page-components/app-page-mdc.vue';
+import type { ControlKey } from './../helpers/components';
 
 definePageMeta({
   title: { resName: getI18nResName2('indexPage', 'title'), resArgs: undefined }
 });
 useOgImage();
 
+const CtrlKey: ControlKey = ['Page', 'Index'];
+
 </script>
 
 <template>
   <div class="golobe-landing-page">
     <SearchPageHead
-      ctrl-key="MainPageHead"
+      :ctrl-key="[...CtrlKey, 'SearchPageHead']"
       :image-entity-src="{ slug: MainTitleSlug }"
       :category="ImageCategory.MainTitle"
       :image-alt-res-name="getI18nResName2('searchPageCommon', 'mainImageAlt')"
@@ -26,7 +29,7 @@ useOgImage();
         }
       }"
     >
-      <HeadingText ctrl-key="IndexPageMainHeading" />
+      <HeadingText :ctrl-key="[...CtrlKey, 'SearchPageHead', 'Title']" />
     </SearchPageHead>
     
     <AppPageMdc/>

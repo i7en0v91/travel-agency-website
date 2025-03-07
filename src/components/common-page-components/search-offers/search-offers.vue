@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { AppConfig, type OfferKind, AppPage, getPagePath, getI18nResName1, getI18nResName2, type Locale, PreviewModeParamEnabledValue, QueryPagePreviewModeParam, CheckInOutDateUrlFormat } from '@golobe-demo/shared';
-import type { ISearchStayOffersMainParams, ISearchFlightOffersMainParams, ISearchFlightOffersParams, ISearchListItem, ISearchStayOffersParams } from './../../../types';
+import { areCtrlKeysEqual, type ControlKey } from './../../../helpers/components';
+import { type EntityId, type OfferKind, AppPage, getPagePath, getI18nResName1, getI18nResName2, type Locale, PreviewModeParamEnabledValue, QueryPagePreviewModeParam, CheckInOutDateUrlFormat } from '@golobe-demo/shared';
+import type { ISearchStayOffersMainParams, ISearchFlightOffersMainParams, ISearchFlightOffersParams, ISearchStayOffersParams } from './../../../types';
 import dayjs from 'dayjs';
 import isEqual from 'lodash-es/isEqual';
 import pick from 'lodash-es/pick';
@@ -12,103 +13,105 @@ import type { RouteLocationRaw } from 'vue-router';
 import set from 'lodash-es/set';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 import { usePreviewState } from './../../../composables/preview-state';
-import { getClientServices, getCommonServices } from '../../../helpers/service-accessors';
+import { getCommonServices } from '../../../helpers/service-accessors';
+import { useEntityCacheStore } from '../../../stores/entity-cache-store';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   singleTab?: 'flights' | 'stays',
   showPromoBtn?: boolean,
   takeInitialValuesFromUrlQuery?: boolean // this will look into page's url query for initial values and may result into server fetch requests
 }
 const { ctrlKey, singleTab, showPromoBtn = false, takeInitialValuesFromUrlQuery = false } = defineProps<IProps>();
 
-const SearchTabFlights = `${ctrlKey}-TabFlights`;
-const SearchTabStays = `${ctrlKey}-TabStays`;
+const SearchOffersTabControl: ControlKey = [...ctrlKey, 'TabGroup'];
+const SearchTabFlights: ControlKey = [...SearchOffersTabControl, 'Flights', 'Tab'];
+const SearchTabStays: ControlKey = [...SearchOffersTabControl, 'Stays', 'Tab'];
 
 const searchOffersStoreAccessor = useSearchOffersStore();
-const clientEntityCache = import.meta.client ? getClientServices().getEntityCache() : undefined;
+const entityCacheStore = useEntityCacheStore();
 
-const selectedTab = ref<string | undefined>();
-if(singleTab) {
-  selectedTab.value = singleTab === 'stays' ? SearchTabStays : SearchTabFlights;
-}
+const selectedTab = ref<ControlKey>();
 
 const promoTooltipShown = ref(false);
 const searchFlights = useTemplateRef('search-flights');
 const searchStays = useTemplateRef('search-stays');
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'SearchOffers' });
 const router = useRouter();
 const navLinkBuilder = useNavLinkBuilder();
 const { enabled } = usePreviewState();
 const { locale, t } = useI18n();
+const hasMounted = ref(false);
 
-const searchFlightStore = await searchOffersStoreAccessor.getInstance<ISearchFlightOffersParams>('flights', false, false);
-const searchStayStore = await searchOffersStoreAccessor.getInstance<ISearchStayOffersParams>('stays', false, false);
+const isFlightsTabActive = computed(() => {
+  if(singleTab === 'stays') {
+    return false;
+  }
+  if(singleTab === 'flights') {
+    return true;
+  }
+  return !hasMounted.value || (selectedTab.value && areCtrlKeysEqual(selectedTab.value, SearchTabFlights));
+});
 
-async function resolveFlightCitiesSlugs (searchParams: Partial<ISearchFlightOffersParams>): Promise<{ fromCitySlug?: string | undefined, toCitySlug?: string | undefined }> {
-  let fromCitySlug = searchParams.fromCity?.slug;
-  let toCitySlug = searchParams.toCity?.slug;
-  const citiesToResolve: ISearchListItem[] = [];
-  if (searchParams.fromCity && !searchParams.fromCity.slug) {
-    citiesToResolve.push(searchParams.fromCity);
+async function resolveFlightCitiesSlugs (searchParams: Partial<ISearchFlightOffersParams>): Promise<{ fromCitySlug: string | undefined, toCitySlug: string | undefined }> {
+  const cityIdsToResolve: EntityId[] = [];
+  if (searchParams.fromCityId) {
+    cityIdsToResolve.push(searchParams.fromCityId);
   }
-  if (searchParams.toCity && !searchParams.toCity.slug) {
-    citiesToResolve.push(searchParams.toCity);
+  if (searchParams.toCityId) {
+    cityIdsToResolve.push(searchParams.toCityId);
   }
-  if (citiesToResolve.length === 0) {
-    const result = { fromCitySlug, toCitySlug };
-    logger.verbose(`(SearchOffers) resolved slugs without fetch requests, result=${JSON.stringify(result)}`);
+  if (cityIdsToResolve.length === 0) {
+    const result = { fromCitySlug: undefined, toCitySlug: undefined };
+    logger.verbose('no slugs to resolve - no cities specified', ctrlKey);
     return result;
   }
 
   try {
-    logger.verbose(`(SearchOffers) resolving cities slugs, items=${JSON.stringify(citiesToResolve)}`);
-    const resolvedCities = (await clientEntityCache!.get<'City'>(citiesToResolve.map(i => i.id), [], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
+    logger.verbose('resolving cities slugs', { items: cityIdsToResolve });
+
+    let fromCitySlug: string | undefined;
+    let toCitySlug: string | undefined;
+    const resolvedCities = await entityCacheStore!.get({ ids: cityIdsToResolve }, 'City', true);
     if (resolvedCities.length === 2) {
       fromCitySlug = resolvedCities[0].slug;
       toCitySlug = resolvedCities[1].slug;
-    } else if (searchParams.fromCity && !searchParams.fromCity.slug) {
+    } else if (searchParams.fromCityId && !searchParams.fromCityId) {
       fromCitySlug = resolvedCities[0].slug;
     } else {
       toCitySlug = resolvedCities[0].slug;
     }
     const result = { fromCitySlug, toCitySlug };
-    logger.verbose(`(SearchOffers) slugs resolved with fetch request, result=${JSON.stringify(result)}`);
+    logger.verbose('flight slugs resolved with fetch request', result);
     return result;
   } catch (err: any) {
-    logger.warn(`(SearchOffers) failed to resolve flight cities slugs, ctrlKey=${ctrlKey}`, err, citiesToResolve);
-    return { fromCitySlug, toCitySlug };
+    logger.warn('failed to resolve flight cities slugs', err, { ctrlKey, cityIds: cityIdsToResolve });
+    return { fromCitySlug: undefined, toCitySlug: undefined };
   }
 }
 
 async function resolveDestinationCitySlug (searchParams: Partial<ISearchStayOffersParams>): Promise<string | undefined> {
-  if (!searchParams.city) {
-    logger.verbose('(SearchOffers) stay\'s city is not specified, no slug to resolve');
+  if (!searchParams.cityId) {
+    logger.verbose('stays city is not specified, no slug to resolve');
     return undefined;
   }
 
-  if (searchParams.city.slug) {
-    const result = searchParams.city.slug;
-    logger.verbose(`(SearchOffers) stay's city slug resolved without fetch request, result=${result}`);
-    return result;
-  }
-
   try {
-    const cityId = searchParams.city.id;
-    logger.verbose(`(SearchOffers) resolving stay's city slug', cityId=${cityId}`);
-    const resolvedCities = (await clientEntityCache!.get<'City'>([cityId], [], 'City', { expireInSeconds: AppConfig.caching.clientRuntime.expirationsSeconds.default }))!;
+    const cityId = searchParams.cityId;
+    logger.verbose('resolving stay', cityId);
+    const resolvedCities = await entityCacheStore!.get({ ids: [cityId] }, 'City', true);
     const result = resolvedCities[0].slug;
-    logger.verbose(`(SearchOffers) slugs resolved with fetch request, result=${result}`);
+    logger.verbose('destination slugs resolved with fetch request', result);
     return result;
   } catch (err: any) {
-    logger.warn(`(SearchOffers) failed to resolve flight cities slugs, ctrlKey=${ctrlKey}`, err, searchParams.city);
+    logger.warn('failed to resolve flight cities slugs', err, { ctrlKey, cityId: searchParams.cityId });
     return undefined;
   }
 }
 
 async function validateAndGetRouteParams (): Promise<RouteLocationRaw | undefined> {
-  const searchKind: OfferKind = selectedTab.value === SearchTabStays ? 'stays' : 'flights';
+  const searchKind: OfferKind = isFlightsTabActive.value ? 'flights' : 'stays';
   if (searchKind === 'flights') {
     const searchFlightStore = await searchOffersStoreAccessor.getInstance<ISearchFlightOffersParams>('flights', false, false);
     const userParams = searchFlightStore.viewState.currentSearchParams;
@@ -157,8 +160,8 @@ async function validateAndGetRouteParams (): Promise<RouteLocationRaw | undefine
 }
 
 async function applyParamsAndFetchData (): Promise<void> {
-  logger.verbose(`(SearchOffers) applying user params and fetching, ctrlKey=${ctrlKey}, selectedTab=${selectedTab.value}`);
-  const searchKind: OfferKind = selectedTab.value === SearchTabStays ? 'stays' : 'flights';
+  logger.verbose('applying user params and fetching', { ctrlKey, selectedTab: selectedTab.value });
+  const searchKind: OfferKind = isFlightsTabActive.value ? 'flights' : 'stays';
   const store = await searchOffersStoreAccessor.getInstance(searchKind, false, false);
   if (searchKind === 'flights') {
     const searchParams = searchFlights.value!.getSearchParamsFromInputControls();
@@ -168,7 +171,7 @@ async function applyParamsAndFetchData (): Promise<void> {
     store.setMainSearchParams(searchParams!);
   }
   if (store.resultState.status !== 'fetched' && store.resultState.status !== 'error') {
-    logger.debug(`(SearchOffers) checking for refetch skipped, as fetch is in progress, ctrlKey=${ctrlKey}, type=${searchKind}`);
+    logger.debug('apply, checking for refetch skipped, as fetch is in progress', { ctrlKey, type: searchKind });
     return;
   }
 
@@ -178,31 +181,31 @@ async function applyParamsAndFetchData (): Promise<void> {
 
     const isOnSearchPage = router.currentRoute.value.path.includes(getPagePath(AppPage.FindFlights)) || router.currentRoute.value.path.includes(getPagePath(AppPage.FindStays));
     if (isOnSearchPage) {
-      logger.info(`(SearchOffers) replacing search page query params, ctrlKey=${ctrlKey}`, searchRoute);
+      logger.info('replacing search page query params', ctrlKey);
       router.replace(searchRoute);
       store.fetchData('full-refetch');
     } else {
-      logger.info(`(SearchOffers) navigating to search page, ctrlKey=${ctrlKey}`, searchRoute);
+      logger.info('navigating to search page', ctrlKey);
       router.push(searchRoute);
     }
   }
-  logger.verbose(`(SearchOffers) user params applied, fetch request sent, ctrlKey=${ctrlKey}`);
+  logger.verbose('user params applied, fetch request sent', ctrlKey);
 }
 
 async function onSearchBtnClick () : Promise<void> {
-  logger.debug(`(SearchOffers) search btn click handler, ctrlKey=${ctrlKey}`);
+  logger.debug('search btn click handler', ctrlKey);
   await applyParamsAndFetchData();
 }
 
 async function refetchIfNotLatestSearchParams (): Promise<void> {
-  logger.debug(`(SearchOffers) checking for refetch if not latest search params were used, ctrlKey=${ctrlKey}, selectedTab=${selectedTab.value}`);
-  const searchKind: OfferKind = selectedTab.value === SearchTabStays ? 'stays' : 'flights';
+  const searchKind: OfferKind = isFlightsTabActive.value ? 'flights' : 'stays';
+  logger.debug('checking for refetch if not latest search params were used', { ctrlKey, type: searchKind, selectedTab: selectedTab.value });
 
   let paramsAreActual = true;
   if (searchKind === 'flights') {
     const searchFlightStore = await searchOffersStoreAccessor.getInstance<ISearchFlightOffersParams>('flights', false, false);
     if (searchFlightStore.resultState.status !== 'fetched' && searchFlightStore.resultState.status !== 'error') {
-      logger.debug(`(SearchOffers) checking for refetch skipped, as fetch is in progress, ctrlKey=${ctrlKey}, type=${searchKind}`);
+      logger.debug('checking for flights refetch skipped, as fetch is in progress', { ctrlKey, type: searchKind });
       return;
     }
 
@@ -210,12 +213,12 @@ async function refetchIfNotLatestSearchParams (): Promise<void> {
     const userParams = pick(searchFlightStore.viewState.currentSearchParams, ['class', 'dateFrom', 'dateTo', 'fromCity.id', 'toCity.id', 'numPassengers', 'tripType'] as Array<keyof ISearchFlightOffersMainParams>);
     paramsAreActual = isEqual(fetchParams, userParams);
     if (!paramsAreActual) {
-      logger.verbose(`(SearchOffers) params used in last request are not actual, refetching with latest values, ctrlKey=${ctrlKey}, type=${searchKind}, fetchParams=${JSON.stringify(fetchParams)}, userParams=${JSON.stringify(userParams)}`);
+      logger.verbose('params used in last request are not actual, refetching flights with latest values', { ctrlKey, type: searchKind, fetchParams, userParams });
     }
   } else {
     const searchStayStore = await searchOffersStoreAccessor.getInstance<ISearchStayOffersParams>('stays', false, false);
     if (searchStayStore.resultState.status !== 'fetched' && searchStayStore.resultState.status !== 'error') {
-      logger.debug(`(SearchOffers) checking for refetch skipped, as fetch is in progress, ctrlKey=${ctrlKey}, type=${searchKind}`);
+      logger.debug('checking for stays refetch skipped, as fetch is in progress', { ctrlKey, type: searchKind });
       return;
     }
 
@@ -223,12 +226,12 @@ async function refetchIfNotLatestSearchParams (): Promise<void> {
     const userParams = pick(searchStayStore.viewState.currentSearchParams, ['checkIn', 'checkOut', 'city.id', 'numGuests', 'numRooms'] as Array<keyof ISearchStayOffersMainParams>);
     paramsAreActual = isEqual(fetchParams, userParams);
     if (!paramsAreActual) {
-      logger.verbose(`(SearchOffers) params used in last request are not actual, refetching with latest values, ctrlKey=${ctrlKey}, type=${searchKind}, fetchParams=${JSON.stringify(fetchParams)}, userParams=${JSON.stringify(userParams)}`);
+      logger.verbose('params used in last request are not actual, refetching stays with latest values', { ctrlKey, type: searchKind, fetchParams, userParams });
     }
   }
 
   if (paramsAreActual) {
-    logger.debug(`(SearchOffers) fetch params are actual, refetch is not needed, ctrlKey=${ctrlKey}, type=${searchKind}`);
+    logger.debug('fetch params are actual, refetch is not needed', { ctrlKey, type: searchKind });
     return;
   }
 
@@ -240,6 +243,10 @@ function scheduleTooltipAutoHide () {
 }
 
 onMounted(async () => {
+  hasMounted.value = true;
+  
+  const searchFlightStore = await searchOffersStoreAccessor.getInstance<ISearchFlightOffersParams>('flights', false, false);
+  const searchStayStore = await searchOffersStoreAccessor.getInstance<ISearchStayOffersParams>('stays', false, false);
   watch(() => searchFlightStore.resultState.status, () => {
     refetchIfNotLatestSearchParams();
   });
@@ -248,11 +255,12 @@ onMounted(async () => {
   });
 });
 
+
 const flightsTabHtmlId = useId()!;
 const staysTabHtmlId = useId()!;
 
 const searchBtnLabel = computed(() => {
-  return showPromoBtn ? t(getI18nResName2('searchOffers', (singleTab === 'stays' || selectedTab.value === SearchTabStays) ? 'showStays' : 'showFlights')) : '';
+  return showPromoBtn ? t(getI18nResName2('searchOffers', isFlightsTabActive.value ? 'showFlights' : 'showStays')) : '';
 });
 
 </script>
@@ -264,8 +272,9 @@ const searchBtnLabel = computed(() => {
         <TabsGroup
           v-if="!singleTab"
           v-model:active-tab-key="selectedTab"
+          :default-active-tab-key="SearchTabFlights"
           class="w-full pt-1"
-          :ctrl-key="`${ctrlKey}-TabControl`"
+          :ctrl-key="SearchOffersTabControl"
           :tabs="[
             { ctrlKey: SearchTabFlights, tabName: SearchTabFlights, slotName: 'flights', label: { resName: getI18nResName2('searchOffers', 'flightsTab'), shortIcon: 'i-material-symbols-flight' }, enabled: true },
             { ctrlKey: SearchTabStays, tabName: SearchTabStays, slotName: 'stays', label: { resName: getI18nResName2('searchOffers', 'staysTab'), shortIcon: 'i-material-symbols-bed' }, enabled: true }
@@ -274,13 +283,13 @@ const searchBtnLabel = computed(() => {
         >
           <template #flights>
             <div class="w-full h-auto">
-              <SearchFlightOffers :id="flightsTabHtmlId" ref="search-flights" ctrl-key="SearchFlightOffersBox" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
+              <SearchFlightOffers :id="flightsTabHtmlId" ref="search-flights" :ctrl-key="[...ctrlKey, 'FlightOffers']" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
             </div>
           </template>
 
           <template #stays>
             <div class="w-full h-auto">
-              <SearchStayOffers :id="staysTabHtmlId" ref="search-stays" ctrl-key="SearchStayOffersBox" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
+              <SearchStayOffers :id="staysTabHtmlId" ref="search-stays" :ctrl-key="[...ctrlKey, 'StayOffers']" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
             </div>
           </template>
         </TabsGroup>
@@ -290,8 +299,8 @@ const searchBtnLabel = computed(() => {
           </h2>
           <div class="flex flex-row flex-wrap xl:flex-nowrap gap-[16px] sm:gap-[24px]">
             <div class="flex-1 w-full h-auto">
-              <SearchFlightOffers v-if="singleTab === 'flights'" :id="flightsTabHtmlId" ref="search-flights" ctrl-key="SearchFlightOffersBox" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
-              <SearchStayOffers v-else :id="staysTabHtmlId" ref="search-stays" ctrl-key="SearchStayOffersBox" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
+              <SearchFlightOffers v-if="isFlightsTabActive" :id="flightsTabHtmlId" ref="search-flights" :ctrl-key="[...ctrlKey, 'FlightOffers']" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
+              <SearchStayOffers v-else :id="staysTabHtmlId" ref="search-stays" :ctrl-key="[...ctrlKey, 'StayOffers']" :take-initial-values-from-url-query="takeInitialValuesFromUrlQuery" />
             </div>
             <UButton
               v-if="!showPromoBtn"

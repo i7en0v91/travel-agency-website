@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { DropdownListValue, IDropdownListItemProps } from './../../types';
+import { areCtrlKeysEqual, type ControlKey } from '../../helpers/components';
+import { isArray } from 'lodash';
 
 interface ISortInfoProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   label: string,
   items: IDropdownListItemProps[]
 }
@@ -19,7 +21,12 @@ onMounted(() => {
     }
   }, { immediate: false });
   watch(tabModel, () => {
-    selected.value = tabModel.value ? (items.find(i => i.value === tabModel!.value)) : undefined;
+    selected.value = tabModel.value ? (
+      items.find(i => isArray(i.value) ? 
+        (areCtrlKeysEqual(i.value, tabModel.value! as ControlKey)) : 
+        i.value === tabModel!.value
+      )
+    ) : undefined;
   }, { immediate: false });
 });
 

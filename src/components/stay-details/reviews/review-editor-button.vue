@@ -1,17 +1,18 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { getI18nResName3 } from '@golobe-demo/shared';
 import type { ReviewEditorButtonType } from './../../../types';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   type: ReviewEditorButtonType,
   disabled: boolean,
   active: boolean
 }
 const { ctrlKey, type, disabled } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ReviewEditorButton' });
 
 const { t } = useI18n();
 
@@ -29,7 +30,7 @@ const iconsMap: { [P in ReviewEditorButtonType]: string } = {
 
 const $emit = defineEmits(['click']);
 function onClick () {
-  logger.debug(`(ReviewEditorButton) clicked, ctrlKey=${ctrlKey}`);
+  logger.debug('clicked', ctrlKey);
   $emit('click');
 }
 

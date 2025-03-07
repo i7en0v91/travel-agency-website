@@ -3,7 +3,10 @@ import { PrismaClient } from '@prisma/client';
 import { access } from 'fs/promises';
 import { resolve, join } from 'pathe';
 
+const CommonLogProps = { component: 'PrismaClient' };
+const CommonDiagnosticsLogProps = { component: 'PrismaClientDiagnostics' };
 export async function createPrismaClient (logger?: IAppLogger): Promise<PrismaClient> {
+  logger = logger ? logger.addContextProps(CommonLogProps) : undefined;
   logger?.verbose(`initializing prisma client`);
 
   let datasourceUrl: string | undefined;
@@ -15,21 +18,22 @@ export async function createPrismaClient (logger?: IAppLogger): Promise<PrismaCl
     if (datasourceUrl) {
       datasourceUrl = `${join(datasourceUrl, AppConfig.acsys.execDir, AppConfig.acsys.dbName)}`;
     } else {
-      logger?.error(`failed to locate SQLite db directory, cwd=${cwd}`);
+      logger?.error(`failed to locate SQLite db directory, cwd=${cwd}`, undefined, { cwd });
       throw new Error('failed to locate SQLite db directory');
     }
     
     try {
       await access(datasourceUrl);
     } catch (err: any) {
-      logger?.error(`cannot access SQLite db file, path=${datasourceUrl}`, err);
+      logger?.error(`cannot access SQLite db file`, err, { path: datasourceUrl });
       throw new Error('cannot access SQLite db file');
     }
 
-    logger?.info(`the following SQLite db file will be used, path=${datasourceUrl}`);
+    logger?.info(`the following SQLite db file will be used`, { path: datasourceUrl });
     datasourceUrl = `file:${datasourceUrl}`;
   }
 
+  const diagnosticsLogger = logger ? logger.addContextProps(CommonDiagnosticsLogProps) : undefined;
   const prismaClient = new PrismaClient({
     datasourceUrl,
     log: [
@@ -51,10 +55,10 @@ export async function createPrismaClient (logger?: IAppLogger): Promise<PrismaCl
       }
     ]
   });
-  prismaClient.$on('query', (e) => { logger?.debug(`prisma orm, query: ${e.query}; params: ${e.params}; duration: ${e.duration}; ts: ${e.timestamp}`); });
-  prismaClient.$on('info', (e) => { logger?.info(`prisma orm,: ${e.message}; ts: ${e.timestamp}`); });
-  prismaClient.$on('warn', (e) => { logger?.warn(`prisma orm,: ${e.message}; ts: ${e.timestamp}`); });
-  prismaClient.$on('error', (e) => { logger?.error(`prisma orm,: ${e.message}; ts: ${e.timestamp}`); });
+  prismaClient.$on('query', (e) => { diagnosticsLogger?.debug(`prisma orm`, { query: e.query, params: e.params, duration: e.duration, ts: e.timestamp }); });
+  prismaClient.$on('info', (e) => { diagnosticsLogger?.info(`prisma orm`, { message: e.message, ts: e.timestamp }); });
+  prismaClient.$on('warn', (e) => { diagnosticsLogger?.warn(`prisma orm`, undefined, { message: e.message, ts: e.timestamp }); });
+  prismaClient.$on('error', (e) => { diagnosticsLogger?.error(`prisma orm`, undefined, { message: e.message, ts: e.timestamp }); });
   
   logger?.verbose('prisma client initialized');
   return prismaClient;

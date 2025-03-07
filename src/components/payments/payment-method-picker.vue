@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { toShortForm, type ArbitraryControlElementMarker, type ControlKey } from './../../helpers/components';
 import { type PaymentMethodType, getI18nResName3, getI18nResName1 } from '@golobe-demo/shared';
 import { TooltipHideTimeout } from './../../helpers/constants';
 import PriceMethodVariant from './payment-method-variant.vue';
 import dayjs from 'dayjs';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   amount?: number
 };
 
@@ -69,8 +70,8 @@ const uiStyling = {
     >
       <template #label="{ option: item, selected }">
         <PriceMethodVariant
-          :key="`${ctrlKey}-Method-${item.props.type}`"
-          :ctrl-key="`${ctrlKey}-Method-${item.props.type}`"
+          :key="`${toShortForm(ctrlKey)}-Method-${item.props.type}`"
+          :ctrl-key="[...ctrlKey, 'PaymentMethod', item.type as ArbitraryControlElementMarker]"
           :type="(item.props.type as PaymentMethodType)"
           :selected="selected"
           :header-res-name="item.props.headerResName"

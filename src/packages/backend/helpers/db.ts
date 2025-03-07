@@ -33,7 +33,7 @@ export async function executeWithConcurrencyErrorCheck (concurrentEntity: IConcu
 };
 
 export async function executeWithConcurrentUpdateRetries (concurrentEntity: () => IConcurrentlyModifyingEntity, onCollision: () => Promise<void>, dbOperation: (entity: IConcurrentlyModifyingEntity) => Promise<void>) {
-  const logger = getServerServices().getLogger();
+  const logger = getServerServices().getLogger().addContextProps({ component: 'DbHelper' });
 
   let numRetries = 0;
   while (numRetries <= AppConfig.maxDbConcurrentUpdateAttemps) {
@@ -46,15 +46,15 @@ export async function executeWithConcurrentUpdateRetries (concurrentEntity: () =
         const concurrentErr = err as DbConcurrentUpdateException;
         numRetries++;
         if(numRetries >= AppConfig.maxDbConcurrentUpdateAttemps) {
-          logger?.warn(`maximum concurrent update collisions reached, version=${concurrentEntity().version}`, concurrentErr.dbException);
+          logger?.warn('maximum concurrent update collisions reached', concurrentErr.dbException, { version: concurrentEntity().version });
           throw concurrentErr.dbException;
         }
 
-        logger?.info(`concurrent update collision detected, retrying ${numRetries} attempt, version=${entity.version}`);
+        logger?.info('concurrent update collision detected, retrying', { numRetries, version: entity.version });
         try {
           await onCollision();
         } catch (err: any) {
-          logger?.warn(`failed to handle udpate collision, version=${entity.version}`, err);
+          logger?.warn('failed to handle udpate collision', err, { version: entity.version });
           throw err;
         }
       } else {

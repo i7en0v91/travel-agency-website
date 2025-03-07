@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { getI18nResName3, getI18nResName2, type EntityDataAttrsOnly, type IStayDescription, type Locale, getLocalizeableValue, getScoreClassResName } from '@golobe-demo/shared';
 import orderBy from 'lodash-es/orderBy';
 import zip from 'lodash-es/zip';
@@ -7,7 +8,7 @@ import range from 'lodash-es/range';
 const { t, locale } = useI18n();
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   description?: EntityDataAttrsOnly<IStayDescription>[],
   numReviews?: number,
   reviewScore?: number
@@ -47,7 +48,7 @@ const reviewsCountText = computed(() => numReviews ? `${numReviews} ${t(getI18nR
       {{ getLocalizeableValue(mainStr, locale as Locale) }}
     </p>
     <ul v-if="featureStrs?.length ?? 0" class="flex flex-col flex-nowrap gap-3 mt-4">
-      <li v-for="(feature, idx) in featureStrs" :key="`${ctrlKey}-Feature-${idx}`" class="flex-auto flex flex-row flex-nowrap gap-2">
+      <li v-for="(feature, idx) in featureStrs" :key="`${toShortForm(ctrlKey)}-Feature-${idx}`" class="flex-auto flex flex-row flex-nowrap gap-2">
         <UCheckbox :model-value="true" disabled :ui="{ wrapper: 'flex-initial', base: 'disabled:opacity-100 disabled:cursor-default' }"/>
         <div class="flex-auto block w-fit h-auto whitespace-normal">
           <span class="text-primary-900 dark:text-white font-semibold">
@@ -85,7 +86,7 @@ const reviewsCountText = computed(() => numReviews ? `${numReviews} ${t(getI18nR
               </template>
             </ClientOnly>
           </li>
-          <li v-for="(resName, idx) in highlightResNames" :key="`${ctrlKey}-Highlight-${idx}`" class="w-full h-auto min-h-max min-w-[166px] bg-transparent ring-primary-300 dark:ring-primary-600 ring-1 aspect-[1_/_1] flex flex-col flex-nowrap items-start justify-between p-4 rounded-xl">
+          <li v-for="(resName, idx) in highlightResNames" :key="`${toShortForm(ctrlKey)}-Highlight-${idx}`" class="w-full h-auto min-h-max min-w-[166px] bg-transparent ring-primary-300 dark:ring-primary-600 ring-1 aspect-[1_/_1] flex flex-col flex-nowrap items-start justify-between p-4 rounded-xl">
             <UIcon name="i-bi-stars" class="w-8 h-8 block bg-gray-900 dark:bg-white"/>
             <div v-if="reviewScore">
               {{ $t(getI18nResName3('stayDetailsPage', 'overviewHightlights', resName as any)) }}

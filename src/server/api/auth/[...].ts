@@ -1,4 +1,4 @@
-import { DefaultLocale, CookieI18nLocale, type Locale, HeaderLocation, patchUrlWithLocale, getLocaleFromUrl, isDevOrTestEnv, isQuickStartEnv, maskLog, AuthProvider, type IUserProfileInfo, isElectronBuild } from '@golobe-demo/shared';
+import { type IAppLogger, DefaultLocale, CookieI18nLocale, type Locale, HeaderLocation, patchUrlWithLocale, getLocaleFromUrl, isDevOrTestEnv, isQuickStartEnv, maskLog, AuthProvider, type IUserProfileInfo, isElectronBuild } from '@golobe-demo/shared';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GitHubProvider from 'next-auth/providers/github';
 import GoogleProvider from 'next-auth/providers/google';
@@ -25,27 +25,22 @@ function wrapI18nRedirect<Request extends EventHandlerRequest = EventHandlerRequ
   return defineEventHandler(async (event) => {
     const url = event.node.req.url;
 
-    const serverServices = getServerServices();
-    if (!serverServices || !url) {
-      return await originalHandler(event); // skipping as nuxt hasn't been fully started
-    }
-
-    const logger = serverServices.getLogger();
-    logger.verbose(`(wrapI18nRedirect) called for url=${event.node.req.url}`);
+    const logger = getLogger();
+    logger.verbose('called for', { url: event.node.req.url });
 
     let currentLocale: Locale | undefined;
     if (event.node.req.url) {
       currentLocale = getCookie(event, CookieI18nLocale) as Locale;
       if (!currentLocale) {
         currentLocale = getLocaleFromUrl(event.node.req.url!);
-        logger.debug(`(wrapI18nRedirect) cookie has no locale info, obtained from url: url=${url}, locale=${currentLocale}`);
+        logger.debug('cookie has no locale info, obtained from url', { url, locale: currentLocale });
       } else {
-        logger.debug(`(wrapI18nRedirect) locale obtained from cookie: url=${url}, locale=${currentLocale}`);
+        logger.debug('locale obtained from cookie', { url, locale: currentLocale });
       }
     }
 
     if (!currentLocale || currentLocale === DefaultLocale) {
-      logger.debug(`(wrapI18nRedirect) skipping as current locale is the default one: url=${url}`);
+      logger.debug('skipping as current locale is the default one', url);
       return await originalHandler(event);
     }
 
@@ -56,25 +51,33 @@ function wrapI18nRedirect<Request extends EventHandlerRequest = EventHandlerRequ
         const location = response.getHeader(HeaderLocation)?.toString();
         if (responseStatus === 302 && location && affectedUrls.some(r => r.test(url!))) {
           if (currentLocale) {
-            logger.info(`(wrapI18nRedirect) updating redirect location with locale path: url=${url}, location=${location}, locale=${currentLocale}`);
+            logger.info('updating redirect location with locale path', { url, location, locale: currentLocale });
             const patchedLocation = patchUrlWithLocale(location!.toString(), currentLocale);
             if (!patchedLocation) {
-              logger.warn(`(wrapI18nRedirect) failed to parse url, skipping: url=${url}, location${url}`);
+              logger.warn('failed to parse url, skipping', undefined, url);
               return;
             }
-            logger.verbose(`(wrapI18nRedirect) updated redirect location is: location=${patchedLocation}`);
+            logger.verbose('updated redirect location is', { location: patchedLocation });
             response.setHeader(HeaderLocation, patchedLocation);
           } else {
-            logger.warn(`(wrapI18nRedirect) failed to update redirect location as cannot detect current locale: url=${url}, location=${location}`);
+            logger.warn('failed to update redirect location as cannot detect current locale', undefined, { url, location });
           }
         }
       } catch (err: any) {
-        logger.warn(`(wrapI18nRedirect) exception occured while processing headers, url=${url}`, err);
+        logger.warn('exception occured while processing headers', err, url);
       }
     });
 
     return await originalHandler(event);
   });
+}
+
+let logger: IAppLogger | undefined;
+function getLogger(): IAppLogger {
+  if(!logger) {
+    logger = getCommonServices().getLogger().addContextProps({ component: 'NuxtAuthHandler' });
+  }
+  return logger;
 }
 
 export default wrapI18nRedirect(NuxtAuthHandler({
@@ -104,8 +107,8 @@ export default wrapI18nRedirect(NuxtAuthHandler({
             clientId: process.env.OAUTH_GOOGLE_CLIENT_ID,
             clientSecret: process.env.OAUTH_GOOGLE_CLIENT_SECRET,
             profile: async (profile: any /*, tokens: any */) => {
-              const logger = getCommonServices().getLogger();
-              logger.info('(NuxtAuthHandler) setting up user Google profile');
+              const logger = getLogger();
+              logger.info('setting up user Google profile');
 
               const providerIdentity = profile.sub.toString();
               const email = profile.email as string;
@@ -126,7 +129,7 @@ export default wrapI18nRedirect(NuxtAuthHandler({
                 const user = await userLogic.ensureOAuthUser(AuthProvider.Google, providerIdentity, email, emailVerified, firstName, lastName);
                 return mapUserDto(user);
               } catch (err: any) {
-                logger.warn(`(NuxtAuthHandler) exception during Google sign in, email=${maskLog(email)}`, err);
+                logger.warn('exception during Google sign in', err, { email: maskLog(email) });
               }
               return null;
             }
@@ -136,8 +139,8 @@ export default wrapI18nRedirect(NuxtAuthHandler({
             clientId: process.env.OAUTH_GITHUB_CLIENT_ID!,
             clientSecret: process.env.OAUTH_GITHUB_CLIENT_SECRET!,
             profile: async (profile: any /*, tokens: any */) => {
-              const logger = getCommonServices().getLogger();
-              logger.info('(NuxtAuthHandler) setting up user GitHub profile');
+              const logger = getLogger();
+              logger.info('setting up user GitHub profile');
 
               const providerIdentity = profile.id?.toString() ?? '';
               const email = undefined; // profile.email as string;
@@ -148,7 +151,7 @@ export default wrapI18nRedirect(NuxtAuthHandler({
                 const user = await userLogic.ensureOAuthUser(AuthProvider.GitHub, providerIdentity, firstName, undefined, email, false);
                 return mapUserDto(user);
               } catch (err: any) {
-                logger.warn(`(NuxtAuthHandler) exception during GitHub sign in, email=${maskLog(email)}`, err);
+                logger.warn('exception during GitHub sign in', err, { email: maskLog(email) });
               }
               return null;
             }
@@ -165,13 +168,13 @@ export default wrapI18nRedirect(NuxtAuthHandler({
         password: { label: 'Password', type: 'password' }
       },
       async authorize (credentials: any) {
-        const logger = getCommonServices().getLogger();
+        const logger = getLogger();
 
         const email = credentials?.username as string;
         const password = credentials?.password as string;
-        logger.info(`(NuxtAuthHandler) signing in user, email=${maskLog(email)}`);
+        logger.info('signing in user', { email: maskLog(email) });
         if (!email || !password) {
-          logger.warn('(NuxtAuthHandler) received empty sign in credentials, sign in failed');
+          logger.warn('received empty sign in credentials, sign in failed');
           return null;
         }
 
@@ -179,13 +182,13 @@ export default wrapI18nRedirect(NuxtAuthHandler({
         try {
           const user = await userLogic.verifyUserPassword(email, password);
           if (user) {
-            logger.info(`(NuxtAuthHandler) user sign in approved, email=${maskLog(email)}, id=${user.id}`);
+            logger.info('user sign in approved', { email: maskLog(email), id: user.id });
             return mapUserDto(user);
           } else {
-            logger.info(`(NuxtAuthHandler) user sign in rejected, email=${maskLog(email)}`);
+            logger.info('user sign in rejected', { email: maskLog(email) });
           }
         } catch (err: any) {
-          logger.warn(`(NuxtAuthHandler) exception during sign in, email=${maskLog(email)}`, err);
+          logger.warn('exception during sign in', err, { email: maskLog(email) });
         }
         return null;
       }

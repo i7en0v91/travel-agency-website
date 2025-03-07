@@ -1,74 +1,71 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey, type ArbitraryControlElementMarker } from './../../helpers/components';
 import { getCommonServices } from '../../helpers/service-accessors';
 import type { IAccordionProps } from '../../types';
 import type { UAccordion } from '../../.nuxt/components';
+import { useControlValuesStore } from '../../stores/control-values-store';
 
-const { ctrlKey, items, persistent = true } = defineProps<IAccordionProps>();
+const { 
+  ctrlKey, 
+  items, 
+  persistent = true 
+} = defineProps<IAccordionProps>();
 
-const defaultOpenSettings = ref(items.map(() => { return { open: true }; }));
-const accordionRef = useTemplateRef('accordion');
-
-const controlSettingsStore = useControlSettingsStore();
-
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'MyAccordion' });
+const controlValuesStore = useControlValuesStore();
 const { t } = useI18n();
 
+const accordionRef = useTemplateRef('accordion');
 
-const getButtonSettingsName = (slotName: string): string => `${ctrlKey}-${slotName}-collapsed`;
+function getButtonToggledValueKey(slotName: string): ControlKey {
+  return [...ctrlKey, slotName as ArbitraryControlElementMarker, 'Accordion'];
+};
 
-function saveToggledStatesToSettings(states: { open: boolean }[]) {
-  logger.verbose(`(MyAccordion) saving toggled states, ctrlKey=${ctrlKey}, count=${states.length}`);
+async function saveToggledStatesToSettings(states: { open: boolean }[]): Promise<void> {
+  logger.verbose('saving toggled states', { ctrlKey, count: states.length });
 
   if(states.length !== items.length) {
-    logger.warn(`(MyAccordion) cannot save toggled states to settings, length differs, ctrlKey=${ctrlKey}, count=${states.length}, items=${JSON.stringify(items)}`);
+    logger.warn('cannot save toggled states to settings, length differs', undefined, { ctrlKey, count: states.length, items });
     return;
   }
 
   try {
     for(let i = 0; i < items.length; i++) {
-      const settingsName = getButtonSettingsName(items[i].slotName);
-      const isCollapsed = !states[i].open;
-      const settings = controlSettingsStore.getControlValueSetting<'collapsed' | 'expanded' | undefined>(settingsName, 'expanded', true);
-      settings.value = isCollapsed ? 'collapsed' : 'expanded';
+      const settingsName = getButtonToggledValueKey(items[i].slotName);
+      const isExpanded = states[i].open;
+      await controlValuesStore.setValue<boolean>(settingsName, isExpanded);
     }
 
-    logger.verbose(`(MyAccordion) toggled states saved, ctrlKey=${ctrlKey}, count=${states.length}`);
+    logger.verbose('toggled states saved', { ctrlKey, count: states.length });
   } catch(err: any) {
-    logger.warn(`(MyAccordion) failed to save toggled states to settings, ctrlKey=${ctrlKey}, count=${states.length}, items=${JSON.stringify(items)}`, err);
+    logger.warn('failed to save toggled states to settings', err, { ctrlKey, count: states.length, items });
   }
 }
 
-function readToggledStatesFromSettings(): { open: boolean }[] {
-  logger.verbose(`(MyAccordion) reading toggled states, ctrlKey=${ctrlKey}, count=${items.length}`);
+async function readToggledStatesFromSettings(): Promise<{ open: boolean }[]> {
+  logger.verbose('reading toggled states', { ctrlKey, count: items.length });
 
   const result: { open: boolean }[] = [];
 
   try {
     for(let i = 0; i < items.length; i++) {
-      const settingsName = getButtonSettingsName(items[i].slotName);
-      const settings = controlSettingsStore.getControlValueSetting<'collapsed' | 'expanded' | undefined>(settingsName, 'expanded', true);
-      const open = settings.value === 'expanded';
+      const valueKey = getButtonToggledValueKey(items[i].slotName);
+      const open = await controlValuesStore.getValue<boolean>(valueKey);
       result.push({ open });
     }
 
-    logger.verbose(`(MyAccordion) toggled states have been read, ctrlKey=${ctrlKey}, count=${result.length}`);
+    logger.verbose('toggled states have been read', { ctrlKey, count: result.length });
     return result; 
   } catch(err: any) {
-    logger.warn(`(MyAccordion) failed to read toggled states from settings, ctrlKey=${ctrlKey}, items=${JSON.stringify(items)}`, err);
+    logger.warn('failed to read toggled states from settings', err, { ctrlKey, items });
     return items.map(() => { return { open: true }; });
   }
 }
 
-onBeforeMount(() => {
-  if(persistent) {
-    defaultOpenSettings.value = readToggledStatesFromSettings();
-  }
-});
-
 onMounted(() => {
   const togglers = accordionRef.value?.buttonRefs as { open: boolean }[];
   
-  logger.debug(`(MyAccordion) tracking toggler buttons states, ctrlKey=${ctrlKey}, count=${togglers.length}`);
+  logger.debug('tracking toggler buttons states', { ctrlKey, count: togglers.length });
   if(persistent) {
     watch(accordionRef.value!.buttonRefs!, saveToggledStatesToSettings, { immediate: false });
   }
@@ -86,6 +83,13 @@ const labeledItems = computed(() => {
   });
 });
 
+const defaultOpenSettings = ref(items.map(() => { return { open: true }; }));
+if(import.meta.client) {
+  if(persistent) {
+    defaultOpenSettings.value = await readToggledStatesFromSettings();
+  }
+}
+
 </script>
 
 <template>
@@ -93,8 +97,7 @@ const labeledItems = computed(() => {
     <template
       v-for="(item) in labeledItems"
       #[item.slot]
-      :key="`${ctrlKey}-Item-${item.slot}`">
-  
+      :key="`${toShortForm(ctrlKey)}-Item-${item.slot}`">
       <slot :name="item.slot" />
     </template>
   </UAccordion>

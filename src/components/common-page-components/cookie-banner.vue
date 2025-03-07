@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { AppPage, type Locale, CookiePolicyConsent, getI18nResName2 } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { getCommonServices } from './../../helpers/service-accessors';
 import { LocatorClasses } from './../../helpers/constants';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 
 defineProps<IProps>();
@@ -15,10 +16,10 @@ const ConsentCookieValue = 'consent-given';
 const consentCookie = useCookie(CookiePolicyConsent, { path: '/', maxAge: 2147483640 /** "never" expire */ });
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'CookieBanner' });
 
 function onAcceptBtnClick () {
-  logger.info('(CookieBanner) accept button clicked');
+  logger.info('accept button clicked');
   if (!consentCookie.value) {
     consentCookie.value = ConsentCookieValue;
   }

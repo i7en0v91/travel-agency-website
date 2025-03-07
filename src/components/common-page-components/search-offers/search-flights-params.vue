@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../../helpers/components';
 import { DefaultFlightClass, FlightMinPassengers, FlightMaxPassengers, type FlightClass, getI18nResName1, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import DropdownList from './../../forms/dropdown-list.vue';
 import InputFieldFrame from '../../forms/input-field-frame.vue';
 import SearchOffersCounter from './search-offers-counter.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 import { LocatorClasses } from '../../../helpers/constants';
+import { useControlValuesStore } from './../../../stores/control-values-store';
 
 interface IFlightParams {
   passengers: number,
@@ -12,7 +14,7 @@ interface IFlightParams {
 }
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   ui?: {
     wrapper?: string,
     input?: string
@@ -21,91 +23,63 @@ interface IProps {
 
 const { ctrlKey } = defineProps<IProps>();
 
-const modelRef = defineModel<IFlightParams | null | undefined>('params');
+const logger = getCommonServices().getLogger().addContextProps({ component: 'SearchFlightsParams' });
+const controlValuesStore = useControlValuesStore();
+const { t } = useI18n();
+
+const paramsModel = defineModel<IFlightParams | null | undefined>('params');
+const selectedClass = ref<FlightClass>();
+const selectedPassengers = ref<number>();
 const hasMounted = ref(false);
 const mainMenuOpen = ref(false);
 
-const logger = getCommonServices().getLogger();
+const displayText = import.meta.client ? (
+  controlValuesStore.acquireValuesView(
+    (flightClassRef, numPassengersRef) => {
+      const flightClass = flightClassRef.value as FlightClass | null;
+      const numPassengers = numPassengersRef.value as number | null;
 
-const controlSettingsStore = useControlSettingsStore();
-const passengerControlValueSetting = controlSettingsStore.getControlValueSetting<string>(`${ctrlKey}-NumPassengers`, FlightMinPassengers.toString(), true);
-const classControlValueSetting = controlSettingsStore.getControlValueSetting<FlightClass>(`${ctrlKey}-FlightClass`, DefaultFlightClass, true);
-
-const selectedClass = ref<FlightClass | null | undefined>();
-const numPassengers = ref<number | null | undefined>();
-
-const { t } = useI18n();
-
-function saveInitialValuesToSettingsIfNotEmpty () {
-  const initiallySelectedParams = modelRef.value;
-  if (initiallySelectedParams) {
-    passengerControlValueSetting.value = initiallySelectedParams.passengers.toString();
-    classControlValueSetting.value = initiallySelectedParams.class;
-  } else if (initiallySelectedParams === null) {
-    passengerControlValueSetting.value = FlightMinPassengers.toString();
-    classControlValueSetting.value = DefaultFlightClass;
-  }
-}
-
-function readParamsFromSettings(): IFlightParams {
-  logger.debug(`(SearchFlightsParams) parsing flight params from settings, ctrlKey=${ctrlKey}`);
-  let numPassengers = FlightMinPassengers;
-  if(passengerControlValueSetting.value?.length) {
-    try {
-      numPassengers = parseInt(passengerControlValueSetting.value);
-      if(numPassengers === undefined || numPassengers === null) {
-        logger.warn(`(SearchFlightsParams) parsing num passenger from settings resulted into empty number, ctrlKey=${ctrlKey}, value=[${JSON.stringify(passengerControlValueSetting.value)}]`);
-        numPassengers = FlightMinPassengers;
+      const passengersText = (numPassengers != undefined) ? `${numPassengers} ${t(getI18nResName2('searchFlights', 'passenger'), numPassengers)}` : undefined;
+      const flightClassResName = flightClass ? getI18nResName3('searchFlights', 'class', flightClass) : undefined;
+      if(!passengersText || !flightClassResName) {
+        return '';
       }
-    } catch(err: any) {
-      logger.warn(`(SearchFlightsParams) failed to parse num passenger from settings, ctrlKey=${ctrlKey}, value=[${JSON.stringify(passengerControlValueSetting.value)}]`, err);
-    }    
-  }
-  const result = {
-    passengers: numPassengers,
-    class: classControlValueSetting.value ?? DefaultFlightClass
-  };
-  logger.debug(`(SearchFlightsParams) flight params parsed from settings, ctrlKey=${ctrlKey}, result=${JSON.stringify(result)}`);
-  return result;
-}
 
-const displayText = computed(() => {
-  if (!hasMounted.value) {
-    return '';
-  }
-
-  const passengersText = `${numPassengers.value} ${t(getI18nResName2('searchFlights', 'passenger'), numPassengers.value!)}`;
-  const flightClassResName = getI18nResName3('searchFlights', 'class', modelRef.value?.class ?? classControlValueSetting.value!);
-  const flightClass = t(flightClassResName);
-
-  return `${passengersText}, ${flightClass}`;
-});
-
-function updateParams (params: IFlightParams) {
-  logger.verbose(`(SearchFlightsParams) updating params: ctrlKey=${ctrlKey}, params=${JSON.stringify(params)}`);
-  passengerControlValueSetting.value = (params.passengers ?? FlightMinPassengers).toString();
-  classControlValueSetting.value = params.class ?? DefaultFlightClass;
-  modelRef.value = params;
-  logger.verbose(`(SearchFlightsParams) selected params updated: ctrlKey=${ctrlKey}, params=${JSON.stringify(params)}`);
-}
-
-function onParamsChange () {
-  updateParams({
-    class: selectedClass.value ?? modelRef.value?.class ?? DefaultFlightClass,
-    passengers: numPassengers.value ?? modelRef.value?.passengers ?? FlightMinPassengers
-  });
-}
-
-onBeforeMount(() => {
-  saveInitialValuesToSettingsIfNotEmpty();
-  const flightParams = readParamsFromSettings();
-  numPassengers.value = flightParams.passengers;
-  selectedClass.value = flightParams.class;
-  updateParams(flightParams);
-});
+      const flightClassText = t(flightClassResName);
+      return hasMounted.value ? `${passengersText}, ${flightClassText}` : '';
+    }, 
+    [...ctrlKey, 'FlightClass', 'Dropdown'], 
+    [...ctrlKey, 'NumPassengers', 'Counter']
+  )
+) : computed(() => '');
 
 onMounted(() => {
-  hasMounted.value = true;  
+  watch([selectedClass, selectedPassengers], () => {
+    logger.debug('class or passengers control value watcher', { ctrlKey, selectedClass: selectedClass.value, modelClass: paramsModel.value?.class, selectedNumPassengers: selectedPassengers.value, modelNumPassengers: paramsModel.value?.passengers });
+    
+    const classChanged = selectedClass.value != paramsModel.value?.class;
+    const numPassengersChanged = selectedPassengers.value != paramsModel.value?.passengers;
+    const changed = classChanged || numPassengersChanged;
+    if(changed) {
+      paramsModel.value = { 
+        class: selectedClass.value ?? DefaultFlightClass,
+        passengers: selectedPassengers.value ?? FlightMinPassengers
+      };
+    }
+  }, { immediate: false });
+
+  watch(paramsModel, () => {
+    logger.debug('model value watcher', { ctrlKey, selectedClass: selectedClass.value, modelClass: paramsModel.value?.class, selectedNumPassengers: selectedPassengers.value, modelNumPassengers: paramsModel.value?.passengers });
+    const classChanged = selectedClass.value != paramsModel.value?.class;
+    const numPassengersChanged = selectedPassengers.value != paramsModel.value?.passengers;
+    const changed = classChanged || numPassengersChanged;
+    if(changed) {
+      selectedClass.value = paramsModel.value?.class ?? DefaultFlightClass;
+      selectedPassengers.value = paramsModel.value?.passengers ?? FlightMinPassengers;
+    }
+  }, { immediate: false });
+
+  hasMounted.value = true;
 });
 
 defineShortcuts({
@@ -127,9 +101,8 @@ defineShortcuts({
       <div class="w-full p-4">
         <DropdownList
           v-model:selected-value="selectedClass"
-          :ctrl-key="`${ctrlKey}-FlightClass`"
+          :ctrl-key="[...ctrlKey, 'FlightClass', 'Dropdown']"
           :caption-res-name="getI18nResName2('searchFlights', 'fieldClass')"
-          :persistent="false"
           :items="[{
             value: 'economy',
             resName: getI18nResName3('searchFlights', 'class', 'economy')
@@ -140,17 +113,15 @@ defineShortcuts({
             value: 'business',
             resName: getI18nResName3('searchFlights', 'class', 'business')
           }]"
-          @update:selected-value="onParamsChange"
         />
         <SearchOffersCounter
-          v-model:value="numPassengers"
-          :ctrl-key="`${ctrlKey}-NumPassengers`"
+          v-model:value="selectedPassengers"
+          :ctrl-key="[...ctrlKey, 'NumPassengers', 'Counter']"
           :min-value="FlightMinPassengers"
           :max-value="FlightMaxPassengers"
-          :defaul-value="FlightMinPassengers"
+          :default-value="FlightMinPassengers"
           :label-res-name="getI18nResName2('searchFlights', 'fieldPassengers')"
           class="mt-16"
-          @update:value="onParamsChange"
         />
         <UButton
           class="mt-6 w-full justify-center"

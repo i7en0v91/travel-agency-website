@@ -11,15 +11,15 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return;
   }
 
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'RedirectionsSearchStaysDate' });
   if(!!to.query.checkIn && !!to.query.checkOut) {
-    logger.debug(`(redirect-with-search-stays-date-filled) redirect not needed, checkIn=${to.query.checkIn}, checkOut=${to.query.checkOut}`);
+    logger.debug('redirect not needed', { checkIn: to.query.checkIn, checkOut: to.query.checkOut });
     return;
   }
   
   const checkIn = dayjs().local().format(CheckInOutDateUrlFormat);
   const checkOut = dayjs().local().add(AppConfig.autoInputDatesRangeDays, 'day').format(CheckInOutDateUrlFormat);
-  logger.verbose(`(redirect-with-search-stays-date-filled) date range is not specified for searech stay offers page, using default range, checkIn=${checkIn}, checkOut=${checkOut}`);
+  logger.verbose('date range is not specified for searech stay offers page, using default range', { checkIn, checkOut });
   to.query.checkIn = checkIn;
   to.query.checkOut = checkOut;
   return await navigateTo(to);

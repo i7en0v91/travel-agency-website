@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { type Locale, AppPage, getI18nResName3, ImageCategory } from '@golobe-demo/shared';
 import { DeviceSizeEnum, LocatorClasses } from './../../helpers/constants';
 import { formatImageEntityUrl, formatAvatarLabel, getUserMenuLinksInfo, getCurrentDeviceSize } from './../../helpers/dom';
@@ -7,11 +8,11 @@ import { getCommonServices } from '../../helpers/service-accessors';
 import get from 'lodash-es/get';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 const { ctrlKey } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'NavUser' });
 const { locale, t } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 const userAccountStore = useUserAccountStore();
@@ -63,7 +64,7 @@ const userMenuItems = computed(() => {
 
 function onUserMenuClick(e: InputEvent) {
   const deviceSize = getCurrentDeviceSize();
-  logger.debug(`(NavUser) user menu click handler: ctrlKey=${ctrlKey}, deviceSize=${deviceSize}`);
+  logger.debug('user menu click handler', { ctrlKey, deviceSize });
 
   switch(deviceSize) {
     case DeviceSizeEnum.XS:

@@ -4,6 +4,7 @@ import type { IServerI18n } from './common-services/i18n';
 import type { IChangeDependencyTracker, EntityModel } from './common-services/change-dependency-tracker';
 import type { IHtmlPageModelMetadata }  from './common-services/html-page-model-metadata';
 import type { IAcsysClientProvider } from './acsys/client/interfaces';
+import type { Storage, StorageValue } from 'unstorage';
 
 export enum EmptyParams {};
 export { type IServerI18n } from './common-services/i18n';
@@ -525,7 +526,8 @@ export interface IServerServicesLocator extends ICommonServicesLocator {
   getPageModelMetadata(): IHtmlPageModelMetadata,
   getChangeDependencyTracker(): IChangeDependencyTracker,
   getEntityChangeNotifications(): IEntityChangeNotificationTask,
-  getDataSeedingLogic(): IDataSeedingLogic
+  getDataSeedingLogic(): IDataSeedingLogic,
+  getCache(): Storage<StorageValue>
 }
 
 export interface IAcsysServerServicesLocator extends IServerServicesLocator {

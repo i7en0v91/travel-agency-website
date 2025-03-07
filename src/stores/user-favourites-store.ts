@@ -33,11 +33,11 @@ export const useUserFavouritesStore = defineStore('userFavouritesStore', () => {
   const { status } = useAuth();
 
   const ensureUserAccount = async (): Promise<void> => {
-    logger.verbose('(user-favourites-store) ensuring user account');
+    // logger.verbose('(user-favourites-store) ensuring user account');
 
     const isAuthenticated = status.value === 'authenticated';
     if (!isAuthenticated) {
-      logger.warn('(user-favourites-store) user is unauthenticated');
+      // logger.warn('(user-favourites-store) user is unauthenticated');
       throw new AppException(AppExceptionCodeEnum.UNAUTHENTICATED, 'user is unauthneticated', 'error-stub');
     }
 
@@ -45,57 +45,57 @@ export const useUserFavouritesStore = defineStore('userFavouritesStore', () => {
       try {
         userAccount = await userAccountStore.getUserAccount();
       } catch (err: any) {
-        logger.warn('(user-favourites-store) cannot obtain user account data', err);
+        // logger.warn('(user-favourites-store) cannot obtain user account data', err);
         throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'cannot obtain user account data', 'error-stub');
       }
     }
 
-    logger.verbose(`(user-favourites-store) user account ensured, userId=${userAccount?.userId}`);
+    // logger.verbose(`(user-favourites-store) user account ensured, userId=${userAccount?.userId}`);
   };
 
   async function sendFetchFavouritesRequest (logger: IAppLogger): Promise<UserFavouriteStoreItem[]> {
-    logger.debug(`(user-favourites-store) sending get HTTP request, userId=${userAccount?.userId}`);
+    // logger.debug(`(user-favourites-store) sending get HTTP request, userId=${userAccount?.userId}`);
     if(import.meta.server) { 
       // ensuring user data won't be added into html payload
-      logger.warn(`(user-favourites-store) fetching user favourites data is not available on server, userId=${userAccount?.userId}`);
+      // logger.warn(`(user-favourites-store) fetching user favourites data is not available on server, userId=${userAccount?.userId}`);
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'operation not available', 'error-page');
     }
 
     const resultDto = await getObject(`/${ApiEndpointUserFavourites}`, undefined, 'no-store', true, undefined, 'default') as IUserFavouritesResultDto;
     if (!resultDto) {
-      logger.warn(`(user-favourites-store) exception occured while sending get HTTP request, userId=${userAccount?.userId}`);
+      // logger.warn(`(user-favourites-store) exception occured while sending get HTTP request, userId=${userAccount?.userId}`);
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
     }
 
     const result: UserFavouriteStoreItem[] = mapUserFavouriteOffersResult(resultDto);
-    logger.debug(`(user-favourites-store) get HTTP request completed, userId=${userAccount?.userId}, count=${result.length}`);
+    // logger.debug(`(user-favourites-store) get HTTP request completed, userId=${userAccount?.userId}, count=${result.length}`);
     return result;
   }
 
   async function getFavouriteItems (nuxtApp: NuxtApp, logger: IAppLogger): Promise<UserFavouriteStoreItem[] | undefined> {
-    logger.verbose(`(user-favourites-store) get favourite items, userId=${userAccount?.userId}`);
+    // logger.verbose(`(user-favourites-store) get favourite items, userId=${userAccount?.userId}`);
     let favouriteItems: UserFavouriteStoreItem[] | undefined;
     try {
       favouriteItems = await sendFetchFavouritesRequest(logger);
     } catch (err: any) {
-      logger.warn(`(user-favourites-store) failed to fetch favourites data, userId=${userAccount?.userId}`, err);
+      // logger.warn(`(user-favourites-store) failed to fetch favourites data, userId=${userAccount?.userId}`, err);
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to fetch favourites data', 'error-stub');
     }
-    logger.verbose(`(user-favourites-store) get favourites data, userId=${userAccount?.userId}, count=${favouriteItems?.length}`);
+    // logger.verbose(`(user-favourites-store) get favourites data, userId=${userAccount?.userId}, count=${favouriteItems?.length}`);
     return favouriteItems;
   }
 
   const createInstance = (): UserFavouritesStoreInternalRef => {
-    logger.verbose('(user-favourites-store) creating new instance');
+    // logger.verbose('(user-favourites-store) creating new instance');
 
     const nuxtApp = useNuxtApp();
     const result: UserFavouritesStoreInternalRef = reactive({
       status: 'pending',
       items: [],
       fetchFavourites: async (): Promise<void> => {
-        logger.verbose(`(user-favourites-store) obtaining favourites, userId=${userAccount?.userId}`);
+        // logger.verbose(`(user-favourites-store) obtaining favourites, userId=${userAccount?.userId}`);
         if (result.status === 'error') {
-          logger.warn('(user-favourites-store) cannot obtain favourites, store is in failed state');
+          // logger.warn('(user-favourites-store) cannot obtain favourites, store is in failed state');
           throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown error occured', 'error-stub');
         }
 
@@ -104,19 +104,19 @@ export const useUserFavouritesStore = defineStore('userFavouritesStore', () => {
         result.status = 'pending';
         try {
           const itemsData = await getFavouriteItems(nuxtApp, logger);
-          logger.verbose(`(user-favourites-store) favourites obtained, userId=${userAccount?.userId}, count=${itemsData?.length}`);
+          // logger.verbose(`(user-favourites-store) favourites obtained, userId=${userAccount?.userId}, count=${itemsData?.length}`);
           result.items.splice(0, result.items.length, ...itemsData!);
           result.status = 'success';
         } catch (err: any) {
-          logger.warn(`(user-favourites-store) failed to obtain favourites, userId=${userAccount?.userId}`, err);
+          // logger.warn(`(user-favourites-store) failed to obtain favourites, userId=${userAccount?.userId}`, err);
           result.status = 'error';
           result.items.splice(0, result.items.length);
         }
       },
       toggleFavourite: async <TOfferKind extends OfferKind, TOffer extends (EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>) & { kind: TOfferKind }>(offerId: EntityId, kind: TOfferKind, offer?: TOffer): Promise<boolean> => {
-        logger.verbose(`(user-favourites-store) toggling favourite, offerId=${offerId}, offerKind=${kind}`);
+        // logger.verbose(`(user-favourites-store) toggling favourite, offerId=${offerId}, offerKind=${kind}`);
         if (result.status === 'error') {
-          logger.warn(`(user-favourites-store) cannot toggle offer, store is in failed state, offerId=${offerId}, offerKind=${kind}`);
+          // logger.warn(`(user-favourites-store) cannot toggle offer, store is in failed state, offerId=${offerId}, offerKind=${kind}`);
           throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown error occured', 'error-stub');
         }
 
@@ -126,42 +126,42 @@ export const useUserFavouritesStore = defineStore('userFavouritesStore', () => {
         try {
           const resultDto = await post(kind === 'flights' ? `/${ApiEndpointFlightOfferFavourite(offerId)}` : `/${ApiEndpointStayOfferFavourite(offerId)}`, undefined, undefined, undefined, true, undefined, 'default') as IToggleFavouriteOfferResultDto;
           if (!resultDto) {
-            logger.warn(`(user-favourites-store) exception occured while toggling favourite offer on server, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
+            // logger.warn(`(user-favourites-store) exception occured while toggling favourite offer on server, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
             throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown error occured', 'error-stub');
           }
           const isFavourite = resultDto.isFavourite;
-          logger.verbose(`(user-favourites-store) favourite toggled, offerId=${offerId}, offerKind=${kind}, result=${isFavourite}, userId=${userAccount?.userId}`);
+          // logger.verbose(`(user-favourites-store) favourite toggled, offerId=${offerId}, offerKind=${kind}, result=${isFavourite}, userId=${userAccount?.userId}`);
 
           const clientOfferIdx = result.items.findIndex(o => o.id === offerId && o.kind === kind);
           if (isFavourite) {
             if (clientOfferIdx < 0) {
               if (offer) {
-                logger.debug(`(user-favourites-store) adding toggled favourite offer data on client, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
+                // logger.debug(`(user-favourites-store) adding toggled favourite offer data on client, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
                 result.items.splice(0, 0, offer);
               } else {
-                logger.verbose(`(user-favourites-store) reloading favourite offers list after toggling offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
+                // logger.verbose(`(user-favourites-store) reloading favourite offers list after toggling offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
                 result.fetchFavourites();
               }
             } else {
-              logger.warn(`(user-favourites-store) failed to add toggled favourite offer data on client - data not specified, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
+              // logger.warn(`(user-favourites-store) failed to add toggled favourite offer data on client - data not specified, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
             }
           } else if (clientOfferIdx >= 0) {
-            logger.debug(`(user-favourites-store) removing toggled favourite from client data, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
+            // logger.debug(`(user-favourites-store) removing toggled favourite from client data, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
             result.items.splice(clientOfferIdx, 1);
           } else {
-            logger.warn(`(user-favourites-store) failed to remove toggled favourite from client data - not found, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
+            // logger.warn(`(user-favourites-store) failed to remove toggled favourite from client data - not found, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
           }
 
           result.status = 'success';
           return isFavourite;
         } catch (err: any) {
-          logger.warn(`(user-favourites-store) exception occured while toggling favourite, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
+          // logger.warn(`(user-favourites-store) exception occured while toggling favourite, offerId=${offerId}, offerKind=${kind}, userId=${userAccount?.userId}`);
           result.status = 'error';
           throw err;
         }
       },
       onSignOut: () => {
-        logger.debug('(user-favourites-store) onSignOut');
+        // logger.debug('(user-favourites-store) onSignOut');
         result.items.splice(0, result.items.length);
         result.status = 'success';
       }
@@ -171,7 +171,7 @@ export const useUserFavouritesStore = defineStore('userFavouritesStore', () => {
   };
 
   const getInstance = async (): Promise<UserFavouritesStoreRef> => {
-    logger.debug('(user-favourites-store) get instance');
+    // logger.debug('(user-favourites-store) get instance');
 
     if (!instance) {
       instance = createInstance();
@@ -183,13 +183,13 @@ export const useUserFavouritesStore = defineStore('userFavouritesStore', () => {
       }
     }
 
-    logger.debug('(user-favourites-store) get instance - ok');
+    // logger.debug('(user-favourites-store) get instance - ok');
     return instance;
   };
 
   if (import.meta.client) {
     watch(status, async () => {
-      logger.info(`(user-favourites-store) auth status changed, status=${status.value}`);
+      // logger.info(`(user-favourites-store) auth status changed, status=${status.value}`);
       if(status.value === 'authenticated') {
         // fetch user favourites
         if(instance) {
@@ -205,7 +205,7 @@ export const useUserFavouritesStore = defineStore('userFavouritesStore', () => {
     });
   }
 
-  logger.verbose('(user-favourites-store) factory created');
+  // logger.verbose('(user-favourites-store) factory created');
   const result: IUserFavouritesStoreFactory = {
     getInstance
   };

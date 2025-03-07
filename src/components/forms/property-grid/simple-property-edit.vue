@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../helpers/components';
 import { AppConfig, validateObjectSync, maskLog, SecretValueMask, isPasswordSecure, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
 import type { SimplePropertyType, PropertyGridControlButtonType } from './../../../types';
 import { defaultErrorHandler } from './../../../helpers/exceptions';
@@ -7,7 +8,7 @@ import { getCommonServices } from '../../../helpers/service-accessors';
 import type { UFormGroup } from '../../../.nuxt/components';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   validateAndSave: (value?: string) => Promise<I18nResName | 'success' | 'cancel'>,
   captionResName?: I18nResName,
   type: SimplePropertyType,
@@ -41,13 +42,15 @@ const EmailValidationSchema = object({
   email: string().email(getI18nResName2('validations', 'email'))
 });;
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'SimplePropertyEdit' });
 
 const inputFormGroup = useTemplateRef('root-component');
 const isEditMode = ref(false);
 const editValue = ref(props.value);
 const showValidationError = ref(false);
 
+const nuxtApp = useNuxtApp();
+const userNotificationStore = useUserNotificationStore();
 const { t } = useI18n();
 
 const customValidationErrMsgResName = ref<I18nResName>();
@@ -62,12 +65,12 @@ const validationErrMsg = computed(() =>  {
   }
 
   if(props.required && !normalizedValue.length) {
-    logger.verbose(`(SimplePropertyEdit) preliminary validation failed - field required, ctrlKey=${props.ctrlKey}`);
+    logger.verbose('preliminary validation failed - field required', { ctrlKey: props.ctrlKey });
     return t(getI18nResName2('validations', 'required'));
   }
 
   if(props.minLength && normalizedValue.length < props.minLength) {
-    logger.verbose(`(SimplePropertyEdit) preliminary validation failed, ctrlKey=${props.ctrlKey}, required minLength=${props.minLength}`);
+    logger.verbose('preliminary validation failed', { ctrlKey: props.ctrlKey, minLength: props.minLength });
     return t(getI18nResName2('validations', 'minLength'), { min: props.minLength });
   }
 
@@ -75,7 +78,7 @@ const validationErrMsg = computed(() =>  {
     const validationResult = validateObjectSync({ email: normalizedValue }, EmailValidationSchema);
     if(validationResult?.errors?.length) {
       const errMsgResName = validationResult.errors[0] as I18nResName;
-      logger.verbose(`(SimplePropertyEdit) preliminary email validation failed, ctrlKey=${props.ctrlKey}, msgResName=[${errMsgResName}]`);
+      logger.verbose('preliminary email validation failed', { ctrlKey: props.ctrlKey });
       return t(errMsgResName);
     }
   }
@@ -83,13 +86,13 @@ const validationErrMsg = computed(() =>  {
   if (props.type === 'password') {
     if (!isPasswordSecure(normalizedValue)) {
       const errMsgResName = getI18nResName2('validations', 'password');
-      logger.verbose(`(SimplePropertyEdit) preliminary password validation failed, ctrlKey=${props.ctrlKey}`);
+      logger.verbose('preliminary password validation failed', { ctrlKey: props.ctrlKey });
       return t(errMsgResName, { min: AppConfig.userPasswordPolicy.minLength });
     }
   }
 
   if(customValidationErrMsgResName.value) {
-    logger.verbose(`(SimplePropertyEdit) custom validation failed, ctrlKey=${props.ctrlKey}, msgResName=[${customValidationErrMsgResName.value}]`);
+    logger.verbose('custom validation failed', { ctrlKey: props.ctrlKey });
     return t(customValidationErrMsgResName.value);
   }
   
@@ -101,7 +104,7 @@ const lastSectionButtons = computed<PropertyGridControlButtonType[]>(() => props
 
 function focusInput () {
   if (inputFormGroup?.value) {
-    (inputFormGroup.value.$el as HTMLElement).querySelector('input')?.focus();
+    ((inputFormGroup.value as ComponentPublicInstance<unknown>).$el as HTMLElement).querySelector('input')?.focus();
   }
 }
 
@@ -113,37 +116,37 @@ function maskLogValue (value?: string) {
 }
 
 async function performValidateAndSave (value?: string) : Promise<boolean> {
-  logger.verbose(`(SimplePropertyEdit) validating and saving value, ctrlKey=${props.ctrlKey}, value=${maskLogValue(value)}`);
+  logger.verbose('validating and saving value', { ctrlKey: props.ctrlKey, value: maskLogValue(value) });
   customValidationErrMsgResName.value = undefined;
 
   if(validationErrMsg.value) {
-    logger.verbose(`(SimplePropertyEdit) validating and saving value - preliminary validation failed, ctrlKey=${props.ctrlKey}, errMsg=${validationErrMsg.value}`);
+    logger.verbose('validating and saving value - preliminary validation failed', { ctrlKey: props.ctrlKey, errMsg: validationErrMsg.value });
     return false;
   }
   
   try {
-    logger.verbose(`(SimplePropertyEdit) calling client save handler, ctrlKey=${props.ctrlKey}, value=${maskLogValue(value)}`);
+    logger.verbose('calling client save handler', { ctrlKey: props.ctrlKey, value: maskLogValue(value) });
     const validationResult = await props.validateAndSave(value);
     if (validationResult === 'cancel') {
-      logger.verbose(`(SimplePropertyEdit) client save handler cancelled, ctrlKey=${props.ctrlKey}, value=${maskLogValue(value)}`);
+      logger.verbose('client save handler cancelled', { ctrlKey: props.ctrlKey, value: maskLogValue(value) });
       return false;
     }
     customValidationErrMsgResName.value = validationResult === 'success' ? undefined : validationResult;
-    logger.verbose(`(SimplePropertyEdit) client save handler result, ctrlKey=${props.ctrlKey}, errMsgResName=${customValidationErrMsgResName.value}`);
+    logger.verbose('client save handler result', { ctrlKey: props.ctrlKey, errMsgResName: customValidationErrMsgResName.value });
   } catch (err: any) {
-    logger.warn(`(SimplePropertyEdit) client save handler failed, ctrlKey=${props.ctrlKey}, value=${maskLogValue(value)}`, err);
+    logger.warn('client save handler failed', err, { ctrlKey: props.ctrlKey, value: maskLogValue(value) });
     exitEditModeInternal();
-    defaultErrorHandler(err);
+    defaultErrorHandler(err, { nuxtApp, userNotificationStore });
     return false;
   }
   
   const result = !validationErrMsg.value;
-  logger.verbose(`(SimplePropertyEdit) value validation result, ctrlKey=${props.ctrlKey}, value=${maskLogValue(value)}, result=${result}`);
+  logger.verbose('value validation result', { ctrlKey: props.ctrlKey, value: maskLogValue(value), result });
   return result;
 }
 
 async function onControlButtonClick (button: PropertyGridControlButtonType): Promise<void> {
-  logger.debug(`(SimplePropertyEdit) onControlButtonClick, ctrlKey=${props.ctrlKey}, button=${button}`);
+  logger.debug('onControlButtonClick', { ctrlKey: props.ctrlKey, button });
   switch (button) {
     case 'add':
     case 'change':
@@ -164,12 +167,12 @@ async function onControlButtonClick (button: PropertyGridControlButtonType): Pro
     case 'apply':
       if (props.autoTrim) {
         editValue.value = editValue.value?.trim();
-        logger.debug(`(SimplePropertyEdit) value trimmed, ctrlKey=${props.ctrlKey}, newValue=${maskLogValue(editValue.value)}`);
+        logger.debug('value trimmed', { ctrlKey: props.ctrlKey, newValue: maskLogValue(editValue.value) });
       }
 
       showValidationError.value = true;
       if (await performValidateAndSave(editValue.value)) {
-        logger.verbose(`(SimplePropertyEdit) value updated, ctrlKey=${props.ctrlKey}, value=${maskLogValue(editValue.value)}, prev=${props.value}`);
+        logger.verbose('value updated', { ctrlKey: props.ctrlKey, value: maskLogValue(editValue.value), prev: props.value });
         $emit('update:value', editValue.value);
         isEditMode.value = false;
       }
@@ -184,7 +187,7 @@ async function onControlButtonClick (button: PropertyGridControlButtonType): Pro
 
 function exitEditMode () {
   if (isEditMode.value) {
-    logger.debug(`(SimplePropertyEdit) exiting edit mode, ctrlKey=${props.ctrlKey}`);
+    logger.debug('exiting edit mode', { ctrlKey: props.ctrlKey });
     editValue.value = props.value;
     isEditMode.value = false;
     showValidationError.value = false;
@@ -199,7 +202,7 @@ function exitEditModeInternal () {
 }
 
 const $emit = defineEmits<{
-  (event: 'update:value', value: string | undefined): void, (event: 'enterEditMode', ctrlKey: string): void, 
+  (event: 'update:value', value: string | undefined): void, (event: 'enterEditMode', ctrlKey: ControlKey): void, 
   (event: 'buttonClick', button: PropertyGridControlButtonType): void
 }>();
 
@@ -253,10 +256,10 @@ const uiInputStyling = computed(() => {
     </div>
     <div class="flex flex-row flex-nowrap gap-2 sm:gap-4 justify-self-end">
       <div class="flex-1">
-        <PropertyGridControlSection :ctrl-key="`${props.ctrlKey}-firstControlSection`" :buttons="firstSectionButtons" @click="onControlButtonClick" />
+        <PropertyGridControlSection :ctrl-key="[...props.ctrlKey, 'ControlSection', 1]" :buttons="firstSectionButtons" @click="onControlButtonClick" />
       </div>
       <div class="flex-1">
-        <PropertyGridControlSection :ctrl-key="`${props.ctrlKey}-lastControlSection`" :buttons="lastSectionButtons" @click="onControlButtonClick" />
+        <PropertyGridControlSection :ctrl-key="[...props.ctrlKey, 'ControlSection', 2]" :buttons="lastSectionButtons" @click="onControlButtonClick" />
       </div>
     </div>
   </div>

@@ -7,27 +7,27 @@ export class BookingLogic implements IBookingLogic {
 
   public static inject = ['bookingLogicPrisma', 'logger'] as const;
   constructor (prismaImplementation: IBookingLogic, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'BookingLogic-Acsys' });
     this.prismaImplementation = prismaImplementation;
   }
 
   async deleteBooking(id: EntityId): Promise<void> {
-    this.logger.debug(`(BookingLogic-Acsys) deleting booking: id=${id}`);
+    this.logger.debug('deleting booking', id);
     await this.prismaImplementation.deleteBooking(id);
-    this.logger.debug(`(BookingLogic-Acsys) booking deleted: id=${id}`);
+    this.logger.debug('booking deleted', id);
   };
 
   async createBooking (data: IOfferBookingData): Promise<EntityId> {
-    this.logger.debug(`(BookingLogic-Acsys) create booking, offerId=${data.offerId}, kind=${data.kind}, userId=${data.bookedUserId}`);
+    this.logger.debug('create booking', { offerId: data.offerId, kind: data.kind, userId: data.bookedUserId });
     const entityId = await this.prismaImplementation.createBooking(data);
-    this.logger.debug(`(BookingLogic-Acsys) booking created, id=${entityId}`);
+    this.logger.debug('booking created', { id: entityId });
     return entityId;
   }
 
   async getBooking (id: EntityId): Promise<IOfferBooking<IFlightOffer | IStayOfferDetails>> {
-    this.logger.debug(`(BookingLogic-Acsys) get booking, id=${id}`);
+    this.logger.debug('get booking', id);
     const result = await this.prismaImplementation.getBooking(id);
-    this.logger.debug(`(BookingLogic-Acsys) booking found, id=${id}, offerId=${result.offer.id}, bookedUserId=${result.bookedUser.id}`);
+    this.logger.debug('booking found', { id, offerId: result.offer.id, bookedUserId: result.bookedUser.id });
     return result;
   }
 }

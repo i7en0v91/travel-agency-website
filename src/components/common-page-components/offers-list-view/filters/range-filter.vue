@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../../../helpers/components';
 import { getI18nResName3, convertTimeOfDay } from '@golobe-demo/shared';
 import type { ISearchOffersRangeFilterProps } from './../../../../types';
 import dayjs from 'dayjs';
@@ -8,7 +9,7 @@ import { getCommonServices } from '../../../../helpers/service-accessors';
 import type { URange } from './../../../../.nuxt/components';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   filterParams: ISearchOffersRangeFilterProps
 }
 
@@ -17,18 +18,18 @@ const modelValue = defineModel<{ min: number, max: number }>('value', { required
 
 const editValue = ref<number>(modelValue.value.min);
 const rangeRef = useTemplateRef('range');
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'RangeFilter' });
 
 const { d } = useI18n();
 
 function fireValueChangeEvent (value: number) {
-  logger.debug(`(RangeFilter) firing value change event, ctrlKey=${ctrlKey}, value=${value}`);
+  logger.debug('firing value change event', { ctrlKey, value });
   modelValue.value = { min: value, max: filterParams.valueRange.max };
   editValue.value = value;
 }
 
 function onMeterValueChanged (value: number) {
-  logger.debug(`(RangeFilter) range value changed, ctrlKey=${ctrlKey}`);
+  logger.debug('range value changed', ctrlKey);
   fireValueChangeEvent(isNumber(value) ? value : parseInt(value));
 }
 
@@ -63,7 +64,7 @@ function indicatorTextFormatter (value: any): string {
 
 onMounted(() => {
   watch(modelValue, () => {
-    logger.debug(`(RangeFilter) model value update callback, ctrlKey=${ctrlKey}, new model value=${JSON.stringify(modelValue.value)}, edit value=${editValue.value}`);
+    logger.debug('model value update callback', { ctrlKey, newValue: modelValue.value, editValue: editValue.value });
     if(modelValue.value.min !== editValue.value) {
       editValue.value = modelValue.value.min;
     }

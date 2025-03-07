@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import SiteSearch from '../common-page-components/site-search.vue';
 
@@ -15,6 +16,8 @@ defineShortcuts({
     handler: () => { open.value = !open.value; }
   }
 });
+
+const CtrlKey: ControlKey = ['SiteSearchTool'];
 
 const { t } = useI18n();
 
@@ -40,7 +43,7 @@ const { t } = useI18n();
         height: 'h-[60vh] max-h-[60vh] sm:h-[50vh] sm:max-h-[50vh]' 
       }">
       <SiteSearch 
-        ctrl-key="siteSearch" 
+        :ctrl-key="[...CtrlKey, 'SiteSearch']" 
         @close="open = false"/>
     </UModal>
   </UTooltip>

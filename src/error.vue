@@ -3,6 +3,7 @@ import { getI18nResName2, getUsrMsgResName, mapAppExceptionToHttpStatus } from '
 import { destr } from 'destr';
 import ErrorBox from './components/forms/error-box.vue';
 
+const useHardLink = !!useNuxtApp().isHydrating;
 const errorInfo = useError().value;
 const appExceptionCode = ((errorInfo as any)?.data?.code) ?? (destr<any>((errorInfo as any).data)?.code);
 let httpStatusCode = 500;
@@ -26,7 +27,7 @@ if (appExceptionCode) {
 <template>
   <NuxtLayout>
     <UContainer>
-      <ErrorBox :http-code="httpStatusCode" :msg-res-name="errorMsgResName" :msg-res-params="appExceptionParams" />
+      <ErrorBox :http-code="httpStatusCode" :msg-res-name="errorMsgResName" :msg-res-params="appExceptionParams" :hard-link="useHardLink" />
     </UContainer>
   </NuxtLayout>
 </template>

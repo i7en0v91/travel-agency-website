@@ -7,13 +7,16 @@ import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from './../../helpers/service-accessors';
 import { useCityGridLinksTabKeeper } from './../../composables/city-grid-links-tab-keeper';
+import type { ControlKey } from '../../helpers/components';
+
+const CtrlKey: ControlKey = ['CityOffers', 'ResultItemsList'];
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 };
 defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'StaySearchHistory' });
 
 const navLinkBuilder = useNavLinkBuilder();
 const { locale } = useI18n();
@@ -40,9 +43,9 @@ const searchHistoryFetch = await useFetch(`/${ApiEndpointStayOffersSearchHistory
     query: { drafts: enabled },
     default: () => { return null; },
     transform: (response: ISearchedCityHistoryDto[]) => {
-      logger.verbose(`(stay-search-history) received search cities history list response, count=${response.length}`);
+      logger.verbose('received search cities history list response', { count: response.length });
       if (!response) {
-        logger.warn('(stay-search-history) search cities history list response is empty');
+        logger.warn('search cities history list response is empty');
         return []; // error should be logged by fetchEx
       }
       return response;
@@ -56,12 +59,12 @@ const somePopularCity = computed(() => popularCitiesFetch.data?.value ? popularC
 const isError = ref(false);
 watch([searchHistoryFetch.status, popularCitiesFetch.status], () => {
   if (searchHistoryFetch.status.value === 'error') {
-    logger.warn('(stay-search-history) failed to load search city history');
+    logger.warn('failed to load search city history', searchHistoryFetch.error.value);
     isError.value = true;
   }
 
   if (popularCitiesFetch.status.value === 'error') {
-    logger.warn('(stay-search-history) failed to load popular cities');
+    logger.warn('failed to load popular cities', popularCitiesFetch.error.value);
     isError.value = true;
   }
 });
@@ -70,12 +73,12 @@ watch([searchHistoryFetch.status, popularCitiesFetch.status], () => {
 
 <template>
   <ClientOnly>
-    <ComponentWaitingIndicator v-if="showWaitingStub && !isError" :ctrl-key="`${ctrlKey}-WaiterIndicator`" />
+    <ComponentWaitingIndicator v-if="showWaitingStub && !isError" :ctrl-key="[...ctrlKey, 'Waiter']" />
     <ErrorHelm :is-error="!!searchHistoryFetch.error.value || !!popularCitiesFetch.error.value">
       <ul v-if="!showWaitingStub && (searchHistoryFetch.data.value?.length ?? 0) > 0" class="p-2 sm:p-4 grid grid-flow-row auto-rows-auto grid-cols-citylinks overflow-clip -translate-y-[40px] justify-center">
         <li v-for="(city, idx) in searchHistoryFetch.data.value" :key="`popular-city-${idx}`" class="w-full city-offers-list-item">
           <CityOffersLinks
-            :ctrl-key="`CityOffersLinks-${idx}`"
+            :ctrl-key="[...CtrlKey, 'CityOffersLinks', idx]"
             search-kind="stay"
             :text="city ? mapLocalizeableValues((city: string, country: string) => `${city}, ${country}`, city.cityDisplayName, city.countryDisplayName) : undefined"
             :img-src="city ? { slug: city.imgSlug, timestamp: city.timestamp } : undefined"
@@ -99,7 +102,7 @@ watch([searchHistoryFetch.status, popularCitiesFetch.status], () => {
       </div>
     </ErrorHelm>
     <template #fallback>
-      <ComponentWaitingIndicator :ctrl-key="`${ctrlKey}-ClientFallback`" />
+      <ComponentWaitingIndicator :ctrl-key="[...ctrlKey, 'ClientFallback']" />
     </template>
   </ClientOnly>
 </template>

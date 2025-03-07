@@ -14,14 +14,14 @@ export class CitiesLogic implements ICitiesLogic {
 
   public static inject = ['citiesLogicPrisma', 'acsysDraftsEntitiesResolver', 'dbRepository', 'logger'] as const;
   constructor (prismaImplementation: CitiesLogicPrisma, acsysDraftsEntitiesResolver: AcsysDraftEntitiesResolver, dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'CitiesLogic-Acsys' });
     this.prismaImplementation = prismaImplementation;
     this.dbRepository = dbRepository;
     this.acsysDraftsEntitiesResolver = acsysDraftsEntitiesResolver;
   }
 
   async deleteCity (id: EntityId): Promise<void> {
-    this.logger.debug(`(CitiesLogic-Acsys) deleting city: id=${id}`);
+    this.logger.debug('deleting city', id);
 
     const deleted = (await this.dbRepository.acsysDraftsCity.updateMany({
       where: {
@@ -34,19 +34,19 @@ export class CitiesLogic implements ICitiesLogic {
       }
     })).count > 0;
     if(!deleted) {
-      this.logger.debug(`(CitiesLogic-Acsys) no cities have been deleted in drafts table, proceeding to the main table: id=${id}`);
+      this.logger.debug('no cities have been deleted in drafts table, proceeding to the main table', id);
       await this.prismaImplementation.deleteCity(id);
     }
 
-    this.logger.debug(`(CitiesLogic-Acsys) city deleted: id=${id}`);
+    this.logger.debug('city deleted', id);
   };
 
   async getCity (slug: string, previewMode: PreviewMode): Promise<ICity> {
-    this.logger.debug(`(CitiesLogic-Acsys) loading city, slug=${slug}, previewMode=${previewMode}`);
+    this.logger.debug('loading city', { slug, previewMode });
 
     let result: ICity;
     if(previewMode) {
-      this.logger.debug(`(CitiesLogic-Acsys) load city - determining city id by slug=${slug}, previewMode=${previewMode}`);
+      this.logger.debug('load city - determining city id by', { slug, previewMode });
       let cityId: EntityId;
       const draftCityIds = (await this.dbRepository.acsysDraftsCity.findMany({
         where: {
@@ -69,7 +69,7 @@ export class CitiesLogic implements ICitiesLogic {
         })).map(i => i.id);
 
         if(!publishedCityIds.length) {
-          this.logger.warn(`(CitiesLogic-Acsys) city not found: slug=${slug}, previewMode=${previewMode}`);
+          this.logger.warn('city not found', undefined, { slug, previewMode });
           throw new AppException(
             AppExceptionCodeEnum.OBJECT_NOT_FOUND,
             'City not found',
@@ -83,7 +83,7 @@ export class CitiesLogic implements ICitiesLogic {
       const resolvedCities = (await this.acsysDraftsEntitiesResolver.resolveCities({ idsFilter: [cityId] }));
       const resolveResult = Array.from(resolvedCities.items.values());
       if(!resolveResult.length) {
-        this.logger.warn(`(CitiesLogic-Acsys) city not found: slug=${slug}, previewMode=${previewMode}`);
+        this.logger.warn('failed to resolve city - not found', undefined, { slug, previewMode });
           throw new AppException(
             AppExceptionCodeEnum.OBJECT_NOT_FOUND,
             'City not found',
@@ -94,12 +94,12 @@ export class CitiesLogic implements ICitiesLogic {
       result = await this.prismaImplementation.getCity(slug);
     }
     
-    this.logger.debug(`(CitiesLogic-Acsys) city loaded, slug=${slug}, previewMode=${previewMode}, id=${result.id}`);
+    this.logger.debug('city loaded', { slug, previewMode, id: result.id });
     return result;
   }
 
   async makeCityPopular (data: IPopularCityData, previewMode: PreviewMode): Promise<void> {
-    this.logger.debug(`(CitiesLogic-Acsys) adding popular city data, cityId=${data.cityId}, previewMode=${previewMode}`);
+    this.logger.debug('adding popular city data', { cityId: data.cityId, previewMode });
 
     if(previewMode) {
       await executeInTransaction(async () => {
@@ -165,7 +165,7 @@ export class CitiesLogic implements ICitiesLogic {
           })).count > 0;
 
           if(!updated) {
-            this.logger.warn(`(CitiesLogic-Acsys) cannot make city popular - not found: cityId=${data.cityId}, previewMode=${previewMode}`);
+            this.logger.warn('cannot make city popular - not found', undefined, { cityId: data.cityId, previewMode });
             throw new AppException(
               AppExceptionCodeEnum.OBJECT_NOT_FOUND,
               'City not found',
@@ -177,11 +177,11 @@ export class CitiesLogic implements ICitiesLogic {
       await this.prismaImplementation.makeCityPopular(data);
     }
     
-    this.logger.debug(`(CitiesLogic-Acsys) popular city data added, cityId=${data.cityId}, previewMode=${previewMode}`);
+    this.logger.debug('popular city data added', { cityId: data.cityId, previewMode });
   }
 
   async getTravelDetails (cityId: EntityId, previewMode: PreviewMode): Promise<Omit<ITravelDetails, 'price'>> {
-    this.logger.debug(`(CitiesLogic-Acsys) city travel details requested, cityId=${cityId}, previewMode=${previewMode}`);
+    this.logger.debug('city travel details requested', { cityId, previewMode });
 
     let result: Omit<ITravelDetails, 'price'>;
     if(previewMode) {
@@ -213,7 +213,7 @@ export class CitiesLogic implements ICitiesLogic {
           }
         });
 
-        this.logger.debug(`(CitiesLogic-Acsys) city travel details - resolving refs, cityId=${cityId}, previewMode=${previewMode}`);
+        this.logger.debug('city travel details - resolving refs', { cityId, previewMode });
         const resolvedCity = await this.acsysDraftsEntitiesResolver.resolveCities({ idsFilter: [cityId] });
         const city = Array.from(resolvedCity.items)[0][1];
 
@@ -231,10 +231,10 @@ export class CitiesLogic implements ICitiesLogic {
           city
         };
       } else {
-        this.logger.debug(`(CitiesLogic-Acsys) popular city hasn't been found in drafts table, proceeding to the main table: id=${cityId}`);
+        this.logger.debug('popular city hasn', { id: cityId });
         result = await this.prismaImplementation.getTravelDetails(cityId);  
         if(!result) {
-          this.logger.warn(`(CitiesLogic-Acsys) popular city not found: cityId=${cityId}`);
+          this.logger.warn('popular city not found', undefined, cityId);
           throw new AppException(
             AppExceptionCodeEnum.OBJECT_NOT_FOUND,
             'Popular city not found',
@@ -245,12 +245,12 @@ export class CitiesLogic implements ICitiesLogic {
       result = await this.prismaImplementation.getTravelDetails(cityId);  
     }
     
-    this.logger.debug(`(CitiesLogic-Acsys) city travel details loaded, cityId=${cityId}, previewMode=${previewMode}, numImages=${result.images.length}, lastModified=${result.city.modifiedUtc}`);
+    this.logger.debug('city travel details loaded', { cityId, previewMode, numImages: result.images.length, lastModified: result.city.modifiedUtc });
     return result;
   }
 
   async setPopularCityImages (id: EntityId, images: { id: EntityId, order: number }[], previewMode: PreviewMode): Promise<void> {
-    this.logger.debug(`(CitiesLogic-Acsys) setting popular city images, cityId=${id}, images=${JSON.stringify(images)}, previewMode=${previewMode}`);
+    this.logger.debug('setting popular city images', { cityId: id, images, previewMode });
 
     if(previewMode) {
       await executeInTransaction(async () => {
@@ -264,14 +264,14 @@ export class CitiesLogic implements ICitiesLogic {
         }))?.id;
 
         if (popularCityId) {
-          this.logger.debug(`(CitiesLogic-Acsys) deleting previous popular city image links, cityId=${id}, previewMode=${previewMode}`);
+          this.logger.debug('deleting previous popular city image links', { cityId: id, previewMode });
           await this.dbRepository.acsysDraftsPopularCityImage.deleteMany({
             where: {
               popularCityId
             }
           });
     
-          this.logger.debug(`(CitiesLogic-Acsys) creating popular city image links, cityId=${id}, previewMode=${previewMode}`);
+          this.logger.debug('creating popular city image links', { cityId: id, previewMode });
           for (let i = 0; i < images.length; i++) {
             const image = images[i];
             await this.dbRepository.acsysDraftsPopularCityImage.create({
@@ -286,7 +286,7 @@ export class CitiesLogic implements ICitiesLogic {
             });
           }
         } else {
-          this.logger.debug(`(CitiesLogic-Acsys) city hasn't been found in drafts table, proceeding to the main table: id=${id}`);
+          this.logger.debug('city hasn', id);
           await this.prismaImplementation.setPopularCityImages(id, images);
         }
       }, this.dbRepository);  
@@ -294,11 +294,11 @@ export class CitiesLogic implements ICitiesLogic {
       await this.prismaImplementation.setPopularCityImages(id, images);
     }
 
-    this.logger.debug(`(CitiesLogic-Acsys) popular city images have been set, id=${id}, images=${JSON.stringify(images)}, previewMode=${previewMode}`);
+    this.logger.debug('popular city images have been set', { id, images, previewMode });
   }
 
   async getPopularCities (previewMode: PreviewMode): Promise<IPopularCityItem[]> {
-    this.logger.debug(`(CitiesLogic-Acsys) obtaining list of popular cities, previewMode=${previewMode}`);
+    this.logger.debug('obtaining list of popular cities', previewMode);
 
     let result: IPopularCityItem[];
     if(previewMode) {
@@ -334,7 +334,7 @@ export class CitiesLogic implements ICitiesLogic {
       const popularCityIds = [...draftCities.map(x => x.id), ...publishedCities.map(x => x.id)];
       const cityIds = [...draftCities.map(x => x.cityId), ...publishedCities.map(x => x.cityId)];
       if(!cityIds.length) {
-        this.logger.debug(`(CitiesLogic-Acsys) list of popular cities obtained - empty result, previewMode=${previewMode}`);
+        this.logger.debug('list of popular cities obtained - empty result', previewMode);
         return [];
       }
 
@@ -371,12 +371,12 @@ export class CitiesLogic implements ICitiesLogic {
       ] as [EntityId, EntityId][]);
       const promoStrIds = [...draftCities.map(x => x.promoLineStrId), ...publishedCities.map(x => x.promoLineStrId)];
 
-      this.logger.debug(`(CitiesLogic-Acsys) listing popular cities - resolving refs, previewMode=${previewMode}`);
+      this.logger.debug('listing popular cities - resolving refs', previewMode);
       const resolvedCities = await this.acsysDraftsEntitiesResolver.resolveCities({ idsFilter: cityIds, includeDeleted: false, unresolvedEntityPolicy: UnresolvedEntityThrowingCondition.ExcludeFromResult });
       const resolvedPromoStrs = await this.acsysDraftsEntitiesResolver.resolveLocalizeableValues({ idsFilter: promoStrIds });
       const resolvedImages = await this.acsysDraftsEntitiesResolver.resolveImageFileInfos({ idsFilter: Array.from(cityImageIdsMap.values()) });
 
-      this.logger.debug(`(CitiesLogic-Acsys) listing popular cities - mapping result entities, previewMode=${previewMode}`);
+      this.logger.debug('listing popular cities - mapping result entities', previewMode);
       result = [];
       const cities = Array.from(resolvedCities.items.values());
       const popularCitiesMap = new Map([
@@ -387,7 +387,7 @@ export class CitiesLogic implements ICitiesLogic {
         const city = cities[i];
         const popularCity = popularCitiesMap.get(city.id);
         if(!popularCity) {
-          this.logger.warn(`(CitiesLogic-Acsys) failed to load popular city (not found): cityId=${city.id}, previewMode=${previewMode}`);
+          this.logger.warn('failed to load popular city (not found', undefined, { cityId: city.id, previewMode });
           throw new AppException(
             AppExceptionCodeEnum.OBJECT_NOT_FOUND,
             'City not found',
@@ -414,14 +414,14 @@ export class CitiesLogic implements ICitiesLogic {
       result = await this.prismaImplementation.getPopularCities();
     }
     
-    this.logger.debug(`(CitiesLogic-Acsys) list of popular cities obtained, count=${result.length}, previewMode=${previewMode}`);
+    this.logger.debug('list of popular cities obtained', { count: result.length, previewMode });
     return result;
   }
 
   async search (params: CitiesSearchParams): Promise<ICitySearchItem[]> {
-    this.logger.debug(`(CitiesLogic-Acsys) searching cities: locale=${params.locale}, size=${params.size}, term=${params.searchTerm}, includeCountry=${params.includeCountry}`);
+    this.logger.debug('searching cities', { locale: params.locale, size: params.size, term: params.searchTerm, includeCountry: params.includeCountry });
     const result = await this.prismaImplementation.search(params);
-    this.logger.debug(`(CitiesLogic-Acsys) search cities completed: locale=${params.locale}, size=${params.size}, term=${params.searchTerm}, includeCountry=${params.includeCountry}, count=${result.length}`);
+    this.logger.debug('search cities completed', { locale: params.locale, size: params.size, term: params.searchTerm, includeCountry: params.includeCountry, count: result.length });
     return result;
   }
 }

@@ -4,10 +4,7 @@ import { ApiEndpointImage } from './../server/api-definitions';
 import orderBy from 'lodash-es/orderBy';
 import { withQuery, parseURL, stringifyParsedURL, stringifyQuery } from 'ufo';
 import set from 'lodash-es/set';
-
-export function getLastSelectedTabStorageKey (tabCtrlKey: string) {
-  return `lastSelTab:${tabCtrlKey}`;
-}
+import { getCommonServices } from './service-accessors';
 
 export function isInViewport (element: HTMLElement, includeVeticallyScrollableTo = false) {
   const rect = element.getBoundingClientRect();
@@ -165,7 +162,7 @@ export function getNavMenuLinksInfo(isHorizontalNav: boolean) {
     iconClass: undefined,
     authStatus: undefined,
     verticalNav: 3,
-    showOnErrorPage: true
+    showOnErrorPage: false
   }],[{
     kind: 'favourites' as const,
     labelResName: getI18nResName3('nav', 'userBox', 'favourites'),

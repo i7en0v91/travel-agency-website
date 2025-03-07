@@ -2,15 +2,15 @@ import { getCommonServices } from '../helpers/service-accessors';
 import throttle from 'lodash-es/throttle';
 
 export function useCityGridLinksTabKeeper () {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'UseCityGridLinksTabKeeper' });
 
   if(import.meta.server) {
-    logger.verbose('(city-links-tab) not applicable on server');
+    logger.verbose('not applicable on server');
     return;
   }
 
   function updateLinksTabAvailability() {
-    logger.debug('(city-links-tab) updating links tab availability');
+    logger.debug('updating links tab availability');
   
     try {
       const listItemsEl = document.querySelectorAll('li.city-offers-list-item');
@@ -33,9 +33,9 @@ export function useCityGridLinksTabKeeper () {
         });
       }
   
-      logger.debug(`(city-links-tab) links tab availability updated, total=${availableCount}, available=${availableCount}`);
+      logger.debug('links tab availability updated', { total: availableCount, available: availableCount });
     } catch(err: any) {
-      logger.warn('(city-links-tab) failed to update links tab availability', err);
+      logger.warn('failed to update links tab availability', err);
     }
   }
   

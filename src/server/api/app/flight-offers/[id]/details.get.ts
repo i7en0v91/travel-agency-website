@@ -7,12 +7,12 @@ import { getServerSession } from '#auth';
 import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
   const flightsLogic = getServerServices()!.getFlightsLogic();
 
   const offerParam = getRouterParams(event)?.id?.toString() ?? '';
   if (!offerParam) {
-    logger.warn(`(api:flight-details) flight offer id paramer was not speicifed: path=${event.path}`);
+    logger.warn('flight offer id paramer was not speicifed', undefined, { path: event.path });
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
       'offerId parameter was not specified',

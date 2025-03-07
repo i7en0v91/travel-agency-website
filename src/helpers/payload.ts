@@ -1,46 +1,42 @@
-import type { IAppLogger } from '@golobe-demo/shared';
 import keys from 'lodash-es/keys';
 import { destr } from 'destr';
-import type { NuxtApp } from 'nuxt/app';
+import type { NuxtPayload } from 'nuxt/app';
 import { getCommonServices } from './service-accessors';
 
-function getLogger (): IAppLogger {
-  return getCommonServices().getLogger() as IAppLogger;
-}
 
-export function addPayload<TPayload extends NonNullable<unknown> = NonNullable<unknown>> (nuxtApp: NuxtApp, key: string, payload: TPayload | null) {
-  const logger = getLogger();
+export function addPayload<TPayload extends NonNullable<unknown> = NonNullable<unknown>> (nuxtPayload: NuxtPayload, key: string, payload: TPayload | null) {
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'Payload' });
   if (import.meta.client) {
-    logger.warn(`adding payload is not possible on client side, key=${key}`);
+    logger.warn('adding payload is not possible on client side', undefined, key);
     return;
   }
   if (payload !== undefined) {
-    logger.debug(`adding payload, key=${key}`);
-    nuxtApp.payload[key] = payload;
+    logger.debug('adding', key);
+    nuxtPayload[key] = payload;
   } else {
-    logger.debug(`removing payload, key=${key}`);
-    nuxtApp.payload[key] = undefined;
+    logger.debug('removing', key);
+    nuxtPayload[key] = undefined;
   }
 }
 
-export function getPayload<TPayload extends NonNullable<unknown> = any> (nuxtApp: NuxtApp, key: string): TPayload | null | undefined {
-  const logger = getLogger();
-  logger.debug(`get payload, key=${key}`);
-  if (!nuxtApp.payload) {
-    logger.verbose(`get payload - empty, payload is not initialized, key=${key}`);
+export function getPayload<TPayload extends NonNullable<unknown> = any> (nuxtPayload: NuxtPayload, key: string): TPayload | null | undefined {
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'Payload' });
+  logger.debug('get', key);
+  if (!nuxtPayload) {
+    logger.verbose('get - empty, payload is not initialized', key);
     return undefined;
   }
 
-  if (keys(nuxtApp.payload).includes(key)) {
-    const result = (destr<TPayload>(nuxtApp.payload[key])) ?? null;
-    logger.debug(`get payload - key in payload, key=${key}, result=${!!result}`);
+  if (keys(nuxtPayload).includes(key)) {
+    const result = (destr<TPayload>(nuxtPayload[key])) ?? null;
+    logger.debug('get - key in payload', { key, result: !!result });
     return result;
-  } else if (nuxtApp.payload.data && keys(nuxtApp.payload.data).includes(key)) {
-    const result = (destr<TPayload>(nuxtApp.payload.data[key])) ?? null;
-    logger.debug(`get payload - key in payload.data, key=${key}, result=${!!result}`);
+  } else if (nuxtPayload.data && keys(nuxtPayload.data).includes(key)) {
+    const result = (destr<TPayload>(nuxtPayload.data[key])) ?? null;
+    logger.debug('get - key in payload.data', { key, result: !!result });
     return result;
   }
 
-  logger.debug(`get payload - not present, key=${key}`);
+  logger.debug('get - not present', key);
   return undefined;
 }

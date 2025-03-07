@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 
 import { DefaultUserAvatarSlug, ImageCategory, type IImageEntitySrc, getI18nResName2 } from '@golobe-demo/shared';
 import EditableImage from './../images/editable-image.vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey
 }
 const { ctrlKey } = defineProps<IProps>();
 
@@ -14,7 +15,7 @@ const userAvatarImage = useTemplateRef('avatar-image');
 const userAccountStore = useUserAccountStore();
 const userAccount = await userAccountStore.getUserAccount();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'AvatarBox' });
 
 const imageSrc = ref(userAccount.avatar
   ? { slug: userAccount.avatar!.slug, timestamp: userAccount.avatar!.timestamp }
@@ -23,36 +24,36 @@ const imageSrc = ref(userAccount.avatar
 
 function checkImageSrcDiffers(firstSrc: IImageEntitySrc | undefined, secondSrc: IImageEntitySrc | undefined): boolean {
   if(!firstSrc && !secondSrc) {
-    logger.debug(`(UserAvatar) image src are the same, ctrlKey=${ctrlKey}, first=${JSON.stringify(firstSrc)}, second=${JSON.stringify(secondSrc)}`);
+    logger.debug('image src are the same (empty', { ctrlKey, first: firstSrc, second: secondSrc });
     return false;
   }
 
   if(firstSrc?.slug !== secondSrc?.slug) {
-    logger.debug(`(UserAvatar) image src slugs differ, ctrlKey=${ctrlKey}, first=${JSON.stringify(firstSrc)}, second=${JSON.stringify(secondSrc)}`);
+    logger.debug('image src slugs differ', { ctrlKey, first: firstSrc, second: secondSrc });
     return true;
   }
 
   if(firstSrc?.timestamp !== secondSrc?.timestamp) {
-    logger.debug(`(UserAvatar) image src timestamps differ, ctrlKey=${ctrlKey}, first=${JSON.stringify(firstSrc)}, second=${JSON.stringify(secondSrc)}`);
+    logger.debug('image src timestamps differ', { ctrlKey, first: firstSrc, second: secondSrc });
     return true;
   }
 
-  logger.debug(`(UserAvatar) image src are the same, ctrlKey=${ctrlKey}, first=${JSON.stringify(firstSrc)}, second=${JSON.stringify(secondSrc)}`);
+  logger.debug('image src are the same', { ctrlKey, first: firstSrc, second: secondSrc });
   return false;
 }
 
 watch(userAccount, () => {
-  logger.debug(`(UserAvatar) user account watch handler, ctrlKey=${ctrlKey}`);
+  logger.debug('user account watch handler', ctrlKey);
   if (userAccount.avatar && checkImageSrcDiffers(imageSrc.value, userAccount.avatar)) {
-    logger.verbose(`(UserAvatar) user image changed, ctrlKey=${ctrlKey}`);
+    logger.verbose('user avatar changed', ctrlKey);
     userAvatarImage.value?.setImage(userAccount.avatar!);
   }
 });
 
 watch(imageSrc, () => {
-  logger.debug(`(UserAvatar) edit image watch handler, ctrlKey=${ctrlKey}, editSlug=${imageSrc.value?.slug}`);
+  logger.debug('edit image watch handler', { ctrlKey, editSlug: imageSrc.value?.slug });
   if (imageSrc.value && checkImageSrcDiffers(imageSrc.value, userAccount.avatar)) {
-    logger.verbose(`(UserAvatar) user image changed, ctrlKey=${ctrlKey}`);
+    logger.verbose('user image changed', ctrlKey);
     userAccountStore.notifyUserAccountChanged({
       avatar: {
         slug: imageSrc.value.slug,
@@ -64,7 +65,7 @@ watch(imageSrc, () => {
 
 onMounted(() => {
   if (userAccount.avatar && checkImageSrcDiffers(imageSrc.value, userAccount.avatar)) {
-    logger.verbose(`(UserAvatar) setting up initial image, ctrlKey=${ctrlKey}, editSlug=${imageSrc.value?.slug}, newSlug=${userAccount.avatar?.slug}`);
+    logger.verbose('setting up initial image', { ctrlKey, editSlug: imageSrc.value?.slug, newSlug: userAccount.avatar?.slug });
     userAvatarImage.value!.setImage(userAccount.avatar!);
   }
 });
@@ -79,7 +80,7 @@ onMounted(() => {
     ref="avatar-image"
     v-model:entity-src="imageSrc"
     :category="ImageCategory.UserAvatar"
-    ctrl-key="userAvatar"
+    :ctrl-key="[...ctrlKey, 'EditableImg']"
     sizes="xs:50vw sm:30vw md:20vw lg:10vw xl:10vw"
     :fill-alpha="false"
     :show-stub="false"

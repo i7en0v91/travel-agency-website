@@ -3,6 +3,7 @@ import { defaultErrorHandler } from '../helpers/exceptions';
 import castArray from 'lodash-es/castArray';
 import omit from 'lodash-es/omit';
 import { getCommonServices } from '../helpers/service-accessors';
+import { getActivePinia } from 'pinia';
 
 export default defineNuxtPlugin((nuxtApp) => {
   nuxtApp.vueApp.config.errorHandler = (err : any, _, info : string) => {
@@ -11,13 +12,14 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
 
     const logger = getCommonServices().getLogger();
-    logger.error('(nuxtApp.vueApp.config.exceptionHandler) ' + info, wrapExceptionIfNeeded(err));
+    const CommonLogProps = { component: 'NuxtVueApp' };
+    logger.error(info, wrapExceptionIfNeeded(err), CommonLogProps);
 
     if (import.meta.client && err.errorHelmed) {
       // error has been already processed by ErrorHelm component
       return;
     }
-    defaultErrorHandler(err);
+    defaultErrorHandler(err, { nuxtApp: nuxtApp as any });
   };
 
   nuxtApp.vueApp.config.warnHandler = (msg : string, _, trace : string) => {
@@ -26,7 +28,8 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
 
     const logger = getCommonServices().getLogger();
-    logger.warn(`(nuxtApp.vueApp.config.warnHandler): ${msg}; trace: ${trace}`);
+    const CommonLogProps = { component: 'NuxtVueApp' };
+    logger.warn(msg + 'trace: ' + trace, undefined, CommonLogProps);
   };
 
   nuxtApp.hook('vue:error', (err : any, _, info : string) => {
@@ -35,13 +38,14 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
 
     const logger = getCommonServices().getLogger();
-    logger.error('(nuxtApp.hook vue:exception) ' + info, wrapExceptionIfNeeded(err));
+    const CommonLogProps = { component: 'Vue' };
+    logger.error(info, wrapExceptionIfNeeded(err), CommonLogProps);
 
     if (import.meta.client && err.errorHelmed) {
       // error has been already processed by ErrorHelm component
       return;
     }
-    defaultErrorHandler(err);
+    defaultErrorHandler(err, { nuxtApp: nuxtApp as any });
   });
 
   nuxtApp.hook('app:chunkError', (err: any) => {
@@ -50,7 +54,8 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
 
     const logger = getCommonServices().getLogger();
-    logger.error('(app:chunkError) app error occured', wrapExceptionIfNeeded(err));
+    const CommonLogProps = { component: 'NuxtApp' };
+    logger.error('chunk error occured', wrapExceptionIfNeeded(err), CommonLogProps);
   });
 
   nuxtApp.hook('app:error', (err: any) => {
@@ -59,9 +64,10 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
     
     const logger = getCommonServices().getLogger();
-    logger.error('(app:error) error occured', wrapExceptionIfNeeded(err));
+    const CommonLogProps = { component: 'NuxtApp' };
+    logger.error('nuxt app error occured', wrapExceptionIfNeeded(err), CommonLogProps);
 
-    defaultErrorHandler(err);
+    defaultErrorHandler(err, { nuxtApp: nuxtApp as any });
   });
 
   nuxtApp.hook('dev:ssr-logs', (logs) => {
@@ -69,6 +75,7 @@ export default defineNuxtPlugin((nuxtApp) => {
       return;
     }
 
+    const CommonLogProps = { component: 'NuxtDevSsrLogs' };
     const logger = getCommonServices().getLogger();
     try {
       for (let i = 0; i < logs.length; i++) {
@@ -78,38 +85,63 @@ export default defineNuxtPlugin((nuxtApp) => {
         const args = logItem.args;
         const stack = args.filter(arg => !!arg?.stack).map(s => JSON.stringify(s)).join(';;;\r\n');
         const msgText = `${logItem.message ?? (logItem.args as any)?.msg ?? ''} ${logItem.additional ? castArray(logItem.additional).join(', ') : ''}`;
-        const fullMsg = `(dev:ssr-logs) [server-side] ${msgText}`;
+        const fullMsg = `[server-side] ${msgText}`;
         if (checkNeedSuppressVueMsg(msgText, stack, undefined) || checkNeedSuppressServerMsg(msgText, undefined)) {
           return;
         }
 
         switch (level) {
           case 'debug':
-            logger.debug(fullMsg, logItem.args);
+            logger.debug(fullMsg, { ...CommonLogProps, ...logItem.args });
             break;
           case 'verbose':
-            logger.verbose(fullMsg, logItem.args);
+            logger.verbose(fullMsg, { ...CommonLogProps, ...logItem.args });
             break;
           case 'info':
-            logger.info(fullMsg, logItem.args);
+            logger.info(fullMsg, { ...CommonLogProps, ...logItem.args });
             break;
           case 'warn':
-            logger.warn(fullMsg, new Error('an error occured'), omit(logItem.args, ['msg']));
+            logger.warn(fullMsg, new Error('an error occured'), { ...CommonLogProps, ...omit(logItem.args, ['msg']) } );
             break;
           case 'error':
-            logger.error(fullMsg, new Error('an error occured'), omit(logItem.args, ['msg']));
+            logger.error(fullMsg, new Error('an error occured'), { ...CommonLogProps, ...omit(logItem.args, ['msg']) } );
             break;
         }
       }
     } catch (err: any) {
-      logger.error(`(nuxt:dev) error occured when processing nuxt dev logs, logsObj=${JSON.stringify(logs)}`, err);
+      logger.error(`error occured when processing nuxt dev logs`, err, { ...CommonLogProps, logs });
     }
   });
 
   (nuxtApp.$i18n as any).onBeforeLanguageSwitch = (oldLocale: string, newLocale: string) => {
     const logger = getCommonServices().getLogger();
-    logger.info(`(onBeforeLanguageSwitch) from ${oldLocale}, to ${newLocale}`);
+    const CommonLogProps = { component: 'I18n' };
+    logger.info(`onBeforeLanguageSwitch`, { ...CommonLogProps, from: oldLocale, to: newLocale });
   };
 
-  
+  const pinia = getActivePinia();
+  if(pinia) {
+    pinia?.use(({ store }) => {
+      store.$onAction(({
+        name,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        store,
+        args,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        after,
+        onError,
+      }) => {
+        onError((error) => {
+          if(error) {
+            store.getLogger().warn(`action failed`, error, { action: name, args });
+            defaultErrorHandler(error, { nuxtApp: nuxtApp as any });
+          }
+        });
+      });
+    });
+  } else {
+    const CommonLogProps = { component: 'PiniaPlugins' };
+    const logger = getCommonServices().getLogger();
+    logger.error('failed to install error logging hooks for stores, pinia instance not available', CommonLogProps);
+  }  
 });

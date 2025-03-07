@@ -81,7 +81,7 @@ export class AcsysClientAdministrator extends AcsysClientStandard implements IAc
   };
 
   findViewInfo = async (sourceCollection: SourceCollection): Promise<IViewInfo | undefined> => {
-    this.logger.verbose(`(AcsysClientAdministrator) find view info, sourceCollection=${sourceCollection.valueOf()}`);
+    this.logger.verbose('find view info', { sourceCollection: sourceCollection.valueOf() });
 
     const queryParams = {
       table: AcsysTableLogicalContent,
@@ -90,22 +90,23 @@ export class AcsysClientAdministrator extends AcsysClientStandard implements IAc
 
     const fetchResult = await this.fetch<ApiResponseTypes.json, ViewInfoResponseDto[]>(RouteReadData, queryParams, undefined, 'GET', UserRoleEnum.Administrator, true, ApiResponseTypes.json, undefined);
     if(fetchResult.length === 0) {
-      this.logger.verbose(`(AcsysClientAdministrator) view not found, sourceCollection=${sourceCollection.valueOf()}`);
+      this.logger.verbose('view not found', { sourceCollection: sourceCollection.valueOf() });
       return undefined;
     }
     const uniqueItems = uniqBy(fetchResult, (i) => i.acsys_id);
     if(uniqueItems.length > 1) {
-      this.logger.warn(`(AcsysClientAdministrator) too much views, sourceCollection=${sourceCollection.valueOf()}, all ids=[${(uniqueItems.map(f => f.acsys_id)).join('; ')}]`);
+      const allIds = uniqueItems.map(f => f.acsys_id);
+      this.logger.warn('too much views', undefined, { sourceCollection: sourceCollection.valueOf(), ids: allIds });
       throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'Too much views found', 'error-page');
     }
 
     const result = this.mapViewInfoDto(uniqueItems[0], sourceCollection);
-    this.logger.verbose(`(AcsysClientAdministrator) view found, sourceCollection=${sourceCollection.valueOf()}, viewId=${result.id}`);
+    this.logger.verbose('view found', { sourceCollection: sourceCollection.valueOf(), viewId: result.id });
     return result;
   };
 
   getViewDisplayProps = async (viewId: EntityId): Promise<IViewDisplayProps> => {
-    this.logger.verbose(`(AcsysClientAdministrator) get view display props, viewId=${viewId}`);
+    this.logger.verbose('get view display props', viewId);
 
     const queryParams = {
       table: AcsysTableViews,
@@ -113,23 +114,23 @@ export class AcsysClientAdministrator extends AcsysClientStandard implements IAc
     };
     const fetchResult = await this.fetch<ApiResponseTypes.json, ViewDisplayPropsDto[]>(RouteReadData, queryParams, undefined, 'GET', UserRoleEnum.Administrator, true, ApiResponseTypes.json, undefined);
     if(fetchResult.length === 0) {
-      this.logger.warn(`(AcsysClientAdministrator) view display props not found, viewId=${viewId}`);
+      this.logger.warn('view display props not found', undefined, viewId);
       throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'Acsys view not found', 'error-page');
     }
     const uniqueItems = uniqBy(fetchResult, (i) => i.acsys_id);
     if(uniqueItems.length > 1) {
-      this.logger.warn(`(AcsysClientAdministrator) too much view display props found, viewId=${viewId}`);
+      this.logger.warn('too much view display props found', undefined, viewId);
       throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'Too much views found', 'error-page');
     }
 
     const result = this.mapViewDisplayPropsDto(uniqueItems[0]);
-    this.logger.verbose(`(AcsysClientAdministrator) view display props found, viewId=${viewId}`, result);
+    this.logger.verbose('view display props found', viewId);
     
     return result;
   };
 
   setViewDisplayProps = async (viewId: EntityId, props: IViewDisplayProps): Promise<void> => {
-    this.logger.verbose(`(AcsysClientAdministrator) set view display props, viewId=${viewId}`, props);
+    this.logger.verbose('set view display props', viewId);
 
     const body: SetViewDisplayPropsDto = {
       table: AcsysTableViews,
@@ -140,15 +141,15 @@ export class AcsysClientAdministrator extends AcsysClientStandard implements IAc
     const fetchResult = await this.fetch<ApiResponseTypes.text, string>(RouteUpdateData, undefined, body, 'POST', UserRoleEnum.Administrator, true, ApiResponseTypes.text, SetViewDisplayPropsDtoSchema);
     const isSuccess = fetchResult.toLowerCase() === 'true';
     if(!isSuccess) {
-      this.logger.warn(`(AcsysClientAdministrator) failed to set view display props, viewId=${viewId}, response=${fetchResult}`, props);
+      this.logger.warn('failed to set view display props', undefined, { viewId, response: fetchResult });
       throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'failed to set view display props', 'error-page');
     }
 
-    this.logger.verbose(`(AcsysClientAdministrator) view display props set, viewId=${viewId}`, props);
+    this.logger.verbose('view display props set', viewId);
   };
 
   getDropDownColumnValues = async(viewId: EntityId, columnId: EntityId): Promise<string[] | undefined> => {
-    this.logger.debug(`(AcsysClientAdministrator) get dropdown column values, viewId=${viewId}, columnId=${columnId}`);
+    this.logger.debug('get dropdown column values', { viewId, columnId });
 
     const queryParams = {
       table: AcsysTableDetailsDropdown,
@@ -157,20 +158,20 @@ export class AcsysClientAdministrator extends AcsysClientStandard implements IAc
     const fetchResult = await this.fetch<ApiResponseTypes.json, GetDropdownValuesDto[]>(RouteReadData, queryParams, undefined, 'GET', UserRoleEnum.Administrator, true, ApiResponseTypes.json, undefined);
     let result: string[] | undefined;
     if(fetchResult.length === 0) {
-      this.logger.verbose(`(AcsysClientAdministrator) dropdown column values response empty, viewId=${viewId}, columnId=${columnId}`);
+      this.logger.verbose('dropdown column values response empty', { viewId, columnId });
     } else if(fetchResult.length > 1) {
-      this.logger.warn(`(AcsysClientAdministrator) too much dropdown column value dtos in reponse, viewId=${viewId}, columnId=${columnId}`);
+      this.logger.warn('too much dropdown column value dtos in reponse', undefined, { viewId, columnId });
       throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'Too much dropdown column values found', 'error-page');
     } else {
       result = (fetchResult[0].field ?? '').split(',');
     }
 
-    this.logger.debug(`(AcsysClientAdministrator) dropdown column values obtained, viewId=${viewId}, columnId=${columnId}, result=[${result?.join(',') ?? ''}]`);
+    this.logger.debug('dropdown column values obtained', { viewId, columnId, result });
     return result;
   };
 
   setDropDownColumnValues = async (viewId: EntityId, columnId: EntityId, columnName: string, values: string[]): Promise<void> => {
-    this.logger.debug(`(AcsysClientAdministrator) set dropdown column values, viewId=${viewId}, columnId=${columnId}, columnName=${columnName}, values=${values.join(',')}`);
+    this.logger.debug('set dropdown column values', { viewId, columnId, columnName, values });
 
     const isUpdate = (await this.getDropDownColumnValues(viewId, columnId)) !== undefined;
 
@@ -194,15 +195,15 @@ export class AcsysClientAdministrator extends AcsysClientStandard implements IAc
     const fetchResult = await this.fetch<ApiResponseTypes.text, string>(isUpdate ? RouteUpdateData : RouteInsertData, undefined, body, 'POST', UserRoleEnum.Administrator, true, ApiResponseTypes.text, EditDropdownValuesDtoSchema);
     const isSuccess = fetchResult.toLowerCase() === 'true';
     if(!isSuccess) {
-      this.logger.warn(`(AcsysClientAdministrator) failed to set dropdown column values, viewId=${viewId}, columnId=${columnId}, columnName=${columnName}, values=${values.join(',')}, response=${fetchResult}`);
+      this.logger.warn('failed to set dropdown column values', undefined, { viewId, columnId, columnName, response: fetchResult });
       throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'failed to set dropdown column values', 'error-page');
     }
 
-    this.logger.debug(`(AcsysClientAdministrator) dropdown column values have been set, viewId=${viewId}, columnId=${columnId}, columnName=${columnName}, values=${values.join(',')}`);
+    this.logger.debug('dropdown column values have been set', { viewId, columnId, columnName });
   };
 
   getViewColumnSettings = async (viewId: EntityId): Promise<IViewColumnSettings[]> => {
-    this.logger.verbose(`(AcsysClientAdministrator) get view column settings, viewId=${viewId}`);
+    this.logger.verbose('get view column settings', viewId);
 
     const queryParams = {
       table: AcsysTableDocumentDetails,
@@ -213,7 +214,7 @@ export class AcsysClientAdministrator extends AcsysClientStandard implements IAc
 
     const dropdownColumns = new Map<EntityId, string[]>();
 
-    this.logger.debug(`(AcsysClientAdministrator) checking dropdown column settings, viewId=${viewId}`);
+    this.logger.debug('checking dropdown column settings', viewId);
     const dropdownColumnDtos = fetchResult.filter(c => c.control === FieldEditControl.DropDown.valueOf());
     for(let i = 0; i < dropdownColumnDtos.length; i++) {
       const columnId = dropdownColumnDtos[i].acsys_id;
@@ -226,18 +227,18 @@ export class AcsysClientAdministrator extends AcsysClientStandard implements IAc
       const columnId = columnDto.acsys_id;
       return this.mapViewColumnDetailsDto(columnDto, isDropdown ? dropdownColumns.get(columnId) : undefined);
     });
-    this.logger.verbose(`(AcsysClientAdministrator) view column settings obtained, viewId=${viewId}, count=${result.length}`);
+    this.logger.verbose('view column settings obtained', { viewId, count: result.length });
     return result;
   };
 
   setViewColumnSettings = async (viewId: EntityId, sourceCollection: SourceCollection, settings: Omit<IViewColumnSettings, 'id'>[]): Promise<void> => {
-    this.logger.verbose(`(AcsysClientAdministrator) set view column settings, viewId=${viewId}, sourceCollection=${sourceCollection.valueOf()}, count=${settings.length}`);
+    this.logger.verbose('set view column settings', { viewId, sourceCollection: sourceCollection.valueOf(), count: settings.length });
 
-    this.logger.debug(`(AcsysClientAdministrator) obtaining view's current column ids list, viewId=${viewId}`);
+    this.logger.debug('obtaining view', viewId);
     const currentColumns = (await this.getViewColumnSettings(viewId));
 
     if(currentColumns.length) {
-      this.logger.debug(`(AcsysClientAdministrator) removing view's current column list, viewId=${viewId}, sourceCollection=${sourceCollection.valueOf()}, count=${currentColumns.length}`);
+      this.logger.debug('removing view', { viewId, sourceCollection: sourceCollection.valueOf(), count: currentColumns.length });
       const body: DeleteDataDto = {
         table: AcsysTableDocumentDetails,
         entry: [[AcsysTableContentIdColumn, '=', viewId]]
@@ -246,41 +247,41 @@ export class AcsysClientAdministrator extends AcsysClientStandard implements IAc
       const fetchResult = await this.fetch<ApiResponseTypes.text, string>(RouteDeleteData, undefined, body, 'POST', UserRoleEnum.Administrator, true, ApiResponseTypes.text, DeleteDataDtoSchema);
       const isSuccess = fetchResult.toLowerCase() === 'true';
       if(!isSuccess) {
-        this.logger.warn(`(AcsysClientAdministrator) failed to remove view's columns list, viewId=${viewId}, sourceCollection=${sourceCollection.valueOf()}, response=${fetchResult}, reqDto=${JSON.stringify(body)}`);
+        this.logger.warn('failed to remove view', undefined, { viewId, sourceCollection: sourceCollection.valueOf(), response: fetchResult, reqDto: body });
         throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'failed to remove view column settigns', 'error-page');
       }
 
-      this.logger.debug(`(AcsysClientAdministrator) view's current column list removed, viewId=${viewId}, sourceCollection=${sourceCollection.valueOf()}, count=${currentColumns.length}`);
+      this.logger.debug('view', { viewId, sourceCollection: sourceCollection.valueOf(), count: currentColumns.length });
     }
 
     if(!settings.length) {
-      this.logger.verbose(`(AcsysClientAdministrator) view column settings were set, viewId=${viewId}, sourceCollection=${sourceCollection.valueOf()}, count=${settings.length}`);
+      this.logger.verbose('view column settings were set', { viewId, sourceCollection: sourceCollection.valueOf(), count: settings.length });
       return;
     }
 
     for(let i = 0; i < settings.length; i++) {
-      this.logger.debug(`(AcsysClientAdministrator) adding view's column settings, viewId=${viewId}, sourceCollection=${sourceCollection.valueOf()}, column=${settings[i].name}, settings=${JSON.stringify(settings[i])}`);
+      this.logger.debug('adding view', { viewId, sourceCollection: sourceCollection.valueOf(), column: settings[i].name, settings: settings[i] });
       const body: AddViewColumnDetailsDto = this.mapAddViewColumnDetails(settings[i], viewId, sourceCollection);
       
       const fetchResult = await this.fetch<ApiResponseTypes.json, any>(RouteInsertWithUid, undefined, body, 'POST', UserRoleEnum.Administrator, true, ApiResponseTypes.json, AddViewColumnDetailsDtoSchema);
       const isSuccessfull = fetchResult?.status === true;
       const columnId = fetchResult.fields?.find((f: { field: string; }) => f.field === AcsysTableIdColumn)?.value;
       if(!isSuccessfull || !columnId) {
-        this.logger.warn(`(AcsysClientAdministrator) failed to add view column settings, viewId=${viewId}, sourceCollection=${sourceCollection.valueOf()}, column=${settings[i].name}, response=${JSON.stringify(fetchResult)}`);
+        this.logger.warn('failed to add view column settings', undefined, { viewId, sourceCollection: sourceCollection.valueOf(), column: settings[i].name, response: fetchResult });
         throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'failed to set view display props', 'error-page');
       }
       if(settings[i].dropdownValues?.length) {        
         await this.setDropDownColumnValues(viewId, columnId, settings[i].name, settings[i].dropdownValues!);
       }
 
-      this.logger.debug(`(AcsysClientAdministrator) view's column settings added, viewId=${viewId}, sourceCollection=${sourceCollection.valueOf()}, column=${settings[i].name}`);
+      this.logger.debug('view', { viewId, sourceCollection: sourceCollection.valueOf(), column: settings[i].name });
     }
     
-    this.logger.verbose(`(AcsysClientAdministrator) view column settings were set, viewId=${viewId}, sourceCollection=${sourceCollection.valueOf()} count=${settings.length}`);
+    this.logger.verbose('view column settings were set', { viewId, sourceCollection: sourceCollection.valueOf(), count: settings.length });
   };
 
   createView = async (sourceCollection: SourceCollection, name: string, description: string): Promise<EntityId> => {
-    this.logger.verbose(`(AcsysClientAdministrator) creating view, sourceCollection=${sourceCollection.valueOf()}, name=${name}`);
+    this.logger.verbose('creating view', { sourceCollection: sourceCollection.valueOf(), name });
 
     const bodyDto: CreateViewDto = {
       collection: sourceCollection.valueOf(),
@@ -290,23 +291,23 @@ export class AcsysClientAdministrator extends AcsysClientStandard implements IAc
     const fetchResult = await this.fetch<ApiResponseTypes.json, any>(RouteCreateView, undefined, bodyDto, 'POST', UserRoleEnum.Administrator, true, ApiResponseTypes.json, CreateViewDtoSchema);
     const isSuccessfull = fetchResult?.status === 'success';
     if(!isSuccessfull) {
-      this.logger.warn(`(AcsysClientAdministrator) failed to create view, sourceCollection=${sourceCollection.valueOf()}, name=${name}, response=${JSON.stringify(fetchResult)}`);
+      this.logger.warn('failed to create view', undefined, { sourceCollection: sourceCollection.valueOf(), name, response: fetchResult });
       throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'failed to create view', 'error-page');
     }
 
-    this.logger.debug(`(AcsysClientAdministrator) obtaining created view's id, sourceCollection=${sourceCollection.valueOf()}, name=${name}`);
+    this.logger.debug('obtaining created view', { sourceCollection: sourceCollection.valueOf(), name });
     const viewInfo = await this.findViewInfo(sourceCollection);
     if(!viewInfo) {
-      this.logger.warn(`(AcsysClientAdministrator) created view not found, sourceCollection=${sourceCollection.valueOf()}, name=${name}`);
+      this.logger.warn('created view not found', undefined, { sourceCollection: sourceCollection.valueOf(), name });
       throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'failed to create view', 'error-page');
     }
 
-    this.logger.verbose(`(AcsysClientAdministrator) view created, sourceCollection=${sourceCollection.valueOf()}, name=${name}, viewId=${viewInfo.id}`);
+    this.logger.verbose('view created', { sourceCollection: sourceCollection.valueOf(), name, viewId: viewInfo.id });
     return viewInfo.id;
   };
 
   createUser = async (userData: UserData): Promise<'created' | 'exists'> => {
-    this.logger.info(`(AcsysClientAdministrator) creating user`, omit(userData, 'password'));
+    this.logger.info('creating user');
 
     const bodyDto: CreateUserDto = {
       data: {
@@ -321,18 +322,18 @@ export class AcsysClientAdministrator extends AcsysClientStandard implements IAc
 
     const exists = fetchResult?.message === 'Email already in use.' || fetchResult?.message === 'Username already in use.';
     if(exists) {
-      this.logger.info(`(AcsysClientAdministrator) user already exists, username=${userData.username}`, omit(userData, 'password'));  
+      this.logger.info('user already exists', { username: userData.username });  
       return 'exists';
     }
 
     const resultText = JSON.stringify(fetchResult);
     const isSuccess = resultText.toLowerCase() === 'true';
     if(!isSuccess) {
-      this.logger.warn(`(AcsysClientAdministrator) failed to create user, response=${resultText}`, omit(userData, 'password'));
+      this.logger.warn('failed to create user', undefined, { response: resultText });
       throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'failed to create user', 'error-page');
     }
 
-    this.logger.info(`(AcsysClientAdministrator) user created, acsys_id=${fetchResult.acsys_id}`, omit(userData, 'password'));
+    this.logger.info('user created', { acsysId: fetchResult.acsys_id });
     return 'created';
   };
 }

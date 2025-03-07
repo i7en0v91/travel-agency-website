@@ -7,13 +7,13 @@ import { getServerSession } from '#auth';
 import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
   const staysLogic = getServerServices()!.getStaysLogic();
 
   const stayParam = getRouterParams(event)?.id?.toString() ?? '';
   const stayId: EntityId | undefined = stayParam;
   if(!(stayId?.length ?? 0)) {
-    logger.warn(`(api:stay-reviews-delete) stay id parameter was not specified: param=${stayParam}`);
+    logger.warn('stay id parameter was not specified', undefined, { param: stayParam });
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
       'failed to parse stay id parameter',
@@ -24,7 +24,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   const authSession = await getServerSession(event);
   const userId = extractUserIdFromSession(authSession);
   if (!userId) {
-    logger.warn(`(api:stay-reviews-delete) unauthorized attempt: stayId=${stayId}`);
+    logger.warn('unauthorized attempt', undefined, stayId);
     throw new AppException(
       AppExceptionCodeEnum.FORBIDDEN,
       'only authorized users can edit stay\'s reviews',

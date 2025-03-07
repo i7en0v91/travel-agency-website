@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { AppPage, getI18nResName3, getI18nResName2, type IImageEntitySrc, type ILocalizableValue, ImageCategory, type Locale } from '@golobe-demo/shared';
+import type { ControlKey } from './../../../helpers/components';
+import { AppPage, getI18nResName3, type IImageEntitySrc, type ILocalizableValue, ImageCategory, type Locale } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   bookKind: 'flight' | 'stay',
   cityName?: ILocalizableValue,
   promoLine?: ILocalizableValue,
@@ -70,8 +71,8 @@ const uiStyling = {
     </UCard>
     <div class="rounded-xl row-start-1 row-end-2 col-start-1 col-end-2 w-auto h-full z-[2] bg-gradient-to-t from-black to-gray-600 via-75% via-transparent opacity-40 " />
     <StaticImage
-      :ctrl-key="`${ctrlKey}-CityImage`"
-      :entity-src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
+      :ctrl-key="[...ctrlKey, 'StaticImg', 'City']"
+      :src="imgSrc ? { slug: imgSrc.slug, timestamp: imgSrc.timestamp } : undefined"
       :category="ImageCategory.CityCard"
       sizes="xs:90vw sm:80vw md:60vw lg:50vw xl:50vw"
       :ui="{ 
@@ -79,8 +80,8 @@ const uiStyling = {
         img: 'rounded-xl object-cover',
         stub: 'rounded-xl'
       }"
-      :alt-res-name="getI18nResName2('travelDetails', 'travelImgAlt')"
-      :show-stub="true"
+      :alt="{ resName: getI18nResName3('indexPage', 'companyReviewSection', 'imgAlt') }"
+      stub="default"
     />
   </div>
 </template>

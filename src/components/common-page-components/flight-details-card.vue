@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { type Locale, getLocalizeableValue, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, getValueForFlightDurationFormatting, extractAirportCode, getI18nResName2, getI18nResName3, type EntityDataAttrsOnly, type ICity, ImageCategory, type ILocalizableValue, type IAirlineCompany } from '@golobe-demo/shared';
 import type { Decimal } from 'decimal.js';
 import FlightPlane from '~/public/img/flight-transition.svg';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   departCity?: EntityDataAttrsOnly<ICity>,
   arriveCity?: EntityDataAttrsOnly<ICity>,
   departTimeUtc?: Date,
@@ -80,14 +81,14 @@ const uiStyling = {
             <div class="w-full h-auto px-2">
               <div class="w-fit max-w-[80vw] flex flex-row flex-wrap items-center px-4 sm:px-6 py-4 pl-0 sm:pl-0 h-min ring-1 ring-gray-400 dark:ring-gray-500 rounded-xl">
                 <StaticImage
-                  :ctrl-key="`${ctrlKey}-CompanyLogo`"
+                  :ctrl-key="[...ctrlKey, 'StaticImg', 'CompanyLogo']"
                   :ui="{ wrapper: 'm-4 sm:m-6 w-16 h-16 min-w-16 min-h-16', img: 'object-cover' }"
-                  :entity-src="airlineCompany?.logoImage"
+                  :src="airlineCompany?.logoImage"
                   :category="ImageCategory.AirlineLogo"
-                  :show-stub="false"
+                  :stub="false"
                   :request-extra-display-options="true"
                   sizes="xs:30vw sm:30vw md:20vw lg:20vw xl:20vw"
-                  :alt-res-name="getI18nResName2('searchFlights', 'airlineCompanyLogoAlt')"
+                  :alt="{ resName: getI18nResName2('searchFlights', 'airlineCompanyLogoAlt') }"
                 />
                 <div class="flex-auto w-auto h-full flex flex-col flex-nowrap gap-3 justify-center items-start ml-4">
                   <div v-if="airlineCompany" class="block w-auto h-auto break-words text-2xl font-semibold text-primary-900 dark:text-white">
@@ -105,7 +106,7 @@ const uiStyling = {
           
           <div class="flex-1 min-w-36 max-w-56 w-full h-auto mt-4 px-4 ">
             <ul class="w-full h-auto grid grid-flow-row auto-rows-auto grid-cols-flightofferfeatures gap-4">
-              <li v-for="icon in featureIcons" :key="`${ctrlKey}-Feature-${icon}`">
+              <li v-for="icon in featureIcons" :key="`${toShortForm(ctrlKey)}-Feature-${icon}`">
                 <UIcon :name="icon" class="w-6 h-6 inline-block bg-gray-900 dark:bg-white"/>
               </li>
             </ul>

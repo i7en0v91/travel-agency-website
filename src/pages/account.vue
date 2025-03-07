@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { UserAccountTabGroup, UserAccountTabAccount, UserAccountTabHistory, UserAccountTabPayments, LocatorClasses } from './../helpers/constants';
+import { UserAccountPageCtrlKey, UserAccountTabGroup, UserAccountTabAccount, UserAccountTabHistory, UserAccountTabPayments, LocatorClasses } from './../helpers/constants';
+import type { ControlKey } from './../helpers/components';
 import AvatarBox from './../components/user-account/avatar-box.vue';
 import UserCover from './../components/user-account/user-cover.vue';
 import TabsGroup from '../components/forms/tabs-group.vue';
@@ -17,7 +18,7 @@ useOgImage();
 const userAccountStore = useUserAccountStore();
 const userAccount = await userAccountStore.getUserAccount();
 
-const selectedTab = ref<string | undefined>();
+const selectedTab = ref<ControlKey | undefined>();
 
 const paymentsTabReady = ref(false);
 const historyTabReady = ref(false);
@@ -29,18 +30,20 @@ const primaryEmail = computed(() => {
     : undefined;
 });
 
+const CtrlKey = UserAccountPageCtrlKey;
+
 </script>
 
 <template>
-  <PageSection ctrl-key="UserAccountSection" :spaced="false">
+  <PageSection :ctrl-key="[...CtrlKey, 'PageSection']" :spaced="false">
     <ClientOnly>
       <div :class="LocatorClasses.UserAccountPage">
         <div class="w-full grid grid-rows-1 grid-cols-1 profile-images pb-[40px] sm:pb-[60px]">
           <div class="w-full h-auto z-[1] row-start-1 row-end-2 col-start-1 col-end-2">
-            <UserCover ctrl-key="userCover" />
+            <UserCover :ctrl-key="[...CtrlKey, 'UserCover']" />
           </div>
           <div class="pointer-events-none w-full h-auto self-end z-[2] row-start-1 row-end-2 col-start-1 col-end-2 md:*:mx-auto">
-            <AvatarBox ctrl-key="avatarBox" class="*:pointer-events-auto ml-2 sm:ml-6 md:ml-0 translate-y-[40px] sm:translate-y-[60px]" />
+            <AvatarBox :ctrl-key="[...CtrlKey, 'Avatar']" class="*:pointer-events-auto ml-2 sm:ml-6 md:ml-0 translate-y-[40px] sm:translate-y-[60px]" />
           </div>
         </div>
         <div class="w-full flex flex-col flex-nowrap items-center mt-4">
@@ -69,30 +72,30 @@ const primaryEmail = computed(() => {
             variant="split"
           >
             <template #account>
-              <ComponentWaitingIndicator v-if="!accountTabReady" ctrl-key="accountPageContentWaiter" />
+              <ComponentWaitingIndicator v-if="!accountTabReady" :ctrl-key="[...CtrlKey, 'Waiter']" />
               <div class="p-4 sm:p-6 rounded-xl bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-700 mt-2 sm:mt-4" :style="{ display: accountTabReady ? 'block' : 'none' }">
-                <TabAccount  v-model:ready="accountTabReady" ctrl-key="userAccountTabAccount" />
+                <TabAccount  v-model:ready="accountTabReady" :ctrl-key="UserAccountTabAccount" />
               </div>
             </template>
 
             <template #history>
-              <ComponentWaitingIndicator v-if="!historyTabReady" ctrl-key="accountPageContentWaiter" />
+              <ComponentWaitingIndicator v-if="!historyTabReady" :ctrl-key="[...CtrlKey, 'Waiter']" />
               <div class="w-full h-auto mt-2 sm:mt-4" :style="{ display: historyTabReady ? 'block' : 'none' }">
-                <TabHistory  v-model:ready="historyTabReady" ctrl-key="userAccountTabHistory" />
+                <TabHistory  v-model:ready="historyTabReady" :ctrl-key="UserAccountTabHistory" />
               </div>
             </template>
 
             <template #payments>
-              <ComponentWaitingIndicator v-if="!paymentsTabReady" ctrl-key="accountPageContentWaiter" />
+              <ComponentWaitingIndicator v-if="!paymentsTabReady" :ctrl-key="[...CtrlKey, 'Waiter']" />
               <div class="p-4 sm:p-6 rounded-xl bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-700 mt-2 sm:mt-4" :style="{ display: paymentsTabReady ? 'block' : 'none' }">
-                <TabPayments v-model:ready="paymentsTabReady" ctrl-key="userAccountTabPayments" />
+                <TabPayments v-model:ready="paymentsTabReady" :ctrl-key="UserAccountTabPayments" />
               </div>
             </template>
           </TabsGroup>
         </section>
       </div>
       <template #fallback>
-        <ComponentWaitingIndicator ctrl-key="AccountPageClientFallback" class="my-8 min-h-[calc(300px+10rem)]"/>
+        <ComponentWaitingIndicator :ctrl-key="[...CtrlKey, 'ClientFallback']" class="my-8 min-h-[calc(300px+10rem)]"/>
       </template>
     </ClientOnly>
   </PageSection>

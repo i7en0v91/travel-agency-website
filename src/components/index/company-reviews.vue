@@ -1,18 +1,18 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import range from 'lodash-es/range';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from './../../helpers/service-accessors';
 import { ApiEndpointCompanyReviewsList, type ICompanyReviewDto } from './../../server/api-definitions';
 import { useCarouselPlayer } from '../../composables/carousel-player';
-import type { UCarousel } from '../../.nuxt/components';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
 };
 defineProps<IProps>();
 
 const nuxtApp = useNuxtApp();
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'CompanyReviews' });
 const { enabled } = usePreviewState();
 
 const reviewsListFetch = await useFetch(`/${ApiEndpointCompanyReviewsList}`, 
@@ -23,9 +23,9 @@ const reviewsListFetch = await useFetch(`/${ApiEndpointCompanyReviewsList}`,
     query: { drafts: enabled },
     default: () => { return range(0, 10, 1).map(_ => null); },
     transform: (response: ICompanyReviewDto[]) => {
-      logger.verbose(`(ClientReviews) received company reviews list response: [${JSON.stringify(response)}]`);
+      logger.verbose('received company reviews list', response);
       if (!response) {
-        logger.warn('(ClientReviews) company review list response is empty');
+        logger.warn('company review list response is empty');
         return range(0, 10, 1).map(_ => null); // error should be logged by fetchEx
       }
       return response;
@@ -50,7 +50,7 @@ useCarouselPlayer(carouselRef as any);
     >
       <CompanyReviewCard 
         :style="{ width: 'auto' }"
-        :ctrl-key="`CompanyReviewCard-${review?.id ?? 'Empty'}`"
+        :ctrl-key="[...ctrlKey, 'Card', 'CompanyReview', review?.id ?? 0]"
         :header="review?.header ?? undefined"
         :body="review?.body ?? undefined"
         :user-name="review?.userName ?? undefined"

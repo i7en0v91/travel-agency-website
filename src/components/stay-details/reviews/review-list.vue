@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey, type ArbitraryControlElementMarker } from './../../../helpers/components';
 import { type EntityId, ImageCategory, type Locale, getLocalizeableValue, getScoreClassResName, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
 import { formatImageEntityUrl } from './../../../helpers/dom';
 import ConfirmBox from '../../forms/confirm-box.vue';
@@ -14,17 +15,18 @@ import chunk from 'lodash-es/chunk';
 const { locale } = useI18n();
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   stayId: EntityId
 }
 
 const ReviewsPerSlidePage = 5;
 
 const { status } = useAuth();
+const userNotificationStore = useUserNotificationStore();
 const { requestUserAction } = usePreviewState();
 
 const { ctrlKey, stayId } = defineProps<IProps>();
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ReviewList' });
 
 const carouselRef = useTemplateRef<ComponentInstance<any>>('carousel');
 const confirmBoxRef = useTemplateRef('confirm-box');  
@@ -60,22 +62,22 @@ watch(() => reviewStore.status, () => {
 });
 
 function refreshPagingState () {
-  logger.debug(`(ReviewList) refreshing paging state, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  logger.debug('refreshing paging state', { ctrlKey, stayId });
   const carouselInstance = carouselRef.value;
   if (!isCarouselReady.value || !carouselInstance) {
-    logger.debug(`(ReviewList) refreshing paging state - carousel not initialized, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+    logger.debug('refreshing paging state - carousel not initialized', { ctrlKey, stayId });
     return;
   }
 
   const current = carouselInstance.page;
   const total = Math.max(Math.ceil((reviewStore.items?.length ?? 0) / ReviewsPerSlidePage), current);
 
-  logger.debug(`(ReviewList) refreshing paging state completed, ctrlKey=${ctrlKey}, stayId=${stayId}, current=${current}, total=${total}`);
+  logger.debug('refreshing paging state completed', { ctrlKey, stayId, current, total });
   pagingState.value = { current, total };
 }
 
 function rewindToTop () {
-  logger.debug(`(ReviewList) rewind to top, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  logger.debug('rewind to top', { ctrlKey, stayId });
   if (isCarouselReady.value && carouselRef.value) {
     carouselRef.value.select(0);
     refreshPagingState();
@@ -87,7 +89,7 @@ async function refreshUserAccount (): Promise<void> {
     try {
       userAccount.value = await userAccountStore.getUserAccount();
     } catch (err: any) {
-      logger.warn(`(ReviewList) failed to initialize user account info, ctrlKey=${ctrlKey}, stayId=${stayId}`, err);
+      logger.warn('failed to initialize user account info', err, { ctrlKey, stayId });
       userAccount.value = undefined;
     }
   } else {
@@ -105,20 +107,20 @@ function isTestUserReview (review: IStayReviewItem): boolean {
 }
 
 function onEditUserReviewBtnClick () {
-  logger.verbose(`(ReviewList) edit review btn click handler, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  logger.verbose('edit review btn click handler', { ctrlKey, stayId });
   $emit('editBtnClick');
 }
 
 async function onDeleteUserReviewBtnClick (): Promise<void> {
-  logger.verbose(`(ReviewList) delete review btn click handler, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  logger.verbose('delete review btn click handler', { ctrlKey, stayId });
 
-  if(!await requestUserAction()) {
-    logger.verbose(`(ReviewList) delete review btn click handler hasn't been run - not allowed in preview mode, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  if(!await requestUserAction(userNotificationStore)) {
+    logger.verbose('delete review btn click handler hasn', { ctrlKey, stayId });
     return;
   }
 
   if(reviewStore.status === 'pending') {
-    logger.verbose(`(ReviewList) cannot delete review while store is in pending state, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+    logger.verbose('cannot delete review while store is in pending state', { ctrlKey, stayId });
     return;
   }
 
@@ -133,19 +135,19 @@ async function onDeleteUserReviewBtnClick (): Promise<void> {
 }
 
 function onSlideChanged () {
-  logger.debug(`(ReviewList) slide changed, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  logger.debug('slide changed', { ctrlKey, stayId });
   refreshPagingState();
 }
 
 function onNavNextBtnClick () {
-  logger.debug(`(ReviewList) nav next btn clicked, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  logger.debug('nav next btn clicked', { ctrlKey, stayId });
   if (isCarouselReady.value && carouselRef.value) {
     carouselRef.value.next();
   }
 }
 
 function onNavPrevBtnClick () {
-  logger.debug(`(ReviewList) nav next btn clicked, ctrlKey=${ctrlKey}, stayId=${stayId}`);
+  logger.debug('nav prev btn clicked', { ctrlKey, stayId });
   if (isCarouselReady.value && carouselRef.value) {
     carouselRef.value.prev();
   }
@@ -181,7 +183,7 @@ onMounted(() => {
         <div class="w-full h-auto flex flex-col flex-nowrap gap-3 sm:gap-6 items-stretch">
           <div
             v-for="(review) in reviewsPage"
-            :key="`${ctrlKey}-Review-${review.id}`"
+            :key="`${toShortForm(ctrlKey)}-Review-${review.id}`"
             class="w-full h-auto"
           >
             <UDivider color="gray" orientation="horizontal" class="w-full mb-3 sm:mb-6" size="sm"/>
@@ -230,7 +232,7 @@ onMounted(() => {
         </div>
       </UCarousel>
       <UDivider v-if="!showNoReviewStub" color="gray" orientation="horizontal" class="w-full mb-3 sm:mb-6" size="sm"/>
-      <ComponentWaitingIndicator v-if="(reviewStore.status !== 'error' && reviewStore.items === undefined) || !isCarouselReady" :ctrl-key="`${ctrlKey}-ReviewListWaiterFallback`" class="my-6" />
+      <ComponentWaitingIndicator v-if="(reviewStore.status !== 'error' && reviewStore.items === undefined) || !isCarouselReady" :ctrl-key="[...ctrlKey, 'ResultItemsList', 'Waiter']" class="my-6" />
       <section v-if="isNavButtonsVisible" :class="`w-full h-auto flex flex-row flex-nowrap items-center justify-center gap-4 my-2 sm:my-4 ${(pagingState?.total ?? 0) <= 1 ? 'hidden' : ''}`">
         <UButton icon="i-heroicons-chevron-left-20-solid" size="sm" color="gray" variant="outline" class="border-none ring-0" :disabled="(pagingState?.current ?? 0) <= 1" @click="onNavPrevBtnClick"/>
         <div class="mx-2 sm:mx-4 text-sm text-gray-500 dark:text-gray-400">
@@ -242,6 +244,6 @@ onMounted(() => {
         {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'noReviews')) }}
       </div>
     </ErrorHelm>
-    <ConfirmBox ref="confirm-box" v-model:open="open" v-model:result="result" :ctrl-key="`${ctrlKey}-UserReview-DeleteConfirm`" :buttons="confirmBoxButtons" :msg-res-name="getI18nResName3('stayDetailsPage', 'reviews', 'confirmDelete')"/>
+    <ConfirmBox ref="confirm-box" v-model:open="open" v-model:result="result" :ctrl-key="[...ctrlKey, 'UserReview', 'Delete', 'ConfirmBox']" :buttons="confirmBoxButtons" :msg-res-name="getI18nResName3('stayDetailsPage', 'reviews', 'confirmDelete')"/>
   </div>
 </template>

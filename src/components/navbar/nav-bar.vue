@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ImageCategory, AppPage, type Locale, getI18nResName2 } from '@golobe-demo/shared';
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { DeviceSizeEnum } from './../../helpers/constants';
 import { formatImageEntityUrl , formatAvatarLabel, getUserMenuLinksInfo, getNavMenuLinksInfo, formatAuthCallbackUrl, getCurrentDeviceSize} from './../../helpers/dom';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
@@ -16,9 +17,10 @@ import throttle from 'lodash-es/throttle';
 import { withQuery } from 'ufo';
 
 interface IProps {
-  ctrlKey: string
+  ctrlKey: ControlKey,
+  hardLinks: boolean
 }
-const { ctrlKey } = defineProps<IProps>();
+const { ctrlKey, hardLinks } = defineProps<IProps>();
 
 const themeSwitcher = useTemplateRef('theme-switcher');
 const siteSearchTool = useTemplateRef('site-search');
@@ -28,7 +30,7 @@ const verticalNavCollapsed = ref(true);
 const { status } = useAuth();
 const { enabled } = usePreviewState();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'NavBar' });
 const route = useRoute();
 const { locale, t } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
@@ -51,7 +53,7 @@ const onWindowResize = () => setTimeout(throttle(function () {
         return;
     }
 
-    logger.verbose(`(NavBar) window resized to ${deviceSize.valueOf()} size, collapsing vertical navbar, ctrlKey=${ctrlKey}`);
+    logger.verbose('window resized, collapsing vertical navbar', { ctrlKey, deviceSize });
     verticalNavCollapsed.value = true;
   }
 }), 100);
@@ -77,7 +79,7 @@ defineShortcuts({
     usingInput: true,
     handler: () => {
       if(!verticalNavCollapsed.value) {
-        logger.debug(`(NavBar) closing vertical nav by [ESC] press, ctrlKey=${ctrlKey}`);
+        logger.debug('closing vertical nav by [ESC] press', ctrlKey);
         verticalNavCollapsed.value = true;
       }
     }
@@ -86,7 +88,7 @@ defineShortcuts({
 
 function openSiteSearch () {
   setTimeout(() => {
-    logger.debug('(NavBar) showing site search');
+    logger.debug('showing site search');
     siteSearchTool.value?.$el?.querySelector('button')?.click();
   }, 0);
 }
@@ -103,7 +105,7 @@ function toggleVerticalNav () {
         return;
     }
 
-    logger.debug(`(NavBar) toggling vertical nav, ctrlKey=${ctrlKey}, new state collapsed=${!verticalNavCollapsed.value}`);
+    logger.debug('toggling vertical nav', { ctrlKey, collapsed: !verticalNavCollapsed.value });
     verticalNavCollapsed.value = !verticalNavCollapsed.value;
   });
 }
@@ -112,11 +114,11 @@ function themeSwitchClickHandler (e: InputEvent) {
   const themeSwitcherEl = (themeSwitcher.value?.$el as HTMLElement);
   if(themeSwitcherEl) {
     if((e.target as HTMLElement)?.tagName?.toLowerCase() === 'button') {
-      logger.debug(`(NavBar) passing click evt down to theme switcher, ctrlKey=${ctrlKey}, route=${route.path}`);
+      logger.debug('passing click evt down to theme switcher', { ctrlKey, route: route.path });
       themeSwitcherEl.click();
     }
   } else {
-    logger.warn(`(NavBar) nested theme switcher not initialized, ctrlKey=${ctrlKey}, route=${route.path}`);
+    logger.warn('nested theme switcher not initialized', undefined, { ctrlKey, route: route.path });
   }
 }
 
@@ -148,7 +150,7 @@ const horizontalNavLinks = computed(() => {
             locale.value as Locale
           ) : undefined)
         ),
-        external: false
+        external: hardLinks
       };
     })
   );
@@ -158,7 +160,9 @@ const verticalNavLinks = computed(() => {
   const authStatus = status?.value === undefined ? false : (status.value === 'authenticated' ? true : false);
   const navMenuLinks = getNavMenuLinksInfo(false).map(navGroup => 
     orderBy(
-      navGroup.filter(li => li.verticalNav && (li.authStatus === undefined || li.authStatus === authStatus)), 
+      navGroup
+        .filter(li => li.verticalNav && (li.authStatus === undefined || li.authStatus === authStatus))
+        .filter(li => !isErrorPage.value || li.showOnErrorPage), 
       ['verticalNav'], ['asc']
     ).map(li => {
       return {
@@ -179,7 +183,7 @@ const verticalNavLinks = computed(() => {
             locale.value as Locale
           ) : undefined)
         ),
-        external: li.kind !== 'site-search' ? false : undefined,
+        external: li.kind !== 'site-search' ? hardLinks : undefined,
         click: li.kind === 'site-search' ? (() => {
           openSiteSearch();
           toggleVerticalNav();
@@ -203,7 +207,7 @@ const verticalNavLinks = computed(() => {
             },
             to: navLinkBuilder.buildPageLink(AppPage.Account, locale.value as Locale),
             click: toggleVerticalNav,
-            external: false
+            external: hardLinks
           } : {
             kind: li.kind,
             label: vNavAvatarLabel.value ?? '',
@@ -212,7 +216,7 @@ const verticalNavLinks = computed(() => {
             iconClass: 'w-[32px] h-[32px] sm:w-[48px] sm:h-[48px]',
             to: navLinkBuilder.buildPageLink(AppPage.Account, locale.value as Locale),
             click: toggleVerticalNav,
-            external: false
+            external: hardLinks
           }
       ) : {
         kind: li.kind,
@@ -238,7 +242,7 @@ const verticalNavLinks = computed(() => {
           li.toPage, 
           locale.value as Locale
         ) : undefined),
-        external: false
+        external: hardLinks
       };
     });
   });
@@ -292,20 +296,20 @@ const uiStyling = computed(() => {
   >   
     <!-- KB: z-10 used below are to capture click event & fix label dissapearing when hovered in light theme  -->
     <template #default="{ link }">
-      <NavLogo v-if="link.kind === 'nav-logo'" ctrl-key="navLogo" class="lg:absolute lg:translate-x-[50vw] lg:left-[-4.37rem] xl:left-[-6.87rem] translate-y-1 lg:-translate-y-1/3"/>
+      <NavLogo v-if="link.kind === 'nav-logo'" :ctrl-key="[...ctrlKey, 'NavLogo']" class="lg:absolute lg:translate-x-[50vw] lg:left-[-4.37rem] xl:left-[-6.87rem] translate-y-1 lg:-translate-y-1/3" :hard-link="hardLinks"/>
       <ClientOnly v-else-if="link.kind === 'nav-toggler'" >
         <UButton size="md" :ui="uiStyling" :icon="`${verticalNavCollapsed ? 'cil-hamburger-menu' : 'i-ph-x'}`" variant="link" color="gray" @click="toggleVerticalNav"/>
       </ClientOnly>
       <ClientOnly v-else-if="link.kind === 'locale-switcher' && navButtonsVisible">
-        <LocaleSwitcher ctrl-key="navLocaleSwitcher" />
+        <LocaleSwitcher :ctrl-key="[...ctrlKey, 'Toggler', 'Locale']" />
       </ClientOnly>
       <ClientOnly v-else-if="link.kind === 'theme-switcher'">
-        <ThemeSwitcher ref="theme-switcher" ctrl-key="navThemeSwitcher" :class="`${navButtonsVisible ? 'visible' : 'invisible'}`" />
+        <ThemeSwitcher ref="theme-switcher" :ctrl-key="[...ctrlKey, 'Toggler', 'Theme']" :class="`${navButtonsVisible ? 'visible' : 'invisible'}`" />
       </ClientOnly>
       <ClientOnly v-else-if="link.kind === 'site-search'">
         <SiteSearchTool ref="site-search" :class="`${navButtonsVisible ? 'visible' : 'invisible'}`" />
       </ClientOnly>
-      <NavUser v-else-if="link.kind === 'nav-user' && navButtonsVisible" ctrl-key="navUser" @vertical-nav-toggled="toggleVerticalNav"/>
+      <NavUser v-else-if="link.kind === 'nav-user' && navButtonsVisible" :ctrl-key="[...ctrlKey, 'NavUser']" @vertical-nav-toggled="toggleVerticalNav"/>
       <span v-else :class="`text-sm sm:text-base text-nowrap z-10 ${link.kind === 'signup' ? 'auth-link bg-black text-white hover:bg-white-100/80 dark:bg-white dark:text-black dark:hover:bg-gray-100/80 rounded-lg px-3.5 py-2 sm:py-3.5 font-semibold' : (link.kind === 'login' ? 'auth-link' : (link.kind === 'favourites' ? 'favourites-link' : 'search-page-link'))}`" >{{ link.label }}</span>
     </template>
   </UHorizontalNavigation>

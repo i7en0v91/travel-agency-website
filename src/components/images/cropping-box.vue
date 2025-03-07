@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { UserNotificationLevel, getI18nResName2, getI18nResName3, type ImageCategory } from '@golobe-demo/shared';
 import { CroppingImageDataKey, CroppingImageFormat } from './../../helpers/constants';
 import Cropper from 'cropperjs';
@@ -11,7 +12,7 @@ globalThis.Buffer = globalThis.Buffer || Buffer;
 const ImageCaptureMinSizeBase = 10;
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   category: ImageCategory,
   fillAlpha: boolean
 }
@@ -29,13 +30,13 @@ const { t } = useI18n();
 const userNotificationStore = useUserNotificationStore();
 const systemConfigurationStore = useSystemConfigurationStore();
 const themeSettings = useThemeSettings();
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'CroppingBox' });
 
 const isError = ref(false);
 const cropperImg = useTemplateRef<HTMLImageElement>('cropper-image');
 let cropper : Cropper | undefined;
 
-const imageSize = await systemConfigurationStore.getImageSrcSize(category);
+const imageSize = systemConfigurationStore.imageCategories.find(x => x.kind === category)!;
 
 const $emit = defineEmits(['close']);
 
@@ -64,7 +65,7 @@ function getCropper (reset: boolean): Cropper | undefined {
     }
     return cropper;
   } catch (err: any) {
-    logger.warn(`(cropping-box) failed to prepare Cropper instance, ctrlKey=${ctrlKey}`, err);
+    logger.warn('failed to prepare Cropper instance', err, ctrlKey);
     destroyCropperSafe();
     isError.value = true;
     return undefined;
@@ -94,7 +95,7 @@ function onImgError () {
       level: UserNotificationLevel.ERROR,
       resName: getI18nResName3('editableImage', 'issues', 'imageLoadFailed')
     });
-    logger.warn(`(cropping-box) failed to load image, ctrlKey=${ctrlKey}, category=${category}`);
+    logger.warn('failed to load image', undefined, { ctrlKey, category });
   }
 }
 
@@ -110,7 +111,7 @@ function onImgLoad () {
         level: UserNotificationLevel.ERROR,
         resName: getI18nResName3('editableImage', 'issues', 'imageLoadFailed')
       });
-      logger.warn(`(cropping-box) image is empty, ctrlKey=${ctrlKey}, category=${category}`);
+      logger.warn('image is empty', undefined, { ctrlKey, category });
     }
   }, 1);
 }
@@ -125,7 +126,7 @@ function readCropperCanvasAsByteArray (): Promise<Uint8Array> {
   };
 
   const promise = new Promise<Uint8Array>((resolve, reject) => {
-    logger.verbose(`(cropping-box) starting to capture canvas, ctrlKey=${ctrlKey}, category=${category}`);
+    logger.verbose('starting to capture canvas', { ctrlKey, category });
     cropper!.getCroppedCanvas(canvasOptions).toBlob((blob: Blob | null) => {
       if (!blob) {
         reject(new Error(`(cropping-box) failed to capture canvas, got empty data, ctrlKey=${ctrlKey}, category=${category}`));
@@ -133,10 +134,10 @@ function readCropperCanvasAsByteArray (): Promise<Uint8Array> {
       }
 
       blob.arrayBuffer().then((b) => {
-        logger.verbose(`(cropping-box) canvas captured, ctrlKey=${ctrlKey}, category=${category}, size=${b.byteLength}`);
+        logger.verbose('canvas captured', { ctrlKey, category, size: b.byteLength });
         resolve(new Uint8Array(b));
-      }).catch((r) => {
-        logger.warn(`(cropping-box) failed to capture canvas, category=${category}`, r);
+      }).catch((err) => {
+        logger.warn('failed to capture canvas', err, category);
         reject(new Error('failed to crop image'));
       });
     }, CroppingImageFormat, 1);
@@ -154,7 +155,7 @@ async function onUploadClick (): Promise<void> {
       const imageDataBase64 = Buffer.from(imageData).toString('base64');
       setCurrentImageData(imageDataBase64);
     } catch (err: any) {
-      logger.warn(`(cropping-box) failed to crop image, ctrlKey=${ctrlKey}, category=${category}`, err);
+      logger.warn('failed to crop image', err, { ctrlKey, category });
       setCurrentImageData(null);
       userNotificationStore.show({
         level: UserNotificationLevel.ERROR,
@@ -168,7 +169,7 @@ async function onUploadClick (): Promise<void> {
 function onOpened () {
   const imageData = readCurrentImageData();
   if (!imageData) {
-    logger.warn(`(cropping-box) got empty current image data, ctrlKey=${ctrlKey}`);
+    logger.warn('got empty current image data', undefined, ctrlKey);
     destroyCropperSafe();
     isError.value = true;
     return;
@@ -178,7 +179,7 @@ function onOpened () {
   try {
     getCropper(true)?.replace(imageData);
   } catch (err: any) {
-    logger.warn(`(cropping-box) failed to set image, ctrlKey=${ctrlKey}`, err);
+    logger.warn('failed to set image', err, ctrlKey);
     userNotificationStore.show({
       level: UserNotificationLevel.ERROR,
       resName: getI18nResName3('editableImage', 'issues', 'imageLoadFailed')

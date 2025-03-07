@@ -17,7 +17,7 @@ export class ImageLogic implements IImageLogic {
 
   public static inject = ['imageCategoryLogic', 'fileLogic', 'imageLogicPrisma', 'acsysDraftsEntitiesResolver', 'dbRepository', 'logger'] as const;
   constructor (imageCategoryLogic: IImageCategoryLogic, fileLogic: IFileLogic, prismaImplementation: IImageLogic, acsysDraftsEntitiesResolver: AcsysDraftEntitiesResolver, dbRepository: PrismaClient, logger: IAppLogger) {
-    this.logger = logger;
+    this.logger = logger.addContextProps({ component: 'ImageLogic-Acsys' });
     this.dbRepository = dbRepository;
     this.imageCategoryLogic = imageCategoryLogic;
     this.fileLogic = fileLogic;
@@ -34,7 +34,7 @@ export class ImageLogic implements IImageLogic {
   }
 
   async deleteImage(id: EntityId): Promise<void> {
-    this.logger.debug(`(ImageLogic-Acsys) deleting image: id=${id}`);
+    this.logger.debug('deleting image', id);
 
     const deleted = (await this.dbRepository.acsysDraftsImage.updateMany({
       where: {
@@ -48,15 +48,15 @@ export class ImageLogic implements IImageLogic {
     })).count > 0;
 
     if(!deleted) {
-      this.logger.debug(`(ImageLogic-Acsys) no images have been deleted in drafts table, proceeding to the main table: id=${id}`);
+      this.logger.debug('no images have been deleted in drafts table, proceeding to the main table', id);
       await this.prismaImplementation.deleteImage(id);
     }
 
-    this.logger.debug(`(ImageLogic-Acsys) image deleted: id=${id}`);
+    this.logger.debug('image deleted', id);
   };
 
   async createImage (data: IImageData, userId: EntityId | undefined, previewMode: PreviewMode): Promise<{ id: EntityId, timestamp: Timestamp }> {
-    this.logger.debug(`(ImageLogic-Acsys) creating image, slug=${data.slug}, category=${data.category}, ownerId=${data.ownerId}, userId=${userId}, fileName=${data.originalName}, length=${data.bytes.length}, previewMode=${previewMode}`);
+    this.logger.debug('creating image', { slug: data.slug, category: data.category, ownerId: data.ownerId, userId, fileName: data.originalName, length: data.bytes.length, previewMode });
 
     let result: { id: EntityId, timestamp: Timestamp };
     if(previewMode) {
@@ -84,12 +84,12 @@ export class ImageLogic implements IImageLogic {
       result = await this.prismaImplementation.createImage(data, userId, previewMode);
     }
     
-    this.logger.debug(`(ImageLogic-Acsys) image created, id=${result.id}, slug=${data.slug}, category=${data.category}, ownerId=${data.ownerId}, userId=${userId}, fileName=${data.originalName}, length=${data.bytes.length}, previewMode=${previewMode}`);
+    this.logger.debug('image created', { id: result.id, slug: data.slug, category: data.category, ownerId: data.ownerId, userId, fileName: data.originalName, length: data.bytes.length, previewMode });
     return result;
   }
 
   async updateImage (imageId: EntityId, data: IImageData, imageFileId: EntityId | undefined, userId: EntityId | undefined, event: H3Event, previewMode: PreviewMode): Promise<{ timestamp: Timestamp }> {
-    this.logger.debug(`(ImageLogic-Acsys) updating image, imageId=${imageId}, slug=${data.slug}, category=${data.category}, ownerId=${data.ownerId}, userId=${userId}, imageFileId=${imageFileId}, fileName=${data.originalName}, length=${data.bytes?.length?.toString() ?? '[empty]'}, previewMode=${previewMode}`);
+    this.logger.debug('updating image', { imageId, slug: data.slug, category: data.category, ownerId: data.ownerId, userId, imageFileId, fileName: data.originalName, length: data.bytes?.length?.toString() ?? '[empty]', previewMode });
     let result: { timestamp: Timestamp } | undefined;
     if(previewMode) {
       if (!imageFileId) {
@@ -105,7 +105,7 @@ export class ImageLogic implements IImageLogic {
         if (fileInfo?.fileId) {
           imageFileId = fileInfo.fileId;
         } else {
-          this.logger.verbose(`(ImageLogic-Acsys) image file info does not exist in drafts, proceeding with published: imageId=${imageId}, slug=${data.slug}, category=${data.category}`);
+          this.logger.verbose('image file info does not exist in drafts, proceeding with published', { imageId, slug: data.slug, category: data.category });
           result = await this.prismaImplementation.updateImage(imageId, data, undefined, userId, event, previewMode); 
         }
       }
@@ -137,24 +137,24 @@ export class ImageLogic implements IImageLogic {
       result = await this.prismaImplementation.updateImage(imageId, data, imageFileId, userId, event, previewMode);
     }
     
-    this.logger.debug(`(ImageLogic-Acsys) image updated, imageId=${imageId}, slug=${data.slug}, category=${data.category}, ownerId=${data.ownerId}, userId=${userId}, imageFileId=${imageFileId}, fileName=${data.originalName}, length=${data.bytes?.length?.toString() ?? '[empty]'}, previewMode=${previewMode}`);
+    this.logger.debug('image updated', { imageId, slug: data.slug, category: data.category, ownerId: data.ownerId, userId, imageFileId, fileName: data.originalName, length: data.bytes?.length?.toString() ?? '[empty]', previewMode });
     return result;
   }
 
   async checkAccess (id: EntityId | undefined, slug: string | undefined, category: ImageCategory, previewMode: PreviewMode, userId?: EntityId | undefined): Promise<ImageCheckAccessResult | undefined> {
-    this.logger.debug(`(ImageLogic-Acsys) checking access, id=${id}, slug=${slug}, category=${category}, previewMode=${previewMode}, userId=${userId ?? ''}`);
+    this.logger.debug('checking access', { id, slug, category, previewMode, userId: userId ?? '' });
     let result: ImageCheckAccessResult | undefined;
     if(previewMode) {
       result = 'granted';
     } else {
       result = await this.prismaImplementation.checkAccess(id, slug, category, previewMode, userId);
     }
-    this.logger.debug(`(ImageLogic-Acsys) access checked, id=${id}, slug=${slug}, category=${category}, userId=${userId}, result=${result}, previewMode=${previewMode}`);
+    this.logger.debug('access checked', { id, slug, category, userId, result, previewMode });
     return result;
   }
 
   async findImage (id: EntityId | undefined, slug: string | undefined, category: ImageCategory, event: H3Event, previewMode: PreviewMode): Promise<IImageInfo | undefined> {
-    this.logger.debug(`(ImageLogic-Acsys) loading image info, id=${id}, slug=${slug}, category=${category}, previewMode=${previewMode}`);
+    this.logger.debug('loading image info', { id, slug, category, previewMode });
 
     let result: IImageInfo | undefined;
     if(previewMode) {
@@ -176,7 +176,7 @@ export class ImageLogic implements IImageLogic {
         const fileInfoResultResult = await this.acsysDraftsEntitiesResolver.resolveFileInfos({ idsFilter: [resultFileUnresolved.fileId], unresolvedEntityPolicy: UnresolvedEntityThrowingCondition.ExcludeFromResult });
         const fileInfos = Array.from(fileInfoResultResult.items.values());
         if (!fileInfos?.length) {
-          this.logger.warn(`(ImageLogic-Acsys) cannot found file, id=${id}, slug=${slug}, fileId=${resultFileUnresolved.fileId}`);
+          this.logger.warn('cannot found file', undefined, { id, slug, fileId: resultFileUnresolved.fileId });
           return undefined;
         }
     
@@ -186,18 +186,18 @@ export class ImageLogic implements IImageLogic {
           previewMode: true
         }; 
       } else {
-        this.logger.debug(`(ImageLogic-Acsys) no images exist in drafts table, proceeding to the main table, id=${id}, slug=${slug}, category=${category}, previewMode=${previewMode}`);
+        this.logger.debug('no images exist in drafts table, proceeding to the main table', { id, slug, category, previewMode });
         result = await this.prismaImplementation.findImage(id, slug, category, event, previewMode); 
       }
     } else {
       result = await this.prismaImplementation.findImage(id, slug, category, event, previewMode);
     }
-    this.logger.debug(`(ImageLogic-Acsys) image bytes loaded, id=${id}, slug=${slug}, previewMode=${previewMode}`);
+    this.logger.debug('image bytes loaded', { id, slug, previewMode });
     return result;
   }
 
   async getImagesByIds(ids: EntityId[], previewMode: PreviewMode): Promise<IImageFileInfoUnresolved[]> {
-    this.logger.debug(`(ImageLogic-Acsys) loading image infos by ids, count=${ids.length}, previewMode=${previewMode}`);
+    this.logger.debug('loading image infos by ids', { count: ids.length, previewMode });
     let result: IImageFileInfoUnresolved[];
     if(previewMode) {
       const queryResult = await this.dbRepository.acsysDraftsImage.findMany({
@@ -234,30 +234,30 @@ export class ImageLogic implements IImageLogic {
       const draftIds = new Set<EntityId>(result.map(d => d.id));
       const publishedIds = ids.filter(id => !draftIds.has(id));
       if(publishedIds.length) {
-        this.logger.debug(`(ImageLogic-Acsys) some image infos don't exist in drafts table, proceeding to the main table, draftIds=[${result.map(d => d.id).join('; ')}], publishedIds=[${publishedIds.join('; ')}]`);
+        this.logger.debug('some image infos don', { draftIds, publishedIds });
         const published = await this.prismaImplementation.getImagesByIds(publishedIds, previewMode);
         result.push(...published);
       }
     } else {
       result = await this.prismaImplementation.getImagesByIds(ids, previewMode);
     }
-    this.logger.debug(`(ImageLogic-Acsys) image infos by ids loaded, req count=${ids.length}, previewMode=${previewMode}, result count=${result.length}`);
+    this.logger.debug('image infos by ids loaded', { reqCount: ids.length, previewMode, resCount: result.length });
     return result;
   }
 
   async getImageBytes (id: EntityId | undefined, slug: string | undefined, category: ImageCategory, event: H3Event, previewMode: PreviewMode): Promise<IImageBytes | undefined> {
-    this.logger.debug(`(ImageLogic-Acsys) loading image bytes, id=${id}, slug=${slug}, category=${category}, previewMode=${previewMode}`);
+    this.logger.debug('loading image bytes', { id, slug, category, previewMode });
     let result: IImageBytes | undefined;
     if(previewMode) {
       const fileId  = (await this.findImage(id, slug, category, event, true))?.file.id;
       if(!fileId) {
-        this.logger.warn(`(ImageLogic-Acsys) image file info not found, id=${id}, slug=${slug}`);
+        this.logger.warn('image file info not found', undefined, { id, slug });
         return undefined;
       }
 
       const fileData = await this.fileLogic.getFileData(fileId, event);
       if(!fileData) {
-        this.logger.warn(`(ImageLogic-Acsys) file not found, id=${id}, slug=${slug}, fileId=${fileId}`);
+        this.logger.warn('file not found', undefined, { id, slug, fileId });
         return undefined;
       }
 
@@ -265,12 +265,12 @@ export class ImageLogic implements IImageLogic {
     } else {
       result = await this.prismaImplementation.getImageBytes(id, slug, category, event, previewMode);
     }
-    this.logger.debug(`(ImageLogic-Acsys) image bytes loaded, id=${id}, slug=${slug}, previewMode=${previewMode}, mime=${result?.mimeType}, size=${result?.bytes.byteLength}`);
+    this.logger.debug('image bytes loaded', { id, slug, previewMode, mime: result?.mimeType, size: result?.bytes.byteLength });
     return result;
   }
 
   async getAllImagesByCategory (category: ImageCategory, skipAuthChecks: boolean, previewMode: PreviewMode): Promise<IImageFileInfoUnresolved[]> {
-    this.logger.debug(`(ImageLogic-Acsys) accessing all images by category=${category}, skipAuthChecks=${skipAuthChecks}, previewMode=${previewMode}`);
+    this.logger.debug('accessing all images by', { category, skipAuthChecks, previewMode });
 
     const result = await this.prismaImplementation.getAllImagesByCategory(category, previewMode ? true : skipAuthChecks, previewMode);
     if(previewMode) {
@@ -301,18 +301,18 @@ export class ImageLogic implements IImageLogic {
       );
     }
 
-    this.logger.debug(`(ImageLogic-Acsys) images by category: category=${category}, skipAuthChecks=${skipAuthChecks}, previewMode=${previewMode}, count=${result.length}`);
+    this.logger.debug('images by category', { category, skipAuthChecks, previewMode, count: result.length });
     return result;
   }
 
   async resolveImageFiles(imageInfos: IImageFileInfoUnresolved[], event: H3Event<EventHandlerRequest>, previewMode: PreviewMode): Promise<IImageInfo[]> {
-    this.logger.debug(`(ImageLogic-Acsys) resolving image files, count=${imageInfos.length}, previewMode=${previewMode}`);
+    this.logger.debug('resolving image files', { count: imageInfos.length, previewMode });
 
     let result: IImageInfo[];
     if(previewMode) {
       const fileInfoResolveResult = await this.acsysDraftsEntitiesResolver.resolveFileInfos({ idsFilter: imageInfos.map(i => i.fileId), unresolvedEntityPolicy: UnresolvedEntityThrowingCondition.ExcludeFromResult });
       if(fileInfoResolveResult.notFoundIds?.length) {
-        this.logger.warn(`(ImageLogic-Acsys) cannot resolve files, fileIds=[${fileInfoResolveResult.notFoundIds.join('; ')}]`);
+        this.logger.warn('cannot resolve files', undefined, { fileIds: fileInfoResolveResult.notFoundIds });
       }
       result = [];
       for(let i = 0; i < imageInfos.length; i++) {
@@ -331,7 +331,7 @@ export class ImageLogic implements IImageLogic {
       result = await this.prismaImplementation.resolveImageFiles(imageInfos, event, previewMode);
     }
 
-    this.logger.debug(`(ImageLogic-Acsys) image files resolved, result count=${result.length} (of requested count=${imageInfos.length}), previewMode=${previewMode}`);
+    this.logger.debug('image files resolved', { resCount: result.length, reqCount: imageInfos.length, previewMode });
     return result;
   }
 }

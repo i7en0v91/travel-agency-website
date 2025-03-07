@@ -3,13 +3,16 @@ import { FlightsTitleSlug, ImageCategory, type EntityId, getI18nResName2 } from 
 import { TravelDetailsHtmlAnchor } from './../helpers/constants';
 import HeadingText from './../components/flights/flights-heading-text.vue';
 import { getCommonServices } from '../helpers/service-accessors';
+import type { ControlKey } from './../helpers/components';
 
 definePageMeta({
   title: { resName: getI18nResName2('flightsPage', 'title'), resArgs: undefined }
 });
 useOgImage();
 
-const logger = getCommonServices().getLogger();
+const CtrlKey: ControlKey = ['Page', 'Flights'];
+
+const logger = getCommonServices().getLogger().addContextProps({ component: 'Flights' });
 
 const travelDetailsStore = useTravelDetailsStore();
 function scrollToTravelDetailsSection () {
@@ -21,28 +24,28 @@ function scrollToTravelDetailsSection () {
 }
 
 function displayCity (cityId: EntityId) {
-  logger.verbose(`(Flights) setting displayed city, id=${cityId}`);
+  logger.verbose('setting displayed city', { id: cityId });
   travelDetailsStore.setDisplayingCity(cityId);
   scrollToTravelDetailsSection();
-  logger.verbose(`(Flights) setting displayed city, id=${cityId}, exit`);
+  logger.verbose('setting displayed city', { id: cityId });
 }
 
 async function displayCityFromUrl (): Promise<void> {
   const route = useRoute();
-  logger.verbose(`(Flights) updating displayed city from url, url=${route.fullPath}, query=${JSON.stringify(route.query)}`);
+  logger.verbose('updating displayed city from url', { url: route.fullPath, query: route.query });
   const cityFromUrl = await travelDetailsStore.getCityFromUrl();
   if (!cityFromUrl) {
-    logger.debug('(Flights) no city from url retrieved');
+    logger.debug('no city from url retrieved');
     return;
   }
 
   const currentlyDisplayedCity = (await travelDetailsStore.getInstance()).current;
   if (currentlyDisplayedCity?.cityId === cityFromUrl.id) {
-    logger.verbose(`(Flights) city from url equals to currently displayed, id=${cityFromUrl.id}`);
+    logger.verbose('city from url equals to currently displayed', { id: cityFromUrl.id });
     return;
   }
 
-  logger.verbose(`(Flights) setting city to display from url, id=${cityFromUrl.id}`);
+  logger.verbose('setting city to display from url', { id: cityFromUrl.id });
   await displayCity(cityFromUrl.id);
 }
 
@@ -62,7 +65,7 @@ onMounted(() => {
 <template>
   <div class="flights-page">
     <SearchPageHead
-      ctrl-key="SearchPageHeadFlights"
+      :ctrl-key="[...CtrlKey, 'SearchPageHead']"
       :image-entity-src="{ slug: FlightsTitleSlug }"
       :category="ImageCategory.PageTitle"
       :image-alt-res-name="getI18nResName2('searchPageCommon', 'mainImageAlt')"
@@ -76,7 +79,7 @@ onMounted(() => {
         }
       }"
     >
-      <HeadingText ctrl-key="FlightsPageHeading" />
+      <HeadingText :ctrl-key="[...CtrlKey, 'SearchPageHead', 'Title']" />
     </SearchPageHead>
 
     <AppPageMdc />

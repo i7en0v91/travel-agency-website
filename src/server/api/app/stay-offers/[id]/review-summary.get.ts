@@ -5,13 +5,13 @@ import type { H3Event } from 'h3';
 import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
   const staysLogic = getServerServices()!.getStaysLogic();
 
   const offerParam = getRouterParams(event)?.id?.toString() ?? '';
   const stayOfferId: EntityId | undefined = offerParam;
   if(!(stayOfferId?.length ?? 0)) {
-    logger.warn(`(api:stay-review-summary) stay id parameter was not specified: param=${offerParam}`);
+    logger.warn('stay id parameter was not specified', undefined, { param: offerParam });
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
       'failed to parse stay id parameter',

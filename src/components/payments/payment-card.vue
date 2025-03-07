@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { ControlKey } from './../../helpers/components';
 import { getI18nResName1, getI18nResName3, formatValidThruDate } from '@golobe-demo/shared';
 import { TooltipHideTimeout } from './../../helpers/constants';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   digits: string,
   dueDate: Date
 };

@@ -17,5 +17,5 @@ switch(page) {
 </script>
 
 <template>
-  <TravelCities :ctrl-key="bookKind === 'flight' ? 'FlightsTravelCitiesSection' : 'StaysTravelCitiesSection'" :book-kind="bookKind"/>
+  <TravelCities :ctrl-key="['PageSection', 'TravelCities', bookKind === 'flight' ? 'Flights' : 'Stays']" :book-kind="bookKind"/>
 </template>

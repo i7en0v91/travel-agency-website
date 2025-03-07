@@ -7,7 +7,7 @@ import { destr } from 'destr';
 import { getCommonServices, getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger();
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
   const citiesLogic = getServerServices()!.getCitiesLogic();
 
   handleCacheHeaders(event, {
@@ -26,11 +26,12 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
       result.push(item!);
     }
     if (result.length < searchedCities.popularCityIds.length) {
-      logger.warn(`(api:stay-search-history) not all searched cities from user session found in popular cities, result ids=[${result.map(c => c.id).join(', ')}], history ids=[${searchedCities.popularCityIds.join(', ')}]`);
+      const resultIds = result.map(c => c.id);
+      logger.warn('not all searched cities from user session found in popular cities', undefined, { resultIds, historyIds: searchedCities.popularCityIds });
     }
-    logger.verbose(`(api:stay-search-history) returning stay search history items, count=${result.length}`);
+    logger.verbose('returning stay search history items', { count: result.length });
   } else {
-    logger.verbose('(api:stay-search-history) stay search history is empty');
+    logger.verbose('stay search history is empty');
   }
 
   return result;

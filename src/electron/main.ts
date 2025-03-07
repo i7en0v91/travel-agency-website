@@ -29,11 +29,11 @@ try {
 
 /** App configuration */
 try {
-  Logger.verbose(`(Main) configuring app, name=${app.getName()}, version=${app.getVersion()}`);
+  Logger.verbose('configuring app', { name: app.getName(), version: app.getVersion() });
 
   if(!AppConfig.electron) {
     consola.error('cannot start app - Electron configuration missed');
-    Logger.error(`(Main) cannot start app - Electron configuration missed, name=${app.getName()}, version=${app.getVersion()}`);
+    Logger.error('cannot start app - Electron configuration missed', undefined, { name: app.getName(), version: app.getVersion() });
     throw new Error('Electron configuration missed');
   }
 
@@ -66,27 +66,27 @@ try {
   app.on('web-contents-created', (event, contents) => {
     // see https://www.electronjs.org/docs/latest/tutorial/security#12-verify-webview-options-before-creation
     contents.on('will-attach-webview', (event, webPreferences, params) => {
-      Logger.verbose(`(Main) on attaching web view, src=${params.src}`);
+      Logger.verbose('on attaching web view', { src: params.src });
       // Strip away preload scripts if unused or verify their location is legitimate
       delete webPreferences.preload;
       // Disable Node.js integration
       webPreferences.nodeIntegration = false;
       // Verify URL being loaded
       if (!params.src.startsWith(AppConfig.siteUrl)) {
-        Logger.warn(`(Main) unexpected web view attach attempt, src=[${params.src}]`);
+        Logger.warn('unexpected web view attach attempt', undefined, { src: params.src });
         event.preventDefault();
       }
     });
 
     // see https://www.electronjs.org/docs/latest/tutorial/security#13-disable-or-limit-navigation
     contents.on('will-navigate', (event, navigationUrl) => {
-      Logger.verbose(`(Main) navigating to url=${navigationUrl}`);
+      Logger.verbose('navigating to', { url: navigationUrl });
       if(navigationUrl.toLowerCase().startsWith('mailto:')) {
         return;
       }
       const parsedUrl = new URL(navigationUrl);
       if (parsedUrl.origin !== AppConfig.siteUrl) { // for simplicity considering only website's own urls as safe
-        Logger.warn(`(Main) navigation to potentially unsafe external url=${navigationUrl}`);
+        Logger.warn('navigation to potentially unsafe external', undefined, { url: navigationUrl });
         event.preventDefault();
       }
     });
@@ -102,7 +102,7 @@ try {
           action: 'allow', 
           createWindow: (options) => {
             try {
-              Logger.info(`(Main) creating new window at url=${url}, parent=${parent?.title}`);
+              Logger.info('creating new window at', { url, parent: parent?.title });
               const childWindow = new BrowserWindow({ 
                 ...options,
                 show: false, 
@@ -117,58 +117,58 @@ try {
               childWindow.setBounds(ChildWindowSize);
               setImmediate(async () => {
                 try {
-                  Logger.verbose(`(Main) loading new window at url=${url}`);
+                  Logger.verbose('loading new window at', url);
                   const loadTask = childWindow.loadURL(url);
                   childWindow.once('ready-to-show', () => {
-                    Logger.verbose(`(Main) showing new window at url=${url}, title=${childWindow.title}`);
+                    Logger.verbose('showing new window at', { url, title: childWindow.title });
                     childWindow.show();
                   });
                   await loadTask;
-                  Logger.verbose(`(Main) new window loaded at url=${url}, title=${childWindow.title}`);
+                  Logger.verbose('new window loaded at', { url, title: childWindow.title });
                 } catch(err: any) {
-                  Logger.warn(`(Main) exception occured while loading window at url=${url}, parent=${parent?.title}`, err);
+                  Logger.warn('exception occured while loading window at', err, { url, parent: parent?.title });
                   try {
                     childWindow.destroy();
                   } catch(err: any) {
-                    Logger.warn(`(Main) exception occured while destroying window at url=${url}, parent=${parent?.title}`, err);
+                    Logger.warn('exception occured while destroying window at', err, { url, parent: parent?.title });
                   }
                 }
               });
-              Logger.debug(`(Main) new window created, parent=${parent?.title}, waiting to load at url=[${url}]`);
+              Logger.debug('new window created', { parent: parent?.title });
               return childWindow.webContents;
             } catch(err: any) {
-              Logger.warn(`(Main) failed to create new window at url=${url}, parent=${parent?.title}`, err);
+              Logger.warn('failed to create new window at', err, { url, parent: parent?.title });
               showExceptionDialog('warning', ContextBridge, Logger);
               throw err;
             }
           }
         };
       } else {
-        Logger.warn(`(Main) preventing creation of new window at potentially unsafe url=${url}`);
+        Logger.warn('preventing creation of new window at potentially unsafe', undefined, url);
       }
       return { action: 'deny' };
     });
   });
 
-  Logger.verbose(`(Main) app configuration completed, name=${app.getName()}, version=${app.getVersion()}`);
+  Logger.verbose('app configuration completed', { name: app.getName(), version: app.getVersion() });
 } catch(err: any) {
-  Logger.error('(Main) failed to configure Electron app', err);
+  Logger.error('failed to configure Electron app', err);
   throw err;
 }
 
 async function loadIcon(): Promise<NativeImage | undefined> {
   try {
-    Logger.verbose('(Main) loading icon');
+    Logger.verbose('loading icon');
     const response = await fetch(joinURL(AppConfig.siteUrl, 'icon-512.png'));
     if(response) {
       const bytes = await response.bytes();
       const result = nativeImage.createFromBuffer(Buffer.from(bytes));
-      Logger.verbose(`(Main) icon loaded, width=${result.getSize().width}, height=${result.getSize().height}`);
+      Logger.verbose('icon loaded', { width: result.getSize().width, height: result.getSize().height });
       return result;
     }
-    Logger.warn('(Main) icon load failed - empty response');
+    Logger.warn('icon load failed - empty response');
   } catch(err: any) {
-    Logger.warn('(Main) icon load failed', err);
+    Logger.warn('icon load failed', err);
   }
   return undefined;
 }
@@ -185,7 +185,7 @@ async function openWebPage(): Promise<void> {
     }
   }
 
-  Logger.info(`(Main) initializing main page, url=${AppConfig.siteUrl}, prefs=[${JSON.stringify(DefaultWindowPreferences)}]`);
+  Logger.info('initializing main page', { url: AppConfig.siteUrl, prefs: DefaultWindowPreferences });
   const icon = await loadIcon();
   if(icon) {
     TrayIcon = new Tray(icon);
@@ -195,25 +195,26 @@ async function openWebPage(): Promise<void> {
     icon
   });
 
-  Logger.verbose(`(Main) setting context bridge`);
+  Logger.verbose('setting context bridge');
   ContextBridge = new RendererClientBridge(app, MainWindow, Logger);
 
-  Logger.debug(`(Main) resetting menu to minimum`);
+  Logger.debug('resetting menu to minimum');
   const emptyMenu = buildMenu([], MainWindow, ContextBridge, app, Logger);
   Menu.setApplicationMenu(emptyMenu);
   MainWindow.setMenuBarVisibility(true);
   MainWindow.setAutoHideMenuBar(false);
 
   app.on('login', async (event, webContents, details, authInfo /*, callback*/) => {
-    Logger.info(`(Main) login requested, url=[${details?.url}]`, authInfo ?? {});
+    const logData = authInfo ?? {};
+    Logger.info('login requested', { url: details?.url });
     event.preventDefault();
     
     navigateTo(AppPage.Login, MainWindow, ContextBridge, Logger);
 
-    Logger.verbose(`(Main) login request completed, url=[${details?.url}]`, authInfo ?? {});
+    Logger.verbose('login request completed', { url: details?.url });
   });
 
-  Logger.info(`(Main) opening main page, url=${AppConfig.siteUrl}`);
+  Logger.info('opening main page', { url: AppConfig.siteUrl });
   await MainWindow.loadURL(AppConfig.siteUrl);
 }
 
@@ -221,13 +222,13 @@ app.whenReady().then(async () => {
   try {
     await openWebPage();
   } catch(err: any) {
-    Logger.error(`(Main) failed to open main page, url=${AppConfig.siteUrl}`, err);
+    Logger.error('failed to open main page', err, { url: AppConfig.siteUrl });
     showNotification('fatal', 'unknown error', undefined, Logger, MainWindow);
   }
 });
 
 app.on('window-all-closed', () => {
-  Logger.verbose('(Main) all window closed');
+  Logger.verbose('all window closed');
   if (process.platform !== 'darwin') {
     app.quit();
   }

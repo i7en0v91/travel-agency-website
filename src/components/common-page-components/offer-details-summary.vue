@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toShortForm, type ControlKey } from './../../helpers/components';
 import { type Price, type EntityDataAttrsOnly, type EntityId, type ICity, type ILocalizableValue, type OfferKind, getI18nResName1, getI18nResName2, type I18nResName, type Locale, getLocalizeableValue, getScoreClassResName } from '@golobe-demo/shared';
 import { TooltipHideTimeout } from './../../helpers/constants';
 import range from 'lodash-es/range';
@@ -8,7 +9,7 @@ import { getCommonServices } from '../../helpers/service-accessors';
 import { IconSvgCustomizers } from './../../helpers/components';
 
 interface IProps {
-  ctrlKey: string,
+  ctrlKey: ControlKey,
   offerKind?: OfferKind,
   offerId?: EntityId,
   city?: EntityDataAttrsOnly<ICity>,
@@ -22,13 +23,14 @@ interface IProps {
 };
 const { ctrlKey, offerId, offerKind, numReviews, reviewScore, variant = 'default' } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger();
+const logger = getCommonServices().getLogger().addContextProps({ component: 'OfferDetailsSummary' });
 
 const isError = ref(false);
 const promoTooltipShown = ref(false);
 
 const { status } = useAuth();
 const { t, locale } = useI18n();
+const userNotificationStore = useUserNotificationStore();
 const { requestUserAction } = usePreviewState();
 
 const userFavouritesStoreFactory = useUserFavouritesStore();
@@ -39,18 +41,18 @@ const scoreClassResName = computed(() => reviewScore ? getScoreClassResName(revi
 const reviewsCountText = computed(() => numReviews ? `${numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), numReviews)}` : '');
 
 async function toggleFavourite (): Promise<void> {
-  logger.verbose(`(OfferDetailsSummary) toggling favourite, offerId=${offerId}, kind=${offerKind}, current=${isFavourite.value}`);
-  if(!await requestUserAction()) {
-    logger.verbose(`(OfferDetailsSummary) favourite hasn't been toggled - not allowed in preview mode, offerId=${offerId}, kind=${offerKind}, current=${isFavourite.value}`);
+  logger.verbose('toggling favourite', { offerId, kind: offerKind, current: isFavourite.value });
+  if(!await requestUserAction(userNotificationStore)) {
+    logger.verbose('favourite hasn', { offerId, kind: offerKind, current: isFavourite.value });
     return;
   }
   const store = await userFavouritesStoreFactory.getInstance();
   const result = await store.toggleFavourite(offerId!, offerKind!);
-  logger.verbose(`(OfferDetailsSummary) favourite toggled, offerId=${offerId}, isFavourite=${result}`);
+  logger.verbose('favourite toggled', { offerId, isFavourite: result });
 }
 
 async function favouriteBtnClick (): Promise<void> {
-  logger.debug(`(OfferDetailsSummary) favourite button clicked, ctrlKey=${ctrlKey}, current=${isFavourite.value}`);
+  logger.debug('favourite button clicked', { ctrlKey, current: isFavourite.value });
   await toggleFavourite();
 }
 
@@ -61,7 +63,7 @@ function scheduleTooltipAutoHide () {
 const $emit = defineEmits<{(event: 'btnClick'): void}>();
 
 function onBtnClick () {
-  logger.debug(`(OfferDetailsSummary) button clicked, ctrlKey=${ctrlKey}`);
+  logger.debug('button clicked', ctrlKey);
   $emit('btnClick');
 }
 
@@ -71,10 +73,10 @@ function initializeFavouriteStatusWatcherIfNeeded () {
   }
 
   if (offerId && offerKind) {
-    logger.debug(`(OfferDetailsSummary) creating favourite status watcher, ctrlKey=${ctrlKey}, offerId=${offerId}, offerKind=${offerKind}`);
+    logger.debug('creating favourite status watcher', { ctrlKey, offerId, offerKind });
     favouriteStatusWatcher = useOfferFavouriteStatus(offerId, offerKind);
     watch(() => favouriteStatusWatcher!.isFavourite, () => {
-      logger.debug(`(OfferDetailsSummary) favourite status updated, ctrlKey=${ctrlKey}, offerId=${offerId}, offerKind=${offerKind}, status=${favouriteStatusWatcher!.isFavourite}`);
+      logger.debug('favourite status updated', { ctrlKey, offerId, offerKind, status: favouriteStatusWatcher!.isFavourite });
       isFavourite.value = favouriteStatusWatcher!.isFavourite;
     });
     isFavourite.value = favouriteStatusWatcher!.isFavourite;
@@ -101,7 +103,7 @@ onMounted(() => {
               <div class="inline-flex flex-row flex-nowrap items-center gap-[2px]">
                 <UIcon 
                   v-for="i in range(0, 5)" 
-                  :key="`${ctrlKey}-HotelStar-${i}`" 
+                  :key="`${toShortForm(ctrlKey)}-HotelStar-${i}`" 
                   name="i-material-symbols-star" 
                   mode="svg"
                   class="w-5 h-5 inline-block" 

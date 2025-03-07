@@ -11,13 +11,13 @@ import { getServerServices } from '../../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const serverServices = getServerServices()!;
-  const logger = serverServices.getLogger();
+  const logger = serverServices.getLogger().addContextProps({ component: 'WebApi' });
   const bookingLogic = serverServices.getBookingLogic();
   const documentCreator = serverServices.getDocumentCreator();
 
   const bookingParam = getRouterParams(event)?.id?.toString() ?? '';
   if (!bookingParam) {
-    logger.warn(`(api:booking-download) booking id paramer was not speicifed: path=${event.path}`);
+    logger.warn('booking id paramer was not speicifed', undefined, { path: event.path });
     throw new AppException(
       AppExceptionCodeEnum.BAD_REQUEST,
       'booking id parameter was not specified',
@@ -29,7 +29,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   const query = getQuery(event);
   const validationError = await validateObject(omit(query, QueryPagePreviewModeParam), BookingDownloadQuerySchema);
   if (validationError) {
-    logger.warn(`(api:booking-download) booking download query does not match schema, url=${event.node.req.url}, msg=${validationError.message}, issues=${validationError.errors?.join('; ') ?? '[empty]'}]`, undefined, query);
+    logger.warn('booking download query does not match schema', undefined, { ...(query), ...{ url: event.node.req.url, msg: validationError.message } });
     throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'booking download query arguments has invalid format', 'error-stub');
   }
   const requestParams = BookingDownloadQuerySchema.cast(query);
@@ -39,7 +39,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   const userId = extractUserIdFromSession(authSession);
 
   if (booking.bookedUser.id !== userId) {
-    logger.warn(`(api:booking-download) user has no access to booking, url=${event.node.req.url}, bookedUserId=${booking.bookedUser.id}, authUserId=${userId}`, undefined, query);
+    logger.warn('user has no access to booking', undefined, { ...(query), ...{ url: event.node.req.url, bookedUserId: booking.bookedUser.id, authUserId: userId } });
     throw new AppException(
       AppExceptionCodeEnum.FORBIDDEN,
       'access to the booking is forbidden',
