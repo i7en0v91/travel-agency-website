@@ -167,10 +167,8 @@ export class PrismaFlightOfferMaterializer implements IFlightOfferMaterializer {
       const matchedDbOffer = dbOffersMap.get(dataKey);
       if (matchedDbOffer) {
         offer.id = matchedDbOffer.id;
-        offer.isFavourite = matchedDbOffer.isFavourite;
         identifiedCount++;
       } else {
-        offer.isFavourite = false;
         offersToCreate.push(offer);
       }
     }
@@ -258,10 +256,8 @@ export class PrismaStayOfferMaterializer implements IStayOfferMaterializer {
       const matchedDbOffer = dbOffersMap.get(dataKey);
       if (matchedDbOffer) {
         offer.id = matchedDbOffer.id;
-        offer.isFavourite = matchedDbOffer.isFavourite;
         identifiedCount++;
       } else {
-        offer.isFavourite = false;
         offersToCreate.push(offer);
       }
     }

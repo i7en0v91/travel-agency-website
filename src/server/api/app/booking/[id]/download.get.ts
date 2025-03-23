@@ -5,13 +5,13 @@ import { getBytes } from './../../../../../helpers/rest-utils';
 import { Readable } from 'stream';
 import type { H3Event } from 'h3';
 import omit from 'lodash-es/omit';
-import { defineWebApiEventHandler } from '../../../../utils/webapi-event-handler';
+import { defineWebApiEventHandler, getLogger as getWebApiLogger } from '../../../../utils/webapi-event-handler';
 import { getServerSession } from '#auth';
 import { getServerServices } from '../../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const serverServices = getServerServices()!;
-  const logger = serverServices.getLogger().addContextProps({ component: 'WebApi' });
+  const logger = getWebApiLogger();
   const bookingLogic = serverServices.getBookingLogic();
   const documentCreator = serverServices.getDocumentCreator();
 

@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import type { ControlKey } from './../../../../helpers/components';
+import { computeNarrowedRange, type ControlKey } from './../../../../helpers/components';
 import { getI18nResName3, convertTimeOfDay } from '@golobe-demo/shared';
-import type { ISearchOffersRangeFilterProps } from './../../../../types';
+import type { ISearchOffersRangeFilterProps, SearchOffersFilterRange } from './../../../../types';
 import dayjs from 'dayjs';
 import isNumber from 'lodash-es/isNumber';
 import isString from 'lodash-es/isString';
 import { getCommonServices } from '../../../../helpers/service-accessors';
-import type { URange } from './../../../../.nuxt/components';
 
 interface IProps {
   ctrlKey: ControlKey,
@@ -14,23 +13,27 @@ interface IProps {
 }
 
 const { ctrlKey, filterParams } = defineProps<IProps>();
-const modelValue = defineModel<{ min: number, max: number }>('value', { required: true });  
 
-const editValue = ref<number>(modelValue.value.min);
+const DiffValuesEpsilon = 0.01;
+
+const logger = getCommonServices().getLogger().addContextProps({ component: 'RangeFilter', filterId: filterParams.filterId });
+const controlValuesStore = useControlValuesStore();
+
+const modelValue = defineModel<{ min: number, max: number } | undefined>('value');  
+
+const editValue = ref<number>(modelValue.value?.min ?? filterParams.valueRange.min);
 const rangeRef = useTemplateRef('range');
-const logger = getCommonServices().getLogger().addContextProps({ component: 'RangeFilter' });
 
 const { d } = useI18n();
 
-function fireValueChangeEvent (value: number) {
-  logger.debug('firing value change event', { ctrlKey, value });
+function updateModelValue (value: number) {
+  logger.debug('updating model value', { ctrlKey, value });
   modelValue.value = { min: value, max: filterParams.valueRange.max };
-  editValue.value = value;
 }
 
 function onMeterValueChanged (value: number) {
   logger.debug('range value changed', ctrlKey);
-  fireValueChangeEvent(isNumber(value) ? value : parseInt(value));
+  updateModelValue(isNumber(value) ? value : parseInt(value));
 }
 
 function getValueForTimeOfDayFormatting (timeOfDayMinutes: number): Date {
@@ -62,15 +65,62 @@ function indicatorTextFormatter (value: any): string {
   }
 }
 
+function areValuesEqual(value1: number, value2: number): boolean {
+  return Math.abs(value1 - value2) < DiffValuesEpsilon;
+}
+
 onMounted(() => {
+  logger.debug('acquiring store value ref', { ctrlKey });
+  const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<SearchOffersFilterRange | undefined>(ctrlKey, {
+    persistent: false
+  });
+
+  watch(storeValueRef, () => {
+    logger.debug('store value watcher', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value });
+    const newValue = (storeValueRef.value as SearchOffersFilterRange) ?? undefined;
+    const changed = (!!storeValueRef.value !== !!modelValue.value) || 
+      (storeValueRef.value && !areValuesEqual(storeValueRef.value.min, modelValue.value!.min));
+    if(changed) {
+      logger.verbose('updating model value by store value change', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value, editValue: editValue.value });
+      modelValue.value = newValue;  
+    }
+  }, { immediate: true });
+
   watch(modelValue, () => {
-    logger.debug('model value update callback', { ctrlKey, newValue: modelValue.value, editValue: editValue.value });
-    if(modelValue.value.min !== editValue.value) {
-      editValue.value = modelValue.value.min;
+    logger.debug('model value watcher', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value, editValue: editValue.value });
+
+    const value = modelValue.value;
+    if(!value) {
+      logger.verbose('updating store value by model value change (to empty)', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value, editValue: editValue.value });
+      storeValueRef.value = undefined;
+      editValue.value = filterParams.valueRange.min;
+      return;
+    }
+
+    if (!areValuesEqual(value.min, editValue.value)) {
+      logger.verbose('updating edit values by model value change', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value, editValue: editValue.value });
+      editValue.value = value.min;
+    }
+
+    const changed = (!!storeValueRef.value !== !!modelValue.value) || 
+      (modelValue.value && !areValuesEqual(modelValue.value.min, storeValueRef.value!.min));
+    if(changed) {
+      logger.verbose('updating store value by model value change', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value, editValue: editValue.value });
+      storeValueRef.value = modelValue.value;
+    }
+  }, { immediate: true });
+
+  watch(() => filterParams, () => { 
+    logger.debug('filter params watcher', { ctrlKey, modelValue: modelValue.value, filterParams });
+    if(modelValue.value) {
+      const narrowedValue = computeNarrowedRange(modelValue.value, filterParams.valueRange, filterParams.valueRange);
+      if(!areValuesEqual(narrowedValue.min, modelValue.value.min)) {
+        logger.verbose('model value adjusted by filter limits', { ctrlKey, currentValue: modelValue.value, filterParams, narrowedValue });
+        modelValue.value = narrowedValue;
+      }
     }
   }, { immediate: false });
 });
-
 
 </script>
 

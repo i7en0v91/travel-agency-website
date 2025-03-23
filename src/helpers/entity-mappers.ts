@@ -90,8 +90,7 @@ export function mapSearchedFlightOffer (dto: ISearchedFlightOfferDto, lookup: IS
     departFlight: mapSearchedFlight(dto.departFlight, lookup),
     arriveFlight: dto.arriveFlight ? mapSearchedFlight(dto.arriveFlight, lookup) : undefined,
     numPassengers: dto.numPassengers,
-    totalPrice: new Decimal(dto.totalPrice),
-    isFavourite: dto.isFavourite
+    totalPrice: new Decimal(dto.totalPrice)
   };
 }
 
@@ -118,8 +117,7 @@ export function mapFlightOfferDetails (dto: IFlightOfferDetailsDto): Omit<IFligh
     arriveFlight: dto.arriveFlight ? mapFlight(dto.arriveFlight) : undefined,
     numPassengers: dto.numPassengers,
     class: dto.class,
-    totalPrice: new Decimal(dto.totalPrice),
-    isFavourite: dto.isFavourite
+    totalPrice: new Decimal(dto.totalPrice)
   };
 }
 
@@ -174,7 +172,6 @@ export function mapStayOfferDetails (dto: IStayOfferDetailsDto, reviewSummary: R
     numGuests: dto.numGuests,
     numRooms: dto.numRooms,
     totalPrice: new Decimal(dto.totalPrice),
-    isFavourite: dto.isFavourite,
     stay: mapStay(dto.stay, reviewSummary),
     prices: {
       Base: new Decimal(dto.prices.Base),
@@ -312,8 +309,7 @@ export function mapSearchedStayOffer (dto: ISearchedStayOfferDto, lookup: ISearc
     numGuests: dto.numGuests,
     numRooms: dto.numRooms,
     stay: mapSearchedStay(dto.stay, lookup),
-    totalPrice: new Decimal(dto.totalPrice),
-    isFavourite: dto.isFavourite
+    totalPrice: new Decimal(dto.totalPrice)
   };
 }
 

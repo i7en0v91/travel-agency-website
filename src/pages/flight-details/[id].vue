@@ -101,7 +101,7 @@ onMounted(() => {
 <template>
   <article class="px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
     <ErrorHelm :is-error="flightDetailsFetch.status.value === 'error'">
-      <OfferDetailsBreadcrumbs
+      <LazyOfferDetailsBreadcrumbs
         :ctrl-key="[...CtrlKey, 'Breadcrumbs']"
         offer-kind="flights"
         :city="flightOffer?.departFlight?.departAirport.city"

@@ -1,13 +1,13 @@
 import { QueryPagePreviewModeParam, AppConfig, AppException, AppExceptionCodeEnum, validateObject } from '@golobe-demo/shared';
 import { CitiesSearchQuerySchema, type IListItemDto } from '../../../api-definitions';
-import { defineWebApiEventHandler } from './../../../utils/webapi-event-handler';
+import { defineWebApiEventHandler, getLogger as getWebApiLogger } from './../../../utils/webapi-event-handler';
 import omit from 'lodash-es/omit';
 import type { H3Event } from 'h3';
 import { getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const serverServices = getServerServices()!;
-  const logger = serverServices.getLogger().addContextProps({ component: 'WebApi' });
+  const logger = getWebApiLogger();
   const citiesLogic = serverServices.getCitiesLogic();
   const query = getQuery(event);
 

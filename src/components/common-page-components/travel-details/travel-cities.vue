@@ -56,7 +56,7 @@ const popularCitiesListFetch = await useFetch(`/${ApiEndpointPopularCitiesList}`
       }"
       :indicators="false" 
     >
-    <TravelCityCard
+    <LazyTravelCityCard
       :ctrl-key="[...ctrlKey, 'TravelCities', city?.id ?? 0]"
       :book-kind="bookKind"
       :city-name="city?.cityDisplayName ?? undefined"

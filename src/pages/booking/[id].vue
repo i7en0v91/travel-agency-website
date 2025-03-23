@@ -311,7 +311,7 @@ if (import.meta.server) {
   updatePageTitle();
 }
 
-onMounted(async () => {
+onMounted(() => {
   modalWaiter = useModalWaiter(modalWaiterRef as any, modalWaiterOpen);
   documentDownloader = useDocumentDownloader(modalWaiter);
 
@@ -355,7 +355,7 @@ async function onDownloadBtnClick (): Promise<void> {
     <ClientOnly>
       <article :class="`px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px] group booking-page-group ${LocatorClasses.BookingDetails}`">
         <ErrorHelm v-model:is-error="isError">
-          <OfferDetailsBreadcrumbs
+          <LazyOfferDetailsBreadcrumbs
             v-if="!isDownloadFromElectron"
             :ctrl-key="[...CtrlKey, 'Breadcrumbs']"
             :offer-kind="offer?.kind"

@@ -1,13 +1,13 @@
 import { AppConfig, AppException, AppExceptionCodeEnum, type EntityId } from '@golobe-demo/shared';
 import { extractUserIdFromSession } from './../../../../../server/utils/auth';
-import { defineWebApiEventHandler } from '../../../../utils/webapi-event-handler';
+import { defineWebApiEventHandler, getLogger as getWebApiLogger } from '../../../../utils/webapi-event-handler';
 import { mapStayOffer } from '../../../../utils/dto-mappers';
 import type { H3Event } from 'h3';
 import { getServerSession } from '#auth';
-import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
+import { getServerServices } from '../../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
+  const logger = getWebApiLogger();
   const staysLogic = getServerServices()!.getStaysLogic();
 
   const offerParam = getRouterParams(event)?.id?.toString() ?? '';

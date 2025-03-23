@@ -5,6 +5,9 @@ import orderBy from 'lodash-es/orderBy';
 import { withQuery, parseURL, stringifyParsedURL, stringifyQuery } from 'ufo';
 import set from 'lodash-es/set';
 import { getCommonServices } from './service-accessors';
+import once from 'lodash-es/once';
+
+const getLogger = once(() => getCommonServices().getLogger().addContextProps({ component: 'DomHelper' }));
 
 export function isInViewport (element: HTMLElement, includeVeticallyScrollableTo = false) {
   const rect = element.getBoundingClientRect();

@@ -531,8 +531,7 @@ export const MapFlightOffer = function (flightOffer: TFlightOfferInfo): IFlightO
     numPassengers: flightOffer.numPassengers,
     kind: 'flights',
     totalPrice: new Decimal(flightOffer.totalPrice),
-    dataHash: flightOffer.dataHash,
-    isFavourite: flightOffer.offerUsers?.some(u => u.isFavourite) ?? false
+    dataHash: flightOffer.dataHash
   };
 };
 
@@ -659,7 +658,6 @@ export const MapStayOfferCommon = function (stayOffer: TStayOfferInfo): Omit<ISt
     numRooms: stayOffer.numRooms,
     kind: 'stays',
     dataHash: stayOffer.dataHash,
-    isFavourite: stayOffer.offerUsers?.some(u => u.isFavourite) ?? false,
     totalPrice: new Decimal(stayOffer.totalPrice)
   };
 };

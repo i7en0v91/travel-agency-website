@@ -2,11 +2,11 @@ import { type IAppLogger, type IFlightOffersFilterParams, type ISorting, type Fl
 import { type ISearchFlightOffersParamsDto, SearchFlightOffersParamsDtoSchema, type ISearchFlightOffersResultDto } from '../../../api-definitions';
 import { mapSearchFlightOfferResultEntities, mapSearchedFlightOffer } from '../../../utils/dto-mappers';
 import { extractUserIdFromSession } from './../../../../server/utils/auth';
-import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
+import { defineWebApiEventHandler, getLogger as getWebApiLogger } from '../../../utils/webapi-event-handler';
 import type { H3Event } from 'h3';
 import { Decimal } from 'decimal.js';
 import { getServerSession } from '#auth';
-import { getCommonServices, getServerServices } from '../../../../helpers/service-accessors';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 function performAdditionalDtoValidation (dto: ISearchFlightOffersParamsDto, event : H3Event, logger: IAppLogger) {
   if (dto.price?.to && dto.price?.from && dto.price.from > dto.price.to) {
@@ -39,7 +39,7 @@ function getSortDirection (sort: FlightOffersSortFactor): 'asc' | 'desc' {
 }
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
+  const logger = getWebApiLogger();
   const flightsLogic = getServerServices()!.getFlightsLogic();
 
   logger.debug('parsing flight offers search query from HTTP body');
@@ -54,8 +54,8 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     dateTo: searchParamsDto.dateTo,
     departureTimeOfDay: searchParamsDto.departureTimeOfDay,
     flexibleDates: searchParamsDto.flexibleDates,
-    fromCitySlug: searchParamsDto.fromCitySlug,
-    toCitySlug: searchParamsDto.toCitySlug,
+    fromCityId: searchParamsDto.fromCityId,
+    toCityId: searchParamsDto.toCityId,
     numPassengers: searchParamsDto.numPassengers,
     price: searchParamsDto.price
       ? {

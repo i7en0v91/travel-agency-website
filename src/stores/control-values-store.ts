@@ -1,13 +1,16 @@
-import { type EntityId, AppConfig, eraseTimeOfDay, type IAppLogger, AppException, AppExceptionCodeEnum, DefaultFlightClass, DefaultFlightTripType, FlightMinPassengers, StaysMinGuestsCount, StaysMinRoomsCount } from '@golobe-demo/shared';
-import { StoreKindEnum, UserAccountTabGroup, UserAccountTabAccount, HistoryTabGroup, HistoryTabFlights } from '../helpers/constants';
-import { toShortForm } from './../helpers/components';
+import { type EntityId, AppConfig, eraseTimeOfDay, type IAppLogger, AppException, AppExceptionCodeEnum, DefaultFlightClass, DefaultFlightTripType, FlightMinPassengers, StaysMinGuestsCount, StaysMinRoomsCount, DefaultFlightOffersSorting, DefaultStayOffersSorting } from '@golobe-demo/shared';
+import { StoreKindEnum, UserAccountTabGroup, UserAccountTabAccount, HistoryTabGroup, HistoryTabFlights, FindFlightsPageCtrlKey, FindStaysPageCtrlKey } from '../helpers/constants';
+import { getFunctionalElementKey, RESET_TO_DEFAULT, toShortForm } from './../helpers/components';
 import { buildStoreDefinition } from '../helpers/stores/pinia';
 import isArray from 'lodash-es/isArray';
 import isString from 'lodash-es/isString';
-import { defu } from 'defu';
+import deepmerge from 'lodash-es/merge';
+import { destr } from 'destr';
 import dayjs from 'dayjs';
 import type { ComputedRef } from 'vue';
-import { isCommonControl, isSpecificControl, type ControlKey } from '../helpers/components';
+import { isCommonControl, isSpecificControl, isNestedControl, type ControlKey } from '../helpers/components';
+import type { SearchOffersFilterRange, SearchOffersFilterVariantId } from '../types';
+import { omit } from 'lodash';
 
 /** Control value identifier, usually a component key */
 export type ControlValueKey = ControlKey;
@@ -37,16 +40,21 @@ TModelValue extends ControlStoreValue ? {
   to: (storeValue: ControlStoreValue) => TModelValue | null, 
   from: (modelValue: TModelValue) => ControlStoreValue | null
 };
-type ValueConverterOptions<TModelValue> = { valueConverter: ValueConverter<TModelValue> };
-type ControlValueOptions<TModelValue> = {
-  defaultValue?: TModelValue | ControlValueInitializer<TModelValue>,
+/** Options which can be serialized and passed in the store */
+type ControlValueStoreOptions = {
+  /** Whether control value needs to be persisted in local storage and restored on next setup */
   persistent?: boolean
-} & ValueConverterOptions<TModelValue>;
-
-type ControlValueRuntimeOptions<TModelValue = ControlStoreValue> = ControlValueOptions<TModelValue> & {
-  initialOverwrite?: TModelValue | ControlValueInitializer<TModelValue>
 };
-export type ControlValueInfo<TModelValue = ControlStoreValue> = ValueMetaInfo & ControlValueRuntimeOptions<TModelValue>;
+type ValueConverterOptions<TModelValue> = { valueConverter: ValueConverter<TModelValue> };
+/** All options including {@link ControlValueStoreOptions} and non-serializeable options like functions */
+type ControlValueAllOptions<TModelValue> = ControlValueStoreOptions & {
+  /** Default value used when user settings/last selected values are empty */
+  defaultValue?: TModelValue | ControlValueInitializer<TModelValue>,
+  /** Allows to overwrite any default or last selected value during setup */
+  initialOverwrite?: TModelValue | ControlValueInitializer<TModelValue>,
+  
+} & ValueConverterOptions<TModelValue>;
+export type ControlValueInfo = ValueMetaInfo & ControlValueStoreOptions;
 type ControlValueSettingType = EntityId | string;
 
 const StringValidator: ValueConverter<ControlStoreValue> = {
@@ -62,7 +70,7 @@ const StringValidator: ValueConverter<ControlStoreValue> = {
 };
 
 const NumberValueConverter: ValueConverter<number> = {
-  from: (value) => value?.toString(),
+  from: (value) => value.toString(),
   to: (value) =>  {
     if(!value) {
       return null;
@@ -85,7 +93,7 @@ const ControlKeyValueConverter: ValueConverter<ControlKey> = {
     if(!isArray(value)) {
       throw new Error('incorrect control key value type');
     }
-     return value.join(':');
+    return value.join(':');
   },
   to: (value): ControlKey | null => {
     if(!value) {
@@ -123,8 +131,30 @@ const BoleanValueConverter: ValueConverter<boolean> = {
   }
 };
 
+const RangeFilterValueConverter: ValueConverter<SearchOffersFilterRange> = {
+  from: (value: SearchOffersFilterRange) => JSON.stringify(value),
+  to: (value): SearchOffersFilterRange | null => {
+    if(!value) {
+      return null;
+    }
+    if(typeof value !== 'string') {
+      throw new Error('incorrect value type');
+    };
+    const normalizedValue = value.trim();
+    if(!normalizedValue.length) {
+      return null;
+    }
+
+    const parsed = destr<SearchOffersFilterRange>(normalizedValue);
+    if(!parsed) {
+      throw new Error('failed to parse range filter');
+    }
+    return parsed;
+  }
+};
+
 const DateValueConverter: ValueConverter<Date> = {
-  from: (value) => value?.toISOString() ?? null,
+  from: (value) => value.toISOString(),
   to: (value) =>  {
     if(!value) {
       return null;
@@ -138,7 +168,7 @@ const DateValueConverter: ValueConverter<Date> = {
 };
 
 const DateRangeValueConverter: ValueConverter<Date[]> = {
-  from: (value) => value?.map(x => x.toISOString()) ?? null,
+  from: (value) => value.map(x => x.toISOString()),
   to: (value) =>  {
     if(!value) {
       return null;
@@ -152,7 +182,7 @@ const DateRangeValueConverter: ValueConverter<Date[]> = {
 };
 
 declare type State = {
-  s_controlValues: Map<string, ControlValueInfo<unknown>>
+  s_controlValues: Map<string, ControlValueInfo>
 };
 
 const StoreId = StoreKindEnum.ControlValues;
@@ -214,33 +244,53 @@ function getCurrentTimestamp() {
   return new Date().getTime();
 }
 
-function getValueDefaultOptions(key: ControlValueKey, logger: IAppLogger): ControlValueOptions<any> {
-  let commonTypeDefaults: ControlValueOptions<any>;
+function mergeOptions(...sources: Partial<ControlValueAllOptions<any>>[]): Partial<ControlValueAllOptions<any>> {
+  if(!sources?.length) {
+    return {};
+  } else if(sources.length === 1) {
+    return sources[0];
+  } else {
+    return deepmerge(sources[0], ...sources.slice(1));
+  }
+}
+
+function getValueDefaultOptions(key: ControlValueKey, logger: IAppLogger): ControlValueAllOptions<any> {
+  let commonTypeDefaults: ControlValueAllOptions<any>;
   if(isCommonControl(key, 'SearchList')) {
-    commonTypeDefaults = { persistent: true, valueConverter: StringValidator } as ControlValueOptions<EntityId>;
+    commonTypeDefaults = { persistent: true, valueConverter: StringValidator } as ControlValueAllOptions<EntityId>;
   } else if(isCommonControl(key, 'Dropdown')) {
-    commonTypeDefaults = { persistent: true, valueConverter: StringValidator } as ControlValueOptions<string>;
+    commonTypeDefaults = { persistent: true, valueConverter: StringValidator } as ControlValueAllOptions<string>;
   } else if(isCommonControl(key, 'Counter')) {
-    commonTypeDefaults = { persistent: true, valueConverter: NumberValueConverter } as ControlValueOptions<number>;
+    commonTypeDefaults = { persistent: true, valueConverter: NumberValueConverter } as ControlValueAllOptions<number>;
   } else if(isCommonControl(key, 'DatePicker')) {
-    commonTypeDefaults = { persistent: true, valueConverter: DateValueConverter } as ControlValueOptions<Date>;
+    commonTypeDefaults = { persistent: true, valueConverter: DateValueConverter } as ControlValueAllOptions<Date>;
   } else if(isCommonControl(key, 'DateRangePicker')) {
-    commonTypeDefaults = { persistent: true, valueConverter: DateRangeValueConverter } as ControlValueOptions<Date[]>;
+    commonTypeDefaults = { persistent: true, valueConverter: DateRangeValueConverter } as ControlValueAllOptions<Date[]>;
   } else if(isCommonControl(key, 'TabGroup')) {
-    commonTypeDefaults = { persistent: true, valueConverter: ControlKeyValueConverter } as ControlValueOptions<ControlKey>;
+    commonTypeDefaults = { persistent: true, valueConverter: ControlKeyValueConverter } as ControlValueAllOptions<ControlKey>;
   } else if(isCommonControl(key, 'Accordion')) {
-    commonTypeDefaults = { persistent: true, defaultValue: true, valueConverter: BoleanValueConverter } as ControlValueOptions<boolean>;
+    commonTypeDefaults = { persistent: true, defaultValue: true, valueConverter: BoleanValueConverter } as ControlValueAllOptions<boolean>;
+  } else if(isCommonControl(key, 'RangeFilter')) {
+    commonTypeDefaults = { persistent: false, defaultValue: undefined, valueConverter: RangeFilterValueConverter } as ControlValueAllOptions<SearchOffersFilterRange>;
+  } else if(isCommonControl(key, 'ChecklistFilter')) {
+    commonTypeDefaults = { persistent: false, defaultValue: undefined } as ControlValueAllOptions<SearchOffersFilterVariantId[]>;
+  } else if(isCommonControl(key, 'ChoiceFilter')) {
+    commonTypeDefaults = { persistent: false, defaultValue: undefined } as ControlValueAllOptions<SearchOffersFilterVariantId>;
   } else {
     logger.error(`unknown value key`, undefined, { key });
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown value', 'error-page');
   }
 
-  let specificControlDefaults: Partial<ControlValueOptions<any>> | undefined;
+  let specificControlDefaults: Partial<ControlValueAllOptions<any>> | undefined;
   // Dropdowns
   if(isSpecificControl(key, ['SearchOffers', 'FlightOffers', 'TripType', 'Dropdown'])) {
     specificControlDefaults = { defaultValue: DefaultFlightTripType };
   } else if(isSpecificControl(key, ['SearchOffers', 'FlightOffers', 'FlightParams', 'FlightClass', 'Dropdown'])) {
     specificControlDefaults = { defaultValue: DefaultFlightClass };
+  } else if(isSpecificControl(key, [...FindFlightsPageCtrlKey, 'ListView', 'ResultItemsList', 'SecondarySort', 'Dropdown'])) {
+    specificControlDefaults = { defaultValue: DefaultFlightOffersSorting };
+  } else if(isSpecificControl(key, [...FindStaysPageCtrlKey, 'ListView', 'ResultItemsList', 'SecondarySort', 'Dropdown'])) {
+    specificControlDefaults = { defaultValue: DefaultStayOffersSorting };
   // Search offer counter
   } else if(isSpecificControl(key, ['SearchOffers', 'FlightOffers', 'FlightParams', 'NumPassengers', 'Counter'])) {
     specificControlDefaults = { defaultValue: FlightMinPassengers };  
@@ -262,57 +312,82 @@ function getValueDefaultOptions(key: ControlValueKey, logger: IAppLogger): Contr
   } else if(isSpecificControl(key, ['SearchOffers', 'StayOffers', 'CheckIn', 'DatePicker'])) {
     specificControlDefaults = { defaultValue: () => eraseTimeOfDay(dayjs().toDate()) };
   } else if(isSpecificControl(key, ['SearchOffers', 'StayOffers', 'CheckOut', 'DatePicker'])) {
-    specificControlDefaults = { defaultValue: () => dayjs().add(AppConfig.autoInputDatesRangeDays, 'day').toDate() };
+    specificControlDefaults = { defaultValue: () => eraseTimeOfDay(dayjs().add(AppConfig.autoInputDatesRangeDays, 'day').toDate()) };
   // Tabs group
   } else if(isSpecificControl(key, ['SearchOffers', 'TabGroup'])) {
     specificControlDefaults = { persistent: false };
   } else if(isSpecificControl(key, ['Page', 'Favourites', 'TabGroup'])) {
     specificControlDefaults = { persistent: false };
-  } else if(isSpecificControl(key, UserAccountTabGroup)) {
-    specificControlDefaults = { defaultValue: UserAccountTabAccount };
-  } else if(isSpecificControl(key, HistoryTabGroup)) {
-    specificControlDefaults = { defaultValue: HistoryTabFlights };
+  } else if(isSpecificControl(key, [...FindFlightsPageCtrlKey, 'ListView', 'ResultItemsList', 'TabGroup'])) {
+    specificControlDefaults = { 
+      defaultValue: getFunctionalElementKey({ sortOption: DefaultFlightOffersSorting, isPrimary: true }) 
+    };
+  } else if(isSpecificControl(key, [...FindStaysPageCtrlKey, 'ListView', 'ResultItemsList', 'TabGroup'])) {
+    specificControlDefaults = { 
+      defaultValue: getFunctionalElementKey({ sortOption: 'hotels', isPrimary: true })
+    };
   }
-  
-  return defu(
-    commonTypeDefaults, 
-    specificControlDefaults ?? {},
+
+  // disable storing search params in user preferences on find offers pages
+  if(
+    isNestedControl(key, [...FindFlightsPageCtrlKey, 'ListView', 'ResultItemsList']) ||
+    isNestedControl(key, [...FindStaysPageCtrlKey, 'ListView', 'ResultItemsList'])
+  ) {
+    specificControlDefaults ??= { persistent: false };
+    specificControlDefaults.persistent = false;
+  }
+
+ return mergeOptions(
+  { 
+    persistent: false, 
+    valueConverter: undefined as any 
+  },
+  commonTypeDefaults, 
+  specificControlDefaults ?? {}
+ ) as ControlValueAllOptions<any>;
+};
+
+function getValueConverter<TModelValue>(key: ControlValueKey, logger: IAppLogger) {
+  const defaultOptions = getValueDefaultOptions(key, logger) as ControlValueAllOptions<TModelValue>;
+  return defaultOptions.valueConverter;
+}
+
+function applyOptionsOverDefaults<TModelValue>(
+  key: ControlValueKey, 
+  options: Partial<ControlValueStoreOptions> | undefined,
+  logger: IAppLogger
+): ControlValueAllOptions<TModelValue> {
+  const defaultOptions = getValueDefaultOptions(key, logger);
+  const mergedOptions = mergeOptions(
     { 
       persistent: false, 
+      fullKey: key,
+      value: null,
       valueConverter: undefined as any 
-    }
-  );
-};
+    } as any, 
+    defaultOptions, 
+    options ?? {}
+  ) as ControlValueAllOptions<TModelValue>;
+  return mergedOptions;
+}
+
+function pickStoreOptionsOnly<TOptions extends ControlValueStoreOptions>(
+  options: ControlValueAllOptions<any> | ControlValueInfo
+): TOptions {
+ return omit(options, ['defaultValue', 'initialOverwrite', 'valueConverter']) as TOptions;
+}
 
 const evalControlValue = <TModelValue>(
   value : TModelValue | ControlValueInitializer<TModelValue> | undefined
 ) => (value && (typeof value === 'function')) ? ((value as any)() as TModelValue) : value;
 
-function getDefaultValueOnServer<TModelValue>(
-  key: ControlValueKey, 
-  options: Partial<ControlValueRuntimeOptions<TModelValue>> | undefined,
-  logger: IAppLogger
-): TModelValue {
-  const defaultOptions = getValueDefaultOptions(key, logger);
-  const result = 
-    evalControlValue(options?.initialOverwrite) ?? 
-    evalControlValue(options?.defaultValue) ?? 
-    evalControlValue(defaultOptions.defaultValue);
-  if(!result) {
-    logger.error(`control value can be available on server only if default value is specified`, undefined, { key });
-    throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'control value is not available on server', 'error-page');
-  }
-  return result;
-};
-
 function convertStoreToModel<TModelValue>(
   key: ControlValueKey, 
   storeValue: ControlStoreValue, 
-  options: ControlValueOptions<TModelValue>, 
   logger: IAppLogger
 ): TModelValue {
-  if(options.valueConverter) {
-    const valueConverter = options.valueConverter;
+  const valueConverter = getValueConverter(key, logger) as ValueConverter<TModelValue>;
+  if(valueConverter) {
     if('isStoredValueAcceptable' in valueConverter) {
       if(!valueConverter.isStoredValueAcceptable(storeValue)) {
         logger.warn(`store value is not acceptable`, undefined, { key, controlValue: storeValue });
@@ -333,12 +408,15 @@ function convertStoreToModel<TModelValue>(
 
 function convertModelToStore<TModelValue>(
   key: ControlValueKey, 
-  modelValue: TModelValue, 
-  options: ControlValueOptions<TModelValue>, 
+  modelValue: TModelValue | null | undefined, 
   logger: IAppLogger
 ): ControlStoreValue {
+  if(modelValue === null || modelValue === undefined) {
+    return null;
+  }
+
   let storeValue: ControlStoreValue;
-  const valueConverter = options.valueConverter as ValueConverter<TModelValue>;
+  const valueConverter = getValueConverter(key, logger) as ValueConverter<TModelValue>;
   if(valueConverter && 'from' in valueConverter) {
     try {
       storeValue = valueConverter.from(modelValue as any);
@@ -369,7 +447,7 @@ const StoreDef = buildStoreDefinition(StoreId,
       /**
        * All tracked control values
        */
-      values(): ReadonlyMap<string, ControlValueInfo<unknown>> {
+      values(): ReadonlyMap<string, ControlValueInfo> {
         return this.s_controlValues;
       }
     },
@@ -388,9 +466,9 @@ const StoreDef = buildStoreDefinition(StoreId,
         });
 
         const logger = this.getLogger();
-        const valueInfo = this.values.get(toShortForm(key))! as ControlValueInfo<TModelValue>;
+        const valueInfo = this.values.get(toShortForm(key))! as ControlValueInfo;
         const storeValue = valueInfo.value;
-        return convertStoreToModel<TModelValue>(key, storeValue, valueInfo, logger);
+        return convertStoreToModel<TModelValue>(key, storeValue, logger);
       },
 
       /**
@@ -399,45 +477,35 @@ const StoreDef = buildStoreDefinition(StoreId,
        * responsible controls haven't been mounted yet) it will be instantiated with respective 
        * settings taken via {@link getValueDefaultOptions}
        */
-      async setValue<TModelValue = ControlStoreValue>(
+      async setValue<TModelValue>(
         key: ControlValueKey, 
-        value: TModelValue
+        value: TModelValue | typeof RESET_TO_DEFAULT
       ): Promise<void> {
-        this.updateControlValue({ 
-          key, 
-          value: { modelValue: value } 
-        });
+
+        if(value === RESET_TO_DEFAULT) {
+          this.resetToDefault(key);
+        } else {
+          this.updateControlValue({ 
+            key, 
+            value: { modelValue: value } 
+          });
+        }
       },
 
       /**
        * Returns ref to value's editing state to be used as models in control components
-       * @param options optionally overwrite default options:
-       * - {@link defaultValue} value to use if local user input history is empty
-       * - {@link persistent} whether to persist value in local storage and restore it in subsequent app launches, e.g. when browser restarts 
-       * - {@link initialOverwrite} force overwrite any default or history values with specified in {@link initialOverwrite}
+       * @param options optionally overwrite default options {@link getValueDefaultOptions}
        * @returns writable computed ref to value's editing state
        */
       acquireValueRef<TModelValue = ControlStoreValue>(
         key: ControlValueKey, 
-        options?: Partial<ControlValueRuntimeOptions<TModelValue>>
+        options?: Partial<ControlValueStoreOptions>
       ): { valueRef: WritableComputedRef<TModelValue> } {
         const logger = this.getLogger();
         
-        if(import.meta.server) {
-          const defaultValue = getDefaultValueOnServer(key, options, logger);
-          return {
-            valueRef: computed({
-              get: () => {
-                return defaultValue;
-              },
-              set: () => {}
-            })
-          };
-        }
-        
         this.ensureValueTracked({ 
           key, 
-          options: options as ControlValueRuntimeOptions<unknown>
+          options: options as ControlValueStoreOptions
         });
 
         const shortKey = toShortForm(key);
@@ -451,8 +519,7 @@ const StoreDef = buildStoreDefinition(StoreId,
 
             return convertStoreToModel<TModelValue>(
               key, 
-              valueInfo.value, 
-              (valueInfo as any) as ControlValueOptions<TModelValue>, 
+              valueInfo.value,
               logger
             );
           },
@@ -495,7 +562,7 @@ const StoreDef = buildStoreDefinition(StoreId,
     patches: {
       ensureValueTracked(args: { 
         key: ControlValueKey,
-        options?: Partial<ControlValueRuntimeOptions<unknown>>
+        options?: Partial<ControlValueAllOptions<unknown>>
       }) {
         const logger = this.getLogger();
 
@@ -504,51 +571,54 @@ const StoreDef = buildStoreDefinition(StoreId,
           return;
         }
  
-        const defaultOptions = getValueDefaultOptions(args.key, logger);
-        const mergedOptions: ControlValueRuntimeOptions<unknown> = defu(
-          args.options, 
-          defaultOptions, 
-          { 
-            persistent: false, 
-            fullKey: args.key,
-            valueConverter: undefined as any 
-          }
-        );
-
-        if(import.meta.server) {
-          getDefaultValueOnServer(args.key, args.options, logger); 
-          return;
-        }
+        const valueOptions = applyOptionsOverDefaults(
+          args.key, 
+          args.options ?? {}, 
+          logger
+        ) as ControlValueAllOptions<unknown>;
 
         let initialModelValue: any;
-        if(!mergedOptions.persistent) {
-          initialModelValue = evalControlValue(mergedOptions.initialOverwrite ?? mergedOptions.defaultValue);
+        if(!valueOptions.persistent) {
+          initialModelValue = evalControlValue(valueOptions.initialOverwrite ?? valueOptions.defaultValue);
           logger.verbose(`initializing non-persistent value`, { key: args.key, controlValue: initialModelValue });
         } else {
-          const savedValue = this.loadValue(args.key);
-          const savedModelValue = savedValue ? convertStoreToModel(args.key, savedValue, mergedOptions, logger) : undefined;
-          initialModelValue = evalControlValue(mergedOptions.initialOverwrite ?? savedModelValue ?? mergedOptions.defaultValue);
+          const savedValue = import.meta.client ? this.loadValue(args.key) : null;
+          const savedModelValue = savedValue ? convertStoreToModel(args.key, savedValue, logger) : undefined;
+          initialModelValue = evalControlValue(valueOptions.initialOverwrite ?? savedModelValue ?? valueOptions.defaultValue);
           logger.verbose(`initializing persistent value`, { key: args.key, controlValue: initialModelValue });
         }
 
         const initialStoreValue = convertModelToStore(
           args.key,
           initialModelValue,
-          mergedOptions,
           logger
         );
-        const initialControlValueInfo: ControlValueInfo<unknown> = {
-          ...mergedOptions,
+        const initialControlValueInfo: ControlValueInfo = {
+          ...valueOptions,
           fullKey: args.key,
           value: initialStoreValue ?? null,
         };
         this.$patch((s) => { 
-          s.s_controlValues.set(shortKey, initialControlValueInfo);
+          s.s_controlValues.set(shortKey, pickStoreOptionsOnly(initialControlValueInfo));
         });
 
         this.updateControlValue({
           key: args.key,
           value: { storeValue: initialStoreValue },
+          force: true
+        });
+      },
+
+      resetToDefault(key: ControlValueKey) {
+        const valueOptions = applyOptionsOverDefaults(
+          key, 
+          {}, 
+          this.getLogger()
+        ) as ControlValueAllOptions<unknown>;
+        const defaultValue = evalControlValue(valueOptions.initialOverwrite ?? valueOptions.defaultValue);
+        this.updateControlValue({
+          key,
+          value: { modelValue: defaultValue },
           force: true
         });
       },
@@ -564,8 +634,15 @@ const StoreDef = buildStoreDefinition(StoreId,
         const shortKey = toShortForm(args.key);
         let valueInfo = this.s_controlValues.get(shortKey);
         if(!valueInfo) {
-          logger.verbose(`value not being tracked - initializing with registry value`, { key: args.key, controlValue: 'modelValue' in args.value ? args.value.modelValue : args.value.storeValue });
-          this.ensureValueTracked({ key: args.key });
+          const serverOnlyOptions: Partial<ControlValueAllOptions<unknown>> | undefined = 
+            (import.meta.server && 'modelValue' in args.value) ? {
+              initialOverwrite: args.value.modelValue
+            } : undefined;
+          logger.verbose(`value not being tracked - initializing with registry value`, { key: args.key, controlValue: 'modelValue' in args.value ? args.value.modelValue : args.value.storeValue,  serverOnlyOptions });
+          this.ensureValueTracked({ 
+            key: args.key, 
+            options: serverOnlyOptions 
+          });
           valueInfo = this.s_controlValues.get(shortKey)!;
         }
 
@@ -573,15 +650,14 @@ const StoreDef = buildStoreDefinition(StoreId,
           convertModelToStore(
             args.key,
             args.value.modelValue,
-            valueInfo,
             logger
           ) : args.value.storeValue;
         this.$patch((s) => { 
-          s.s_controlValues.set(shortKey, {
+          s.s_controlValues.set(shortKey, pickStoreOptionsOnly({
             ...valueInfo,
             value: storeValue,
             agentUpdateTimestamp: timestamp
-          });
+          }));
         });
 
         if(valueInfo?.persistent) {
@@ -590,6 +666,10 @@ const StoreDef = buildStoreDefinition(StoreId,
       },
 
       storeValue(args: { key: ControlValueKey, value: ControlStoreValue }) {
+        if(import.meta.server) {
+          return;
+        }
+
         const logger = this.getLogger();
         logger.debug(`persisting value`, { key: args.key, controlValue: args.value });
         const strValue = args.value ?? null;
@@ -597,6 +677,10 @@ const StoreDef = buildStoreDefinition(StoreId,
       },
 
       loadValue(key: ControlValueKey): ControlStoreValue {
+        if(import.meta.server) {
+          throw new Error('loading value is not implemented on server');
+        }
+
         const logger = this.getLogger();
         logger.debug(`loading value`, { key });
         return readControlValue(key, logger) ?? null;

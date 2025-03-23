@@ -200,8 +200,7 @@ export interface IAirlineCompany extends IEditableEntity, ISoftDeleteEntity {
 export interface IOffer extends IEditableEntity, ISoftDeleteEntity {
   kind: OfferKind,
   totalPrice: Price,
-  dataHash: string,
-  isFavourite: boolean
+  dataHash: string
 }
 
 export interface IAirport extends IEditableEntity, ISoftDeleteEntity {
@@ -251,8 +250,8 @@ export interface IFlightOffer extends IOffer {
 }
 
 export interface IFlightOffersFilterParams {
-  fromCitySlug?: string,
-  toCitySlug?: string,
+  fromCityId?: EntityId,
+  toCityId?: EntityId,
   tripType?: TripType,
   numPassengers?: number,
   class?: FlightClass,
@@ -365,7 +364,7 @@ export interface IStayOffer extends IOffer {
 }
 
 export interface IStayOffersFilterParams {
-  citySlug?: string,
+  cityId?: EntityId,
   checkIn?: Date,
   checkOut?: Date,
   price?: {

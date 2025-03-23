@@ -1,7 +1,6 @@
 import { LogAlwaysLevel, type IAppLogger, type LogLevel, type LogLevelEnum } from '@golobe-demo/shared';
-import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
+import { defineWebApiEventHandler, getLogger as getWebApiLogger } from '../../utils/webapi-event-handler';
 import type { H3Event } from 'h3';
-import { getServerServices } from '../../../helpers/service-accessors';
 import isArray from 'lodash-es/isArray';
 
 async function handleLogEntry(logEntry: { level: LogLevel | (typeof LogAlwaysLevel), msg: any }, logger: IAppLogger): Promise<void> {
@@ -35,7 +34,7 @@ async function handleLogEntry(logEntry: { level: LogLevel | (typeof LogAlwaysLev
 }
 
 export default defineWebApiEventHandler(async (event: H3Event) => {
-  const logger = getServerServices()!.getLogger().addContextProps({ component: 'WebApi' });
+  const logger = getWebApiLogger();
 
   // client's message/error will be logged inside handler logging wrapper
   const body = await readBody(event);

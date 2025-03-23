@@ -114,7 +114,7 @@ onMounted(() => {
 <template>
   <article class="px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
     <ErrorHelm v-model:is-error="isError">
-      <OfferDetailsBreadcrumbs
+      <LazyOfferDetailsBreadcrumbs
         :ctrl-key="[...CtrlKey, 'Breadcrumbs']"
         offer-kind="stays"
         :city="stayOffer?.stay?.city"

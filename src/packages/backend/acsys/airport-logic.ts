@@ -44,26 +44,27 @@ export class AirportLogic implements IAirportLogic {
     this.logger.debug('airport deleted', id);
   };
 
-  async getAirportsForSearch (citySlugs: string[], addPopular: boolean, previewMode: PreviewMode): Promise<EntityDataAttrsOnly<IAirport>[]> {
-    this.logger.debug('get airports for search, city', { slugs: citySlugs, addPopular, previewMode });
+  async getAirportsForSearch (cityIds: EntityId[], addPopular: boolean, previewMode: PreviewMode): Promise<EntityDataAttrsOnly<IAirport>[]> {
+    this.logger.debug('get airports for search', { ids: cityIds, addPopular, previewMode });
     let result: EntityDataAttrsOnly<IAirport>[] | undefined;
     if(previewMode) {
+      let filterCityIds: EntityId[] = [...cityIds];
       if (addPopular) {
-        const popularCities = await this.citiesLogic.getPopularCities(previewMode);
-        citySlugs.push(...popularCities.map(c => c.slug));
-        citySlugs = uniq(citySlugs);
+        const popularCities = await this.citiesLogic.getPopularCities(true);
+        popularCities.forEach(pc => filterCityIds.push(pc.id));
+        filterCityIds = uniq(filterCityIds);
       }
   
-      if (citySlugs.length === 0) {
-        this.logger.debug('get airports for search, empty city slug list');
+      if (filterCityIds.length === 0) {
+        this.logger.debug('get airports for search, empty city ids list');
         return [];
       }
 
-      this.logger.debug('get airports for search - determining airport ids by city', { slugs: citySlugs });
+      this.logger.debug('get airports for search - determining airport ids by city', { ids: filterCityIds });
       const draftCityIds = (await this.dbRepository.acsysDraftsCity.findMany({
         where: {
-          slug: {
-            in: citySlugs
+          id: {
+            in: filterCityIds
           },
           isDeleted: false
         },
@@ -85,8 +86,8 @@ export class AirportLogic implements IAirportLogic {
       const publishedAirportIds = (await this.dbRepository.airport.findMany({
         where: {
           city: {
-            slug: {
-              in: citySlugs
+            id: {
+              in: filterCityIds
             },
             isDeleted: false
           },
@@ -106,10 +107,10 @@ export class AirportLogic implements IAirportLogic {
       // take only one first airport in each city in case it has more than 1 airport
       result = values(groupBy(resolveResult, (a: IAirport) => a.city.slug)).map(g => g[0] as IAirport);
     } else {
-      result = await this.prismaImplementation.getAirportsForSearch(citySlugs, addPopular, previewMode);
+      result = await this.prismaImplementation.getAirportsForSearch(cityIds, addPopular, previewMode);
     }
     
-    this.logger.debug('get airports for search, city', { slugs: citySlugs, addPopular, previewMode, count: result.length });
+    this.logger.debug('get airports for search', { ids: cityIds, addPopular, previewMode, count: result.length });
     return result;
   }
 

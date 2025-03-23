@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toShortForm, type ControlKey } from './../../../helpers/components';
+import type { ControlKey } from './../../../helpers/components';
 import { DefaultFlightClass, FlightMinPassengers, FlightMaxPassengers, type FlightClass, getI18nResName1, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import DropdownList from './../../forms/dropdown-list.vue';
 import InputFieldFrame from '../../forms/input-field-frame.vue';
@@ -119,7 +119,6 @@ defineShortcuts({
           :ctrl-key="[...ctrlKey, 'NumPassengers', 'Counter']"
           :min-value="FlightMinPassengers"
           :max-value="FlightMaxPassengers"
-          :default-value="FlightMinPassengers"
           :label-res-name="getI18nResName2('searchFlights', 'fieldPassengers')"
           class="mt-16"
         />

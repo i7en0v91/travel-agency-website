@@ -4,6 +4,7 @@ import merge from 'lodash-es/merge';
 import { type IAppLogger, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { getCommonServices } from '../service-accessors';
 import camelCase from 'lodash-es/camelCase';
+import once from 'lodash-es/once';
 
 declare type GettersWithCommons<Id extends string, S extends StateTree, ClientSetupVars, G, A> = 
   DefineStoreOptions<Id, S & ClientSetupVars, G, A>['getters'];
@@ -21,7 +22,8 @@ declare type StoreCommonMethods<ClientSetupVars> = {
 
 declare type ClientSideOptions = {
   nuxtApp: ReturnType<typeof useNuxtApp>,
-  fetchEx: ReturnType<typeof useNuxtApp>['$fetchEx']
+  fetchEx: ReturnType<typeof useNuxtApp>['$fetchEx'],
+  getLogger: () => IAppLogger
 };
 
 export function getStoreLoggingPrefix(storeId: string) { 
@@ -62,21 +64,16 @@ export function buildStoreDefinition<
   try {
     if(import.meta.client) {
       const nuxtApp = useNuxtApp();
+      const getLogger = once(() => getCommonServices().getLogger().addContextProps({ component: 'CustomFetch' }));
       const fetchEx = (options: FetchExOptions) => {
-        let logger: IAppLogger | undefined;
-        const getLogger = () => {
-          if(!logger) {
-            logger = getCommonServices().getLogger().addContextProps({ component: 'CustomFetch' });
-          }
-          return logger;
-        };
         return options.defautAppExceptionAppearance === 'error-page' ? 
           createFetch({ defautAppExceptionAppearance: 'error-page' }, nuxtApp, getLogger) : 
           createFetch({ defautAppExceptionAppearance: 'error-stub' }, nuxtApp, getLogger);
       };
       clientSetupVariables = clientSetup({
         nuxtApp,
-        fetchEx
+        fetchEx,
+        getLogger
       });
     }
   } catch(err: any) {

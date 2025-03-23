@@ -10,7 +10,6 @@ interface IProps {
   ctrlKey: ControlKey,
   captionResName: I18nResName,
   persistent?: boolean,
-  defaultDate?: Date,
   minDate?: Date,
   ui?: {
     wrapper?: string,
@@ -20,8 +19,7 @@ interface IProps {
 
 const { 
   ctrlKey, 
-  persistent = undefined, 
-  defaultDate = undefined, 
+  persistent = undefined,
   minDate 
 } = defineProps<IProps>();
 
@@ -38,11 +36,13 @@ const datesDisplayText = computed(() => {
 });
 
 onMounted(() => {
-  const initialOverwrite = modelValue.value as Date;
-  logger.debug('acquiring store value ref', { ctrlKey, defaultValue: defaultDate, initialOverwrite });
+  //const initialOverwrite = modelValue.value as Date;
+  logger.debug('acquiring store value ref', { ctrlKey /*, defaultValue: defaultDate, initialOverwrite */ });
   const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<Date | null>(ctrlKey, {
+    /*
     initialOverwrite,
     defaultValue: defaultDate,
+    */
     persistent
   });
 

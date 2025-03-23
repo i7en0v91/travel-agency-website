@@ -8,7 +8,7 @@ import { type IListItemDto, ApiEndpointCitiesSearch } from '../../server/api-def
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
 import { useEntityCacheStore } from '../../stores/entity-cache-store';
-import { useControlValuesStore, type ControlStoreValue } from '../../stores/control-values-store';
+import { useControlValuesStore } from '../../stores/control-values-store';
 
 interface IProps {
   ctrlKey: ControlKey,
@@ -186,10 +186,10 @@ async function setSelectionFromModelValue (value?: EntityId | null): Promise<voi
 }
 
 onMounted(() => {
-  const initialOverwrite = modelValue.value as ControlStoreValue;
-  logger.debug('acquiring store value ref', { ctrlKey, initialOverwrite });
+  //const initialOverwrite = modelValue.value as ControlStoreValue;
+  logger.debug('acquiring store value ref', { ctrlKey /*, initialOverwrite */ });
   const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef(ctrlKey, {
-    initialOverwrite,
+    //initialOverwrite,
     persistent
   });
 

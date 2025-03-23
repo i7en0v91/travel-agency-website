@@ -8,7 +8,6 @@ import { useControlValuesStore } from '../../stores/control-values-store';
 const {
   items, 
   persistent = undefined, 
-  defaultValue = undefined,
   placeholderResName,
   ctrlKey, 
   variant = 'default' 
@@ -45,11 +44,13 @@ function updateSelectedValue (value?: DropdownListValue | undefined) {
 }
 
 onMounted(() => {
-  const initialOverwrite = modelValue.value;
-  logger.debug('acquiring store value ref', { ctrlKey, defaultValue, initialOverwrite });
-  const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef(ctrlKey, {
+  //const initialOverwrite = modelValue.value;
+  logger.debug('acquiring store value ref', { ctrlKey /* defaultValue, initialOverwrite */ });
+  const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<DropdownListValue | null>(ctrlKey, {
+    /*
     initialOverwrite,
     defaultValue,
+    */
     persistent
   });
 

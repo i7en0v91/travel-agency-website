@@ -6,6 +6,7 @@ import { mergeConfig } from './../../node_modules/@nuxt/ui/dist/runtime/utils/in
 import TabsGroupMenu from './tabs-group-menu.vue';
 import { useControlValuesStore } from '../../stores/control-values-store';
 import { areCtrlKeysEqual, type ControlKey } from '../../helpers/components';
+import { toShortForm } from '@golobe-demo/shared';
 
 const { 
   ctrlKey, 
@@ -92,24 +93,25 @@ function getTabIndexByModelKey(tabModelValue: ControlKey) {
 }
 
 
-const initialOverwrite = modelValue.value as ControlKey;
-logger.debug('acquiring control value ref', { ctrlKey, defaultValue: DefaultTab.value, initialOverwrite });
+//const initialOverwrite = modelValue.value as ControlKey;
+logger.debug('acquiring control value ref', { ctrlKey /*, defaultValue: DefaultTab.value, initialOverwrite */ });
 const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<ControlKey>(ctrlKey, {
-  initialOverwrite,
-  defaultValue: defaultActiveTabKey,
+  //initialOverwrite,
+  //defaultValue: defaultActiveTabKey,
   persistent
 });
 
-watch(storeValueRef, () => {
+watch(() => storeValueRef.value ? toShortForm(storeValueRef.value) : undefined, () => {
   logger.debug('control value watcher', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value });
   const newValue: ControlKey = (storeValueRef.value as ControlKey) ?? DefaultTab.value;
   const changed = !modelValue.value || !areCtrlKeysEqual(newValue, modelValue.value);
   if(changed) {
+    logger.verbose('model value changed via store value', { ctrlKey, newValue, prevValue: modelValue.value });
     modelValue.value = newValue;  
   }
 }, { immediate: true });
 
-watch(modelValue, () => {
+watch(() => modelValue.value ? toShortForm(modelValue.value) : undefined, () => {
   logger.debug('model value watcher', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value });
   if(!modelValue.value) {
     return;
@@ -119,7 +121,7 @@ watch(modelValue, () => {
     storeValueRef.value = modelValue.value ?? DefaultTab.value;
   }
   const newTabIndex = getTabIndexByModelKey(modelValue.value);
-  if(selectedTabIndex.value != newTabIndex) {
+  if(selectedTabIndex.value !== newTabIndex) {
     logger.verbose('selected tab index changed via model value', { ctrlKey, new: newTabIndex, prev: selectedTabIndex.value });
     selectedTabIndex.value = newTabIndex;
   }
@@ -130,6 +132,10 @@ watch(selectedTabIndex, () => {
   if(!modelValue.value) {
     return;
   }
+  if(otherMenuItems.value.length && selectedTabIndex.value === tabs.length) {
+    logger.debug('ignoring selected tab key watcher - sorting cannot be changed by selecting other items menu tab', { ctrlKey, modelValue: modelValue.value });
+    return;
+  };
 
   const newTabKey = getModelKeyByTabIndex(selectedTabIndex.value!);
   if(!newTabKey) {

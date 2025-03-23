@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { type OfferKind, AppPage, type Locale, getI18nResName3, getI18nResName2, type ILocalizableValue, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
 import type { ControlKey } from './../../../helpers/components';
-import { AppPage, type Locale, getI18nResName3, getI18nResName2, type ILocalizableValue, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
+import { getCommonServices } from './../../../helpers/service-accessors';
+import type { ISearchFlightOffersMainParams, ISearchStayOffersMainParams } from './../../../types';
 import { useNavLinkBuilder } from '../../../composables/nav-link-builder';
 
 interface IProps {
@@ -11,10 +13,28 @@ interface IProps {
   citySlug?: string,
   numStays?: number
 };
-defineProps<IProps>();
+const { ctrlKey, searchKind } = defineProps<IProps>();
+
+const logger = getCommonServices().getLogger().addContextProps({ component: 'CityOffersLinks' });
 
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
+
+async function onSearchBtnClick(offersKind: OfferKind, citySlug: string): Promise<void> {
+  logger.debug('search btn click', { ctrlKey, offersKind, citySlug });
+  const searchOffersStore = useSearchOffersStore();
+
+  const entityCacheStore = useEntityCacheStore();
+  const items = await entityCacheStore!.get({ slugs: [citySlug!] }, 'City', true);
+  const cityId = items[0].id;
+
+  const mainParams = offersKind === 'flights' ? 
+    { fromCityId: cityId } as ISearchFlightOffersMainParams :
+    { cityId } as ISearchStayOffersMainParams;
+  
+  logger.debug('offer search params computed', { ctrlKey, offersKind, mainParams });
+  await searchOffersStore.load(offersKind, { overrideParams: mainParams });
+}
 
 </script>
 
@@ -37,15 +57,15 @@ const navLinkBuilder = useNavLinkBuilder();
         <USkeleton v-else class="w-full h-3" />
         <div class="text-gray-700 dark:text-gray-200 font-normal w-fit h-auto overflow-hidden flex flex-row flex-wrap items-center gap-[8px] mt-2 pr-2">
           <div v-if="searchKind === 'flight'" class="contents">
-            <ULink class="ring-inset m-1" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindFlights, locale as Locale, { fromCitySlug: citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
+            <ULink class="ring-inset m-1" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindFlights, locale as Locale, { fromCitySlug: citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)" @click="() => citySlug ? onSearchBtnClick('flights', citySlug) : undefined">
               {{ $t(getI18nResName3('indexPage', 'popularCity', 'flights')) }}
             </ULink>
-            <ULink class="ring-inset m-1" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
+            <ULink class="ring-inset m-1" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)" @click="() => citySlug ? onSearchBtnClick('stays', citySlug) : undefined">
               {{ $t(getI18nResName3('indexPage', 'popularCity', 'stays')) }}
             </ULink>
           </div>
           <div v-else class="contents">
-            <ULink v-if="numStays !== undefined" class="ring-inset m-1" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
+            <ULink v-if="numStays !== undefined" class="ring-inset m-1" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)" @click="() => citySlug ? onSearchBtnClick('stays', citySlug) : undefined">
               {{ $t(getI18nResName2('staysPage', 'cityPlacesCount'), numStays) }}
             </ULink>
             <USkeleton v-else class="w-32 max-w-[30vw] h-3" />

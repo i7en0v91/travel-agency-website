@@ -5,14 +5,38 @@ import{ getStoreLoggingPrefix } from './pinia';
 import { StoreKindEnum } from './../../helpers/constants';
 import { defaultErrorHandler } from '../exceptions';
 import { consola } from 'consola';
-import type { useControlValuesStore, ControlValueKey } from '../../stores/control-values-store';
+import type { useControlValuesStore } from '../../stores/control-values-store';
+import type { useSystemConfigurationStore } from '../../stores/system-configuration-store';
 
 function isControlValuesStore(store: any): store is ReturnType<typeof useControlValuesStore> {
   return store.$id === StoreKindEnum.ControlValues;
 }
 
+function isSystemConfigurationStore(store: any): store is ReturnType<typeof useSystemConfigurationStore> {
+  return store.$id === StoreKindEnum.SystemConfiguration;
+}
+
 export const CommonStoreProperties: PiniaPlugin = ({ store }) => {
   let storeLogger: IAppLogger | undefined;
+  store.$onAction(({
+    name,
+    store,
+    args
+  }) => {
+    if(store.nuxtApp) {
+      return;
+    }
+    let nuxtApp: ReturnType<typeof useNuxtApp>;
+    try {
+      nuxtApp = useNuxtApp();  
+    } catch(err: any) {
+      store.getLogger().warn(`failed to acquire Nuxt app instance`, err, { action: name, args });
+      return;
+    }
+    store.getLogger().verbose(`injecting Nuxt app instance`, { action: name, args });
+    store.nuxtApp = markRaw(nuxtApp);
+  });
+
   store.displayError = markRaw((err: any) => {
     defaultErrorHandler(err, import.meta.client ? { nuxtApp: useNuxtApp() } : {});
   });
@@ -25,7 +49,7 @@ export const CommonStoreProperties: PiniaPlugin = ({ store }) => {
 };
 
 export const SystemConfigurationStoreResetWarning: PiniaPlugin = ({ store }) => {
-  if(store.$id !== StoreKindEnum.SystemConfiguration) {
+  if(!isSystemConfigurationStore(store)) {
     return;
   }
 
@@ -37,7 +61,8 @@ export const SystemConfigurationStoreResetWarning: PiniaPlugin = ({ store }) => 
       consola.warn(`resetting [${StoreKindEnum.SystemConfiguration}] store state is not desired`);
     },
     displayError: store.displayError,
-    getLogger: store.getLogger
+    getLogger: store.getLogger,
+    nuxtApp: store.nuxtApp
   };
 };
 
@@ -46,26 +71,15 @@ export const ControlValuesStoreCustomReset: PiniaPlugin = ({ store }) => {
     return;
   }
 
-  const evalControlValue = (value : any) => 
-    (value && (typeof value === 'function')) ? (value()) : value;  
-
   return {
     $reset() {
-      const timestamp = new Date().getTime();;
-      for(const fe of store.s_controlValues.entries()) {
-        const key: ControlValueKey = fe[1].fullKey;
-        const value = { 
-          ...fe[1],
-          ...{
-            agentUpdateTimestamp: timestamp,
-            modelValue: evalControlValue(fe[1].initialOverwrite ?? fe[1].defaultValue)
-          },
-          valueKind: fe[1].kind
-        };
-        store.updateControlValue({ key, value });
-      };
+      const allKeys = [...store.values.values()].map(ev => ev.fullKey);
+      for(const key of allKeys) {
+        store.resetToDefault(key);
+      }
     },
     displayError: store.displayError,
-    getLogger: store.getLogger
+    getLogger: store.getLogger,
+    nuxtApp: store.nuxtApp
   };
 };

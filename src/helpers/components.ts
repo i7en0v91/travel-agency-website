@@ -1,8 +1,7 @@
-import type { ControlKey as ControlKeyGeneral, AppPage, SystemPage, OfferKind, FlightOffersSortFactor, StayOffersSortFactor } from '@golobe-demo/shared';
+import type { ControlKey as ControlKeyGeneral, FilterId, AppPage, SystemPage, OfferKind, FlightOffersSortFactor, StayOffersSortFactor } from '@golobe-demo/shared';
 import { toShortForm as toShortFormGeneral, areCtrlKeysEqual as areCtrlKeysEqualGeneral }from '@golobe-demo/shared';
 import type { SearchStaysOptionButtonKind } from './constants';
-import type { PropertyGridControlButtonType } from './../types';
-
+import type { PropertyGridControlButtonType, SearchOffersFilterRange, SearchOffersFilterVariantId, ISearchOffersFilterVariant } from './../types';
 
 export const IconSvgCustomizers = {
   fill(color: string) {
@@ -25,10 +24,12 @@ export type CommonControls =
   'DateRangePicker' |
   'TabGroup' |
   'Tab' |
-  'Accordion';
+  'Accordion' |
+  FilterControl;
 
 type KnownControlElements = 
   CommonControls |
+  'FunctionalElement' |
   'Page' |
   keyof typeof AppPage | keyof typeof SystemPage |
   'Waiter' |
@@ -205,10 +206,15 @@ type KnownControlElements =
   'CityOffers' |
   'CityOffersLinks' |
   'StayParams';
+type FilterControl = 'RangeFilter' |
+  'ChecklistFilter' | 
+  'ChoiceFilter';
 export type ArbitraryControlElementMarker = KnownControlElements;
 
 type ControlKeyPart = KnownControlElements | number;
 export type ControlKey = ControlKeyGeneral<ControlKeyPart>;
+
+export const RESET_TO_DEFAULT = Symbol.for('control-value-reset');
 
 export function toShortForm(key: ControlKey): string {
   return toShortFormGeneral(key);
@@ -263,3 +269,113 @@ export function isSpecificControl(testKey: ControlKey, specificControl: ControlK
  const keyLengthDiff = testKey.length - specificControl.length;
  return specificControl.every((kp, idx) => kp === testKey[keyLengthDiff + idx]);
 }
+
+export function isNestedControl(testKey: ControlKey, containingControl: ControlKey) {
+  if(testKey.length < containingControl.length) {
+    return false;
+   }
+  
+   return containingControl.every((kp, idx) => kp === testKey[idx]);
+}
+
+type FunctionalElementProps = {
+  sortOption: SearchStaysOptionButtonKind | FlightOffersSortFactor | StayOffersSortFactor,
+  isPrimary: boolean
+} | {
+  filterId: FilterId
+};
+/** 
+ * Returns {@link ControlKey} for functional controls - i.e. elements with 
+ * complex client-side behavior, whose state and logic are grouped and extracted 
+ * into stores
+ */
+export function getFunctionalElementKey(elementProps: FunctionalElementProps): ControlKey {
+  if('filterId' in elementProps) {
+    const { filterId } = elementProps;
+    let isRangeFilter: boolean = false;
+    switch(filterId) {
+      case 'DepartureTime':
+      case 'FlightPrice':
+      case 'StayPrice':
+        isRangeFilter = true;
+        break;
+    }
+    const filterControl: FilterControl = isRangeFilter ? 'RangeFilter' :
+      (
+        filterId === 'StayRating' || 
+        filterId === 'FlightRating'
+      ) ? 'ChoiceFilter' : 'ChecklistFilter';
+    return [
+      'FilterPanel', 
+      'FunctionalElement',
+      'Filter', 
+      filterId as ArbitraryControlElementMarker, 
+      filterControl
+    ];
+  } else {
+    const { isPrimary, sortOption } = elementProps;
+    return isPrimary ? 
+      ['TabGroup', 'FunctionalElement', toKnownElement(sortOption), 'Tab'] :
+      ['SecondarySort', 'FunctionalElement', toKnownElement(sortOption), 'Dropdown'];
+  }
+}
+
+/**
+ * Inverse to @see getFunctionalElementKey
+ */
+export function getFunctionalElementProps(ctrlKey: ControlKey): FunctionalElementProps {
+  if(ctrlKey.length <= 2) {
+    throw new Error('invalid functional element key');
+  }
+  
+  if(isNestedControl(ctrlKey, ['FilterPanel', 'FunctionalElement'])) {
+    const filterId = ctrlKey[ctrlKey.length - 2] as FilterId;
+    return { filterId };
+  } else if(
+    isNestedControl(ctrlKey, ['TabGroup', 'FunctionalElement']) ||
+    isNestedControl(ctrlKey, ['SecondarySort', 'FunctionalElement'])
+  ) {
+    return { 
+      sortOption: ctrlKey[ctrlKey.length - 2] as SearchStaysOptionButtonKind | FlightOffersSortFactor | StayOffersSortFactor,
+      isPrimary: isNestedControl(ctrlKey, ['TabGroup', 'FunctionalElement']) 
+     };
+  } else {
+    throw new Error('unexpected functional element key');
+  }
+}
+
+export function computeNarrowedVariantList(
+  currentVariants: ISearchOffersFilterVariant[] | undefined, 
+  newVariants: ISearchOffersFilterVariant[]
+): ISearchOffersFilterVariant[] {
+  if(!(currentVariants?.length ?? 0)) {
+    return newVariants;
+  }
+  const valueSet = new Set<SearchOffersFilterVariantId>(currentVariants!.map(v => v.id));
+  return newVariants.filter(v => valueSet.has(v.id));
+};
+
+export function computeNarrowedRange(
+  currentRange: SearchOffersFilterRange | undefined, 
+  newRange: SearchOffersFilterRange, 
+  limits: SearchOffersFilterRange
+): SearchOffersFilterRange {
+  if(!currentRange) {
+    return newRange;
+  }
+
+  let result: SearchOffersFilterRange;
+  if (currentRange.min > newRange.max || currentRange.max < newRange.min) {
+    result = newRange;
+  } else {
+    const sortedEdgeValues = [newRange.min, newRange.max, currentRange.min, currentRange.max];
+    sortedEdgeValues.sort((a, b) => a - b);
+    result = { min: sortedEdgeValues[1], max: sortedEdgeValues[2] };
+  }
+  if (Math.abs(result.min - result.max) < 0.01) {
+    result.min = Math.max(limits.min, result.min - 1);
+    result.max = Math.min(limits.max, result.max + 1);
+  }
+
+  return result;
+};

@@ -40,6 +40,8 @@ export const SiteSearchMaxMatchLength: { [P in keyof typeof DeviceSizeEnum]: num
 export const HashNavigationPageTimeout = 3000;
 export const StoreOperationTimeout = 30000;
 
+export const FindFlightsPageCtrlKey: ControlKey = ['Page', 'FindFlights'];
+export const FindStaysPageCtrlKey: ControlKey = ['Page', 'FindStays'];
 export const UserAccount = 'Account';
 export const UserHistory = 'History';
 export const UserPayments = 'Payments';
@@ -64,11 +66,13 @@ export const SearchStaysOptionButtons: SearchStaysOptionButtonKind[] = [
 
 export const WorldMapCityLabelFlipX = 0.85;
 export const TravelDetailsHtmlAnchor = 'travelDetails';
+export const LOADING_STATE = Symbol.for('store-loading');
 export enum StoreKindEnum {
   SystemConfiguration = 'system-configuration',
   UserNotification = 'user-notification',
   ControlValues = 'control-values',
-  EntityCache = 'entity-cache'
+  EntityCache = 'entity-cache',
+  SearchOffers = 'search-offers'
 }
 
 export const StayReviewEditorHtmlAnchor = 'stayReviewEditor';

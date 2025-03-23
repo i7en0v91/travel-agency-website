@@ -87,7 +87,6 @@ defineShortcuts({
         <SearchOffersCounter
           v-model:value="numRooms"
           :ctrl-key="[...ctrlKey, 'Rooms', 'Counter']"
-          :default-value="StaysMinRoomsCount"
           :min-value="StaysMinRoomsCount"
           :max-value="StaysMaxRoomsCount"
           :label-res-name="getI18nResName2('searchStays', 'numberOfRooms')"
@@ -96,7 +95,6 @@ defineShortcuts({
           v-model:value="numGuests"
           :ctrl-key="[...ctrlKey, 'Guests', 'Counter']"
           class="mt-4"
-          :default-value="StaysMinGuestsCount"
           :min-value="StaysMinGuestsCount"
           :max-value="StaysMaxGuestsCount"
           :label-res-name="getI18nResName2('searchStays', 'numberOfGuests')"

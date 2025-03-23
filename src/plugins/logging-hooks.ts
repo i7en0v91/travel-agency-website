@@ -124,7 +124,6 @@ export default defineNuxtPlugin((nuxtApp) => {
     pinia?.use(({ store }) => {
       store.$onAction(({
         name,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         store,
         args,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

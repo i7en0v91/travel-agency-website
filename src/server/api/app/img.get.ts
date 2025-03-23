@@ -2,13 +2,13 @@ import { AppConfig, AppException, AppExceptionCodeEnum, ImageCategory } from '@g
 import { Readable } from 'stream';
 import type { H3Event } from 'h3';
 import { getQuery } from 'ufo';
-import { defineWebApiEventHandler } from '../../utils/webapi-event-handler';
+import { defineWebApiEventHandler, getLogger as getWebApiLogger } from '../../utils/webapi-event-handler';
 import { extractUserIdFromSession } from '../../utils/auth';
 import { getServerSession } from '#auth';
-import { getCommonServices, getServerServices } from '../../../helpers/service-accessors';
+import { getServerServices } from '../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
+  const logger = getWebApiLogger();
   const serverServices = getServerServices()!;
   const imageProcessor = serverServices.getImageProcessor(); 
   const imageProvider = serverServices.getImageProvider();

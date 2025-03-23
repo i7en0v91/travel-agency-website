@@ -184,7 +184,7 @@ const imageStylings: IStaticImageUiProps[] = [
 <template>  
   <article class="px-[14px] py-[27px] sm:px-[20px] md:px-[40px] xl:px-[104px]">
     <ErrorHelm :is-error="stayDetailsFetch.status.value === 'error'">
-      <OfferDetailsBreadcrumbs
+      <LazyOfferDetailsBreadcrumbs
         :ctrl-key="[...CtrlKey, 'Breadcrumbs']"
         offer-kind="stays"
         :city="stayOffer?.stay?.city"

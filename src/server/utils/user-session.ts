@@ -4,14 +4,9 @@ import type { H3Event } from 'h3';
 import get from 'lodash-es/get';
 import fromPairs from 'lodash-es/fromPairs';
 import { getCommonServices } from '../../helpers/service-accessors';
+import once from 'lodash-es/once';
 
-let logger: IAppLogger | undefined;
-function getLogger(): IAppLogger | undefined {
-  if(!logger) {
-    logger = getCommonServices()?.getLogger()?.addContextProps({ component: 'UserSession' });
-  }
-  return logger;
-}
+const getLogger = once(() => getCommonServices().getLogger().addContextProps({ component: 'UserSession' }));
 
 function createNewSessionId (): string {
   const result = randomBytes(32).toString('base64');

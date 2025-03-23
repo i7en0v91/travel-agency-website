@@ -160,8 +160,8 @@ export const PaginationDtoSchema = object({
 });
 
 export const SearchFlightOffersMainParamsDtoSchema = object().shape({
-  fromCitySlug: string().max(256).optional(),
-  toCitySlug: string().max(256).optional(),
+  fromCityId: string().max(EntityIdMaxLength).optional(),
+  toCityId: string().max(EntityIdMaxLength).optional(),
   tripType: string<TripType>().max(16).optional(),
   dateFrom: date().optional(),
   dateTo: date().optional(),
@@ -189,7 +189,7 @@ export const SearchFlightOffersParamsDtoSchema = SearchFlightOffersMainParamsDto
 });
 
 export const SearchStayOffersMainParamsDtoSchema = object({
-  citySlug: string().max(256).optional(),
+  cityId: string().max(EntityIdMaxLength).optional(),
   checkIn: date().optional(),
   checkOut: date().optional(),
   numRooms: number().min(0).max(StaysMaxRoomsCount).optional(),
@@ -462,8 +462,7 @@ export interface IAirlineCompanyDto {
 export interface IOfferDto {
   id: string,
   kind: OfferKind,
-  totalPrice: number,
-  isFavourite: boolean
+  totalPrice: number
 }
 
 export interface ISearchedFlightDto {

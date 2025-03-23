@@ -1,4 +1,4 @@
-import { type IAppLogger, DefaultLocale, CookieI18nLocale, type Locale, HeaderLocation, patchUrlWithLocale, getLocaleFromUrl, isDevOrTestEnv, isQuickStartEnv, maskLog, AuthProvider, type IUserProfileInfo, isElectronBuild } from '@golobe-demo/shared';
+import { DefaultLocale, CookieI18nLocale, type Locale, HeaderLocation, patchUrlWithLocale, getLocaleFromUrl, isDevOrTestEnv, isQuickStartEnv, maskLog, AuthProvider, type IUserProfileInfo, isElectronBuild } from '@golobe-demo/shared';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GitHubProvider from 'next-auth/providers/github';
 import GoogleProvider from 'next-auth/providers/google';
@@ -8,6 +8,9 @@ import { NuxtAuthHandler } from '#auth';
 import { type EventHandler, type EventHandlerRequest, type EventHandlerResponse, getCookie } from 'h3';
 import onHeaders from 'on-headers';
 import { getCommonServices, getServerServices } from '../../../helpers/service-accessors';
+import once from 'lodash-es/once';
+
+const getLogger = once(() => getCommonServices().getLogger().addContextProps({ component: 'NuxtAuthHandler' }));
 
 function mapUserDto (user: IUserProfileInfo) : IAuthUserDto {
   return {
@@ -70,14 +73,6 @@ function wrapI18nRedirect<Request extends EventHandlerRequest = EventHandlerRequ
 
     return await originalHandler(event);
   });
-}
-
-let logger: IAppLogger | undefined;
-function getLogger(): IAppLogger {
-  if(!logger) {
-    logger = getCommonServices().getLogger().addContextProps({ component: 'NuxtAuthHandler' });
-  }
-  return logger;
 }
 
 export default wrapI18nRedirect(NuxtAuthHandler({

@@ -1,20 +1,19 @@
 <script setup lang="ts">
 import { mapLocalizeableValues, getLocalizeableValue, type Locale, AppConfig, AppPage, getI18nResName2 } from '@golobe-demo/shared';
-import { type ISearchedCityHistoryDto, type IPopularCityDto, ApiEndpointStayOffersSearchHistory, ApiEndpointPopularCitiesList } from './../../server/api-definitions';
+import { type ISearchedCityHistoryDto, type IPopularCityDto, ApiEndpointStayOffersSearchHistory, ApiEndpointPopularCitiesList } from '../../server/api-definitions';
 import range from 'lodash-es/range';
 import ComponentWaitingIndicator from '../forms/component-waiting-indicator.vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from './../../helpers/service-accessors';
 import { useCityGridLinksTabKeeper } from './../../composables/city-grid-links-tab-keeper';
+import type { ISearchStayOffersMainParams } from './../../types';
 import type { ControlKey } from '../../helpers/components';
-
-const CtrlKey: ControlKey = ['CityOffers', 'ResultItemsList'];
 
 interface IProps {
   ctrlKey: ControlKey
 };
-defineProps<IProps>();
+const { ctrlKey } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger().addContextProps({ component: 'StaySearchHistory' });
 
@@ -57,6 +56,21 @@ const showWaitingStub = computed(() => (!searchHistoryFetch.data?.value || !popu
 const somePopularCity = computed(() => popularCitiesFetch.data?.value ? popularCitiesFetch.data.value[0] : undefined);
 
 const isError = ref(false);
+
+async function onSearchBtnClick(citySlug: string): Promise<void> {
+  logger.debug('search btn click', { ctrlKey, citySlug });
+  const searchOffersStore = useSearchOffersStore();
+
+  const entityCacheStore = useEntityCacheStore();
+  const items = await entityCacheStore!.get({ slugs: [citySlug!] }, 'City', true);
+  const cityId = items[0].id;
+
+  const mainParams: Partial<ISearchStayOffersMainParams> = { cityId };
+
+  logger.debug('offer search params computed', { ctrlKey, mainParams });
+  await searchOffersStore.load('stays', { overrideParams: mainParams });
+}
+
 watch([searchHistoryFetch.status, popularCitiesFetch.status], () => {
   if (searchHistoryFetch.status.value === 'error') {
     logger.warn('failed to load search city history', searchHistoryFetch.error.value);
@@ -78,7 +92,7 @@ watch([searchHistoryFetch.status, popularCitiesFetch.status], () => {
       <ul v-if="!showWaitingStub && (searchHistoryFetch.data.value?.length ?? 0) > 0" class="p-2 sm:p-4 grid grid-flow-row auto-rows-auto grid-cols-citylinks overflow-clip -translate-y-[40px] justify-center">
         <li v-for="(city, idx) in searchHistoryFetch.data.value" :key="`popular-city-${idx}`" class="w-full city-offers-list-item">
           <CityOffersLinks
-            :ctrl-key="[...CtrlKey, 'CityOffersLinks', idx]"
+            :ctrl-key="[...ctrlKey, 'CityOffersLinks', idx]"
             search-kind="stay"
             :text="city ? mapLocalizeableValues((city: string, country: string) => `${city}, ${country}`, city.cityDisplayName, city.countryDisplayName) : undefined"
             :img-src="city ? { slug: city.imgSlug, timestamp: city.timestamp } : undefined"
@@ -94,7 +108,9 @@ watch([searchHistoryFetch.status, popularCitiesFetch.status], () => {
               v-if="somePopularCity"
               class="font-bold underline" 
               :external="false"
-              :to="navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug : somePopularCity!.slug })">
+              :to="navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug : somePopularCity!.slug })"
+              @click="() => onSearchBtnClick(somePopularCity!.slug)"
+            >  
               {{ getLocalizeableValue(somePopularCity!.cityDisplayName, locale as Locale) }}
             </ULink>
           </template>

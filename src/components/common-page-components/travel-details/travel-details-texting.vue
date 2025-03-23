@@ -121,7 +121,7 @@ xl:row-start-1 xl:row-end-3 xl:col-start-1 xl:col-end-2
     <ErrorHelm v-model:is-error="isError">
       <TravelDetailsFrameContainer>
         <Transition v-bind="TravelDetails">
-          <TravelDetailsTextingFrame
+          <LazyTravelDetailsTextingFrame
             v-show="activeFrame === 'initial'"
             :ctrl-key="[...ctrlKey, 'TravelDetails', 'Texting', 1]"
             :texting="dataBufInitial"
@@ -130,7 +130,7 @@ xl:row-start-1 xl:row-end-3 xl:col-start-1 xl:col-end-2
           />
         </Transition>
         <Transition v-bind="TravelDetails">
-          <TravelDetailsTextingFrame
+          <LazyTravelDetailsTextingFrame
             v-show="activeFrame === 'A'"
             :book-kind="bookKind"
             :ctrl-key="[...ctrlKey, 'TravelDetails', 'Texting', 2]"
@@ -139,7 +139,7 @@ xl:row-start-1 xl:row-end-3 xl:col-start-1 xl:col-end-2
           />
         </Transition>
         <Transition v-bind="TravelDetails">
-          <TravelDetailsTextingFrame
+          <LazyTravelDetailsTextingFrame
             v-show="activeFrame === 'B'"
             :book-kind="bookKind"
             :ctrl-key="[...ctrlKey, 'TravelDetails', 'Texting', 3]"

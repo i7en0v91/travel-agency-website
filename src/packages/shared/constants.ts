@@ -215,22 +215,30 @@ export const NumMinutesInDay = 1440;
 export const MaxSearchHistorySize = 8;
 
 export const DefaultFlightOffersSorting = 'score';
-export const FlightsAirlineCompanyFilterId = 'FlightOffersAirlineCompanyFilterId';
-export const FlightsDepartureTimeFilterId = 'FlightsDepartureTimeFilterId';
-export const FlightsTripTypeFilterId = 'FlightOffersTripTypeFilterId';
-export const FlightsRatingFilterId = 'FlightsRatingFilterId';
-export const FlightsPriceFilterId = 'FlightsPriceFilterId';
+export enum FlightsFilterEnum {
+  AirlineCompany = 'AirlineCompany',
+  DepartureTime = 'DepartureTime',
+  TripType = 'TripType',
+  FlightRating = 'FlightRating',
+  FlightPrice = 'FlightPrice'
+}
+export type FlightsFilterIds = keyof typeof FlightsFilterEnum;
 // Search flight offers - trip options
 export const FlightsTripTypeFilterFlexibleDatesItemId = 'FlightsTripTypeFilterFlexibleDatesItemId';
 export const CheckInOutDateUrlFormat = 'YYYY-MM-DD';
 
 export const DefaultStayOffersSorting = 'score';
-export const StaysPriceFilterId = 'StaysPriceFilterId';
-export const StaysRatingFilterId = 'StaysRatingFilterId';
-export const StaysFreebiesFilterId = 'StaysFreebiesFilterId';
-export const StaysFreebiesFilterItemId = (itemLabel: string) => `StaysFreebiesFilterItemId-${itemLabel}`;
-export const StaysAmenitiesFilterId = 'StaysAmenitiesFilterId';
-export const StaysAmenitiesFilterItemId = (itemLabel: string) => `StaysAmenitiesFilterItemId-${itemLabel}`;
+export enum StaysFilterEnum {
+  StayPrice = 'StayPrice',
+  StayRating = 'StayRating',
+  Freebies = 'Freebies',
+  Amenities = 'Amenities'
+}
+export type StaysFilterIds = keyof typeof StaysFilterEnum;
+export const StaysFreebiesFilterItemId = (itemLabel: string) => `${StaysFilterEnum.Freebies}-${itemLabel}`;
+export const StaysAmenitiesFilterItemId = (itemLabel: string) => `${StaysFilterEnum.Amenities}-${itemLabel}`;
+
+export type FilterId = FlightsFilterIds | StaysFilterIds;
 
 export enum SignUpResultEnum {
   SUCCESS = 'SUCCESS',

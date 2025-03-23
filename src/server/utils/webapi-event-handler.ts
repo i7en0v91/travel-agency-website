@@ -7,6 +7,7 @@ import omit from 'lodash-es/omit';
 import type { IApiErrorDto, ICaptchaVerificationDto } from '../api-definitions';
 import { getServerSession } from '#auth';
 import { getCommonServices } from '../../helpers/service-accessors';
+import once from 'lodash-es/once';
 
 type YupMaybe<T> = T | null | undefined;
 type YupAnyObject = { [k: string]: any; };
@@ -190,8 +191,10 @@ async function ensureAuthorization (event: H3Event) : Promise<void> {
   }
 }
 
+const getLogger = once(() => getCommonServices().getLogger().addContextProps({ component: 'WebApi' }));
+
 const defineWebApiEventHandler = function defineWebApiEventHandler<Request extends EventHandlerRequest = EventHandlerRequest, Response = EventHandlerResponse, TBodySchema extends YupMaybe<YupAnyObject> = any> (handler: EventHandler<Request, Promise<Response>>, options: IWebApiEventHandlerOptions<TBodySchema>) : EventHandler<Request, Promise<Response | IApiErrorDto>> {
   return defineEventHandler(wrapHandler(handler, options));
 };
 
-export { defineWebApiEventHandler };
+export { defineWebApiEventHandler, getLogger };

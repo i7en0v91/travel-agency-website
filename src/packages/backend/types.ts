@@ -387,7 +387,7 @@ export interface IAirportLogic {
   getAirport(id: EntityId, previewMode: PreviewMode): Promise<IAirport>;
   getAllAirportsShort(previewMode: PreviewMode): Promise<IAirportShort[]>;
   createAirport(data: IAirportData, previewMode: PreviewMode): Promise<EntityId>;
-  getAirportsForSearch(citySlugs: string[], addPopular: boolean, previewMode: PreviewMode): Promise<EntityDataAttrsOnly<IAirport>[]>;
+  getAirportsForSearch(cityIds: EntityId[], addPopular: boolean, previewMode: PreviewMode): Promise<EntityDataAttrsOnly<IAirport>[]>;
   deleteAirport(id: EntityId): Promise<void>;
 }
 

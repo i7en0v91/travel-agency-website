@@ -6,15 +6,13 @@ import { useControlValuesStore } from './../../../stores/control-values-store';
 
 interface IProps {
   ctrlKey: ControlKey,
-  defaultValue: number,
   minValue: number,
   maxValue: number,
   labelResName: I18nResName
 }
 
 const { 
-  ctrlKey, 
-  defaultValue, 
+  ctrlKey,
   minValue, 
   maxValue 
 } = defineProps<IProps>();
@@ -32,7 +30,7 @@ const displayText = computed(() => {
     return '';
   }
 
-  return (counterModel.value ?? defaultValue)?.toString() ?? '';
+  return counterModel.value?.toString() ?? '';
 });
 
 function onIncrementClick () {
@@ -62,16 +60,12 @@ function onDecrementClick () {
 }
 
 onMounted(() => {
-  const initialOverwrite = counterModel.value;
-  logger.debug('acquiring value ref', { ctrlKey, defaultValue, initialOverwrite });
-  const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<number>(ctrlKey, {
-    initialOverwrite,
-    defaultValue
-  });
+  logger.debug('acquiring value ref', { ctrlKey });
+  const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<number | null>(ctrlKey, {});
 
   watch(storeValueRef, () => {
     logger.debug('store value watcher', { ctrlKey, modelValue: counterModel.value, storeValue: storeValueRef.value });
-    const newValue: number = storeValueRef.value;
+    const newValue: number | undefined = storeValueRef.value ?? undefined;
     const changed = storeValueRef.value !== counterModel.value;
     if(changed) {
       counterModel.value = newValue;  
@@ -81,7 +75,7 @@ onMounted(() => {
   watch(counterModel, () => {
     logger.debug('model value watcher', { ctrlKey, modelValue: counterModel.value, storeValue: storeValueRef.value });
     if(counterModel.value !== storeValueRef.value) {
-      storeValueRef.value = counterModel.value ?? defaultValue;
+      storeValueRef.value = counterModel.value ?? null;
     }
   }, { immediate: false });
 });

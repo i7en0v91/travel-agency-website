@@ -50,6 +50,10 @@ declare module 'pinia' {
      * Generally should not be used, as any exceptions occuring inside actions & patches must be 
      * (re-)thrown for crosscutting concerns (logging, retries, throttling e.t.c)
      */
-    displayError: (err: any) => void
+    displayError: (err: any) => void,
+    /**
+     * @returns Nuxt app instance (for this store)
+     */
+    nuxtApp: ReturnType<typeof useNuxtApp>
   }
 }
