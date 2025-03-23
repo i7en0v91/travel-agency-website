@@ -73,7 +73,7 @@ function storeModelValuesDiffer(
 ) {
   return mode === 'single' ? 
     (storeValue != ((modelValue?.length ?? 0) > 0 ? modelValue![0] : null)) :
-    (!datesArrayEquals(storeValue as Date[], (modelValue?.length ?? 0) > 0 ? (modelValue as Date[]) : [])
+    (!datesArrayEquals((storeValue ?? []) as Date[], (modelValue?.length ?? 0) > 0 ? (modelValue as Date[]) : [])
   );
 }
 
@@ -113,28 +113,10 @@ onMounted(() => {
     const newValue = mode === 'single' ? storeValue : (storeValue ?? []);
     const changed = storeModelValuesDiffer(newValue, modelValue.value, mode);
     if(changed) {
+      logger.debug('updating model value by store change', { ctrlKey, newValue, mode });
       modelValue.value = newValue ? (isArray(newValue) ? newValue : [newValue]) : null;  
     }
   }, { immediate: true });
-
-  watch([singleValue, rangeValue], () => {
-    const newValue = mode === 'single' ? 
-      (singleValue.value ? [singleValue.value] : null) : 
-      (rangeValue.value ? [rangeValue.value!.start, rangeValue.value!.end] : null);
-    const storeValue = (mode === 'single' ? singleStoreValueRef : rangeStoreValueRef).value;
-    logger.debug('selected calendar value watcher', { ctrlKey, newValue, storeValue, mode });
-    
-    const changed = storeModelValuesDiffer(storeValue, newValue, mode);
-    if(changed) {
-      switch(mode) {
-        case 'single':
-          singleStoreValueRef.value = toUnary(singleValue.value) ?? null;
-          break;
-        default:
-          rangeStoreValueRef.value = newValue;
-      }
-    }
-  }, { immediate: false });
 
   watch(modelValue, () => {
     const storeValue = (mode === 'single' ? singleStoreValueRef : rangeStoreValueRef).value;
@@ -151,14 +133,36 @@ onMounted(() => {
         singleValue.value = modelValue.value ? 
           (isArray(modelValue.value) ? modelValue.value[0] : modelValue.value) : undefined;
         if(changed) {
+          logger.debug('updating store value by model change', { ctrlKey, modelValue: modelValue.value, mode });
           singleStoreValueRef.value = toUnary(modelValue.value ?? null) as Date | null;
         }
         break;
       default:
         rangeValue.value = modelValue.value ? { start: modelValue.value[0], end: modelValue.value[1] } : undefined;
         if(changed) {
+          logger.debug('updating store value by model change', { ctrlKey, modelValue: modelValue.value, mode });
           rangeStoreValueRef.value = modelValue.value ?? null;
         }
+    }
+  }, { immediate: true });
+
+  watch([singleValue, rangeValue], () => {
+    const newValue = mode === 'single' ? 
+      (singleValue.value ? [singleValue.value] : null) : 
+      (rangeValue.value ? [rangeValue.value!.start, rangeValue.value!.end] : null);
+    const storeValue = (mode === 'single' ? singleStoreValueRef : rangeStoreValueRef).value;
+    logger.debug('selected calendar value watcher', { ctrlKey, newValue, storeValue, mode });
+    
+    const changed = storeModelValuesDiffer(storeValue, newValue, mode);
+    if(changed) {
+      logger.debug('updating store value by calendar selection', { ctrlKey, newValue, mode });
+      switch(mode) {
+        case 'single':
+          singleStoreValueRef.value = toUnary(singleValue.value) ?? null;
+          break;
+        default:
+          rangeStoreValueRef.value = newValue;
+      }
     }
   }, { immediate: false });
 

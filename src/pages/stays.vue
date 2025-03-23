@@ -1,16 +1,10 @@
 <script setup lang="ts">
-import { mapLocalizeableValues, getLocalizeableValue, type Locale, MaxSearchHistorySize, StaysTitleSlug, AppConfig, AppPage, ImageCategory, getI18nResName2 } from '@golobe-demo/shared';
-import { type ISearchedCityHistoryDto, type IPopularCityDto, ApiEndpointStayOffersSearchHistory, ApiEndpointPopularCitiesList } from './../server/api-definitions';
+import { StaysTitleSlug, ImageCategory, getI18nResName2 } from '@golobe-demo/shared';
 import { TravelDetailsHtmlAnchor } from './../helpers/constants';
-import range from 'lodash-es/range';
-import ComponentWaitingIndicator from './../components/component-waiting-indicator.vue';
 import PageSection from './../components/common-page-components/page-section.vue';
 import HeadingText from './../components/stays/stays-heading-text.vue';
 import TravelCities from './../components/common-page-components/travel-details/travel-cities.vue';
 import TravelDetails from './../components/common-page-components/travel-details/travel-details.vue';
-import { useNavLinkBuilder } from './../composables/nav-link-builder';
-import { usePreviewState } from './../composables/preview-state';
-import { getCommonServices } from '../helpers/service-accessors';
 import type { ControlKey } from './../helpers/components';
 
 definePageMeta({
@@ -20,51 +14,7 @@ useOgImage();
 
 const CtrlKey: ControlKey = ['Page', 'Stays'];
 
-const logger = getCommonServices().getLogger().addContextProps({ component: 'Stays' });
-
-const navLinkBuilder = useNavLinkBuilder();
-const { locale } = useI18n();
-
-const nuxtApp = useNuxtApp();
-const { enabled } = usePreviewState();
-const popularCitiesFetch = await useFetch<IPopularCityDto[] | null[]>(`/${ApiEndpointPopularCitiesList}`, {
-    server: true,
-    lazy: true,
-    query: { drafts: enabled },
-    cache: (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
-    default: () => { return range(0, 20, 1).map(_ => null); },
-    key: 'StaysPagePopulatCitiesList',
-    $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-stub' })
-  });
-
-const searchHistoryFetch = await useFetch(`/${ApiEndpointStayOffersSearchHistory}`,
-  {
-    server: false,
-    lazy: true,
-    cache: 'no-cache',
-    query: { drafts: enabled },
-    default: () => { return range(0, MaxSearchHistorySize, 1).map(_ => null); },
-    transform: (response: ISearchedCityHistoryDto[]) => {
-      logger.verbose('received search cities history list response', { count: response.length });
-      if (!response) {
-        logger.warn('search cities history list response is empty');
-        return []; // error should be logged by fetchEx
-      }
-      return response;
-    },
-    $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-stub' })
-  });
-
-const showWaitingStub = computed(() => (!searchHistoryFetch.data?.value || !popularCitiesFetch.data?.value) && (searchHistoryFetch.status.value === 'pending' || searchHistoryFetch.status.value === 'idle'));
-const somePopularCity = computed(() => popularCitiesFetch.data?.value ? popularCitiesFetch.data.value[0] : undefined);
-
 const isError = ref(false);
-watch(searchHistoryFetch.status, () => {
-  if (searchHistoryFetch.status.value === 'error') {
-    logger.warn('failed to load search city history');
-    isError.value = true;
-  }
-});
 
 </script>
 
@@ -82,41 +32,14 @@ watch(searchHistoryFetch.status, () => {
       <HeadingText :ctrl-key="[...CtrlKey, 'SearchPageHead', 'Title']" />
     </SearchPageHead>
     <PageSection
-      :ctrl-key="[...CtrlKey, 'RecentSearches']"
+      :ctrl-key="[...CtrlKey, 'PageSection']"
       :header-res-name="getI18nResName2('staysPage', 'recentSearchesTitle')"
       :is-error="isError"
       :content-padded="true"
     >
-    <ClientOnly>
-      <ComponentWaitingIndicator v-if="showWaitingStub && !isError" :ctrl-key="[...CtrlKey, 'Waiter']" />
-      <ul v-if="searchHistoryFetch.data.value.length > 0" class="popular-city-grid p-xs-2 p-s-3  hidden-overflow-nontabbable">
-        <PopularCityCard
-          v-for="(city, idx) in searchHistoryFetch.data.value"
-          :key="`popular-city-${idx}`"
-          :ctrl-key="[...CtrlKey, 'RecentSearches', 'Card', idx]"
-          search-kind="stay"
-          :text="city ? mapLocalizeableValues((city: string, country: string) => `${city}, ${country}`, city.cityDisplayName, city.countryDisplayName) : undefined"
-          :img-src="city ? { slug: city.imgSlug, timestamp: city.timestamp } : undefined"
-          :city-slug="city ? city.slug : undefined"
-          :num-stays="city ? city.numStays : undefined"
-          class="popular-city-grid-item"
-        />
-      </ul>
-      <div v-else class="search-history-empty-div mt-xs-2">
-        <i18n-t :keypath="getI18nResName2('staysPage', 'searchHistoryEmpty')" tag="div" scope="global" class="search-history-empty">
-          <template #cityLink>
-            <NuxtLink v-if="somePopularCity" class="search-history-city-link brdr-1" :to="navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug : somePopularCity!.slug })">
-              {{ getLocalizeableValue(somePopularCity!.cityDisplayName, locale as Locale) }}
-            </NuxtLink>
-          </template>
-        </i18n-t>
-      </div>
-      <template #fallback>
-        <ComponentWaitingIndicator :ctrl-key="[...CtrlKey, 'ClientFallback']" />
-      </template>
-    </ClientOnly>
+      <LazyStaySearchHistory :ctrl-key="[...CtrlKey, 'RecentSearches']" />
     </PageSection>
-    <TravelCities :ctrl-key="[...CtrlKey, 'PageSection', 'TravelCities']" book-kind="stay" class="stays-page-travel-cities-section" />
-    <TravelDetails :id="TravelDetailsHtmlAnchor" :ctrl-key="[...CtrlKey, 'PageSection', 'TravelDetails']" book-kind="stay" />
+    <TravelCities :ctrl-key="[...CtrlKey, 'TravelCities']" book-kind="stay" class="stays-page-travel-cities-section" />
+    <TravelDetails :id="TravelDetailsHtmlAnchor" :ctrl-key="[...CtrlKey, 'TravelDetails']" book-kind="stay" />
   </div>
 </template>

@@ -30,6 +30,8 @@ export const TooltipHideTimeout = 2000;
 export const HashNavigationPageTimeout = 3000;
 export const StoreOperationTimeout = 30000;
 
+export const FindFlightsPageCtrlKey: ControlKey = ['Page', 'FindFlights'];
+export const FindStaysPageCtrlKey: ControlKey = ['Page', 'FindStays'];
 export const UserAccountTabAccount = 'Account';
 export const UserAccountTabHistory = 'History';
 export const UserAccountTabPayments = 'Payments';
@@ -51,9 +53,11 @@ export const SearchStaysOptionButtons: SearchStaysOptionButtonKind[] = [
 export const WorldMapCityLabelFlipX = 0.85;
 export const TravelDetailsHtmlAnchor = 'travelDetails';
 
+export const LOADING_STATE = Symbol.for('store-loading');
 export enum StoreKindEnum {
   SystemConfiguration = 'system-configuration',
   UserNotification = 'user-notification',
   ControlValues = 'control-values',
-  EntityCache = 'entity-cache'
+  EntityCache = 'entity-cache',
+  SearchOffers = 'search-offers'
 }

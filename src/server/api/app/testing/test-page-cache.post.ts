@@ -2,9 +2,9 @@ import { getServerSession } from '#auth';
 import { lookupValueOrThrow, AvailableLocaleCodes, AppPage, AppException, AppExceptionCodeEnum, type IAppLogger, type EntityId, ImageCategory, type ILocalizableValue } from '@golobe-demo/shared';
 import { type ITestingPageCacheActionDto, type ITestingPageCacheActionResultDto, TestingPageCacheActionDtoSchema, TestingPageCacheActionEnum } from '../../../api-definitions';
 import fromPairs from 'lodash-es/fromPairs';
-import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
+import { defineWebApiEventHandler, getLogger as getWebApiLogger } from '../../../utils/webapi-event-handler';
 import type { H3Event } from 'h3';
-import { getServerServices, getCommonServices } from '../../../../helpers/service-accessors';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 declare type HandlePageActionResult = {
   testId: string | undefined;
@@ -379,7 +379,7 @@ async function handleBookingPageActionRequest(action: TestingPageCacheActionEnum
 
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
+  const logger = getWebApiLogger();
   
   logger.debug('parsing page action request from HTTP body');
   const pageActionDto: ITestingPageCacheActionDto = TestingPageCacheActionDtoSchema.cast(await readBody(event));

@@ -34,25 +34,26 @@ export class AirportLogic implements IAirportLogic {
     this.logger.verbose('airport deleted', id);
   };
 
-  async getAirportsForSearch (citySlugs: string[], addPopular: boolean): Promise<EntityDataAttrsOnly<IAirport>[]> {
-    this.logger.debug('get airports for search, city', { slugs: citySlugs, addPopular });
+  async getAirportsForSearch (cityIds: EntityId[], addPopular: boolean): Promise<EntityDataAttrsOnly<IAirport>[]> {
+    this.logger.debug('get airports for search', { ids: cityIds, addPopular });
 
+    let filterCityIds: EntityId[] = [...cityIds];
     if (addPopular) {
       const popularCities = await this.citiesLogic.getPopularCities(false);
-      citySlugs.push(...popularCities.map(c => c.slug));
-      citySlugs = uniq(citySlugs);
+      popularCities.forEach(pc => filterCityIds.push(pc.id));
+      filterCityIds = uniq(filterCityIds);
     }
 
-    if (citySlugs.length === 0) {
-      this.logger.debug('get airports for search, empty city slug list');
+    if (filterCityIds.length === 0) {
+      this.logger.debug('get airports for search, empty city ids list');
       return [];
     }
 
     const allAirportsInCities = (await this.dbRepository.airport.findMany({
       where: {
         city: {
-          slug: {
-            in: citySlugs
+          id: {
+            in: filterCityIds
           },
           isDeleted: false
         },
@@ -64,7 +65,7 @@ export class AirportLogic implements IAirportLogic {
     // take only one first airport in each city in case it has more than 1 airport
     const result = values(groupBy(allAirportsInCities, (a: IAirport) => a.city.slug)).map(g => g[0]);
 
-    this.logger.debug('get airports for search, city', { slugs: citySlugs, addPopular, count: result.length });
+    this.logger.debug('get airports for search', { ids: cityIds, addPopular, count: result.length });
     return result;
   }
 

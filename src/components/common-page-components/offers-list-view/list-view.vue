@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ControlKey } from './../../../helpers/components';
+import { LOADING_STATE } from './../../../helpers/constants';
 import type { OfferKind } from '@golobe-demo/shared';
 import FilterPanel from './filter-panel.vue';
 import DisplayOptions from './display-options.vue';
@@ -14,43 +15,34 @@ interface IProps {
 }
 const { ctrlKey, offersKind } = defineProps<IProps>();
 
-const searchOffersStoreAccessor = useSearchOffersStore();
-const searchOffersStore = await searchOffersStoreAccessor.getInstance(offersKind, true, true);
-
 const logger = getCommonServices().getLogger().addContextProps({ component: 'ListView' });
-const nuxtApp = useNuxtApp();
-const isError = ref(false);
+const searchOffersStore = useSearchOffersStore();
 
-const isShowWaitingStubNeeded = () => !searchOffersStore || searchOffersStore.resultState.status === 'full-refetch' || searchOffersStore.resultState.status === 'error';
-const showWaitingStub = ref(!import.meta.server && !nuxtApp.isHydrating);
-
-const updateWaitingStubValue = () => {
-  showWaitingStub.value = isShowWaitingStubNeeded();
-};
-watch(() => searchOffersStore.resultState.status, () => {
-  if (searchOffersStore.resultState.status === 'error') {
-    logger.warn('exception while fetching items', undefined, { ctrlKey, type: offersKind });
-    isError.value = true;
-  } else {
-    isError.value = false;
-  }
-  updateWaitingStubValue();
+const isComponentError = ref(false);
+const isError = computed(() => searchOffersStore.isError[offersKind]);
+const showWaitingStub = computed(() => {
+  return import.meta.client && searchOffersStore.filterInfo[offersKind] === LOADING_STATE;
 });
 
-onMounted(() => {
-  logger.verbose('mounted', { ctrlKey, type: offersKind });
+if(import.meta.server || (import.meta.client && useNuxtApp().isHydrating)) {
+  await searchOffersStore.load(offersKind);
+}
+
+
+onMounted( () => {
+  logger.debug('mounted', { ctrlKey, type: offersKind });
 });
 
 </script>
 
 <template>
   <div class="offers-list-view" role="search">
-    <ComponentWaitingIndicator v-if="showWaitingStub && !isError" :ctrl-key="[...ctrlKey, 'Waiter']" class="offers-list-view-waiter mt-xs-5" />
-    <ErrorHelm v-model:is-error="isError">
+    <ComponentWaitingIndicator v-if="showWaitingStub && !isError && !isComponentError" :ctrl-key="[...ctrlKey, 'Waiter']" class="offers-list-view-waiter mt-xs-5" />
+    <ErrorHelm v-model:is-error="isComponentError">
       <div v-if="!showWaitingStub" class="offers-list-view-grid">
         <FilterPanel :ctrl-key="[...ctrlKey, 'FilterPanel']" :offers-kind="offersKind" />
         <DisplayOptions :ctrl-key="[...ctrlKey, 'DisplayOptions']" :offers-kind="offersKind" />
-        <ResultItemsList :ctrl-key="[...ctrlKey, 'ResultItemsList']" :items="searchOffersStore.resultState.items" :offers-kind="offersKind" />
+        <ResultItemsList :ctrl-key="[...ctrlKey, 'ResultItemsList']" :offers-kind="offersKind" />
         <ListPaging :ctrl-key="[...ctrlKey, 'ListPaging']" :offers-kind="offersKind" />
       </div>
     </ErrorHelm>

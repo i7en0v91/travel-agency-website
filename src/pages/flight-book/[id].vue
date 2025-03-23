@@ -100,7 +100,7 @@ onMounted(() => {
 <template>
   <div class="flight-book-page">
     <ErrorHelm :is-error="isError" class="flight-book-page-error-helm">
-      <OfferDetailsBreadcrumbs
+      <LazyOfferDetailsBreadcrumbs
         :ctrl-key="[...CtrlKey, 'Breadcrumbs']"
         offer-kind="flights"
         :city="flightOffer?.departFlight?.departAirport.city"

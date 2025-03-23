@@ -112,7 +112,7 @@ onBeforeUnmount(() => {
     <ErrorHelm :is-error="isError">
       <div class="travel-details-frame-container">
         <Transition name="travel-details-fade">
-          <TravelDetailsTextingFrame
+          <LazyTravelDetailsTextingFrame
             v-show="activeFrame === 'initial'"
             :ctrl-key="[...ctrlKey, 'TravelDetails', 'Texting', 1]"
             :texting="dataBufInitial"
@@ -122,7 +122,7 @@ onBeforeUnmount(() => {
           />
         </Transition>
         <Transition name="travel-details-fade">
-          <TravelDetailsTextingFrame
+          <LazyTravelDetailsTextingFrame
             v-show="activeFrame === 'A'"
             :book-kind="bookKind"
             :ctrl-key="[...ctrlKey, 'TravelDetails', 'Texting', 2]"
@@ -131,7 +131,7 @@ onBeforeUnmount(() => {
           />
         </Transition>
         <Transition name="travel-details-fade">
-          <TravelDetailsTextingFrame
+          <LazyTravelDetailsTextingFrame
             v-show="activeFrame === 'B'"
             :book-kind="bookKind"
             :ctrl-key="[...ctrlKey, 'TravelDetails', 'Texting', 3]"

@@ -101,7 +101,7 @@ onMounted(() => {
 <template>
   <article class="flight-details-page no-hidden-parent-tabulation-check">
     <ErrorHelm :is-error="flightDetailsFetch.status.value === 'error'" class="flight-details-page-error-helm">
-      <OfferDetailsBreadcrumbs
+      <LazyOfferDetailsBreadcrumbs
         :ctrl-key="[...CtrlKey, 'Breadcrumbs']"
         offer-kind="flights"
         :city="flightOffer?.departFlight?.departAirport.city"

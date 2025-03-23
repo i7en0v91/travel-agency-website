@@ -76,7 +76,7 @@ function onActiveSlideChanged () {
       :is-error="!!citiesListFetch.error.value"
     >
       <ul class="popular-city-grid p-xs-2 p-s-3  hidden-overflow-nontabbable">
-        <PopularCityCard
+        <LazyPopularCityCard
           v-for="(city, idx) in citiesListFetch.data.value"
           :key="`popular-city-${idx}`"
           :ctrl-key="[...CtrlKey, 'Card', 'PopularCity', idx]"

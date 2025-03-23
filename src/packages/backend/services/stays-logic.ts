@@ -702,10 +702,10 @@ export class StaysLogic implements IStaysLogic {
     this.logger.debug('generating full stay offer variants', { userId, from: checkInDateVariants, to: checkOutDateVariants });
 
     let stayVariants = [] as (IStayShort & { reviewSummary: ReviewSummary })[];
-    if (filter.citySlug) {
-      stayVariants = (availableStays ?? (await this.getAllStays())).filter(x => x.city.slug === filter.citySlug!);
+    if (filter.cityId) {
+      stayVariants = (availableStays ?? (await this.getAllStays())).filter(x => x.city.id === filter.cityId!);
     }
-    if (stayVariants.length === 0 && !filter.citySlug) {
+    if (stayVariants.length === 0 && !filter.cityId) {
       stayVariants = availableStays ?? (await this.getAllStays());
     }
 
@@ -726,7 +726,6 @@ export class StaysLogic implements IStaysLogic {
             checkIn,
             checkOut,
             id: TemporaryEntityId,
-            isFavourite: false,
             kind: 'stays',
             numGuests,
             numRooms,

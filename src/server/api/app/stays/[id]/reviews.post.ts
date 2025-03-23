@@ -1,13 +1,13 @@
 import { type EntityId, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { type ICreateOrUpdateStayReviewDto, type IModifyStayReviewResultDto, CreateOrUpdateStayReviewDtoSchema } from '../../../../api-definitions';
-import { defineWebApiEventHandler } from '../../../../utils/webapi-event-handler';
+import { defineWebApiEventHandler, getLogger as getWebApiLogger } from '../../../../utils/webapi-event-handler';
 import { extractUserIdFromSession } from './../../../../../server/utils/auth';
 import { getServerSession } from '#auth';
 import type { H3Event } from 'h3';
-import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
+import { getServerServices } from '../../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
+  const logger = getWebApiLogger();
   const staysLogic = getServerServices()!.getStaysLogic();
 
   const stayParam = getRouterParams(event)?.id?.toString() ?? '';

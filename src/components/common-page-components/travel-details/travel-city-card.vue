@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { ControlKey } from './../../../helpers/components';
-import { AppPage, getI18nResName3, type IImageEntitySrc, type ILocalizableValue, ImageCategory, type Locale } from '@golobe-demo/shared';
+import { getCommonServices } from '../../../helpers/service-accessors';
+import type { ISearchFlightOffersMainParams, ISearchStayOffersMainParams } from './../../../types';
+import { type OfferKind, AppPage, getI18nResName3, type IImageEntitySrc, type ILocalizableValue, ImageCategory, type Locale } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 
 interface IProps {
@@ -12,10 +14,47 @@ interface IProps {
   citySlug?: string,
   imgSrc?: IImageEntitySrc
 };
-const { cityName, promoLine, promoPrice } = defineProps<IProps>();
+const { 
+  ctrlKey, 
+  cityName = undefined, 
+  promoLine = undefined, 
+  promoPrice = undefined, 
+  citySlug = undefined, 
+  bookKind = undefined 
+} = defineProps<IProps>();
+
+const logger = getCommonServices().getLogger().addContextProps({ component: 'TravelCityCard' });
 
 const navLinkBuilder = useNavLinkBuilder();
 const { locale } = useI18n();
+
+const offersSearchLink = computed (() => 
+  citySlug ? (
+    bookKind === 'flight' ? 
+      navLinkBuilder.buildPageLink(AppPage.FindFlights, locale.value as Locale, { fromCitySlug: citySlug }) : 
+      navLinkBuilder.buildPageLink(AppPage.FindStays, locale.value as Locale, { citySlug })
+  ) : 
+  navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale)
+);
+
+async function onBookBtnClick(): Promise<void> {
+  logger.debug('book btn click', { ctrlKey, bookKind, citySlug });
+  if(citySlug) {
+    const searchOffersStore = useSearchOffersStore();
+    const offersKind: OfferKind = bookKind === 'flight' ? 'flights' : 'stays';
+
+    const entityCacheStore = useEntityCacheStore();
+    const items = await entityCacheStore!.get({ slugs: [citySlug!] }, 'City', true);
+    const cityId = items[0].id;
+
+    const mainParams = offersKind === 'flights' ?
+      { fromCityId: cityId } as Partial<ISearchFlightOffersMainParams> :
+      { cityId }  as Partial<ISearchStayOffersMainParams>;
+
+    logger.debug('travel city offers search params computed', { ctrlKey, mainParams });
+    await searchOffersStore.load(offersKind, { overrideParams: mainParams });
+  }
+}
 
 </script>
 
@@ -36,7 +75,7 @@ const { locale } = useI18n();
           {{ promoPrice ? `$ ${promoPrice}` : '&nbsp;' }}
         </div>
       </div>
-      <NuxtLink class="btn btn-primary brdr-1 mt-xs-3 no-hidden-parent-tabulation-check" :to="citySlug ? (bookKind === 'flight' ? navLinkBuilder.buildPageLink(AppPage.FindFlights, locale as Locale, { fromCitySlug: citySlug }) : navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug })) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
+      <NuxtLink class="btn btn-primary brdr-1 mt-xs-3 no-hidden-parent-tabulation-check" :to="offersSearchLink" @click="onBookBtnClick">
         {{ $t(getI18nResName3('travelCities', 'bookBtn', bookKind)) }}
       </NuxtLink>
     </div>

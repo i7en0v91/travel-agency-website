@@ -1,10 +1,10 @@
 import { AppConfig, type Locale, type Theme, RecoverPasswordResultEnum, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { type IRecoverPasswordDto, type IRecoverPasswordResultDto, RecoverPasswordDtoSchema } from '../../../api-definitions';
-import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { getCommonServices, getServerServices } from '../../../../helpers/service-accessors';
+import { defineWebApiEventHandler, getLogger as getWebApiLogger } from '../../../utils/webapi-event-handler';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event) => {
-  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
+  const logger = getWebApiLogger();
   if (!AppConfig.email) {
     logger.warn('cannot recover password as emailing is disabled');
     throw new AppException(AppExceptionCodeEnum.EMAILING_DISABLED, 'cannot recover password as emailing is disabled', 'error-stub');

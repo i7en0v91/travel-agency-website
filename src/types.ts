@@ -1,4 +1,4 @@
-import type { CacheEntityType, ICommonServicesLocator, AppPage, I18nResName, GeoPoint, Price, StayOffersSortFactor, FlightOffersSortFactor, FlightClass, TripType, OfferKind, Timestamp, ILocalizableValue, EntityId, IImageEntitySrc } from '@golobe-demo/shared';
+import type { CacheEntityType, ICommonServicesLocator, AppPage, I18nResName, GeoPoint, Price, FlightOffersSortFactor, FlightClass, TripType, OfferKind, Timestamp, ILocalizableValue, EntityId, IImageEntitySrc, FlightsFilterIds, StaysFilterIds } from '@golobe-demo/shared';
 import type { IElectronShell } from './electron/interfaces';
 import type { ControlKey } from './helpers/components';
 
@@ -92,35 +92,30 @@ export interface ISearchListItem {
 
 // Filters
 export type FilterType = 'range' | 'checklist';
-export interface ISearchOffersFilterProps<TValue> {
-  filterId: string,
+export interface ISearchOffersFilterProps {
+  filterId: FlightsFilterIds | StaysFilterIds,
   captionResName: I18nResName,
   type: FilterType,
-  currentValue?: TValue,
   displayOrder: number
 }
 
-export interface ISearchOffersRangeFilterProps extends ISearchOffersFilterProps<{ min: number, max: number }> {
+export type SearchOffersFilterRange = { min: number, max: number };
+export interface ISearchOffersRangeFilterProps extends ISearchOffersFilterProps {
   type: 'range',
-  valueRange: {
-    min: number,
-    max: number
-  },
-  limitLabelFormatter: 'price' | 'daytime',
-  applyNarrowing: (min: number, max: number) => void
+  valueRange: SearchOffersFilterRange,
+  limitLabelFormatter: 'price' | 'daytime'
 }
 
 export type SearchOffersFilterVariantId = string;
 export interface ISearchOffersFilterVariant {
   id: SearchOffersFilterVariantId,
-  displayText?: I18nResName | ILocalizableValue
+  displayText: I18nResName | ILocalizableValue | undefined
 }
 
-export interface ISearchOffersChecklistFilterProps extends ISearchOffersFilterProps<SearchOffersFilterVariantId[]> {
+export interface ISearchOffersChecklistFilterProps extends ISearchOffersFilterProps {
   type: 'checklist',
   display: 'list' | 'flow',
-  variants: ISearchOffersFilterVariant[],
-  applyNarrowing: (variants: ISearchOffersFilterVariant[]) => void
+  variants: ISearchOffersFilterVariant[] | undefined
 }
 
 export interface ISearchOffersCommonParams {
@@ -154,24 +149,19 @@ export type ISearchFlightOffersParams = ISearchFlightOffersMainParams & ISearchO
 export type ISearchStayOffersParams = ISearchStayOffersMainParams & ISearchOffersFilterParams & ISearchOffersCommonParams & { kind: 'stays' };
 
 // Display options
-export type FlightOffersDisplayOptionType = FlightOffersSortFactor;
+export type FlightOffersSortOptionType = FlightOffersSortFactor;
 
-export interface ISearchOffersCommonDisplayOptions {
+export interface ISearchOffersCommonSortOptions {
   totalCount: number
 }
 
-export interface ISearchFlightOffersDisplayOption {
-  type: FlightOffersDisplayOptionType,
+export type SearchFlightOffersSortVariant = {
+  type: FlightOffersSortOptionType,
   price?: Price,
   duration?: number, // flights duration in minutes
-  isActive: boolean
-}
-export interface ISearchFlightOffersDisplayOptions extends ISearchOffersCommonDisplayOptions {
-  primaryOptions: ISearchFlightOffersDisplayOption[],
-  additionalSorting: FlightOffersDisplayOptionType
-}
-export interface ISearchStayOffersDisplayOptions extends ISearchOffersCommonDisplayOptions {
-  sorting: StayOffersSortFactor
+};
+export interface ISearchFlightOffersSortOptions extends ISearchOffersCommonSortOptions {
+  sortVariants: SearchFlightOffersSortVariant[]
 }
 
 /** Components - maps */

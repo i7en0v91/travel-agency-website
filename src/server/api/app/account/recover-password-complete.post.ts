@@ -1,12 +1,12 @@
 import { AppException, AppExceptionCodeEnum, isPasswordSecure, RecoverPasswordCompleteResultEnum } from '@golobe-demo/shared';
 import { type IRecoverPasswordCompleteDto, RecoverPasswordCompleteDtoSchema, type IRecoverPasswordCompleteResultDto } from '../../../api-definitions';
-import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import { getCommonServices, getServerServices } from '../../../../helpers/service-accessors';
+import { defineWebApiEventHandler, getLogger as getWebApiLogger } from '../../../utils/webapi-event-handler';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event) => {
   const recoverPasswordCompleteDto = await readBody(event) as IRecoverPasswordCompleteDto;
 
-  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
+  const logger = getWebApiLogger();
   if (!isPasswordSecure(recoverPasswordCompleteDto.password)) {
     logger.warn('insecure password');
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, '(recover-password-complete) insecure password', 'error-page');

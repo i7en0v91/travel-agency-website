@@ -1270,7 +1270,6 @@ export class AcsysDraftEntitiesResolver {
         departFlight,
         arriveFlight,
         dataHash: unresolved.dataHash,
-        isFavourite: false,
         kind: 'flights',
         numPassengers: unresolved.numPassengers,
         totalPrice: new Decimal(unresolved.totalPrice),
@@ -1671,7 +1670,6 @@ export class AcsysDraftEntitiesResolver {
         id: unresolved.id,
         isDeleted: unresolved.isDeleted,
         dataHash: unresolved.dataHash,
-        isFavourite: false,
         kind: 'stays',
         totalPrice: new Decimal(unresolved.totalPrice),
         previewMode: draftIds.has(unresolved.id) 

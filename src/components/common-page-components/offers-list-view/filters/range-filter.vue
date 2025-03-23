@@ -1,47 +1,46 @@
 <script setup lang="ts">
-import type { ControlKey } from './../../../../helpers/components';
+import { computeNarrowedRange, type ControlKey } from './../../../../helpers/components';
 import { getI18nResName3, convertTimeOfDay } from '@golobe-demo/shared';
-import type { ISearchOffersRangeFilterProps } from './../../../../types';
+import type { ISearchOffersRangeFilterProps, SearchOffersFilterRange } from './../../../../types';
 import Slider from '@vueform/slider';
 import dayjs from 'dayjs';
 import isNumber from 'lodash-es/isNumber';
 import isString from 'lodash-es/isString';
+import isArray from 'lodash-es/isArray';
 import { getCommonServices } from '../../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: ControlKey,
-  filterParams: ISearchOffersRangeFilterProps,
-  value: { min: number, max: number }
+  filterParams: ISearchOffersRangeFilterProps
 }
 
-const { ctrlKey, filterParams, value } = defineProps<IProps>();
+const { ctrlKey, filterParams } = defineProps<IProps>();
 
-const logger = getCommonServices().getLogger().addContextProps({ component: 'RangeFilter' });
-const editValue = ref([value.min, value.max]);
-watch(() => value, () => {
-  logger.debug('received value update', { ctrlKey, newValue: value, currentValue: editValue.value });
-  if (Math.abs(value.min - editValue.value[0]) > 0.01 || Math.abs(value.max - editValue.value[1]) > 0.01) {
-    editValue.value[0] = value.min;
-    editValue.value[1] = value.max;
-  }
-});
+const DiffValuesEpsilon = 0.01;
+
+const logger = getCommonServices().getLogger().addContextProps({ component: 'RangeFilter', filterId: filterParams.filterId });
+const controlValuesStore = useControlValuesStore();
+
+const modelValue = defineModel<{ min: number, max: number } | undefined>('modelValue');
+const editValue = ref([
+  modelValue.value?.min ?? filterParams.valueRange.min, 
+  modelValue.value?.max  ?? filterParams.valueRange.max
+]);
 
 const leftHandlePos = ref<number>(0.0);
 const rightHandlePos = ref<number>(1.0);
 
 const { d, t } = useI18n();
 
-const $emit = defineEmits<{(event: 'update:value', value: { min: number, max: number }): void}>();
-
-function fireValueChangeEvent (value: { min: number, max: number }) {
-  logger.verbose('firing value change event', { ctrlKey, min: value.min, max: value.max });
-  $emit('update:value', value);
+function updateModelValue (value: { min: number, max: number }) {
+  logger.debug('updating model value', { ctrlKey, value });
+  modelValue.value = value;
 }
 
 function onSliderValueChanged (value: number[]) {
   logger.debug('slider value changed', ctrlKey);
   if (value?.length === 2) {
-    fireValueChangeEvent({ min: value[0], max: value[1] });
+    updateModelValue({ min: value[0], max: value[1] });
   }
 }
 
@@ -105,6 +104,71 @@ function tooltipTextFormatter (value: any): string {
     return value.toString();
   }
 }
+
+function areRangesEqual(
+  range1: SearchOffersFilterRange | number[], 
+  range2: SearchOffersFilterRange | number[]
+): boolean {
+  return Math.abs((isArray(range1) ? range1[0] : range1.min) - (isArray(range2) ? range2[0] : range2.min)) < DiffValuesEpsilon 
+    && Math.abs((isArray(range1) ? range1[1] : range1.max) - (isArray(range2) ? range2[1] : range2.max)) < DiffValuesEpsilon;
+}
+
+onMounted(() => {
+  logger.debug('acquiring store value ref', { ctrlKey });
+  const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<SearchOffersFilterRange | undefined>(ctrlKey, {
+    initialOverwrite: undefined,
+    defaultValue: undefined,
+    persistent: false
+  });
+
+  watch(storeValueRef, () => {
+    logger.debug('store value watcher', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value });
+    const newValue = (storeValueRef.value as SearchOffersFilterRange) ?? undefined;
+    const changed = (!!storeValueRef.value !== !!modelValue.value) || 
+      (storeValueRef.value && !areRangesEqual(storeValueRef.value, modelValue.value!));
+    if(changed) {
+      logger.verbose('updating model value by store value change', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value, editValue: editValue.value });
+      modelValue.value = newValue;  
+    }
+  }, { immediate: true });
+
+  watch(modelValue, () => {
+    logger.debug('model value watcher', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value, editValue: editValue.value });
+
+    const value = modelValue.value;
+    if(!value) {
+      logger.verbose('updating store value by model value change (to empty)', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value, editValue: editValue.value });
+      storeValueRef.value = undefined;
+      editValue.value[0] = filterParams.valueRange.min;
+      editValue.value[1] = filterParams.valueRange.max;
+      return;
+    }
+
+    if (!areRangesEqual(value, editValue.value)) {
+      logger.verbose('updating edit values by model value change', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value, editValue: editValue.value });
+      editValue.value[0] = value.min;
+      editValue.value[1] = value.max;
+    }
+
+    const changed = (!!storeValueRef.value !== !!modelValue.value) || 
+      (modelValue.value && !areRangesEqual(modelValue.value, storeValueRef.value!));
+    if(changed) {
+      logger.verbose('updating store value by model value change', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value, editValue: editValue.value });
+      storeValueRef.value = modelValue.value;
+    }
+  }, { immediate: true });
+
+  watch(() => filterParams, () => { 
+    logger.debug('filter params watcher', { ctrlKey, modelValue: modelValue.value, filterParams });
+    if(modelValue.value) {
+      const narrowedValue = computeNarrowedRange(modelValue.value, filterParams.valueRange, filterParams.valueRange);
+      if(!areRangesEqual(narrowedValue, modelValue.value)) {
+        logger.verbose('model value adjusted by filter limits', { ctrlKey, currentValue: modelValue.value, filterParams, narrowedValue });
+        modelValue.value = narrowedValue;
+      }
+    }
+  }, { immediate: false });
+});
 
 </script>
 

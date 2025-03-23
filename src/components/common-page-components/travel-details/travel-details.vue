@@ -119,7 +119,7 @@ onMounted(() => {
 
 <template>
   <PageSection
-    :ctrl-key="[...ctrlKey, 'TravelDetails']"
+    :ctrl-key="[...ctrlKey, 'PageSection']"
     :header-res-name="getI18nResName2('travelDetails', 'title')"
     :subtext-res-name="getI18nResName2('travelCities', 'subtext')"
     :btn-text-res-name="getI18nResName2('travelCities', 'btn')"

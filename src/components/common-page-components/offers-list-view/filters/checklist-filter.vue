@@ -2,6 +2,7 @@
 import { toShortForm, type ControlKey, type ArbitraryControlElementMarker } from './../../../../helpers/components';
 import { getI18nResName3, type Locale, getLocalizeableValue } from '@golobe-demo/shared';
 import isString from 'lodash-es/isString';
+import isEqual from 'lodash-es/isEqual';
 import FlowChecklistItem from './flow-checklist-item.vue';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../../helpers/dom';
 import { SearchOffersFilterTabGroupId } from './../../../../helpers/constants';
@@ -11,21 +12,16 @@ import { getCommonServices } from '../../../../helpers/service-accessors';
 interface IProps {
   ctrlKey: ControlKey,
   filterParams: ISearchOffersChecklistFilterProps,
-  value: SearchOffersFilterVariantId[],
   maxCollapsedListItemsCount?: number
 }
 
-const { ctrlKey, value, filterParams, maxCollapsedListItemsCount } = defineProps<IProps>();
+const { ctrlKey, filterParams, maxCollapsedListItemsCount } = defineProps<IProps>();
 
 const { locale } = useI18n();
-const logger = getCommonServices().getLogger().addContextProps({ component: 'ChecklistFilter' });
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ChecklistFilter', filterId: filterParams.filterId });
+const controlValuesStore = useControlValuesStore();
 
-const $emit = defineEmits<{(event: 'update:value', value: SearchOffersFilterVariantId[]): void}>();
-
-function fireValueChangeEvent (value: SearchOffersFilterVariantId[]) {
-  logger.verbose('firing value change event', { ctrlKey, values: value });
-  $emit('update:value', value);
-}
+const modelValue = defineModel<SearchOffersFilterVariantId[] | undefined>('modelValue');
 
 function getVariantDisplayText (variant: ISearchOffersFilterVariant, locale: Locale): string | undefined {
   if (!variant.displayText) {
@@ -40,24 +36,34 @@ function getVariantDisplayText (variant: ISearchOffersFilterVariant, locale: Loc
 }
 
 function onVariantToggled (variantId: SearchOffersFilterVariantId) {
-  const newValue = [...value];
+  logger.debug('variant toggled', { ctrlKey, variantId, modelValue: modelValue.value });
+  const newValue = [...(modelValue.value ?? [])];
   if (newValue.includes(variantId)) {
     newValue.splice(newValue.indexOf(variantId), 1);
   } else {
     newValue.push(variantId);
   }
 
-  fireValueChangeEvent(newValue);
+  modelValue.value = newValue;
 }
 
 const variantsToDisplay = computed(() => {
-  return (filterParams.display === 'list' && maxCollapsedListItemsCount !== undefined)
-    ? filterParams.variants.slice(0, Math.min(maxCollapsedListItemsCount, filterParams.variants.length))
-    : filterParams.variants;
+  return listExpanded.value ? filterParams.variants :
+    (filterParams.variants?.length ?
+      (
+        (filterParams.display === 'list' && maxCollapsedListItemsCount !== undefined)
+        ? filterParams.variants.slice(0, Math.min(maxCollapsedListItemsCount, filterParams.variants.length))
+        : filterParams.variants
+      ) : []
+    );
 });
 
 const numMoreVariantsToDisplay = computed(() => {
-  return (filterParams.display === 'list' && maxCollapsedListItemsCount !== undefined) ? Math.max(0, filterParams.variants.length - maxCollapsedListItemsCount) : 0;
+  return filterParams.variants?.length ?
+    (
+      (filterParams.display === 'list' && maxCollapsedListItemsCount !== undefined) ? 
+        Math.max(0, filterParams.variants.length - maxCollapsedListItemsCount) : 0
+    ) : 0;
 });
 
 const listExpanded = ref(false);
@@ -67,23 +73,61 @@ function toggleList () {
   setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 }
 
+onMounted(() => {
+  logger.debug('acquiring store value ref', { ctrlKey });
+  const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<SearchOffersFilterVariantId[] | undefined>(ctrlKey, {
+    initialOverwrite: undefined,
+    defaultValue: undefined,
+    persistent: false
+  });
+
+  watch(storeValueRef, () => {
+    logger.debug('store value watcher', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value });
+    const newValue = (storeValueRef.value as SearchOffersFilterVariantId[]) ?? undefined;
+    const changed = (!!storeValueRef.value !== !!modelValue.value) || !isEqual(storeValueRef.value, modelValue.value);
+    if(changed) {
+      logger.verbose('updating model value by store value change', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value });
+      modelValue.value = newValue;  
+    }
+  }, { immediate: true });
+
+  watch(modelValue, () => {
+    logger.debug('model value watcher', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value });
+    if(!modelValue.value || !isEqual(modelValue.value, storeValueRef.value)) {
+      logger.verbose('updating store value by model value change', { ctrlKey, modelValue: modelValue.value, storeValue: storeValueRef.value });
+      storeValueRef.value = modelValue.value;
+    }
+  }, { immediate: false });
+
+  watch(() => filterParams, () => { 
+    logger.debug('filter params watcher', { ctrlKey, modelValue: modelValue.value, filterParams });
+    if(modelValue.value) {
+      const filteredModelValues = filterParams.variants ? modelValue.value.filter(vId => filterParams.variants!.some(v => v.id === vId)) : [];
+      if(modelValue.value.length !== filteredModelValues.length) {
+        logger.verbose('model values filtered out by filter limits', { ctrlKey, currentModelValues: modelValue.value, filteredModelValues });
+        modelValue.value = filteredModelValues;
+      }
+    }
+  });
+});
+
 </script>
 
 <template>
   <div class="checklist-filter">
     <ol :class="filterParams.display === 'flow' ? 'flow-checklist' : 'list-checklist'">
-      <li v-for="(variant) in (listExpanded ? filterParams.variants : variantsToDisplay)" :key="`${toShortForm(ctrlKey)}-${variant.id}`" class="checklist-filter-container">
+      <li v-for="variant in variantsToDisplay" :key="`${toShortForm(ctrlKey)}-${variant.id}`" class="checklist-filter-container">
         <FlowChecklistItem
           v-if="filterParams.display === 'flow'"
           class="m-xs-2"
           :ctrl-key="[...ctrlKey, 'FilterVariant', variant.id as ArbitraryControlElementMarker]"
-          :value="value.includes(variant.id)"
+          :value="modelValue?.includes(variant.id) ?? false"
           :variant="variant"
           @update:value="() => onVariantToggled(variant.id)"
         />
         <CheckBox
           v-else
-          :model-value="value.includes(variant.id)"
+          :model-value="modelValue?.includes(variant.id) ?? false"
           :ctrl-key="[...ctrlKey, 'FilterVariant', variant.id as ArbitraryControlElementMarker]"
           class="list-checklist-item m-xs-2"
           :tabbable-group-id="SearchOffersFilterTabGroupId"

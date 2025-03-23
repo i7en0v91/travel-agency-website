@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { ControlKey } from './../../helpers/components';
-import { AppPage, type Locale, getI18nResName3, getI18nResName2, type ILocalizableValue, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
+import { getCommonServices } from './../../helpers/service-accessors';
+import { type OfferKind, AppPage, type Locale, getI18nResName3, getI18nResName2, type ILocalizableValue, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
+import type { ISearchFlightOffersMainParams, ISearchStayOffersMainParams } from './../../types';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 
 interface IProps {
@@ -11,10 +13,31 @@ interface IProps {
   citySlug?: string,
   numStays?: number
 };
-const { text } = defineProps<IProps>();
+const { ctrlKey, searchKind, citySlug = undefined, text = undefined } = defineProps<IProps>();
 
+const logger = getCommonServices().getLogger().addContextProps({ component: 'PopularCityCard' });
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
+
+async function onSearchBtnClick(): Promise<void> {
+  logger.debug('search btn click', { ctrlKey, searchKind, slug: citySlug });
+  if(citySlug) {
+    const offerKind: OfferKind = searchKind === 'flight' ? 'flights' : 'stays';
+    const searchOffersStore = useSearchOffersStore();
+    searchOffersStore.$reset();
+
+    const entityCacheStore = useEntityCacheStore();
+    const items = await entityCacheStore!.get({ slugs: [citySlug!] }, 'City', true);
+    const cityId = items[0].id;
+
+    const mainParams = offerKind === 'flights' ?
+      { fromCityId: cityId } as Partial<ISearchFlightOffersMainParams> :
+      { cityId }  as Partial<ISearchStayOffersMainParams>;
+
+    logger.debug('offer search params computed', { ctrlKey, mainParams });
+    await searchOffersStore.load(offerKind, { overrideParams: mainParams });
+  }
+}
 
 </script>
 
@@ -36,15 +59,15 @@ const navLinkBuilder = useNavLinkBuilder();
             {{ text ? ((text as any)[locale]) : '&nbsp;' }}
           </div>
           <div v-if="searchKind === 'flight'" class="popular-city-links mt-xs-2 p-xs-2">
-            <NuxtLink class="popular-city-link brdr-1 hidden-overflow-nontabbable" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindFlights, locale as Locale, { fromCitySlug: citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
+            <NuxtLink class="popular-city-link brdr-1 hidden-overflow-nontabbable" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindFlights, locale as Locale, { fromCitySlug: citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)" @click="() => $props.citySlug ? onSearchBtnClick() : undefined">
               {{ $t(getI18nResName3('indexPage', 'popularCity', 'flights')) }}
             </NuxtLink>
-            <NuxtLink class="popular-city-link brdr-1 hidden-overflow-nontabbable" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
+            <NuxtLink class="popular-city-link brdr-1 hidden-overflow-nontabbable" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)" @click="() => $props.citySlug ? onSearchBtnClick() : undefined">
               {{ $t(getI18nResName3('indexPage', 'popularCity', 'stays')) }}
             </NuxtLink>
           </div>
           <div v-else class="popular-city-links mt-xs-2 p-xs-2">
-            <NuxtLink v-if="numStays !== undefined" class="popular-city-link brdr-1 hidden-overflow-nontabbable" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)">
+            <NuxtLink v-if="numStays !== undefined" class="popular-city-link brdr-1 hidden-overflow-nontabbable" :to="citySlug ? navLinkBuilder.buildPageLink(AppPage.FindStays, locale as Locale, { citySlug }) : navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale)" @click="() => $props.citySlug ? onSearchBtnClick() : undefined">
               {{ $t(getI18nResName2('staysPage', 'cityPlacesCount'), numStays) }}
             </NuxtLink>
             <div v-else class="data-loading-stub text-data-loading" />

@@ -175,7 +175,7 @@ onMounted(() => {
 <template>
   <article class="stay-details-page no-hidden-parent-tabulation-check">
     <ErrorHelm :is-error="stayDetailsFetch.status.value === 'error'" class="stay-details-page-error-helm">
-      <OfferDetailsBreadcrumbs
+      <LazyOfferDetailsBreadcrumbs
         :ctrl-key="[...CtrlKey, 'Breadcrumbs']"
         offer-kind="stays"
         :city="stayOffer?.stay?.city"

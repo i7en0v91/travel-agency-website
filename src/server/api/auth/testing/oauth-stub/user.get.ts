@@ -2,7 +2,7 @@ import type { IAppLogger } from '@golobe-demo/shared';
 import { OAUTH_SECRET, OAUTH_TOKEN_TYPE } from './../../../../../helpers/testing';
 import { verify, type JwtPayload } from 'jsonwebtoken';
 import type { H3Event } from 'h3';
-import { getCommonServices } from '../../../../../helpers/service-accessors';
+import { getLogger as getWebApiLogger } from '../../../../utils/webapi-event-handler';
 
 const extractToken = (authHeaderValue: string) => {
   const [, token] = authHeaderValue.split(`${OAUTH_TOKEN_TYPE} `);
@@ -29,7 +29,7 @@ const ensureAuth = (logger: IAppLogger, event: H3Event) => {
 };
 
 export default defineWebApiEventHandler((event: H3Event): Promise<string | JwtPayload> => {
-  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
+  const logger = getWebApiLogger();
   logger.verbose('enter');
   const user = ensureAuth(logger, event);
   logger.verbose('exit');

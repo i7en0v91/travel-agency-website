@@ -79,7 +79,6 @@ export function mapFlightOffer (value: IFlightOffer): IFlightOfferDetailsDto {
   const mapped: IFlightOfferDetailsDto = {
     id: value.id,
     kind: 'flights',
-    isFavourite: value.isFavourite,
     totalPrice: value.totalPrice.toNumber(),
     class: value.class,
     departFlight: mapFlight(value.departFlight),
@@ -144,7 +143,6 @@ export function mapStayOffer (value: IStayOfferDetails): IStayOfferDetailsDto {
   const mapped: IStayOfferDetailsDto = {
     id: value.id,
     kind: 'stays',
-    isFavourite: value.isFavourite,
     totalPrice: value.totalPrice.toNumber(),
     checkInDate: dayjs(value.checkIn).format(CheckInOutDateUrlFormat),
     checkOutDate: dayjs(value.checkOut).format(CheckInOutDateUrlFormat),
@@ -245,7 +243,6 @@ export function mapSearchedFlightOffer (value: EntityDataAttrsOnly<IFlightOffer>
   const mapped: ISearchedFlightOfferDto = {
     id: value.id,
     kind: 'flights',
-    isFavourite: value.isFavourite,
     totalPrice: value.totalPrice.toNumber(),
     class: value.class,
     departFlight: mapSearchedFlight(value.departFlight),
@@ -291,7 +288,6 @@ export function mapSearchedStayOffer (value: EntityDataAttrsOnly<IStayOffer>): I
   const mapped: ISearchedStayOfferDto = {
     id: value.id,
     kind: 'stays',
-    isFavourite: value.isFavourite,
     totalPrice: value.totalPrice.toNumber(),
     checkInDate: value.checkIn.toISOString(),
     checkOutDate: value.checkOut.toISOString(),

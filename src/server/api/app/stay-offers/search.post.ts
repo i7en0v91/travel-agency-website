@@ -1,5 +1,5 @@
 import { type IStayOffersFilterParams, type ISorting, type StayOffersSortFactor, type IStaySearchHistory, MaxSearchHistorySize, SessionStaySearchHistory, type IAppLogger, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
-import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
+import { defineWebApiEventHandler, getLogger as getWebApiLogger } from '../../../utils/webapi-event-handler';
 import { type ISearchStayOffersResultDto, type ISearchStayOffersParamsDto, SearchStayOffersParamsDtoSchema } from '../../../api-definitions';
 import { getUserSessionValue, setUserSessionValue } from './../../../utils/user-session';
 import { mapSearchedStayOffer, mapSearchStayOfferResultEntities } from '../../../utils/dto-mappers';
@@ -8,7 +8,7 @@ import type { H3Event } from 'h3';
 import { Decimal } from 'decimal.js';
 import { destr } from 'destr';
 import { getServerSession } from '#auth';
-import { getServerServices, getCommonServices } from '../../../../helpers/service-accessors';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 function performAdditionalDtoValidation (dto: ISearchStayOffersParamsDto, event : H3Event, logger: IAppLogger) {
   if (dto.price?.to && dto.price?.from && dto.price.from > dto.price.to) {
@@ -31,40 +31,36 @@ function getSortDirection (sort: StayOffersSortFactor): 'asc' | 'desc' {
   }
 }
 
-async function addCityToSearchHistory (citySlug: string | undefined, event: H3Event, logger: IAppLogger): Promise<void> {
-  if (!citySlug) {
+async function addCityToSearchHistory (cityId: string | undefined, event: H3Event, logger: IAppLogger): Promise<void> {
+  if (!cityId) {
     return;
   }
 
-  const citiesLogic = getServerServices()!.getCitiesLogic();
-  const cityId = (await citiesLogic.getPopularCities(event.context.preview.mode)).find(x => x.slug === citySlug)?.id;
-  if (cityId) {
-    try {
-      logger.verbose('adding popular city to search history', { citySlug, id: cityId });
+  try {
+    logger.verbose('adding popular city to search history', { id: cityId });
 
-      let searchHistory = destr<IStaySearchHistory | undefined>(await getUserSessionValue(event, SessionStaySearchHistory));
-      if (!searchHistory) {
-        searchHistory = { popularCityIds: [] };
-      }
-      if (searchHistory.popularCityIds.includes(cityId)) {
-        logger.debug('wont add city to search history as it is already there', { citySlug, id: cityId });
-        return;
-      }
-      searchHistory.popularCityIds = [cityId, ...searchHistory.popularCityIds];
-      if (searchHistory.popularCityIds.length > MaxSearchHistorySize) {
-        searchHistory.popularCityIds.pop();
-      }
-      logger.debug('city search history updated', { result: searchHistory.popularCityIds });
-      await setUserSessionValue(event, SessionStaySearchHistory, JSON.stringify(searchHistory));
-    } catch (err: any) {
-      logger.warn('failed to add popular city to search history', err, { citySlug, id: cityId });
+    let searchHistory = destr<IStaySearchHistory | undefined>(await getUserSessionValue(event, SessionStaySearchHistory));
+    if (!searchHistory) {
+      searchHistory = { popularCityIds: [] };
     }
+    if (searchHistory.popularCityIds.includes(cityId)) {
+      logger.debug('wont add city to search history as it is already there', { id: cityId });
+      return;
+    }
+    searchHistory.popularCityIds = [cityId, ...searchHistory.popularCityIds];
+    if (searchHistory.popularCityIds.length > MaxSearchHistorySize) {
+      searchHistory.popularCityIds.pop();
+    }
+    logger.debug('city search history updated', { result: searchHistory.popularCityIds });
+    await setUserSessionValue(event, SessionStaySearchHistory, JSON.stringify(searchHistory));
+  } catch (err: any) {
+    logger.warn('failed to add popular city to search history', err, { id: cityId });
   }
 }
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const serverServices = getServerServices()!;
-  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
+  const logger = getWebApiLogger();
   const staysLogic = serverServices.getStaysLogic();
 
   logger.debug('parsing stay offers search query from HTTP body');
@@ -74,7 +70,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   const filterParams: IStayOffersFilterParams = {
     checkIn: searchParamsDto.checkIn,
     checkOut: searchParamsDto.checkOut,
-    citySlug: searchParamsDto.citySlug,
+    cityId: searchParamsDto.cityId,
     numGuests: searchParamsDto.numGuests,
     numRooms: searchParamsDto.numRooms,
     price: searchParamsDto.price
@@ -96,7 +92,7 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   };
 
   const searchResults = await staysLogic.searchOffers(filterParams, userId ?? 'guest', sorting, searchParamsDto.pagination, searchParamsDto.narrowFilterParams, event.context.preview.mode);
-  await addCityToSearchHistory(searchParamsDto.citySlug, event, logger);
+  await addCityToSearchHistory(searchParamsDto.cityId, event, logger);
 
   setHeader(event, 'content-type', 'application/json');
 

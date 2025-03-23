@@ -10,6 +10,9 @@ import flatten from 'lodash-es/flatten';
 import { parseURL, stringifyParsedURL, stringifyQuery } from 'ufo';
 import set from 'lodash-es/set';
 import { getCommonServices } from './service-accessors';
+import once from 'lodash-es/once';
+
+const getLogger = once(() => getCommonServices().getLogger().addContextProps({ component: 'DomHelper' }));
 
 export function isInViewport (element: HTMLElement, includeVeticallyScrollableTo = false) {
   const rect = element.getBoundingClientRect();
@@ -356,12 +359,4 @@ export function getCurrentDeviceSize (): DeviceSizeEnum {
     }
   }
   return DeviceSizeEnum.XS;
-}
-
-let logger: IAppLogger | undefined;
-function getLogger(): IAppLogger {
-  if(!logger) {
-    logger = getCommonServices().getLogger().addContextProps({ component: 'DomHelper' });
-  }
-  return logger;
 }

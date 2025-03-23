@@ -34,6 +34,6 @@ defineProps<IProps>();
         <slot />
       </div>
     </div>
-    <SearchOffers :ctrl-key="['SearchOffers']" :single-tab="singleTab" />
+    <LazySearchOffers :ctrl-key="['SearchOffers']" :single-tab="singleTab" />
   </div>
 </template>

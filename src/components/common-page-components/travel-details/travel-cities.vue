@@ -51,7 +51,7 @@ watch(popularCitiesListFetch.status, () => {
 
 <template>
   <PageSection
-    :ctrl-key="[...ctrlKey, 'TravelCities']"
+    :ctrl-key="[...ctrlKey, 'PageSection']"
     :header-res-name="getI18nResName2('travelCities', 'title')"
     :subtext-res-name="getI18nResName2('travelCities', 'subtext')"
     :btn-text-res-name="getI18nResName2('travelCities', 'btn')"
@@ -84,7 +84,7 @@ watch(popularCitiesListFetch.status, () => {
         :key="`${toShortForm(ctrlKey)}-TravelCity-${index}`"
         :style="{width: 'auto'}"
       >
-        <TravelCityCard
+        <LazyTravelCityCard
           :ctrl-key="[...ctrlKey, 'TravelCities', index]"
           :book-kind="bookKind"
           :city-name="city?.cityDisplayName ?? undefined"

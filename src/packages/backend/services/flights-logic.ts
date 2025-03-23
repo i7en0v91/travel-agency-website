@@ -486,23 +486,23 @@ export class FlightsLogic implements IFlightsLogic {
     this.logger.debug('generating full flight offer variants', { userId, previewMode, from: dateFromVariants, to: dateToVariants });
 
     // construct airport variants
-    const cityAirports = await this.airportLogic.getAirportsForSearch([filter.fromCitySlug, filter.toCitySlug].filter(x => (x?.length ?? 0) > 0) as string[], !filter.fromCitySlug || !filter.toCitySlug, previewMode);
+    const cityAirports = await this.airportLogic.getAirportsForSearch([filter.fromCityId, filter.toCityId].filter(x => (x?.length ?? 0) > 0) as string[], !filter.fromCityId || !filter.toCityId, previewMode);
     if (cityAirports.length === 0) {
       this.logger.warn('got empty list of airports to search', undefined, { filter, userId, previewMode });
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'airports data not found', 'error-stub');
     }
 
-    const fromCitySlugs = filter.fromCitySlug ? [filter.fromCitySlug] : (cityAirports.map(x => x.city.slug).filter(s => s !== filter.toCitySlug));
-    const toCitySlugs = filter.toCitySlug ? [filter.toCitySlug] : (cityAirports.map(x => x.city.slug).filter(s => s !== filter.fromCitySlug));
-    if (toCitySlugs.length > fromCitySlugs.length && fromCitySlugs.length > 1 && (toCitySlugs.length % fromCitySlugs.length === 0)) {
-      fromCitySlugs.splice(0, 1);
+    const fromCityIds = filter.fromCityId ? [filter.fromCityId] : (cityAirports.map(x => x.city.id).filter(s => s !== filter.toCityId));
+    const toCityIds = filter.toCityId ? [filter.toCityId] : (cityAirports.map(x => x.city.id).filter(s => s !== filter.fromCityId));
+    if (toCityIds.length > fromCityIds.length && fromCityIds.length > 1 && (toCityIds.length % fromCityIds.length === 0)) {
+      fromCityIds.splice(0, 1);
     }
     const cityAirportVariants: { from: EntityDataAttrsOnly<IAirport>, to: EntityDataAttrsOnly<IAirport> }[] = [];
-    for (let i = 0; i < Math.min(MaxOfferGenerationCityPairCount, Math.max(fromCitySlugs.length, toCitySlugs.length)); i++) {
-      const fromCitySlug = fromCitySlugs[((i + 1) * SearchOffersPrimeOfferIterator) % fromCitySlugs.length];
-      const toCitySlug = toCitySlugs[((i + 2) * SearchOffersPrimeOfferIterator) % toCitySlugs.length];
-      const fromAirport = cityAirports.find(x => x.city.slug === fromCitySlug)!;
-      const toAirport = cityAirports.find(x => x.city.slug === toCitySlug)!;
+    for (let i = 0; i < Math.min(MaxOfferGenerationCityPairCount, Math.max(fromCityIds.length, toCityIds.length)); i++) {
+      const fromCityId = fromCityIds[((i + 1) * SearchOffersPrimeOfferIterator) % fromCityIds.length];
+      const toCityId = toCityIds[((i + 2) * SearchOffersPrimeOfferIterator) % toCityIds.length];
+      const fromAirport = cityAirports.find(x => x.city.id === fromCityId)!;
+      const toAirport = cityAirports.find(x => x.city.id === toCityId)!;
       cityAirportVariants.push({ from: fromAirport, to: toAirport });
     }
     this.logger.debug('generating full flight offer variants', { userId, previewMode, count: cityAirportVariants.length });
@@ -553,7 +553,6 @@ export class FlightsLogic implements IFlightsLogic {
     for (let i = 0; i < flightPairs.length; i++) {
       const offer: OfferWithSortFactors<IFlightOffer> = {
         class: flightClass,
-        isFavourite: false,
         id: TemporaryEntityId,
         kind: 'flights',
         departFlight: flightPairs[i].depart,

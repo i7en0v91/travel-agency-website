@@ -359,7 +359,7 @@ async function deleteViewSampleData(sampleDataIds: SampleDataIds, serviceLocator
 
   if(sampleDataIds.userId) {
     const stayLogic = serviceLocator.getStaysLogic();
-    const stayOffers = (await stayLogic.searchOffers({ citySlug: SampleCitySlugs[0], }, sampleDataIds.userId, { direction: 'asc' }, { skip: 0, take: 1000 }, false, ViewSampleDataPreviewMode)).pagedItems;
+    const stayOffers = (await stayLogic.searchOffers({ cityId: sampleDataIds.cityIds![0], }, sampleDataIds.userId, { direction: 'asc' }, { skip: 0, take: 1000 }, false, ViewSampleDataPreviewMode)).pagedItems;
     logger.debug('deleting sample stay offers', { count: stayOffers.length });
     for(let i = 0; i < stayOffers.length; i++) {
       await stayLogic.deleteStayOffer(stayOffers[i].id);
@@ -669,7 +669,7 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
     }, ViewSampleDataPreviewMode);
   
   logger.debug('creating sample stay offers data');
-  const stayOffers = await stayLogic.searchOffers({ citySlug: SampleCitySlugs[0], }, sampleIds.userId, { direction: 'asc' }, { skip: 0, take: 1 }, false, ViewSampleDataPreviewMode);
+  const stayOffers = await stayLogic.searchOffers({ cityId: sampleIds.cityIds![0], }, sampleIds.userId, { direction: 'asc' }, { skip: 0, take: 1 }, false, ViewSampleDataPreviewMode);
   if(stayOffers.pagedItems.length === 0) {
     logger.warn('failed to create stay offers', undefined, { rseult: registerUserResult });
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to create stay offers', 'error-page');

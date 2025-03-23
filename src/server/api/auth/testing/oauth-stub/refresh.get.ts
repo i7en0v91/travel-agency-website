@@ -2,7 +2,8 @@ import { type IAppLogger, AppException, AppExceptionCodeEnum, AuthProvider, type
 import { OAUTH_SECRET, OAUTH_TESTUSER_PROFILE as testUserProfile } from '../../../../../helpers/testing';
 import { sign, verify } from 'jsonwebtoken';
 import type { H3Event } from 'h3';
-import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
+import { getServerServices } from '../../../../../helpers/service-accessors';
+import { getLogger as getWebApiLogger } from '../../../../utils/webapi-event-handler';
 
 interface User {
   username: string;
@@ -25,7 +26,7 @@ async function ensureAppUser (logger: IAppLogger): Promise<EntityId> {
 }
 
 export default defineWebApiEventHandler(async (event: H3Event) => {
-  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
+  const logger = getWebApiLogger();
   logger.info('enter');
 
   const body = await readBody<{ refreshToken: string }>(event);

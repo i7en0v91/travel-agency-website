@@ -305,7 +305,7 @@ if (import.meta.server) {
   updatePageTitle();
 }
 
-onMounted(async () => {
+onMounted(() => {
   if (offerBookingStore) {
     logger.debug('starting status watcher', bookingId);
     watch(() => offerBookingStore!.status, () => {
@@ -345,7 +345,7 @@ async function onDownloadBtnClick (): Promise<void> {
   <ClientOnly>
     <div class="booking-details-page">
       <ErrorHelm :is-error="isError" class="booking-details-error-helm">
-        <OfferDetailsBreadcrumbs
+        <LazyOfferDetailsBreadcrumbs
           v-if="!isDownloadFromElectron"
           :ctrl-key="[...CtrlKey, 'Breadcrumbs']"
           :offer-kind="offer?.kind"

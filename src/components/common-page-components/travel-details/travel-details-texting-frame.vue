@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { ControlKey } from './../../../helpers/components';
-import { type Locale, AppPage, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import type { ITravelDetailsTextingData } from './../../../types';
+import { type OfferKind, type Locale, AppPage, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import type { ITravelDetailsTextingData, ISearchFlightOffersMainParams, ISearchStayOffersMainParams } from './../../../types';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
+import { getCommonServices } from '../../../helpers/service-accessors';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 
 interface IProps {
@@ -12,8 +13,14 @@ interface IProps {
   isInitial?: boolean
 };
 
-const { bookKind, texting, isInitial } = defineProps<IProps>();
+const { 
+  ctrlKey, 
+  bookKind, 
+  texting = undefined, 
+  isInitial = undefined 
+} = defineProps<IProps>();
 
+const logger = getCommonServices().getLogger().addContextProps({ component: 'TravelDetailsTextingFrame' });
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
@@ -38,6 +45,26 @@ const bookLinkUrl = computed(() => {
 });
 
 const price = computed(() => texting?.price ? texting.price.toFixed(0) : undefined);
+
+async function onBookBtnClick(): Promise<void> {
+  logger.debug('book btn click', { ctrlKey, bookKind, slug: texting?.slug });
+  const citySlug = texting?.slug;
+  if(citySlug) {
+    const searchOffersStore = useSearchOffersStore();
+    const offersKind: OfferKind = bookKind === 'flight' ? 'flights' : 'stays';
+
+    const entityCacheStore = useEntityCacheStore();
+    const items = await entityCacheStore!.get({ slugs: [citySlug!] }, 'City', true);
+    const cityId = items[0].id;
+
+    const mainParams = offersKind === 'flights' ?
+      { fromCityId: cityId } as Partial<ISearchFlightOffersMainParams> :
+      { cityId }  as Partial<ISearchStayOffersMainParams>;
+
+    logger.debug('travel city offers search params computed', { ctrlKey, mainParams });
+    await searchOffersStore.load(offersKind, { overrideParams: mainParams });
+  }
+}
 
 </script>
 
@@ -68,7 +95,7 @@ const price = computed(() => texting?.price ? texting.price.toFixed(0) : undefin
         {{ texting?.text ? (texting?.text as any)[locale] : '&nbsp;' }}
       </p>
     </PerfectScrollbar>
-    <NuxtLink :class="`btn btn-primary brdr-1 travel-details-book-btn ${ (!fadeIn && !isInitial) ? '' : 'nontabbable' }`" :to="bookLinkUrl">
+    <NuxtLink :class="`btn btn-primary brdr-1 travel-details-book-btn ${ (!fadeIn && !isInitial) ? '' : 'nontabbable' }`" :to="bookLinkUrl" @click="onBookBtnClick">
       {{ $t(getI18nResName3('travelCities', 'bookBtn', bookKind)) }}
     </NuxtLink>
   </div>

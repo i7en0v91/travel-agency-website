@@ -3,7 +3,8 @@ import { OAUTH_SECRET, OAUTH_TESTUSER_PROFILE as testUserProfile } from '../../.
 import { sign } from 'jsonwebtoken';
 import type { H3Event } from 'h3';
 import { withQuery } from 'ufo';
-import { getCommonServices, getServerServices } from '../../../../../helpers/service-accessors';
+import { getServerServices } from '../../../../../helpers/service-accessors';
+import { getLogger as getWebApiLogger } from '../../../../utils/webapi-event-handler';
 
 const refreshTokens: Record<number, Record<string, any>> = {};
 
@@ -49,7 +50,7 @@ function buildRedirectUrl (logger: IAppLogger, event: H3Event): string {
 }
 
 export default defineWebApiEventHandler(async (event: H3Event): Promise<LoginResult> => {
-  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
+  const logger = getWebApiLogger();
   logger.info('enter');
 
   const expiresIn = 15;

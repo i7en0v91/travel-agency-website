@@ -11,6 +11,7 @@ import set from 'lodash-es/set';
 import { parseQuery } from 'ufo';
 import { usePreviewState } from './../composables/preview-state';
 import { getCommonServices } from './service-accessors';
+import once from 'lodash-es/once';
 
 /**
  * all exceptions from fetch responses are converted into {@link AppException} retaining all
@@ -22,6 +23,8 @@ import { getCommonServices } from './service-accessors';
 export type FetchErrorHandlingMode = 'default' | 'throw';
 
 type HTTPMethod = 'GET' | 'HEAD' | 'PATCH' | 'POST' | 'PUT' | 'DELETE' | 'CONNECT' | 'OPTIONS' | 'TRACE';
+
+const getLogger = once(() => getCommonServices().getLogger().addContextProps({ component: 'ApiClient' }));
 
 function getCurrentAuthCookies (event: H3Event | undefined, logger?: IAppLogger): string[] | null {
   logger?.debug('get current auth cookies', { event: !!event });
@@ -236,12 +239,4 @@ export async function getBytes (route: string, query: any, headers: HeadersInit 
     return undefined;
   }
   return Buffer.from((await (result as Blob).arrayBuffer()));
-}
-
-let logger: IAppLogger | undefined;
-function getLogger(): IAppLogger | undefined {
-  if(!logger) {
-    logger = getCommonServices()?.getLogger()?.addContextProps({ component: 'ApiClient' });
-  }
-  return logger;
 }

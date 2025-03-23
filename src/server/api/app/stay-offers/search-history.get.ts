@@ -1,13 +1,13 @@
 import { type IStaySearchHistory, SessionStaySearchHistory } from '@golobe-demo/shared';
-import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
+import { defineWebApiEventHandler, getLogger as getWebApiLogger } from '../../../utils/webapi-event-handler';
 import type { ISearchedCityHistoryDto } from '../../../api-definitions';
 import { getUserSessionValue } from '../../../utils/user-session';
 import type { H3Event } from 'h3';
 import { destr } from 'destr';
-import { getCommonServices, getServerServices } from '../../../../helpers/service-accessors';
+import { getServerServices } from '../../../../helpers/service-accessors';
 
 export default defineWebApiEventHandler(async (event : H3Event) => {
-  const logger = getCommonServices().getLogger().addContextProps({ component: 'WebApi' });
+  const logger = getWebApiLogger();
   const citiesLogic = getServerServices()!.getCitiesLogic();
 
   handleCacheHeaders(event, {

@@ -1,12 +1,8 @@
 <script setup lang="ts">
-import { toShortForm, type ArbitraryControlElementMarker, type ControlKey } from './../../../helpers/components';
+import { toShortForm, type ArbitraryControlElementMarker, type ControlKey, getFunctionalElementKey } from './../../../helpers/components';
 import { getI18nResName3, type OfferKind } from '@golobe-demo/shared';
-import type { ISearchOffersChecklistFilterProps, ISearchOffersRangeFilterProps } from './../../../types';
-import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
-import { SearchOffersFilterTabGroupId } from './../../../helpers/constants';
+import { LOADING_STATE, SearchOffersFilterTabGroupId } from './../../../helpers/constants';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
-import orderBy from 'lodash-es/orderBy';
-import isEqual from 'lodash-es/isEqual';
 import CollapsableSection from './../../collapsable-section.vue';
 import RangeFilter from './filters/range-filter.vue';
 import ChecklistFilter from './filters/checklist-filter.vue';
@@ -19,139 +15,30 @@ interface IProps {
 }
 const { ctrlKey, offersKind } = defineProps<IProps>();
 
-const searchOffersStoreAccessor = useSearchOffersStore();
-const searchOffersStore = await searchOffersStoreAccessor.getInstance(offersKind, true, true);
-
+const searchOffersStore = useSearchOffersStore();
 const logger = getCommonServices().getLogger().addContextProps({ component: 'FilterPanel' });
 
 const isError = ref(false);
 const isCollapsed = ref(false);
 
-const filters = reactive([] as {
-  params: ISearchOffersChecklistFilterProps | ISearchOffersRangeFilterProps,
-  value: any
-}[]);
-
-const searchResultsEmpty = computed(() => (searchOffersStore?.viewState.displayOptions.totalCount ?? 0) === 0);
-
-function refreshFilterParams () {
-  logger.debug('refershing filter params', { ctrlKey, type: offersKind });
-  if (!searchOffersStore || !searchOffersStore.viewState.currentSearchParams.filters) {
-    logger.debug('filter params wont refresh, not initialized', { ctrlKey, type: offersKind });
-    return;
-  }
-
-  const filtersOrdered = orderBy(searchOffersStore.viewState.currentSearchParams.filters, ['displayOrder'], ['asc']);
-  if (filters.length === 0) {
-    logger.verbose('initializing filters list', { ctrlKey, type: offersKind, count: filtersOrdered.length });
-    for (let i = 0; i < filtersOrdered.length; i++) {
-      const filterParams = filtersOrdered[i];
-      if (filterParams.type === 'checklist') {
-        filters.push({
-          params: filterParams,
-          value: []
-        });
-      } else if (filterParams.type === 'range') {
-        filters.push({
-          params: filterParams,
-          value: {
-            min: (filterParams as ISearchOffersRangeFilterProps).valueRange.min,
-            max: (filterParams as ISearchOffersRangeFilterProps).valueRange.max
-          }
-        });
-      } else {
-        throw new Error('unknown filter');
-      }
-    }
-    logger.verbose('filters list initialized', { ctrlKey, type: offersKind, count: filtersOrdered.length });
-  } else {
-    for (let i = 0; i < filtersOrdered.length; i++) {
-      filters[i].params = filtersOrdered[i];
-    }
-  }
-  setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
-  logger.debug('filter params refreshed', { ctrlKey, type: offersKind });
-}
-if (import.meta.server) {
-  refreshFilterParams();
-}
-
-onMounted(() => {
-  logger.verbose('mounted', { ctrlKey, type: offersKind });
-  watch(() => searchOffersStore?.viewState.currentSearchParams.filters, () => {
-    refreshFilterParams();
-  });
-  refreshFilterParams();
-
-  watch(() => searchOffersStore.resultState.status, () => {
-    refetchIfNotLatestFilterValues();
-  });
+const searchResultsEmpty = computed(() => {
+  return searchOffersStore.items[offersKind] !== LOADING_STATE && 
+        searchOffersStore.items[offersKind].length === 0;
 });
 
-function refetchIfNotLatestFilterValues () {
-  logger.debug('checking for refetch if not latest filter values were used', { ctrlKey, type: offersKind });
-  if (searchOffersStore.resultState.status !== 'fetched' && searchOffersStore.resultState.status !== 'error') {
-    logger.debug('checking for refetch skipped, as fetch is in progress', { ctrlKey, type: offersKind });
-    return;
-  }
-
-  let filtersChanged = false;
-  for (let i = 0; i < filters.length; i++) {
-    const filterId = filters[i].params.filterId;
-    const fetchUsedValue = searchOffersStore.resultState.usedSearchParams!.filters!.find(f => f.filterId === filterId)!.currentValue;
-    const lastUserValue = searchOffersStore.viewState.currentSearchParams.filters!.find(f => f.filterId === filterId)!.currentValue;
-    if (!isEqual(fetchUsedValue, lastUserValue)) {
-      logger.verbose('filter values have been changed by user during fetch', { ctrlKey, type: offersKind, filterId, fetchValue: fetchUsedValue, lastUserValue });
-      filtersChanged = true;
-    }
-  }
-
-  if (!filtersChanged) {
-    logger.debug('checked for refetch - not needed', { ctrlKey, type: offersKind });
-    return;
-  }
-  setTimeout(() => searchOffersStore.fetchData('filter-refetch'), 0);
-}
-
-function applyFiltersAndRefetchData () {
-  logger.debug('applying filters', { ctrlKey, type: offersKind });
-  for (let i = 0; i < filters.length; i++) {
-    const inputState = filters[i];
-    const storeState = searchOffersStore.viewState.currentSearchParams.filters!.find(f => f.filterId === inputState.params.filterId)!;
-    logger.debug('setting filter value in store', { ctrlKey, filterId: inputState.params.filterId, value: inputState.value });
-    storeState.currentValue = inputState.value;
-  }
-  if (searchOffersStore.resultState.status !== 'fetched' && searchOffersStore.resultState.status !== 'error') {
-    logger.debug('fetching data was postponed as fetch is in progress', { ctrlKey, type: offersKind });
-    return;
-  }
-  logger.debug('fetching data with applied filters', { ctrlKey, type: offersKind });
-  setTimeout(() => searchOffersStore.fetchData('filter-refetch'), 0);
-}
+const filters = computed(() => { 
+  return searchOffersStore.filterInfo[offersKind] !== LOADING_STATE ? 
+    (searchOffersStore.filterInfo[offersKind]) : [];
+});
 
 function onApplyBtnClick () {
   logger.debug('apply btn click', { ctrlKey, type: offersKind });
-  applyFiltersAndRefetchData();
+  searchOffersStore.load(offersKind);
 }
 
 function onResetBtnClick () {
   logger.debug('reset btn click', { ctrlKey, type: offersKind });
-  for (let i = 0; i < filters.length; i++) {
-    const filter = searchOffersStore.viewState.currentSearchParams.filters!.find(f => f.filterId === filters[i].params.filterId)!;
-    if (filter.type === 'range') {
-      const rangeFilter = filter as ISearchOffersRangeFilterProps;
-      logger.debug('resetting range filter value in store', { ctrlKey, filterId: filter.filterId, value: rangeFilter.valueRange });
-      rangeFilter.currentValue = rangeFilter.valueRange;
-    } else if (filter.type === 'checklist') {
-      const checklistFilter = filter as ISearchOffersChecklistFilterProps;
-      logger.debug('resetting checklist filter value in store', { ctrlKey, filterId: filter.filterId });
-      checklistFilter.currentValue = [];
-    } else {
-      throw new Error('unknown filter');
-    }
-    filters.find(f => f.params.filterId === filter.filterId)!.value = filter.currentValue;
-  }
-  setTimeout(() => searchOffersStore.fetchData('filter-refetch'), 0);
+  searchOffersStore.resetFilters(offersKind);
 }
 
 </script>
@@ -160,7 +47,6 @@ function onResetBtnClick () {
   <section :class="`filter-panel pt-xs-2 pt-m-5 pr-m-2 mb-xs-5 mb-m-0 tabbable-group-${SearchOffersFilterTabGroupId}`">
     <ErrorHelm v-model:is-error="isError">
       <ClientOnly>
-        <!-- TODO: found SSR-aware UI components & remove ClientOnly -->
         <CollapsableSection v-model:collapsed="isCollapsed" :ctrl-key="[...ctrlKey, 'CollapsableSection']" collapseable persistent :tabbable-group-id="SearchOffersFilterTabGroupId">
           <template #head>
             <h2 class="filter-panel-header">
@@ -181,13 +67,13 @@ function onResetBtnClick () {
                 <div class="filter-panel-content mx-xs-2 mx-m-0">
                   <FilterSection
                     v-for="(filter) in filters"
-                    :key="`${toShortForm(ctrlKey)}FilterSection${filter.params.filterId}`"
-                    :ctrl-key="[...ctrlKey, filter.params.filterId as ArbitraryControlElementMarker]"
-                    :caption-res-name="filter.params.captionResName"
+                    :key="`${toShortForm(ctrlKey)}FilterSection${filter.filterId}`"
+                    :ctrl-key="[...ctrlKey, filter.filterId as ArbitraryControlElementMarker]"
+                    :caption-res-name="filter.captionResName"
                     :show-no-results-stub="searchResultsEmpty"
                   >
-                    <RangeFilter v-if="filter.params.type === 'range'" v-model:value="filter.value" :ctrl-key="[...ctrlKey, 'Filter', filter.params.filterId as ArbitraryControlElementMarker]" :filter-params="filter.params" />
-                    <ChecklistFilter v-else-if="filter.params.type === 'checklist'" v-model:value="filter.value" :ctrl-key="[...ctrlKey, 'Filter', filter.params.filterId as ArbitraryControlElementMarker]" :filter-params="filter.params" :max-collapsed-list-items-count="(filter.params.display === 'list' && (filter.params.variants?.length ?? 0) > 5) ? 4 : undefined" />
+                    <RangeFilter v-if="filter.type === 'range'" :ctrl-key="getFunctionalElementKey({ filterId: filter.filterId })" :filter-params="filter" />
+                    <ChecklistFilter v-else-if="filter.type === 'checklist'" :ctrl-key="getFunctionalElementKey({ filterId: filter.filterId })" :filter-params="filter" :max-collapsed-list-items-count="(filter.display === 'list' && (filter.variants?.length ?? 0) > 5) ? 4 : undefined" />
                   </FilterSection>
                 </div>
               </PerfectScrollbar>
