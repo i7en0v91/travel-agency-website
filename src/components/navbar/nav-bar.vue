@@ -5,7 +5,6 @@ import type { ActivePageLink, NavBarMode } from './../../types';
 import { formatAuthCallbackUrl, updateTabIndices, isPrefersReducedMotionEnabled } from './../../helpers/dom';
 import { withQuery } from 'ufo';
 import NavLink from './nav-link.vue';
-import NavUser from './nav-user.vue';
 import NavLogo from './nav-logo.vue';
 import NavSearchPageLinks from './nav-search-page-links.vue';
 import LocaleSwitcher from './locale-switcher.vue';
@@ -14,7 +13,6 @@ import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
 
-const { status } = useAuth();
 const { enabled } = usePreviewState();
 
 interface IProps {
@@ -25,25 +23,20 @@ interface IProps {
 const { ctrlKey, mode } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger().addContextProps({ component: 'NavBar' });
-const nuxtApp = useNuxtApp();
 const route = useRoute();
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
+const userAccountStore = useUserAccountStore();
 
 const collapsed = ref(true);
 const toggling = ref(false);
 
-const userAccountStore = useUserAccountStore();
-userAccountStore.getUserAccount(); // start auth session refreshing in background
-
 async function getBookingOfferKind (bookingId: EntityId): Promise<OfferKind> {
   logger.verbose('obtaining booking offer kind', { ctrlKey, bookingId });
-  const offerBookingStoreFactory = await useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
-  const offerBookingStore = await offerBookingStoreFactory.getUserBooking(bookingId, !!nuxtApp.ssrContext?.event.context.ogImageContext, nuxtApp.ssrContext?.event);
-  const offerId = offerBookingStore.offerId;
-  const offerKind = offerBookingStore.offerKind;
-  logger.verbose('booking offer kind obtained', { ctrlKey, bookingId, offerId, offerKind });
-  return offerKind;
+  const userAccountStore = useUserAccountStore();
+  const offerInfo = await userAccountStore.getBookingOfferInfo(bookingId);
+  logger.verbose('booking offer kind obtained', { ctrlKey, bookingId, offerInfo });
+  return offerInfo.offerKind;
 }
 
 async function getActivePageLink () : Promise<ActivePageLink | undefined> {
@@ -176,21 +169,23 @@ onBeforeUnmount(() => {
     </div>
     <div class="nav-controlbox mt-xs-2 mt-s-0">
       <div v-if="!isErrorPage" class="nav-page-settings">
-        <div v-if="status === 'authenticated'" class="nav-user-favourites-div">
-          <NavLink
-            :ctrl-key="[...ctrlKey, 'NavLink', 'Favourites']"
-            link-class="nav-user-favourites mr-l-3"
-            :to="navLinkBuilder.buildPageLink(AppPage.Favourites, locale as Locale)"
-            :text-res-name="getI18nResName3('nav', 'userBox', 'favourites')"
-            :is-active="activePageLink === AppPage.Favourites"
-            :hard-link="hardLinks"
-            icon="favourite"
-          />
-        </div>
+        <ClientOnly>
+          <div v-if="userAccountStore.isAuthenticated" class="nav-user-favourites-div">
+            <NavLink
+              :ctrl-key="[...ctrlKey, 'NavLink', 'Favourites']"
+              link-class="nav-user-favourites mr-l-3"
+              :to="navLinkBuilder.buildPageLink(AppPage.Favourites, locale as Locale)"
+              :text-res-name="getI18nResName3('nav', 'userBox', 'favourites')"
+              :is-active="activePageLink === AppPage.Favourites"
+              :hard-link="hardLinks"
+              icon="favourite"
+            />
+          </div>
+        </ClientOnly>
         <LocaleSwitcher :ctrl-key="[...ctrlKey, 'Toggler', 'Locale']" />
         <ThemeSwitcher :ctrl-key="[...ctrlKey, 'Toggler', 'Theme']" />
         <ClientOnly>
-          <NavUser v-if="status==='authenticated'" :ctrl-key="[...ctrlKey, 'NavUser']" />
+          <LazyNavUser v-if="userAccountStore.isAuthenticated" :ctrl-key="[...ctrlKey, 'NavUser']" />
           <div v-else class="nav-login">
             <NavLink
               :id="`${toShortForm(ctrlKey)}-login-link`"

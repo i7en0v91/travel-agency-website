@@ -1,7 +1,7 @@
 import { type EntityId, AppConfig, eraseTimeOfDay, type IAppLogger, AppException, AppExceptionCodeEnum, DefaultFlightClass, DefaultFlightTripType, FlightMinPassengers, StaysMinGuestsCount, StaysMinRoomsCount, DefaultFlightOffersSorting, DefaultStayOffersSorting } from '@golobe-demo/shared';
-import { StoreKindEnum, FindFlightsPageCtrlKey, FindStaysPageCtrlKey } from '../helpers/constants';
+import { UserAccountPageCtrlKey, StoreKindEnum, FindFlightsPageCtrlKey, FindStaysPageCtrlKey, DefaultTimeRangeFilter } from '../helpers/constants';
 import { getFunctionalElementKey, RESET_TO_DEFAULT, toShortForm } from './../helpers/components';
-import { buildStoreDefinition } from '../helpers/stores/pinia';
+import { buildStoreDefinition, type PublicStore } from '../helpers/stores/pinia';
 import isArray from 'lodash-es/isArray';
 import isString from 'lodash-es/isString';
 import deepmerge from 'lodash-es/merge';
@@ -289,6 +289,8 @@ function getValueDefaultOptions(key: ControlValueKey, logger: IAppLogger): Contr
     specificControlDefaults = { defaultValue: DefaultFlightOffersSorting };
   } else if(isSpecificControl(key, [...FindStaysPageCtrlKey, 'ListView', 'DisplayOptions', 'SecondarySort', 'Dropdown'])) {
     specificControlDefaults = { defaultValue: DefaultStayOffersSorting };
+  } else if(isSpecificControl(key, [...UserAccountPageCtrlKey, 'PageContent', 'History', 'Tab', 'TimeRangeFilter', 'Dropdown'])) {
+    specificControlDefaults = { defaultValue: DefaultTimeRangeFilter };
   // Search offer counter
   } else if(isSpecificControl(key, ['SearchOffers', 'FlightOffers', 'FlightParams', 'NumPassengers', 'Counter'])) {
     specificControlDefaults = { defaultValue: FlightMinPassengers };  
@@ -428,7 +430,7 @@ function convertModelToStore<TModelValue>(
   return storeValue;
 }
 
-const StoreDef = buildStoreDefinition(StoreId, 
+const storeDefBuilder = () => buildStoreDefinition(StoreId, 
   () => { 
     // TODO: uncomment preview state
     // const { enabled } = usePreviewState();
@@ -686,5 +688,7 @@ const StoreDef = buildStoreDefinition(StoreId,
     }
   }
 );
-
-export const useControlValuesStore = defineStore(StoreId, StoreDef);
+const StoreDef = storeDefBuilder();
+const useControlValuesStoreInternal = defineStore(StoreId, StoreDef);
+export const useControlValuesStore = useControlValuesStoreInternal as PublicStore<typeof storeDefBuilder>;
+export type ControlValuesStoreInternal = ReturnType<typeof useControlValuesStoreInternal>;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { UserAccountPageCtrlKey, UserAccountOptionButtonPayments, UserAccountOptionButtonHistory, UserAccountOptionButtonAccount, UserAccountOptionButtonGroup, UserAccountTabAccount, UserAccountTabHistory, UserAccountTabPayments } from './../helpers/constants';
+import { UserAccountPageCtrlKey, UserAccountOptionButtonPayments, UserAccountOptionButtonHistory, UserAccountOptionButtonAccount, UserAccountOptionButtonGroup, UserAccountTabAccount, UserAccountTabHistory, UserAccountTabPayments, LOADING_STATE } from './../helpers/constants';
 import AvatarBox from './../components/user-account/avatar-box.vue';
 import UserCover from './../components/user-account/user-cover.vue';
 import OptionButtonGroup from './../components/option-buttons/option-button-group.vue';
@@ -16,21 +16,26 @@ definePageMeta({
 useOgImage();
 
 const userAccountStore = useUserAccountStore();
-const userAccount = await userAccountStore.getUserAccount();
 
 const accountTabHtmlId = useId();
 const historyTabHtmlId = useId();
 const paymentTabHtmlId = useId();
 
 const primaryEmail = computed(() => {
-  return ((userAccount.emails?.length ?? 0) > 0 && (userAccount.emails![0]?.length ?? 0) > 0)
-    ? userAccount.emails![0]
-    : undefined;
+  return (
+    userAccountStore.emails !== LOADING_STATE && 
+    (userAccountStore.emails?.length ?? 0) > 0 && 
+    (userAccountStore.emails![0]?.length ?? 0) > 0
+  ) ? userAccountStore.emails![0] : undefined;
 });
 
 const CtrlKey = UserAccountPageCtrlKey;
 
 const activeOptionCtrl = ref<ControlKey | undefined>();
+
+const displayedFirstName = computed(() => (userAccountStore.name !== LOADING_STATE && (userAccountStore.name?.firstName?.trim().length ?? 0) > 0) ? userAccountStore.name!.firstName!.trim() : undefined);
+const displayedLastName = computed(() => (userAccountStore.name !== LOADING_STATE && (userAccountStore.name?.lastName?.trim().length ?? 0) > 0) ? userAccountStore.name!.lastName!.trim() : undefined);
+
 </script>
 
 <template>
@@ -42,11 +47,11 @@ const activeOptionCtrl = ref<ControlKey | undefined>();
       </div>
       <div class="user-account-contacts">
         <div class="user-name mt-xs-3 mt-s-4">
-          <div v-if="(userAccount.firstName?.trim().length ?? 0) > 0" class="first-name">
-            {{ userAccount.firstName }}
+          <div v-if="displayedFirstName" class="first-name">
+            {{ displayedFirstName }}
           </div>
-          <div v-if="(userAccount.lastName?.trim().length ?? 0) > 0" class="last-name">
-            {{ userAccount.lastName }}
+          <div v-if="displayedLastName" class="last-name">
+            {{ displayedLastName }}
           </div>
         </div>
         <h1 v-if="primaryEmail" class="user-email mt-xs-2">

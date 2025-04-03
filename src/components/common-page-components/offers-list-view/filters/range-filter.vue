@@ -116,8 +116,6 @@ function areRangesEqual(
 onMounted(() => {
   logger.debug('acquiring store value ref', { ctrlKey });
   const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<SearchOffersFilterRange | undefined>(ctrlKey, {
-    initialOverwrite: undefined,
-    defaultValue: undefined,
     persistent: false
   });
 

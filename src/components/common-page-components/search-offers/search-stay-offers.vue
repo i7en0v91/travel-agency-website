@@ -7,7 +7,6 @@ import dayjs from 'dayjs';
 import SearchListInput from './../../../components/forms/search-list-input.vue';
 import DatePicker from './../../../components/forms/date-picker.vue';
 import SearchOffersCounter from './search-offers-counter.vue';
-import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: ControlKey
@@ -152,7 +151,6 @@ onMounted(() => {
           <div class="search-stays-bookparams-content p-xs-2" :data-popper-anchor="`stays-bookparams-${toShortForm(ctrlKey)}`">
             <SearchOffersCounter
               :ctrl-key="[...ctrlKey, 'Rooms', 'Counter']"
-              :default-value="StaysMinRoomsCount"
               :min-value="StaysMinRoomsCount"
               :max-value="StaysMaxRoomsCount"
               :label-res-name="getI18nResName2('searchStays', 'numberOfRooms')"
@@ -160,7 +158,6 @@ onMounted(() => {
             <SearchOffersCounter
               :ctrl-key="[...ctrlKey, 'Guests', 'Counter']"
               class="mt-xs-4"
-              :default-value="StaysMinGuestsCount"
               :min-value="StaysMinGuestsCount"
               :max-value="StaysMaxGuestsCount"
               :label-res-name="getI18nResName2('searchStays', 'numberOfGuests')"

@@ -59,7 +59,6 @@ export interface IDropdownListProps {
   captionResName?: I18nResName,
   persistent?: boolean,
   selectedValue?: DropdownListValue,
-  defaultValue?: DropdownListValue,
   placeholderResName?: I18nResName,
   listContainerClass?: string,
   items: IDropdownListItemProps[],
@@ -234,5 +233,6 @@ export interface IBookingTicketProps {
 export interface IClientServicesLocator extends ICommonServicesLocator {
   appMounted: boolean,
   userNotificationStore?: ReturnType<typeof useUserNotificationStore>,
+  userAccountStore?: ReturnType<typeof useUserAccountStore>
   getElectronShell(): IElectronShell
 }

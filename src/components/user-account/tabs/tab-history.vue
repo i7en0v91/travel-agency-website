@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { areCtrlKeysEqual, type ControlKey } from './../../../helpers/components';
-import { AppConfig, type EntityId, type OfferKind, type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, eraseTimeOfDay, getValueForFlightDayFormatting, getI18nResName3, type I18nResName } from '@golobe-demo/shared';
+import { type EntityId, type OfferKind, type EntityDataAttrsOnly, type IFlightOffer, type IStayOffer, eraseTimeOfDay, getValueForFlightDayFormatting, getI18nResName3, type I18nResName } from '@golobe-demo/shared';
 import FlightTicketCard from './../../../components/user-account/ticket-card/ticket-flight-card.vue';
 import StayTicketCard from './../../../components/user-account/ticket-card/ticket-stay-card.vue';
-import { mapUserTicketsResult } from './../../../helpers/entity-mappers';
-import { ApiEndpointUserTickets, type IUserTicketsResultDto } from '../../../server/api-definitions';
+import { LOADING_STATE, type TimeRangeFilter } from './../../../helpers/constants';
+import { mapLoadOffersResult } from './../../../helpers/entity-mappers';
+import { type ILoadOffersDto, ApiEndpointLoadOffers } from '../../../server/api-definitions';
 import dayjs from 'dayjs';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 export type UserTicketItem = (EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>) & { bookingId: EntityId, bookingDateUtc: Date };
-declare type TimeRangeFilter = 'upcoming' | 'passed';
-const DefaultTimeRangeFilter: TimeRangeFilter = 'upcoming';
+
 
 interface IProps {
   ctrlKey: ControlKey,
@@ -25,39 +25,42 @@ const TabHistoryOptionButtonStays: ControlKey = [...TabHistoryOptionButtonGroup,
 const DefaultActiveTabKey: ControlKey = TabHistoryOptionButtonFlights;
 
 const logger = getCommonServices().getLogger().addContextProps({ component: 'TabHistory' });
-const isError = ref(false);
-
-const timeRangeFilter = ref<TimeRangeFilter>();
-const timeRangeFilterDropdownItems: {value: TimeRangeFilter, resName: I18nResName}[] = (['upcoming', 'passed'] as TimeRangeFilter[]).map(f => { return { value: f, resName: getI18nResName3('accountPage', 'tabHistory', f) }; });
-
-const activeOptionCtrl = ref<ControlKey | undefined>();
-
-const $emit = defineEmits(['update:ready']);
+const nuxtApp = useNuxtApp();
+const { enabled } = usePreviewState();
+const userAccountStore = useUserAccountStore();
 
 const flightsTabHtmlId = useId();
 const staysTabHtmlId = useId();
 
-const nuxtApp = useNuxtApp();
-const { enabled } = usePreviewState();
-const userTicketsFetch = await useFetch(`/${ApiEndpointUserTickets}`,
-{
-  server: false,
-  lazy: true,
-  immediate: false,
-  query: { 
-    drafts: enabled 
-  },
-  cache: (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
-  transform: (response: IUserTicketsResultDto) => {
-    logger.verbose('received user tickets response', ctrlKey);
-    if (!response) {
-      logger.warn('user tickets response is empty', undefined, ctrlKey);
-      return []; // error should be logged by fetchEx
-    }
-    return mapUserTicketsResult(response);
-  },
-  $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-page' })
+const isError = ref(false);
+const timeRangeFilter = ref<TimeRangeFilter>();
+const timeRangeFilterDropdownItems: {value: TimeRangeFilter, resName: I18nResName}[] = (['upcoming', 'passed'] as TimeRangeFilter[]).map(f => { return { value: f, resName: getI18nResName3('accountPage', 'tabHistory', f) }; });
+const activeOptionCtrl = ref<ControlKey | undefined>();
+
+const userTicketsInfo = computed(() => {
+  return (userAccountStore.bookings && userAccountStore.bookings !== LOADING_STATE) ? 
+            new Map(userAccountStore.bookings.map((b) => [b.offerId, b])) : undefined;
 });
+
+const fetchBody = computed(() => { 
+  return userTicketsInfo.value !== undefined ? {
+    ids: Array.from(userTicketsInfo.value.values()).map(i => i.offerId)
+  } as ILoadOffersDto : undefined;
+ });
+const offersDetailsFetch = 
+  useFetch(`/${ApiEndpointLoadOffers}`, {
+    server: false,
+    lazy: true,
+    immediate: false,
+    cache: 'no-cache',
+    dedupe: 'cancel',
+    method: 'POST' as const,
+    query: { drafts: enabled },
+    body: fetchBody,
+    watch: false,
+    transform: mapLoadOffersResult,
+    $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-stub' })
+  });
 
 const now = dayjs().toDate();
 const localUtcOffset = dayjs().local().utcOffset();
@@ -65,31 +68,59 @@ const filterCheckpointDates = {
   flights: dayjs(now),
   stays: dayjs(eraseTimeOfDay(getValueForFlightDayFormatting(now, localUtcOffset)))
 };
+
 const displayedItems = computed<{ [P in OfferKind]:(UserTicketItem[] | undefined) }>(() => {
-  return (userTicketsFetch.status.value === 'success' && userTicketsFetch.data.value !== null) ? {
-    flights: userTicketsFetch.data.value.filter(o => o.kind === 'flights' && (filterCheckpointDates.flights.isAfter((o as EntityDataAttrsOnly<IFlightOffer>).departFlight.departTimeUtc) === (timeRangeFilter.value === 'passed'))),
-    stays: userTicketsFetch.data.value.filter(o => o.kind === 'stays' && (filterCheckpointDates.stays.isAfter((o as EntityDataAttrsOnly<IStayOffer>).checkIn) === (timeRangeFilter.value === 'passed')))
+  return (offersDetailsFetch.status.value === 'success' && !!offersDetailsFetch.data.value && !!userTicketsInfo.value) ? 
+  {
+    flights: 
+      offersDetailsFetch.data.value.flights
+        .filter(o => filterCheckpointDates.flights.isAfter((o as EntityDataAttrsOnly<IFlightOffer>).departFlight.departTimeUtc) === (timeRangeFilter.value === 'passed'))
+          .map(o => { 
+            const ticketInfo = userTicketsInfo.value!.get(o.id)!; 
+            return { 
+              ...o, 
+              bookingId: ticketInfo.bookingId, 
+              bookingDateUtc: new Date(ticketInfo.bookedTimestamp) 
+            }; 
+          }),
+    stays: 
+      offersDetailsFetch.data.value.stays
+        .filter(o => filterCheckpointDates.stays.isAfter((o as EntityDataAttrsOnly<IStayOffer>).checkIn) === (timeRangeFilter.value === 'passed'))
+        .map(o => { 
+            const ticketInfo = userTicketsInfo.value!.get(o.id)!; 
+            return { 
+              ...o, 
+              bookingId: ticketInfo.bookingId, 
+              bookingDateUtc: new Date(ticketInfo.bookedTimestamp) 
+            }; 
+          })
   } : {
     flights: undefined,
     stays: undefined
   };
 });
 
-watch(userTicketsFetch.status, () => { 
-  logger.debug('tickets fetch status changed', { ctrlKey, status: userTicketsFetch.status.value });
-  if(userTicketsFetch.status.value === 'error') {
-    logger.warn('got failed tickets fetch status', undefined, ctrlKey);
-    isError.value = true;
-  } else if(userTicketsFetch.status.value === 'success') {
-    isError.value = false;
-    $emit('update:ready', true);
-  }
+onMounted(() => {
+  logger.verbose('mounted, fetching tickets',  { ctrlKey });
+
+  watch(fetchBody, () => {
+    if(fetchBody.value !== undefined) {
+      offersDetailsFetch.refresh();
+    }
+  }, { immediate: true });
+
+  watch(offersDetailsFetch.status, () => { 
+    logger.debug('offer details fetch status changed', { ctrlKey, status: offersDetailsFetch.status.value });
+    if(offersDetailsFetch.status.value === 'error') {
+      logger.warn('got failed offer details fetch status', undefined, ctrlKey);
+      isError.value = true;
+    } else if(offersDetailsFetch.status.value === 'success') {
+      $emit('update:ready', true);
+    }
+  }, { immediate: true });
 });
 
-onMounted(() => {
-  logger.verbose('mounted, fetching tickets', ctrlKey);
-  userTicketsFetch.execute();
-});
+const $emit = defineEmits(['update:ready']);
 
 </script>
 
@@ -107,7 +138,6 @@ onMounted(() => {
         kind="secondary"
         class="account-tab-history-dropdown"
         list-container-class="account-tab-history-dropdown-list"
-        :default-value="DefaultTimeRangeFilter"
         :items="timeRangeFilterDropdownItems"
       />
     </div>

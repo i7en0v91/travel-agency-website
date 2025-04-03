@@ -95,17 +95,11 @@ const datesDisplayText = computed(() => {
 onMounted(() => {
   const singleInitialOverwrite = modelValue.value?.length ? modelValue.value[0] : undefined;
   logger.debug('acquiring value ref for single date', { ctrlKey, initialOverwrite: singleInitialOverwrite });
-  const { valueRef: singleStoreValueRef } = controlValuesStore.acquireValueRef<Date | null>(
-    [...ctrlKey, 'DatePicker'], {
-      initialOverwrite: singleInitialOverwrite
-    });
+  const { valueRef: singleStoreValueRef } = controlValuesStore.acquireValueRef<Date | null>([...ctrlKey, 'DatePicker']);
     
   const rangeInitialOverwrite = ((modelValue.value?.length ?? 0) >= 2) ? modelValue.value : undefined;
   logger.debug('acquiring value ref for range dates', { ctrlKey, initialOverwrite: rangeInitialOverwrite });
-  const { valueRef: rangeStoreValueRef } = controlValuesStore.acquireValueRef<Date[] | null>(
-    [...ctrlKey, 'DateRangePicker'], {
-      initialOverwrite: rangeInitialOverwrite
-    });
+  const { valueRef: rangeStoreValueRef } = controlValuesStore.acquireValueRef<Date[] | null>([...ctrlKey, 'DateRangePicker']);
 
   watch([singleStoreValueRef, rangeStoreValueRef], () => {
     const storeValue = (mode === 'single' ? singleStoreValueRef : rangeStoreValueRef).value;

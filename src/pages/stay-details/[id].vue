@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type IStayImageShort, AppConfig, type ReviewSummary, type IStayOfferDetails, type ILocalizableValue, ImageCategory, type EntityId, AppPage, getPagePath, type Locale, getLocalizeableValue, getI18nResName2 } from '@golobe-demo/shared';
-import { ApiEndpointStayOfferDetails, ApiEndpointStayOfferReviewSummary } from './../../server/api-definitions';
+import { ApiEndpointStayOfferReviewSummary, ApiEndpointStayOfferDetails } from './../../server/api-definitions';
 import { mapStayOfferDetails, mapReviewSummary } from './../../helpers/entity-mappers';
 import range from 'lodash-es/range';
 import CaptchaProtection from './../../components/forms/captcha-protection.vue';
@@ -47,7 +47,7 @@ const captchaToken = ref<ICaptchaTokenComposable>();
 
 const isSsr = import.meta.server && !!nuxtApp.ssrContext;
 const isOgImageRequest = isSsr && !!nuxtApp.ssrContext!.event?.context.ogImageContext;
-const reviewSummaryFetch = await useFetch(`/${ApiEndpointStayOfferReviewSummary(offerId ?? -1)}`,
+const reviewSummaryFetch = await useFetch(() => `/${ApiEndpointStayOfferReviewSummary(offerId)}`,
 {
   server: isOgImageRequest,
   lazy: !isOgImageRequest,
@@ -67,12 +67,13 @@ const reviewSummaryFetch = await useFetch(`/${ApiEndpointStayOfferReviewSummary(
 const reviewSummaryAvailable = computed(() => reviewSummaryFetch.status.value === 'success' && reviewSummaryFetch.data?.value);
 const reviewSummary = ref<ReviewSummary | undefined>(reviewSummaryFetch.data?.value ?? undefined);
 
-const stayDetailsFetch = await useFetch<IStayOfferDetailsDto, IStayOfferDetailsDto>(`/${ApiEndpointStayOfferDetails(offerId ?? -1)}`,
+const stayDetailsFetch = await useFetch<IStayOfferDetailsDto, IStayOfferDetailsDto>(() => `/${ApiEndpointStayOfferDetails(offerId)}`,
   {
     server: true,
     lazy: true,
     immediate: !!offerId,
-    cache: 'no-cache',
+    cache:  (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
+    dedupe: 'defer',
     query: { drafts: enabled },
     $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-page' })
   });

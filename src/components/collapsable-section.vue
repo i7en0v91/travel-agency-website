@@ -93,11 +93,8 @@ const onWindowResize = () => setTimeout(throttle(function () {
 
 onMounted(() => {
   if(persistent) {
-    const initialOverwrite = (collapsed.value !== null && collapsed.value !== undefined) ? collapsed.value : undefined;
-    logger.debug('acquiring store ref', { ctrlKey, defaultValue: defaultCollapsed, initialOverwrite });
+    logger.debug('acquiring store ref', { ctrlKey });
     const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<boolean | null>(ctrlKey, {
-      initialOverwrite,
-      defaultValue: defaultCollapsed,
       persistent
     });
 

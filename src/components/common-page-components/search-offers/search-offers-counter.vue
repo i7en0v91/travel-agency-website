@@ -7,7 +7,6 @@ import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: ControlKey,
-  defaultValue: number,
   minValue: number,
   maxValue: number,
   labelResName: I18nResName
@@ -15,7 +14,6 @@ interface IProps {
 
 const { 
   ctrlKey, 
-  defaultValue, 
   minValue, 
   maxValue 
 } = defineProps<IProps>();
@@ -33,7 +31,7 @@ const displayText = computed(() => {
     return '';
   }
 
-  return (counterModel.value ?? defaultValue)?.toString() ?? '';
+  return counterModel.value?.toString() ?? '';
 });
 
 function onIncrementClick () {
@@ -65,12 +63,8 @@ function onDecrementClick () {
 }
 
 onMounted(() => {
-  const initialOverwrite = counterModel.value;
-  logger.debug('acquiring value ref', { ctrlKey, defaultValue, initialOverwrite });
-  const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<number>(ctrlKey, {
-    initialOverwrite,
-    defaultValue
-  });
+  logger.debug('acquiring value ref', { ctrlKey });
+  const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<number>(ctrlKey);
 
   watch(storeValueRef, () => {
     logger.debug('store value watcher', { ctrlKey, modelValue: counterModel.value, storeValue: storeValueRef.value });
@@ -84,7 +78,7 @@ onMounted(() => {
   watch(counterModel, () => {
     logger.debug('model value watcher', { ctrlKey, modelValue: counterModel.value, storeValue: storeValueRef.value });
     if(counterModel.value !== storeValueRef.value) {
-      storeValueRef.value = counterModel.value ?? defaultValue;
+      storeValueRef.value = counterModel.value!;
     }
   }, { immediate: false });
 });
@@ -104,7 +98,7 @@ onMounted(() => {
           :ctrl-key="[...ctrlKey, 'Btn', 'Decrement']"
           kind="icon"
           icon="decrement"
-          :enabled="(value ?? defaultValue) > minValue"
+          :enabled="!!counterModel && (counterModel > minValue)"
           @click="onDecrementClick"
         />
         <div class="search-offers-counter-value">
@@ -116,7 +110,7 @@ onMounted(() => {
           :ctrl-key="[...ctrlKey, 'Btn', 'Increment']"
           kind="icon"
           icon="increment"
-          :enabled="(value ?? defaultValue) < maxValue"
+          :enabled="!!counterModel && (counterModel < maxValue)"
           @click="onIncrementClick"
         />
       </div>

@@ -6,13 +6,11 @@ import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../helper
 import type { Dropdown } from 'floating-vue';
 import FieldFrame from './../forms/field-frame.vue';
 import { getCommonServices } from '../../helpers/service-accessors';
-import type { ControlStoreValue } from '../../stores/control-values-store';
 
 const { 
   ctrlKey,
   items, 
   persistent = undefined, 
-  defaultValue = undefined, 
   placeholderResName,
   listContainerClass = '', 
   kind = 'primary' 
@@ -73,11 +71,8 @@ function onActivate (item: IDropdownListItemProps) {
 }
 
 onMounted(() => {
-  const initialOverwrite = modelValue.value as ControlStoreValue;
-  logger.debug('acquiring store value ref', { ctrlKey, defaultValue, initialOverwrite });
+  logger.debug('acquiring store value ref', { ctrlKey });
   const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef(ctrlKey, {
-    initialOverwrite,
-    defaultValue,
     persistent
   });
 

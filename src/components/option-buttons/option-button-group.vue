@@ -55,11 +55,8 @@ function onOptionButtonClick (optionKey: ControlKey) {
   selectedOptionKey.value = optionKey;
 }
 
-const initialOverwrite = selectedOptionKey.value;
-logger.debug('acquiring store value ref', { ctrlKey, defaultValue: DefaultOption.value, initialOverwrite });
+logger.debug('acquiring store value ref', { ctrlKey });
 const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<ControlKey>(ctrlKey, {
-  initialOverwrite,
-  defaultValue: DefaultOption.value,
   persistent
 });
 

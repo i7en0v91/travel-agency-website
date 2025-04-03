@@ -1,7 +1,6 @@
 import { type EntityId, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
 import type { IUserFavouritesResultDto } from '../../../api-definitions';
-import { mapSearchFlightOfferResultEntities, mapSearchedFlightOffer, mapSearchedStayOffer, mapSearchStayOfferResultEntities } from '../../../utils/dto-mappers';
 import { extractUserIdFromSession } from './../../../../server/utils/auth';
 import { getServerSession } from '#auth';
 import type { H3Event } from 'h3';
@@ -22,8 +21,8 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
     );
   }
 
-  const flightFavourites = await flightsLogic.getUserFavouriteOffers(userId);
-  const stayFavourites = await staysLogic.getUserFavouriteOffers(userId);
+  const flightIds = await flightsLogic.getUserFavouriteOffers(userId);
+  const stayIds = await staysLogic.getUserFavouriteOffers(userId);
 
   handleCacheHeaders(event, {
     cacheControls: ['no-store']
@@ -31,25 +30,9 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
 
   setHeader(event, 'content-type', 'application/json');
 
-  const flightsDto: IUserFavouritesResultDto['flights'] = {
-    entities: mapSearchFlightOfferResultEntities(flightFavourites),
-    pagedItems: flightFavourites.pagedItems.map((item) => {
-      return { ...mapSearchedFlightOffer(item), addTimestamp: item.addDateUtc.getTime() };
-    }),
-    totalCount: flightFavourites.totalCount
-  };
-
-  const staysDto: IUserFavouritesResultDto['stays'] = {
-    entities: mapSearchStayOfferResultEntities(stayFavourites),
-    pagedItems: stayFavourites.pagedItems.map((item) => {
-      return { ...mapSearchedStayOffer(item), addTimestamp: item.addDateUtc.getTime() };
-    }),
-    totalCount: stayFavourites.totalCount
-  };
-
   const result: IUserFavouritesResultDto = {
-    flights: flightsDto,
-    stays: staysDto
+    flightIds,
+    stayIds
   };
   return result;
-}, { logResponseBody: false, authorizedOnly: true });
+}, { logResponseBody: true, authorizedOnly: true });

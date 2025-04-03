@@ -38,8 +38,8 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   const authSession = await getServerSession(event);
   const userId = extractUserIdFromSession(authSession);
 
-  if (booking.bookedUser.id !== userId) {
-    logger.warn('user has no access to booking', undefined, { ...(query), ...{ url: event.node.req.url, bookedUserId: booking.bookedUser.id, authUserId: userId } });
+  if (booking.userId !== userId) {
+    logger.warn('user has no access to booking', undefined, { ...(query), ...{ url: event.node.req.url, bookedUserId: booking.userId, authUserId: userId } });
     throw new AppException(
       AppExceptionCodeEnum.FORBIDDEN,
       'access to the booking is forbidden',

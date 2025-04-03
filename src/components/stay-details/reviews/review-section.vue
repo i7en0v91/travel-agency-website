@@ -21,8 +21,8 @@ interface IProps {
 
 const { ctrlKey, preloadedSummaryInfo, stayId } = defineProps<IProps>();
 
-const { status } = useAuth();
 const userNotificationStore = useUserNotificationStore();
+const userAccountStore = useUserAccountStore();
 const { enabled, requestUserAction } = usePreviewState();
 
 const logger = getCommonServices().getLogger().addContextProps({ component: 'ReviewSection' });
@@ -161,41 +161,44 @@ const tooltipId = useId();
         <h2 class="stay-reviews-title mt-xs-2">
           {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'title')) }}
         </h2>
-        <SimpleButton
-          v-if="status === 'authenticated'"
-          class="stay-reviews-addBtn mt-xs-2"
-          :ctrl-key="[...ctrlKey, 'Btn', 'Add']"
-          :label-res-name="getI18nResName3('stayDetailsPage', 'reviews', 'giveReviewBtn')"
-          :aria-label-res-name="getI18nResName2('ariaLabels', 'btnGiveReview')"
-          kind="default"
-          @click="onAddReviewBtnClick"
-        />
-        <VTooltip
-          v-else
-          ref="tooltip"
-          :aria-id="tooltipId"
-          :distance="6"
-          :triggers="['click']"
-          placement="bottom-end"
-          :flip="false"
-          theme="default-tooltip"
-          :auto-hide="true"
-          no-auto-focus
-          @apply-show="scheduleTooltipAutoHide"
-        >
+        <ClientOnly>
           <SimpleButton
+            v-if="userAccountStore.isAuthenticated"
             class="stay-reviews-addBtn mt-xs-2"
             :ctrl-key="[...ctrlKey, 'Btn', 'Add']"
             :label-res-name="getI18nResName3('stayDetailsPage', 'reviews', 'giveReviewBtn')"
             :aria-label-res-name="getI18nResName2('ariaLabels', 'btnGiveReview')"
             kind="default"
+            @click="onAddReviewBtnClick"
           />
-          <template #popper>
-            <div>
-              {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'mustBeLoggedInToReview')) }}
-            </div>
-          </template>
-        </VTooltip>
+          <VTooltip
+            v-else
+            ref="tooltip"
+            :aria-id="tooltipId"
+            :distance="6"
+            :triggers="['click']"
+            placement="bottom-end"
+            :flip="false"
+            theme="default-tooltip"
+            :auto-hide="true"
+            no-auto-focus
+            @apply-show="scheduleTooltipAutoHide"
+          >
+            <SimpleButton
+              class="stay-reviews-addBtn mt-xs-2"
+              :ctrl-key="[...ctrlKey, 'Btn', 'Add']"
+              :label-res-name="getI18nResName3('stayDetailsPage', 'reviews', 'giveReviewBtn')"
+              :aria-label-res-name="getI18nResName2('ariaLabels', 'btnGiveReview')"
+              kind="default"
+            />
+            <template #popper>
+              <div>
+                {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'mustBeLoggedInToReview')) }}
+              </div>
+            </template>
+          </VTooltip>
+          <template #fallback />
+        </ClientOnly>
       </div>
       <ClientOnly>
         <div class="stay-reviews-summary mt-xs-3">
@@ -215,7 +218,7 @@ const tooltipId = useId();
           </div>
         </div>
         <CollapsableSection
-          v-if="status === 'authenticated'"
+          v-if="userAccountStore.isAuthenticated"
           ref="editor-section"
           v-model:collapsed="editorHidden"
           :ctrl-key="[...ctrlKey, 'CollapsableSection']"

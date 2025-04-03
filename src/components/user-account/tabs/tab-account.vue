@@ -2,14 +2,15 @@
 import { AppException, AppExceptionCodeEnum, UserNotificationLevel, maskLog, AppConfig, getI18nResName2, getI18nResName3, type I18nResName } from '@golobe-demo/shared';
 import { areCtrlKeysEqual, type ControlKey } from './../../../helpers/components';
 import { TabIndicesUpdateDefaultTimeout, updateTabIndices } from './../../../helpers/dom';
-import { ApiEndpointUserAccount, type IUpdateAccountDto, type IUpdateAccountResultDto, UpdateAccountResultCode } from '../../../server/api-definitions';
+import { UpdateAccountResultCode } from '../../../server/api-definitions';
 import PropertyGrid from './../../forms/property-grid/property-grid.vue';
 import SimplePropertyEdit from './../../forms/property-grid/simple-property-edit.vue';
 import ListPropertyEdit from './../../forms/property-grid/list-property-edit.vue';
 import CaptchaProtection from './../../../components/forms/captcha-protection.vue';
 import { useCaptchaToken } from './../../../composables/captcha-token';
-import { post } from './../../../helpers/rest-utils';
+import type { UserUpdateData } from './../../../stores/user-account-store';
 import { getCommonServices } from '../../../helpers/service-accessors';
+import { LOADING_STATE } from '../../../helpers/constants';
 
 interface IProps {
   ctrlKey: ControlKey,
@@ -24,10 +25,7 @@ const PropCtrlKeyEmail: ControlKey = [...ctrlKey, 'Email'];
 
 const userNotificationStore = useUserNotificationStore();
 const userAccountStore = useUserAccountStore();
-const userAccount = await userAccountStore.getUserAccount();
-const themeSettings = useThemeSettings();
 
-const { locale } = useI18n();
 const logger = getCommonServices().getLogger().addContextProps({ component: 'TabAccount' });
 
 const isError = ref(false);
@@ -41,20 +39,12 @@ const propEmails = useTemplateRef('prop-emails');
 const captchaToken = useCaptchaToken(captcha as any);
 let isCaptchaTokenRequestPending = false;
 
-const firstName = ref<string | undefined>(userAccount.firstName);
-const lastName = ref<string | undefined>(userAccount.lastName);
+const firstName = ref<string | undefined>();
+const lastName = ref<string | undefined>();
 const password = ref<string | undefined>();
-const emails = ref<string[]>(userAccount.emails ?? []);
-watch(userAccount, () => {
-  logger.debug('userAccount ref triggered');
-  refreshAccountData();
-});
+const emails = ref<string[]>([]);
 
-function refreshAccountData () {
-  firstName.value = userAccount.firstName;
-  lastName.value = userAccount.lastName;
-  emails.value = userAccount.emails ?? [];
-}
+const $emit = defineEmits(['update:ready']);
 
 function onPropertyEnterEditMode (ctrlKey: ControlKey) {
   logger.debug('property entered edit mode', { ctrlKey, propsCtrlKey: ctrlKey });
@@ -70,86 +60,88 @@ function onPropertyEnterEditMode (ctrlKey: ControlKey) {
   setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
 }
 
-async function validateAndSaveChanges (dto: IUpdateAccountDto, emailForVerification?: string): Promise<I18nResName | 'success' | 'cancel'> {
+async function validateAndSaveChanges (
+  updateFields: UserUpdateData, 
+  emailForVerification?: string
+): Promise<I18nResName | 'success' | 'cancel'> {
   if (isCaptchaTokenRequestPending) {
     logger.verbose('simple property change canceled - captcha request pending', ctrlKey);
     return 'cancel';
   }
 
+  let token: string;
   try {
     isCaptchaTokenRequestPending = true;
-    dto.captchaToken = await captchaToken.requestToken();
+    token = await captchaToken.requestToken();
   } finally {
     isCaptchaTokenRequestPending = false;
   }
 
-  logger.info('sending user account update dto', { userId: userAccount.userId });
-  const resultDto = await post(`/${ApiEndpointUserAccount}`, undefined, dto, undefined, true, undefined, 'default') as IUpdateAccountResultDto;
-  if (resultDto) {
-    switch (resultDto.code) {
-      case UpdateAccountResultCode.SUCCESS:
-        logger.info('user account updated successfully', { userId: userAccount.userId });
-        setTimeout(() => { userAccountStore.notifyUserAccountChanged(dto); }, 0);
-        if (emailForVerification) {
-          userNotificationStore.show({
-            level: UserNotificationLevel.INFO,
-            resName: getI18nResName3('accountPage', 'tabAccount', 'emailVerifyNotification'),
-            resArgs: { email: emailForVerification }
-          });
-        }
-        return 'success';
-      case UpdateAccountResultCode.EMAIL_AUTOVERIFIED:
-        logger.info('user account updated successfully (email autoverified', { userId: userAccount.userId });
+  const resultCode = await userAccountStore.changePersonalInfo(updateFields, token);
+  switch (resultCode) {
+    case UpdateAccountResultCode.SUCCESS:
+      logger.info('user account updated successfully', { userId: userAccountStore.userId });
+      if (emailForVerification) {
         userNotificationStore.show({
-          level: UserNotificationLevel.WARN,
-          resName: getI18nResName3('accountPage', 'tabAccount', 'emailWasAutoverified')
+          level: UserNotificationLevel.INFO,
+          resName: getI18nResName3('accountPage', 'tabAccount', 'emailVerifyNotification'),
+          resArgs: { email: emailForVerification }
         });
-        return 'success';
-      case UpdateAccountResultCode.EMAIL_ALREADY_EXISTS:
-        logger.info('cannot update user account as email already used', { userId: userAccount.userId });
-        return getI18nResName2('validations', 'emailIsUsed');
-      case UpdateAccountResultCode.DELETING_LAST_EMAIL:
-        logger.info('cannot update user account as the only email cannot be deleted for this user', { userId: userAccount.userId });
-        return getI18nResName2('validations', 'deletingLastEmail');
-    }
-  } else {
-    // default error handler should throw in a while
-    return getI18nResName2('appErrors', 'unknown');
+      }
+      return 'success';
+    case UpdateAccountResultCode.EMAIL_AUTOVERIFIED:
+      logger.info('user account updated successfully (email autoverified', { userId: userAccountStore.userId });
+      userNotificationStore.show({
+        level: UserNotificationLevel.WARN,
+        resName: getI18nResName3('accountPage', 'tabAccount', 'emailWasAutoverified')
+      });
+      return 'success';
+    case UpdateAccountResultCode.EMAIL_ALREADY_EXISTS:
+      logger.info('cannot update user account as email already used', { userId: userAccountStore.userId });
+      return getI18nResName2('validations', 'emailIsUsed');
+    case UpdateAccountResultCode.DELETING_LAST_EMAIL:
+      logger.info('cannot update user account as the only email cannot be deleted for this user', { userId: userAccountStore.userId });
+      return getI18nResName2('validations', 'deletingLastEmail');
+    case false:
+      logger.info('result of user account update may be ignored', { userId: userAccountStore.userId });
+      return 'cancel';
   }
 }
 
 async function validateAndSaveSimpleChanges (propCtrlKey: ControlKey, value?: string): Promise<I18nResName | 'success' | 'cancel'> {
   logger.verbose('validating and saving simple property change', { ctrlKey, propCtrlKey, value: maskLog(value) });
-  let updateDto: IUpdateAccountDto = {
-    locale: locale.value,
-    theme: themeSettings.currentTheme.value
-  };
+  let updateData: UserUpdateData;
   if(areCtrlKeysEqual(propCtrlKey, PropCtrlKeyFirstName)) {
-    updateDto = { ...updateDto, firstName: (value?.trim() ?? '') };
+    updateData = { firstName: value?.trim() ?? '' };
   } else if(areCtrlKeysEqual(propCtrlKey, PropCtrlKeyLastName)) {
-    updateDto = { ...updateDto, lastName: (value?.trim() ?? '') };
+    updateData = { lastName: value?.trim() ?? '' };
   } else if(areCtrlKeysEqual(propCtrlKey, PropCtrlKeyPassword)) {
-    updateDto = { ...updateDto, password: value ?? '' };
+    updateData = { password: value };
   } else {
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown field', 'error-stub');
   }
-  return await validateAndSaveChanges(updateDto);
+  return await validateAndSaveChanges(updateData);
 }
 
 async function validateAndSaveEmailChanges (newValues: (string | undefined)[], _currentValues: (string | undefined)[], op: 'add' | 'change' | 'delete', propIdx: number | 'add', newValue?: string) : Promise<I18nResName | 'success' | 'cancel'> {
   logger.verbose('validating and saving email changes', { ctrlKey, op, propIdx, newValue: maskLog(newValue) });
-  const updateDto: IUpdateAccountDto = {
-    locale: locale.value,
-    theme: themeSettings.currentTheme.value,
-    emails: newValues.map(e => e?.trim() ?? '').filter(e => e.length > 0)
+  const updateData: UserUpdateData = {
+    emails: newValues.map(e => e?.trim() ?? '').filter(e => e.length > 0) as string[]
   };
   const emailIfAdded = (op === 'add' || op === 'change') ? newValue : undefined;
-  return await validateAndSaveChanges(updateDto, emailIfAdded);
+  return await validateAndSaveChanges(updateData, emailIfAdded);
 }
 
-const $emit = defineEmits(['update:ready']);
-
 onMounted(() => {
+  watch(() => userAccountStore.emails, () => {
+    emails.value = ((userAccountStore.emails && userAccountStore.emails !== LOADING_STATE) ? userAccountStore.emails : undefined) ?? [];
+  }, { immediate: true });
+
+  watch(() => userAccountStore.name, () => {
+    firstName.value = ((userAccountStore.name && userAccountStore.name !== LOADING_STATE) ? userAccountStore.name?.firstName : undefined) ?? '';
+    lastName.value = ((userAccountStore.name && userAccountStore.name !== LOADING_STATE) ? userAccountStore.name?.lastName : undefined) ?? '';
+  }, { immediate: true });
+
   $emit('update:ready', true);
 });
 

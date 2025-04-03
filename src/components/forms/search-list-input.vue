@@ -9,7 +9,7 @@ import { type IListItemDto, ApiEndpointCitiesSearch } from '../../server/api-def
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
 import { useEntityCacheStore } from '../../stores/entity-cache-store';
-import { useControlValuesStore, type ControlStoreValue } from '../../stores/control-values-store';
+import { useControlValuesStore } from '../../stores/control-values-store';
 
 interface IProps {
   ctrlKey: ControlKey,
@@ -246,10 +246,8 @@ async function onActivate (item: ISearchListItem): Promise<void> {
 }
 
 onMounted(() => {
-  const initialOverwrite = modelValue.value as ControlStoreValue;
-  logger.debug('acquiring store value ref', { ctrlKey, initialOverwrite });
+  logger.debug('acquiring store value ref', { ctrlKey });
   const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef(ctrlKey, {
-    initialOverwrite,
     persistent
   });
 
@@ -289,7 +287,7 @@ onMounted(() => {
     }
   }, { immediate: true });
 
-  watchEffect(() => {
+  watch(() => [modelValue.value, ...(exclusionIds ?? [])], () => {
     logger.verbose('exclusion ids list watcher', { ctrlKey, list: exclusionIds });
     if (modelValue.value && exclusionIds?.includes(modelValue.value)) {
       setModelValueFromSelection(undefined);

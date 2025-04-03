@@ -213,7 +213,7 @@ logger.verbose('setup script completed', { ctrlKey, offerKind });
               <div :class="`booking-ticket-general bordered ticket-general-bg input-ctrl-color ${CommonClass}`">
                 <div :class="`booking-ticket-general-avatar-div ${CommonClass}`">
                   <nuxt-img
-                    v-if="generalInfo.avatar !== null"
+                    v-if="avatarImgUrl"
                     :src="avatarImgUrl"
                     fit="cover"
                     :width="avatarImageSize.width"

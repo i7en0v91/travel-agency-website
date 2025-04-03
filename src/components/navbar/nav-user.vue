@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { toShortForm, type ControlKey } from './../../helpers/components';
 import { clampTextLine, type Locale, AppPage, getPagePath, AppConfig, getI18nResName3, ImageCategory } from '@golobe-demo/shared';
-import { UserAccountOptionButtonAccount, UserAccountOptionButtonGroup, UserAccountTabAccount, UserAccountTabPayments, UserAccountOptionButtonPayments } from './../../helpers/constants';
+import { UserAccountOptionButtonAccount, UserAccountOptionButtonGroup, UserAccountTabAccount, UserAccountTabPayments, UserAccountOptionButtonPayments, LOADING_STATE } from './../../helpers/constants';
 import { updateTabIndices, TabIndicesUpdateDefaultTimeout } from './../../helpers/dom';
 import type { Dropdown } from 'floating-vue';
 import StaticImage from './../images/static-image.vue';
@@ -15,17 +15,25 @@ interface IProps {
 }
 const { ctrlKey } = defineProps<IProps>();
 
+const logger = getCommonServices().getLogger().addContextProps({ component: 'NavUser' });
+const controlValuesStore = useControlValuesStore();
+const userAccountStore = useUserAccountStore();
 const signOutHelper = useSignOut();
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 
-const logger = getCommonServices().getLogger().addContextProps({ component: 'NavUser' });
-
-const controlValuesStore = useControlValuesStore();
-const userAccountStore = useUserAccountStore();
-const userAccount = await userAccountStore.getUserAccount();
-
 const dropdown = useTemplateRef<InstanceType<typeof Dropdown>>('dropdown');
+
+const menuTogglerText = computed(() =>
+  userAccountStore.name !== LOADING_STATE ? 
+    `${clampTextLine(`${userAccountStore.name?.firstName ?? '' }`, 30)} ${(userAccountStore.name?.lastName ? `${userAccountStore.name.lastName.substring(0, 1).toUpperCase()}.`: '')}` 
+    : ''
+);
+const avatarText = computed(() => 
+  (userAccountStore.firstName !== LOADING_STATE && userAccountStore.lastName !== LOADING_STATE) ?
+    clampTextLine(`${userAccountStore.firstName ?? '' } ${userAccountStore.lastName ? `${userAccountStore.lastName}.` : ''}`, 30)
+    : ''
+);
 
 function onMenuShown () {
   setTimeout(() => updateTabIndices(), TabIndicesUpdateDefaultTimeout);
@@ -104,37 +112,37 @@ async function onSettingsMenuItemClick (): Promise<void> {
       @apply-hide="onMenuHide"
     >
       <StaticImage
-        v-if="userAccount.avatar"
+        v-if="userAccountStore.avatar  && userAccountStore.avatar !== LOADING_STATE"
         :ctrl-key="[...ctrlKey, 'Avatar']"
         :stub="false"
         class="nav-user-avatar"
         :ui="{ img: 'nav-user-avatar-img mb-xs-1' }"
-        :src="{ slug: userAccount.avatar.slug, timestamp: userAccount.avatar.timestamp }"
+        :src="{ slug: userAccountStore.avatar.slug, timestamp: userAccountStore.avatar.timestamp }"
         :category="ImageCategory.UserAvatar"
         sizes="xs:30vw sm:20vw md:20vw lg:10vw xl:10vw"
         :alt="{ resName: getI18nResName3('nav', 'userBox', 'navAvatarAlt') }"
       />
       <span v-else class="nav-user-avatar nav-user-avatar-default" />
       <button id="nav-user-menu-anchor" class="btn-user-name brdr-1" type="button">
-        {{ clampTextLine(`${userAccount.firstName ?? '' }`, 30) }} {{ (userAccount.lastName ? `${userAccount.lastName.substring(0, 1).toUpperCase()}.`: '') }}
+        {{ menuTogglerText }}
       </button>
       <template #popper>
         <section class="nav-user-dropdown" data-popper-anchor="nav-user-menu-anchor" @keyup.escape="hideDropdown">
           <div class="nav-user-menu-header px-xs-5 pb-xs-3 pt-xs-2 py-s-4">
             <StaticImage
-              v-if="userAccount.avatar"
+              v-if="userAccountStore.avatar && userAccountStore.avatar !== LOADING_STATE"
               :ctrl-key="[...ctrlKey, 'UserMenu', 'Avatar']"
               :stub="false"
               class="nav-user-menu-avatar"
               :ui="{ img: 'nav-user-menu-avatar-img' }"
-              :src="{ slug: userAccount.avatar.slug, timestamp: userAccount.avatar.timestamp }"
+              :src="{ slug: userAccountStore.avatar.slug, timestamp: userAccountStore.avatar.timestamp }"
               :category="ImageCategory.UserAvatar"
               sizes="xs:30vw sm:20vw md:20vw lg:10vw xl:10vw"
               :alt="{ resName: getI18nResName3('nav', 'userBox', 'navAvatarAlt') }"
             />
             <div v-else class="nav-user-menu-avatar nav-user-menu-avatar-default" />
             <h4 class="nav-user-menu-name">
-              {{ clampTextLine(`${userAccount.firstName ?? '' } ${userAccount.lastName ? `${userAccount.lastName}.` : ''}`, 30) }}
+              {{ avatarText }}
             </h4>
           </div>
           <div class="nav-user-menu-list">

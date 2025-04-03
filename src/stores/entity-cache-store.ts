@@ -2,7 +2,7 @@ import { delay, AppException, AppExceptionCodeEnum, AppConfig, type EntityId, ty
 import { StoreOperationTimeout, StoreKindEnum } from './../helpers/constants';
 import { getServerServices } from '../helpers/service-accessors';
 import { type IEntityCacheQuery, ApiEndpointEntityCache } from './../server/api-definitions';
-import { buildStoreDefinition } from './../helpers/stores/pinia';
+import { buildStoreDefinition, type PublicStore } from './../helpers/stores/pinia';
 import dayjs from 'dayjs';
 import has from 'lodash-es/has';
 import type { Raw } from 'vue';
@@ -27,10 +27,6 @@ type EntryEndpointResponseItemDto = GetEntityCacheItem<CacheEntityType>;
 type EntryEndpointResponseDto = EntryEndpointResponseItemDto[];
 
 declare type State = {
-  /** TODO: optimization
-   * add limit on maximum amount of items on client, 
-   * cleanup oldest in background (to gain performance by 
-   * not tracking potentially thousands of objects in cache) */
   s_cachedItems: Map<CacheKey, Raw<CacheEntry>>,
   s_pendingQueue: EntryFetchArgs[]
 };
@@ -54,15 +50,19 @@ function isExpired<TEntityType extends CacheEntityType>(entry: CacheEntry<TEntit
   }
 };
 
-const StoreDef = buildStoreDefinition(StoreId, 
+const storeDefBuilder = () => buildStoreDefinition(StoreId, 
   (clientSideOptions) => {
-    // TODO: uncomment preview state
+    // TODO: uncomment preview
     // const { enabled } = usePreviewState();
     const enabled = false;
     const fetchQuery = ref<IEntityCacheQuery>();
+    /** KB: optimization - keep items outside of state to gain performance 
+     * by not tracking potentially thousands of objects in cache */
+    const clientBackplane: Map<CacheKey, CacheEntry> = new Map([]);
     const vars = {
       nuxtApp: clientSideOptions.nuxtApp,
       fetchQuery,
+      clientBackplane,
       entriesFetch:
         useFetch(`/${ApiEndpointEntityCache}`, {
           server: false,
@@ -275,8 +275,12 @@ const StoreDef = buildStoreDefinition(StoreId,
         for (let i = 0; i < (useIds ? keys.ids.length : keys.slugs.length); i++) {
           const key = getItemKey(useIds ? keys.ids[i] : keys.slugs[i], type);
           let cacheEntry = this.s_cachedItems.get(key);
-          if(import.meta.server && !cacheEntry) {
-            cacheEntry = await getServerServices()!.getCache().getItemRaw(key) as CacheEntry<TEntityType>;
+          if(!cacheEntry) {
+            if(import.meta.server) {
+              cacheEntry = await getServerServices()!.getCache().getItemRaw(key) as CacheEntry<TEntityType>;
+            } else {
+              cacheEntry = this.clientSetupVariables().clientBackplane.get(key);
+            }
           }
 
           if(!cacheEntry || isExpired(cacheEntry)) {
@@ -366,8 +370,22 @@ const StoreDef = buildStoreDefinition(StoreId,
           if(nextFetchArgs.dedupe) {
             logger.debug(`advancing queue, performing locally cached check`);
             const locallyCached = (('ids' in nextFetchArgs.keys) ?
-              nextFetchArgs.keys.ids.map(id => this.s_cachedItems.get(getItemKey(id, nextFetchArgs!.type))) :
-              nextFetchArgs.keys.slugs.map(slug => this.s_cachedItems.get(getItemKey(slug, nextFetchArgs!.type)))
+              nextFetchArgs.keys.ids.map(id => { 
+                const itemKey = getItemKey(id, nextFetchArgs!.type);
+                let cachedItem = this.s_cachedItems.get(itemKey);
+                if(!cachedItem && import.meta.client) {
+                  cachedItem = this.clientSetupVariables().clientBackplane.get(itemKey);
+                }
+                return cachedItem;
+              }) :
+              nextFetchArgs.keys.slugs.map(slug => {
+                const itemKey = getItemKey(slug, nextFetchArgs!.type);
+                let cachedItem = this.s_cachedItems.get(itemKey);
+                if(!cachedItem && import.meta.client) {
+                  cachedItem = this.clientSetupVariables().clientBackplane.get(itemKey);
+                }
+                return cachedItem;
+              })
             ).filter(i => !!i);
             
             const hasExpired = locallyCached.some(e => isExpired(e));
@@ -445,6 +463,9 @@ const StoreDef = buildStoreDefinition(StoreId,
       deleteItem(key: CacheKey) {
         const logger = this.getLogger();
         logger.debug(`deleting item`, { key });
+        if(import.meta.client) {
+          this.clientSetupVariables().clientBackplane.delete(key);
+        }
         this.$patch((s) => {
           s.s_cachedItems.delete(key);
         });
@@ -453,15 +474,20 @@ const StoreDef = buildStoreDefinition(StoreId,
       addItem(args: { key: CacheKey, entry: CacheEntry }) {
         const logger = this.getLogger();
         logger.debug(`adding item`, { key: args.key, item: args.entry.item });
-        this.$patch((s) => {
-          s.s_cachedItems.set(
-            args.key, 
-            markRaw(args.entry)
-          );
-        });
+        if(import.meta.client) {
+          this.clientSetupVariables().clientBackplane.set(args.key, args.entry);
+        } else {
+          this.$patch((s) => {
+            s.s_cachedItems.set(
+              args.key, 
+              markRaw(args.entry)
+            );
+          });
+        }
       }
     }
   }
 );
-
-export const useEntityCacheStore = defineStore(StoreId, StoreDef);
+const StoreDef = storeDefBuilder();
+const useEntityCacheStoreInternal = defineStore(StoreId, StoreDef);
+export const useEntityCacheStore = useEntityCacheStoreInternal as PublicStore<typeof storeDefBuilder>;

@@ -41,10 +41,15 @@ declare module 'h3' {
 declare module 'pinia' {
   export interface PiniaCustomProperties {
     /**
-     * Retuns logger with {@link IAppLogger.addContextProps} configured for this store.
+     * Returns logger with {@link IAppLogger.addContextProps} configured for this store.
      * Available only after store has been initialized
      */
     getLogger: () => IAppLogger
+    /**
+     * Enriches store's logging context with {@link props}.
+     * Available only after store has been initialized
+     */
+    setLoggingProps(props: Record<string, any>): void,
     /**
      * Shows exception to user (without logging) but doesn't break current code execution flow, i.e. doesn't throw.
      * Generally should not be used, as any exceptions occuring inside actions & patches must be 

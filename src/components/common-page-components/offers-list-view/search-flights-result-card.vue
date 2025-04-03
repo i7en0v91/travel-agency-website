@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import type { ControlKey } from './../../../helpers/components';
-import { AppPage, getPagePath, type Locale, getLocalizeableValue, getScoreClassResName, extractAirportCode, getValueForFlightDurationFormatting, getValueForTimeOfDayFormatting, getI18nResName2, getI18nResName3, type EntityDataAttrsOnly, type IFlightOffer, type OfferKind, ImageCategory, isElectronBuild } from '@golobe-demo/shared';
+import { LOADING_STATE } from './../../../helpers/constants';
+import { AppPage, getPagePath, type Locale, getLocalizeableValue, getScoreClassResName, extractAirportCode, getValueForFlightDurationFormatting, getValueForTimeOfDayFormatting, getI18nResName2, getI18nResName3, type EntityDataAttrsOnly, type IFlightOffer, ImageCategory, isElectronBuild } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
-import { useUserFavouritesStore } from './../../../stores/user-favourites-store';
-import { useOfferFavouriteStatus } from './../../../composables/offer-favourite-status';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
@@ -14,14 +13,13 @@ interface IProps {
 }
 const { ctrlKey, offer } = defineProps<IProps>();
 
-const { status } = useAuth();
 const { locale, t } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 const userNotificationStore = useUserNotificationStore();
+const userAccountStore = useUserAccountStore();
 const { requestUserAction } = usePreviewState();
 
 const logger = getCommonServices().getLogger().addContextProps({ component: 'SearchFlightsResultCard' });
-const userFavouritesStore = useUserFavouritesStore();
 
 const isError = ref(false);
 
@@ -31,22 +29,26 @@ const scoreClassResName = getScoreClassResName(airlineCompany.reviewSummary.scor
 const reviewsCountText = `${airlineCompany.reviewSummary.numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), airlineCompany.reviewSummary.numReviews)}`;
 
 const offerFlights = offer.arriveFlight ? [offer.departFlight, offer.arriveFlight] : [offer.departFlight];
-const favouriteStatusWatcher = useOfferFavouriteStatus(offer.id, offer.kind);
+
+const isFavourite = computed(() => 
+  userAccountStore.favourites && userAccountStore.favourites !== LOADING_STATE && 
+  userAccountStore.favourites['flights'].includes(offer.id)
+);
 
 async function toggleFavourite (): Promise<void> {
   const offerId = offer.id;
-  logger.verbose('toggling favourite', { offerId, current: favouriteStatusWatcher.isFavourite });
+  logger.verbose('toggling favourite', { offerId, current: isFavourite.value });
   if(!await requestUserAction(userNotificationStore)) {
-    logger.verbose('favourite hasn', offerId);
+    logger.verbose('toggling favourite is not possible in current configuration', { offerId, current: isFavourite.value });
     return;  
   }
-  const store = await userFavouritesStore.getInstance();
-  const result = await store.toggleFavourite(offerId, 'flights' as OfferKind, offer);
+  const userAccountStore = useUserAccountStore();
+  const result = await userAccountStore.toggleFavourite('flights', offerId);
   logger.verbose('favourite toggled', { offerId, isFavourite: result });
 }
 
 async function favouriteBtnClick (): Promise<void> {
-  logger.debug('favourite button clicked', { ctrlKey, current: favouriteStatusWatcher.isFavourite });
+  logger.debug('favourite button clicked', { ctrlKey, current: isFavourite.value });
   await toggleFavourite();
 }
 
@@ -131,14 +133,17 @@ async function favouriteBtnClick (): Promise<void> {
             </PerfectScrollbar>
           </div>
           <div class="search-flights-card-buttons pt-xs-3">
-            <SimpleButton
-              v-if="status === 'authenticated'"
-              class="search-flights-card-btn-like"
-              :ctrl-key="[...ctrlKey, 'Btn', 'Like']"
-              :icon="`${favouriteStatusWatcher.isFavourite ? 'heart' : 'like'}`"
-              kind="support"
-              @click="favouriteBtnClick"
-            />
+            <ClientOnly>
+              <SimpleButton
+                v-if="userAccountStore.isAuthenticated"
+                class="search-flights-card-btn-like"
+                :ctrl-key="[...ctrlKey, 'Btn', 'Like']"
+                :icon="isFavourite ? 'heart' : 'like'"
+                kind="support"
+                @click="favouriteBtnClick"
+              />
+              <template #fallback />
+            </ClientOnly>
             <NuxtLink class="btn btn-primary brdr-1 search-flights-card-btn-details" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.FlightDetails)}/${offer.id}`, locale as Locale)" :target="isElectronBuild() ? '_blank' : undefined">
               {{ $t(getI18nResName2('searchFlights', 'viewDetails')) }}
             </NuxtLink>

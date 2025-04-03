@@ -1,24 +1,12 @@
 <script setup lang="ts">
-import { ImageCategory, type EntityDataAttrsOnly, type IFlightOffer, type ILocalizableValue, type EntityId, getLocalizeableValue, getI18nResName3, getI18nResName2, type I18nResName, AppPage, type Locale } from '@golobe-demo/shared';
+import { AppConfig, ImageCategory, type ILocalizableValue, type EntityId, getLocalizeableValue, getI18nResName3, getI18nResName2, type I18nResName, AppPage, type Locale } from '@golobe-demo/shared';
 import OfferBooking from './../../components/booking-page/offer-booking.vue';
-import type { IOfferBookingStoreFactory } from './../../stores/offer-booking-store';
-import OfferDetailsBreadcrumbs from './../../components/common-page-components/offer-details-breadcrumbs.vue';
+import { ApiEndpointFlightOfferDetails } from './../../server/api-definitions';
 import FlightDetailsCard from './../../components/common-page-components/flight-details-card.vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
+import { mapFlightOfferDetails } from './../../helpers/entity-mappers';
 import type { ControlKey, ArbitraryControlElementMarker } from './../../helpers/components';
-
-const { locale } = useI18n();
-const navLinkBuilder = useNavLinkBuilder();
-
-const route = useRoute();
-
-const isError = ref(false);
-
-const offerParam = route.params?.id?.toString() ?? '';
-if (offerParam.length === 0) {
-  await navigateTo(navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale));
-}
-const offerId: EntityId = offerParam;
+import { Decimal } from 'decimal.js';
 
 definePageMeta({
   title: { resName: getI18nResName2('flightBookingPage', 'title'), resArgs: undefined }
@@ -26,22 +14,54 @@ definePageMeta({
 
 const CtrlKey: ControlKey = ['Page', 'BookFlight'];
 
+const { locale } = useI18n();
+const navLinkBuilder = useNavLinkBuilder();
+const route = useRoute();
+const nuxtApp = useNuxtApp();
+const { enabled } = usePreviewState();
+
+const offerParam = route.params?.id?.toString() ?? '';
+if (offerParam.length === 0) {
+  await navigateTo(navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale));
+}
+const offerId: EntityId = offerParam;
+
 const PriceDecompositionWeights: { labelResName: I18nResName, amount: number }[] = [
   { labelResName: getI18nResName3('bookingCommon', 'pricingDecomposition', 'fare'), amount: 0.6 },
   { labelResName: getI18nResName3('bookingCommon', 'pricingDecomposition', 'discount'), amount: 0.05 },
   { labelResName: getI18nResName3('bookingCommon', 'pricingDecomposition', 'taxes'), amount: 0.3 },
   { labelResName: getI18nResName3('bookingCommon', 'pricingDecomposition', 'fee'), amount: 0.05 }
 ];
+const priceDecomposition = computed(() => 
+  PriceDecompositionWeights.map((w) => { 
+    return { 
+      labelResName: w.labelResName, 
+      amount: flightOffer.value ? flightOffer.value!.totalPrice.toNumber() * w.amount : undefined }; 
+    })
+);
 
-const offerBookingStoreFactory = await useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
-const offerBookingStore = await offerBookingStoreFactory.createNewBooking<IFlightOffer>(offerId!, 'flights', undefined);
-
-const flightOffer = ref<EntityDataAttrsOnly<IFlightOffer> | undefined>(offerBookingStore.booking?.offer);
-const offerDataAvailable = computed(() => offerBookingStore.status === 'success' && offerBookingStore.booking?.offer && !isError.value);
-
-const priceDecomposition = computed(() => PriceDecompositionWeights.map((w) => { return { labelResName: w.labelResName, amount: flightOffer.value ? flightOffer.value!.totalPrice.toNumber() * w.amount : undefined }; }));
+const offerFetch = useFetch(() => `/${ApiEndpointFlightOfferDetails(offerId)}`,
+  {
+    server: true,
+    lazy: true,
+    cache:  (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
+    dedupe: 'defer',
+    query: { drafts: enabled },
+    immediate: true,
+    transform: mapFlightOfferDetails,
+    $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-stub' })
+  });
+const flightOffer = computed(() => {
+  const result = (offerFetch.status.value === 'success' && offerFetch.data?.value) ? 
+    offerFetch.data.value : undefined;
+  if(typeof (result?.totalPrice) === 'number') {
+    result.totalPrice = new Decimal(result.totalPrice);
+  }
+  return result;
+});
 
 if (import.meta.server) {
+  await offerFetch;
   useOgImage({
     name: 'OgOfferSummary',
     props: {
@@ -73,33 +93,18 @@ function extendPageTitle (fromCityName: ILocalizableValue, toCityName: ILocaliza
   (route.meta.title as any).resArgs = { from, to };
 }
 
-watch(() => offerBookingStore.status, () => {
-  if (offerBookingStore.status === 'error') {
-    isError.value = true;
-    flightOffer.value = undefined;
-  }
-  if (offerDataAvailable.value) {
-    flightOffer.value = offerBookingStore.booking!.offer;
-    updatePageTitle();
-  }
-});
-
-watch(locale, () => {
-  updatePageTitle();
-});
 if (import.meta.server) {
   updatePageTitle();
 }
-
 onMounted(() => {
-  updatePageTitle();
+  watchEffect(updatePageTitle);
 });
 
 </script>
 
 <template>
   <div class="flight-book-page">
-    <ErrorHelm :is-error="isError" class="flight-book-page-error-helm">
+    <ErrorHelm :is-error="offerFetch.status.value === 'error'" class="flight-book-page-error-helm">
       <LazyOfferDetailsBreadcrumbs
         :ctrl-key="[...CtrlKey, 'Breadcrumbs']"
         offer-kind="flights"

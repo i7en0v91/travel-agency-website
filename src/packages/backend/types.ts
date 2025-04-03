@@ -1,4 +1,4 @@
-import type { QueryInternalRequestParam, QueryPageTimestampParam, QueryPagePreviewModeParam, EmailTemplateEnum, TokenKind, AuthProvider, AppPage, ImageCategory, PageCacheVaryOptions, ISearchStayOffersResult, ISearchFlightOffersResult, UninitializedPageTimestamp, IOfferBookingData, IUserMinimalInfo, IUserProfileInfo, IStayOffersFilterParams, IFlightOffersFilterParams, DocumentCommonParams, IFileInfo, IImageInfo, IFileData, IImageData, IAirplaneData, IStayData, ICommonServicesLocator, StayOffersSortFactor, FlightOffersSortFactor, IBooking, IStayOfferDetails, IStayOffer, IStayShort, IStay, IStayReview, IFlightOffer, IAirplane, EntityDataAttrsOnly, IAirport, IAirlineCompany, ICountry, ICity, StayServiceLevel, IPagination, ISorting, Price, GeoPoint, ReviewSummary, IImageCategoryInfo, CacheEntityType, GetEntityCacheItem, DistanceUnitKm, PreviewMode, EntityId, IEditableEntity, ISoftDeleteEntity, ILocalizableValue, Timestamp, PreviewModeParamEnabledValue, EntityChangeSubscribersOrder, Locale, Theme, type IImageProcessor } from '@golobe-demo/shared';
+import type { QueryInternalRequestParam, QueryPageTimestampParam, QueryPagePreviewModeParam, EmailTemplateEnum, TokenKind, AuthProvider, AppPage, ImageCategory, PageCacheVaryOptions, ISearchStayOffersResult, ISearchFlightOffersResult, UninitializedPageTimestamp, IOfferBookingData, IUserMinimalInfo, IUserProfileInfo, IStayOffersFilterParams, IFlightOffersFilterParams, DocumentCommonParams, IFileInfo, IImageInfo, IFileData, IImageData, IAirplaneData, IStayData, ICommonServicesLocator, StayOffersSortFactor, FlightOffersSortFactor, IBooking, IStayOfferDetails, IStayOffer, IStayShort, IStay, IStayReview, IFlightOffer, IAirplane, EntityDataAttrsOnly, IAirport, IAirlineCompany, ICountry, ICity, StayServiceLevel, IPagination, ISorting, Price, GeoPoint, ReviewSummary, IImageCategoryInfo, CacheEntityType, GetEntityCacheItem, DistanceUnitKm, PreviewMode, EntityId, IEditableEntity, ISoftDeleteEntity, ILocalizableValue, Timestamp, PreviewModeParamEnabledValue, EntityChangeSubscribersOrder, Locale, Theme, type IImageProcessor, OfferKind } from '@golobe-demo/shared';
 import type { H3Event } from 'h3';
 import type { IServerI18n } from './common-services/i18n';
 import type { IChangeDependencyTracker, EntityModel } from './common-services/change-dependency-tracker';
@@ -396,7 +396,8 @@ export interface IFlightsLogic {
   getFlightPromoPrice(cityId: EntityId, previewMode: boolean): Promise<Price>;
   getFlightOffer(id: EntityId, userId: EntityId | 'guest', previewMode: boolean): Promise<IFlightOffer>;
   searchOffers(filter: IFlightOffersFilterParams, userId: EntityId | 'guest', primarySorting: ISorting<FlightOffersSortFactor>, secondarySorting: ISorting<FlightOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean, topOffersStats: boolean, previewMode: boolean): Promise<ISearchFlightOffersResult>;
-  getUserFavouriteOffers(userId: EntityId): Promise<ISearchFlightOffersResult<IFlightOffer & { addDateUtc: Date }>>;
+  findOffers (offerIds: EntityId[], previewMode: PreviewMode): Promise<EntityDataAttrsOnly<IFlightOffer>[]>;
+  getUserFavouriteOffers(userId: EntityId): Promise<EntityId[]>;
   getUserTickets(userId: EntityId): Promise<ISearchFlightOffersResult<IFlightOffer & { bookingId: EntityId, bookDateUtc: Date; }>>;
   toggleFavourite(offerId: EntityId, userId: EntityId): Promise<boolean>;
   deleteFlightOffer(id: EntityId): Promise<void>;
@@ -411,7 +412,8 @@ export interface IStaysLogic {
   getStayOffer(id: EntityId, userId: EntityId | 'guest', previewMode: PreviewMode): Promise<IStayOfferDetails>;
   findStay(idOrSlug: EntityId | string, previewMode: PreviewMode): Promise<IStay | undefined>;
   searchOffers(filter: IStayOffersFilterParams, userId: EntityId | 'guest', sorting: ISorting<StayOffersSortFactor>, pagination: IPagination, narrowFilterParams: boolean, previewMode: PreviewMode, availableStays?: (IStayShort & { reviewSummary: ReviewSummary })[] | undefined): Promise<ISearchStayOffersResult>;
-  getUserFavouriteOffers(userId: EntityId): Promise<ISearchStayOffersResult<IStayOffer & { addDateUtc: Date }>>;
+  findOffers (offerIds: EntityId[], previewMode: PreviewMode): Promise<EntityDataAttrsOnly<IStayOffer>[]>;
+  getUserFavouriteOffers(userId: EntityId): Promise<EntityId[]>;
   getUserTickets(userId: EntityId): Promise<ISearchStayOffersResult<IStayOffer & { bookingId: EntityId, bookDateUtc: Date; }>>;
   toggleFavourite(offerId: EntityId, userId: EntityId): Promise<boolean>;
   createOrUpdateReview(stayId: EntityId, textOrHtml: string, score: number, userId: EntityId): Promise<EntityId>;
@@ -431,7 +433,7 @@ export interface IOfferBooking<TOffer extends IFlightOffer | IStayOfferDetails> 
 
 export interface IBookingLogic {
   getBooking(id: EntityId): Promise<IOfferBooking<IFlightOffer | IStayOfferDetails>>;
-  createBooking(data: IOfferBookingData): Promise<EntityId>;
+  createBooking<TOfferKind extends OfferKind>(data: IOfferBookingData<TOfferKind>): Promise<EntityId>;
   deleteBooking(id: EntityId): Promise<void>;
 }
 

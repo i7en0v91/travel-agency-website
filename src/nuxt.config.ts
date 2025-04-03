@@ -1,5 +1,5 @@
 import { UseWinstonOnClient, I18LocalesDirName, lookupValueOrThrow, AppConfig, SystemPage, AppPage, EntityIdPages, getPagePath, AvailableLocaleCodes, CookieI18nLocale, DefaultLocale, isTestEnv, isPublishEnv, isDevEnv, isElectronBuild, LoadingStubFileName } from '@golobe-demo/shared';
-import { ApiEndpointPrefix, ApiEndpointAuthentication, ApiEndpointUserAccount, ApiAppEndpointPrefix, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets } from './server/api-definitions';
+import { ApiEndpointLoadOffers, ApiEndpointPrefix, ApiEndpointAuthentication, ApiEndpointUserAccount, ApiAppEndpointPrefix, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets } from './server/api-definitions';
 import { resolveSharedPkgPath } from './helpers/resolvers';
 import { joinURL } from 'ufo';
 import type { RollupLog, LogLevel, LogOrStringHandler } from 'rollup';
@@ -71,7 +71,7 @@ const HtmlPageCachingRules: { [P in AppPage]: NitroRouteConfig } & { [P in Syste
   'EmailVerifyComplete': getRouteCachingRule(false, true),
   'Drafts': getRouteCachingRule(false, false)
 };
-const ApiRoutesWithCachingDisabled = [`${ApiAppEndpointPrefix}/stays/**`, `${ApiAppEndpointPrefix}/booking/**`, ApiEndpointUserAccount, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets];
+const ApiRoutesWithCachingDisabled = [`${ApiAppEndpointPrefix}/stays/**`, `${ApiAppEndpointPrefix}/booking/**`, ApiEndpointUserAccount, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets, ApiEndpointLoadOffers];
 
 const AcsysFilesGlobForWatchers = isDevEnv() ? 
   [`**/${basename(AppConfig.acsys.execDir)}/**`, `**/externals/${basename(AppConfig.acsys.srcDir)}/**`] : [];

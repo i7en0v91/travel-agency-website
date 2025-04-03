@@ -14,9 +14,9 @@ useOgImage();
 
 const CtrlKey: ControlKey = ['Page', 'EmailVerifyComplete'];
 
-const { status } = useAuth();
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
+const userAccountStore = useUserAccountStore();
 const { enabled } = usePreviewState();
 const completionResult = ref<EmailVerifyCompleteResultCode | undefined>(undefined);
 
@@ -84,26 +84,26 @@ if (!tokenId || !tokenValue) {
       <div class="email-verify-complete-page-content">
         <div v-if="completionResult === EmailVerifyCompleteResultCode.SUCCESS">
           {{ $t(getI18nResName3('emailVerifyCompletePage', 'text', 'success')) }}
-          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="status === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
-            {{ $t(getI18nResName2('accountPageCommon', status === 'authenticated' ? 'toHome' : 'login')) }}
+          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="userAccountStore.isAuthenticated ? navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
+            {{ $t(getI18nResName2('accountPageCommon', userAccountStore.isAuthenticated ? 'toHome' : 'login')) }}
           </NuxtLink>
         </div>
         <div v-else-if="completionResult === EmailVerifyCompleteResultCode.ALREADY_CONSUMED">
           {{ $t(getI18nResName3('emailVerifyCompletePage', 'text', 'alreadyConsumed')) }}
-          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="status === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
-            {{ $t(getI18nResName2('accountPageCommon', status === 'authenticated' ? 'toHome' : 'login')) }}
+          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="userAccountStore.isAuthenticated ? navLinkBuilder.buildPageLink(AppPage.Index, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
+            {{ $t(getI18nResName2('accountPageCommon', userAccountStore.isAuthenticated ? 'toHome' : 'login')) }}
           </NuxtLink>
         </div>
         <div v-else-if="completionResult === EmailVerifyCompleteResultCode.LINK_EXPIRED">
           {{ $t(getI18nResName3('emailVerifyCompletePage', 'text', 'linkExpired')) }}
-          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="status === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Account, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
-            {{ $t(getI18nResName2('accountPageCommon', status === 'authenticated' ? 'toAccount' : 'login')) }}
+          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="userAccountStore.isAuthenticated ? navLinkBuilder.buildPageLink(AppPage.Account, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
+            {{ $t(getI18nResName2('accountPageCommon', userAccountStore.isAuthenticated ? 'toAccount' : 'login')) }}
           </NuxtLink>
         </div>
         <div v-else>
           {{ $t(getI18nResName3('emailVerifyCompletePage', 'text', 'linkInvalid')) }}
-          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="status === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Account, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
-            {{ $t(getI18nResName2('accountPageCommon', status === 'authenticated' ? 'toAccount' : 'login')) }}
+          <NuxtLink class="btn btn-email-verify-complete mt-xs-3 mt-m-5 px-xs-4 py-xs-3 px-m-5 py-m-4" :to="userAccountStore.isAuthenticated ? navLinkBuilder.buildPageLink(AppPage.Account, locale as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale as Locale)">
+            {{ $t(getI18nResName2('accountPageCommon', userAccountStore.isAuthenticated ? 'toAccount' : 'login')) }}
           </NuxtLink>
         </div>
       </div>

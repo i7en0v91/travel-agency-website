@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { toShortForm, type ControlKey } from './../../helpers/components';
 import { type Price, type EntityDataAttrsOnly, type EntityId, type ICity, type ILocalizableValue, type OfferKind, getI18nResName1, getI18nResName2, type I18nResName, type Locale, getLocalizeableValue, getScoreClassResName } from '@golobe-demo/shared';
-import { TooltipHideTimeout } from './../../helpers/constants';
+import { LOADING_STATE, TooltipHideTimeout } from './../../helpers/constants';
 import range from 'lodash-es/range';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import type { Tooltip } from 'floating-vue';
-import { useUserFavouritesStore } from './../../stores/user-favourites-store';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
 
@@ -28,15 +27,17 @@ const logger = getCommonServices().getLogger().addContextProps({ component: 'Off
 
 const isError = ref(false);
 
-const { status } = useAuth();
 const { t, locale } = useI18n();
 const userNotificationStore = useUserNotificationStore();
+const userAccountStore = useUserAccountStore();
 const { requestUserAction } = usePreviewState();
 
 const tooltip = useTemplateRef<InstanceType<typeof Tooltip>>('tooltip');
-const userFavouritesStoreFactory = useUserFavouritesStore();
-let favouriteStatusWatcher: ReturnType<typeof useOfferFavouriteStatus> | undefined;
-const isFavourite = ref(false);
+const isFavourite = computed(() => 
+  offerKind && offerId && 
+  userAccountStore.favourites && userAccountStore.favourites !== LOADING_STATE && 
+  userAccountStore.favourites[offerKind].includes(offerId)
+);
 
 const scoreClassResName = computed(() => reviewScore ? getScoreClassResName(reviewScore) : undefined);
 const reviewsCountText = computed(() => numReviews ? `${numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), numReviews)}` : '');
@@ -44,11 +45,14 @@ const reviewsCountText = computed(() => numReviews ? `${numReviews} ${t(getI18nR
 async function toggleFavourite (): Promise<void> {
   logger.verbose('toggling favourite', { offerId, kind: offerKind, current: isFavourite.value });
   if(!await requestUserAction(userNotificationStore)) {
-    logger.verbose('favourite hasn', { offerId, kind: offerKind, current: isFavourite.value });
+    logger.verbose('toggling favourite is not possible in current configuration', { offerId, kind: offerKind, current: isFavourite.value });
     return;
   }
-  const store = await userFavouritesStoreFactory.getInstance();
-  const result = await store.toggleFavourite(offerId!, offerKind!);
+  if(!offerKind || !offerId) {
+    logger.verbose('skipping favourite toggle action, offer data is not fully available', { offerId, kind: offerKind });
+    return;
+  }
+  const result = await userAccountStore.toggleFavourite(offerKind, offerId);
   logger.verbose('favourite toggled', { offerId, isFavourite: result });
 }
 
@@ -67,27 +71,6 @@ function onBtnClick () {
   logger.debug('button clicked', ctrlKey);
   $emit('btnClick');
 }
-
-function initializeFavouriteStatusWatcherIfNeeded () {
-  if (favouriteStatusWatcher) {
-    return;
-  }
-
-  if (offerId && offerKind) {
-    logger.debug('creating favourite status watcher', { ctrlKey, offerId, offerKind });
-    favouriteStatusWatcher = useOfferFavouriteStatus(offerId, offerKind);
-    watch(() => favouriteStatusWatcher!.isFavourite, () => {
-      logger.debug('favourite status updated', { ctrlKey, offerId, offerKind, status: favouriteStatusWatcher!.isFavourite });
-      isFavourite.value = favouriteStatusWatcher!.isFavourite;
-    });
-    isFavourite.value = favouriteStatusWatcher!.isFavourite;
-  }
-}
-
-onMounted(() => {
-  watch(() => [offerId, offerKind], initializeFavouriteStatusWatcherIfNeeded);
-  initializeFavouriteStatusWatcherIfNeeded();
-});
 
 const tooltipId = useId();
 
@@ -195,14 +178,17 @@ const tooltipId = useId();
                 </div>
               </template>
             </VTooltip>
-            <SimpleButton
-              v-if="status === 'authenticated' && variant === 'default'"
-              class="offer-details-summary-btn-like"
-              :ctrl-key="[...ctrlKey, 'Btn', 'Like']"
-              :icon="`${isFavourite ? 'heart' : 'like'}`"
-              kind="support"
-              @click="favouriteBtnClick"
-            />
+            <ClientOnly>
+              <SimpleButton
+                v-if="userAccountStore.isAuthenticated && variant === 'default'"
+                class="offer-details-summary-btn-like"
+                :ctrl-key="[...ctrlKey, 'Btn', 'Like']"
+                :icon="`${isFavourite ? 'heart' : 'like'}`"
+                kind="support"
+                @click="favouriteBtnClick"
+              />
+              <template #fallback />
+            </ClientOnly>
           </div>
         </div>
       </PerfectScrollbar>

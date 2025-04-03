@@ -259,10 +259,23 @@ export class StaysLogic implements IStaysLogic {
     return result;
   }
 
-  async getUserFavouriteOffers (userId: EntityId): Promise<ISearchStayOffersResult<IStayOffer & { addDateUtc: Date; }>> {
+  async findOffers (offerIds: EntityId[], previewMode: PreviewMode): Promise<EntityDataAttrsOnly<IStayOffer>[]> {
+    this.logger.debug('find offers', offerIds);
+    let result: EntityDataAttrsOnly<IStayOffer>[];
+    if(previewMode) {
+      const resolveResult = await this.acsysDraftsEntitiesResolver.resolveStayOffers({ idsFilter: offerIds });
+      result = Array.from(resolveResult.items.values());
+    } else {
+      result = await this.prismaImplementation.findOffers(offerIds, previewMode);
+    }
+    this.logger.debug('find offers - completed', { offerIds, result });
+    return result;
+  }
+
+  async getUserFavouriteOffers (userId: EntityId): Promise<EntityId[]> {
     this.logger.debug('get user favourite offers', userId);
     const result = await this.prismaImplementation.getUserFavouriteOffers(userId);
-    this.logger.debug('get user favourite offers completed', { userId, count: result.totalCount });
+    this.logger.debug('get user favourite offers completed', { userId, result });
     return result;
   }
 

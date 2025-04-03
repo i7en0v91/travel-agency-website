@@ -3,6 +3,7 @@ import type { ControlKey } from './../../../helpers/components';
 import { AppPage, getPagePath, type Locale, getI18nResName3, type EntityId, type IStayOffer, type IFlightOffer, type EntityDataAttrsOnly, isElectronBuild } from '@golobe-demo/shared';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { getCommonServices } from '../../../helpers/service-accessors';
+import { LOADING_STATE } from '../../../helpers/constants';
 
 interface IProps {
   ctrlKey: ControlKey,
@@ -24,16 +25,8 @@ const userAccountStore = useUserAccountStore();
 async function onBtnClick(): Promise<void> {
   logger.verbose('download btn clicked', { ctrlKey, bookingId });
 
-  let firstName: string | undefined;
-  let lastName: string | undefined;
-  try {
-    const userAccount = await userAccountStore.getUserAccount();
-    firstName = userAccount.firstName;
-    lastName = userAccount.lastName;
-  } catch (err: any) {
-    logger.warn('failed to initialize user account info', err, ctrlKey);
-  }
-
+  const firstName = ((userAccountStore.name && userAccountStore.name !== LOADING_STATE) ? userAccountStore.name.firstName : undefined) ?? undefined;
+  const lastName = ((userAccountStore.name && userAccountStore.name !== LOADING_STATE) ? userAccountStore.name.lastName : undefined) ?? undefined;
   await documentDownloader!.download(bookingId, offer, firstName, lastName, locale.value as Locale, theme.currentTheme.value);
 }
 

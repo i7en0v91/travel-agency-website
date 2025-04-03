@@ -682,8 +682,7 @@ async function ensureViewSampleData(serviceLocator: IServerServicesLocator, logg
   sampleIds.bookingId = await bookingLogic.createBooking({ 
     bookedUserId: sampleIds.userId, 
     kind: 'flights', 
-    offerId: flightOffer.id, 
-    serviceLevel: undefined 
+    offerId: flightOffer.id
   });
 
   logger.debug('creating sample mail template data');

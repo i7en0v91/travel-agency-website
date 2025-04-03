@@ -167,7 +167,6 @@ onUnmounted(() => {
             <SearchOffersCounter
               v-model:value="selectedPassengers"
               :ctrl-key="[...ctrlKey, 'NumPassengers', 'Counter']"
-              :default-value="FlightMinPassengers"
               :min-value="FlightMinPassengers"
               :max-value="FlightMaxPassengers"
               :label-res-name="getI18nResName2('searchFlights', 'fieldPassengers')"

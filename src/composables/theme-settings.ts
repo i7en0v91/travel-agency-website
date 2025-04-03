@@ -2,6 +2,7 @@ import { DefaultTheme, isElectronBuild, SessionThemeKey, type Theme } from '@gol
 import { getCurrentThemeSettings, setCurrentThemeSettings } from './../helpers/dom';
 import { getCommonServices } from '../helpers/service-accessors';
 import { getThemeFacade } from '../helpers/electron';
+import once from 'lodash-es/once';
 
 export interface IThemeSettings {
   currentTheme: Ref<Theme>,
@@ -11,16 +12,16 @@ export interface IThemeSettings {
 let themeValue: Ref<Theme> | undefined;
 let instance: IThemeSettings | undefined;
 
-export function useThemeSettings (): IThemeSettings {
-  const logger = getCommonServices().getLogger().addContextProps({ component: 'UseThemeSettings' });
+const getLogger = once(() => getCommonServices().getLogger().addContextProps({ component: 'UseThemeSettings' }));
 
+export function useThemeSettings (): IThemeSettings {
   const toggleTheme = () => {
     if (!instance) {
-      logger.warn('cannot toggle theme, settings havent been initialized properly');
+      getLogger().warn('cannot toggle theme, settings havent been initialized properly');
       return;
     }
     const targetValue: Theme = instance.currentTheme.value === 'light' ? 'dark' : 'light';
-    logger.verbose('toggling theme to', { theme: targetValue });
+    getLogger().verbose('toggling theme to', { theme: targetValue });
 
     localStorage.setItem(SessionThemeKey, targetValue.toString());
     setCurrentThemeSettings(targetValue);
@@ -32,10 +33,10 @@ export function useThemeSettings (): IThemeSettings {
   };
 
   if (!instance) {
-    logger.verbose('initializing theme settings');
+    getLogger().verbose('initializing theme settings');
     // this must be initialized in page-load.js script
     const initialValue: Theme = import.meta.client ? (getCurrentThemeSettings() ?? DefaultTheme) : 'light'; // TODO: fix initialization with undefined in Electron build
-    logger.verbose('theme settings initialized with', { theme: initialValue });
+    getLogger().verbose('theme settings initialized with', { theme: initialValue });
     themeValue = ref(initialValue);
     instance = {
       currentTheme: themeValue,

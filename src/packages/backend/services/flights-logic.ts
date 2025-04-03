@@ -253,32 +253,42 @@ export class FlightsLogic implements IFlightsLogic {
     }
   }
 
-  async getUserFavouriteOffers (userId: EntityId): Promise<ISearchFlightOffersResult<IFlightOffer & { addDateUtc: Date }>> {
+  async findOffers (offerIds: EntityId[]): Promise<EntityDataAttrsOnly<IFlightOffer>[]> {
+    this.logger.verbose('find offers', { offerIds });
+
+    const userOffers = await this.dbRepository.flightOffer.findMany({
+      where: {
+        isDeleted: false,
+        id: {
+          in: offerIds
+        }
+      },
+      select: FlightOfferInfoQuery('guest').select
+    });
+
+    const mappedItems = userOffers.map(MapFlightOffer);
+    const result: EntityDataAttrsOnly<IFlightOffer>[] = mappedItems;
+
+    this.logger.verbose('find offers - finished', { offerIds, result });
+    return result;
+  }
+
+  async getUserFavouriteOffers (userId: EntityId): Promise<EntityId[]> {
     this.logger.verbose('get user favourite offers', userId);
 
-    const userOffers = await this.dbRepository.userFlightOffer.findMany({
+    const favouriteOffers = await this.dbRepository.userFlightOffer.findMany({
       where: {
         isDeleted: false,
         isFavourite: true,
         userId
       },
       select: {
-        modifiedUtc: true,
-        offer: {
-          select: FlightOfferInfoQuery(userId).select
-        }
+        offerId: true
       }
     });
+    const result = favouriteOffers.map(o => o.offerId);
 
-    const mappedItems = userOffers.map((uo) => { return { addDateUtc: uo.modifiedUtc, ...(MapFlightOffer(uo.offer)) }; }).filter(o => !o.isDeleted);
-    const result: ISearchFlightOffersResult<IFlightOffer & { addDateUtc: Date }> = {
-      pagedItems: mappedItems,
-      paramsNarrowing: undefined,
-      topOffers: undefined,
-      totalCount: mappedItems.length
-    };
-
-    this.logger.verbose('get user favourite offers completed', { userId, count: result.totalCount });
+    this.logger.verbose('get user favourite offers completed', { userId, offerIds: result });
     return result;
   }
 

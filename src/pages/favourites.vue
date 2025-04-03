@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { AppException, AppExceptionCodeEnum, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { defaultErrorHandler } from './../helpers/exceptions';
+import { getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { mapLoadOffersResult } from './../helpers/entity-mappers';
+import { ApiEndpointLoadOffers, type ILoadOffersDto } from './../server/api-definitions';
 import OptionButtonGroup from './../components/option-buttons/option-button-group.vue';
 import OfferTabbedView from './../components/common-page-components/offer-tabbed-view.vue';
 import FlightsListItemCard from './../components/common-page-components/offers-list-view/search-flights-result-card.vue';
 import StaysListItemCard from './../components/common-page-components/offers-list-view/search-stays-result-card.vue';
-import { useUserFavouritesStore } from './../stores/user-favourites-store';
 import ComponentWaitingIndicator from './../components/component-waiting-indicator.vue';
 import { getCommonServices } from '../helpers/service-accessors';
 import { areCtrlKeysEqual, type ControlKey } from './../helpers/components';
+import { LOADING_STATE } from '../helpers/constants';
 
 definePageMeta({
   middleware: 'auth',
@@ -23,30 +24,52 @@ const FavouritesOptionButtonFlights: ControlKey = [...FavouritesOptionButtonGrou
 const FavouritesOptionButtonStays: ControlKey = [...FavouritesOptionButtonGroup, 'Stays', 'Option'];
 const DefaultActiveTabKey: ControlKey = FavouritesOptionButtonFlights;
 
+const { enabled } = usePreviewState();
 const nuxtApp = useNuxtApp();
 const logger = getCommonServices().getLogger().addContextProps({ component: 'Favourites' });
-const isError = ref(false);
 
-const userNotificationStore = useUserNotificationStore();
-const userFavouritesStore = useUserFavouritesStore();
-let userFavourites: Awaited<ReturnType<typeof userFavouritesStore.getInstance>> | undefined;
-try {
-  userFavourites = await userFavouritesStore.getInstance();
-} catch (err: any) {
-  logger.warn('failed to initialized user favourites store', err);
-  isError.value = true;
-}
+const userAccountStore = useUserAccountStore();
+
+const isError = ref(false);
+const activeOptionCtrl = ref<ControlKey | undefined>();
+
+const favouriteOfferIds = computed(() => {
+  return userAccountStore.favourites ? 
+    ( userAccountStore.favourites !== LOADING_STATE ? [
+        ...userAccountStore.favourites.flights,
+        ...userAccountStore.favourites.stays
+      ] : LOADING_STATE 
+    ) : undefined;
+});
+
+const fetchBody = computed(() => { 
+  return (favouriteOfferIds.value && favouriteOfferIds.value !== LOADING_STATE) ? 
+            ({ ids: favouriteOfferIds.value } as ILoadOffersDto) : 
+            undefined;
+ });
+const offersDetailsFetch = 
+  useFetch(`/${ApiEndpointLoadOffers}`, {
+    server: false,
+    lazy: true,
+    immediate: false,
+    cache: 'no-cache',
+    dedupe: 'cancel',
+    method: 'POST' as const,
+    query: { drafts: enabled },
+    body: fetchBody,
+    watch: false,
+    transform: mapLoadOffersResult,
+    $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-stub' })
+  });
 
 const flightsTabHtmlId = useId();
 const staysTabHtmlId = useId();
 
-const activeOptionCtrl = ref<ControlKey | undefined>();
-
 const displayedItems = computed(() => {
-  return userFavourites
+  return (offersDetailsFetch.status.value === 'success' && offersDetailsFetch.data.value)
     ? {
-        flights: userFavourites.status === 'success' ? (userFavourites.items.filter(i => i.kind === 'flights')) : undefined,
-        stays: userFavourites.status === 'success' ? (userFavourites.items.filter(i => i.kind === 'stays')) : undefined
+        flights: offersDetailsFetch.data.value.flights,
+        stays: offersDetailsFetch.data.value.stays
       }
     : {
         flights: undefined,
@@ -55,24 +78,18 @@ const displayedItems = computed(() => {
 });
 
 onMounted(() => {
-  watch(() => userFavourites?.status, () => {
-    logger.debug('handling favourites store status change', { status: userFavourites!.status });
-    switch (userFavourites!.status) {
-      case 'success':
-        isError.value = false;
-        break;
-      case 'error':
-        isError.value = true;
-        break;
+  watch(fetchBody, () => {
+    if(fetchBody.value) {
+      offersDetailsFetch.refresh();
     }
-  });
+  }, { immediate: true });
 
-  if (userFavourites?.status === 'error') {
-    defaultErrorHandler(new AppException(
-      AppExceptionCodeEnum.UNKNOWN,
-      'unhandled exception occured',
-      'error-stub'), { nuxtApp, userNotificationStore });
-  }
+  watch(offersDetailsFetch.status, () => {
+    logger.debug('offer details fetch effect handler', { ctrlKey: CtrlKey, status: offersDetailsFetch.status.value });
+    if(offersDetailsFetch.status.value === 'error') {
+      isError.value = true;
+    }
+  }, { immediate: true });
 });
 
 </script>

@@ -76,8 +76,6 @@ function toggleList () {
 onMounted(() => {
   logger.debug('acquiring store value ref', { ctrlKey });
   const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<SearchOffersFilterVariantId[] | undefined>(ctrlKey, {
-    initialOverwrite: undefined,
-    defaultValue: undefined,
     persistent: false
   });
 

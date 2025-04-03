@@ -1,5 +1,5 @@
-import { AppException, AppExceptionCodeEnum, type ReviewSummary, type EntityId, type Timestamp, type IOfferBooking, type IStayImageShort, type IStayOfferDetails, type IStay, type ICity, type ISearchFlightOffersResult, type ISearchStayOffersResult, type EntityDataAttrsOnly, type IFlightOffer, type IFlight, type IAirlineCompany, type IAirport, type IAirplane, type IStayOffer, type IStayShort } from '@golobe-demo/shared';
-import type { IUserFavouritesResultDto, IStayDto, IFlightDto, IFlightOfferDetailsDto, IStayOfferDetailsDto, ICityDto, ISearchStayOffersResultDto, IAirlineCompanyDto, ISearchedFlightDto, ISearchedFlightOfferDto, IAirportDto, IAirplaneDto, ISearchedStayOfferDto, ISearchFlightOffersResultDto, ISearchedStayDto, IBookingDetailsDto, IUserTicketsResultDto, IReviewSummaryDto } from '../server/api-definitions';
+import { AppException, AppExceptionCodeEnum, type ReviewSummary, type IOfferBooking, type IStayImageShort, type IStayOfferDetails, type IStay, type ICity, type ISearchFlightOffersResult, type ISearchStayOffersResult, type EntityDataAttrsOnly, type IFlightOffer, type IFlight, type IAirlineCompany, type IAirport, type IAirplane, type IStayOffer, type IStayShort } from '@golobe-demo/shared';
+import type { ILoadOffersResultDto, IStayDto, IFlightDto, IFlightOfferDetailsDto, IStayOfferDetailsDto, ICityDto, ISearchStayOffersResultDto, IAirlineCompanyDto, ISearchedFlightDto, ISearchedFlightOfferDto, IAirportDto, IAirplaneDto, ISearchedStayOfferDto, ISearchFlightOffersResultDto, ISearchedStayDto, IBookingDetailsDto, IUserTicketsResultDto, IReviewSummaryDto } from '../server/api-definitions';
 import { Decimal } from 'decimal.js';
 import orderBy from 'lodash-es/orderBy';
 import { getCommonServices } from './service-accessors';
@@ -322,37 +322,34 @@ export function mapSearchStayOffersResult (resultDto: ISearchStayOffersResultDto
   };
 };
 
-export function mapUserFavouriteOffersResult (resultDto: IUserFavouritesResultDto): (EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>)[] {
-  const mappedOffers: { offer: (EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>), timestamp: number }[] = [];
+export function mapLoadOffersResult (resultDto: ILoadOffersResultDto): {
+  flights: EntityDataAttrsOnly<IFlightOffer>[],
+  stays: EntityDataAttrsOnly<IStayOffer>[]
+ } {
+  const flightsLookup = createSearchFlightOfferResultLookup({
+    entities: resultDto.flights.entities,
+    pagedItems: resultDto.flights.items,
+    totalCount: resultDto.flights.items.length
+  });
+  const flights = orderBy(resultDto.flights.items.map((i) => { return mapSearchedFlightOffer(i, flightsLookup); }), (i) => i.departFlight.departTimeUtc, 'desc');
 
-  const flightsLookup = createSearchFlightOfferResultLookup(resultDto.flights);
-  mappedOffers.push(...resultDto.flights.pagedItems.map((i) => { return { offer: mapSearchedFlightOffer(i, flightsLookup), timestamp: i.addTimestamp }; }));
-  const staysLookup = createSearchStayOfferResultLookup(resultDto.stays);
-  mappedOffers.push(...resultDto.stays.pagedItems.map((i) => { return { offer: mapSearchedStayOffer(i, staysLookup), timestamp: i.addTimestamp }; }));
-
-  return orderBy(mappedOffers, ['timestamp'], ['desc']).map(o => o.offer);
-}
-
-export function mapUserTicketsResult (resultDto: IUserTicketsResultDto): ((EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>) & { bookingId: EntityId, bookingDateUtc: Date })[] {
-  const mappedOffers: { offer: (EntityDataAttrsOnly<IFlightOffer> | EntityDataAttrsOnly<IStayOffer>), timestamp: Timestamp, bookingId: EntityId }[] = [];
-
-  const flightsLookup = createSearchFlightOfferResultLookup(resultDto.flights);
-  mappedOffers.push(...resultDto.flights.pagedItems.map((i) => { return { offer: mapSearchedFlightOffer(i, flightsLookup), timestamp: i.bookedTimestamp, bookingId: i.bookingId}; }));
-  const staysLookup = createSearchStayOfferResultLookup(resultDto.stays);
-  mappedOffers.push(...resultDto.stays.pagedItems.map((i) => { return { offer: mapSearchedStayOffer(i, staysLookup), timestamp: i.bookedTimestamp, bookingId: i.bookingId }; }));
-
-  return orderBy(mappedOffers, ['timestamp'], ['desc']).map(o => { return { ...o.offer, bookingId: o.bookingId, bookingDateUtc: new Date(o.timestamp) }; });
+  const staysLookup = createSearchStayOfferResultLookup({
+    entities: resultDto.stays.entities,
+    pagedItems: resultDto.stays.items,
+    totalCount: resultDto.stays.items.length
+  });
+  const stays = orderBy(resultDto.stays.items.map((i) => { return mapSearchedStayOffer(i, staysLookup); }), ['checkIn'], ['desc']);
+  
+  return {
+    flights,
+    stays
+  };
 }
 
 export function mapBookingDetails (dto: IBookingDetailsDto): EntityDataAttrsOnly<IOfferBooking<IFlightOffer | IStayOfferDetails>> {
   return {
     id: dto.id,
-    bookedUser: {
-      id: dto.bookedUser.id,
-      avatar: dto.bookedUser.avatar,
-      firstName: dto.bookedUser.firstName,
-      lastName: dto.bookedUser.lastName
-    },
+    userId: dto.bookedUser.id,
     offer: dto.kind === 'flights' ? mapFlightOfferDetails(dto.flightOffer!) : mapStayOfferDetails(dto.stayOffer!, dto.stayOffer!.reviewSummary),
     serviceLevel: dto.kind === 'stays' ? dto.serviceLevel : undefined
   };

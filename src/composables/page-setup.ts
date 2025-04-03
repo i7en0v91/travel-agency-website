@@ -1,6 +1,7 @@
 import { AppConfig } from '@golobe-demo/shared';
 import Toast, { type PluginOptions, POSITION as ToastPosition } from 'vue-toastification';
 import { getClientServices, getCommonServices } from '../helpers/service-accessors';
+import type { UserAccountStoreInternal } from './../stores/user-account-store';
 
 let _ToastPluginUsed = false;
 
@@ -33,6 +34,12 @@ export async function usePageSetup(): Promise<void> {
   const systemConfigurationStore = useSystemConfigurationStore();
   await systemConfigurationStore.loadImageCategories();
   useEntityCacheStore();
+  if(import.meta.client) {
+    const userAccountStore = useUserAccountStore();
+    getClientServices().userAccountStore = userAccountStore;
+    // start syncing store & user personal info in case auth status = 'authenticated'
+    (userAccountStore as UserAccountStoreInternal).triggerAuthStatusSync();
+  }
 
   logger.verbose('completed');
 }

@@ -2,7 +2,7 @@ import { isElectronBuild, UserNotificationLevel, type I18nResName } from '@golob
 import { StoreKindEnum } from './../helpers/constants';
 import { TYPE, useToast } from 'vue-toastification';
 import { getDialogsFacade } from '../helpers/electron';
-import { buildStoreDefinition } from './../helpers/stores/pinia';
+import { buildStoreDefinition, type PublicStore } from './../helpers/stores/pinia';
 
 export interface IUserNotificationParams {
   level: UserNotificationLevel;
@@ -19,7 +19,7 @@ const StoreId = StoreKindEnum.UserNotification;
  * and probably it will be better to use more flexible Setup API store definition 
  * instead of Options API (see https://pinia.vuejs.org/core-concepts/#Setup-Stores)
  */
-const StoreDef = buildStoreDefinition(StoreId, 
+const storeDefBuilder = () => buildStoreDefinition(StoreId, 
   (clientSideOptions) => {
     const toastManager = !isElectronBuild() ? useToast() : undefined;
     const nuxtApp = clientSideOptions!.nuxtApp;
@@ -81,5 +81,6 @@ const StoreDef = buildStoreDefinition(StoreId,
     patches: { }
   }
 );
-
-export const useUserNotificationStore = defineStore(StoreId, StoreDef);
+const StoreDef = storeDefBuilder();
+const useUserNotificationStoreInternal = defineStore(StoreId, StoreDef);
+export const useUserNotificationStore = useUserNotificationStoreInternal as PublicStore<typeof storeDefBuilder>;

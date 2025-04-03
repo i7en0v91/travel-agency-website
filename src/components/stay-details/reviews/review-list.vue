@@ -10,6 +10,7 @@ import type { IStayReviewItem } from './../../../stores/stay-reviews-store';
 import { useConfirmBox } from './../../../composables/confirm-box';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
+import { LOADING_STATE } from '../../../helpers/constants';
 
 const { locale } = useI18n();
 
@@ -20,7 +21,6 @@ interface IProps {
 
 const ReviewsPerSlidePage = 5;
 
-const { status } = useAuth();
 const userNotificationStore = useUserNotificationStore();
 const { requestUserAction } = usePreviewState();
 
@@ -69,7 +69,6 @@ defineExpose({
 const reviewStoreFactory = useStayReviewsStoreFactory();
 const reviewStore = await reviewStoreFactory.getInstance(stayId);
 const userAccountStore = useUserAccountStore();
-const userAccount = ref<IUserAccount>();
 
 const confirmBox = useConfirmBox();
 
@@ -80,23 +79,6 @@ watch(() => reviewStore.status, () => {
   nextTick(refreshPagingState);
 });
 
-async function refreshUserAccount (): Promise<void> {
-  if (status.value === 'authenticated') {
-    try {
-      userAccount.value = await userAccountStore.getUserAccount();
-    } catch (err: any) {
-      logger.warn('failed to initialize user account info', err, { ctrlKey, stayId });
-      userAccount.value = undefined;
-    }
-  } else {
-    userAccount.value = undefined;
-  }
-}
-
-watch(status, async () => {
-  await refreshUserAccount();
-});
-await refreshUserAccount();
 
 function isTestUserReview (review: IStayReviewItem): boolean {
   return review.text.en !== review.text.ru;
@@ -188,12 +170,12 @@ function onNavPrevBtnClick () {
           <article class="stay-reviews-card">
             <div class="stay-reviews-card-avatar">
               <StaticImage
-                v-if="review.user === 'current' ? !!(userAccount?.avatar) : !!(review.user.avatar)"
+                v-if="review.user === 'current' ? !!(userAccountStore.avatar) : !!(review.user.avatar)"
                 :ctrl-key="[...ctrlKey, 'ReviewItem', review.id as ArbitraryControlElementMarker, 'Avatar', 'StaticImg']"
                 :stub="false"
                 class="stay-reviews-card-avatar"
                 :ui="{ img: 'stay-reviews-card-avatar-img' }"
-                :src="review.user === 'current' ? userAccount?.avatar : review.user.avatar"
+                :src="review.user === 'current' ? ((userAccountStore.avatar && userAccountStore.avatar !== LOADING_STATE) ? userAccountStore.avatar : undefined) : review.user.avatar"
                 :category="ImageCategory.UserAvatar"
                 sizes="xs:30vw sm:20vw md:20vw lg:10vw xl:10vw"
                 :alt="{ resName: getI18nResName3('stayDetailsPage', 'reviews', 'avatarImgAlt') }"
@@ -218,7 +200,7 @@ function onNavPrevBtnClick () {
                     </div>
                     <span class="stay-reviews-card-scoring-separator" />
                     <div class="stay-reviews-card-username">
-                      {{ `${review.user === 'current' ? (userAccount ? `${userAccount.firstName} ${userAccount.lastName}` : '...') : (`${review.user.firstName} ${review.user.lastName}`)}` }}
+                      {{ `${review.user === 'current' ? ((userAccountStore.name && userAccountStore.name !== LOADING_STATE) ? `${userAccountStore.name.firstName} ${userAccountStore.name.lastName}` : '...') : (`${review.user.firstName} ${review.user.lastName}`)}` }}
                     </div>
                   </h3>
                   <p v-if="isTestUserReview(review)" class="stay-reviews-card-text">
@@ -231,7 +213,7 @@ function onNavPrevBtnClick () {
             </div>
             <div class="stay-reviews-card-buttons-div mr-xs-2">
               <div class="stay-reviews-card-flag" />
-              <div v-if="review.user === 'current' || review.user.id === userAccount?.userId" class="stay-reviews-card-control-buttons">
+              <div v-if="review.user === 'current' || review.user.id === userAccountStore.userId" class="stay-reviews-card-control-buttons">
                 <SimpleButton
                   class="stay-reviews-card-btn review-btn-delete no-hidden-parent-tabulation-check"
                   :ctrl-key="[...ctrlKey, 'UserReview', 'Btn', 'Delete']"

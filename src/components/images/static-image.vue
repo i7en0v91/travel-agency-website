@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toShortForm, type ControlKey } from './../../helpers/components';
+import type { ControlKey } from './../../helpers/components';
 import { AppConfig, PreviewModeParamEnabledValue, QueryPagePreviewModeParam, type I18nResName, type ImageCategory, ImageAuthRequiredCategories, type IImageEntitySrc, type CssPropertyList } from '@golobe-demo/shared';
 import { ApiEndpointImageDetails, ApiEndpointImage } from './../../server/api-definitions';
 import fromPairs from 'lodash-es/fromPairs';
@@ -59,7 +59,7 @@ declare interface IFetchedImageDetails {
 
 const { 
   ctrlKey,
-  src,
+  src = undefined,
   category,
   ui,
   highPriority = false, 
@@ -78,8 +78,6 @@ const { enabled } = usePreviewState();
 const isError = ref(false);
 const loaded = ref(false);
 const nuxtImageComponent = useTemplateRef('image-component');
-
-const DataKeyImageDetails = (ctrlKey: ControlKey, slug: string) => `ImageDetails-${toShortForm(ctrlKey)}-${slug}`;
 
 function isAssetSrc(src?: IPublicAssetSrc | IImageEntitySrc): src is IPublicAssetSrc {
   return has(src as any, 'filename');
@@ -112,11 +110,8 @@ const imageMediaSize = computed(() => {
 });
 
 const imageDetailsFetchRequired = computed(() => {
-  if(!src || isAssetSrc(src)) {
-    return;
-  }
-
-  return stub === 'custom-if-configured' || requestExtraDisplayOptions;
+  return (stub === 'custom-if-configured' || requestExtraDisplayOptions) && 
+    ( src && !isAssetSrc(src) && !!src.slug );
 });
 
 const imageDetailsFetchQuery = ref(
@@ -129,10 +124,10 @@ const imageDetailsFetch = useFetch(`/${ApiEndpointImageDetails}`, {
     server: true,
     lazy: true,
     query: imageDetailsFetchQuery,
-    immediate: false,
+    immediate: !!imageDetailsFetchQuery.value?.slug && imageDetailsFetchRequired.value,
+    watch: false,
     cache: (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
     dedupe: 'defer',
-    key: DataKeyImageDetails(ctrlKey, (src as IImageEntitySrc)?.slug ?? ''),
     default: () => null,
     transform: (dto: IFetchedImageDetails) => {
       const slug = (src as IImageEntitySrc).slug;
@@ -219,17 +214,14 @@ if(import.meta.server && imageDetailsFetchRequired.value) {
 } else if(import.meta.client) {
   watchEffect(() => {
     if(imageDetailsFetchRequired.value === true) {
-      logger.debug('image details fetch refresh triggered', { ctrlKey, url: imageUrl.value, category: category! });
       if(!imageDetailsFetchQuery.value) {
-        // updating query ref will trigger refresh
         imageDetailsFetchQuery.value = { 
           slug: (src as IImageEntitySrc).slug!,
           category,
           drafts: enabled
         };
-      } else {
-        imageDetailsFetch.refresh();
       }
+      imageDetailsFetch.refresh();
     }
   });
 }

@@ -353,31 +353,42 @@ export class StaysLogic implements IStaysLogic {
     }
   }
 
-  async getUserFavouriteOffers (userId: EntityId): Promise<ISearchStayOffersResult<IStayOffer & { addDateUtc: Date; }>> {
+  async findOffers (offerIds: EntityId[]): Promise<EntityDataAttrsOnly<IStayOffer>[]> {
+    this.logger.verbose('find offers', { offerIds });
+
+    const userOffers = await this.dbRepository.stayOffer.findMany({
+      where: {
+        isDeleted: false,
+        id: {
+          in: offerIds
+        }
+      },
+      select: StayOfferInfoQuery('guest').select
+    });
+
+    const mappedItems = userOffers.map(MapStayOffer);
+    const result: EntityDataAttrsOnly<IStayOffer>[] = mappedItems;
+
+    this.logger.verbose('find offers - finished', { offerIds, result });
+    return result;
+  }
+
+  async getUserFavouriteOffers (userId: EntityId): Promise<EntityId[]> {
     this.logger.verbose('get user favourite offers', userId);
 
-    const userOffers = await this.dbRepository.userStayOffer.findMany({
+    const favouriteOffers = await this.dbRepository.userStayOffer.findMany({
       where: {
         isDeleted: false,
         isFavourite: true,
         userId
       },
       select: {
-        modifiedUtc: true,
-        offer: {
-          select: StayOfferInfoQuery(userId).select
-        }
+        offerId: true
       }
     });
+    const result = favouriteOffers.map(o => o.offerId);
 
-    const mappedItems = userOffers.map((uo) => { return { addDateUtc: uo.modifiedUtc, ...(MapStayOffer(uo.offer)) }; }).filter(o => !o.isDeleted);
-    const result: ISearchStayOffersResult<IStayOffer & { addDateUtc: Date }> = {
-      pagedItems: mappedItems,
-      paramsNarrowing: undefined,
-      totalCount: mappedItems.length
-    };
-
-    this.logger.verbose('get user favourite offers completed', { userId, count: result.totalCount });
+    this.logger.verbose('get user favourite offers completed', { userId, offerIds: result });
     return result;
   }
 
