@@ -701,12 +701,7 @@ export const MapBooking = function (booking: TBookingInfo): IOfferBooking<IFligh
     createdUtc: booking.createdUtc,
     isDeleted: booking.isDeleted,
     modifiedUtc: booking.modifiedUtc,
-    bookedUser: {
-      id: booking.user.id,
-      firstName: booking.user.firstName ?? undefined,
-      lastName: booking.user.lastName ?? undefined,
-      avatar: booking.user.avatar ? { slug: booking.user.avatar.slug } : undefined
-    },
+    userId: booking.user.id,
     offer: booking.flightOffer?.offer ? MapFlightOffer(booking.flightOffer!.offer) : MapStayOfferDetails(booking.stayOffer!.offer),
     serviceLevel: booking.stayOffer?.offer ? (booking.serviceLevel as StayServiceLevel) : undefined
   };

@@ -2,25 +2,31 @@ import { getLocaleFromUrl, type Locale, AppPage, getPagePath, type IAppLogger } 
 import { parseURL, stringifyParsedURL } from 'ufo';
 import { usePreviewState } from './../composables/preview-state';
 import type { INavLinkBuilder } from './nav-link-builder';
-import { getCommonServices } from '../helpers/service-accessors';
+import { getClientServices, getCommonServices } from '../helpers/service-accessors';
 import { formatAuthCallbackUrl } from './../helpers/dom';
+import type { UserAccountStore } from './../stores/user-account-store';
 
 export interface ISignOut {
   signOut(): Promise<void>;
 }
 
-async function getBookingPageSignOutUrl (logger: IAppLogger, navLinkBuilder: INavLinkBuilder, locale: Locale): Promise<string> {
+async function getBookingPageSignOutUrl (
+  userAccountStore: UserAccountStore, 
+  navLinkBuilder: INavLinkBuilder, 
+  locale: Locale,
+  logger: IAppLogger
+): Promise<string> {
   logger.debug('obtaining booking signout url', locale);
   try {
     const route = useRoute();
 
     const bookingParam = route.params.id!.toString();
     const bookingId = bookingParam;
-    const offerBookingStoreFactory = await useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
-    const offerBookingStore = await offerBookingStoreFactory.getUserBooking(bookingId, false, undefined);
-    const offerId = offerBookingStore.offerId;
-    const offerKind = offerBookingStore.offerKind;
-    const urlPath = offerKind === 'flights' ? navLinkBuilder.buildLink(`/${getPagePath(AppPage.FlightDetails)}/${offerId}`, locale) : navLinkBuilder.buildLink(`/${getPagePath(AppPage.StayDetails)}/${offerId}`, locale as Locale);
+    const offerBookingInfo = await userAccountStore.getBookingOfferInfo(bookingId);
+    const { id: offerId, offerKind } = offerBookingInfo;
+    const urlPath = offerKind === 'flights' ? 
+      navLinkBuilder.buildLink(`/${getPagePath(AppPage.FlightDetails)}/${offerId}`, locale) : 
+      navLinkBuilder.buildLink(`/${getPagePath(AppPage.StayDetails)}/${offerId}`, locale as Locale);
 
     const parsedRoute = parseURL(route.fullPath);
     parsedRoute.pathname = urlPath;
@@ -52,7 +58,12 @@ export function useSignOut (linkBuilder?: INavLinkBuilder): ISignOut {
     
     let callbackUrl = route.fullPath;
     if (callbackUrl.includes(getPagePath(AppPage.BookingDetails))) {
-      callbackUrl = await getBookingPageSignOutUrl(logger, navLinkBuilder, locale as Locale);
+      callbackUrl = await getBookingPageSignOutUrl(
+        getClientServices().lazy.userAccountStore!, 
+        navLinkBuilder, 
+        locale as Locale, 
+        logger
+      );
     }
     callbackUrl = formatAuthCallbackUrl(callbackUrl, enabled);
   

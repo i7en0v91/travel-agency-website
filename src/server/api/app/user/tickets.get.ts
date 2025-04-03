@@ -1,7 +1,6 @@
 import { type EntityId, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { defineWebApiEventHandler } from '../../../utils/webapi-event-handler';
-import type { IUserTicketsResultDto } from '../../../api-definitions';
-import { mapSearchFlightOfferResultEntities, mapSearchedFlightOffer, mapSearchedStayOffer, mapSearchStayOfferResultEntities } from '../../../utils/dto-mappers';
+import type { IUserTicketDto, IUserTicketsResultDto } from '../../../api-definitions';
 import { extractUserIdFromSession } from './../../../../server/utils/auth';
 import type { H3Event } from 'h3';
 import { getServerSession } from '#auth';
@@ -31,21 +30,21 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
 
   setHeader(event, 'content-type', 'application/json');
 
-  const flightsDto: IUserTicketsResultDto['flights'] = {
-    entities: mapSearchFlightOfferResultEntities(flightTickets),
-    pagedItems: flightTickets.pagedItems.map((item) => {
-      return { ...mapSearchedFlightOffer(item), bookedTimestamp: item.bookDateUtc.getTime(), bookingId: item.bookingId };
-    }),
-    totalCount: flightTickets.totalCount
-  };
+  const flightsDto: IUserTicketDto[] = flightTickets.pagedItems.map((i) => { 
+    return {
+      offerId: i.id,
+      bookedTimestamp: i.bookDateUtc.getTime(),
+      bookingId: i.bookingId
+    };
+  });
 
-  const staysDto: IUserTicketsResultDto['stays'] = {
-    entities: mapSearchStayOfferResultEntities(stayTickets),
-    pagedItems: stayTickets.pagedItems.map((item) => {
-      return { ...mapSearchedStayOffer(item), bookedTimestamp: item.bookDateUtc.getTime(), bookingId: item.bookingId };
-    }),
-    totalCount: stayTickets.totalCount
-  };
+  const staysDto: IUserTicketDto[] = stayTickets.pagedItems.map((i) => { 
+    return {
+      offerId: i.id,
+      bookedTimestamp: i.bookDateUtc.getTime(),
+      bookingId: i.bookingId
+    };
+  });
 
   const result: IUserTicketsResultDto = {
     flights: flightsDto,

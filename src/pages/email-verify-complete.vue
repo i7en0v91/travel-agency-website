@@ -14,9 +14,9 @@ useOgImage();
 
 const CtrlKey: ControlKey = ['Page', 'EmailVerifyComplete'];
 
-const { status } = useAuth();
 const { locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
+const userAccountStore = useUserAccountStore();
 const { enabled } = usePreviewState();
 const completionResult = ref<EmailVerifyCompleteResultCode | undefined>(undefined);
 
@@ -80,32 +80,32 @@ const displayParams = (() => {
       return {
         msgResName: getI18nResName3('emailVerifyCompletePage', 'text', 'success'),
         link: {
-          url: status.value === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale),
-          labelResName: getI18nResName2('accountPageCommon', status.value === 'authenticated' ? 'toHome' : 'login')
+          url: userAccountStore.isAuthenticated ? navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale),
+          labelResName: getI18nResName2('accountPageCommon', userAccountStore.isAuthenticated ? 'toHome' : 'login')
         }
       };
     case EmailVerifyCompleteResultCode.ALREADY_CONSUMED:
       return {
         msgResName: getI18nResName3('emailVerifyCompletePage', 'text', 'alreadyConsumed'),
         link: {
-          url: status.value === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale),
-          labelResName: getI18nResName2('accountPageCommon', status.value === 'authenticated' ? 'toHome' : 'login')
+          url: userAccountStore.isAuthenticated ? navLinkBuilder.buildPageLink(AppPage.Index, locale.value as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale),
+          labelResName: getI18nResName2('accountPageCommon', userAccountStore.isAuthenticated ? 'toHome' : 'login')
         }
       };
     case EmailVerifyCompleteResultCode.LINK_EXPIRED:
       return {
         msgResName: getI18nResName3('emailVerifyCompletePage', 'text', 'linkExpired'),
         link: {
-          url: status.value === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Account, locale.value as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale),
-          labelResName: getI18nResName2('accountPageCommon', status.value === 'authenticated' ? 'toAccount' : 'login')
+          url: userAccountStore.isAuthenticated ? navLinkBuilder.buildPageLink(AppPage.Account, locale.value as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale),
+          labelResName: getI18nResName2('accountPageCommon', userAccountStore.isAuthenticated ? 'toAccount' : 'login')
         }
       };
     default:
       return {
         msgResName: getI18nResName3('emailVerifyCompletePage', 'text', 'linkInvalid'),
         link: {
-          url: status.value === 'authenticated' ? navLinkBuilder.buildPageLink(AppPage.Account, locale.value as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale),
-          labelResName: getI18nResName2('accountPageCommon', status.value === 'authenticated' ? 'toAccount' : 'login')
+          url: userAccountStore.isAuthenticated ? navLinkBuilder.buildPageLink(AppPage.Account, locale.value as Locale) : navLinkBuilder.buildPageLink(AppPage.Login, locale.value as Locale),
+          labelResName: getI18nResName2('accountPageCommon', userAccountStore.isAuthenticateds ? 'toAccount' : 'login')
         }
       };
   }

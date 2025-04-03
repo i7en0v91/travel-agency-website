@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { toShortForm } from './../../helpers/components';
-import { AvailableFlightClasses, ImageCategory, type IFlightOffer, type ILocalizableValue, type EntityId, AppPage, getPagePath, type Locale, getLocalizeableValue, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
+import { AppConfig, AvailableFlightClasses, ImageCategory, type IFlightOffer, type ILocalizableValue, type EntityId, AppPage, getPagePath, type Locale, getLocalizeableValue, getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
 import { ApiEndpointFlightOfferDetails } from './../../server/api-definitions';
 import orderBy from 'lodash-es/orderBy';
 import range from 'lodash-es/range';
@@ -33,12 +33,13 @@ const CtrlKey: ControlKey = ['Page', 'FlightDetails'];
 
 const nuxtApp = useNuxtApp();
 const { enabled } = usePreviewState();
-const flightDetailsFetch = await useFetch<IFlightOfferDetailsDto, IFlightOfferDetailsDto>(`/${ApiEndpointFlightOfferDetails(offerId ?? -1)}`,
+const flightDetailsFetch = await useFetch<IFlightOfferDetailsDto, IFlightOfferDetailsDto>(() => `/${ApiEndpointFlightOfferDetails(offerId)}`,
   {
     server: true,
     lazy: true,
-    cache: 'no-cache',
+    cache:  (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
     query: { drafts: enabled },
+    dedupe: 'defer',
     immediate: !!offerId,
     $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-page' })
   });

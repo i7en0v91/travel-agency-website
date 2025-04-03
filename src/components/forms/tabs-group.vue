@@ -93,11 +93,8 @@ function getTabIndexByModelKey(tabModelValue: ControlKey) {
 }
 
 
-//const initialOverwrite = modelValue.value as ControlKey;
-logger.debug('acquiring control value ref', { ctrlKey /*, defaultValue: DefaultTab.value, initialOverwrite */ });
+logger.debug('acquiring control value ref', { ctrlKey });
 const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<ControlKey>(ctrlKey, {
-  //initialOverwrite,
-  //defaultValue: defaultActiveTabKey,
   persistent
 });
 

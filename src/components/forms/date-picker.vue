@@ -36,13 +36,8 @@ const datesDisplayText = computed(() => {
 });
 
 onMounted(() => {
-  //const initialOverwrite = modelValue.value as Date;
-  logger.debug('acquiring store value ref', { ctrlKey /*, defaultValue: defaultDate, initialOverwrite */ });
+  logger.debug('acquiring store value ref', { ctrlKey });
   const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<Date | null>(ctrlKey, {
-    /*
-    initialOverwrite,
-    defaultValue: defaultDate,
-    */
     persistent
   });
 

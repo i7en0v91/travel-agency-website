@@ -2,7 +2,7 @@ import { AppConfig, AvailableImageCategories, CachedResultsInAppServicesEnabled,
 import { StoreKindEnum } from './../helpers/constants';
 import { getCommonServices, getServerServices } from '../helpers/service-accessors';
 import { ApiEndpointImageCategories, type IImageCategoryDto } from '../server/api-definitions';
-import { buildStoreDefinition, getStoreLoggingPrefix } from './../helpers/stores/pinia';
+import { buildStoreDefinition, getStoreLoggingPrefix, type PublicStore } from './../helpers/stores/pinia';
 
 type CategoryInfo = Omit<IImageCategoryInfo, 'createdUtc' | 'modifiedUtc'>;
 type CategoryInfoArray = CategoryInfo[];
@@ -42,7 +42,7 @@ function buildFallbackImageCategoriesConfig() {
 }
 const FallbackImageCategories = buildFallbackImageCategoriesConfig();
 
-const StoreDef = buildStoreDefinition(StoreId, 
+const storeDefBuilder = () => buildStoreDefinition(StoreId, 
   (clientSideOptions) => { 
     // TODO: uncomment preview state
     // const { enabled } = usePreviewState();
@@ -169,5 +169,7 @@ const StoreDef = buildStoreDefinition(StoreId,
     }
   }
 );
-
-export const useSystemConfigurationStore = defineStore(StoreId, StoreDef);
+const StoreDef = storeDefBuilder();
+const useSystemConfigurationStoreInternal = defineStore(StoreId, StoreDef);
+export const useSystemConfigurationStore = useSystemConfigurationStoreInternal as PublicStore<typeof storeDefBuilder>;
+export type SystemConfigurationStoreInternal = ReturnType<typeof useSystemConfigurationStoreInternal>;

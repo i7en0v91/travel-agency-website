@@ -16,7 +16,7 @@ import values from 'lodash-es/values';
 import fromPairs from 'lodash-es/fromPairs';
 import cloneDeep from 'lodash-es/cloneDeep';
 import sortBy from 'lodash-es/sortBy';
-import { buildStoreDefinition } from './../helpers/stores/pinia';
+import { buildStoreDefinition, type PublicStore } from './../helpers/stores/pinia';
 import { parseQuery, parseURL } from 'ufo';
 import { defu } from 'defu';
 import deepmerge from 'lodash-es/merge';
@@ -78,7 +78,7 @@ declare type State = {
 
 const StoreId = StoreKindEnum.SearchOffers;
 
-declare type StoreInternal = ReturnType<typeof useSearchOffersStore>;
+declare type StoreInternal = ReturnType<typeof useSearchOffersStoreInternal>;
 type Localizer = (resName: I18nResName, locale: Locale) => string;
 
 function normalizeDateRanges(dateRange: { from?: Date, to?: Date }): { from?: Date, to?: Date } {
@@ -526,7 +526,6 @@ function mapSearchOfferRequestParams<TOffersKind extends OfferKind>(
         skip: trigger === 'page-fetch' ? currentListSize : 0,
         take: AppConfig.searchOffers.listPageSize
       },
-      //sort: params.sorting[0],
       sort: params.viewState.sorting[0],
       price: mapNumberRangeFilterValue(searchParams.filters?.find(f => f.filterId === StaysFilterEnum.StayPrice)?.value as SearchOffersFilterRange | undefined) ?? { from: SearchOffersPriceRange.min, to: SearchOffersPriceRange.max },
       ratings: mapRatingsFilterValue(getRatingFromFilterVariantId((searchParams.filters?.find(f => f.filterId === StaysFilterEnum.StayRating)?.value))),
@@ -749,7 +748,7 @@ function handleFetchCompletion(store: StoreInternal, kind: OfferKind, resultDto:
   });
 }
 
-const StoreDef = buildStoreDefinition(StoreId, 
+const storeDefBuilder = () => buildStoreDefinition(StoreId, 
   (clientSideOptions) => { 
     // TODO: uncomment preview state
     // const { enabled } = usePreviewState();
@@ -911,7 +910,7 @@ const StoreDef = buildStoreDefinition(StoreId,
 
       /**
        * Params used to filter all matched offers.
-       * Initially are set to cover all offers obtained with {@link listParams}, 
+       * On first load values are set to cover all offers obtained with {@link ViewMainParams}, 
        * but ranges & options may be subsequently narrowed by user via filter panel
        */
       filterInfo(): { [K in OfferKind]: (ViewFilterInfo[] | StateWillChange) } {
@@ -1004,8 +1003,9 @@ const StoreDef = buildStoreDefinition(StoreId,
        * read from controls (default sources) and used to issue new search request.
        * @param options: 
        * - advanceNextPage request for next offers page
-       * - overrideParams if specified then overrides search params from default sources and 
-       * resets control values as for {@link OfferFetchTrigger}.{@const 'full-refetch'}
+       * - overrideParams if specified then overrides search params from default sources (obtained
+       * via {@link getSearchParams}) and resets control values as for {@link OfferFetchTrigger}.{@const 'full-refetch'}. 
+       * Also, if {@constant fromUrlQuery} value is specified then parses url for {@link ViewMainParams}
        */
       async load<TOffersKind extends OfferKind>(
         kind: TOffersKind, 
@@ -1043,7 +1043,7 @@ const StoreDef = buildStoreDefinition(StoreId,
             return;
           }
           if(!this.hasMoreItems[kind]) {
-            logger.warn('cannot start paging operation - no more items to fetch', { kind });
+            logger.warn('cannot start paging operation - no more items to fetch', undefined, { kind });
             return;
           }
 
@@ -1149,7 +1149,7 @@ const StoreDef = buildStoreDefinition(StoreId,
         const { kind, searchParams, overrideParams } = args;
         const modelState = this.s_viewModel[kind] as OffersViewModel<typeof kind>;
         if(modelState.status.type === 'pending' && isEqual(modelState.status.searchParams, searchParams)) {
-          logger.warn('skipping load setup, as it is currently executing with the same search params', { kind, searchParams });
+          logger.warn('skipping load setup, as it is currently executing with the same search params', undefined, { kind, searchParams });
           return;
         }
 
@@ -1456,5 +1456,6 @@ const StoreDef = buildStoreDefinition(StoreId,
     }
   }
 );
-
-export const useSearchOffersStore = defineStore(StoreId, StoreDef);
+const StoreDef = storeDefBuilder();
+const useSearchOffersStoreInternal = defineStore(StoreId, StoreDef);
+export const useSearchOffersStore = useSearchOffersStoreInternal as PublicStore<typeof storeDefBuilder>;

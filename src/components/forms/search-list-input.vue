@@ -186,10 +186,8 @@ async function setSelectionFromModelValue (value?: EntityId | null): Promise<voi
 }
 
 onMounted(() => {
-  //const initialOverwrite = modelValue.value as ControlStoreValue;
-  logger.debug('acquiring store value ref', { ctrlKey /*, initialOverwrite */ });
+  logger.debug('acquiring store value ref', { ctrlKey });
   const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef(ctrlKey, {
-    //initialOverwrite,
     persistent
   });
 

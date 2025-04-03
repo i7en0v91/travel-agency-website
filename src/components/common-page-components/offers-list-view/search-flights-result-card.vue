@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { ControlKey } from './../../../helpers/components';
-import { AppPage, getPagePath, type Locale, getLocalizeableValue, getScoreClassResName, extractAirportCode, getValueForFlightDurationFormatting, getValueForTimeOfDayFormatting, getI18nResName2, getI18nResName3, type EntityDataAttrsOnly, type IFlightOffer, type OfferKind, ImageCategory, isElectronBuild } from '@golobe-demo/shared';
-import { useUserFavouritesStore } from './../../../stores/user-favourites-store';
-import { useOfferFavouriteStatus } from './../../../composables/offer-favourite-status';
+import { LOADING_STATE } from './../../../helpers/constants';
+import { AppPage, getPagePath, type Locale, getLocalizeableValue, getScoreClassResName, extractAirportCode, getValueForFlightDurationFormatting, getValueForTimeOfDayFormatting, getI18nResName2, getI18nResName3, type EntityDataAttrsOnly, type IFlightOffer, ImageCategory, isElectronBuild } from '@golobe-demo/shared';
 import { useNavLinkBuilder } from './../../../composables/nav-link-builder';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
@@ -13,14 +12,13 @@ interface IProps {
 }
 const { ctrlKey, offer } = defineProps<IProps>();
 
-const { status } = useAuth();
 const { locale, t } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 const userNotificationStore = useUserNotificationStore();
+const userAccountStore = useUserAccountStore();
 const { requestUserAction } = usePreviewState();
 
 const logger = getCommonServices().getLogger().addContextProps({ component: 'SearchFlightsResultCard' });
-const userFavouritesStore = useUserFavouritesStore();
 
 const isError = ref(false);
 
@@ -30,22 +28,26 @@ const scoreClassResName = getScoreClassResName(airlineCompany.reviewSummary.scor
 const reviewsCountText = `${airlineCompany.reviewSummary.numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), airlineCompany.reviewSummary.numReviews)}`;
 
 const offerFlights = offer.arriveFlight ? [offer.departFlight, offer.arriveFlight] : [offer.departFlight];
-const favouriteStatusWatcher = useOfferFavouriteStatus(offer.id, offer.kind);
+
+const isFavourite = computed(() => 
+  userAccountStore.favourites && userAccountStore.favourites !== LOADING_STATE && 
+  userAccountStore.favourites['flights'].includes(offer.id)
+);
 
 async function toggleFavourite (): Promise<void> {
   const offerId = offer.id;
-  logger.verbose('toggling favourite', { offerId, current: favouriteStatusWatcher.isFavourite });
+  logger.verbose('toggling favourite', { offerId, current: isFavourite.value });
   if(!await requestUserAction(userNotificationStore)) {
-    logger.verbose('favourite hasn', offerId);
+    logger.verbose('toggling favourite is not possible in current configuration', { offerId, current: isFavourite.value });
     return;  
   }
-  const store = await userFavouritesStore.getInstance();
-  const result = await store.toggleFavourite(offerId, 'flights' as OfferKind, offer);
+  const userAccountStore = useUserAccountStore();
+  const result = await userAccountStore.toggleFavourite('flights', offerId);
   logger.verbose('favourite toggled', { offerId, isFavourite: result });
 }
 
 async function favouriteBtnClick (): Promise<void> {
-  logger.debug('favourite button clicked', { ctrlKey, current: favouriteStatusWatcher.isFavourite });
+  logger.debug('favourite button clicked', { ctrlKey, current: isFavourite.value });
   await toggleFavourite();
 }
 
@@ -154,15 +156,18 @@ const uiStyling = {
           <div class="order-4 w-full row-start-3 row-end-4 col-start-1 col-end-3 sm:col-start-2 sm:col-end-3 md:col-start-1 md:col-end-3 lg:col-start-2 lg:col-end-3">
             <UDivider color="gray" orientation="horizontal" class="w-full mt-4" size="xs"/>
             <div class="flex flex-row flex-nowrap gap-4 mt-4 p-1">
-              <UButton
-                v-if="status === 'authenticated'"
-                :ui="{ base: 'aspect-square justify-center' }"
-                size="lg"
-                :icon="favouriteStatusWatcher.isFavourite ? 'i-heroicons-heart-solid' : 'i-heroicons-heart'"
-                variant="outline"
-                color="primary"
-                @click="favouriteBtnClick"
-              />
+              <ClientOnly>
+                <UButton
+                  v-if="userAccountStore.isAuthenticated"
+                  :ui="{ base: 'aspect-square justify-center' }"
+                  size="lg"
+                  :icon="isFavourite ? 'i-heroicons-heart-solid' : 'i-heroicons-heart'"
+                  variant="outline"
+                  color="primary"
+                  @click="favouriteBtnClick"
+                />
+                <template #fallback />
+              </ClientOnly>
 
               <UButton size="lg" class="w-full flex-1" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :to="navLinkBuilder.buildLink(`/${getPagePath(AppPage.FlightDetails)}/${offer.id}`, locale as Locale)" :external="false"  :target="isElectronBuild() ? '_blank' : undefined">
                 {{ $t(getI18nResName2('searchFlights', 'viewDetails')) }}

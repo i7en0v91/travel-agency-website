@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ImageCategory, AppPage, type Locale, getI18nResName2 } from '@golobe-demo/shared';
-import { toShortForm, type ControlKey } from './../../helpers/components';
-import { DeviceSizeEnum } from './../../helpers/constants';
+import type { ControlKey } from './../../helpers/components';
+import { LOADING_STATE, DeviceSizeEnum } from './../../helpers/constants';
 import { formatImageEntityUrl , formatAvatarLabel, getUserMenuLinksInfo, getNavMenuLinksInfo, formatAuthCallbackUrl, getCurrentDeviceSize} from './../../helpers/dom';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { usePreviewState } from './../../composables/preview-state';
@@ -10,7 +10,6 @@ import ThemeSwitcher from './theme-switcher.vue';
 import LocaleSwitcher from './locale-switcher.vue';
 import SiteSearchTool from './site-search-tool.vue';
 import NavLogo from './nav-logo.vue';
-import NavUser from './nav-user.vue';
 import orderBy from 'lodash-es/orderBy';
 import get from 'lodash-es/get';
 import throttle from 'lodash-es/throttle';
@@ -27,7 +26,6 @@ const siteSearchTool = useTemplateRef('site-search');
 
 const verticalNavCollapsed = ref(true);
 
-const { status } = useAuth();
 const { enabled } = usePreviewState();
 
 const logger = getCommonServices().getLogger().addContextProps({ component: 'NavBar' });
@@ -37,10 +35,17 @@ const navLinkBuilder = useNavLinkBuilder();
 const isErrorPage = useError();
 
 const userAccountStore = useUserAccountStore();
-userAccountStore.getUserAccount(); // start auth session refreshing in background
-
-const vNavAvatarUrl = ref<string | undefined>(undefined);
-const vNavAvatarLabel = ref<string | undefined>(undefined);
+const vNavAvatarUrl = computed(() =>
+  (userAccountStore.avatar && userAccountStore.avatar !== LOADING_STATE) ?   
+      formatImageEntityUrl(userAccountStore.avatar, ImageCategory.UserAvatar, 1) : undefined
+);
+const vNavAvatarLabel = computed(() =>
+  (userAccountStore.name && userAccountStore.name !== LOADING_STATE) ?   
+    formatAvatarLabel(
+      userAccountStore.name.firstName ?? undefined, 
+      userAccountStore.name.lastName ?? undefined
+    ) : undefined
+);
 const navButtonsVisible = ref(false);
 
 const onWindowResize = () => setTimeout(throttle(function () {
@@ -61,13 +66,6 @@ const onWindowResize = () => setTimeout(throttle(function () {
 onMounted(async () => {
   window.addEventListener('resize', onWindowResize);
   navButtonsVisible.value = true;
-
-  const userAccount = await userAccountStore.getUserAccount();
-  watch(userAccount, () => {
-    vNavAvatarUrl.value = userAccount.avatar ?   
-        formatImageEntityUrl(userAccount.avatar, ImageCategory.UserAvatar, 1) : undefined;
-    vNavAvatarLabel.value = formatAvatarLabel(userAccount.firstName, userAccount.lastName);
-  }, { immediate: true });
 });
 
 onUnmounted(() => {
@@ -123,7 +121,7 @@ function themeSwitchClickHandler (e: InputEvent) {
 }
 
 const horizontalNavLinks = computed(() => {
-  const authStatus = status?.value === undefined ? false : (status.value === 'authenticated' ? true : false);
+  const authStatus = userAccountStore.isAuthenticated && navButtonsVisible.value;
   return getNavMenuLinksInfo(true).map(navGroup => navGroup
     .filter(li => 
       ((li.authStatus !== true && !authStatus) || ((li.authStatus === undefined || li.authStatus) && authStatus)) &&
@@ -157,7 +155,7 @@ const horizontalNavLinks = computed(() => {
 });
 
 const verticalNavLinks = computed(() => {
-  const authStatus = status?.value === undefined ? false : (status.value === 'authenticated' ? true : false);
+  const authStatus = userAccountStore.isAuthenticated && navButtonsVisible.value;
   const navMenuLinks = getNavMenuLinksInfo(false).map(navGroup => 
     orderBy(
       navGroup
@@ -309,7 +307,7 @@ const uiStyling = computed(() => {
       <ClientOnly v-else-if="link.kind === 'site-search'">
         <SiteSearchTool ref="site-search" :class="`${navButtonsVisible ? 'visible' : 'invisible'}`" />
       </ClientOnly>
-      <NavUser v-else-if="link.kind === 'nav-user' && navButtonsVisible" :ctrl-key="[...ctrlKey, 'NavUser']" @vertical-nav-toggled="toggleVerticalNav"/>
+      <LazyNavUser v-else-if="link.kind === 'nav-user' && navButtonsVisible" :ctrl-key="[...ctrlKey, 'NavUser']" @vertical-nav-toggled="toggleVerticalNav"/>
       <span v-else :class="`text-sm sm:text-base text-nowrap z-10 ${link.kind === 'signup' ? 'auth-link bg-black text-white hover:bg-white-100/80 dark:bg-white dark:text-black dark:hover:bg-gray-100/80 rounded-lg px-3.5 py-2 sm:py-3.5 font-semibold' : (link.kind === 'login' ? 'auth-link' : (link.kind === 'favourites' ? 'favourites-link' : 'search-page-link'))}`" >{{ link.label }}</span>
     </template>
   </UHorizontalNavigation>

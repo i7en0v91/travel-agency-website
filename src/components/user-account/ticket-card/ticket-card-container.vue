@@ -5,6 +5,7 @@ import { getCommonServices } from '../../../helpers/service-accessors';
 import type ModalWaitingIndicator from '../../forms/modal-waiting-indicator.vue';
 import { useDocumentDownloader, type IDocumentDownloader } from './../../../composables/document-downloader';
 import { useModalWaiter, type IModalWaiter } from './../../../composables/modal-waiter';
+import { LOADING_STATE } from '../../../helpers/constants';
 
 interface IProps {
   ctrlKey: ControlKey,
@@ -31,16 +32,8 @@ const userAccountStore = useUserAccountStore();
 async function onBtnClick(): Promise<void> {
   logger.verbose('download btn clicked', { ctrlKey, bookingId });
 
-  let firstName: string | undefined;
-  let lastName: string | undefined;
-  try {
-    const userAccount = await userAccountStore.getUserAccount();
-    firstName = userAccount.firstName;
-    lastName = userAccount.lastName;
-  } catch (err: any) {
-    logger.warn('failed to initialize user account info', err, ctrlKey);
-  }
-
+  const firstName = ((userAccountStore.name && userAccountStore.name !== LOADING_STATE) ? userAccountStore.name.firstName : undefined) ?? undefined;
+  const lastName = ((userAccountStore.name && userAccountStore.name !== LOADING_STATE) ? userAccountStore.name.lastName : undefined) ?? undefined;
   await documentDownloader!.download(bookingId, offer, firstName, lastName, locale.value as Locale, theme.currentTheme.value);
 }
 

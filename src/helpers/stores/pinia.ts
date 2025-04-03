@@ -1,4 +1,4 @@
-import type { StateTree, DefineStoreOptions } from 'pinia';
+import type { StateTree, DefineStoreOptions, StoreDefinition } from 'pinia';
 import type { PatchKey, PatchFn, IStoreWithPatchSematics, Patches } from './types';
 import merge from 'lodash-es/merge';
 import { type IAppLogger, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
@@ -26,6 +26,21 @@ declare type ClientSideOptions = {
   getLogger: () => IAppLogger
 };
 
+declare type StoreDefInternal<
+  Id extends string, 
+  S extends StateTree, 
+  ClientSetupVars, G, A, P extends Record<PatchKey, PatchFn>
+> = DefineStoreOptions<Id, S, G, A & StoreCommonMethods<ClientSetupVars> & P>;
+
+export type PublicStore<InternalStoreBuilder extends (...args: any) => any> = 
+  ReturnType<InternalStoreBuilder> extends StoreDefInternal<infer Id, any, any, infer G, infer A, any> ? 
+    (StoreDefinition<
+      Id,
+      StateTree, // private state, getters & actions should be used to access it from outside
+      G, A
+    >) : never;
+export type PublicStoreDef<InternalStoreBuilder extends (...args: any) => any> = ReturnType<PublicStore<InternalStoreBuilder>>;
+
 export function getStoreLoggingPrefix(storeId: string) { 
   const camelized = camelCase(`${storeId}-store`);
   return `${camelized[0].toUpperCase()}${camelized.substring(1)}`;
@@ -45,7 +60,10 @@ export function getStoreLoggingPrefix(storeId: string) {
 export function buildStoreDefinition<
   Id extends string, 
   S extends StateTree, 
-  ClientSetupVars, G, A, P extends Record<PatchKey, PatchFn>
+  ClientSetupVars, 
+  G, 
+  A, 
+  P extends Record<PatchKey, PatchFn>
 >(
     id: Id,
     clientSetup: (clientSideOptions: ClientSideOptions) => ClientSetupVars, 
@@ -55,11 +73,7 @@ export function buildStoreDefinition<
       ActionsWithCommonsAndPatches<Id, S, StoreCommonMethods<ClientSetupVars>, P, G, A>,
       Patches<Id, S & StoreCommonMethods<ClientSetupVars>, G, P>
     >
-): DefineStoreOptions<
-  Id, 
-  StateTree, // private state, getters & actions should be used to access it from outside
-  G, A
-> {
+) : StoreDefInternal<Id, S, ClientSetupVars, G, A, P> {
   let clientSetupVariables: ClientSetupVars | undefined;
   try {
     if(import.meta.client) {
@@ -94,7 +108,11 @@ export function buildStoreDefinition<
   return {
     id,
     state: store.state,
-    actions: merge(store.actions, store.patches ?? {}, commonMethods),
+    actions: merge(
+        store.actions, 
+        store.patches ?? {} as Patches<Id, S & StoreCommonMethods<ClientSetupVars>, G, P>, 
+        commonMethods
+      ),
     getters: store.getters
   };
 }

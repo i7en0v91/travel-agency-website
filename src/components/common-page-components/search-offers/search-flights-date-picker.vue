@@ -103,19 +103,13 @@ defineShortcuts({
 });
 
 onMounted(() => {
-  //const singleInitialOverwrite = modelValue.value?.length ? modelValue.value[0] : undefined;
-  logger.debug('acquiring value ref for single date', { ctrlKey /*, initialOverwrite: singleInitialOverwrite*/ });
+  logger.debug('acquiring value ref for single date', { ctrlKey });
   const { valueRef: singleStoreValueRef } = controlValuesStore.acquireValueRef<Date | null>(
-    [...ctrlKey, 'DatePicker'], {
-      //initialOverwrite: singleInitialOverwrite
-    });
+    [...ctrlKey, 'DatePicker'], { });
     
-  //const rangeInitialOverwrite = ((modelValue.value?.length ?? 0) >= 2) ? modelValue.value : undefined;
-  logger.debug('acquiring value ref for range dates', { ctrlKey /*, initialOverwrite: rangeInitialOverwrite */ });
+  logger.debug('acquiring value ref for range dates', { ctrlKey });
   const { valueRef: rangeStoreValueRef } = controlValuesStore.acquireValueRef<Date[] | null>(
-    [...ctrlKey, 'DateRangePicker'], {
-      //initialOverwrite: rangeInitialOverwrite
-    });
+    [...ctrlKey, 'DateRangePicker'], { });
 
   watch([singleStoreValueRef, rangeStoreValueRef], () => {
     const storeValue = (mode === 'single' ? singleStoreValueRef : rangeStoreValueRef).value;

@@ -44,13 +44,8 @@ function updateSelectedValue (value?: DropdownListValue | undefined) {
 }
 
 onMounted(() => {
-  //const initialOverwrite = modelValue.value;
-  logger.debug('acquiring store value ref', { ctrlKey /* defaultValue, initialOverwrite */ });
+  logger.debug('acquiring store value ref', { ctrlKey });
   const { valueRef: storeValueRef } = controlValuesStore.acquireValueRef<DropdownListValue | null>(ctrlKey, {
-    /*
-    initialOverwrite,
-    defaultValue,
-    */
     persistent
   });
 

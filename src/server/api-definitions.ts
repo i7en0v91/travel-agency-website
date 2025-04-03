@@ -44,6 +44,7 @@ export const ApiEndpointPopularCitiesList = `${ApiAppEndpointPrefix}/popular-cit
 export const ApiEndpointPopularCityTravelDetails = `${ApiAppEndpointPrefix}/popular-cities/travel-details`;
 export const ApiEndpointCompanyReviewsList = `${ApiAppEndpointPrefix}/company-reviews`;
 export const ApiEndpointEntityCache = `${ApiAppEndpointPrefix}/entity-cache`;
+export const ApiEndpointLoadOffers = `${ApiAppEndpointPrefix}/load-offers`;
 export const ApiEndpointFlightOffersSearch = `${ApiAppEndpointPrefix}/flight-offers/search`;
 export const ApiEndpointFlightOfferDetails = (id: EntityId) => `${ApiAppEndpointPrefix}/flight-offers/${id}/details`;
 export const ApiEndpointFlightOfferFavourite = (id: EntityId) => `${ApiAppEndpointPrefix}/flight-offers/${id}/favourite`;
@@ -212,6 +213,10 @@ export const CreateOrUpdateStayReviewDtoSchema = object({
   score: number().min(0).max(5).required()
 });
 
+export const LoadOffersDtoSchema = object({
+  ids: array().of(string().max(EntityIdMaxLength).required()).required()
+});
+
 /**
  * Interface Types
  */
@@ -313,7 +318,7 @@ export interface IRecoverPasswordCompleteResultDto {
 export interface IRecoverPasswordCompleteDto extends InferType<typeof RecoverPasswordCompleteDtoSchema> {};
 
 export interface IUserAccountDto {
-  userId?: string,
+  userId: string,
   firstName?: string,
   lastName?: string,
   emails?: string[],
@@ -362,6 +367,7 @@ export interface ISearchStayOffersMainParamsDto extends InferType<typeof SearchS
 export interface ISearchStayOffersParamsDto extends InferType<typeof SearchStayOffersParamsDtoSchema> {};
 export interface ICreateOrUpdateStayReviewDto extends InferType<typeof CreateOrUpdateStayReviewDtoSchema> {};
 export interface ITestingPageCacheActionDto extends InferType<typeof TestingPageCacheActionDtoSchema> {};
+export interface ILoadOffersDto extends InferType<typeof LoadOffersDtoSchema> {};
 
 export interface IListItemDto {
   id: string,
@@ -648,26 +654,29 @@ export interface IBookingResultDto {
   bookingId: string
 }
 
-export interface IUserFavouriteFlightOfferDto extends ISearchedFlightOfferDto {
-  addTimestamp: number
-}
-export interface IUserFavouriteStayOfferDto extends ISearchedStayOfferDto {
-  addTimestamp: number
-}
+export interface ILoadOffersResultDto {
+  flights: {
+    entities: ISearchFlightOffersResultDto<ISearchedFlightOfferDto>['entities'],
+    items: ISearchedFlightOfferDto[],
+  },
+  stays: {
+    entities: ISearchStayOffersResultDto<ISearchedStayOfferDto>['entities'],
+    items: ISearchedStayOfferDto[]
+  } 
+};
 export interface IUserFavouritesResultDto {
-  flights: Omit<ISearchFlightOffersResultDto<IUserFavouriteFlightOfferDto>, 'paramsNarrowing' | 'topOffers'>,
-  stays: Omit<ISearchStayOffersResultDto<IUserFavouriteStayOfferDto>, 'paramsNarrowing'>
+  flightIds: EntityId[],
+  stayIds: EntityId[]
 };
 
 export interface IUserTicketDto {
+  offerId: EntityId,
   bookedTimestamp: number,
   bookingId: string
 }
-export type IUserFlightTicketDto = ISearchedFlightOfferDto & IUserTicketDto;
-export type IUserStayTicketDto = ISearchedStayOfferDto & IUserTicketDto;
 export interface IUserTicketsResultDto {
-  flights: Omit<ISearchFlightOffersResultDto<IUserFlightTicketDto>, 'paramsNarrowing' | 'topOffers'>,
-  stays: Omit<ISearchStayOffersResultDto<IUserStayTicketDto>, 'paramsNarrowing'>
+  flights: IUserTicketDto[],
+  stays: IUserTicketDto[]
 };
 
 export interface ITestingInvalidateCacheResultDto {

@@ -1,6 +1,6 @@
 import { AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { getActivePinia } from 'pinia';
-import { ControlValuesStoreCustomReset, SystemConfigurationStoreResetWarning, CommonStoreProperties } from '../helpers/stores/plugins';
+import { UserAccountStoreCustomReset, ControlValuesStoreCustomReset, SystemConfigurationStoreResetWarning, CommonStoreProperties } from '../helpers/stores/plugins';
 import { getCommonServices } from '../helpers/service-accessors';
 
 export default defineNuxtPlugin({
@@ -18,5 +18,6 @@ export default defineNuxtPlugin({
     pinia.use(CommonStoreProperties);
     pinia.use(SystemConfigurationStoreResetWarning);
     pinia.use(ControlValuesStoreCustomReset);
+    pinia.use(UserAccountStoreCustomReset);
   }
 });

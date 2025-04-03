@@ -1,4 +1,4 @@
-import { type EntityId, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
+import { type IStayOfferDetails, type IFlightOffer, type EntityId, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import { defineWebApiEventHandler, getLogger as getWebApiLogger } from '../../../../utils/webapi-event-handler';
 import type { H3Event } from 'h3';
 import { getServerServices } from '../../../../../helpers/service-accessors';
@@ -19,13 +19,17 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   }
 
   const bookingId: EntityId | undefined = bookingParam;
-  const offer = await bookingLogic.getBooking(bookingId);
+  const booking = await bookingLogic.getBooking(bookingId);
 
   handleCacheHeaders(event, {
     cacheControls: ['no-store']
   });
   setHeader(event, 'content-type', 'application/json');
 
-  const bookingDto = mapBooking(offer);
-  return bookingDto.flightOffer ?? bookingDto.stayOffer;
+  return booking.offer.kind === 'flights' ? 
+    mapFlightOffer(booking.offer as IFlightOffer) : 
+    { 
+      ...mapStayOffer(booking.offer as IStayOfferDetails), 
+      reviewSummary: (booking.offer as IStayOfferDetails).stay.reviewSummary  
+    };
 }, { logResponseBody: true, authorizedOnly: false });

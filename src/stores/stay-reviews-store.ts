@@ -1,7 +1,7 @@
 import { type IAppLogger, type EntityId, type ILocalizableValue, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
 import  { ApiEndpointStayReviews, type ICreateOrUpdateStayReviewDto, type IModifyStayReviewResultDto, type IStayReviewsDto } from '../server/api-definitions';
 import { getObject, post, del } from './../helpers/rest-utils';
-import type { IUserAccount } from './user-account-store';
+import { LOADING_STATE } from './../helpers/constants';
 import orderBy from 'lodash-es/orderBy';
 import isString from 'lodash-es/isString';
 import type { NuxtApp } from 'nuxt/app';
@@ -116,9 +116,9 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
 
   const logger = getCommonServices().getLogger();
   const userAccountStore = useUserAccountStore();
-  let userAccount: IUserAccount | undefined;
+  //let userAccount: IUserAccount | undefined;
 
-  const { status } = useAuth();
+  //const { status } = useAuth();
 
   const createInstance = (stayId: EntityId): StayReviewsStoreInternalRef => {
     // logger.verbose(`(stay-reviews-store) creating instance, stayId=${stayId}`);
@@ -135,31 +135,21 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
           let itemsData = await fetchItems(stayId, nuxtApp, logger);
           // logger.verbose(`(stay-reviews-store) reviews obtained, stayId=${stayId}, count=${itemsData?.length}`);
 
-          const isAuthenticated = status.value === 'authenticated';
-          if (isAuthenticated) {
-            if (!userAccount) {
-              try {
-                userAccount = await userAccountStore.getUserAccount();
-              } catch (err: any) {
-                // logger.warn('(stay-reviews-store) failed to process current user review when fetching reviews, cannot obtain user account data', err);
+          const userId = userAccountStore.userId;
+          if (userId) {
+            const currentUserReview = itemsData?.find(i => !isString(i.user) && i.user.id === userId);
+            if (currentUserReview) {
+              // logger.debug(`(stay-reviews-store) updating current user's review, stayId=${stayId}, userId=${userId}, reviewId=${currentUserReview.id}`);
+              itemsData!.splice(itemsData!.indexOf(currentUserReview), 1);
+              if (import.meta.client) {
+                currentUserReview.user = 'current';
               }
+              itemsData = [currentUserReview, ...itemsData!];
             }
-            // logger.verbose(`(stay-reviews-store) checking current user review, stayId=${stayId}, userId=${userAccount?.userId}`);
-            const userId = userAccount?.userId;
-            if (userId) {
-              const currentUserReview = itemsData?.find(i => !isString(i.user) && i.user.id === userId);
-              if (currentUserReview) {
-                // logger.debug(`(stay-reviews-store) updating current user's review, stayId=${stayId}, userId=${userId}, reviewId=${currentUserReview.id}`);
-                itemsData!.splice(itemsData!.indexOf(currentUserReview), 1);
-                if (import.meta.client) {
-                  currentUserReview.user = 'current';
-                }
-                itemsData = [currentUserReview, ...itemsData!];
-              }
-            } else {
-              // logger.verbose(`(stay-reviews-store) skipping current user's review data update, user info is empty, stayId=${stayId}`);
-            }
+          } else {
+            // logger.verbose(`(stay-reviews-store) skipping current user's review data update, user info is empty, stayId=${stayId}`);
           }
+
           result.items = itemsData!;
 
           result.status = 'success';
@@ -176,7 +166,7 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
           return;
         }
 
-        if (status.value !== 'authenticated') {
+        if (!userAccountStore.isAuthenticated) {
           // logger.warn(`(stay-reviews-store) cannot create or update review, user must be authneticated, stayId=${stayId}`);
           return;
         }
@@ -217,7 +207,7 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
           return;
         }
 
-        if (status.value !== 'authenticated') {
+        if (!userAccountStore.isAuthenticated) {
           // logger.warn(`(stay-reviews-store) cannot delete review, user must be authneticated, stayId=${stayId}`);
           return;
         }
@@ -252,21 +242,21 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
           const userReview = result.items?.find(i => i.user === 'current');
           if (userReview) {
             // logger.verbose(`(stay-reviews-store) actualizing review user, stayId=${stayId}, reviewId=${userReview.id}`);
-            if (!userAccount) {
-              // logger.warn(`(stay-reviews-store) cannot handle singOut event, user data in empty, stayId=${stayId}`);
+            if (!userAccountStore.isAuthenticated || !userAccountStore.name || userAccountStore.name === LOADING_STATE) {
+              // logger.warn(`(stay-reviews-store) cannot handle singOut event, user data is empty, stayId=${stayId}`);
               result.items = [];
               result.status = 'error';
               return;
             }
 
             userReview.user = {
-              id: userAccount.userId!,
-              firstName: userAccount.firstName!,
-              lastName: userAccount.lastName!,
-              avatar: userAccount.avatar
+              id: userAccountStore.userId!,
+              firstName: userAccountStore.name.firstName ?? '',
+              lastName: userAccountStore.name.lastName ?? '',
+              avatar: (userAccountStore.avatar && userAccountStore.avatar !== LOADING_STATE)
                 ? {
-                    slug: userAccount.avatar.slug,
-                    timestamp: userAccount.avatar.timestamp
+                    slug: userAccountStore.avatar.slug,
+                    timestamp: userAccountStore.avatar.timestamp
                   }
                 : undefined
             };
@@ -314,21 +304,21 @@ export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factor
   };
 
   if (import.meta.client) {
-    watch(status, async () => {
-      // logger.info(`(stay-reviews-store) auth status changed, status=${status.value}`);
-      if (status.value === 'authenticated') {
-        try {
-          userAccount = await userAccountStore.getUserAccount();
-        } catch (err: any) {
-          // logger.warn('(stay-reviews-store) failed to process auth status change, cannot obtain user account data', err);
-          return;
-        }
-        notifyInstancesOnAuthEvent(userAccount.userId!);
-      } else if (status.value === 'unauthenticated') {
-        notifyInstancesOnAuthEvent('sign-out');
-        userAccount = undefined;
-      }
-    });
+    // watch(status, async () => {
+    //   // logger.info(`(stay-reviews-store) auth status changed, status=${userAccountStore.isAuthenticated}`);
+    //   if (userAccountStore.isAuthenticated) {
+    //     try {
+    //       userAccount = await userAccountStore.getUserAccount();
+    //     } catch (err: any) {
+    //       // logger.warn('(stay-reviews-store) failed to process auth status change, cannot obtain user account data', err);
+    //       return;
+    //     }
+    //     notifyInstancesOnAuthEvent(userAccount.userId!);
+    //   } else {
+    //     notifyInstancesOnAuthEvent('sign-out');
+    //     userAccount = undefined;
+    //   }
+    // });
   }
 
   // logger.verbose('(stay-reviews-store) factory created');

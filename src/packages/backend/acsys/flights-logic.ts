@@ -1,4 +1,4 @@
-import { type ISearchFlightOffersResult, type IFlightOffersFilterParams, AppException, AppExceptionCodeEnum, type IAppLogger, type FlightOffersSortFactor, type IPagination, type ISorting, type Price, type EntityId, type IFlightOffer } from '@golobe-demo/shared';
+import { type EntityDataAttrsOnly, type PreviewMode, type ISearchFlightOffersResult, type IFlightOffersFilterParams, AppException, AppExceptionCodeEnum, type IAppLogger, type FlightOffersSortFactor, type IPagination, type ISorting, type Price, type EntityId, type IFlightOffer } from '@golobe-demo/shared';
 import type { IFlightsLogic } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import type { AcsysDraftEntitiesResolver } from './acsys-draft-entities-resolver';
@@ -109,10 +109,23 @@ export class FlightsLogic implements IFlightsLogic {
     return result;
   }
 
-  async getUserFavouriteOffers (userId: EntityId): Promise<ISearchFlightOffersResult<IFlightOffer & { addDateUtc: Date }>> {
+  async findOffers (offerIds: EntityId[], previewMode: PreviewMode): Promise<EntityDataAttrsOnly<IFlightOffer>[]> {
+    this.logger.debug('find offers', offerIds);
+    let result: EntityDataAttrsOnly<IFlightOffer>[];
+    if(previewMode) {
+      const resolveResult = await this.acsysDraftsEntitiesResolver.resolveFlightOffers({ idsFilter: offerIds });
+      result = Array.from(resolveResult.items.values());
+    } else {
+      result = await this.prismaImplementation.findOffers(offerIds, previewMode);
+    }
+    this.logger.debug('find offers - completed', { offerIds, result });
+    return result;
+  }
+
+  async getUserFavouriteOffers (userId: EntityId): Promise<EntityId[]> {
     this.logger.debug('get user favourite offers', userId);
     const result = await this.prismaImplementation.getUserFavouriteOffers(userId);
-    this.logger.debug('get user favourite offers completed', { userId, count: result.totalCount });
+    this.logger.debug('get user favourite offers completed', { userId, result });
     return result;
   }
 

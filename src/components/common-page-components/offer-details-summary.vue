@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { toShortForm, type ControlKey } from './../../helpers/components';
 import { type Price, type EntityDataAttrsOnly, type EntityId, type ICity, type ILocalizableValue, type OfferKind, getI18nResName1, getI18nResName2, type I18nResName, type Locale, getLocalizeableValue, getScoreClassResName } from '@golobe-demo/shared';
-import { TooltipHideTimeout } from './../../helpers/constants';
+import { LOADING_STATE, TooltipHideTimeout } from './../../helpers/constants';
 import range from 'lodash-es/range';
-import { useUserFavouritesStore } from './../../stores/user-favourites-store';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';
 import { IconSvgCustomizers } from './../../helpers/components';
@@ -28,14 +27,16 @@ const logger = getCommonServices().getLogger().addContextProps({ component: 'Off
 const isError = ref(false);
 const promoTooltipShown = ref(false);
 
-const { status } = useAuth();
 const { t, locale } = useI18n();
 const userNotificationStore = useUserNotificationStore();
+const userAccountStore = useUserAccountStore();
 const { requestUserAction } = usePreviewState();
 
-const userFavouritesStoreFactory = useUserFavouritesStore();
-let favouriteStatusWatcher: ReturnType<typeof useOfferFavouriteStatus> | undefined;
-const isFavourite = ref(false);
+const isFavourite = computed(() => 
+  offerKind && offerId && 
+  userAccountStore.favourites && userAccountStore.favourites !== LOADING_STATE && 
+  userAccountStore.favourites[offerKind].includes(offerId)
+);
 
 const scoreClassResName = computed(() => reviewScore ? getScoreClassResName(reviewScore) : undefined);
 const reviewsCountText = computed(() => numReviews ? `${numReviews} ${t(getI18nResName2('searchOffers', 'reviewsCount'), numReviews)}` : '');
@@ -43,11 +44,14 @@ const reviewsCountText = computed(() => numReviews ? `${numReviews} ${t(getI18nR
 async function toggleFavourite (): Promise<void> {
   logger.verbose('toggling favourite', { offerId, kind: offerKind, current: isFavourite.value });
   if(!await requestUserAction(userNotificationStore)) {
-    logger.verbose('favourite hasn', { offerId, kind: offerKind, current: isFavourite.value });
+    logger.verbose('toggling favourite is not possible in current configuration', { offerId, kind: offerKind, current: isFavourite.value });
     return;
   }
-  const store = await userFavouritesStoreFactory.getInstance();
-  const result = await store.toggleFavourite(offerId!, offerKind!);
+  if(!offerKind || !offerId) {
+    logger.verbose('skipping favourite toggle action, offer data is not fully available', { offerId, kind: offerKind });
+    return;
+  }
+  const result = await userAccountStore.toggleFavourite(offerKind, offerId);
   logger.verbose('favourite toggled', { offerId, isFavourite: result });
 }
 
@@ -66,27 +70,6 @@ function onBtnClick () {
   logger.debug('button clicked', ctrlKey);
   $emit('btnClick');
 }
-
-function initializeFavouriteStatusWatcherIfNeeded () {
-  if (favouriteStatusWatcher) {
-    return;
-  }
-
-  if (offerId && offerKind) {
-    logger.debug('creating favourite status watcher', { ctrlKey, offerId, offerKind });
-    favouriteStatusWatcher = useOfferFavouriteStatus(offerId, offerKind);
-    watch(() => favouriteStatusWatcher!.isFavourite, () => {
-      logger.debug('favourite status updated', { ctrlKey, offerId, offerKind, status: favouriteStatusWatcher!.isFavourite });
-      isFavourite.value = favouriteStatusWatcher!.isFavourite;
-    });
-    isFavourite.value = favouriteStatusWatcher!.isFavourite;
-  }
-}
-
-onMounted(() => {
-  watch(() => [offerId, offerKind], initializeFavouriteStatusWatcherIfNeeded);
-  initializeFavouriteStatusWatcherIfNeeded();
-});
 
 </script>
 
@@ -158,15 +141,18 @@ onMounted(() => {
         </div>
         <div class="w-full h-min block row-start-3 row-end-4 col-start-1 col-end-3 sm:row-start-2 sm:row-end-3 sm:col-start-2 sm:col-end-3 self-end">
           <div class="w-full flex flex-row flex-wrap gap-4 px-1">
-            <UButton
-              v-if="status === 'authenticated' && variant === 'default'"
-              :ui="{ base: 'aspect-square justify-center' }"
-              size="lg"
-              :icon="isFavourite ? 'i-heroicons-heart-solid' : 'i-heroicons-heart'"
-              variant="outline"
-              color="primary"
-              @click="favouriteBtnClick"
-            />
+            <ClientOnly>
+              <UButton
+                v-if="userAccountStore.isAuthenticated && variant === 'default'"
+                :ui="{ base: 'aspect-square justify-center' }"
+                size="lg"
+                :icon="isFavourite ? 'i-heroicons-heart-solid' : 'i-heroicons-heart'"
+                variant="outline"
+                color="primary"
+                @click="favouriteBtnClick"
+              />
+              <template #fallback />
+            </ClientOnly>
 
             <UPopover v-model:open="promoTooltipShown" :popper="{ placement: 'bottom' }" :ui="{ wrapper: `self-stretch *:h-full ${variant === 'booking-download' ? 'invisible' : ''}` }">
               <UButton 

@@ -19,8 +19,8 @@ interface IProps {
 
 const { ctrlKey, preloadedSummaryInfo, stayId } = defineProps<IProps>();
 
-const { status } = useAuth();
 const userNotificationStore = useUserNotificationStore();
+const userAccountStore = useUserAccountStore();
 const { enabled, requestUserAction } = usePreviewState();
 
 const logger = getCommonServices().getLogger().addContextProps({ component: 'ReviewSection' });
@@ -176,17 +176,20 @@ watch([() => reviewStore.items, () => reviewStore.status], () => {
         <h2 class="flex-initial block w-fit max-w-[90vw] text-3xl font-semibold text-gray-600 dark:text-gray-300 break-words">
           {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'title')) }}
         </h2>
-        <UButton v-if="status === 'authenticated'" size="lg" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :aria-label="t(getI18nResName2('ariaLabels', 'btnGiveReview'))" @click="scrollToReviewEditor">
-          {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'giveReviewBtn')) }}
-        </UButton>
-        <UPopover v-else v-model:open="promoTooltipShown" :popper="{ placement: 'bottom' }" class="flex-grow-0 flex-shrink basis-auto">
-          <UButton size="lg" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :aria-label="t(getI18nResName2('ariaLabels', 'btnGiveReview'))" @click="scheduleTooltipAutoHide">
+        <ClientOnly>
+          <UButton v-if="userAccountStore.isAuthenticated" size="lg" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :aria-label="t(getI18nResName2('ariaLabels', 'btnGiveReview'))" @click="scrollToReviewEditor">
             {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'giveReviewBtn')) }}
           </UButton>
-          <template #panel="{ close }">
-            <span class="p-2 block" @click="close">{{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'mustBeLoggedInToReview')) }}</span>
-          </template>
-        </UPopover>  
+          <UPopover v-else v-model:open="promoTooltipShown" :popper="{ placement: 'bottom' }" class="flex-grow-0 flex-shrink basis-auto">
+            <UButton size="lg" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :aria-label="t(getI18nResName2('ariaLabels', 'btnGiveReview'))" @click="scheduleTooltipAutoHide">
+              {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'giveReviewBtn')) }}
+            </UButton>
+            <template #panel="{ close }">
+              <span class="p-2 block" @click="close">{{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'mustBeLoggedInToReview')) }}</span>
+            </template>
+          </UPopover>  
+          <template #fallback />
+        </ClientOnly>
       </div>
       <ClientOnly>
         <div class="w-full h-auto flex flex-row flex-wrap items-center text-gray-600 dark:text-gray-300 gap-4 mt-4">
@@ -209,7 +212,7 @@ watch([() => reviewStore.items, () => reviewStore.status], () => {
           <ReviewList ref="review-list" :ctrl-key="[...ctrlKey, 'ResultItemsList']" :stay-id="stayId" @edit-btn-click="onUserEditBtnClick" @user-review-deleted="onUserReviewDeleted"/>
         </div>
         <ReviewEditor
-          v-if="status === 'authenticated'"
+          v-if="userAccountStore.isAuthenticated"
           :id="StayReviewEditorHtmlAnchor"
           ref="editor"
           :ctrl-key="[...ctrlKey, 'ReviewEditor']"

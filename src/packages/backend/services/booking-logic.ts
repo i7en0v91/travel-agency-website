@@ -1,4 +1,4 @@
-import { type IOfferBookingData, AppException, AppExceptionCodeEnum, DbVersionInitial, newUniqueId, type IAppLogger, type EntityId, type IStayOfferDetails, type IFlightOffer, type IOfferBooking, type EntityDataAttrsOnly } from '@golobe-demo/shared';
+import { type OfferKind, type IOfferBookingData, AppException, AppExceptionCodeEnum, DbVersionInitial, newUniqueId, type IAppLogger, type EntityId, type IStayOfferDetails, type IFlightOffer, type IOfferBooking, type EntityDataAttrsOnly } from '@golobe-demo/shared';
 import type { IStaysLogic, IBookingLogic } from './../types';
 import type { PrismaClient } from '@prisma/client';
 import { BookingInfoQuery, MapBooking } from './queries';
@@ -60,7 +60,7 @@ export class BookingLogic implements IBookingLogic {
     this.logger.verbose('booking deleted', id);
   };
 
-  async createBooking (data: IOfferBookingData): Promise<EntityId> {
+  async createBooking<TOfferKind extends OfferKind> (data: IOfferBookingData<TOfferKind>): Promise<EntityId> {
     this.logger.verbose('create booking', { offerId: data.offerId, kind: data.kind, userId: data.bookedUserId });
 
     const entityId = await executeInTransaction(async () => {
@@ -188,7 +188,7 @@ export class BookingLogic implements IBookingLogic {
       result.offer = stayOffer;
     }
 
-    this.logger.verbose('booking found', { id, offerId: result.offer.id, bookedUserId: result.bookedUser.id });
+    this.logger.verbose('booking found', { id, offerId: result.offer.id, bookedUserId: result.userId });
     return result;
   }
 }

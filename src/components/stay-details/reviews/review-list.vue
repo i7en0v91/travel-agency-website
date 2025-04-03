@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toShortForm, type ControlKey, type ArbitraryControlElementMarker } from './../../../helpers/components';
+import { toShortForm, type ControlKey } from './../../../helpers/components';
 import { type EntityId, ImageCategory, type Locale, getLocalizeableValue, getScoreClassResName, getI18nResName3, getI18nResName2 } from '@golobe-demo/shared';
 import { formatImageEntityUrl } from './../../../helpers/dom';
 import ConfirmBox from '../../forms/confirm-box.vue';
@@ -11,6 +11,7 @@ import type { UCarousel } from '../../../.nuxt/components';
 import type { ComponentInstance } from 'vue';
 import type { ConfirmBoxButton } from './../../../types';
 import chunk from 'lodash-es/chunk';
+import { LOADING_STATE } from '../../../helpers/constants';
 
 const { locale } = useI18n();
 
@@ -21,7 +22,6 @@ interface IProps {
 
 const ReviewsPerSlidePage = 5;
 
-const { status } = useAuth();
 const userNotificationStore = useUserNotificationStore();
 const { requestUserAction } = usePreviewState();
 
@@ -49,7 +49,6 @@ defineExpose({
 const reviewStoreFactory = useStayReviewsStoreFactory();
 const reviewStore = await reviewStoreFactory.getInstance(stayId);
 const userAccountStore = useUserAccountStore();
-const userAccount = ref<IUserAccount>();
 
 const open = ref(false);
 const result = ref<ConfirmBoxButton>();
@@ -84,23 +83,23 @@ function rewindToTop () {
   }
 }
 
-async function refreshUserAccount (): Promise<void> {
-  if (status.value === 'authenticated') {
-    try {
-      userAccount.value = await userAccountStore.getUserAccount();
-    } catch (err: any) {
-      logger.warn('failed to initialize user account info', err, { ctrlKey, stayId });
-      userAccount.value = undefined;
-    }
-  } else {
-    userAccount.value = undefined;
-  }
-}
+// async function refreshUserAccount (): Promise<void> {
+//   if (status.value === 'authenticated') {
+//     try {
+//       userAccount.value = await userAccountStore.getUserAccount();
+//     } catch (err: any) {
+//       logger.warn('failed to initialize user account info', err, { ctrlKey, stayId });
+//       userAccount.value = undefined;
+//     }
+//   } else {
+//     userAccount.value = undefined;
+//   }
+// }
 
-watch(status, async () => {
-  await refreshUserAccount();
-});
-await refreshUserAccount();
+// watch(status, async () => {
+//   await refreshUserAccount();
+// });
+// await refreshUserAccount();
 
 function isTestUserReview (review: IStayReviewItem): boolean {
   return review.text.en !== review.text.ru;
@@ -190,8 +189,8 @@ onMounted(() => {
             <article class="w-full h-auto flex flex-row flex-nowrap items-start gap-4">
               <div class="flex-initial">
                 <UAvatar 
-                  v-if="review.user === 'current' ? !!(userAccount?.avatar) : !!(review.user.avatar)"
-                  :src="formatImageEntityUrl(review.user === 'current' ? userAccount?.avatar : review.user.avatar, ImageCategory.UserAvatar, 1)"
+                  v-if="review.user === 'current' ? (userAccountStore.avatar && userAccountStore.avatar !== LOADING_STATE) : !!(review.user.avatar)"
+                  :src="formatImageEntityUrl(review.user === 'current' ? userAccountStore.avatar : review.user.avatar, ImageCategory.UserAvatar, 1)"
                   :alt="$t(getI18nResName3('stayDetailsPage', 'reviews', 'avatarImgAlt'))"
                   :ui="{ rounded: 'rounded-full' }"
                 />
@@ -208,7 +207,7 @@ onMounted(() => {
                       </div>
                       <span class="hidden sm:block">|</span>
                       <div class="whitespace-wrap">
-                        {{ `${review.user === 'current' ? (!!userAccount ? `${userAccount!.firstName} ${userAccount!.lastName}` : '...') : (`${review.user.firstName} ${review.user.lastName}`)}` }}
+                        {{ `${review.user === 'current' ? ((userAccountStore.name && userAccountStore.name !== LOADING_STATE) ? `${userAccountStore.name.firstName} ${userAccountStore.name.lastName}` : '...') : (`${review.user.firstName} ${review.user.lastName}`)}` }}
                       </div>
                     </h3>
                     <p v-if="isTestUserReview(review)" class="block w-full h-auto whitespace-normal">
@@ -222,7 +221,7 @@ onMounted(() => {
               </div>
               <div class="w-max flex-initial flex flex-col flex-nowrap items-center gap-2 mr-2">
                 <UIcon name="heroicons-solid:flag" class="bg-primary-200 dark:bg-primary-700 m-1.5 mt-0" size="xs"/>
-                <div v-if="review.user === 'current' || review.user.id === userAccount?.userId" class="contents">
+                <div v-if="review.user === 'current' || review.user.id === userAccountStore.userId" class="contents">
                   <UButton icon="i-heroicons-solid-trash" size="xs" variant="outline" class="border-none ring-0" :title="$t(getI18nResName2('ariaLabels', 'btnDeleteUserReview'))" @click="onDeleteUserReviewBtnClick"/>
                   <UButton icon="i-heroicons-solid-pencil" size="xs" variant="outline" class="border-none ring-0" :title="$t(getI18nResName2('ariaLabels', 'btnEditUserReview'))" @click="onEditUserReviewBtnClick"/>
                 </div>

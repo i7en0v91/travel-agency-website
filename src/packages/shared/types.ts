@@ -398,20 +398,19 @@ export interface IStaySearchHistory {
   popularCityIds: EntityId[]
 }
 
-export type IOfferBookingData = {
+export type IOfferBookingData<TOfferKind extends OfferKind> = {
+  kind: TOfferKind,
   offerId: EntityId,
-  kind: OfferKind,
-  bookedUserId: EntityId,
-  serviceLevel?: StayServiceLevel
-};
+  bookedUserId: EntityId
+} & (
+  TOfferKind extends 'flights' ? object :
+  TOfferKind extends 'stays' ? { serviceLevel: StayServiceLevel } :
+  never
+);
 
 export interface IBooking extends IEditableEntity, ISoftDeleteEntity {
-  bookedUser: {
-    id: EntityId,
-    avatar: IImageEntitySrc | undefined,
-    firstName?: string,
-    lastName?: string
-  }
+  /** Booked user id  */
+  userId: EntityId
 }
 
 /**

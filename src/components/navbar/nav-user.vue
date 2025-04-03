@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { toShortForm, type ControlKey } from './../../helpers/components';
+import type { ControlKey } from './../../helpers/components';
 import { type Locale, AppPage, getI18nResName3, ImageCategory } from '@golobe-demo/shared';
-import { DeviceSizeEnum, LocatorClasses } from './../../helpers/constants';
+import { DeviceSizeEnum, LocatorClasses, LOADING_STATE } from './../../helpers/constants';
 import { formatImageEntityUrl, formatAvatarLabel, getUserMenuLinksInfo, getCurrentDeviceSize } from './../../helpers/dom';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import { getCommonServices } from '../../helpers/service-accessors';
@@ -16,14 +16,21 @@ const logger = getCommonServices().getLogger().addContextProps({ component: 'Nav
 const { locale, t } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
 const userAccountStore = useUserAccountStore();
-const userAccount = await userAccountStore.getUserAccount();
 
 const $emit = defineEmits(['verticalNavToggled']);
 
 const userAvatarUrl = computed(() => {
-  return userAccount.avatar ?   
-    formatImageEntityUrl(userAccount.avatar, ImageCategory.UserAvatar, 1) :
+  return userAccountStore.avatar  && userAccountStore.avatar !== LOADING_STATE ?
+    formatImageEntityUrl(userAccountStore.avatar, ImageCategory.UserAvatar, 1) :
     undefined;
+});
+
+const userAvatarText = computed(() => {
+  return (userAccountStore.name && userAccountStore.name !== LOADING_STATE) ? 
+    (formatAvatarLabel(
+      userAccountStore.name!.firstName ?? undefined, 
+      userAccountStore.name!.lastName ?? undefined
+    )) : '';
 });
 
 const userMenuItems = computed(() => {
@@ -32,7 +39,7 @@ const userMenuItems = computed(() => {
       switch(li.kind) {
         case 'avatar':
           return userAvatarUrl.value ? {
-            label: formatAvatarLabel(userAccount.firstName, userAccount.lastName),
+            label: userAvatarText.value,
             labelClass: 'text-nowrap ml-2',
             avatar: {
               src: userAvatarUrl.value,
@@ -40,7 +47,7 @@ const userMenuItems = computed(() => {
             },
             to: navLinkBuilder.buildPageLink(AppPage.Account, locale.value as Locale)
           } : {
-            label: formatAvatarLabel(userAccount.firstName, userAccount.lastName),
+            label: userAvatarText.value,
             labelClass: 'text-nowrap',
             icon: 'i-heroicons-user-20-solid',
             iconClass: 'w-16 h-16',
@@ -92,7 +99,7 @@ function onUserMenuClick(e: InputEvent) {
     />
     <Icon v-else name="i-heroicons-user-20-solid" class="w-8 h-8" :alt="t(getI18nResName3('nav', 'userBox', 'navAvatarAlt'))" @click.capture="onUserMenuClick"/>
     <UDropdown :items="userMenuItems" :popper="{ placement: 'bottom-end' }" :ui="{ container: `w-[320px] max-w-[320px] ${LocatorClasses.AuthUserMenuPopup}` }" class="*:hidden sm:*:block" @click.capture="onUserMenuClick">
-      <UButton color="gray" variant="link" :class="`max-w-[200px] font-semibold text-primary-900 hover:text-primary-900 *:overflow-hidden *:text-ellipsis *:text-nowrap ${LocatorClasses.AuthUserMenu}`" :label="formatAvatarLabel(userAccount.firstName, userAccount.lastName)" />
+      <UButton color="gray" variant="link" :class="`max-w-[200px] font-semibold text-primary-900 hover:text-primary-900 *:overflow-hidden *:text-ellipsis *:text-nowrap ${LocatorClasses.AuthUserMenu}`" :label="userAvatarText" />
     </UDropdown>
   </div>
 </template>

@@ -27,7 +27,7 @@ function isPrimitiveData(data?: any): boolean {
 
 function createContextPropsWrapper(props: Record<string, any>, parent: IAppLogger): IAppLogger {
   const mergeProps = (data?: any): any => deepmerge(
-    isPrimitiveData(data) ? set({}, PrimitiveDataValuePropName, data) : (data ?? {}), 
+    isPrimitiveData(data) ? set({}, PrimitiveDataValuePropName, data) : (cloneDeep(data) ?? {}), 
     props
   );
 

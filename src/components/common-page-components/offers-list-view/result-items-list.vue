@@ -149,7 +149,7 @@ function buildSearchStayOffersTabProps (
   sortOptions: ISearchOffersCommonSortOptions,
   activeTabKey: ControlKey | undefined
 ): IDisplayOptionTabProps[] {
-  logger.debug('building search stay offers tab props', { ctrlKey, sortOptions, activeTabKey });
+  //logger.debug('building search stay offers tab props', { ctrlKey, sortOptions, activeTabKey });
 
   let result: IDisplayOptionTabProps[] = [];
   for (let i = 0; i < SearchStaysOptionButtons.length; i++) {
@@ -201,7 +201,7 @@ function buildSearchFlightOffersTabProps (
   sortOptions: ISearchFlightOffersSortOptions,
   activeTabKey: ControlKey | undefined
 ): IDisplayOptionTabProps[] {
-  logger.debug('building search flight offers tabs props', { ctrlKey, sortOptions, activeTabKey });
+  //logger.debug('building search flight offers tabs props', { ctrlKey, sortOptions, activeTabKey });
 
   let result: IDisplayOptionTabProps[] = [];
   for (let i = 0; i < sortOptions.sortVariants.length; i++) {
@@ -341,7 +341,7 @@ async function updateTabButtonsCount (): Promise<void> {
 }
 
 watchEffect(() => {
-  logger.debug('display options tab effect handler', { ctrlKey, offersKind, activeTabKey: activeTabKey.value });
+  //logger.debug('display options tab effect handler', { ctrlKey, offersKind, activeTabKey: activeTabKey.value });
   const searchOffersSortInfo = searchOffersStore.sortInfo[offersKind];
   if(searchOffersSortInfo === LOADING_STATE) {
     allDisplayOptionTabProps.value = [];

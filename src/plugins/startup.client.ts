@@ -154,6 +154,7 @@ function buildServiceLocator () : IClientServicesLocator {
   return {
     getLogger: () => provider.resolve('logger'),
     getElectronShell: () => isElectronBuild() ? provider.resolve('electronShell') : (undefined as any),
+    lazy: {},
     state: {
       mounted: false,
       navigatedFromPage: undefined

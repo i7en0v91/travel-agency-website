@@ -51,7 +51,7 @@ const defineBookOfferWebApiHandler = (offerKind: OfferKind) => defineWebApiEvent
     );
   }
 
-  const offerBookingData: IOfferBookingData = {
+  const offerBookingData: IOfferBookingData<OfferKind> = {
     offerId,
     bookedUserId: userId,
     kind: offerKind,

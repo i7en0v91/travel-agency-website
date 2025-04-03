@@ -54,6 +54,8 @@ export const UserAccountTabPayments: ControlKey = [...UserAccountTabGroup, 'Paym
 export const HistoryTabGroup: ControlKey = [...UserAccountTabHistory, 'TabGroup'];
 export const HistoryTabFlights: ControlKey = [...HistoryTabGroup, 'Flights', 'Tab'];
 export const HistoryTabStays: ControlKey = [...HistoryTabGroup, 'Stays', 'Tab'];
+export type TimeRangeFilter = 'upcoming' | 'passed';
+export const DefaultTimeRangeFilter: TimeRangeFilter = 'upcoming';
 
 export const SearchOffersFilterTabGroupId = 'search-offers-filter-panel-gid';
 enum SearchStaysOptionButtonEnum { hotels = 'hotels', motels = 'motels', resorts = 'resorts' };
@@ -72,7 +74,8 @@ export enum StoreKindEnum {
   UserNotification = 'user-notification',
   ControlValues = 'control-values',
   EntityCache = 'entity-cache',
-  SearchOffers = 'search-offers'
+  SearchOffers = 'search-offers',
+  UserAccount = 'user-account'
 }
 
 export const StayReviewEditorHtmlAnchor = 'stayReviewEditor';

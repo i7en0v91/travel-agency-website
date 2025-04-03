@@ -57,7 +57,7 @@ defineProps<IProps>();
               <span v-if="room" class="text-2xl">{{ $n(Math.floor(room.price.toNumber()), 'currency') }}<wbr>&#47;<span class="text-base">{{ $t(getI18nResName2('searchStays', 'night')) }}</span></span>
               <USkeleton v-else class="w-10 h-8" />
             </div>
-            <UButton size="lg" class="block flex-1 text-center sm:float-right sm:w-auto sm:ml-8 lg:ml-16" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :to="offerId ? navLinkBuilder.buildLink(`/${getPagePath(AppPage.BookStay)}/${offerId!}`, locale as Locale, { serviceLevel: room!.serviceLevel }) : navLinkBuilder.buildLink(route.fullPath, locale as Locale)" :external="false">
+            <UButton size="lg" class="block flex-initial text-center sm:float-right sm:w-auto sm:ml-8 lg:ml-16" :ui="{ base: 'justify-center text-center' }" variant="solid" color="primary" :to="offerId ? navLinkBuilder.buildLink(`/${getPagePath(AppPage.BookStay)}/${offerId!}`, locale as Locale, { serviceLevel: room!.serviceLevel }) : navLinkBuilder.buildLink(route.fullPath, locale as Locale)" :external="false">
               {{ $t(getI18nResName2('offerDetailsPage', 'bookBtn')) }}
             </UButton>
           </div>

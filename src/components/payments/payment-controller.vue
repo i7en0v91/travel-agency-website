@@ -15,7 +15,7 @@ interface IProps {
 const { ctrlKey, paymentProcessing = false } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger().addContextProps({ component: 'PaymentController' });
-const { status } = useAuth();
+const userAccountStore = useUserAccountStore();
 const $emit = defineEmits<{(event: 'pay'): void}>();
 
 function onPayBtnClick () {
@@ -30,14 +30,14 @@ function onPayBtnClick () {
     <div class="w-full h-auto">
       <PaymentMethodPicker :ctrl-key="[...ctrlKey, 'PaymentMethod']" :amount="amount" />
     </div>
-    <div v-if="status !== 'authenticated'" class="mt-4 lg:mt-6">
+    <div v-if="!userAccountStore.isAuthenticated" class="mt-4 lg:mt-6">
       <LoginForPay :ctrl-key="[...ctrlKey, 'Login']" />
     </div>
-    <div v-if="status === 'authenticated'" class="mt-4 lg:mt-6">
+    <div v-if="userAccountStore.isAuthenticated" class="mt-4 lg:mt-6">
       <PaymentCardPicker :ctrl-key="[...ctrlKey, 'CardPicker']" />
     </div>
     <UButton
-      v-if="status === 'authenticated' && !paymentProcessing"
+      v-if="userAccountStore.isAuthenticated && !paymentProcessing"
       size="md"
       color="primary"
       variant="solid"

@@ -1,4 +1,4 @@
-import { type ReviewSummary, type ISearchFlightOffersResult,  type ISearchStayOffersResult, type IStayShort, type IStayOffer, type EntityId, type IOfferBooking, type IStay, type IStayReview, type IStayImageShort, type IFlight, type ICity, type IAirlineCompany, type IAirplane, type IAirport, type IFlightOffer, type EntityDataAttrsOnly, type IStayOfferDetails, CheckInOutDateUrlFormat } from '@golobe-demo/shared';
+import { type IUserProfileInfo, type ReviewSummary, type ISearchFlightOffersResult,  type ISearchStayOffersResult, type IStayShort, type IStayOffer, type EntityId, type IOfferBooking, type IStay, type IStayReview, type IStayImageShort, type IFlight, type ICity, type IAirlineCompany, type IAirplane, type IAirport, type IFlightOffer, type EntityDataAttrsOnly, type IStayOfferDetails, CheckInOutDateUrlFormat } from '@golobe-demo/shared';
 import type { ISearchedStayDto, ISearchedStayOfferDto, ISearchedFlightDto, ISearchedFlightOfferDto, IFlightDto, ICityDto, IStayDto, IFlightOfferDetailsDto, IAirlineCompanyDto, IAirplaneDto, IAirportDto, IStayOfferDetailsDto, IStayReviewDto, IBookingDetailsDto } from '../api-definitions';
 import dayjs from 'dayjs';
 
@@ -161,17 +161,17 @@ export function mapStayOffer (value: IStayOfferDetails): IStayOfferDetailsDto {
   return mapped;
 }
 
-export function mapBooking (booking: IOfferBooking<IFlightOffer | IStayOfferDetails>): IBookingDetailsDto {
+export function mapBooking (booking: IOfferBooking<IFlightOffer | IStayOfferDetails>, userInfo: IUserProfileInfo): IBookingDetailsDto {
   return {
     id: booking.id,
     kind: booking.offer.kind,
     flightOffer: booking.offer.kind === 'flights' ? mapFlightOffer(booking.offer as IFlightOffer) : undefined,
     stayOffer: booking.offer.kind === 'stays' ? { ...mapStayOffer(booking.offer as IStayOfferDetails), reviewSummary: (booking.offer as IStayOfferDetails).stay.reviewSummary  } : undefined,
     bookedUser: {
-      id: booking.bookedUser.id,
-      avatar: booking.bookedUser.avatar,
-      firstName: booking.bookedUser.firstName,
-      lastName: booking.bookedUser.lastName
+      id: userInfo.id,
+      avatar: userInfo.avatar,
+      firstName: userInfo.firstName,
+      lastName: userInfo.lastName
     },
     serviceLevel: booking.serviceLevel
 

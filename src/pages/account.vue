@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getI18nResName2, getI18nResName3 } from '@golobe-demo/shared';
-import { UserAccountPageCtrlKey, UserAccountTabGroup, UserAccountTabAccount, UserAccountTabHistory, UserAccountTabPayments, LocatorClasses } from './../helpers/constants';
+import { UserAccountPageCtrlKey, UserAccountTabGroup, UserAccountTabAccount, UserAccountTabHistory, UserAccountTabPayments, LocatorClasses, LOADING_STATE } from './../helpers/constants';
 import type { ControlKey } from './../helpers/components';
 import AvatarBox from './../components/user-account/avatar-box.vue';
 import UserCover from './../components/user-account/user-cover.vue';
@@ -16,7 +16,6 @@ definePageMeta({
 useOgImage();
 
 const userAccountStore = useUserAccountStore();
-const userAccount = await userAccountStore.getUserAccount();
 
 const selectedTab = ref<ControlKey | undefined>();
 
@@ -25,12 +24,17 @@ const historyTabReady = ref(false);
 const accountTabReady = ref(false);
 
 const primaryEmail = computed(() => {
-  return ((userAccount.emails?.length ?? 0) > 0 && (userAccount.emails![0]?.length ?? 0) > 0)
-    ? userAccount.emails![0]
-    : undefined;
+  return (
+    userAccountStore.emails !== LOADING_STATE && 
+    (userAccountStore.emails?.length ?? 0) > 0 && 
+    (userAccountStore.emails![0]?.length ?? 0) > 0
+  ) ? userAccountStore.emails![0] : undefined;
 });
 
 const CtrlKey = UserAccountPageCtrlKey;
+
+const displayedFirstName = computed(() => (userAccountStore.name !== LOADING_STATE && (userAccountStore.name?.firstName?.trim().length ?? 0) > 0) ? userAccountStore.name!.firstName!.trim() : undefined);
+const displayedLastName = computed(() => (userAccountStore.name !== LOADING_STATE && (userAccountStore.name?.lastName?.trim().length ?? 0) > 0) ? userAccountStore.name!.lastName!.trim() : undefined);
 
 </script>
 
@@ -48,11 +52,11 @@ const CtrlKey = UserAccountPageCtrlKey;
         </div>
         <div class="w-full flex flex-col flex-nowrap items-center mt-4">
           <div class="w-full mt-4 sm:mt-6 flex-1 flex flex-row flex-wrap justify-center gap-2 text-2xl font-semibold *:flex-grow-0 *:flex-shrink *:basis-auto *:text-center *:text-nowrap *:text-ellipsis *:overflow-hidden">
-            <div v-if="(userAccount.firstName?.trim().length ?? 0) > 0">
-              {{ userAccount.firstName }}
+            <div v-if="displayedFirstName">
+              {{ displayedFirstName }}
             </div>
-            <div v-if="(userAccount.lastName?.trim().length ?? 0) > 0">
-              {{ userAccount.lastName }}
+            <div v-if="displayedLastName">
+              {{ displayedLastName }}
             </div>
           </div>
           <h1 v-if="primaryEmail" class="flex-1 w-full mt-1 flex-grow-0 flex-shrink basis-auto text-center text-nowrap text-ellipsis overflow-hidden text-gray-600 dark:text-gray-300">

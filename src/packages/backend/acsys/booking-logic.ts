@@ -1,4 +1,4 @@
-import type { IOfferBookingData, IAppLogger, EntityId, IStayOfferDetails, IFlightOffer, IOfferBooking } from '@golobe-demo/shared';
+import type { OfferKind, IOfferBookingData, IAppLogger, EntityId, IStayOfferDetails, IFlightOffer, IOfferBooking } from '@golobe-demo/shared';
 import type { IBookingLogic } from './../types';
 
 export class BookingLogic implements IBookingLogic {
@@ -17,7 +17,7 @@ export class BookingLogic implements IBookingLogic {
     this.logger.debug('booking deleted', id);
   };
 
-  async createBooking (data: IOfferBookingData): Promise<EntityId> {
+  async createBooking<TOfferKind extends OfferKind> (data: IOfferBookingData<TOfferKind>): Promise<EntityId> {
     this.logger.debug('create booking', { offerId: data.offerId, kind: data.kind, userId: data.bookedUserId });
     const entityId = await this.prismaImplementation.createBooking(data);
     this.logger.debug('booking created', { id: entityId });
@@ -27,7 +27,7 @@ export class BookingLogic implements IBookingLogic {
   async getBooking (id: EntityId): Promise<IOfferBooking<IFlightOffer | IStayOfferDetails>> {
     this.logger.debug('get booking', id);
     const result = await this.prismaImplementation.getBooking(id);
-    this.logger.debug('booking found', { id, offerId: result.offer.id, bookedUserId: result.bookedUser.id });
+    this.logger.debug('booking found', { id, offerId: result.offer.id, bookedUserId: result.userId });
     return result;
   }
 }

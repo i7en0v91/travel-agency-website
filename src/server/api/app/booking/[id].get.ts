@@ -9,6 +9,7 @@ import { getServerServices } from '../../../../helpers/service-accessors';
 export default defineWebApiEventHandler(async (event : H3Event) => {
   const serverServices = getServerServices()!;
   const logger = getWebApiLogger();
+  const userLogic = serverServices.getUserLogic();
   const bookingLogic = serverServices.getBookingLogic();
 
   const bookingParam = getRouterParams(event)?.id?.toString() ?? '';
@@ -25,10 +26,21 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   const booking = await bookingLogic.getBooking(bookingId);
   const authSession = await getServerSession(event);
   const userId = extractUserIdFromSession(authSession);
-  if (!userId || (booking.bookedUser.id !== userId)) {
+  if (!userId || (booking.userId !== userId)) {
+    logger.warn('cannot obtain complete booking info - access is forbidden', undefined, { path: event.path, userId, bookingUserId: booking.userId  });
     throw new AppException(
       AppExceptionCodeEnum.FORBIDDEN,
       'access to the booking is forbidden',
+      'error-page'
+    );
+  }
+
+  const userInfo = await userLogic.getUser(userId, 'profile', event);
+  if(!userInfo) {
+    logger.warn('cannot obtain complete booking info - user not found', undefined, { path: event.path, userId });
+    throw new AppException(
+      AppExceptionCodeEnum.OBJECT_NOT_FOUND,
+      'user not found',
       'error-page'
     );
   }
@@ -38,5 +50,5 @@ export default defineWebApiEventHandler(async (event : H3Event) => {
   });
   setHeader(event, 'content-type', 'application/json');
 
-  return mapBooking(booking);
+  return mapBooking(booking, userInfo);
 }, { logResponseBody: true, authorizedOnly: false });

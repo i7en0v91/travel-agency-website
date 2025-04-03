@@ -44,7 +44,7 @@ const propList = useTemplateRef('prop-list');
 const propAdd = useTemplateRef('prop-add');
 const confirmBoxRef = useTemplateRef('confirm-box');  
 const confirmBoxButtons: ConfirmBoxButton[] = ['yes', 'no'];
-const editValues = range(0, maxElementsCount).map((idx: number) => ref<string | undefined>(values[idx]));
+const editValues = range(0, maxElementsCount).map(() => ref<string | undefined>());
 const addingNewValue = ref<string | undefined>('');
 const open = ref(false);
 const result = ref<ConfirmBoxButton>();
@@ -114,28 +114,11 @@ function onPropertyEnterEditMode (propIdx: number | 'add') {
   $emit('enterEditMode', ctrlKey);
 }
 
-function handleItemValueChange (op: 'add' | 'delete' | 'change', propIdx: number | 'add', value?: string) {
-  logger.verbose('handling value change', { ctrlKey, op, propIdx, value: maskLog(value) });
-  // to this moment everything has been already validated & saved by respective SimplePropertyEdit, here need just to trigger component rerender
-  const currentValues = values.slice(0, values.length);
-  const newValues = applyValuesOperation(currentValues, op, propIdx, value);
-  switch (op) {
-    case 'add':
-      if (value && values.length < maxElementsCount) {
-        editValues[values.length].value = value;
-      }
-      addingNewValue.value = '';
-      break;
-    case 'delete':
-      for (let i = (propIdx as number) + 1; i < currentValues.length; i++) {
-        editValues[i - 1].value = editValues[i].value;
-      }
-      if (propIdx === 0 && currentValues.length === 1) {
-        editValues[0].value = undefined;
-      }
-      break;
+function onItemValueChanged (op: 'add' | 'delete' | 'change', propIdx: number | 'add', value?: string) {
+  logger.debug('item value change callback', { ctrlKey, op, propIdx, value: maskLog(value) });
+  if(op === 'add') {
+    addingNewValue.value = '';
   }
-  $emit('update:values', newValues);
 }
 
 async function onControlButtonClick (button: PropertyGridControlButtonType, propIdx: number | 'add'): Promise<void> {
@@ -159,9 +142,7 @@ async function onControlButtonClick (button: PropertyGridControlButtonType, prop
     const msgBoxResult = await confirmBox.show();
     if (msgBoxResult === 'yes') {
       const result = await onValidateAndSave('delete', propIdx, undefined);
-      if (result === 'success') {
-        handleItemValueChange('delete', propIdx, undefined);
-      } else if (result !== 'cancel') {
+      if (result !== 'success' && result !== 'cancel') {
         userNotificationStore.show({
           level: UserNotificationLevel.WARN,
           resName: result
@@ -186,6 +167,18 @@ defineExpose({
   exitEditMode
 });
 
+onMounted(() => {
+  watch(() => values, () => {
+    logger.verbose('model value watch handler', { ctrlKey, newValues: values, currentValues: editValues.map(v => v.value) });
+    values.forEach((v, idx) => {
+      editValues[idx].value = v;
+    });
+    for(let i = values.length; i < maxElementsCount; i++) {
+      editValues[i].value = undefined;
+    }
+  }, { immediate: true });
+});
+
 </script>
 
 <template>
@@ -208,7 +201,7 @@ defineExpose({
         :first-control-section-buttons="{ view: ['delete'], edit: ['cancel'] }"
         :last-control-section-buttons="{ view: ['change'], edit: ['apply'] }"
         @enter-edit-mode="() => onPropertyEnterEditMode(idx)"
-        @update:value="(value?: string) => handleItemValueChange('change', idx, value)"
+        @update:value="(value?: string) => onItemValueChanged('change', idx, value)"
         @button-click="(button: PropertyGridControlButtonType) => onControlButtonClick(button, idx)"
       />
       <SimplePropertyEdit
@@ -230,7 +223,7 @@ defineExpose({
         :first-control-section-buttons="{ view: [], edit: ['cancel'] }"
         :last-control-section-buttons="{ view: ['add'], edit: ['apply'] }"
         @enter-edit-mode="() => onPropertyEnterEditMode('add')"
-        @update:value="(value?: string) => handleItemValueChange('add', 'add', value)"
+        @update:value="(value?: string) => onItemValueChanged('add', 'add', value)"
         @button-click="(button: PropertyGridControlButtonType) => onControlButtonClick(button, 'add')"
       />
     </PropertyGrid>

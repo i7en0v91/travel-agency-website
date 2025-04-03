@@ -91,7 +91,6 @@ export interface IDropdownListProps {
   captionResName?: I18nResName,
   persistent?: boolean,
   selectedValue?: DropdownListValue,
-  defaultValue?: DropdownListValue,
   placeholderResName?: I18nResName,
   items: IDropdownListItemProps[],
   variant?: 'default' | 'none',
@@ -276,6 +275,7 @@ export interface IClientServicesLocator extends ICommonServicesLocator {
   lazy: {
     userNotificationStore?: ReturnType<typeof useUserNotificationStore>,
     controlValuesStore?: ReturnType<typeof useControlValuesStore>,
+    userAccountStore?: ReturnType<typeof useUserAccountStore>
   },
   getElectronShell(): IElectronShell
 }

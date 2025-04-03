@@ -1,20 +1,26 @@
 <script setup lang="ts">
-import { type BookStayPageArgs, AppException, AppExceptionCodeEnum, getLocalizeableValue, type StayServiceLevel, ImageCategory, type EntityDataAttrsOnly, type IStayOfferDetails, type ILocalizableValue, type EntityId, AvailableStayServiceLevel, AppPage, type Locale, getI18nResName3, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
+import { AppConfig, type BookStayPageArgs, AppException, AppExceptionCodeEnum, getLocalizeableValue, type StayServiceLevel, ImageCategory, type ILocalizableValue, type EntityId, AvailableStayServiceLevel, AppPage, type Locale, getI18nResName3, getI18nResName2, type I18nResName } from '@golobe-demo/shared';
 import OfferBooking from './../../components/booking-page/offer-booking.vue';
-import type { IOfferBookingStoreFactory } from './../../stores/offer-booking-store';
-import OfferDetailsBreadcrumbs from './../../components/common-page-components/offer-details-breadcrumbs.vue';
 import { useNavLinkBuilder } from './../../composables/nav-link-builder';
 import dayjs from 'dayjs';
 import { getCommonServices } from '../../helpers/service-accessors';
 import type { ControlKey } from './../../helpers/components';
+import { mapStayOfferDetails, mapReviewSummary } from './../../helpers/entity-mappers';
+import { type IReviewSummaryDto, type IStayOfferDetailsDto, ApiEndpointStayOfferDetails, ApiEndpointStayOfferReviewSummary } from './../../server/api-definitions';
+import { Decimal } from 'decimal.js';
 
+definePageMeta({
+  title: { resName: getI18nResName2('stayBookingPage', 'title'), resArgs: undefined }
+});
+
+const CtrlKey: ControlKey = ['Page', 'BookStay'];
+
+const logger = getCommonServices().getLogger().addContextProps({ component: 'StayBook' });
 const { d, locale } = useI18n();
 const navLinkBuilder = useNavLinkBuilder();
-
 const route = useRoute();
-const logger = getCommonServices().getLogger().addContextProps({ component: 'StayBook' });
-
-const isError = ref(false);
+const nuxtApp = useNuxtApp();
+const { enabled } = usePreviewState();
 
 const offerParam = route.params?.id?.toString() ?? '';
 if (offerParam.length === 0) {
@@ -30,12 +36,6 @@ if (!AvailableStayServiceLevel.includes(serviceLevel)) {
   throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'invalid service level argument', 'error-page');
 }
 
-definePageMeta({
-  title: { resName: getI18nResName2('stayBookingPage', 'title'), resArgs: undefined }
-});
-
-const CtrlKey: ControlKey = ['Page', 'BookStay'];
-
 const PriceDecompositionWeights: { labelResName: I18nResName, amount: number }[] = [
   { labelResName: getI18nResName3('bookingCommon', 'pricingDecomposition', 'fare'), amount: 0.6 },
   { labelResName: getI18nResName3('bookingCommon', 'pricingDecomposition', 'discount'), amount: 0.05 },
@@ -43,18 +43,47 @@ const PriceDecompositionWeights: { labelResName: I18nResName, amount: number }[]
   { labelResName: getI18nResName3('bookingCommon', 'pricingDecomposition', 'fee'), amount: 0.05 }
 ];
 
-const offerBookingStoreFactory = await useOfferBookingStoreFactory() as IOfferBookingStoreFactory;
-const offerBookingStore = await offerBookingStoreFactory.createNewBooking<IStayOfferDetails>(offerId!, 'stays', serviceLevel);
+const offerFetch = useFetch<IStayOfferDetailsDto>(() => `/${ApiEndpointStayOfferDetails(offerId)}`,
+  {
+    server: true,
+    lazy: true,
+    cache:  (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
+    dedupe: 'defer',
+    query: { drafts: enabled },
+    immediate: true,
+    $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-stub' })
+  });
+const stayReviewsFetch = useFetch<IReviewSummaryDto>(() => `/${ApiEndpointStayOfferReviewSummary(offerId)}`,
+  {
+    server: true,
+    lazy: true,
+    cache: 'no-store',
+    dedupe: 'cancel',
+    immediate: true,
+    $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-stub' })
+  });
+const stayOffer = computed(() =>  {
+  const result = (
+    offerFetch.status.value === 'success' && offerFetch.data?.value && 
+    stayReviewsFetch!.status.value === 'success' && stayReviewsFetch!.data?.value
+  ) ? mapStayOfferDetails(offerFetch.data.value as IStayOfferDetailsDto, mapReviewSummary(stayReviewsFetch!.data.value!)) : undefined
+  
+  if(typeof (result?.totalPrice) === 'number') {
+    result.totalPrice = new Decimal(result.totalPrice);
+  }
 
-const stayOffer = ref<EntityDataAttrsOnly<IStayOfferDetails> | undefined>(offerBookingStore.booking?.offer);
-const offerDataAvailable = computed(() => offerBookingStore.status === 'success' && offerBookingStore.booking?.offer && !isError.value);
+  return result;
+});
 
+const isError = computed(() => offerFetch.status.value === 'error' || stayReviewsFetch.status.value === 'error');
 const numDays = computed(() => stayOffer.value ? (Math.ceil(dayjs(stayOffer.value.checkOut).diff(stayOffer.value.checkIn, 'day')) ?? 1) : undefined);
 const pricePerNight = computed(() => (stayOffer.value && numDays.value !== undefined) ? (stayOffer.value.prices[serviceLevel].toNumber()) : undefined);
 const totalPriceForPeriod = computed(() => (numDays.value !== undefined && pricePerNight.value !== undefined) ? (numDays.value * pricePerNight.value) : undefined);
 const priceDecomposition = computed(() => PriceDecompositionWeights.map((w) => { return { labelResName: w.labelResName, amount: totalPriceForPeriod.value !== undefined ? (totalPriceForPeriod.value * w.amount) : undefined }; }));
 
 if (import.meta.server) {
+  await offerFetch;
+  await stayReviewsFetch;
   useOgImage({
     name: 'OgOfferSummary',
     props: {
@@ -72,7 +101,7 @@ if (import.meta.server) {
 }
 
 function updatePageTitle () {
-  if (offerDataAvailable.value && stayOffer.value) {
+  if (!isError.value && stayOffer.value) {
     extendPageTitle(stayOffer.value.stay.name, stayOffer.value.checkIn, stayOffer.value.checkOut);
   }
 }
@@ -87,27 +116,13 @@ function extendPageTitle (stayName: ILocalizableValue, checkIn: Date, checkOut: 
   (route.meta.title as any).resArgs = titleArgs;
 }
 
-watch(() => offerBookingStore.status, () => {
-  if (offerBookingStore.status === 'error') {
-    isError.value = true;
-    stayOffer.value = undefined;
-  }
-  if (offerDataAvailable.value) {
-    stayOffer.value = offerBookingStore.booking!.offer;
-    updatePageTitle();
-  }
-});
-
-watch(locale, () => {
-  updatePageTitle();
-});
 if (import.meta.server) {
   updatePageTitle();
 }
-
 onMounted(() => {
-  updatePageTitle();
+  watchEffect(updatePageTitle);
 });
+
 
 </script>
 

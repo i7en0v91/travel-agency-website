@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import type { ControlKey } from './../../helpers/components';
-import { AppConfig, UserNotificationLevel, type I18nResName, getI18nResName2, getI18nResName3, type ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
-import { type IImageUploadResultDto, ApiEndpointUserImageUpload } from '../../server/api-definitions';
+import { AppException, AppExceptionCodeEnum, AppConfig, UserNotificationLevel, type I18nResName, getI18nResName2, getI18nResName3, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
 import { CroppingImageDataKey } from './../../helpers/constants';
-import { post } from './../../helpers/rest-utils';
 import isString from 'lodash-es/isString';
 import { basename, extname } from 'pathe';
 import StaticImage from './static-image.vue';
@@ -12,13 +10,13 @@ import ModalWaitingIndicator from '../forms/modal-waiting-indicator.vue';
 import { getCommonServices } from '../../helpers/service-accessors';
 import type { IStaticImageUiProps } from '../../types';
 import { useModalWaiter, type IModalWaiter } from '../../composables/modal-waiter';
+import type { UserUpdateSkipped } from './../../stores/user-account-store';
 
 globalThis.Buffer = globalThis.Buffer || Buffer;
 
 interface IProps {
   ctrlKey: ControlKey,
   category: ImageCategory,
-  entitySrc: IImageEntitySrc,
   sizes: string, // e.g. sm:100vw md:100vw lg:80vw xl:60vw 2xl:40vw
   fillAlpha?: boolean, // substiture alpha-channel with solid color (from theme settings)
   btnResName?: I18nResName,
@@ -50,8 +48,6 @@ const {
   isHighPriority = false 
 } = defineProps<IProps>();
 
-const { status } = useAuth();
-
 const open = ref(false);
 
 const fileInput = useTemplateRef<HTMLInputElement>('file-input');
@@ -59,12 +55,12 @@ const selectedFile = ref<FileList | null>(null);
 const modalWaiterRef = useTemplateRef('modal-waiter');
 const modalWaiterOpen = ref<boolean>(false);
 
-const userNotificationStore = useUserNotificationStore();
 const logger = getCommonServices().getLogger().addContextProps({ component: 'EditableImage' });
-
+const userNotificationStore = useUserNotificationStore();
+const userAccountStore = useUserAccountStore();
+const modelValue = defineModel<IImageEntitySrc>('entitySrc');
 let uploadingFileName: string = '';
-
-const $emit = defineEmits(['update:entitySrc']);
+const $emit = defineEmits(['update:ready']);
 
 function onClosed () {
   logger.debug('cropper window closed', ctrlKey);
@@ -73,13 +69,6 @@ function onClosed () {
 }
 
 async function uploadCroppedImageIfSpecified () : Promise<void> {
-  if (status.value !== 'authenticated') {
-    resetCurrentImageData();
-    const { signIn } = useAuth();
-    signIn('credentials');
-    return;
-  }
-
   const imageDataBase64 = readCurrentImageData();
   if (imageDataBase64 && imageDataBase64.length > 0) {
     resetCurrentImageData();
@@ -92,12 +81,22 @@ async function uploadCroppedImageIfSpecified () : Promise<void> {
       modalWaiter = useModalWaiter(modalWaiterRef as any, modalWaiterOpen);
       modalWaiter.show(true);
 
-      const query = uploadingFileName.length > 0 ? { fileName: uploadingFileName, category } : undefined;
-      const uploadedImageInfo = await post<any, IImageUploadResultDto>(`/${ApiEndpointUserImageUpload}`, query, imageBytes, undefined, true, undefined, 'default');
-      if (uploadedImageInfo) {
-        logger.info('image uploaded', { ctrlKey, size: imageBytes.length, fileName: uploadingFileName });
-        $emit('update:entitySrc', uploadedImageInfo);
+      let uploadedImageInfo: IImageEntitySrc | UserUpdateSkipped;
+      if(category === ImageCategory.UserAvatar) {
+        uploadedImageInfo = await userAccountStore.uploadAvatar(imageBytes, uploadingFileName);
+      } else if(category === ImageCategory.UserCover) {
+        uploadedImageInfo = await userAccountStore.uploadCover(imageBytes, uploadingFileName);
+      } else {
+        logger.warn('unexpected image category', undefined, { category });
+        throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected image category', 'error-stub');
       }
+      if(!uploadedImageInfo) {
+        logger.warn('ignoring user image upload result', undefined, { category });
+        return;
+      }
+
+      modelValue.value = uploadedImageInfo;
+      logger.verbose('upload image data completed', { ctrlKey, size: imageBytes.length, fileName: uploadingFileName });
     } catch (err: any) {
       logger.warn('failed to upload image data', err, { ctrlKey, size: imageDataBase64.length, fileName: uploadingFileName });
       throw err;
@@ -221,7 +220,7 @@ function onFileSelected (e: Event) {
 }
 
 function setImage (image: IImageEntitySrc) {
-  $emit('update:entitySrc', image);
+  modelValue.value = image;
 }
 
 function openFileDialog () {
