@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { type Locale, AppPage, getI18nResName3, type ILocalizableValue, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
 import type { ControlKey } from './../../helpers/components';
-import { getI18nResName3, type ILocalizableValue, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
-import { WorldMapCityLabelFlipX } from './../../helpers/constants';
+import { WorldMapCityLabelFlipX, TravelDetailsHtmlAnchor } from './../../helpers/constants';
+import { withQuery, encodeHash, stringifyParsedURL, type ParsedURL } from 'ufo';
+import { getCommonServices } from '../../helpers/service-accessors';
 
 interface IProps {
   ctrlKey: ControlKey,
@@ -13,17 +15,32 @@ interface IProps {
 };
 const { cityName, countryName, relativeCoord, slug } = defineProps<IProps>();
 
+const logger = getCommonServices().getLogger().addContextProps({ component: 'WorldMapCityLabel' });
+const navLinkBuilder = useNavLinkBuilder();
 const { locale } = useI18n();
-const travelDetailsStore = useTravelDetailsStore();
 
-const cityUrl = ref<string>(travelDetailsStore.buildTravelCityUrl(slug));
+function buildTravelCityUrl (citySlug: string): string {
+  logger.debug(`build city url`, { slug: citySlug });
+
+  const url: Partial<ParsedURL> = {
+    pathname: navLinkBuilder.buildPageLink(AppPage.Flights, locale.value as Locale),
+    hash: encodeHash(`#${TravelDetailsHtmlAnchor}`)
+  };
+  const result = withQuery(stringifyParsedURL(url), { citySlug });
+
+  logger.debug(`city url`, { slug: citySlug, url: result });
+  return result;
+}
+
+const cityUrl = ref<string>(buildTravelCityUrl(slug));
 function updateCityUrl () {
-  cityUrl.value = travelDetailsStore.buildTravelCityUrl(slug);
+  cityUrl.value = buildTravelCityUrl(slug);
 }
 
 onMounted(() => {
-  updateCityUrl();
-  watch(locale, updateCityUrl);
+  watch(locale, updateCityUrl, {
+    immediate: true
+  });
 });
 
 </script>

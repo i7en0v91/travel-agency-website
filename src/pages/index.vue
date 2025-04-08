@@ -6,7 +6,6 @@ import { Navigation, Autoplay, Mousewheel } from 'swiper/modules';
 import range from 'lodash-es/range';
 import PageSection from './../components/common-page-components/page-section.vue';
 import SearchPageImageLink from './../components/index/search-page-image-link.vue';
-import PopularCityCard from './../components/index/popular-city-card.vue';
 import CompanyReviewCard from './../components/index/company-review-card.vue';
 import { usePreviewState } from './../composables/preview-state';
 import { getCommonServices } from '../helpers/service-accessors';

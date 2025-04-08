@@ -1,13 +1,9 @@
 import type { PiniaPlugin } from 'pinia';
 import { StoreKindEnum } from './../../helpers/constants';
-import { defaultErrorHandler } from '../exceptions';
 import { consola } from 'consola';
 import type { ControlValuesStoreInternal } from '../../stores/control-values-store';
 import type { SystemConfigurationStoreInternal } from '../../stores/system-configuration-store';
 import type { UserAccountStoreInternal } from '../../stores/user-account-store';
-import type { IAppLogger } from '@golobe-demo/shared';
-import { getCommonServices } from '../service-accessors';
-import { getStoreLoggingPrefix } from './pinia';
 
 function isControlValuesStore(store: any): store is ControlValuesStoreInternal {
   return store.$id === StoreKindEnum.ControlValues;
@@ -22,7 +18,6 @@ function isUserAccountStore(store: any): store is UserAccountStoreInternal {
 }
 
 export const CommonStoreProperties: PiniaPlugin = ({ store }) => {
-  let storeLogger: IAppLogger | undefined;
   store.$onAction(({
     name,
     store,
@@ -35,27 +30,9 @@ export const CommonStoreProperties: PiniaPlugin = ({ store }) => {
     try {
       nuxtApp = useNuxtApp();  
     } catch(err: any) {
-      store.getLogger().warn(`failed to acquire Nuxt app instance`, err, { action: name, args });
       return;
     }
-    store.getLogger().verbose(`injecting Nuxt app instance`, { action: name, args });
     store.nuxtApp = markRaw(nuxtApp);
-  });
-
-  store.displayError = markRaw((err: any) => {
-    defaultErrorHandler(err, import.meta.client ? { nuxtApp: useNuxtApp() } : {});
-  });
-  store.getLogger = markRaw((): IAppLogger => {
-    if(!storeLogger) {
-      storeLogger = getCommonServices().getLogger().addContextProps({ component: getStoreLoggingPrefix(store.$id) });
-    };
-    return storeLogger;
-  });
-  store.setLoggingProps = markRaw((props: Record<string, any>): void => {
-    storeLogger = getCommonServices().getLogger().addContextProps({ 
-      component: getStoreLoggingPrefix(store.$id),
-      ...props
-    });
   });
 };
 

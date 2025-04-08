@@ -2,7 +2,6 @@
 import type { ControlKey } from './../../../helpers/components';
 import type { ITravelDetailsData, ITravelDetailsTextingData } from './../../../types';
 import type { WatchStopHandle } from 'vue';
-import TravelDetailsTextingFrame from './travel-details-texting-frame.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
 
 interface IProps {
@@ -52,17 +51,16 @@ defineExpose({
 const travelDetailsStore = useTravelDetailsStore();
 
 if (import.meta.client) {
-  await startWatchingForDataChanges();
+  startWatchingForDataChanges();
 }
 
-const storeInstance = await (travelDetailsStore.getInstance());
-if (storeInstance.current?.texting) {
-  onInitialDataReady(storeInstance.current);
+if (travelDetailsStore.current?.texting) {
+  onInitialDataReady(travelDetailsStore.current);
 } else if (import.meta.server) {
   isError.value = true;
 }
 
-function onUpcomingDataChanged (data?: ITravelDetailsData | undefined) {
+function onUpcomingDataChanged (data: Partial<ITravelDetailsData> | undefined) {
   logger.verbose('upcoming data changed', { ctrlKey, activeFrame: activeFrame.value });
   if (data?.texting) {
     (activeFrame.value !== 'A' ? dataBuf2 : dataBuf1).value = data.texting;
@@ -80,18 +78,16 @@ function onInitialDataReady (data: ITravelDetailsData) {
     dataBufInitial.value = data.texting;
   }
 }
-
-async function startWatchingForDataChanges () : Promise<void> {
+function startWatchingForDataChanges () {
   logger.verbose('starting to watch for data changes', ctrlKey);
 
-  const storeInstance = await (travelDetailsStore.getInstance());
-  watches.push(watch([() => storeInstance.upcoming?.cityId, () => storeInstance.upcoming?.texting], () => {
-    onUpcomingDataChanged(storeInstance.upcoming);
+  watches.push(watch([() => travelDetailsStore.upcoming?.cityId, () => travelDetailsStore.upcoming?.texting], () => {
+    onUpcomingDataChanged(travelDetailsStore.upcoming);
   }));
 
-  if (!storeInstance.current?.cityId) {
-    watches.push(watch([() => storeInstance.current?.cityId], () => {
-      onInitialDataReady(storeInstance.current!);
+  if (!travelDetailsStore.current?.cityId) {
+    watches.push(watch([() => travelDetailsStore.current?.cityId], () => {
+      onInitialDataReady(travelDetailsStore.current!);
     }));
   }
 }

@@ -8,6 +8,7 @@ import { Decimal } from 'decimal.js';
 import { StoreKindEnum, FindFlightsPageCtrlKey, FindStaysPageCtrlKey, LOADING_STATE } from './../helpers/constants';
 import { post } from './../helpers/rest-utils';
 import type { ValidationError } from 'yup';
+import set from 'lodash-es/set';
 import range from 'lodash-es/range';
 import omit from 'lodash-es/omit';
 import dayjs from 'dayjs';
@@ -753,9 +754,7 @@ function handleFetchCompletion(store: StoreInternal, kind: OfferKind, resultDto:
 
 const storeDefBuilder = () => buildStoreDefinition(StoreId, 
   (clientSideOptions) => { 
-    // TODO: uncomment preview state
-    // const { enabled } = usePreviewState();
-    const enabled = false;
+    const { enabled } = usePreviewState();
 
     const nuxtApp = clientSideOptions!.nuxtApp;
     const localizer: Localizer = (resName: I18nResName, locale: Locale) => 
@@ -771,9 +770,9 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
         lazy: true,
         immediate: false,
         cache: 'no-cache',
-        dedupe: 'cancel',
+        dedupe: 'defer',
         method: 'POST' as const,
-        //query: { drafts: enabled },
+        query: set({}, QueryPagePreviewModeParam, enabled),
         body: flightsFetchBody,
         default: () => [],
         key: DataKeySearchFlightOffers,
@@ -785,9 +784,9 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
         lazy: true,
         immediate: false,
         cache: 'no-cache',
-        dedupe: 'cancel',
+        dedupe: 'defer',
         method: 'POST' as const,
-        //query: { drafts: enabled },
+        query: set({}, QueryPagePreviewModeParam, enabled),
         body: staysFetchBody,
         default: () => [],
         key: DataKeySearchStayOffers,

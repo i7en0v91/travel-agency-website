@@ -17,6 +17,7 @@ const { ctrlKey, offersKind } = defineProps<IProps>();
 
 const logger = getCommonServices().getLogger().addContextProps({ component: 'ListView' });
 const searchOffersStore = useSearchOffersStore();
+const { enabled: preview } = usePreviewMode();
 
 const isComponentError = ref(false);
 const isError = computed(() => searchOffersStore.isError[offersKind]);
@@ -24,7 +25,7 @@ const showWaitingStub = computed(() => {
   return import.meta.client && searchOffersStore.filterInfo[offersKind] === LOADING_STATE;
 });
 
-if(import.meta.server || (import.meta.client && useNuxtApp().isHydrating)) {
+if(import.meta.server || (import.meta.client && useNuxtApp().isHydrating) || preview) {
   await searchOffersStore.load(offersKind);
 }
 

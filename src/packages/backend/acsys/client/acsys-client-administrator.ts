@@ -4,7 +4,6 @@ import { SetViewDisplayPropsDtoSchema, FieldEditControl, FieldType, AddViewColum
 import { AcsysTableDetailsDropdown, RouteCreateView, RouteDeleteData, RouteInsertWithUid, RouteCreateUser, AcsysTableViews, AcsysTableLogicalContent, AcsysTableSourceCollectionColumn, RouteReadData, RouteUpdateData, AcsysTableIdColumn, AcsysTableFieldNameColumn, AcsysTableDocumentDetails, AcsysTableContentIdColumn, RouteInsertData } from './constants';
 import { AcsysClientStandard } from './acsys-client-standard';
 import { type SourceCollection, type IViewInfo, type IViewDisplayProps, type IViewColumnSettings, SortOrderEnum, FieldEditControlEnum, FieldEnum } from './views';
-import omit from 'lodash-es/omit';
 import uniqBy from 'lodash-es/uniqBy';
 
 export class AcsysClientAdministrator extends AcsysClientStandard implements IAcsysClientAdministrator {

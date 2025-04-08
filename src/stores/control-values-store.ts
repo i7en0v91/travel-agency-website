@@ -10,7 +10,7 @@ import dayjs from 'dayjs';
 import type { ComputedRef } from 'vue';
 import { isCommonControl, isSpecificControl, isNestedControl, type ControlKey } from '../helpers/components';
 import type { SearchOffersFilterRange, SearchOffersFilterVariantId } from '../types';
-import { omit } from 'lodash';
+import omit from 'lodash-es/omit';
 
 /** Control value identifier, usually a component key */
 export type ControlValueKey = ControlKey;
@@ -431,10 +431,7 @@ function convertModelToStore<TModelValue>(
 }
 
 const storeDefBuilder = () => buildStoreDefinition(StoreId, 
-  () => { 
-    // TODO: uncomment preview state
-    // const { enabled } = usePreviewState();
-    const enabled = false;
+  () => {
     return {};
   },
   {

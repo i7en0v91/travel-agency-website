@@ -204,8 +204,7 @@ async function openWebPage(): Promise<void> {
   MainWindow.setMenuBarVisibility(true);
   MainWindow.setAutoHideMenuBar(false);
 
-  app.on('login', async (event, webContents, details, authInfo /*, callback*/) => {
-    const logData = authInfo ?? {};
+  app.on('login', async (event, _, details) => {
     Logger.info('login requested', { url: details?.url });
     event.preventDefault();
     

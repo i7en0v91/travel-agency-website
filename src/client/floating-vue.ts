@@ -17,7 +17,6 @@ export function patchPopperComponent(el: HTMLElement, hints: FloatingVueHydratio
     logger.debug('checking popper element', { id: el.id ?? '', className: el.className });
 
     const targetElements = el.querySelectorAll('.v-popper, .v-popper__popper');
-    let numPatched = 0;
     for(let i = 0; i < targetElements.length; i++) {
       const el = targetElements[i] as HTMLElement;
       for(let j = 0; j < PopperClassNamePatches.length; j++) {
@@ -30,7 +29,6 @@ export function patchPopperComponent(el: HTMLElement, hints: FloatingVueHydratio
           extensionListClassNames.reverse();
           const inheritedThemeClasses = `${customThemeClass} ${extensionListClassNames.join(' ')}`;          
           el.className = el.className.replace(customThemeClass, inheritedThemeClasses);
-          numPatched++;
           break;
         }
       }

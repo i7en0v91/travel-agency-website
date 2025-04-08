@@ -1,10 +1,11 @@
-import { delay, AppException, AppExceptionCodeEnum, AppConfig, type EntityId, type CacheEntityType, type GetEntityCacheItem } from '@golobe-demo/shared';
+import { QueryPagePreviewModeParam, delay, AppException, AppExceptionCodeEnum, AppConfig, type EntityId, type CacheEntityType, type GetEntityCacheItem } from '@golobe-demo/shared';
 import { StoreOperationTimeout, StoreKindEnum } from './../helpers/constants';
 import { getServerServices } from '../helpers/service-accessors';
 import { type IEntityCacheQuery, ApiEndpointEntityCache } from './../server/api-definitions';
 import { buildStoreDefinition, type PublicStore } from './../helpers/stores/pinia';
 import dayjs from 'dayjs';
 import has from 'lodash-es/has';
+import set from 'lodash-es/set';
 import type { Raw } from 'vue';
 
 const StoreId = StoreKindEnum.EntityCache;
@@ -52,9 +53,7 @@ function isExpired<TEntityType extends CacheEntityType>(entry: CacheEntry<TEntit
 
 const storeDefBuilder = () => buildStoreDefinition(StoreId, 
   (clientSideOptions) => {
-    // TODO: uncomment preview
-    // const { enabled } = usePreviewState();
-    const enabled = false;
+    const { enabled } = usePreviewState();
     const fetchQuery = ref<IEntityCacheQuery>();
     /** KB: optimization - keep items outside of state to gain performance 
      * by not tracking potentially thousands of objects in cache */
@@ -62,6 +61,7 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
     const vars = {
       nuxtApp: clientSideOptions.nuxtApp,
       fetchQuery,
+      preview: enabled,
       clientBackplane,
       entriesFetch:
         useFetch(`/${ApiEndpointEntityCache}`, {
@@ -403,11 +403,11 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
         }
 
         logger.debug(`advancing queue - executing fetch request`, { params: nextFetchArgs });
-        this.clientSetupVariables().fetchQuery.value = {
+        this.clientSetupVariables().fetchQuery.value = set({
           ids: ('ids' in nextFetchArgs.keys) ? nextFetchArgs.keys.ids : undefined,
           slugs: ('ids' in nextFetchArgs.keys) ? undefined : nextFetchArgs.keys.slugs,
           type: nextFetchArgs.type
-        };
+        }, QueryPagePreviewModeParam, this.clientSetupVariables().preview);
         this.clientSetupVariables().entriesFetch.execute();
       },
 
@@ -489,5 +489,8 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
   }
 );
 const StoreDef = storeDefBuilder();
+
 const useEntityCacheStoreInternal = defineStore(StoreId, StoreDef);
+export declare type EntityCacheStoreInternal = ReturnType<typeof useEntityCacheStoreInternal>;
+export declare type EntityCacheStore = ReturnType<PublicStore<typeof storeDefBuilder>>;
 export const useEntityCacheStore = useEntityCacheStoreInternal as PublicStore<typeof storeDefBuilder>;

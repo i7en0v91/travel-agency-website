@@ -6,7 +6,6 @@ import { type IPopularCityDto, ApiEndpointPopularCitiesList } from './../../../s
 import { Navigation, Autoplay, Mousewheel } from 'swiper/modules';
 import range from 'lodash-es/range';
 import PageSection from './../page-section.vue';
-import TravelCityCard from './travel-city-card.vue';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
 

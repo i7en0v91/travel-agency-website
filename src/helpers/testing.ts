@@ -10,8 +10,6 @@ import omit from 'lodash-es/omit';
 const LogFilePath = resolve('./testrun.log');
 export const ScreenshotDir = '.nuxt/screenshots';
 
-export const TEST_SERVER_PORT = 43321;
-
 export const OAUTH_SECRET = 'dummy';
 export const OAUTH_TOKEN_TYPE = 'Bearer';
 

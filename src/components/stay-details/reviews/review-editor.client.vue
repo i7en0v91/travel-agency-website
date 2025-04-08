@@ -10,6 +10,7 @@ import ReviewEditorButton from './review-editor-button.vue';
 import ComponentWaitingIndicator from './../../component-waiting-indicator.vue';
 import ReviewScorePicker from './review-score-picker.vue';
 import { getCommonServices } from '../../../helpers/service-accessors';
+import { useStayReviewsStore } from '../../../stores/stay-reviews-store';
 
 interface IProps {
   ctrlKey: ControlKey,
@@ -42,9 +43,11 @@ defineExpose({
   setEditedContent
 });
 
-const reviewStoreFactory = useStayReviewsStoreFactory();
-const reviewStore = await reviewStoreFactory.getInstance(stayId);
-
+const stayReviewsStore = useStayReviewsStore();
+const isMounted = ref(false);
+const sendButtonVisible = computed(() => 
+  !isMounted.value || stayReviewsStore.reviews.get(stayId)?.status === 'success'
+);
 const validationErrMsgResName = ref<I18nResName | undefined>();
 
 let completeCallback: (() => void) | undefined;
@@ -172,17 +175,6 @@ function onCancelReviewEditBtnClick () {
   $emit('cancelEdit');
 }
 
-const isMounted = ref(false);
-function isSendButtonVisible (): boolean {
-  return !isMounted.value || reviewStore.status !== 'pending';
-}
-const sendButtonVisible = ref(isSendButtonVisible());
-
-watch(() => reviewStore.status, () => {
-  logger.debug('review store status changed', { ctrlKey, status: reviewStore.status });
-  sendButtonVisible.value = isSendButtonVisible();
-});
-
 onBeforeUnmount(() => {
   logger.verbose('before unmount handler', ctrlKey);
   unref(editor)?.destroy();
@@ -191,7 +183,6 @@ onBeforeUnmount(() => {
 onMounted(() => {
   logger.verbose('mounted', ctrlKey);
   isMounted.value = true;
-  sendButtonVisible.value = isSendButtonVisible();
   refreshTabIndices();
 });
 

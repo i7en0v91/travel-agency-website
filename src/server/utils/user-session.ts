@@ -1,4 +1,4 @@
-import { type IAppLogger, type UserSession, type SessionValue, type SessionValues, CookieSession, AppConfig } from '@golobe-demo/shared';
+import { type UserSession, type SessionValue, type SessionValues, CookieSession, AppConfig } from '@golobe-demo/shared';
 import { randomBytes } from 'crypto';
 import type { H3Event } from 'h3';
 import get from 'lodash-es/get';

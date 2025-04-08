@@ -2,7 +2,6 @@
 import type { ControlKey } from './../../helpers/components';
 import type { ImageCategory, IImageEntitySrc, I18nResName } from '@golobe-demo/shared';
 import StaticImage from './../../components/images/static-image.vue';
-import SearchOffers from './search-offers/search-offers.vue';
 
 interface IProps {
   ctrlKey: ControlKey,

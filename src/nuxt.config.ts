@@ -1,9 +1,8 @@
-import { UseWinstonOnClient, I18LocalesDirName, lookupValueOrThrow, AppConfig, SystemPage, AppPage, EntityIdPages, getPagePath, AvailableLocaleCodes, CookieI18nLocale, DefaultLocale, isTestEnv, isPublishEnv, isDevEnv, isElectronBuild, LoadingStubFileName } from '@golobe-demo/shared';
+import { TEST_SERVER_PORT, UseWinstonOnClient, I18LocalesDirName, lookupValueOrThrow, AppConfig, SystemPage, AppPage, EntityIdPages, getPagePath, AvailableLocaleCodes, CookieI18nLocale, DefaultLocale, isTestEnv, isPublishEnv, isDevEnv, isElectronBuild, LoadingStubFileName } from '@golobe-demo/shared';
 import { ApiEndpointLoadOffers, ApiEndpointPrefix, ApiEndpointAuthentication, ApiEndpointUserAccount, ApiAppEndpointPrefix, ApiEndpointUserFavourites, ApiEndpointUserImageUpload, ApiEndpointUserTickets } from './server/api-definitions';
 import { resolveSharedPkgPath } from './helpers/resolvers';
 import { joinURL } from 'ufo';
 import type { RollupLog, LogLevel, LogOrStringHandler } from 'rollup';
-import { TEST_SERVER_PORT } from './helpers/testing';
 import toPairs from 'lodash-es/toPairs';
 import fromPairs from 'lodash-es/fromPairs';
 import flatten from 'lodash-es/flatten';

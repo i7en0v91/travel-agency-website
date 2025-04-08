@@ -1,4 +1,4 @@
-import { type IAppLogger, type Theme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppConfig } from '@golobe-demo/shared';
+import { type Theme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppConfig } from '@golobe-demo/shared';
 import { DeviceSizeEnum, DeviceSizeBreakpointsMap } from './../helpers/constants';
 import orderBy from 'lodash-es/orderBy';
 import zip from 'lodash-es/zip';

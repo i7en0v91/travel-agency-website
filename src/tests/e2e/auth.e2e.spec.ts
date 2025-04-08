@@ -1,7 +1,7 @@
 /* eslint-disable no-case-declarations */
-import { HeaderLocation, AppConfig, localizePath, type IAppLogger, AllHtmlPages, EntityIdPages, HeaderContentType, DefaultLocale, CookieI18nLocale, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, type Locale, AvailableLocaleCodes, spinWait, delay, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD, RestApiAuth } from '@golobe-demo/shared';
+import { TEST_SERVER_PORT, HeaderLocation, AppConfig, localizePath, type IAppLogger, AllHtmlPages, EntityIdPages, HeaderContentType, DefaultLocale, CookieI18nLocale, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, type Locale, AvailableLocaleCodes, spinWait, delay, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD, RestApiAuth } from '@golobe-demo/shared';
 import { ApiAppEndpointPrefix, ApiEndpointTestingInvlidatePage, type ITestingInvalidateCacheDto } from '../../server/api-definitions';
-import { TEST_SERVER_PORT, createLogger, ScreenshotDir } from '../../helpers/testing';
+import { createLogger, ScreenshotDir } from '../../helpers/testing';
 import { describe, test, type TestOptions } from 'vitest';
 import type { Page, Request, Response } from 'playwright-core';
 import { setup, createPage, createBrowser } from '@nuxt/test-utils/e2e';
@@ -354,13 +354,13 @@ class AuthTestCaseRunner {
         return true;
       }     
       if (pageType === 'index') {
-        const indicatorElLocator = '#flight-params-SearchFlightOffersBox-FlightParams';
+        const indicatorElLocator = '#flight-params-FlightOffers-FlightParams-BW2n';
         return (await page.locator(indicatorElLocator).innerText())?.length > 0;        
       } else if (pageType === 'login') {
         const indicatorElLocator = '.swiper-pagination-bullet';
         return await page.locator(indicatorElLocator).count() > 0;
       } else if (pageType === 'flights') {
-        const indicatorElLocator = '#flight-params-SearchFlightOffersBox-FlightParams';
+        const indicatorElLocator = '#flight-params-FlightOffers-FlightParams-BW2n';
         return (await page.locator(indicatorElLocator).innerText())?.length > 0;
       } else if (pageType === 'account') {
         const indicatorElLocator = '.user-account-page';
@@ -409,7 +409,7 @@ class AuthTestCaseRunner {
 
         const switchLinkId = `#locale-switch-link-${locale.toLowerCase()}`;
         this.prepareOutstandingRequestsCounter();
-        await page.locator('#nav-locale-switcher-navLocaleSwitcher').click();
+        await page.locator('#nav-locale-switcher-NavBar-Locale-pYKT').click();
         await page.locator(switchLinkId).dispatchEvent('click');
 
         await spinWait(() => {
@@ -468,7 +468,7 @@ class AuthTestCaseRunner {
       case 'index':
         switch (type) {
           case 'login':
-            await navigateByClick('#NavBar-login-link a', pageAfterRedirections);
+            await navigateByClick('#Layout-NavBar-login-link a', pageAfterRedirections);
             break;
           case 'account':
             await page.locator('#nav-user-menu-anchor').click();

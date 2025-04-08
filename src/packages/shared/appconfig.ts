@@ -5,7 +5,8 @@ import type { ILogSuppressionRule, ILogVueSuppressionRule } from './logging/comm
 import type { AppExceptionCode } from './exceptions';
 
 export const AppName = 'Golobe';
-export const HostUrl = isPublishEnv() ? 'golobe.demo' : 'localhost:3000';
+export const TEST_SERVER_PORT = 43321;
+export const HostUrl = isPublishEnv() ? 'golobe.demo' : (isTestEnv() ? `127.0.0.1:${TEST_SERVER_PORT}` : 'localhost:3000');
 // url used for showing users browser-navigateable links to the website
 export const SiteUrl = isPublishEnv() ? `https://${HostUrl}` : `http://${HostUrl}`;
 

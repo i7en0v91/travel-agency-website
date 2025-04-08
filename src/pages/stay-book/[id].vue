@@ -66,7 +66,7 @@ const stayOffer = computed(() =>  {
   const result = (
     offerFetch.status.value === 'success' && offerFetch.data?.value && 
     stayReviewsFetch!.status.value === 'success' && stayReviewsFetch!.data?.value
-  ) ? mapStayOfferDetails(offerFetch.data.value as IStayOfferDetailsDto, mapReviewSummary(stayReviewsFetch!.data.value!)) : undefined
+  ) ? mapStayOfferDetails(offerFetch.data.value as IStayOfferDetailsDto, mapReviewSummary(stayReviewsFetch!.data.value!)) : undefined;
   
   if(typeof (result?.totalPrice) === 'number') {
     result.totalPrice = new Decimal(result.totalPrice);

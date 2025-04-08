@@ -6,7 +6,7 @@ import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { Grid, Navigation } from 'swiper/modules';
 import type { Swiper } from 'swiper';
 import ComponentWaitingIndicator from './../../../components/component-waiting-indicator.vue';
-import type { IStayReviewItem } from './../../../stores/stay-reviews-store';
+import { useStayReviewsStore, type IStayReviewItem } from './../../../stores/stay-reviews-store';
 import { useConfirmBox } from './../../../composables/confirm-box';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
@@ -23,21 +23,33 @@ const ReviewsPerSlidePage = 5;
 
 const userNotificationStore = useUserNotificationStore();
 const { requestUserAction } = usePreviewState();
+const stayReviewsStore = useStayReviewsStore();
+const userAccountStore = useUserAccountStore();
+const confirmBox = useConfirmBox();
+
+const isError = computed(() => stayReviewsStore.reviews.get(stayId)?.status === 'error');
 
 const { ctrlKey, stayId } = defineProps<IProps>();
 const logger = getCommonServices().getLogger().addContextProps({ component: 'ReviewList' });
 
 const swiper = shallowRef<InstanceType<typeof Swiper>>();
 const isSwiperReady = ref(false);
-const showNoReviewStub = computed(() => reviewStore.status === 'success' && reviewStore.items !== undefined && reviewStore.items.length === 0);
-const isNavButtonsVisible = computed(() => reviewStore.status !== 'error' && reviewStore.items !== undefined && isSwiperReady.value && !showNoReviewStub.value);
+const stayReviews = computed(() => stayReviewsStore.reviews.get(stayId));
+const showNoReviewStub = computed(() => { 
+  const reviews = stayReviews.value;
+  return reviews?.status === 'success' && reviews.items !== undefined && reviews.items !== LOADING_STATE && reviews.items.length === 0;
+});
+const isNavButtonsVisible = computed(() => {
+  const reviews = stayReviews.value;
+  return reviews && reviews.status !== 'error' && reviews.items !== undefined && reviews.items !== LOADING_STATE && isSwiperReady.value && !showNoReviewStub.value;
+});
 const pagingState = ref<{ of: number, total: number } | undefined>();
 const slideAnimationEnabled = import.meta.client && !isPrefersReducedMotionEnabled();
 
 function refreshPagingState () {
   logger.debug('refreshing paging state', { ctrlKey, stayId });
   const swiperInstance = swiper.value;
-  if (!isSwiperReady.value || !swiperInstance) {
+  if (!isSwiperReady.value || !swiperInstance || !swiperInstance.slides) {
     logger.debug('refreshing paging state - swiper not initialized', { ctrlKey, stayId });
     return;
   }
@@ -66,20 +78,6 @@ defineExpose({
   rewindToTop
 });
 
-const reviewStoreFactory = useStayReviewsStoreFactory();
-const reviewStore = await reviewStoreFactory.getInstance(stayId);
-const userAccountStore = useUserAccountStore();
-
-const confirmBox = useConfirmBox();
-
-const isError = ref(reviewStore.status === 'error');
-
-watch(() => reviewStore.status, () => {
-  isError.value = reviewStore.status === 'error';
-  nextTick(refreshPagingState);
-});
-
-
 function isTestUserReview (review: IStayReviewItem): boolean {
   return review.text.en !== review.text.ru;
 }
@@ -97,12 +95,24 @@ async function onDeleteUserReviewBtnClick (): Promise<void> {
     return;
   }
 
+  const deletingReview = 
+    (stayReviews.value?.items && stayReviews.value.items !== LOADING_STATE) ? 
+    stayReviews.value.items.find(i => i.user.id === userAccountStore.userId) :
+    undefined;
+  if(!deletingReview) {
+    logger.warn('no user review found to delete', undefined, { ctrlKey, stayId });
+    return;
+  }
+
   const result = await confirmBox.confirm([...ctrlKey, 'UserReview', 'Delete', 'ConfirmBox'], ['yes', 'no'], getI18nResName3('stayDetailsPage', 'reviews', 'confirmDelete'));
   if (result === 'yes') {
-    const deletingReview = await reviewStore.getUserReview()!;
-    await reviewStore.deleteReview();
-    nextTick(refreshPagingState);
-    $emit('userReviewDeleted', deletingReview);
+    try {
+      await stayReviewsStore.deleteReview(stayId);
+      setTimeout(refreshPagingState);
+      $emit('userReviewDeleted', deletingReview);
+    } catch(err: any) {
+      logger.warn('failed to delete review', err, { ctrlKey, stayId });
+    }
   }
 }
 
@@ -114,7 +124,7 @@ function onSwiperInit () {
   logger.debug('swiper initialized', { ctrlKey, stayId });
   swiper.value = (document.querySelector('.stay-reviews-swiper') as any).swiper as Swiper;
   isSwiperReady.value = true;
-  nextTick(refreshPagingState);
+  setTimeout(refreshPagingState);
 }
 
 function onSwiperSlideChanged () {
@@ -137,13 +147,19 @@ function onNavPrevBtnClick () {
   }
 }
 
+onMounted(() => {
+  watch(() => stayReviewsStore.reviews.get(stayId)?.status, () => {
+    setTimeout(refreshPagingState);
+  });
+});
+
 </script>
 
 <template>
   <div class="stay-reviews-list-div no-hidden-parent-tabulation-check">
     <ErrorHelm :is-error="isError">
       <Swiper
-        v-if="reviewStore.status !== 'error' && reviewStore.items !== undefined"
+        v-if="stayReviews && stayReviews.status !== 'error' && stayReviews.items && stayReviews.items !== LOADING_STATE"
         :class="`stay-reviews-list stay-reviews-swiper pb-xs-4 ${isSwiperReady ? 'initialized' : ''} ${showNoReviewStub ? 'hidden' : ''}`"
         :modules="[Navigation, Grid]"
         :slides-per-view="1"
@@ -152,7 +168,7 @@ function onNavPrevBtnClick () {
         :rewind="true"
         :effect="slideAnimationEnabled ? 'slide' : 'fade'"
         :speed="slideAnimationEnabled ? 300 : 0"
-        :grid="{ rows: Math.min(reviewStore.items.length, ReviewsPerSlidePage), fill: 'row' }"
+        :grid="{ rows: Math.min(stayReviews.items.length, ReviewsPerSlidePage), fill: 'row' }"
         :navigation="{
           enabled: true,
           nextEl: null,
@@ -162,7 +178,7 @@ function onNavPrevBtnClick () {
         @slide-change-transition-end="onSwiperSlideChanged"
       >
         <SwiperSlide
-          v-for="(review) in reviewStore.items "
+          v-for="(review) in stayReviews.items"
           :key="`${toShortForm(ctrlKey)}-Review-${review.id}`"
           class="stay-reviews-list-item"
         >
@@ -170,12 +186,12 @@ function onNavPrevBtnClick () {
           <article class="stay-reviews-card">
             <div class="stay-reviews-card-avatar">
               <StaticImage
-                v-if="review.user === 'current' ? !!(userAccountStore.avatar) : !!(review.user.avatar)"
+                v-if="review.user.id === userAccountStore.userId ? !!(userAccountStore.avatar) : !!(review.user.avatar)"
                 :ctrl-key="[...ctrlKey, 'ReviewItem', review.id as ArbitraryControlElementMarker, 'Avatar', 'StaticImg']"
                 :stub="false"
                 class="stay-reviews-card-avatar"
                 :ui="{ img: 'stay-reviews-card-avatar-img' }"
-                :src="review.user === 'current' ? ((userAccountStore.avatar && userAccountStore.avatar !== LOADING_STATE) ? userAccountStore.avatar : undefined) : review.user.avatar"
+                :src="review.user.id === userAccountStore.userId ? ((userAccountStore.avatar && userAccountStore.avatar !== LOADING_STATE) ? userAccountStore.avatar : undefined) : review.user.avatar"
                 :category="ImageCategory.UserAvatar"
                 sizes="xs:30vw sm:20vw md:20vw lg:10vw xl:10vw"
                 :alt="{ resName: getI18nResName3('stayDetailsPage', 'reviews', 'avatarImgAlt') }"
@@ -200,7 +216,7 @@ function onNavPrevBtnClick () {
                     </div>
                     <span class="stay-reviews-card-scoring-separator" />
                     <div class="stay-reviews-card-username">
-                      {{ `${review.user === 'current' ? ((userAccountStore.name && userAccountStore.name !== LOADING_STATE) ? `${userAccountStore.name.firstName} ${userAccountStore.name.lastName}` : '...') : (`${review.user.firstName} ${review.user.lastName}`)}` }}
+                      {{ `${review.user.id === userAccountStore.userId ? ((userAccountStore.name && userAccountStore.name !== LOADING_STATE) ? `${userAccountStore.name.firstName} ${userAccountStore.name.lastName}` : '...') : (`${review.user.firstName} ${review.user.lastName}`)}` }}
                     </div>
                   </h3>
                   <p v-if="isTestUserReview(review)" class="stay-reviews-card-text">
@@ -213,7 +229,7 @@ function onNavPrevBtnClick () {
             </div>
             <div class="stay-reviews-card-buttons-div mr-xs-2">
               <div class="stay-reviews-card-flag" />
-              <div v-if="review.user === 'current' || review.user.id === userAccountStore.userId" class="stay-reviews-card-control-buttons">
+              <div v-if="review.user.id === userAccountStore.userId" class="stay-reviews-card-control-buttons">
                 <SimpleButton
                   class="stay-reviews-card-btn review-btn-delete no-hidden-parent-tabulation-check"
                   :ctrl-key="[...ctrlKey, 'UserReview', 'Btn', 'Delete']"
@@ -261,7 +277,7 @@ function onNavPrevBtnClick () {
         {{ $t(getI18nResName3('stayDetailsPage', 'reviews', 'noReviews')) }}
       </div>
       <ComponentWaitingIndicator 
-        v-if="(reviewStore.status !== 'error' && reviewStore.items === undefined) || !isSwiperReady" 
+        v-if="(stayReviews?.status !== 'error' && (stayReviews?.items === undefined || stayReviews?.items === LOADING_STATE)) || !isSwiperReady" 
         :ctrl-key="[...ctrlKey, 'ResultItemsList', 'Waiter']" 
         class="stay-reviews-waiting-indicator my-xs-5" 
       />

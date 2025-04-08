@@ -1,13 +1,12 @@
-import { type IAppLogger, type EntityId, type ILocalizableValue, AppException, AppExceptionCodeEnum } from '@golobe-demo/shared';
-import  { ApiEndpointStayReviews, type ICreateOrUpdateStayReviewDto, type IModifyStayReviewResultDto, type IStayReviewsDto } from '../server/api-definitions';
+import { type ILocalizableValue, type IAppLogger, AppException, AppExceptionCodeEnum, type EntityId } from '@golobe-demo/shared';
+import { type IModifyStayReviewResultDto, type ICreateOrUpdateStayReviewDto, type IStayReviewsDto, ApiEndpointStayReviews } from './../server/api-definitions';
+import { buildStoreDefinition, type PublicStore } from './../helpers/stores/pinia';
+import { LOADING_STATE, StoreKindEnum } from './../helpers/constants';
 import { getObject, post, del } from './../helpers/rest-utils';
-import { LOADING_STATE } from './../helpers/constants';
 import orderBy from 'lodash-es/orderBy';
-import isString from 'lodash-es/isString';
-import type { NuxtApp } from 'nuxt/app';
-import { getCommonServices } from '../helpers/service-accessors';
 
 interface IStayReviewUser {
+  id: EntityId,
   avatar?: {
     slug: string,
     timestamp?: number,
@@ -17,35 +16,41 @@ interface IStayReviewUser {
 }
 
 export interface IStayReviewItem {
-  user: IStayReviewUser | 'current',
+  id: EntityId,
+  user: IStayReviewUser,
   text: ILocalizableValue,
   score: number
 }
 
-interface IStayReviewItemInternal extends IStayReviewItem {
-  user: (IStayReviewUser & { id: EntityId }) | 'current',
-  id: EntityId
+declare type LOADING = typeof LOADING_STATE;
+export type StayReviewsProcessingStatus = 'pending' | 'success' | 'error';
+
+export type StayReviewsState = {
+  status: StayReviewsProcessingStatus,
+  items: IStayReviewItem[] | LOADING | undefined,
+};
+
+declare type ReviewsState = ReadonlyMap<EntityId, StayReviewsState>;
+
+declare type State = {
+  s_reviews: Map<EntityId, StayReviewsState>
+};
+
+const StoreId = StoreKindEnum.StayReviews;
+
+function throwIfExecutingActionOnServer() {
+  if(import.meta.server) {
+    const store = useStayReviewsStore();
+    store.getLogger().error('operations with reviews via store is not possible on server');
+    throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'illegal operation', 'error-page');
+  }
 }
 
-export interface IStayReviewsStore {
-  stayId: EntityId,
-  status: 'pending' | 'success' | 'error',
-  items: IStayReviewItemInternal[] | undefined,
-  fetchReviews: () => Promise<void>,
-  createOrUpdateReview: (text: string, score: number) => Promise<void>,
-  deleteReview: () => Promise<void>,
-  getUserReview: () => IStayReviewItem | undefined
-}
-
-interface IStayReviewsStoreInternal extends IStayReviewsStore {
-  onAuth: (userId: EntityId) => void,
-  onSignOut: () => void
-}
-
-declare type StayReviewsStoreRef = ReturnType<typeof reactive<IStayReviewsStore>>;
-declare type StayReviewsStoreInternalRef = ReturnType<typeof reactive<IStayReviewsStoreInternal>>;
-export interface IStayReviewsStoreFactory {
-  getInstance: (stayId: EntityId) => Promise<StayReviewsStoreRef>;
+async function sendFetchReviewsRequest (stayId: EntityId, logger: IAppLogger): Promise<IStayReviewsDto> {
+  logger.debug(`sending fetch stay reviews HTTP request`, { stayId });
+  const resultDto = await getObject(`/${ApiEndpointStayReviews(stayId)}`, undefined, 'no-store', true, undefined, 'throw') as IStayReviewsDto;
+  logger.debug(`fetch stay reviews request completed`, { stayId, resultDto });
+  return resultDto;
 }
 
 async function sendCreateOrUpdateReviewRequest (stayId: EntityId, textOrHtml: string, score: number, logger: IAppLogger): Promise<EntityId> {
@@ -53,277 +58,377 @@ async function sendCreateOrUpdateReviewRequest (stayId: EntityId, textOrHtml: st
     score,
     textOrHtml
   };
-  // logger.debug(`(stay-reviews-store) sending create or update HTTP request, stayId=${stayId}`);
-  const resultDto = await post(`/${ApiEndpointStayReviews(stayId)}`, undefined, bodyDto, undefined, true, undefined, 'default') as IModifyStayReviewResultDto;
-  if (!resultDto) {
-    // logger.warn(`(stay-reviews-store) exception occured while sending create or update HTTP request, stayId=${stayId}, textOrHtml=${textOrHtml}`);
-    throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
-  }
-  // logger.debug(`(stay-reviews-store) create or update HTTP request completed, stayId=${stayId}, result=${JSON.stringify(resultDto)}`);
+  logger.debug(`sending create or update stay review HTTP request`, { stayId });
+  const resultDto = await post(`/${ApiEndpointStayReviews(stayId)}`, undefined, bodyDto, undefined, true, undefined, 'throw') as IModifyStayReviewResultDto;
+  logger.debug(`create or update stay review HTTP request completed`,  { stayId, resultDto });
   return resultDto.reviewId;
 }
 
-async function sendDeleteReviewRequest (stayId: EntityId, logger: IAppLogger): Promise<void> {
-  // logger.debug(`(stay-reviews-store) sending delete HTTP request, stayId=${stayId}`);
-  const resultDto = await del(`/${ApiEndpointStayReviews(stayId)}`, undefined, true, 'default') as IModifyStayReviewResultDto;
-  if (!resultDto) {
-    // logger.warn(`(stay-reviews-store) exception occured while sending delete HTTP request, stayId=${stayId}`);
-    throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
-  }
-  // logger.debug(`(stay-reviews-store) delete HTTP request completed, stayId=${stayId}, result=${JSON.stringify(resultDto)}`);
+async function sendDeleteReviewRequest (stayId: EntityId, logger: IAppLogger): Promise<EntityId> {
+  logger.debug(`sending delete stay review HTTP request`, { stayId });
+  const resultDto = await del(`/${ApiEndpointStayReviews(stayId)}`, undefined, true, 'throw') as IModifyStayReviewResultDto;
+  logger.debug(`delete stay review HTTP request completed`, { stayId, resultDto });
+  return resultDto.reviewId;
 }
 
-async function sendFetchReviewsRequest (stayId: EntityId, logger: IAppLogger): Promise<IStayReviewItemInternal[]> {
-  // logger.debug(`(stay-reviews-store) sending get HTTP request, stayId=${stayId}`);
-  const resultDto = await getObject(`/${ApiEndpointStayReviews(stayId)}`, undefined, 'no-store', true, undefined, 'default') as IStayReviewsDto;
-  if (!resultDto) {
-    // logger.warn(`(stay-reviews-store) exception occured while sending get HTTP request, stayId=${stayId}`);
-    throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
+function moveUserReviewToTopIfAny(reviews: IStayReviewItem[], userId: EntityId): IStayReviewItem[] {
+  const userReviewIdx = reviews.findIndex(r => r.user.id === userId);
+  if(userReviewIdx < 0) {
+    return reviews;
   }
 
-  const result: IStayReviewItemInternal[] = orderBy(resultDto.reviews, ['order'], ['asc']).map((r) => {
-    return {
-      id: r.id,
-      score: r.score,
-      text: r.text,
-      user: {
-        id: r.user.id,
-        firstName: r.user.firstName,
-        lastName: r.user.lastName,
-        avatar: r.user.avatar
-          ? {
-              slug: r.user.avatar.slug,
-              timestamp: r.user.avatar.timestamp
-            }
-          : undefined
+  const userReview = reviews.splice(userReviewIdx, 1)[0];
+  reviews.unshift(userReview);
+  return reviews;
+}
+
+const storeDefBuilder = () => buildStoreDefinition(StoreId, 
+  () => { 
+    return {};
+  },
+  {
+    state: (): State => {
+      return {
+        s_reviews: new Map<EntityId, StayReviewsState>([])
+      };
+    },
+    getters: {
+      /**
+       * List of reviews broken down by hotel identifiers. For reviews to appear in this list 
+       * a hotel must be first marked for tracking by calling {@link trackStayReviews}
+       */
+      reviews(): ReviewsState {
+        return this.s_reviews;
       }
-    };
-  });
+    },
+    actions: {
+      /**
+       * Marks hotel for tracking so that its reviews appear in {@link reviews} collection
+       * @param stayId Hotel identifier whose reviews are required
+       */
+      async trackStayReviews(stayId: EntityId): Promise<void> {
+        const logger = this.getLogger();
+        if(!this.startTrackingStayReviews(stayId)) {
+          return;
+        }
 
-  // logger.debug(`(stay-reviews-store) get HTTP request completed, stayId=${stayId}, count=${result.length}`);
-  return result;
-}
-
-async function fetchItems (stayId: EntityId, nuxtApp: NuxtApp, logger: IAppLogger): Promise<IStayReviewItemInternal[] | undefined> {
-  // logger.debug(`(stay-reviews-store) fetch review data, stayId=${stayId}`);
-  const reviewItems = await sendFetchReviewsRequest(stayId, logger);
-  // logger.verbose(`(stay-reviews-store) fetch review data, stayId=${stayId}, result=${reviewItems?.length}`);
-  return reviewItems;
-}
-
-export const useStayReviewsStoreFactory = defineStore('stay-reviews-store-factory', () => {
-  const allInstances = new Map<EntityId, StayReviewsStoreInternalRef>();
-
-  const logger = getCommonServices().getLogger();
-  const userAccountStore = useUserAccountStore();
-  //let userAccount: IUserAccount | undefined;
-
-  //const { status } = useAuth();
-
-  const createInstance = (stayId: EntityId): StayReviewsStoreInternalRef => {
-    // logger.verbose(`(stay-reviews-store) creating instance, stayId=${stayId}`);
-
-    const nuxtApp = useNuxtApp();
-    const result: StayReviewsStoreInternalRef = reactive({
-      stayId,
-      status: 'pending',
-      items: undefined,
-      fetchReviews: async (): Promise<void> => {
-        // logger.verbose(`(stay-reviews-store) obtaining reviews, stayId=${stayId}, userId=${userAccount?.userId}`);
-        result.status = 'pending';
         try {
-          let itemsData = await fetchItems(stayId, nuxtApp, logger);
-          // logger.verbose(`(stay-reviews-store) reviews obtained, stayId=${stayId}, count=${itemsData?.length}`);
-
-          const userId = userAccountStore.userId;
-          if (userId) {
-            const currentUserReview = itemsData?.find(i => !isString(i.user) && i.user.id === userId);
-            if (currentUserReview) {
-              // logger.debug(`(stay-reviews-store) updating current user's review, stayId=${stayId}, userId=${userId}, reviewId=${currentUserReview.id}`);
-              itemsData!.splice(itemsData!.indexOf(currentUserReview), 1);
-              if (import.meta.client) {
-                currentUserReview.user = 'current';
-              }
-              itemsData = [currentUserReview, ...itemsData!];
-            }
-          } else {
-            // logger.verbose(`(stay-reviews-store) skipping current user's review data update, user info is empty, stayId=${stayId}`);
-          }
-
-          result.items = itemsData!;
-
-          result.status = 'success';
-        } catch (err: any) {
-          // logger.warn(`(stay-reviews-store) failed to obtain reviews, stayId=${stayId}`, err);
-          result.status = 'error';
-          result.items = [];
+          const resultDto = await sendFetchReviewsRequest(stayId, logger);
+          this.stayReviewsRequestSucceeded({ stayId, resultDto });
+        } catch(err: any) {
+          this.stayReviewsRequestFailed({ stayId, err });
         }
       },
-      createOrUpdateReview: async (text: string, score: number): Promise<void> => {
-        // logger.verbose(`(stay-reviews-store) create or update review, stayId=${stayId}, text=${text}, score=${score}`);
-        if (result.status === 'error') {
-          // logger.warn(`(stay-reviews-store) cannot create or update review, store is in failed state, stayId=${stayId}`);
+
+      /**
+       * Creates new or updates existing hotel review for currently authenticated user
+       */
+      async createOrUpdateReview(stayId: EntityId, text: string, score: number): Promise<void> {
+        const logger = this.getLogger();
+        if(!this.setStartChangeStayReviewState(stayId)) {
           return;
         }
 
-        if (!userAccountStore.isAuthenticated) {
-          // logger.warn(`(stay-reviews-store) cannot create or update review, user must be authneticated, stayId=${stayId}`);
-          return;
-        }
-
-        result.status = 'pending';
         let reviewId: EntityId;
         try {
           reviewId = await sendCreateOrUpdateReviewRequest(stayId, text, score, logger);
-          result.status = 'success';
+          this.changeStayReviewRequestSucceeded({
+            reviewId,
+            stayId,
+            score,
+            text
+          });
         } catch (err: any) {
-          // logger.warn(`(stay-reviews-store) failed to create or update review, stayId=${stayId}`, err);
-          result.status = 'error';
+          this.changeStayReviewRequestFailed({ stayId, err });
           throw err;
         }
+      },
 
-        let reviewInStore = result.items?.find(i => i.user === 'current');
-        if (!reviewInStore) {
-          // logger.debug(`(stay-reviews-store) creating reviews in store, stayId=${stayId}, userId=${userAccount?.userId}`);
-          reviewInStore = <IStayReviewItemInternal>{
-            id: reviewId,
-            score,
-            text: { ru: text, en: text, fr: text },
-            user: 'current'
-          };
-          result.items = [reviewInStore, ...(result.items ?? [])];
-        } else {
-          // logger.debug(`(stay-reviews-store) review in store updated, stayId=${stayId}, userId=${userAccount?.userId}`);
-          reviewInStore.text = { ru: text, en: text, fr: text };
-          reviewInStore.score = score;
+      /**
+       * Deletes hotel review for currently authenticated user
+       */
+      async deleteReview(stayId: EntityId): Promise<void> {
+        const logger = this.getLogger();
+        if(!this.setStartChangeStayReviewState(stayId)) {
+          return;
         }
 
-        // logger.verbose(`(stay-reviews-store) create or update review succeeded, stayId=${stayId}, text=${text}, reviewId=${reviewId}`);
+        try {
+          const reviewId = await sendDeleteReviewRequest(stayId, logger);
+          this.deleteStayReviewRequestSucceeded({
+            reviewId,
+            stayId
+          });
+        } catch (err: any) {
+          this.deleteStayReviewRequestFailed({ stayId,  err });
+          throw err;
+        }
       },
-      deleteReview: async (): Promise<void> => {
-        // logger.verbose(`(stay-reviews-store) delete review, stayId=${stayId}`);
-        if (result.status === 'error') {
-          // logger.warn(`(stay-reviews-store) cannot delete review, store is in failed state, stayId=${stayId}`);
-          return;
+    },
+    patches: {
+
+      startTrackingStayReviews(stayId: EntityId): boolean {
+        const logger = this.getLogger();
+        if(import.meta.server) {
+          logger.verbose('tracking stay reviews is not available on server', { stayId });
+          return false;
+        }
+
+        if(this.s_reviews.has(stayId)) {
+          logger.verbose('skipping track stay reviews request, already tracking', { stayId });
+          return false;
+        }
+
+        logger.verbose('starting to track stay reviews', { stayId });
+        this.$patch((s) => {
+          s.s_reviews.set(stayId, {
+            items: LOADING_STATE,
+            status: 'pending'
+          });
+        });
+        return true;
+      },
+
+      setStartChangeStayReviewState(stayId: EntityId): boolean {
+        throwIfExecutingActionOnServer();
+        const logger = this.getLogger();
+        const userAccountStore = useUserAccountStore();
+
+        const currentState = this.s_reviews.get(stayId);
+        if(currentState?.status === 'pending') {
+          logger.info('skipping stay reviews change as there is already exists an operation in a pending state', { stayId });
+          return false;
+        }
+
+        if(currentState?.status === 'error') {
+          logger.warn('cannot create or update review, currently in a failed state', undefined, { stayId });
+          return false;
         }
 
         if (!userAccountStore.isAuthenticated) {
-          // logger.warn(`(stay-reviews-store) cannot delete review, user must be authneticated, stayId=${stayId}`);
-          return;
+          logger.warn(`cannot create or update review, user must be authneticated`, undefined, { stayId });
+          return false;
         }
 
-        result.status = 'pending';
-        try {
-          await sendDeleteReviewRequest(stayId, logger);
-          result.status = 'success';
-        } catch (err: any) {
-          // logger.warn(`(stay-reviews-store) failed to delete review, stayId=${stayId}`, err);
-          throw err;
-        }
+        logger.verbose('starting stay review change', { stayId });  
+        this.$patch((s) => { 
+          s.s_reviews.set(stayId, {
+            items: s.s_reviews.get(stayId)?.items,
+            status: 'pending'
+          });
+        });
+        return true;
+      },
 
-        result.items = result.items?.filter(i => i.user !== 'current') ?? [];
-        // logger.verbose(`(stay-reviews-store) delete review succeeded, stayId=${stayId}`);
-      },
-      onAuth: (userId: EntityId): void => {
-        // logger.debug(`(stay-reviews-store) onAuth, stayId=${stayId}, userId=${userId}`);
-        if (result.status === 'success') {
-          const userReview = result.items?.find(i => !isString(i.user) && i.user.id === userId);
-          if (userReview) {
-            // logger.verbose(`(stay-reviews-store) setting user's current review, stayId=${stayId}, reviewId=${userReview.id}`);
-            userReview.user = 'current';
-            result.items!.splice(result.items!.indexOf(userReview), 1);
-            result.items = [userReview, ...result.items!];
-          }
+      changeStayReviewRequestSucceeded(args: { stayId: EntityId, reviewId: EntityId, text: string, score: number }) {
+        throwIfExecutingActionOnServer();
+        const logger = this.getLogger();
+        const userAccountStore = useUserAccountStore();
+
+        logger.verbose('change stay review request succeeded', { ...args, userId: userAccountStore.userId });
+        const { stayId } = args;
+
+        const stayReviews = this.s_reviews.get(stayId);
+        let userReview: IStayReviewItem | undefined;
+        if(stayReviews?.items && stayReviews.items !== LOADING_STATE) {
+          userReview = stayReviews.items.find(r => r.user.id === userAccountStore.userId);
         }
-      },
-      onSignOut: () => {
-        // logger.debug(`(stay-reviews-store) onSignOut, stayId=${stayId}`);
-        if (result.status === 'success') {
-          const userReview = result.items?.find(i => i.user === 'current');
-          if (userReview) {
-            // logger.verbose(`(stay-reviews-store) actualizing review user, stayId=${stayId}, reviewId=${userReview.id}`);
-            if (!userAccountStore.isAuthenticated || !userAccountStore.name || userAccountStore.name === LOADING_STATE) {
-              // logger.warn(`(stay-reviews-store) cannot handle singOut event, user data is empty, stayId=${stayId}`);
-              result.items = [];
-              result.status = 'error';
-              return;
+        if(userReview) {
+          logger.debug('existing stay review will be patched', { ...args, userId: userAccountStore.userId });
+          this.$patch((s) => {
+            userReview!.text = { en: args.text, ru: args.text, fr: args.text };
+            userReview!.score = args.score;
+            s.s_reviews.set(stayId, {
+              status: 'success',
+              items: stayReviews?.items
+            });
+          });
+        } else {
+          if(stayReviews?.items && stayReviews.items !== LOADING_STATE && userAccountStore.userId && userAccountStore.isAuthenticated && userAccountStore.name !== LOADING_STATE && userAccountStore.avatar !== LOADING_STATE) {
+            logger.verbose('adding new stay review with user info available to model', { ...args, userId: userAccountStore.userId });
+            userReview = {
+              text: { en: args.text, ru: args.text, fr: args.text },
+              score: args.score,
+              id: args.reviewId,
+              user: {
+                id: userAccountStore.userId!,
+                firstName: userAccountStore.name!.firstName ?? '',
+                lastName: userAccountStore.name!.lastName ?? '',
+                avatar: userAccountStore.avatar ?? undefined
+              }
+            };
+
+            let newItems = stayReviews.items;
+            newItems.push(userReview);
+            newItems = moveUserReviewToTopIfAny(newItems, userAccountStore.userId);
+            this.$patch((s) => { 
+              s.s_reviews.set(stayId, {
+                status: 'success',
+                items: newItems
+              });
+            });        
+          } else {
+            logger.info('reloading reviews instead of patching model with new review data as user info is not available', { ...args, userId: userAccountStore.userId });
+            this.$patch((s) => { 
+              s.s_reviews.set(stayId, {
+                status: 'success',
+                items: stayReviews?.items
+              });
+            });        
+
+            if(!this.setStartStayReviewsFetchState(stayId)) {
+              logger.warn('failed to start reviews reload after changes made', undefined, { ...args, userId: userAccountStore.userId });
+              throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to reload reviews', 'error-stub');
             }
 
-            userReview.user = {
-              id: userAccountStore.userId!,
-              firstName: userAccountStore.name.firstName ?? '',
-              lastName: userAccountStore.name.lastName ?? '',
-              avatar: (userAccountStore.avatar && userAccountStore.avatar !== LOADING_STATE)
-                ? {
-                    slug: userAccountStore.avatar.slug,
-                    timestamp: userAccountStore.avatar.timestamp
-                  }
-                : undefined
-            };
+            sendFetchReviewsRequest(stayId, logger)
+              .then((resultDto) => this.stayReviewsRequestSucceeded({ stayId, resultDto }))
+              .catch((err) => this.stayReviewsRequestFailed({ stayId, err }));
           }
         }
       },
-      getUserReview: (): IStayReviewItem | undefined => {
-        // logger.debug(`(stay-reviews-store) get user review, stayId=${stayId}, userId=${userAccount?.userId}`);
-        const review = result.items?.find(i => i.user === 'current');
-        // logger.debug(`(stay-reviews-store) get user review, stayId=${stayId}, userId=${userAccount?.userId}, reviewId=${review?.id}`);
-        return review;
-      }
-    });
 
-    return result;
-  };
+      changeStayReviewRequestFailed(args: {
+        stayId: EntityId,
+        err: any
+      }) {
+        throwIfExecutingActionOnServer();
+        const logger = this.getLogger();
+        const userAccountStore = useUserAccountStore();
 
-  const getInstance = async (stayId: EntityId): Promise<IStayReviewsStore> => {
-    // logger.debug(`(stay-reviews-store) get instance, stayId=${stayId}`);
+        logger.warn('change stay review request failed', args.err, { stayId: args.stayId, userId: userAccountStore.userId });
+        this.$patch((s) => { 
+          s.s_reviews.set(args.stayId, {
+            status: 'success', // fallback to previous set of reviews, which was before the failed operation
+            items: s.s_reviews.get(args.stayId)?.items
+          });
+        });
+      },
 
-    let instance = allInstances.get(stayId);
-    if (!instance) {
-      instance = createInstance(stayId);
-      if (import.meta.client) {
-        instance.fetchReviews();
-      } else {
-        await instance.fetchReviews();
-      }
-      allInstances.set(stayId, instance);
+      deleteStayReviewRequestSucceeded(args: { stayId: EntityId, reviewId: EntityId }) {
+        throwIfExecutingActionOnServer();
+        const logger = this.getLogger();
+        const userAccountStore = useUserAccountStore();
+
+        logger.verbose('delete stay review request succeeded', { ...args, userId: userAccountStore.userId });
+
+        const { stayId, reviewId } = args;
+        const stayReviews = this.s_reviews.get(stayId);
+        this.$patch(() => {
+          if(stayReviews) {
+            if(stayReviews.items && stayReviews.items !== LOADING_STATE) {
+              const deletedReviewIdx = stayReviews.items.findIndex(i => i.id === reviewId);
+              if(deletedReviewIdx >= 0) {
+                logger.debug('removing deleted review from model', { stayId, reviewId, userId: userAccountStore.userId });
+                stayReviews.items.splice(deletedReviewIdx, 1);
+              } else {
+                logger.warn('review was successfully deleted on server but not found in model', undefined, { stayId, reviewId, userId: userAccountStore.userId });
+              }
+            }
+            stayReviews.status = 'success';
+          } else {
+            logger.warn('review was successfully deleted on server but model is empty', undefined, { stayId, reviewId, userId: userAccountStore.userId });
+          }
+        });
+      },
+
+      deleteStayReviewRequestFailed(args: {
+        stayId: EntityId,
+        err: any
+      }) {
+        throwIfExecutingActionOnServer();
+        const logger = this.getLogger();
+        const userAccountStore = useUserAccountStore();
+
+        logger.warn('delete stay review request failed', args.err, { stayId: args.stayId, userId: userAccountStore.userId });
+        this.$patch((s) => { 
+          s.s_reviews.set(args.stayId, {
+            status: 'success', // fallback to previous set of reviews, which was before the failed operation
+            items: s.s_reviews.get(args.stayId)?.items
+          });
+        });
+      },
+
+      setStartStayReviewsFetchState(stayId: EntityId): boolean {
+        throwIfExecutingActionOnServer();
+        const logger = this.getLogger();
+
+        const currentState = this.s_reviews.get(stayId);
+        if(currentState?.status === 'pending') {
+          logger.info('skipping stay reviews fetch as there is already exists an operation in a pending state', { stayId });
+          return false;
+        }
+
+        logger.verbose('starting stay reviews fetch', { stayId });  
+        this.$patch((s) => { 
+          s.s_reviews.set(stayId, {
+            items: s.s_reviews.get(stayId)?.items,
+            status: 'pending'
+          });
+        });
+        return true;
+      },
+
+      stayReviewsRequestSucceeded(args: { stayId: EntityId, resultDto: IStayReviewsDto }) {
+        throwIfExecutingActionOnServer();
+        const logger = this.getLogger();
+        const userAccountStore = useUserAccountStore();
+
+        const { stayId, resultDto } = args;
+
+        logger.debug('mapping fetched stay reviews data', args);
+        const mappedResult: IStayReviewItem[] = orderBy(
+          resultDto.reviews, ['order'], ['asc']).map((r) => {
+            return {
+              id: r.id,
+              score: r.score,
+              text: r.text,
+              user: {
+                id: r.user.id,
+                firstName: r.user.firstName,
+                lastName: r.user.lastName,
+                avatar: r.user.avatar
+                  ? {
+                      slug: r.user.avatar.slug,
+                      timestamp: r.user.avatar.timestamp
+                    }
+                  : undefined
+              }
+            };
+          });
+
+        const userId = userAccountStore.userId;
+        logger.verbose('updating model with actual stay reviews data', { stayId, reviews: mappedResult, userId });
+        this.$patch((s) => { 
+          s.s_reviews.set(stayId, {
+            status: 'success',
+            items: userId ? moveUserReviewToTopIfAny(mappedResult, userId) : mappedResult
+          });
+        });        
+      },
+
+      stayReviewsRequestFailed(args: {
+        stayId: EntityId,
+        err: any
+      }) {
+        throwIfExecutingActionOnServer();
+        const logger = this.getLogger();
+
+        logger.warn('stay reviews fetch request failed', args.err, { stayId: args.stayId });
+        this.$patch((s) => { 
+          s.s_reviews.set(args.stayId, {
+            status: 'error',
+            items: undefined
+          });
+        });  
+        
+        throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'failed to fetch stay reviews', 'error-stub');
+      },
     }
-
-    // logger.debug(`(stay-reviews-store) get instance - ok, stayId=${stayId}`);
-    return instance;
-  };
-
-  const notifyInstancesOnAuthEvent = (userId: EntityId | 'sign-out') => {
-    const instances = [...allInstances.values()];
-    for (let i = 0; i < instances.length; i++) {
-      if (userId === 'sign-out') {
-        instances[i].onSignOut();
-      } else {
-        instances[i].onAuth(userId);
-      }
-    }
-  };
-
-  if (import.meta.client) {
-    // watch(status, async () => {
-    //   // logger.info(`(stay-reviews-store) auth status changed, status=${userAccountStore.isAuthenticated}`);
-    //   if (userAccountStore.isAuthenticated) {
-    //     try {
-    //       userAccount = await userAccountStore.getUserAccount();
-    //     } catch (err: any) {
-    //       // logger.warn('(stay-reviews-store) failed to process auth status change, cannot obtain user account data', err);
-    //       return;
-    //     }
-    //     notifyInstancesOnAuthEvent(userAccount.userId!);
-    //   } else {
-    //     notifyInstancesOnAuthEvent('sign-out');
-    //     userAccount = undefined;
-    //   }
-    // });
   }
-
-  // logger.verbose('(stay-reviews-store) factory created');
-  const result: IStayReviewsStoreFactory = {
-    getInstance
-  };
-  return result;
-});
+);
+const StoreDef = storeDefBuilder();
+const useStayReviewsStoreInternal = defineStore(StoreId, StoreDef);
+export declare type StayReviewsStoreInternal = ReturnType<typeof useStayReviewsStoreInternal>;
+export declare type StayReviewsStore = ReturnType<PublicStore<typeof storeDefBuilder>>;
+export const useStayReviewsStore = useStayReviewsStoreInternal as PublicStore<typeof storeDefBuilder>;

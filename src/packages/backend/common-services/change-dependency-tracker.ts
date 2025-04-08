@@ -166,7 +166,6 @@ export class ChangeDependencyTracker implements IChangeDependencyTracker {
     }
     result.push(...(modifiedEntities).map(x => { return { entity: x.entity, id: x.id }; }));
     if(result.length > maxCount) {
-      const logEntities = this.getStatsByKeyForLogMessage(result, i => i.entity);
       this.logger.warn('too much changed entities', undefined, { since: since.toISOString() });
       return 'too-much';
     }

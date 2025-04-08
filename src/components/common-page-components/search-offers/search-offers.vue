@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { areCtrlKeysEqual, type ControlKey } from './../../../helpers/components';
 import { type EntityId, type OfferKind, AppPage, lookupPageByUrl, getI18nResName1, getI18nResName2, type Locale, PreviewModeParamEnabledValue, QueryPagePreviewModeParam, CheckInOutDateUrlFormat } from '@golobe-demo/shared';
-import type { ISearchFlightOffersMainParams, ISearchStayOffersMainParams, ISearchFlightOffersParams, ISearchStayOffersParams } from './../../../types';
+import type { ISearchFlightOffersParams, ISearchStayOffersParams } from './../../../types';
 import type { Tooltip } from 'floating-vue';
 import dayjs from 'dayjs';
 import OptionButtonGroup from './../../../components/option-buttons/option-button-group.vue';

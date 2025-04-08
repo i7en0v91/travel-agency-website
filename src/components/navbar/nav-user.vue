@@ -30,8 +30,8 @@ const menuTogglerText = computed(() =>
     : ''
 );
 const avatarText = computed(() => 
-  (userAccountStore.firstName !== LOADING_STATE && userAccountStore.lastName !== LOADING_STATE) ?
-    clampTextLine(`${userAccountStore.firstName ?? '' } ${userAccountStore.lastName ? `${userAccountStore.lastName}.` : ''}`, 30)
+  (userAccountStore.name && userAccountStore.name !== LOADING_STATE) ?
+    clampTextLine(`${userAccountStore.name.firstName ?? '' } ${userAccountStore.name.lastName ? `${userAccountStore.name.lastName}.` : ''}`, 30)
     : ''
 );
 

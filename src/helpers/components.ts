@@ -1,6 +1,6 @@
 import type { ControlKey as ControlKeyGeneral, FilterId, AppPage, SystemPage, OfferKind, FlightOffersSortFactor, StayOffersSortFactor } from '@golobe-demo/shared';
-import { FlightsFilterEnum, toShortForm as toShortFormGeneral, areCtrlKeysEqual as areCtrlKeysEqualGeneral }from '@golobe-demo/shared';
-import { type SearchStaysOptionButtonKind, FindFlightsPageCtrlKey, FindStaysPageCtrlKey } from './constants';
+import { toShortForm as toShortFormGeneral, areCtrlKeysEqual as areCtrlKeysEqualGeneral }from '@golobe-demo/shared';
+import type { SearchStaysOptionButtonKind } from './constants';
 import type { PropertyGridControlButtonType, SearchOffersFilterRange, SearchOffersFilterVariantId, ISearchOffersFilterVariant } from './../types';
 
 export type CommonControls = 

@@ -8,6 +8,8 @@ import assign from 'lodash-es/assign';
 import set from 'lodash-es/set';
 import deepmerge from 'lodash-es/merge';
 import omit from 'lodash-es/omit';
+import isEqual from 'lodash-es/isEqual';
+import { hash } from 'ohash';
 
 export declare type UserUpdateData = { 
   firstName?: string, 
@@ -24,6 +26,12 @@ type UserImageUploadData = {
   content: Buffer,
   category: ImageCategory,
   name?: string
+}
+
+type UploadImageCategory = typeof ImageCategory.UserAvatar | typeof ImageCategory.UserCover;
+type PendingImageUpload = {
+  contentHash: string,
+  name: string | undefined
 }
 
 type BookingOfferInfo = {
@@ -59,7 +67,9 @@ declare type State = {
   s_userInfo: IUserAccount | undefined,
   s_favourites: { [P in OfferKind]: EntityId[] } | undefined,
   s_bookings: UserBookingInfo[] | undefined,
-  s_newBookingStates: ({ [P in OfferKind]: (NewBookingState<P> | null) }) | undefined
+  s_newBookingStates: ({ [P in OfferKind]: (NewBookingState<P> | null) }) | undefined,
+  s_pendingUserDataUpdate: UserUpdateData | undefined,
+  s_pendingImageUploads: { [P in UploadImageCategory]: PendingImageUpload | undefined } | undefined
 };
 
 const StoreId = StoreKindEnum.UserAccount;
@@ -176,16 +186,14 @@ function getUnauthenticatedState(): State {
     s_userInfo: undefined,
     s_bookings: undefined,
     s_favourites: undefined,
-    s_newBookingStates: undefined
+    s_newBookingStates: undefined,
+    s_pendingUserDataUpdate: undefined,
+    s_pendingImageUploads: undefined
   };
 }
 
 const storeDefBuilder = () => buildStoreDefinition(StoreId, 
   (clientSideOptions) => { 
-    // TODO: uncomment preview state
-    // const { enabled } = usePreviewState();
-    const enabled = false;
-
     const nuxtApp = clientSideOptions.nuxtApp;
     const getCurrentLocale = () => (nuxtApp.$i18n as ReturnType<typeof useI18n>).locale.value as Locale;
 
@@ -200,7 +208,7 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
         method: 'GET' as const,
         $fetch: clientSideOptions!.fetchEx({ defautAppExceptionAppearance: 'error-stub' })
       });
-    
+
     const userTicketsFetch =
       useFetch(`/${ApiEndpointUserTickets}`, {
         server: false,
@@ -425,6 +433,7 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
       async changePersonalInfo(updateFields: UserUpdateData, captchaToken: string): Promise<UpdateAccountResultCode | UserUpdateSkipped> {
         throwIfExecutingActionOnServer();        
 
+        const logger = this.getLogger();
         const locale = this.clientSetupVariables().getCurrentLocale();
         const theme = useThemeSettings().currentTheme.value;
         const updateData: UserUpdateData = {
@@ -436,8 +445,13 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
         };
 
         try {
-          const resultCode = await sendUpdateRequest(updateData, captchaToken, locale, theme, this.getLogger());
-          this.updateRequestSucceeded({ updateData, resultCode });
+          if(!this.setStartUpdateState(updateData)) {
+            return false;  
+          }
+          
+          logger.verbose('sending user account update request', { updateData: this.s_pendingUserDataUpdate });
+          const resultCode = await sendUpdateRequest(this.s_pendingUserDataUpdate!, captchaToken, locale, theme, logger);
+          this.updateRequestSucceeded(resultCode);
           return resultCode;
         } catch(err: any) {
           if(!this.updateRequestFailed({ updateData, err })) {
@@ -465,6 +479,10 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
           category: ImageCategory.UserAvatar,
         };
         try {
+          if(!this.setStartUploadImageState(uploadData)) {
+            return false;  
+          }
+
           const result = await sendUploadImageRequest(
             uploadData,
             this.getLogger()
@@ -497,6 +515,10 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
           category: ImageCategory.UserCover,
         };
         try {
+          if(!this.setStartUploadImageState(uploadData)) {
+            return false;  
+          }
+
           const result = await sendUploadImageRequest(
             uploadData,
             this.getLogger()
@@ -639,7 +661,10 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
 
         logger.verbose('updating model with new booking', { args });
         this.$patch((s) => { 
-          if(!s.s_bookings!.some(x => x.bookingId === args.bookInfo.bookingId)) {
+          if(!s.s_bookings?.some(x => x.bookingId === args.bookInfo.bookingId)) {
+            if(!s.s_bookings) {
+              s.s_bookings = [];
+            }
             s.s_bookings!.push(args.bookInfo);
           } else {
             logger.warn('updating model with new booking completed with issues - booking has been already added', undefined, { args });
@@ -876,6 +901,49 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
         return false;
       },
 
+      setStartUploadImageState(uploadData: UserImageUploadData) {
+        throwIfExecutingActionOnServer();
+        const logger = this.getLogger();
+
+        if(!this.isAuthenticated) {
+          logger.warn('skipping upload image request, unauthenticated', undefined, { uploadData }); 
+          return false;
+        }
+
+        switch(uploadData.category) {
+          case ImageCategory.UserAvatar:
+          case ImageCategory.UserCover:
+            break;
+          default:
+            logger.warn('unexpected uploading image category', undefined, { uploadData }); 
+            throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected image category ', 'error-stub'); 
+        }
+
+        const contentHash =  hash(uploadData.content);
+        if(this.s_pendingImageUploads && this.s_pendingImageUploads[uploadData.category]) {
+          if(this.s_pendingImageUploads[uploadData.category]!.contentHash == contentHash) {
+            logger.verbose('skipping image upload, currently uploading the same one', { uploadData }); 
+          } else {
+            logger.warn('skipping image upload, there is another upload pending', undefined, { uploadData }); 
+          }
+          return false;
+        }
+
+        this.$patch((s) => { 
+          s.s_pendingImageUploads ??= {
+            UserAvatar: undefined,
+            UserCover: undefined
+          };
+          s.s_pendingImageUploads[uploadData.category as UploadImageCategory] = {
+            contentHash,
+            name: uploadData.name
+          };
+        });
+
+        logger.verbose('user image upload request prepared', { uploadData }); 
+        return true;
+      },
+
       uploadImageRequestSucceeded(args: {
         uploadData: UserImageUploadData,
         result: IImageEntitySrc
@@ -890,6 +958,10 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
         }
 
         const { uploadData, result } = args;
+        if(!this.s_pendingImageUploads || !this.s_pendingImageUploads[uploadData.category as UploadImageCategory]) {
+          logger.warn('user image upload request successed, but pending image upload record not found', undefined, args); 
+        }
+
         const patchingFields = uploadData.category === ImageCategory.UserAvatar ? {
           avatar: result
         } : {
@@ -910,29 +982,77 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
           logger.warn('user image upload request failed, but user became unauthenticated', args.err, { uploadData: args.uploadData }); 
           return true;
         }
+
+        const { uploadData } = args;
+        if(this.s_pendingImageUploads && this.s_pendingImageUploads[uploadData.category as UploadImageCategory]) {
+          this.$patch((s) => { 
+            s.s_pendingImageUploads![uploadData.category as UploadImageCategory] = undefined;
+          });
+        } else {
+          logger.warn('user image upload request failed, but pending image upload record not found', undefined, args); 
+        }
+
         return false;
       },
-    
-      updateRequestSucceeded(args: { 
-        updateData: UserUpdateData,
-        resultCode: UpdateAccountResultCode
-      }) {
+
+      setStartUpdateState(updateData: UserUpdateData) {
         throwIfExecutingActionOnServer();
         const logger = this.getLogger();
-        const { updateData, resultCode } = args;
 
         if(!this.isAuthenticated) {
-          logger.warn('update request completed successfull, but user became unauthenticated', undefined, { updateData }); 
+          logger.warn('skipping user update request, unauthenticated', undefined, { updateData }); 
+          return false;
+        }
+
+        if(this.s_pendingUserDataUpdate && isEqual(updateData, this.s_pendingUserDataUpdate)) {
+          logger.verbose('skipping user update request, it is currently executing', { updateData }); 
+          return false;
+        }
+
+        if(this.s_pendingUserDataUpdate) {
+          logger.verbose('merging new update data with currently pending update', { pendingUpdateData: this.s_pendingUserDataUpdate, newUpdateData: updateData }); 
+          const pendingEmails = this.s_pendingUserDataUpdate.emails;
+          updateData = deepmerge(omit({ ...this.s_pendingUserDataUpdate }, ['emails']), updateData);
+          if(!updateData.emails) {
+            updateData.emails =  pendingEmails;
+          }
+        }
+        
+        this.$patch((s) => { 
+          s.s_pendingUserDataUpdate = updateData;
+        });
+
+        logger.verbose('user update request prepared', { updateData }); 
+        return true;
+      },
+    
+      updateRequestSucceeded(resultCode: UpdateAccountResultCode) {
+        throwIfExecutingActionOnServer();
+        const logger = this.getLogger();
+
+        if(!this.isAuthenticated) {
+          logger.warn('update request completed successfull, but user became unauthenticated', undefined, { updateData: this.s_pendingUserDataUpdate }); 
+          this.$patch((s) => { 
+            s.s_pendingUserDataUpdate = undefined;
+          });
+          return;
+        }
+
+        if(!this.s_pendingUserDataUpdate) {
+          logger.warn('update request completed successfull, but pending update record is empty'); 
           return;
         }
 
         switch (resultCode) {
           case UpdateAccountResultCode.SUCCESS:
-            logger.verbose('updating model with new user data', { updateData });
-            this.patchUserInfo(updateData);
+            logger.verbose('updating model with new user data', { updateData: this.s_pendingUserDataUpdate });
+            this.patchUserInfo(this.s_pendingUserDataUpdate);
             break;
           default:
-            logger.info('skipping model update as response indicates about server-side issues', { resultCode, updateData });
+            logger.info('skipping model update as response indicates about server-side issues', { resultCode, updateData: this.s_pendingUserDataUpdate });
+            this.$patch((s) => { 
+              s.s_pendingUserDataUpdate = undefined;
+            });
             break;
         }
       },
@@ -947,8 +1067,20 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
 
         if(!this.isAuthenticated) {
           logger.warn('update request failed, but user became unauthenticated', err, { updateData }); 
+          this.$patch((s) => { 
+            s.s_pendingUserDataUpdate = undefined;
+          });
           return true;
         }
+
+        if(this.s_pendingUserDataUpdate && !isEqual(this.s_pendingUserDataUpdate, updateData)) {
+          logger.info('update request was canceled and resend with new data', { oldUpdateData: updateData, newUpdateData: this.s_pendingUserDataUpdate }); 
+          return true;
+        }
+
+        this.$patch((s) => { 
+          s.s_pendingUserDataUpdate = undefined;
+        });
 
         return false;
       },
@@ -965,6 +1097,19 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
           } as IUserAccount;
           deepmerge(s.s_userInfo, omit(updateFields, ['emails']));
           s.s_userInfo.emails = updateFields.emails ?? s.s_userInfo.emails;
+          s.s_pendingUserDataUpdate = undefined;
+          if(updateFields.avatar || updateFields.cover) {
+            s.s_pendingImageUploads ??= {
+              UserAvatar: undefined,
+              UserCover: undefined
+            };
+            if(updateFields.avatar) {
+              s.s_pendingImageUploads[ImageCategory.UserAvatar] = undefined;
+            }
+            if(updateFields.cover) {
+              s.s_pendingImageUploads[ImageCategory.UserCover] = undefined;
+            }
+          }
         });
       }
     }

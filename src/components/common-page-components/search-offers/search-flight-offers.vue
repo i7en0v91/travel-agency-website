@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ControlKey } from './../../../helpers/components';
-import { type TripType, DefaultFlightTripType, type EntityId, getI18nResName2 } from '@golobe-demo/shared';
+import { type TripType, type EntityId, getI18nResName2 } from '@golobe-demo/shared';
 import FieldFrame from './../../forms/field-frame.vue';
 import SearchListInput from './../../forms/search-list-input.vue';
 import DropdownList from './../../../components/forms/dropdown-list.vue';

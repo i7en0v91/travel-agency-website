@@ -134,10 +134,12 @@ async function validateAndSaveEmailChanges (newValues: (string | undefined)[], _
 
 onMounted(() => {
   watch(() => userAccountStore.emails, () => {
+    logger.debug('user account emails watch handler', { ctrlKey, emails: userAccountStore.emails });
     emails.value = ((userAccountStore.emails && userAccountStore.emails !== LOADING_STATE) ? userAccountStore.emails : undefined) ?? [];
   }, { immediate: true });
 
   watch(() => userAccountStore.name, () => {
+    logger.debug('user account name watch handler', { ctrlKey, name: userAccountStore.name });
     firstName.value = ((userAccountStore.name && userAccountStore.name !== LOADING_STATE) ? userAccountStore.name?.firstName : undefined) ?? '';
     lastName.value = ((userAccountStore.name && userAccountStore.name !== LOADING_STATE) ? userAccountStore.name?.lastName : undefined) ?? '';
   }, { immediate: true });
