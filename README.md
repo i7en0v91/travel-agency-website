@@ -13,6 +13,7 @@ https://github.com/user-attachments/assets/9ff4fafd-f0ba-4637-a08e-5bd162eb816c
 - [Acsys CMS](https://github.com/acsysio/acsys) - out-of-the-box CMS integration with drafts/preview mode support
 - HTML pages & images caching, configurable cache refresh policies on changes (e.g. via CMS)
 - UI: adaptive layout, light/dark theme support, input/selected values validation & prompting
+- Vue components binding to [Pinia](https://github.com/vuejs/pinia) stores where possible - async actions for user interaction and reactive getters for displaying current application state
 - Personal account with email confirmation registration flow, reviews, photos uploading, favourites & booking history
 - PDF generation for ticket/booking documents
 - Advanced error handling: error page / popup notification / HTML error stub on problematic component depending on source and severity of error as well as additional logging on server-side and on client-side (via REST endpoint)
@@ -102,7 +103,7 @@ To run e2e tests switch back to browser build.
 
 ## Architecture
 
-![travel-agency-demo](https://github.com/user-attachments/assets/5605a97d-487f-4311-bc60-f75ea1fedd04)
+![travel-agency-demo](https://github.com/user-attachments/assets/41bf637e-0093-409b-a4d2-79c35a5cd655)
 
 ## Tech
 Project uses a number of open source projects to work properly:
@@ -116,8 +117,7 @@ Project uses a number of open source projects to work properly:
 - [Vue 3](https://github.com/vuejs) - progressive, incrementally-adoptable JavaScript framework for building UI on the web
 - [Vite](https://github.com/vitejs) - Next generation frontend tooling. It's fast!
 - [node.js](https://github.com/nodejs) - evented I/O for the backend
-- [Prisma](https://github.com/prisma)
-- ORM solution to support different databases
+- [Prisma](https://github.com/prisma) - ORM solution to support different databases
 - [Pinia](https://github.com/vuejs/pinia) - intuitive, type safe and flexible Store for Vue
 - [Nodemailer](https://github.com/nodemailer/nodemailer) - for sending emails
 - [Playwright](https://github.com/microsoft/playwright) - for Web Testing and Automation
