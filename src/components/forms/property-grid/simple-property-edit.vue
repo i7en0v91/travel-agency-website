@@ -231,6 +231,15 @@ const uiInputStyling = computed(() => {
   };
 });
 
+onMounted(() => {
+  watch(() => props.value, () => {
+    logger.debug('model value watch handler', { ctrlKey: props.ctrlKey, modelValue: props.value, editMode: isEditMode.value });
+    if(!isEditMode.value) {
+      editValue.value = props.value;
+    }
+  }, { immediate: false });
+});
+
 </script>
 
 <template>

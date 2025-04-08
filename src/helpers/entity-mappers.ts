@@ -1,5 +1,5 @@
 import { AppException, AppExceptionCodeEnum, type ReviewSummary, type IOfferBooking, type IStayImageShort, type IStayOfferDetails, type IStay, type ICity, type ISearchFlightOffersResult, type ISearchStayOffersResult, type EntityDataAttrsOnly, type IFlightOffer, type IFlight, type IAirlineCompany, type IAirport, type IAirplane, type IStayOffer, type IStayShort } from '@golobe-demo/shared';
-import type { ILoadOffersResultDto, IStayDto, IFlightDto, IFlightOfferDetailsDto, IStayOfferDetailsDto, ICityDto, ISearchStayOffersResultDto, IAirlineCompanyDto, ISearchedFlightDto, ISearchedFlightOfferDto, IAirportDto, IAirplaneDto, ISearchedStayOfferDto, ISearchFlightOffersResultDto, ISearchedStayDto, IBookingDetailsDto, IUserTicketsResultDto, IReviewSummaryDto } from '../server/api-definitions';
+import type { ILoadOffersResultDto, IStayDto, IFlightDto, IFlightOfferDetailsDto, IStayOfferDetailsDto, ICityDto, ISearchStayOffersResultDto, IAirlineCompanyDto, ISearchedFlightDto, ISearchedFlightOfferDto, IAirportDto, IAirplaneDto, ISearchedStayOfferDto, ISearchFlightOffersResultDto, ISearchedStayDto, IBookingDetailsDto, IReviewSummaryDto } from '../server/api-definitions';
 import { Decimal } from 'decimal.js';
 import orderBy from 'lodash-es/orderBy';
 import { getCommonServices } from './service-accessors';

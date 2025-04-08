@@ -7,7 +7,6 @@ import type { HTTPMethod } from 'h3';
 import { CookieAcsysEmail, CookieAcsysMode, CookieAcsysRefreshToken, CookieAcsysRole, CookieAcsysSession, CookieAcsysUser, CookieAcsysUserId, RouteInitialLocalDatabaseConfig, RouteAuthenticate, AuthKeeperTimerIntervalSec, RefreshAuthTokenWindowSec, RouteRefreshToken, DefaultOperationTimeoutSec, RouteIsConnected, RouteHasAdmin, RouteRegister, HeaderFileLastModifiedUtc } from './constants';
 import { parseURL, stringifyQuery } from 'ufo';
 import { destr } from 'destr';
-import isObject from 'lodash-es/isObject';
 import type { ObjectSchema } from 'yup';
 import { setInterval as scheduleTimer } from 'timers';
 import dayjs from 'dayjs';
@@ -367,7 +366,6 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
       TReqSchema extends ObjectSchema<YupAnyObject> = ObjectSchema<YupAnyObject>>
     (fullPath: string, query: any, body: any, method: HTTPMethod, minimumUserRole: UserRoleEnum | undefined, withAuth: boolean | 'accept-pending-status', respType: ApiResponseTypes, bodyValidationSchema?: TReqSchema): Promise<TRes> => 
   {
-    const logData = (isObject(body) && !(body instanceof FormData)) ? { query, body } : { query };
     this.logger.verbose('fetch', { roleKind: this.roleKind, path: fullPath, method, minRole: minimumUserRole, withAuth, status: this.authStatus });
 
     const authorizationPassed = this.verifyMinimumUserRole(minimumUserRole);
@@ -403,11 +401,9 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
 
     if(body) {
       if(!(body instanceof FormData) && bodyValidationSchema) {
-        const logData = isObject(body) ? { body } : {  };
         this.logger.debug('validating fetch body', { roleKind: this.roleKind, path: fullPath, method });
         const validationError = await validateObject(body, bodyValidationSchema);
         if (validationError) {
-          const logData = isObject(body) ? { query, body } : { query };
           this.logger.warn('fetch body validation failed', undefined, { roleKind: this.roleKind, path: fullPath, method, minRole: minimumUserRole, withAuth, status: this.authStatus, msg: validationError.message });
           throw new AppException(AppExceptionCodeEnum.BAD_REQUEST, 'invalid request parameters', 'error-stub');
         }
@@ -427,7 +423,6 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
     const url = `${this.baseUrl}/${fullPath}${queryStr ? `?${queryStr}` : ''}`;
     const response = await fetch(url, fetchParams);
     if(!response.ok) {
-      const logData = (isObject(body) && !(body instanceof FormData)) ? { query, body } : { query };
       this.logger.warn('fetch failed', undefined, { roleKind: this.roleKind, path: fullPath, method, minRole: minimumUserRole, withAuth, status: this.authStatus, responseStatus: response.status, responseStatusText: response.statusText });
       throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'fetch failed', 'error-stub');
     }
@@ -440,21 +435,18 @@ export class AcsysClientBase implements IAcsysClientBase, IAcsysAuthState {
       let lastModifiedUtc: Date;
       const lastModifiedUtcStr = response.headers.get(HeaderFileLastModifiedUtc);
       if(!lastModifiedUtcStr) {
-        const logData = (isObject(body) && !(body instanceof FormData)) ? { query, body } : { query };
         this.logger.warn('file response does not contain last modified time', undefined, { roleKind: this.roleKind, path: fullPath, method, minRole: minimumUserRole, responseStatus: response.status, responseStatusText: response.statusText });
         throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'Unexpected Acsys file response', 'error-stub');
       }
       try {
         lastModifiedUtc = dayjs().utc().toDate();
       } catch(err: any) {
-        const logData = (isObject(body) && !(body instanceof FormData)) ? { query, body } : { query };
-        this.logger.warn('failed to parse file last modified time', err, { ...(logData), ...{ roleKind: this.roleKind, value: lastModifiedUtcStr, path: fullPath, method, minRole: minimumUserRole, responseStatus: response.status, responseStatusText: response.statusText } });
+        this.logger.warn('failed to parse file last modified time', err, { roleKind: this.roleKind, value: lastModifiedUtcStr, path: fullPath, method, minRole: minimumUserRole, responseStatus: response.status, responseStatusText: response.statusText });
         throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'Unexpected Acsys file last modified time value', 'error-stub');
       }
       
       const mimeType = response.headers.get(HeaderContentType);
       if(!mimeType) {
-        const logData = (isObject(body) && !(body instanceof FormData)) ? { query, body } : { query };
         this.logger.warn('file response does not contain mime type', undefined, { roleKind: this.roleKind, path: fullPath, method, minRole: minimumUserRole, responseStatus: response.status, responseStatusText: response.statusText });
         throw new AppException(AppExceptionCodeEnum.ACSYS_INTEGRATION_ERROR, 'Unexpected Acsys file response', 'error-stub');
       }

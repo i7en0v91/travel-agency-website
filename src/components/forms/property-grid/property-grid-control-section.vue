@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toShortForm, toKnownElement, type ControlKey } from './../../../helpers/components';
+import { toShortForm, type ControlKey } from './../../../helpers/components';
 import { getI18nResName3 } from '@golobe-demo/shared';
 import type { PropertyGridControlButtonType } from './../../../types';
 import { getCommonServices } from '../../../helpers/service-accessors';

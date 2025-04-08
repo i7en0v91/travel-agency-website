@@ -1,31 +1,24 @@
-import { getI18nResName2, AppConfig, type EntityId, type IEntityCacheCityItem, AppException, AppExceptionCodeEnum, AppPage, type Locale, UserNotificationLevel } from '@golobe-demo/shared';
-import { TravelDetailsHtmlAnchor } from './../helpers/constants';
+import { AppConfig, getI18nResName2, UserNotificationLevel, type IEntityCacheCityItem, type IAppLogger, AppException, AppExceptionCodeEnum, type EntityId, QueryPagePreviewModeParam } from '@golobe-demo/shared';
+import { ApiEndpointPopularCityTravelDetails, ApiEndpointPopularCitiesList, type ITravelDetailsDto, type IPopularCityDto } from './../server/api-definitions';
 import type { ITravelDetailsData } from './../types';
-import { ApiEndpointPopularCityTravelDetails, ApiEndpointPopularCitiesList, type IPopularCityDto, type ITravelDetailsDto } from '../server/api-definitions';
-import once from 'lodash-es/once';
-import { withQuery, encodeHash, stringifyParsedURL, type ParsedURL } from 'ufo';
-import { getObject } from '../helpers/rest-utils';
-import { usePreviewState } from './../composables/preview-state';
+import { buildStoreDefinition, type PublicStore } from './../helpers/stores/pinia';
+import type { EntityCacheStore } from './../stores/entity-cache-store';
+import type { UserNotificationStore } from './../stores/user-notification-store';
 import { Decimal } from 'decimal.js';
-import type { AsyncDataRequestStatus } from 'nuxt/app';
-import { getCommonServices } from '../helpers/service-accessors';
-import { useEntityCacheStore } from './entity-cache-store';
+import { StoreKindEnum } from './../helpers/constants';
+import { getObject } from './../helpers/rest-utils';
+import type { H3Event } from 'h3';
+import set from 'lodash-es/set';
 
-interface ITravelDetailsStoreState {
-  current?: ITravelDetailsData | undefined,
-  upcoming?: ITravelDetailsData | undefined,
-  idPlaylist?: EntityId[],
-  isError: boolean,
-  manuallySetCityId?: EntityId | undefined
+declare type State = {
+  s_current: ITravelDetailsData | undefined,
+  s_upcoming: Partial<ITravelDetailsData> | undefined,
+  s_idPlaylist: EntityId[] | undefined,
+  s_loadCityIdx: number | undefined,
+  s_isError: boolean
 };
 
-export interface ITravelDetailsStoreMethods {
-  onPreRenderCompleted: (cityId: EntityId) => void,
-  increaseTimeoutOnCurrentSlideOnce: () => void,
-  startLoadingNewUpcoming: (cityId: EntityId) => void,
-  onComponentAttached: () => void,
-  onComponentDetached: () => void
-}
+const StoreId = StoreKindEnum.TravelDetails;
 
 const TimerLoopIterationInterval = 1000;
 
@@ -39,530 +32,593 @@ interface ITimePlayer {
   setMainLineTask: (action: () => void, delay: number | 'immediate') => void
 }
 
-export const useTravelDetailsStore = defineStore('travel-details-store', () => {
-  const logger = getCommonServices().getLogger();
-  // logger.info('(travel-details-store) start store construction');
+function createTimePlayer(): ITimePlayer {
+  let mainLineTask: ScheduledTask | undefined;
+  let firstTimeOfIdle: number | undefined;
 
-  const entityCacheStore = useEntityCacheStore();
-  const userNotificationStore = useUserNotificationStore();
-  const navLinkBuilder = useNavLinkBuilder();
-  const router = useRouter();
-  const { locale } = useI18n();
-
-  const { enabled } = usePreviewState();
-
-  async function getCityFromUrl (): Promise<IEntityCacheCityItem | undefined> {
-    const route = router.currentRoute.value;
-    // logger.debug(`(travel-details-store) parsing city from url, query=${JSON.stringify(route.query)}`);
-
-    const citySlug = route.query?.citySlug?.toString();
-    if (!citySlug) {
-      // logger.debug('(travel-details-store) city slug parameter was not specified');
-      return undefined;
-    }
-
-    let cacheResult: IEntityCacheCityItem[] = [];
+  const executeTaskSafe = (taskAction: () => void) => {
+    const logger = useTravelDetailsStore().getLogger();
     try {
-      cacheResult = await entityCacheStore.get({ slugs: [citySlug] }, 'City', true);
-    } catch(err: any) {
-      // logger.warn(`(travel-details-store) exception occured looking up city by slug, slug=${citySlug}`, err);
-      if(import.meta.client) {
-        userNotificationStore.show({
-          level: UserNotificationLevel.ERROR,
-          resName: getI18nResName2('appErrors', 'unknown')
-        });
-        return undefined;  
-      }
+      taskAction();
+    } catch (err: any) {
+      logger.warn('exception during task execution', err);
     }
-    
-    if (!cacheResult || cacheResult.length === 0) {
-      // logger.warn(`(travel-details-store) city not found, slug=${citySlug}`);
-      if(import.meta.client) {
-        userNotificationStore.show({
-          level: UserNotificationLevel.WARN,
-          resName: getI18nResName2('appErrors', 'objectNotFound')
-        });
-        return undefined;
-      } else {
-        // logger.warn(`(travel-details-store) failed to lookup city by slug, slug=${citySlug}`);
-        throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'city not found', 'error-page');
-      }
-    }
+  };
 
-    const result = cacheResult[0];
-    // logger.debug(`(travel-details-store) city from url parsed, query=${route.query}, id=${result.id}`);
-    return result;
-  }
-
-  function buildTravelCityUrl (citySlug: string): string {
-    // logger.debug(`(travel-details-store) build city url, slug=${citySlug}`);
-
-    const url: Partial<ParsedURL> = {
-      pathname: navLinkBuilder.buildPageLink(AppPage.Flights, locale.value as Locale),
-      hash: encodeHash(`#${TravelDetailsHtmlAnchor}`)
-    };
-    const result = withQuery(stringifyParsedURL(url), { citySlug });
-
-    // logger.debug(`(travel-details-store) city url, slug=${citySlug}, url=${result}`);
-    return result;
-  }
-
-  const fetchCityId = ref<EntityId>();
-  const nuxtApp = useNuxtApp();
-  const popularCitiesFetch = useFetch(`/${ApiEndpointPopularCitiesList}`,
-    {
-      server: true,
-      lazy: true,
-      immediate: true,
-      cache: enabled ? 'no-cache' : 'default',
-      query: { drafts: enabled },
-      transform: (response: IPopularCityDto[] | null[]) => {
-        // logger.verbose('(travel-details-store) received popular cities list response');
-        if (!response) {
-          // logger.warn('(travel-details-store) got empty popular cities list response');
-          return []; // error should be logged by fetchEx
-        }
-        return response[0] ? (response as IPopularCityDto[]) : response as null[];
-      },
-      $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-page' })
-    });
-
-  const instance = reactive<ITravelDetailsStoreState & ITravelDetailsStoreMethods>({
-    current: undefined,
-    upcoming: undefined,
-    idPlaylist: undefined,
-    isError: false,
-    onPreRenderCompleted: (_: EntityId) => {},
-    increaseTimeoutOnCurrentSlideOnce: () => {},
-    startLoadingNewUpcoming: (_: EntityId) => {},
-    onComponentAttached: () => {},
-    onComponentDetached: () => {},
-    manuallySetCityId: undefined
-  });
-
-  const travelDetails = ref<{ data: ITravelDetailsDto | null, status: AsyncDataRequestStatus }>({ data: null, status: 'idle' });
-  let timePlayer: ITimePlayer | undefined;
-
-  const createTimePlayer = (): ITimePlayer => {
-    // logger.debug('(travel-details-store) creating time player');
-
-    let mainLineTask: ScheduledTask | undefined;
-    let firstTimeOfIdle: number | undefined;
-
-    const executeTaskSafe = (taskAction: () => void) => {
-      try {
-        taskAction();
-      } catch (err: any) {
-        // logger.warn('(travel-details-store) exception during task execution', err);
-      }
-    };
-
-    const ensurePlayingIfIdle = () => {
-      if (!mainLineTask) {
-        const currentTime = new Date().getTime();
-        if (!firstTimeOfIdle) {
-          firstTimeOfIdle = currentTime;
-        } else if ((currentTime - firstTimeOfIdle) > AppConfig.fallIntoTravel.autoplayPeriodMs) {
-          const cityId = instance.upcoming?.cityId ?? instance.current?.cityId;
-          // logger.debug(`(travel-details-store) idle state detected, resuming play, time=${currentTime}, cityId=${cityId}`);
-          firstTimeOfIdle = undefined;
-          if (cityId) {
-            instance.manuallySetCityId = undefined;
-            setMainLineTask(() => {
-              startLoadingNextUpcoming(cityId);
-            }, 'immediate');
-          }
-          // else { } .. - don't log to prevent spamming
-        }
-      } else {
-        firstTimeOfIdle = undefined;
-      }
-    };
-
-    const timerLoopIteration = () => {
+  const ensurePlayingIfIdle = () => {
+    const logger = useTravelDetailsStore().getLogger();
+    if (!mainLineTask) {
       const currentTime = new Date().getTime();
-      // logger.debug(`(travel-details-store) timer loop iteration started, time=${currentTime}`);
-      try {
-        ensurePlayingIfIdle();
-
-        if (mainLineTask && mainLineTask.scheduledTime < currentTime) {
-          // logger.debug(`(travel-details-store) executing main line task, scheduled time=${mainLineTask.scheduledTime}`);
-          executeTaskSafe(mainLineTask.action);
-          mainLineTask = undefined;
+      if (!firstTimeOfIdle) {
+        firstTimeOfIdle = currentTime;
+      } else if ((currentTime - firstTimeOfIdle) > AppConfig.fallIntoTravel.autoplayPeriodMs) {
+        const store = useTravelDetailsStoreInternal();
+        const cityId = store.upcoming?.cityId ?? store.current?.cityId;
+        logger.debug(`idle state detected, resuming play`, { time: currentTime, cityId });
+        firstTimeOfIdle = undefined;
+        if (cityId && store.s_idPlaylist?.length) {
+          store.$patch((s) => {
+            s.s_loadCityIdx = (store.s_idPlaylist!.indexOf(cityId) + 1) % store.s_idPlaylist!.length;
+          });
+        } else {
+          store.$patch((s) => {
+            s.s_loadCityIdx = (s.s_loadCityIdx !== undefined ? s.s_loadCityIdx : -1) + 1;
+          });
         }
-      } catch (err: any) {
-        // logger.warn('(travel-details-store) exception during timer loop iteration', err);
-      } finally {
-        // logger.debug(`(travel-details-store) timer loop iteration finished, time=${currentTime}`);
-        setTimeout(timerLoopIteration, TimerLoopIterationInterval);
+        setMainLineTask(() => {
+          store.startLoadUpcomingCity();
+        }, 'immediate');
       }
-    };
+    } else {
+      firstTimeOfIdle = undefined;
+    }
+  };
 
-    const setMainLineTask = (action: () => void, delay: number | 'immediate') => {
-      if (delay === 'immediate') {
-        // logger.debug('(travel-details-store) setting main task and executing immediately');
+  const timerLoopIteration = () => {
+    const logger = useTravelDetailsStore().getLogger();
+    const currentTime = new Date().getTime();
+    logger.debug(`timer loop iteration started`, { time: currentTime });
+    try {
+      ensurePlayingIfIdle();
+
+      if (mainLineTask && mainLineTask.scheduledTime < currentTime) {
+        logger.debug(`executing main line task`, { scheduledTime: mainLineTask.scheduledTime });
+        executeTaskSafe(mainLineTask.action);
         mainLineTask = undefined;
-        executeTaskSafe(action);
-      } else {
-        const currentTime = (new Date()).getTime();
-        // logger.debug(`(travel-details-store) setting main task, scheduled time=${currentTime} (delay: ${delay})`);
-        mainLineTask = { action, scheduledTime: (currentTime + delay) };
       }
-    };
+    } catch (err: any) {
+      logger.warn('exception during timer loop iteration', err);
+    } finally {
+      logger.debug(`timer loop iteration finished`, { time: currentTime });
+      setTimeout(timerLoopIteration, TimerLoopIterationInterval);
+    }
+  };
 
-    const start = () => {
+  const setMainLineTask = (action: () => void, delay: number | 'immediate') => {
+    const logger = useTravelDetailsStore().getLogger();
+    if (delay === 'immediate') {
+      logger.debug('setting main task and executing immediately');
+      mainLineTask = undefined;
+      executeTaskSafe(action);
+    } else {
+      const currentTime = (new Date()).getTime();
+      logger.debug(`setting main task`, { scheduledTime: currentTime, delay });
+      mainLineTask = { action, scheduledTime: (currentTime + delay) };
+    }
+  };
+
+  const start = () => {
+    if(!mainLineTask) {
       timerLoopIteration();
-    };
+    }
+  };
+
+  return {
+    start,
+    setMainLineTask
+  };
+};
+
+function throwIfExecutingOnServer() {
+  if(import.meta.server) {
+    const store = useTravelDetailsStore();
+    store.getLogger().error('operation is not supposed to run on server');
+    throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'illegal operation', 'error-page');
+  }
+}
+
+async function getCityFromUrl (
+  userNotificationStore: UserNotificationStore,
+  entityCacheStore: EntityCacheStore, 
+  router: ReturnType<typeof useRouter>, 
+  logger: IAppLogger
+): Promise<IEntityCacheCityItem | undefined> {
+  const route = router.currentRoute.value;
+  logger.debug(`parsing city from url`, { query: route.query });
+
+  const citySlug = route.query?.citySlug?.toString();
+  if (!citySlug) {
+    logger.debug('city slug parameter was not specified', { query: route.query });
+    return undefined;
+  }
+
+  let cacheResult: IEntityCacheCityItem[] = [];
+  try {
+    cacheResult = await entityCacheStore.get({ slugs: [citySlug] }, 'City', true);
+  } catch(err: any) {
+    logger.warn(`exception occured looking up city by slug`, err, { slug: citySlug });
+    if(import.meta.client) {
+      userNotificationStore.show({
+        level: UserNotificationLevel.ERROR,
+        resName: getI18nResName2('appErrors', 'unknown')
+      });
+      return undefined;  
+    }
+  }
+  
+  if (!cacheResult || cacheResult.length === 0) {
+    logger.warn(`city not found`, undefined, { slug: citySlug });
+    if(import.meta.client) {
+      userNotificationStore.show({
+        level: UserNotificationLevel.WARN,
+        resName: getI18nResName2('appErrors', 'objectNotFound')
+      });
+      return undefined;
+    } else {
+      logger.warn('failed to lookup city by slug', undefined, { slug: citySlug });
+      throw new AppException(AppExceptionCodeEnum.OBJECT_NOT_FOUND, 'city not found', 'error-page');
+    }
+  }
+
+  const result = cacheResult[0];
+  logger.debug(`city from url parsed`, { query: route.query, id: result.id });
+  return result;
+}
+
+async function sendFetchPopularCitiesRequestOnServer (event: H3Event, logger: IAppLogger): Promise<IPopularCityDto[]> {
+  logger.debug('sending fetch popular cities HTTP request');
+  const resultDto = await getObject(`/${ApiEndpointPopularCitiesList}`, undefined, 'default', false, event, 'throw') as IPopularCityDto[];
+  logger.debug(`popular cities fetch request completed`, { resultDto });
+  return resultDto;
+}
+
+async function sendFetchTravelDetailsRequestOnServer(cityId: EntityId, event: H3Event, logger: IAppLogger): Promise<ITravelDetailsDto> {
+  logger.debug('sending fetch travel details HTTP request', { cityId });
+  const resultDto = await getObject<ITravelDetailsDto>(`/${ApiEndpointPopularCityTravelDetails}`, { cityId }, 'default', false, event, 'throw') as ITravelDetailsDto;
+  logger.debug(`travel details fetch request completed`, { cityId, resultDto });
+  return resultDto;
+}
+
+async function ensureInitializedOnServer (
+  store: TravelDetailsStoreInternal, 
+  initialCityId: EntityId | undefined,
+  event: H3Event,
+  logger: IAppLogger
+): Promise<void> {
+  if(store.s_idPlaylist?.length) {
+    logger.debug('initializing store on server - already initialized', { playlist: store.s_idPlaylist });
+    return;
+  }
+  logger.verbose('initializing store on server');
+
+  try {
+    const popularCitiesDto = await sendFetchPopularCitiesRequestOnServer(event, logger);
+    store.popularCitiesFetchSucceeded({ popularCitiesDto, initialCityId });
+  } catch(err: any) {
+    store.popularCitiesFetchFailed(err);
+    throw err;
+  }
+
+  try {
+    const fetchCityId = store.s_idPlaylist![store.s_loadCityIdx!];
+    const travelDetailsDto = await sendFetchTravelDetailsRequestOnServer(fetchCityId, event, logger);
+    store.travelDetailsFetchSucceeded(travelDetailsDto);
+  } catch(err: any) {
+    store.travelDetailsFetchFailed(err);
+    throw err;
+  }
+
+  logger.verbose('completed store initialization on server');
+};
+
+const storeDefBuilder = () => buildStoreDefinition(StoreId, 
+  (clientSideOptions) => { 
+    const { enabled } = usePreviewState();
+
+    const nuxtApp = clientSideOptions.nuxtApp;
+    const popularCitiesFetch = 
+      useFetch(`/${ApiEndpointPopularCitiesList}`, {
+        server: false,
+        lazy: true,
+        immediate: !nuxtApp.isHydrating,
+        cache: enabled ? 'no-cache' : 'default',
+        dedupe: 'defer',
+        query: set({ }, QueryPagePreviewModeParam, enabled),
+        $fetch: clientSideOptions!.fetchEx({ defautAppExceptionAppearance: 'error-page' })
+      });
+    
+    const travelDetailsFetchCityId = ref<EntityId>();
+    const travelDetailsFetch = 
+      useFetch(`/${ApiEndpointPopularCityTravelDetails}`, {
+        server: false,
+        lazy: true,
+        immediate: false,
+        cache: enabled ? 'no-cache' : 'default',
+        dedupe: 'defer',
+        query: set({ cityId: travelDetailsFetchCityId }, QueryPagePreviewModeParam, enabled),
+        watch: false,
+        $fetch: clientSideOptions!.fetchEx({ defautAppExceptionAppearance: 'error-stub' })
+      });
+
+    watch([popularCitiesFetch.status, popularCitiesFetch.data], () => {
+      const logger = useTravelDetailsStore().getLogger();
+      logger.verbose('popular cities fetch status changed', { status: popularCitiesFetch.status.value });
+      const store = useTravelDetailsStoreInternal();
+      switch(popularCitiesFetch.status.value) {
+        case 'success':
+          if(popularCitiesFetch.data.value) {
+            store.popularCitiesFetchSucceeded({ 
+               popularCitiesDto: popularCitiesFetch.data.value as IPopularCityDto[],
+               initialCityId: initialCityId.value
+            });
+          }
+          break;
+        case 'error':
+          store.popularCitiesFetchFailed(popularCitiesFetch.error.value);
+          break;
+      }
+    }, { immediate: false });
+
+    watch([travelDetailsFetch.status, travelDetailsFetch.data], () => {
+      const logger = useTravelDetailsStore().getLogger();
+      logger.verbose('travel details fetch status changed', { status: travelDetailsFetch.status.value });
+      const store = useTravelDetailsStoreInternal();
+      switch(travelDetailsFetch.status.value) {
+        case 'success':
+          if(travelDetailsFetch.data.value) {
+            store.travelDetailsFetchSucceeded(travelDetailsFetch.data.value as ITravelDetailsDto);
+          }
+          break;
+        case 'error':
+          store.travelDetailsFetchFailed(travelDetailsFetch.error.value);
+          break;
+      }
+    }, { immediate: false });
+
+    const timePlayer = createTimePlayer();
+    const initialCityId = ref<EntityId>();
 
     return {
-      start,
-      setMainLineTask
+      nuxtApp,
+      popularCitiesFetch,
+      travelDetailsFetchCityId,
+      travelDetailsFetch,
+      timePlayer,
+      initialCityId
     };
-  };
-
-  const ensurePopularCities = (popularCitiesFetch: Awaited<ReturnType<typeof useFetch<IPopularCityDto[] | null[] | null>>>): Promise<IPopularCityDto[] | null[] | null> => {
-    // logger.debug('(travel-details-store) ensuring popular cities initialization data fetched');
-    return new Promise<IPopularCityDto[] | null[] | null>((resolve, _) => {
-      if (['pending', 'idle'].includes(popularCitiesFetch.status.value)) {
-        watch(popularCitiesFetch.status, () => {
-          if (!['pending', 'idle'].includes(popularCitiesFetch.status.value)) {
-            const isError = popularCitiesFetch.status.value === 'error';
-            const msg = `(travel-details-store) popular cities initialization data fetch finished, success=${!isError}`;
-            if (isError) {
-              // logger.warn(msg);
-            } else {
-              // logger.info(msg);
-            }
-            resolve(popularCitiesFetch.data.value);
-          }
-        });
-      } else {
-        const isError = popularCitiesFetch.status.value === 'error';
-        const msg = `(travel-details-store) popular cities initialization data fetch finished, success=${!isError}`;
-        if (isError) {
-          // logger.warn(msg);
-        } else {
-          // logger.info(msg);
-        }
-        resolve(popularCitiesFetch.data.value);
-      }
-    });
-  };
-
-  const fetchTravelDetails = async (): Promise<void> => {
-    const cityId = fetchCityId.value;
-    // logger.verbose(`(travel-details-store) fetch travel details, cityId=${cityId}`);
-
-    try {
-      travelDetails.value.status = 'pending';
-      const fetchResult = await getObject<ITravelDetailsDto>(`/${ApiEndpointPopularCityTravelDetails}`, { cityId }, 'default', false, nuxtApp?.ssrContext?.event, 'throw');
-      if (!fetchResult) {
-        // logger.warn(`(travel-details-store) failed to fetch travel details, empty response, cityId=${cityId}`);
-        travelDetails.value.status = 'error';
-        return;
-      }
-
-      travelDetails.value = {
-        data: fetchResult,
-        status: 'success'
+  },
+  {
+    state: (): State => {
+      return {
+        s_current: undefined,
+        s_upcoming: undefined,
+        s_idPlaylist: undefined,
+        s_loadCityIdx: undefined,
+        s_isError: false
       };
-    } catch (err: any) {
-      // logger.warn(`(travel-details-store) failed to fetch travel details, cityId=${cityId}`, err);
-      travelDetails.value.status = 'error';
-      return;
-    }
-
-    // logger.verbose(`(travel-details-store) fetch travel details completed, cityId=${cityId}`);
-  };
-
-  const initializeStateOnClient = once(async (): Promise<void> => {
-    // logger.info('(travel-details-store) starting client state initialization');
-    timePlayer = createTimePlayer();
-    timePlayer.start();
-
-    await popularCitiesFetch;
-
-    const onPopularCitiesLoaded = async (popularCities: IPopularCityDto[]) => {
-      // logger.verbose(`(travel-details-store) popular cities loaded, continuing client state initialization, length=${popularCities.length}`);
-      if (!(popularCities?.length ?? 0) || !popularCities[0]) {
-        // logger.warn('(travel-details-store) client state initialization failed - popular cities load failed');
-        instance.isError = true;
-        return;
-      }
-
-      instance.idPlaylist = popularCities.map(c => (c as IPopularCityDto).id);
-      const cityFromUrl = await getCityFromUrl();
-      if (cityFromUrl) {
-        // logger.verbose(`(travel-details-store) initializing first travel details popular city from url, url cityId=${cityFromUrl.id}`);
-        fetchCityId.value = cityFromUrl.id;
-      } else if (instance.manuallySetCityId) {
-        // logger.verbose(`(travel-details-store) initializing first travel details popular city from manually set city, manual cityId=${fetchCityId.value}`);
-        fetchCityId.value = instance.manuallySetCityId!;
-      } else {
-        fetchCityId.value = instance.idPlaylist[0];
-        // logger.verbose(`(travel-details-store) initializing first travel details popular city, cityId=${fetchCityId.value}`);
-      }
-
-      await fetchTravelDetails();
-
-      if (travelDetails.value.status === 'error') {
-        // logger.warn('(travel-details-store) client state initialization failed - travel details load failed');
-        instance.isError = true;
-        return;
-      }
-
-      watch(travelDetails, () => {
-        // logger.verbose(`(travel-details-store) travel details fetch status changed, current cityId=${fetchCityId.value}, status=${travelDetails.value.status}`);
-        handleTravelDetailsStatusChange(travelDetails.value.status);
-      });
-      handleTravelDetailsStatusChange(travelDetails.value.status);
-    };
-
-    if (['pending', 'idle'].includes(popularCitiesFetch.status.value)) {
-      const stopWatch = watch(popularCitiesFetch.status, () => {
-        if (!['pending', 'idle'].includes(popularCitiesFetch.status.value)) {
-          stopWatch();
-          const isError = popularCitiesFetch.status.value === 'error' || !popularCitiesFetch.data.value || !popularCitiesFetch.data.value[0];
-          const msg = `(travel-details-store) popular cities initialization data fetch finished, success=${!isError}`;
-          if (isError) {
-            // logger.warn(msg);
-          } else {
-            // logger.verbose(msg);
-            onPopularCitiesLoaded(<IPopularCityDto[]>(popularCitiesFetch.data.value!));
-          }
-        }
-      });
-      // logger.verbose('(travel-details-store) client state initialization launched');
-    } else {
-      const isError = popularCitiesFetch.status.value === 'error' || !popularCitiesFetch.data.value || !popularCitiesFetch.data.value[0];
-      const msg = `(travel-details-store) popular cities initialization data fetch finished, success=${!isError}`;
-      if (isError) {
-        // logger.warn(msg);
-      } else {
-        // logger.verbose(msg);
-        await onPopularCitiesLoaded(<IPopularCityDto[]>(popularCitiesFetch.data.value!));
-      }
-    }
-  });
-
-  const initializeStateOnServer = async (): Promise<void> => {
-    // logger.info('(travel-details-store) initializing server state');
-    const popularCities = await ensurePopularCities(await popularCitiesFetch);
-    if (!(popularCities?.length ?? 0) || !(popularCities![0])) {
-      // logger.warn('(travel-details-store) server state initialization failed - popular cities load failed');
-      throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'popular cities load failed', 'error-stub');
-    }
-    instance.idPlaylist = popularCities!.map(c => (c as IPopularCityDto).id);
-
-    const cityFromUrl = await getCityFromUrl();
-    if (cityFromUrl) {
-      // logger.verbose(`(travel-details-store) initializing first travel details popular city from url, url cityId=${cityFromUrl.id}`);
-      fetchCityId.value = cityFromUrl.id;
-    } else {
-      fetchCityId.value = instance.idPlaylist[0];
-      // logger.verbose(`(travel-details-store) initializing first travel details popular city, cityId=${fetchCityId.value}`);
-    }
-    // logger.verbose(`(travel-details-store) setting on server new city travel details to load, cityId=${fetchCityId.value}`);
-
-    await fetchTravelDetails();
-
-    if (travelDetails.value.status === 'error') {
-      // logger.warn('(travel-details-store) server state initialization failed - travel details load failed');
-      throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'travel details load failed', 'error-stub');
-    }
-
-    const travelDetailsDto = travelDetails.value.data!;
-    instance.current = {
-      cityId: fetchCityId.value,
-      texting: {
-        header: travelDetailsDto.header,
-        text: travelDetailsDto.text,
-        price: new Decimal(travelDetailsDto.price),
-        slug: travelDetailsDto.city.slug
+    },
+    getters: {
+      /**
+       * Travel information about currently active city in a slideshow
+       */
+      current(): ITravelDetailsData | undefined {
+        return this.s_current;
       },
-      images: travelDetailsDto.images
-    };
-    // logger.info('(travel-details-store) server state initialization finished');
-  };
 
-  const onPreRenderCompletedInternal = (cityId: EntityId): void => {
-    // logger.verbose(`(travel-details-store) onPreRenderCompleted, cityId=${cityId}, current cityId=${instance.current?.cityId}, upcoming cityId=${instance.upcoming?.cityId}`);
-    if (instance.upcoming?.cityId === cityId) {
-      instance.current = instance.upcoming;
-      instance.upcoming = undefined;
-      const nextCityId = instance.current!.cityId;
-      if (!instance.manuallySetCityId) {
-        timePlayer!.setMainLineTask(() => {
-          startLoadingNextUpcoming(nextCityId);
-        }, AppConfig.fallIntoTravel.autoplayPeriodMs);
+      /**
+       * All currently loaded city information which is about to display next in a slideshow
+       */
+      upcoming(): Partial<ITravelDetailsData> | undefined {
+        return this.s_upcoming;
+      },
+
+      /**
+       * Whether store is in an error state
+       */
+      isError(): boolean {
+        return this.s_isError;
       }
-    } else if (instance.current?.cityId === cityId) {
-      // logger.verbose(`(travel-details-store) initial data prerendered, cityId=${cityId}`);
-      const nextCityId = instance.current!.cityId;
-      if (!instance.manuallySetCityId) {
-        timePlayer!.setMainLineTask(() => {
-          startLoadingNextUpcoming(nextCityId);
-        }, AppConfig.fallIntoTravel.autoplayPeriodMs);
+    },
+    actions: {
+      /**
+       * Rewinds the slideshow to the specified city and makes it currently displayed
+       */
+      async setDisplayingCity(cityId: EntityId): Promise<void> {
+        this.setCity(cityId);
+      },
+
+      /**
+       * Notifies store that all images for an upcoming city have been loaded 
+       * in background (into <img> elements) and are about to be brought to front.
+       * Store treats this notification as a signal that it can proceed with the slideshow
+       */
+      async onPreRenderCompleted(cityId: EntityId): Promise<void> {
+        this.preRenderCompleted(cityId);
+      },
+
+      /**
+       * Signals to the store that a UI component was mounted and is about to start displaying the slideshow
+       */
+      async onComponentAttached(): Promise<void> {
+        const logger = this.getLogger();
+        const event = import.meta.server ? useRequestEvent() : undefined;
+
+        let cityFromUrl: IEntityCacheCityItem | undefined;
+        try {
+          cityFromUrl = await getCityFromUrl(
+            useUserNotificationStore(),
+            useEntityCacheStore(),
+            useRouter(),
+            logger
+          );
+        } catch(err: any) {
+          logger.warn('failed to obtain city from url', err);
+        }
+        
+        this.handleComponentAttach(cityFromUrl?.id);
+        if(import.meta.server) {
+          await ensureInitializedOnServer(this, cityFromUrl?.id, event!, logger);
+        }
+      },
+
+      /**
+       * Signals to the store that a UI component which has been displaying the slideshow was unmounted
+       */
+      async onComponentDetached(): Promise<void> {
+        this.handleComponentDetach();
       }
-    } else {
-      // logger.verbose(`(travel-details-store) onPreRenderCompleted will be ignore as preRendered city is out of sync, cityId=${cityId}, store upcoming cityId=${instance.upcoming?.cityId}`);
-    }
-  };
+    },
+    patches: {
+      handleComponentAttach(initialCityId: EntityId | undefined) {
+        const logger = this.getLogger();
+        logger.verbose('handling component attach');
+        this.ensureInitialized(initialCityId);
+      },
 
-  const startLoadingTravelDetails = (cityId: EntityId) => {
-    if (travelDetails.value.status === 'pending') {
-      // logger.verbose(`(travel-details-store) skipping load travel details request, still in initialization state, new cityId=${cityId}, current cityId=${instance.current?.cityId}, upcoming cityId=${instance.upcoming?.cityId}`);
-      return;
-    }
+      handleComponentDetach() {
+        const logger = this.getLogger();
+        logger.verbose('component detached');
+      },
 
-    if (instance.manuallySetCityId && cityId !== instance.manuallySetCityId) {
-      // logger.info(`(travel-details-store) skipping travel details load as displayed city has been manually set, manually cityId=${instance.manuallySetCityId}, cityId=${cityId}, current cityId=${instance.current?.cityId}, upcoming cityId=${instance.upcoming?.cityId}`);
-      return;
-    }
-
-    // logger.info(`(travel-details-store) starting to load travel details, new cityId=${cityId}, current cityId=${instance.current?.cityId}, upcoming cityId=${instance.upcoming?.cityId}`);
-    instance.upcoming = {
-      cityId,
-      images: undefined,
-      texting: undefined
-    };
-    fetchCityId.value = cityId;
-    fetchTravelDetails();
-    handleTravelDetailsStatusChange(travelDetails.value.status);
-  };
-
-  const onComponentAttachedInternal = () => {
-    // logger.verbose('(travel-details-store) onComponentAttachedInternal');
-    instance.manuallySetCityId = undefined;
-  };
-
-  const onComponentDetachedInternal = () => {
-    // logger.verbose('(travel-details-store) onComponentDetachedInternal');
-    instance.manuallySetCityId = undefined;
-  };
-
-  const startLoadingNextUpcoming = (prevCityId: EntityId, rescheduledOnUncompletedInitiaization?: boolean) => {
-    rescheduledOnUncompletedInitiaization ??= false;
-
-    if (rescheduledOnUncompletedInitiaization) {
-      // client completed initialization and has been scheduled another loading request
-      return;
-    }
-
-    if (!instance.isError) {
-      const currentCityIdx = instance.idPlaylist!.indexOf(prevCityId);
-      const nextCityId = instance.idPlaylist![(currentCityIdx + 1) % instance.idPlaylist!.length];
-      // logger.verbose(`(travel-details-store) starting to load next upcoming city details, prev cityId=${prevCityId}, next cityId=${nextCityId}`);
-      startLoadingTravelDetails(nextCityId);
-    }
-  };
-
-  const checkManualCityLoadIfNeeded = () : 'pending' | 'none' => {
-    if (!instance?.manuallySetCityId) {
-      return 'none';
-    }
-
-    if (travelDetails.value.status === 'pending') {
-      // logger.debug(`(travel-details-store), manually set city needs load, but currently another fetch is in progress, manually cityId=${instance.manuallySetCityId}`);
-      return 'none';
-    }
-
-    if (['pending', 'success'].includes(travelDetails.value.status) && fetchCityId.value === instance.manuallySetCityId) {
-      // already loading
-      return 'pending';
-    }
-
-    // logger.verbose(`(travel-details-store) starting to load manually set city, manually cityId=${instance.manuallySetCityId}`);
-    const cityId = instance.manuallySetCityId;
-    timePlayer!.setMainLineTask(() => {
-      startLoadingTravelDetails(cityId);
-
-      timePlayer!.setMainLineTask(() => {
-        if (instance.manuallySetCityId && instance.manuallySetCityId !== cityId) {
-          // logger.verbose(`(travel-details-store) manually set city changed, switching to new: prev manually cityId=${cityId}, new manually cityId=${instance.manuallySetCityId}`);
-          checkManualCityLoadIfNeeded();
+      setCity(cityId: EntityId) {
+        const logger = this.getLogger();
+        if(import.meta.server) {
+          logger.debug('ignoring setting displaying city call on server');
           return;
+        }
+        
+        const manualCityIdx = this.s_idPlaylist?.indexOf(cityId) ?? -1;
+        if(manualCityIdx < 0) {
+          logger.warn('failed to manually set displaying city - not found', { manualCityId: cityId, currentCityId: this.s_current?.cityId, upcomingCityId: this.s_upcoming?.cityId });
+          return;
+        }
+
+        logger.info('manually setting city to display', { manualCityId: cityId, manualCityIdx, currentCityId: this.s_current?.cityId, upcomingCityId: this.s_upcoming?.cityId });
+        this.$patch((s) => {
+          s.s_loadCityIdx = manualCityIdx;
+        });
+        this.startLoadUpcomingCity();
+      },
+
+      preRenderCompleted(cityId: EntityId) {
+        const logger = this.getLogger();
+        if(import.meta.server) {
+          logger.debug('ignoring preRender completed call on server');
+          return;
+        }
+        
+        const timePlayer = this.clientSetupVariables().timePlayer;
+        const store = useTravelDetailsStoreInternal();
+
+        logger.verbose('preRender completed', { cityId, currentCityId: this.current?.cityId, upcomingCityId: this.upcoming?.cityId });
+        if (this.upcoming?.cityId === cityId) {
+          this.$patch((s) => {
+            s.s_current = s.s_upcoming as ITravelDetailsData;
+            s.s_upcoming = undefined;
+          });
+          
+          timePlayer!.setMainLineTask(() => {
+            store.startLoadUpcomingCity();
+          }, AppConfig.fallIntoTravel.autoplayPeriodMs);
+        } else if (this.s_current?.cityId === cityId) {
+          logger.verbose(`initial data prerendered`, {cityId});
+          timePlayer!.setMainLineTask(() => {
+            store.startLoadUpcomingCity();
+          }, AppConfig.fallIntoTravel.autoplayPeriodMs);
         } else {
-          // logger.verbose(`(travel-details-store) moving from manually displayed city: manually cityId=${cityId}`);
-          instance.manuallySetCityId = undefined;
+          logger.verbose(`preRender completed will be ignore as preRendered city is out of sync`, { cityId, upcomingCityId: this.s_upcoming?.cityId });
         }
-        startLoadingNextUpcoming(cityId);
-      }, AppConfig.fallIntoTravel.worldMapFocusedCityDelayMs);
-    }, 'immediate');
-    return 'pending';
-  };
+      },
 
-  const handleTravelDetailsStatusChange = (status: AsyncDataRequestStatus) => {
-    // logger.debug(`(travel-details-store) travel details status change handler, current cityId=${fetchCityId.value}, status=${status}`);
-    if (status === 'error') {
-      const cityId = fetchCityId.value!;
-      timePlayer!.setMainLineTask(() => {
-        startLoadingNextUpcoming(cityId);
-      }, AppConfig.fallIntoTravel.retryTimeoutMs);
-    } else if (travelDetails.value.status === 'success' && fetchCityId.value! === travelDetails.value?.data?.city.id) {
-      const travelDetailsDto = travelDetails.value?.data;
-      const travelDetailsData : ITravelDetailsData = {
-        cityId: fetchCityId.value!,
-        images: travelDetailsDto?.images ?? [],
-        texting: travelDetailsDto
-          ? {
-              header: travelDetailsDto.header,
-              text: travelDetailsDto.text,
-              price: new Decimal(travelDetailsDto.price),
-              slug: travelDetailsDto.city.slug
+      startFetchPopularCities() {
+        throwIfExecutingOnServer();
+        const logger = this.getLogger();
+
+        const popularCitiesFetch = this.clientSetupVariables().popularCitiesFetch;
+        if(popularCitiesFetch.status.value === 'pending') {
+          logger.debug('skipping popular cities fetch request, currently pending');
+          return;
+        }
+        logger.debug('executing popular cities fetch request');
+        popularCitiesFetch.execute();
+      },
+
+      popularCitiesFetchSucceeded(args: { 
+        popularCitiesDto: IPopularCityDto[], 
+        initialCityId: EntityId | undefined
+      }) {
+        const logger = this.getLogger();
+        logger.verbose('popular cities fetch succeeded', { result: args.popularCitiesDto });
+        
+        if (!(args.popularCitiesDto?.length ?? 0)) {
+          logger.warn('server state initialization failed - popular cities fetch returned empty list');
+          this.$patch((s) => {
+            s.s_idPlaylist = undefined;
+            s.s_loadCityIdx = undefined;
+            s.s_isError = true;
+          });
+          return;
+        }
+
+        const idPlaylist = args.popularCitiesDto!.map(c => (c as IPopularCityDto).id);
+        const initialCityIdx = args.initialCityId ? idPlaylist.indexOf(args.initialCityId) : -1;
+        const loadCityIdx: number = (initialCityIdx >= 0 ? initialCityIdx : undefined) ?? this.s_loadCityIdx ?? 0;
+        this.$patch((s) => {
+          s.s_idPlaylist = idPlaylist;
+          s.s_loadCityIdx = loadCityIdx;
+        });
+
+        logger.verbose('loading initial city details', { loadCityIdx: this.s_loadCityIdx });
+        if(import.meta.client) {
+          this.startLoadUpcomingCity();
+        }
+      },
+
+      popularCitiesFetchFailed(err: any) {
+        const logger = this.getLogger();
+        logger.warn('popular cities fetch failed', err);
+        
+        this.$patch((s) => {
+          s.s_idPlaylist = undefined;
+          s.s_loadCityIdx = undefined;
+          s.s_isError = true;
+        });
+      },
+
+      ensureInitialized(initialCityId: EntityId | undefined) {
+        const logger = this.getLogger();
+        if(import.meta.client) {
+          this.clientSetupVariables().initialCityId.value = initialCityId;
+          this.clientSetupVariables().timePlayer.start();
+
+          if(!this.s_idPlaylist?.length) {
+            logger.verbose('initializing - starting to fetch popular cities');
+            this.startFetchPopularCities();
+          }
+        }
+      },
+      
+      startFetchTravelDetails() {
+        throwIfExecutingOnServer();
+        const logger = this.getLogger();
+
+        if(!this.s_idPlaylist?.length) {
+          logger.verbose(`skipping load travel details - playlist is not initialized`, { currentCityIdx: this.s_loadCityIdx, currentCityId: this.s_current?.cityId, upcomingCityId: this.s_upcoming?.cityId });
+          return;
+        }
+
+        const travelDetailsFetch = this.clientSetupVariables().travelDetailsFetch;
+        if (travelDetailsFetch.status.value === 'pending') {
+          logger.verbose(`skipping load travel details request as it is currently in a pending state`, { currentCityIdx: this.s_loadCityIdx, currentCityId: this.s_current?.cityId, upcomingCityId: this.s_upcoming?.cityId });
+          return;
+        }
+    
+        const cityIdx = (this.s_loadCityIdx ?? 0) % this.s_idPlaylist.length;
+        const cityId = this.s_idPlaylist[cityIdx];
+        logger.info(`starting to load travel details`, { cityIdx, cityId: cityId, currentCityId: this.s_current?.cityId, upcomingCityId: this.s_upcoming?.cityId });
+        this.$patch((s) => {
+          s.s_upcoming = {
+            cityId,
+            images: undefined,
+            texting: undefined
+          };
+        });
+
+        this.clientSetupVariables().travelDetailsFetchCityId.value = cityId;
+        logger.debug('executing travel details fetch request', { cityId: cityId });
+        travelDetailsFetch.execute();
+      },
+
+      travelDetailsFetchSucceeded(travelDetailsDto: ITravelDetailsDto) {
+        const logger = this.getLogger();
+
+        logger.debug('travel details fetch request succeeded', { result: travelDetailsDto });
+        const travelDetailsData : ITravelDetailsData = {
+          cityId: travelDetailsDto.city.id,
+          images: travelDetailsDto.images ?? [],
+          texting: {
+            header: travelDetailsDto.header,
+            text: travelDetailsDto.text,
+            price: new Decimal(travelDetailsDto.price),
+            slug: travelDetailsDto.city.slug
+          }
+        };
+
+        let nextCityIdx = (this.s_idPlaylist?.indexOf(travelDetailsData.cityId) ?? -1) + 1;
+        nextCityIdx = nextCityIdx >= (this.s_idPlaylist?.length ?? 0) ? 0 : nextCityIdx;
+        const nextCityId = this.s_idPlaylist?.length ? this.s_idPlaylist[nextCityIdx] : undefined;
+        logger.verbose(`patching model with fetched travel details data`, { currentCityId: this.s_current?.cityId, upcomingCityId: travelDetailsData.cityId, nextCityIdx, nextCityId });
+        this.$patch((s) => {  
+          if (s.s_current) {
+            if (travelDetailsData.cityId !== this.s_current?.cityId) {
+              s.s_upcoming = travelDetailsData;
             }
-          : undefined
-      };
-      // logger.verbose(`(travel-details-store) upcoming data fetched, current cityId=${instance.current?.cityId}, upcoming cityId=${travelDetailsData.cityId}, status=${travelDetails.value.status}`);
-      if (instance.current) {
-        if (travelDetailsData.cityId !== instance.current.cityId) {
-          instance.upcoming = travelDetailsData;
+          } else {
+            s.s_current = travelDetailsData;
+          }          
+          s.s_loadCityIdx = nextCityIdx;
+        });
+      },
+
+      travelDetailsFetchFailed(err: any) {
+        const logger = this.getLogger();
+        const loadCityId = (this.s_loadCityIdx && this.s_idPlaylist) ? this.s_idPlaylist[this.s_loadCityIdx] : undefined;
+        logger.warn('travel details fetch request failed', err, { loadCityIdx: this.s_loadCityIdx, loadCityId });
+        
+        if(import.meta.client) {
+          const timePlayer = this.clientSetupVariables().timePlayer;
+          let nextCityIdx = (this.s_loadCityIdx !== undefined ? this.s_loadCityIdx : -1) + 1;
+          nextCityIdx = nextCityIdx >= (this.s_idPlaylist?.length ?? 0) ? 0 : nextCityIdx;
+          this.$patch((s) => {
+            s.s_loadCityIdx = nextCityIdx;
+            if(!s.s_current) {
+              // set error stub if failed on the very first request (i.e. there is no city displayed)
+              s.s_isError = true;
+            }
+          });
+          timePlayer.setMainLineTask(() => {
+            const store = useTravelDetailsStoreInternal();
+            store.startLoadUpcomingCity();
+          }, AppConfig.fallIntoTravel.retryTimeoutMs);
         }
-      } else {
-        // logger.verbose(`(travel-details-store) using upcoming data as initial, status=${travelDetails.value.status}`);
-        instance.current = travelDetailsData;
+      },
+
+      startLoadUpcomingCity() {
+        const logger = this.getLogger();
+        if(import.meta.server) {
+          logger.debug('ignoring start load upcoming call on server', { nextCityIdx: this.s_loadCityIdx });
+          return;
+        }
+    
+        if(this.s_isError) {
+          logger.debug(`skipping loading upcoming - store is in error state`, { nextCityIdx: this.s_loadCityIdx });
+          return;
+        }
+
+        if(!this.s_idPlaylist?.length) {
+          logger.verbose(`skipping loading upcoming - playlist is not initialized`, { nextCityIdx: this.s_loadCityIdx, currentCityIdx: this.s_loadCityIdx });
+          this.ensureInitialized(undefined);
+          return;
+        }
+        
+        this.startFetchTravelDetails();
       }
-      checkManualCityLoadIfNeeded();
     }
-  };
+  }
+);
 
-  const startRunningOnClient = once(async (): Promise<void> => {
-    if(nuxtApp.isHydrating) {
-      await initializeStateOnClient();
-    } else {
-      // initialize asynchornously to prevent blocking wait for fetch when navigating to a page with the component
-      initializeStateOnClient();
-    }
-  });
-
-  const getInstance = async () : Promise<ITravelDetailsStoreState & ITravelDetailsStoreMethods> => {
-    if (!instance.current) {
-      if (import.meta.client) {
-        await startRunningOnClient();
-      } else {
-        await initializeStateOnServer();
-      }
-      instance.onPreRenderCompleted = (cityId: EntityId) => { onPreRenderCompletedInternal(cityId); };
-      instance.increaseTimeoutOnCurrentSlideOnce = () => {};
-      instance.startLoadingNewUpcoming = (cityId: EntityId) => { startLoadingTravelDetails(cityId); };
-      instance.onComponentAttached = () => { onComponentAttachedInternal(); };
-      instance.onComponentDetached = onComponentDetachedInternal;
-    }
-
-    return instance;
-  };
-
-  const setDisplayingCity = (cityId: EntityId) => {
-    // logger.info(`(travel-details-store) manually settings city to display, manual cityId=${cityId}, current cityId=${instance.current?.cityId}, upcoming cityId=${instance.upcoming?.cityId}`);
-    instance.manuallySetCityId = cityId;
-    checkManualCityLoadIfNeeded();
-  };
-
-  // logger.info('(travel-details-store) store constructed');
-  return {
-    getInstance,
-    setDisplayingCity,
-    getCityFromUrl,
-    buildTravelCityUrl
-  };
-});
+const StoreDef = storeDefBuilder();
+const useTravelDetailsStoreInternal = defineStore(StoreId, StoreDef);
+export declare type TravelDetailsStoreInternal = ReturnType<typeof useTravelDetailsStoreInternal>;
+export declare type TravelDetailsStore = ReturnType<PublicStore<typeof storeDefBuilder>>;
+export const useTravelDetailsStore = useTravelDetailsStoreInternal as PublicStore<typeof storeDefBuilder>;

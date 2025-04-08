@@ -107,9 +107,8 @@ if (import.meta.client) {
   await startWatchingForDataChanges();
 }
 
-const storeInstance = await (travelDetailsStore.getInstance());
-if (storeInstance.current?.images && imageIndex < storeInstance.current.images.length) {
-  onInitialDataReady(storeInstance.current);
+if (travelDetailsStore.current?.images && imageIndex < travelDetailsStore.current.images.length) {
+  onInitialDataReady(travelDetailsStore.current);
 } else if (import.meta.server) {
   isError.value = true;
   fireStatusChange('current', 'error');
@@ -132,9 +131,9 @@ function onImageFrameStatusChanged () {
   }
 }
 
-function onUpcomingDataChanged (data?: ITravelDetailsData | undefined) {
+function onUpcomingDataChanged (data: Partial<ITravelDetailsData> | undefined) {
   logger.verbose('upcoming data changed', { ctrlKey, activeFrame: activeFrame.value, statusA: frameStatusA.value, statusB: frameStatusB.value, cityId: data?.cityId, numImages: data?.images?.length ?? 0 });
-  if (data?.images) {
+  if (data?.cityId && data?.images) {
     if (imageIndex < data.images.length) {
       const receivingBuf = activeFrame.value !== 'A' ? dataBuf2 : dataBuf1;
       if (receivingBuf.value?.cityId !== data.cityId) {
@@ -185,18 +184,17 @@ function onInitialDataReady (data: ITravelDetailsData) {
 async function startWatchingForDataChanges () : Promise<void> {
   logger.verbose('starting to watch for data changes', ctrlKey);
 
-  const storeInstance = await (travelDetailsStore.getInstance());
-  watches.push(watch([() => storeInstance.upcoming?.cityId, () => storeInstance.upcoming?.images], () => {
-    onUpcomingDataChanged(storeInstance.upcoming);
+  watches.push(watch([() => travelDetailsStore.upcoming?.cityId, () => travelDetailsStore.upcoming?.images], () => {
+    onUpcomingDataChanged(travelDetailsStore.upcoming);
   }));
 
   watches.push(watch([frameStatusA, frameStatusB], () => {
     onImageFrameStatusChanged();
   }));
 
-  if (!storeInstance.current?.cityId) {
-    watches.push(watch([() => storeInstance.current?.cityId], () => {
-      onInitialDataReady(storeInstance.current!);
+  if (!travelDetailsStore.current?.cityId) {
+    watches.push(watch([() => travelDetailsStore.current?.cityId], () => {
+      onInitialDataReady(travelDetailsStore.current!);
     }));
   }
 }

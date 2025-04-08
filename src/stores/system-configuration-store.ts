@@ -44,9 +44,6 @@ const FallbackImageCategories = buildFallbackImageCategoriesConfig();
 
 const storeDefBuilder = () => buildStoreDefinition(StoreId, 
   (clientSideOptions) => { 
-    // TODO: uncomment preview state
-    // const { enabled } = usePreviewState();
-    const enabled = false;
     return {
       fallbackImageCategories: FallbackImageCategories,
       imageCategoriesFetch:
@@ -54,7 +51,7 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
           server: false,
           lazy: false,
           immediate: false,
-          cache: (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
+          cache: AppConfig.caching.intervalSeconds ? 'default' : 'no-cache',
           dedupe: 'defer',
           default: () => [],
           transform: (response: IImageCategoryDto[]) => {

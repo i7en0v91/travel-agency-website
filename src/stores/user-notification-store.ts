@@ -111,5 +111,8 @@ const storeDefBuilder = () => buildStoreDefinition(StoreId,
   }
 );
 const StoreDef = storeDefBuilder();
+
 const useUserNotificationStoreInternal = defineStore(StoreId, StoreDef);
+export declare type UserNotificationStoreInternal = ReturnType<typeof useUserNotificationStoreInternal>;
+export declare type UserNotificationStore = ReturnType<PublicStore<typeof storeDefBuilder>>;
 export const useUserNotificationStore = useUserNotificationStoreInternal as PublicStore<typeof storeDefBuilder>;

@@ -16,6 +16,6 @@ export * from './i18n';
 export { type IAppLogger, maskLog, buildParamsLogData, parseLevelFromNuxtLog, checkNeedSuppressServerMsg, checkNeedSuppressVueMsg } from './logging/common';
 export { AppLoggerBase } from './logging/base-logger';
 export { type AppExceptionAppearance, AppExceptionCodeEnum, AppException, lookupAppExceptionCode, getErrorAppExceptionCode, UntypedJsException, wrapExceptionIfNeeded, mapAppExceptionToHttpStatus, getUsrMsgResName } from './exceptions';
-export { default as AppConfig, AppName, HostUrl, SQLiteDbName, type IAcsysOptions, type IAcsysUserOptions } from './appconfig';
+export { default as AppConfig, TEST_SERVER_PORT, AppName, HostUrl, SQLiteDbName, type IAcsysOptions, type IAcsysUserOptions } from './appconfig';
 
 export const CachedResultsInAppServicesEnabled = !isTestEnv() && !!AppConfig.caching.intervalSeconds;

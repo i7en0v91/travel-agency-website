@@ -1,5 +1,4 @@
 import type { createFetch, FetchExOptions } from './composables/fetch-ex';
-import type { IAppLogger } from './packages/shared';
 
 declare module 'process' {
   global {
@@ -40,22 +39,6 @@ declare module 'h3' {
 
 declare module 'pinia' {
   export interface PiniaCustomProperties {
-    /**
-     * Returns logger with {@link IAppLogger.addContextProps} configured for this store.
-     * Available only after store has been initialized
-     */
-    getLogger: () => IAppLogger
-    /**
-     * Enriches store's logging context with {@link props}.
-     * Available only after store has been initialized
-     */
-    setLoggingProps(props: Record<string, any>): void,
-    /**
-     * Shows exception to user (without logging) but doesn't break current code execution flow, i.e. doesn't throw.
-     * Generally should not be used, as any exceptions occuring inside actions & patches must be 
-     * (re-)thrown for crosscutting concerns (logging, retries, throttling e.t.c)
-     */
-    displayError: (err: any) => void,
     /**
      * @returns Nuxt app instance (for this store)
      */

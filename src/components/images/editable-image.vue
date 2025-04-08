@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ControlKey } from './../../helpers/components';
 import { AppException, AppExceptionCodeEnum, AppConfig, UserNotificationLevel, type I18nResName, getI18nResName2, getI18nResName3, ImageCategory, type IImageEntitySrc } from '@golobe-demo/shared';
-import { CroppingImageDataKey } from './../../helpers/constants';
+import { CroppingImageDataKey, LOADING_STATE } from './../../helpers/constants';
 import isString from 'lodash-es/isString';
 import { basename, extname } from 'pathe';
 import StaticImage from './static-image.vue';
@@ -60,7 +60,6 @@ const userNotificationStore = useUserNotificationStore();
 const userAccountStore = useUserAccountStore();
 const modelValue = defineModel<IImageEntitySrc>('entitySrc');
 let uploadingFileName: string = '';
-const $emit = defineEmits(['update:ready']);
 
 function onClosed () {
   logger.debug('cropper window closed', ctrlKey);
@@ -212,6 +211,15 @@ function onFileSelected (e: Event) {
       level: UserNotificationLevel.WARN,
       resName: getI18nResName3('editableImage', 'issues', 'fileIsNotAnImage')
     });
+    return;
+  }
+
+  if(
+    (category === ImageCategory.UserAvatar && userAccountStore.avatar === LOADING_STATE) ||
+    (category === ImageCategory.UserCover && userAccountStore.cover === LOADING_STATE)
+  ) {
+    logger.warn('ignoring requested upload as user image is being processed', undefined, { category });
+    resetCurrentImageData();
     return;
   }
 

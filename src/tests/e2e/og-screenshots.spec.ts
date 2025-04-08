@@ -4,8 +4,8 @@ import { setup, createPage } from '@nuxt/test-utils/e2e';
 import { join } from 'pathe';
 import { joinURL } from 'ufo';
 import isString from 'lodash-es/isString';
-import { lookupParentDirectory, AppConfig, type IAppLogger, AppPage, AllHtmlPages, EntityIdPages, getPagePath, type Locale, CookieI18nLocale, AvailableLocaleCodes, DefaultLocale, OgImageExt, delay, getOgImageFileName } from '@golobe-demo/shared';
-import { TEST_SERVER_PORT, createLogger, startWatchingTestFiles, stopWatchingTestFiles } from '../../helpers/testing';
+import { TEST_SERVER_PORT, lookupParentDirectory, AppConfig, type IAppLogger, AppPage, AllHtmlPages, EntityIdPages, getPagePath, type Locale, CookieI18nLocale, AvailableLocaleCodes, DefaultLocale, OgImageExt, delay, getOgImageFileName } from '@golobe-demo/shared';
+import { createLogger, startWatchingTestFiles, stopWatchingTestFiles } from '../../helpers/testing';
 import { LocatorClasses } from './../../helpers/constants';
 import { access } from 'fs/promises';
 

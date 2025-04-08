@@ -103,7 +103,7 @@ const uiStyling = {
       </div>
 
       <template #footer>
-        <UButton size="xl" class="w-full rounded mt-4 justify-center" variant="solid" color="green" :to="offersSearchLink" @click="onBookBtnClick" :external="false">
+        <UButton size="xl" class="w-full rounded mt-4 justify-center" variant="solid" color="green" :to="offersSearchLink" :external="false" @click="onBookBtnClick">
           {{ $t(getI18nResName3('travelCities', 'bookBtn', bookKind)) }}
         </UButton>
       </template>

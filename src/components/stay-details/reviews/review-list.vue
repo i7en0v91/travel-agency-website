@@ -4,7 +4,7 @@ import { type EntityId, ImageCategory, type Locale, getLocalizeableValue, getSco
 import { formatImageEntityUrl } from './../../../helpers/dom';
 import ConfirmBox from '../../forms/confirm-box.vue';
 import { useConfirmDialogResult } from './../../../composables/modal-dialog-result';
-import type { IStayReviewItem } from './../../../stores/stay-reviews-store';
+import { useStayReviewsStore, type IStayReviewItem } from './../../../stores/stay-reviews-store';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
 import type { UCarousel } from '../../../.nuxt/components';
@@ -24,6 +24,11 @@ const ReviewsPerSlidePage = 5;
 
 const userNotificationStore = useUserNotificationStore();
 const { requestUserAction } = usePreviewState();
+const stayReviewsStore = useStayReviewsStore();
+const userAccountStore = useUserAccountStore();
+
+const stayReviews = computed(() => stayReviewsStore.reviews.get(stayId));
+const isError = computed(() => stayReviews.value?.status === 'error');
 
 const { ctrlKey, stayId } = defineProps<IProps>();
 const logger = getCommonServices().getLogger().addContextProps({ component: 'ReviewList' });
@@ -33,9 +38,18 @@ const confirmBoxRef = useTemplateRef('confirm-box');
 const confirmBoxButtons: ConfirmBoxButton[] = ['yes', 'no'];
 const isCarouselReady = ref(false);
 
-const showNoReviewStub = computed(() => reviewStore.status === 'success' && reviewStore.items !== undefined && reviewStore.items.length === 0);
-const isNavButtonsVisible = computed(() => reviewStore.status !== 'error' && reviewStore.items !== undefined && isCarouselReady.value && !showNoReviewStub.value);
+const showNoReviewStub = computed(() => {
+  const reviews = stayReviews.value;
+  return reviews?.status === 'success' && reviews.items !== undefined && reviews.items !== LOADING_STATE && reviews.items.length === 0;
+});
+const isNavButtonsVisible = computed(() => {
+  const reviews = stayReviews.value;
+  return reviews && reviews.status !== 'error' && reviews.items !== undefined && reviews.items !== LOADING_STATE && isCarouselReady.value && !showNoReviewStub.value;
+});
 const pagingState = ref<{ current: number, total: number } | undefined>();
+
+const open = ref(false);
+const result = ref<ConfirmBoxButton>();
 
 const $emit = defineEmits<{
   (event: 'editBtnClick'): void,
@@ -44,20 +58,6 @@ const $emit = defineEmits<{
 
 defineExpose({
   rewindToTop
-});
-
-const reviewStoreFactory = useStayReviewsStoreFactory();
-const reviewStore = await reviewStoreFactory.getInstance(stayId);
-const userAccountStore = useUserAccountStore();
-
-const open = ref(false);
-const result = ref<ConfirmBoxButton>();
-
-const isError = ref(reviewStore.status === 'error');
-
-watch(() => reviewStore.status, () => {
-  isError.value = reviewStore.status === 'error';
-  nextTick(refreshPagingState);
 });
 
 function refreshPagingState () {
@@ -69,7 +69,12 @@ function refreshPagingState () {
   }
 
   const current = carouselInstance.page;
-  const total = Math.max(Math.ceil((reviewStore.items?.length ?? 0) / ReviewsPerSlidePage), current);
+  const total = Math.max(Math.ceil(
+    (
+      (stayReviews.value?.items && stayReviews.value.items !== LOADING_STATE) ? 
+        stayReviews.value.items.length : 0
+    ) / ReviewsPerSlidePage
+  ), current);
 
   logger.debug('refreshing paging state completed', { ctrlKey, stayId, current, total });
   pagingState.value = { current, total };
@@ -82,24 +87,6 @@ function rewindToTop () {
     refreshPagingState();
   }
 }
-
-// async function refreshUserAccount (): Promise<void> {
-//   if (status.value === 'authenticated') {
-//     try {
-//       userAccount.value = await userAccountStore.getUserAccount();
-//     } catch (err: any) {
-//       logger.warn('failed to initialize user account info', err, { ctrlKey, stayId });
-//       userAccount.value = undefined;
-//     }
-//   } else {
-//     userAccount.value = undefined;
-//   }
-// }
-
-// watch(status, async () => {
-//   await refreshUserAccount();
-// });
-// await refreshUserAccount();
 
 function isTestUserReview (review: IStayReviewItem): boolean {
   return review.text.en !== review.text.ru;
@@ -118,7 +105,16 @@ async function onDeleteUserReviewBtnClick (): Promise<void> {
     return;
   }
 
-  if(reviewStore.status === 'pending') {
+  const deletingReview = 
+    (stayReviews.value?.items && stayReviews.value.items !== LOADING_STATE) ? 
+    stayReviews.value.items.find(i => i.user.id === userAccountStore.userId) :
+    undefined;
+  if(!deletingReview) {
+    logger.warn('no user review found to delete', undefined, { ctrlKey, stayId });
+    return;
+  }
+
+  if(stayReviews.value?.status === 'pending') {
     logger.verbose('cannot delete review while store is in pending state', { ctrlKey, stayId });
     return;
   }
@@ -126,10 +122,13 @@ async function onDeleteUserReviewBtnClick (): Promise<void> {
   const confirmBox = useConfirmDialogResult(confirmBoxRef, { open, result }, confirmBoxButtons, 'no', getI18nResName3('stayDetailsPage', 'reviews', 'confirmDelete'));
   const dialogResult = await confirmBox.show();
   if (dialogResult === 'yes') {
-    const deletingReview = await reviewStore.getUserReview()!;
-    await reviewStore.deleteReview();
-    nextTick(refreshPagingState);
-    $emit('userReviewDeleted', deletingReview);
+    try {
+      await stayReviewsStore.deleteReview(stayId);
+      setTimeout(refreshPagingState);
+      $emit('userReviewDeleted', deletingReview);
+    } catch(err: any) {
+      logger.warn('failed to delete review', err, { ctrlKey, stayId });
+    }
   }
 }
 
@@ -153,8 +152,10 @@ function onNavPrevBtnClick () {
 }
 
 const carouselPages = computed(() => {
-  return (reviewStore.status !== 'error' && reviewStore.items?.length) ? 
-    chunk(reviewStore.items, Math.min(reviewStore.items.length, ReviewsPerSlidePage)) : [];
+  return (
+    stayReviews.value && stayReviews.value.status !== 'error' && 
+    stayReviews.value.items && stayReviews.value.items !== LOADING_STATE && stayReviews.value.items.length
+  ) ? chunk(stayReviews.value.items, Math.min(stayReviews.value.items.length, ReviewsPerSlidePage)) : [];
 });
 
 onMounted(() => {
@@ -169,7 +170,7 @@ onMounted(() => {
   <div class="block w-full h-auto">
     <ErrorHelm v-model:is-error="isError">
       <UCarousel
-        v-if="reviewStore.status !== 'error' && reviewStore.items !== undefined"
+        v-if="stayReviews && stayReviews.status !== 'error' && stayReviews.items && stayReviews.items !== LOADING_STATE"
         v-slot="{ item: reviewsPage }" 
         ref="carousel"
         :items="carouselPages" 
@@ -189,8 +190,8 @@ onMounted(() => {
             <article class="w-full h-auto flex flex-row flex-nowrap items-start gap-4">
               <div class="flex-initial">
                 <UAvatar 
-                  v-if="review.user === 'current' ? (userAccountStore.avatar && userAccountStore.avatar !== LOADING_STATE) : !!(review.user.avatar)"
-                  :src="formatImageEntityUrl(review.user === 'current' ? userAccountStore.avatar : review.user.avatar, ImageCategory.UserAvatar, 1)"
+                  v-if="review.user.id === userAccountStore.userId ? (userAccountStore.avatar && userAccountStore.avatar !== LOADING_STATE) : !!(review.user.avatar)"
+                  :src="formatImageEntityUrl(review.user.id === userAccountStore.userId ? userAccountStore.avatar : review.user.avatar, ImageCategory.UserAvatar, 1)"
                   :alt="$t(getI18nResName3('stayDetailsPage', 'reviews', 'avatarImgAlt'))"
                   :ui="{ rounded: 'rounded-full' }"
                 />
@@ -207,7 +208,7 @@ onMounted(() => {
                       </div>
                       <span class="hidden sm:block">|</span>
                       <div class="whitespace-wrap">
-                        {{ `${review.user === 'current' ? ((userAccountStore.name && userAccountStore.name !== LOADING_STATE) ? `${userAccountStore.name.firstName} ${userAccountStore.name.lastName}` : '...') : (`${review.user.firstName} ${review.user.lastName}`)}` }}
+                        {{ `${review.user.id === userAccountStore.userId ? ((userAccountStore.name && userAccountStore.name !== LOADING_STATE) ? `${userAccountStore.name.firstName} ${userAccountStore.name.lastName}` : '...') : (`${review.user.firstName} ${review.user.lastName}`)}` }}
                       </div>
                     </h3>
                     <p v-if="isTestUserReview(review)" class="block w-full h-auto whitespace-normal">
@@ -221,7 +222,7 @@ onMounted(() => {
               </div>
               <div class="w-max flex-initial flex flex-col flex-nowrap items-center gap-2 mr-2">
                 <UIcon name="heroicons-solid:flag" class="bg-primary-200 dark:bg-primary-700 m-1.5 mt-0" size="xs"/>
-                <div v-if="review.user === 'current' || review.user.id === userAccountStore.userId" class="contents">
+                <div v-if="review.user.id === userAccountStore.userId" class="contents">
                   <UButton icon="i-heroicons-solid-trash" size="xs" variant="outline" class="border-none ring-0" :title="$t(getI18nResName2('ariaLabels', 'btnDeleteUserReview'))" @click="onDeleteUserReviewBtnClick"/>
                   <UButton icon="i-heroicons-solid-pencil" size="xs" variant="outline" class="border-none ring-0" :title="$t(getI18nResName2('ariaLabels', 'btnEditUserReview'))" @click="onEditUserReviewBtnClick"/>
                 </div>
@@ -231,7 +232,7 @@ onMounted(() => {
         </div>
       </UCarousel>
       <UDivider v-if="!showNoReviewStub" color="gray" orientation="horizontal" class="w-full mb-3 sm:mb-6" size="sm"/>
-      <ComponentWaitingIndicator v-if="(reviewStore.status !== 'error' && reviewStore.items === undefined) || !isCarouselReady" :ctrl-key="[...ctrlKey, 'ResultItemsList', 'Waiter']" class="my-6" />
+      <ComponentWaitingIndicator v-if="(stayReviews?.status !== 'error' && stayReviews?.items === undefined) || !isCarouselReady" :ctrl-key="[...ctrlKey, 'ResultItemsList', 'Waiter']" class="my-6" />
       <section v-if="isNavButtonsVisible" :class="`w-full h-auto flex flex-row flex-nowrap items-center justify-center gap-4 my-2 sm:my-4 ${(pagingState?.total ?? 0) <= 1 ? 'hidden' : ''}`">
         <UButton icon="i-heroicons-chevron-left-20-solid" size="sm" color="gray" variant="outline" class="border-none ring-0" :disabled="(pagingState?.current ?? 0) <= 1" @click="onNavPrevBtnClick"/>
         <div class="mx-2 sm:mx-4 text-sm text-gray-500 dark:text-gray-400">

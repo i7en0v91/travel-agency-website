@@ -1,4 +1,4 @@
-import { RestApiAuth, HeaderLocation, getLocaleFromUrl, localizePath, HeaderAppVersion, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, DefaultLocale, CookieI18nLocale, HeaderDate, HeaderLastModified, HeaderCacheControl, HeaderEtag, HeaderContentType, OgImagePathSegment, OgImageExt, HeaderCookies, DefaultTheme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppConfig, getPagePath, AppPage, type IAppLogger, type Locale, type RecoverPasswordCompleteResultEnum, spinWait, delay, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD, type EntityId, type PreviewMode, type StayServiceLevel } from '@golobe-demo/shared';
+import { TEST_SERVER_PORT, RestApiAuth, HeaderLocation, getLocaleFromUrl, localizePath, HeaderAppVersion, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, DefaultLocale, CookieI18nLocale, HeaderDate, HeaderLastModified, HeaderCacheControl, HeaderEtag, HeaderContentType, OgImagePathSegment, OgImageExt, HeaderCookies, DefaultTheme, QueryPagePreviewModeParam, PreviewModeParamEnabledValue, AppConfig, getPagePath, AppPage, type IAppLogger, type Locale, type RecoverPasswordCompleteResultEnum, spinWait, delay, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD, type EntityId, type PreviewMode, type StayServiceLevel } from '@golobe-demo/shared';
 import { createHtmlPageModelMetadata } from '@golobe-demo/backend';
 import { ApiEndpointPurgeCache, ApiEndpointTestingPageCacheAction, ApiEndpointBookingDownload, type ITestingPageCacheActionDto, type ITestingPageCacheActionResultDto, TestingPageCacheActionEnum, ApiEndpointTestingCacheCleanup } from '../../server/api-definitions';
 import { describe, test, assert, type TestOptions } from 'vitest';
@@ -9,7 +9,7 @@ import { setup, createPage, createBrowser, getBrowser } from '@nuxt/test-utils/e
 import dayjs from 'dayjs';
 import { murmurHash } from 'ohash';
 import { type ParsedURL, joinURL, parseQuery, parseURL, stringifyParsedURL, stringifyQuery, withQuery } from 'ufo';
-import { TEST_SERVER_PORT, createLogger } from '../../helpers/testing';
+import { createLogger } from '../../helpers/testing';
 import { LocatorClasses } from './../../helpers/constants';
 import pick from 'lodash-es/pick';
 import { defu } from 'defu';

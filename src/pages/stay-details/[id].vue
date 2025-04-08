@@ -10,7 +10,6 @@ import OverviewSection from './../../components/stay-details/overview-section.vu
 import AvailableRoomSection from './../../components/stay-details/available-rooms-section.vue';
 import AmenitiesSection from './../../components/stay-details/amenities-section.vue';
 import LocationMap from './../../components/stay-details/location-map.vue';
-import ReviewSection from './../../components/stay-details/reviews/review-section.vue';
 import ComponentWaitingIndicator from '../../components/forms/component-waiting-indicator.vue';
 import { useCaptchaToken, type ICaptchaTokenComposable } from './../../composables/captcha-token';
 import { isRobot } from './../../composables/is-robot';
@@ -246,7 +245,7 @@ const imageStylings: IStaticImageUiProps[] = [
       <AmenitiesSection :ctrl-key="[...CtrlKey, 'StayDetailsSection', 'Amenities']" />
       <UDivider color="gray" orientation="horizontal" class="w-full my-16" size="sm"/>
       
-      <ReviewSection v-if="stayOffer" :ctrl-key="[...CtrlKey, 'StayDetailsSection', 'Reviews']" :stay-id="stayOffer?.stay.id" :preloaded-summary-info="reviewSummary" @review-summary-changed="onReviewSummaryChanged" />
+      <LazyReviewSection v-if="stayOffer" :ctrl-key="[...CtrlKey, 'StayDetailsSection', 'Reviews']" :stay-id="stayOffer?.stay.id" :preloaded-summary-info="reviewSummary" @review-summary-changed="onReviewSummaryChanged" />
       <ComponentWaitingIndicator v-else :ctrl-key="[...CtrlKey, 'StayDetailsSection', 'Reviews', 'Waiter']" class="my-8" />
       <CaptchaProtection v-if="!!AppConfig.maps && !isRobotRequest" ref="captcha" :ctrl-key="[...CtrlKey, 'Captcha']" @verified="onCaptchaVerified" @failed="onCaptchaFailed" />
     </ErrorHelm>

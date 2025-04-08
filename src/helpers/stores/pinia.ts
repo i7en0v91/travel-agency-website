@@ -5,6 +5,7 @@ import { type IAppLogger, AppException, AppExceptionCodeEnum } from '@golobe-dem
 import { getCommonServices } from '../service-accessors';
 import camelCase from 'lodash-es/camelCase';
 import once from 'lodash-es/once';
+import { defaultErrorHandler } from '../exceptions';
 
 declare type GettersWithCommons<Id extends string, S extends StateTree, ClientSetupVars, G, A> = 
   DefineStoreOptions<Id, S & ClientSetupVars, G, A>['getters'];
@@ -17,13 +18,29 @@ declare type StoreCommonMethods<ClientSetupVars> = {
    * defined on global scope outside of Pinia
    * @returns accessor to value returned from {@link clientSetup} method
    */
-  clientSetupVariables: () => ClientSetupVars
+  clientSetupVariables: () => ClientSetupVars,
+
+  /**
+     * Returns logger with {@link IAppLogger.addContextProps} configured for this store.
+     * Available only after store has been initialized
+     */
+  getLogger: () => IAppLogger,
+  /**
+   * Enriches store's logging context with {@link props}.
+   * Available only after store has been initialized
+   */
+  setLoggingProps(props: Record<string, any>): void,
+  /**
+   * Shows exception to user (without logging) but doesn't break current code execution flow, i.e. doesn't throw.
+   * Generally should not be used, as any exceptions occuring inside actions & patches must be 
+   * (re-)thrown for crosscutting concerns (logging, retries, throttling e.t.c)
+   */
+  displayError: (err: any) => void
 }
 
 declare type ClientSideOptions = {
   nuxtApp: ReturnType<typeof useNuxtApp>,
-  fetchEx: ReturnType<typeof useNuxtApp>['$fetchEx'],
-  getLogger: () => IAppLogger
+  fetchEx: ReturnType<typeof useNuxtApp>['$fetchEx']
 };
 
 declare type StoreDefInternal<
@@ -86,8 +103,7 @@ export function buildStoreDefinition<
       };
       clientSetupVariables = clientSetup({
         nuxtApp,
-        fetchEx,
-        getLogger
+        fetchEx
       });
     }
   } catch(err: any) {
@@ -96,12 +112,31 @@ export function buildStoreDefinition<
     throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unknown error', 'error-page');
   }
 
+  let storeLogger: IAppLogger | undefined;
   const commonMethods: StoreCommonMethods<ClientSetupVars> = {
     clientSetupVariables: () => {
       if(!import.meta.client) {
         throw new Error('setup method method is available only on client');
       }
       return clientSetupVariables!;
+    },
+
+    displayError: (err: any) => {
+      defaultErrorHandler(err, import.meta.client ? { nuxtApp: useNuxtApp() } : {});
+    },
+
+    getLogger: (): IAppLogger => {
+      if(!storeLogger) {
+        storeLogger = getCommonServices().getLogger().addContextProps({ component: getStoreLoggingPrefix(id) });
+      };
+      return storeLogger;
+    },
+
+    setLoggingProps: (props: Record<string, any>): void => {
+      storeLogger = getCommonServices().getLogger().addContextProps({ 
+        component: getStoreLoggingPrefix(id),
+        ...props
+      });
     }
   };
 

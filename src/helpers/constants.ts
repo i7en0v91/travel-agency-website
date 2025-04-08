@@ -75,7 +75,9 @@ export enum StoreKindEnum {
   ControlValues = 'control-values',
   EntityCache = 'entity-cache',
   SearchOffers = 'search-offers',
-  UserAccount = 'user-account'
+  UserAccount = 'user-account',
+  StayReviews = 'stay-reviews',
+  TravelDetails = 'travel-details'
 }
 
 export const StayReviewEditorHtmlAnchor = 'stayReviewEditor';

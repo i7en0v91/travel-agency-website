@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { ControlKey } from './../../helpers/components';
 import { AppExceptionCodeEnum, AppException, getI18nResName2, type Locale, DefaultLocale, getLocalizeableValue, getValueForFlightDayFormatting, type ImageCategory, type ILocalizableValue, type ICity, type EntityDataAttrsOnly, type IImageEntitySrc, type OfferKind } from '@golobe-demo/shared';
 import { usePreviewState } from './../../composables/preview-state';
 import { getCommonServices } from '../../helpers/service-accessors';

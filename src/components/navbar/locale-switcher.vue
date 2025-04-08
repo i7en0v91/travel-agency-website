@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toShortForm, type ControlKey } from './../../helpers/components';
+import type { ControlKey } from './../../helpers/components';
 import { QueryPagePreviewModeParam, PreviewModeParamEnabledValue, SessionLocaleKey } from '@golobe-demo/shared';
 import { getCommonServices } from './../../helpers/service-accessors';
 import { LocatorClasses } from './../../helpers/constants';

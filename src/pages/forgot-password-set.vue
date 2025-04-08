@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type EntityId, type Locale, SecretValueMask, RecoverPasswordCompleteResultEnum, AppPage, getPagePath, getI18nResName2, AppConfig } from '@golobe-demo/shared';
+import { type EntityId, type Locale, RecoverPasswordCompleteResultEnum, AppPage, getPagePath, getI18nResName2, AppConfig } from '@golobe-demo/shared';
 import { ApiEndpointPasswordRecoveryComplete, type IRecoverPasswordCompleteDto, type IRecoverPasswordCompleteResultDto } from './../server/api-definitions';
 import AccountPageContainer from './../components/account/page-container.vue';
 import { post } from './../helpers/rest-utils';

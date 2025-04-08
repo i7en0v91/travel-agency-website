@@ -110,8 +110,8 @@ export interface ITravelDetailsTextingData {
 }
 export interface ITravelDetailsData {
   cityId: EntityId,
-  texting?: ITravelDetailsTextingData,
-  images?: { slug: string, timestamp: Timestamp }[]
+  texting: ITravelDetailsTextingData,
+  images: { slug: string, timestamp: Timestamp }[]
 }
 
 /** Components - search lists (with autocomplete) */

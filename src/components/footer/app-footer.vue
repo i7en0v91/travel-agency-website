@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ArbitraryControlElementMarker, ControlKey } from './../../helpers/components';
+import type { ControlKey } from './../../helpers/components';
 import { type Locale, AppPage, getI18nResName2 } from '@golobe-demo/shared';
 import SubscribeBox from './subscribe-box.vue';
 import AppFooterNav from './app-footer-nav.vue';

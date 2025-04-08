@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getPagePath, type IUserProfileInfo, type ReviewSummary, type OfferKind, QueryInternalRequestParam, isElectronBuild, type BookingPageArgs, AppException, AppExceptionCodeEnum, clampTextLine, getLocalizeableValue, getValueForFlightDurationFormatting, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, extractAirportCode, ImageCategory, type ICity, type EntityDataAttrsOnly, type ILocalizableValue, type IFlightOffer, type IStayOfferDetails, type EntityId, getI18nResName2, getI18nResName3, AppPage, type Locale, AvailableLocaleCodes, DefaultTheme, type IOfferBooking } from '@golobe-demo/shared';
+import { getPagePath, type IUserProfileInfo, type ReviewSummary, type OfferKind, QueryInternalRequestParam, isElectronBuild, type BookingPageArgs, AppException, AppExceptionCodeEnum, clampTextLine, getLocalizeableValue, getValueForFlightDurationFormatting, getValueForFlightDayFormatting, getValueForTimeOfDayFormatting, extractAirportCode, ImageCategory, type ICity, type EntityDataAttrsOnly, type ILocalizableValue, type IFlightOffer, type IStayOfferDetails, type EntityId, getI18nResName2, getI18nResName3, AppPage, type Locale, AvailableLocaleCodes, DefaultTheme, type IOfferBooking, type IAppLogger } from '@golobe-demo/shared';
 import type { ControlKey } from './../../helpers/components';
 import type { H3Event } from 'h3';
 import fromPairs from 'lodash-es/fromPairs';
@@ -33,7 +33,7 @@ const navLinkBuilder = useNavLinkBuilder();
 const route = useRoute();
 const nuxtApp = useNuxtApp();
 const { enabled } = usePreviewState();
-const { status } = useAuth();
+const { status, data } = useAuth();
 
 const bookingParam = route.params?.id?.toString() ?? '';
 if (bookingParam.length === 0) {
@@ -180,20 +180,32 @@ async function fetchOfferOnServer<TOffer extends IFlightOffer | IStayOfferDetail
   return (result as any) as EntityDataAttrsOnly<TOffer>;
 }
 
-async function fetchBookingOnServer (bookingId: EntityId): Promise<EntityDataAttrsOnly<IOfferBooking<IFlightOffer | IStayOfferDetails>>> {
-  const resultDto = await getObject<IBookingDetailsDto>(`/${ApiEndpointBookingDetails(bookingId)}`, undefined, 'no-store', true, reqEvent, 'default');
-  if (!resultDto) {
-    logger.warn('exception occured while sending fetch booking HTTP request', undefined, { bookingId });
-    throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'unexpected HTTP request error', 'error-stub');
-  }
-  const result = mapBookingDetails(resultDto);
+async function fetchBookingOnServer (bookingId: EntityId, logger: IAppLogger): Promise<EntityDataAttrsOnly<IOfferBooking<IFlightOffer | IStayOfferDetails>>> {
+  logger.debug('obtaining booking data', { bookingId });
+  const bookingLogic = getServerServices()!.getBookingLogic();
+  const booking = await bookingLogic.getBooking(bookingId);
 
-  logger.verbose('fetch booking offer info HTTP request completed', { result });
-  return result;
+  const isOgImageRequest = !!reqEvent!.context.ogImageContext;
+  const bookingOgImageQueryInfo = (reqEvent!.context.cacheablePageParams as any) as BookingPageArgs;
+  const isInternalRequest = bookingOgImageQueryInfo?.i === '1';
+  if(!isInternalRequest && !isOgImageRequest) {
+    const userId = (data.value as any)?.id as EntityId;
+    if (!userId || (booking.userId !== userId)) {
+      logger.warn('cannot obtain complete booking info - access is forbidden', undefined, { userId, bookingUserId: booking.userId  });
+      throw new AppException(
+        AppExceptionCodeEnum.FORBIDDEN,
+        'access to the booking is forbidden',
+        'error-page'
+      );
+    }
+  }
+
+  logger.verbose('booking data obtained', { bookingId, result: booking });
+  return booking;
 }
 
 // KB: for simplicity rendering ticket images for PDF documents has been implemented via OgImage module - obtaining personal information bypassing user account store
-const bookingOnServer = import.meta.server ? (await fetchBookingOnServer(bookingId)) : undefined;
+const bookingOnServer = import.meta.server ? (await fetchBookingOnServer(bookingId, logger)) : undefined;
 const offerOnServer = import.meta.server ? (await fetchOfferOnServer(bookingOnServer!.offer.id, bookingOnServer!.offer.kind, reqEvent!)) : undefined;
 let userInfoOnServer: IUserProfileInfo | undefined;
 if(import.meta.server) {

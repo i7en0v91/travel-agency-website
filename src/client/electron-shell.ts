@@ -220,10 +220,10 @@ export class ElectronShell implements IElectronShell {
       try {
         this.logger.verbose('locale switch request', { locale });
 
-        const route = useRoute();
-        const updatedLocation = useLocaleRoute()(route, locale);
+        const currentPath = useRouter().currentRoute.value.path;
+        const updatedLocation = localizePath(currentPath, locale);
         if(!updatedLocation) {
-          this.logger.warn('updated location locale is empty', undefined, { locale, route });
+          this.logger.warn('updated location locale is empty', undefined, { locale, path: currentPath });
           this.onRequestShowExceptionDialog('warning');
           return;
         }

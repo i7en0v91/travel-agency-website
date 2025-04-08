@@ -5,6 +5,7 @@ import { WorldMapCityLabelFlipX } from './../../helpers/constants';
 import throttle from 'lodash-es/throttle';
 import clamp from 'lodash-es/clamp';
 import WorldMapCityLabel from './world-map-city-label.vue';
+import { useWorldMap } from './../../composables/world-map';
 import { getCommonServices } from '../../helpers/service-accessors';
 
 const MapPointColor = { r: 255, g: 255, b: 255 };
@@ -23,8 +24,7 @@ const { ctrlKey } = defineProps<IProps>();
 const drawingCanvas = useTemplateRef('drawing-canvas');
 const logger = getCommonServices().getLogger().addContextProps({ component: 'WorldMap' });
 
-const worldMapStore = useWorldMapStore();
-const worldMap = await worldMapStore.getWorldMap();
+const worldMap = await useWorldMap().getInstance();
 const worldMapRenderError = ref(false);
 
 function getPointFillStyle (intensity: number | 'cityLabel'): string {
@@ -66,7 +66,7 @@ function renderMapFrameSafe () {
 
 function doRenderMapFrame () {
   logger.debug('redering new frame');
-  if (worldMap.displayedObjects.points.length === 0 || !worldMap.viewport) {
+  if (worldMap.displayedObjects.points.length === 0 || !worldMap.viewport.value) {
     logger.debug('nothing to render, world map was not initialized');
     return;
   }
@@ -85,7 +85,7 @@ function doRenderMapFrame () {
 
   const animationCmd = worldMap.onPrepareNewFrame();
 
-  const canvasSize = worldMap.viewport;
+  const canvasSize = worldMap.viewport.value;
   ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
   // KB: reset must be present, but may be not and it is a bug (e.g. reproduced on GNOME web 45.2)
   if (ctx.reset) {
@@ -134,14 +134,17 @@ const onWindowResize = () => setTimeout(throttle(function () {
 
 function testCanvasIsInViewport () : boolean {
   if (!drawingCanvas.value || !worldMap) {
+    logger.debug('canvas in viewport test - not initialized');
     return false;
   }
 
   const rect = drawingCanvas.value.getBoundingClientRect();
   const html = document.documentElement;
-  return ((rect.top > 0 && rect.top < (window.innerHeight || html.clientHeight)) ||
+  const result = ((rect.top > 0 && rect.top < (window.innerHeight || html.clientHeight)) ||
       (rect.bottom > 0 && rect.bottom < (window.innerHeight || html.clientHeight)) ||
       (rect.top > 0 && rect.bottom < (window.innerHeight || html.clientHeight)));
+  logger.debug('canvas in viewport test completed', { result, canvasRect: rect });
+  return result;
 }
 
 function raiseWorldMapInViewportIfNeeded () {
@@ -169,7 +172,7 @@ const cityLabelsVisibilityClass = computed(() => {
     return 'invisible';
   }
 
-  return (worldMap?.displayedObjects.citiesVisible ?? false) ? '' : 'invisible';
+  return (worldMap.displayedObjects.citiesVisible ?? false) ? '' : 'invisible';
 });
 
 let worldMapInViewportEventRaised = false;
@@ -186,7 +189,10 @@ onMounted(() => {
   }, 0);
   window.addEventListener('resize', onWindowResize);
   window.addEventListener('scroll', onWindowScroll);
-  raiseWorldMapInViewportIfNeeded();
+  watch([worldMap.status, worldMap.viewport], () => {
+    raiseWorldMapInViewportIfNeeded();
+    renderMapFrame();
+  }, { immediate: true });
 });
 
 onUnmounted(() => {
@@ -203,12 +209,17 @@ onUnmounted(() => {
 
 <template>
   <div class="w-full min-h-worldmaph bg-primary-300 dark:bg-mintgreen-600">
-    <ErrorHelm :is-error="(worldMap ? (worldMap.status.value === 'error') : false) || worldMapRenderError" :ui="{ stub: 'min-h-worldmaph rounded-none' }">
+    <ErrorHelm :is-error="(worldMap.status.value === 'error') || worldMapRenderError" :ui="{ stub: 'min-h-worldmaph rounded-none' }">
       <div class="overflow-x-auto overflow-y-hidden w-full h-full">
         <div class="aspect-worldmap grid grid-rows-1 grid-cols-1 min-w-worldmapw max-w-worldmapw md:w-full md:max-w-full">
-          <canvas v-if="worldMap?.status.value === 'ready' && worldMap?.viewport" id="worldMapCanvas" ref="drawing-canvas" :width="worldMap.viewport.width" :height="worldMap.viewport.height" class="w-full h-full row-start-1 row-end-2 col-start-1 col-end-2 z-[1]" />
+          <canvas 
+            id="worldMapCanvas" 
+            ref="drawing-canvas" 
+            :width="worldMap.viewport.value?.width" 
+            :height="worldMap.viewport.value?.height" class="w-full h-full row-start-1 row-end-2 col-start-1 col-end-2 z-[1]" 
+          />
           <WorldMapCityLabel
-            v-for="(city) in (worldMap?.displayedObjects.cities ?? [])"
+            v-for="(city) in (worldMap.displayedObjects.cities ?? [])"
             :key="`world-map-city-${city.slug}`"
             :class="`row-start-1 row-end-2 col-start-1 col-end-2 z-[2] ${cityLabelsVisibilityClass}`"
             :slug="city.slug"

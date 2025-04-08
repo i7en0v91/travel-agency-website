@@ -26,12 +26,13 @@ export interface IWorldMapCity {
 };
 
 export type WorldMapStatus = 'loading' | 'ready' | 'error';
+type WorldMapViewport = {
+  width: number,
+  height: number,
+};
 
 export interface IWorldMap {
-  viewport?: {
-    width: number,
-    height: number,
-  },
+  viewport: Ref<WorldMapViewport | undefined>,
   displayedObjects: {
     points: IWorldMapPoint[],
     cities: IWorldMapCity[],
@@ -99,13 +100,13 @@ function calcPointGeoCoords (worldMap: IWorldMapInternal, relativeCoord: { x: nu
       lat
     };
   }
-  // logger.debug(`(world-map-store) calculated point geo coords, relative=${JSON.stringify(relativeCoord)}, res=${JSON.stringify(result)}`);
+  logger.debug(`calculated point geo coords`, { relative: relativeCoord, result });
   return result;
 }
 
 function initializeRuntimeValues (worldMap: IWorldMapInternal, logger: IAppLogger) {
   const withAnimation = isAnimationNeeded();
-  // logger.verbose(`(world-map-store) initializing world map runtime values, animation=${withAnimation}`);
+  logger.verbose(`initializing world map runtime values`, { animation: withAnimation });
 
   try {
     worldMap.displayedObjects.points = worldMap.sourceData!.map.points.map((p, idx) => {
@@ -133,17 +134,17 @@ function initializeRuntimeValues (worldMap: IWorldMapInternal, logger: IAppLogge
     worldMap.displayedObjects.cities = filterDisplayedCities(worldMap, logger);
     worldMap.displayedObjects.citiesVisible = !withAnimation;
 
-    // logger.verbose('(world-map-store) world map runtime values initialized');
+    logger.verbose('world map runtime values initialized');
   } catch (err: any) {
-    // logger.warn('(world-map-store) failed to initialize world map runtime values', err);
+    logger.warn('failed to initialize world map runtime values', err);
     worldMap.status.value = 'error';
   }
 }
 
 function reset (map: IWorldMapInternal, logger: IAppLogger) {
-  // logger.verbose('(world-map-store) resetting map');
+  logger.verbose('resetting map');
   if (!isAnimationNeeded()) {
-    // logger.verbose('(world-map-store) animation is not needed - reset ignored');
+    logger.verbose('animation is not needed - reset ignored');
     return;
   }
 
@@ -158,21 +159,21 @@ function reset (map: IWorldMapInternal, logger: IAppLogger) {
 }
 
 function onPageOpen (_: IWorldMapInternal, logger: IAppLogger) {
-  // logger.verbose('(world-map-store) onPageOpen');
+  logger.verbose('onPageOpen');
 }
 
 function onMapInViewport (map: IWorldMapInternal, logger: IAppLogger) {
-  // logger.verbose('(world-map-store) onMapInViewport');
+  logger.verbose('onMapInViewport');
   map.animationStartTimeMs = new Date().getTime();
 }
 
 function onPageLeave (map: IWorldMapInternal, logger: IAppLogger) {
-  // logger.verbose('(world-map-store) onPageLeave');
+  logger.verbose('onPageLeave');
   reset(map, logger);
 }
 
 function filterDisplayedCities (map: IWorldMapInternal, logger: IAppLogger): IWorldMapCity[] {
-  // logger.verbose('(world-map-store) building list of displayed cities');
+  logger.verbose('building list of displayed cities');
 
   const displayedCities = map.sourceData!.cities
     .filter(c => c.visibleOnWorldMap)
@@ -188,7 +189,7 @@ function filterDisplayedCities (map: IWorldMapInternal, logger: IAppLogger): IWo
       };
     });
 
-  // logger.verbose(`(world-map-store) list of displayed cities: ${displayedCities.map(x => x.cityDisplayName.en).join(', ')}`);
+  logger.verbose(`list of displayed cities`, { cities: displayedCities });
   return displayedCities;
 }
 
@@ -242,10 +243,11 @@ function onPrepareNewFrame (map: IWorldMapInternal): 'continue-animation' | 'sto
   }
 }
 
-export const useWorldMapStore = defineStore('world-map-store', () => {
-  const logger = getCommonServices().getLogger();
+export function useWorldMap() {
+  const logger = getCommonServices().getLogger().addContextProps({ component: 'WorldMap' });
   const nuxtApp = useNuxtApp();
   const { enabled } = usePreviewState();
+
   const citiesListFetch = useFetch<IPopularCityDto[] | null[]>(`/${ApiEndpointPopularCitiesList}`,
     {
       server: true,
@@ -254,23 +256,23 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
       query: { drafts: enabled },
       cache: (AppConfig.caching.intervalSeconds && !enabled) ? 'default' : 'no-cache',
       default: (): null[] => { return range(0, 20, 1).map(_ => null); },
-      onResponse: () => { /* logger.verbose('(world-map-store) received popular cities response'); */ },
-      onResponseError: (ctx: { error: any; }) => { /* logger.warn('(world-map-store) got popular cities response exception', ctx.error); */ },
-      onRequestError: (ctx: { error: any; }) => { /* logger.warn('(world-map-store) got popular cities request exception', ctx.error); */ },
+      onResponse: () => { logger.verbose('received popular cities response'); },
+      onResponseError: (ctx: { error: any; }) => { logger.warn('got popular cities response exception', ctx.error); },
+      onRequestError: (ctx: { error: any; }) => { logger.warn('got popular cities request exception', ctx.error); },
       $fetch: nuxtApp.$fetchEx({ defautAppExceptionAppearance: 'error-stub' })
     });
 
   const getWorldMapDataOnServer = async (): Promise<IWorldMapDataDto> => {
-    // logger.verbose('(world-map-store) loading world map data from assets');
+    logger.verbose('loading world map data from assets');
     try {
       const worldMapDto = await getServerServices()!.getAssetsProvider().getAppData('world-map.json') as IWorldMapDataDto;
       if (!worldMapDto) {
         throw new Error('failed to load world map data from assets');
       }
-      // logger.verbose(`(world-map-store) world map data loaded from assets, num points=${worldMapDto?.points?.length}`);
+      logger.verbose(`world map data loaded from assets`, { numPoints: worldMapDto?.points?.length });
       return worldMapDto;
     } catch (err: any) {
-      // logger.warn('(world-map-store) failed to load world map data from assets', err);
+      logger.warn('failed to load world map data from assets', err);
       throw new AppException(AppExceptionCodeEnum.UNKNOWN, 'internal server error', 'error-stub');
     }
   };
@@ -289,12 +291,13 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
         immediate: true,
         cache: 'default',
         key: DataKeyWorldMapData,
-        onResponse: () => { /* logger.verbose('(world-map-store) received world map data response'); */ },
-        onResponseError: (ctx) => { /* logger.warn('(world-map-store) got world map data response exception', ctx.error); */ },
-        onRequestError: (ctx) => { /* logger.warn('(world-map-store) got world map data request exception', ctx.error); */ }
+        onResponse: () => { logger.verbose('received world map data response'); },
+        onResponseError: (ctx) => { logger.warn('got world map data response exception', ctx.error); },
+        onRequestError: (ctx) => { logger.warn('got world map data request exception', ctx.error); }
       });
 
   const worldMapStatus = ref<WorldMapStatus>('loading');
+  const worldMapViewport = ref<WorldMapViewport>();
   let worldMapValue: IWorldMapInternal | undefined;
 
   const calculateExtremLonRelativeX = (dto: IWorldMapDataDto) : number => {
@@ -303,12 +306,12 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
 
   const updateWorldMapOnFetchFinished = (isError: boolean, popularCities: IPopularCityDto[] | undefined) => {
     if (!worldMapValue) {
-      // logger.warn('(world-map-store) world map fetch failed, wont update');
+      logger.warn('world map fetch failed, wont update');
       return;
     }
-    // logger.debug('(world-map-store) world map fetch finished, updating');
+    logger.debug('world map fetch finished, updating');
 
-    worldMapValue.viewport = !isError ? worldMapDataFetch.data.value!.viewport : { width: 1230, height: 505 };
+    worldMapValue.viewport.value = !isError ? worldMapDataFetch.data.value!.viewport : { width: 1230, height: 505 };
     worldMapValue.cellRelativeSize = !isError ? worldMapDataFetch.data.value!.cellRelativeSize : 0.0;
     worldMapValue.extremLonRelativeX = calculateExtremLonRelativeX(worldMapDataFetch.data.value!);
     worldMapValue.sourceData = {
@@ -318,11 +321,11 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
     if (!isError) {
       initializeRuntimeValues(worldMapValue!, logger);
     }
-    // logger.info('(world-map-store) world map data updated');
+    logger.info('world map data updated');
   };
 
   const updateWorldMapWhenFetchFinishes = async () : Promise<void> => {
-    // logger.debug('(world-map-store) starting to watch world map data fetch status');
+    logger.debug('starting to watch world map data fetch status');
 
     const updateWorldMapFetchStatus = () => {
       if (citiesListFetch.status.value === 'error' || worldMapDataFetch.status.value === 'error') {
@@ -337,12 +340,10 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
     const updateWorldMap = () => {
       const isError = citiesListFetch.status.value === 'error' || worldMapDataFetch.status.value === 'error';
       if (isError) {
-        const msg = `(world-map-store) world map data load failed, num points=${worldMapDataFetch.data.value?.points.length ?? 0}`;
-        // logger.warn(msg);
+        logger.warn('world map data load failed', worldMapDataFetch.error.value, { numPoints: worldMapDataFetch.data.value?.points.length ?? 0});
         updateWorldMapOnFetchFinished(true, undefined);
       } else if (worldMapDataFetch.data.value && citiesListFetch.data.value && citiesListFetch.data.value[0]) {
-        const msg = `(world-map-store) world map data load finished, num points=${worldMapDataFetch.data.value?.points.length ?? 0}`;
-        // logger.info(msg);
+        logger.info('world map data load finished', { numPoints: worldMapDataFetch.data.value?.points.length ?? 0 });
         updateWorldMapOnFetchFinished(false, citiesListFetch.data.value as IPopularCityDto[]);
       }
     };
@@ -350,8 +351,7 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
     await citiesListFetch;
     watch([citiesListFetch.status, worldMapDataFetch.status], () => {
       updateWorldMapFetchStatus();
-    });
-    updateWorldMapFetchStatus();
+    }, { immediate: true });
 
     if (worldMapStatus.value === 'loading') {
       watch([worldMapDataFetch.status, citiesListFetch.status], () => {
@@ -364,11 +364,12 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
     }
   };
 
-  const getWorldMap = async () : Promise<IWorldMap> => {
+  const getInstance = async () : Promise<IWorldMap> => {
     if (!worldMapValue) {
-      // logger.verbose('(world-map-store) creating new world map');
+      logger.verbose('creating new world map');
       worldMapValue = {
         status: worldMapStatus,
+        viewport: worldMapViewport,
         displayedObjects: reactive({
           cities: [],
           citiesVisible: false,
@@ -380,7 +381,7 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
         onPrepareNewFrame: () => { return onPrepareNewFrame(worldMapValue!); }
       };
 
-      // logger.verbose('(world-map-store) starting to load world map data');
+      logger.verbose('starting to load world map data');
       await citiesListFetch;
       await worldMapDataFetch;
       await updateWorldMapWhenFetchFinishes();
@@ -390,6 +391,6 @@ export const useWorldMapStore = defineStore('world-map-store', () => {
   };
 
   return {
-    getWorldMap
+    getInstance
   };
-});
+};

@@ -1,5 +1,5 @@
 import { type EntityId, AppConfig, eraseTimeOfDay, type IAppLogger, AppException, AppExceptionCodeEnum, DefaultFlightClass, DefaultFlightTripType, FlightMinPassengers, StaysMinGuestsCount, StaysMinRoomsCount, DefaultFlightOffersSorting, DefaultStayOffersSorting } from '@golobe-demo/shared';
-import { UserAccountPageCtrlKey, StoreKindEnum, UserAccountTabGroup, UserAccountTabAccount, HistoryTabGroup, HistoryTabFlights, FindFlightsPageCtrlKey, FindStaysPageCtrlKey, DefaultTimeRangeFilter } from '../helpers/constants';
+import { UserAccountPageCtrlKey, StoreKindEnum, FindFlightsPageCtrlKey, FindStaysPageCtrlKey, DefaultTimeRangeFilter } from '../helpers/constants';
 import { getFunctionalElementKey, RESET_TO_DEFAULT, toShortForm } from './../helpers/components';
 import { buildStoreDefinition, type PublicStore } from '../helpers/stores/pinia';
 import isArray from 'lodash-es/isArray';
@@ -10,7 +10,7 @@ import dayjs from 'dayjs';
 import type { ComputedRef } from 'vue';
 import { isCommonControl, isSpecificControl, isNestedControl, type ControlKey } from '../helpers/components';
 import type { SearchOffersFilterRange, SearchOffersFilterVariantId } from '../types';
-import { omit } from 'lodash';
+import omit from 'lodash-es/omit';
 
 /** Control value identifier, usually a component key */
 export type ControlValueKey = ControlKey;
@@ -433,10 +433,7 @@ function convertModelToStore<TModelValue>(
 }
 
 const storeDefBuilder = () => buildStoreDefinition(StoreId, 
-  () => { 
-    // TODO: uncomment preview state
-    // const { enabled } = usePreviewState();
-    const enabled = false;
+  () => {
     return {};
   },
   {

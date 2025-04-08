@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ControlKey } from './../../helpers/components';
-import { maskLog, buildParamsLogData, getI18nResName2, AppConfig, UserNotificationLevel } from '@golobe-demo/shared';
+import { maskLog, getI18nResName2, AppConfig, UserNotificationLevel } from '@golobe-demo/shared';
 import { useThemeSettings } from './../../composables/theme-settings';
 import { getCommonServices } from '../../helpers/service-accessors';
 
@@ -92,14 +92,14 @@ function onError (reason: any) {
   $emit('failed');
 }
 
-function onExpire (...args: any[]): any {
+function onExpire (..._: any[]): any {
   logger.info('reCaptcha expired', ctrlKey);
   verificationRequested = false;
   recaptcha.value!.reset();
   $emit('failed');
 }
 
-function onFail (...args: any[]): any {
+function onFail (..._: any[]): any {
   logger.info('reCaptcha client verification failed', ctrlKey);
   verificationRequested = false;
   userNotificationStore.show({

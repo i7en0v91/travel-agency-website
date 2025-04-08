@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { ControlKey } from './../../../helpers/components';
 import { type EntityId, type ReviewSummary, getI18nResName2, getI18nResName3, type I18nResName, DefaultStayReviewScore, getScoreClassResName } from '@golobe-demo/shared';
-import { TooltipHideTimeout, StayReviewEditorHtmlAnchor, StayReviewSectionHtmlAnchor } from './../../../helpers/constants';
-import type { IStayReviewItem } from './../../../stores/stay-reviews-store';
+import { LOADING_STATE, TooltipHideTimeout, StayReviewEditorHtmlAnchor, StayReviewSectionHtmlAnchor } from './../../../helpers/constants';
+import { useStayReviewsStore, type IStayReviewItem } from './../../../stores/stay-reviews-store';
 import type ReviewEditor from './review-editor.client.vue';
 import ReviewList from './review-list.vue';
 import ComponentWaitingIndicator from '../../forms/component-waiting-indicator.vue';
@@ -19,14 +19,13 @@ interface IProps {
 
 const { ctrlKey, preloadedSummaryInfo, stayId } = defineProps<IProps>();
 
+const logger = getCommonServices().getLogger().addContextProps({ component: 'ReviewSection' });
+const { enabled, requestUserAction } = usePreviewState();
 const userNotificationStore = useUserNotificationStore();
 const userAccountStore = useUserAccountStore();
-const { enabled, requestUserAction } = usePreviewState();
-
-const logger = getCommonServices().getLogger().addContextProps({ component: 'ReviewSection' });
-
-const reviewStoreFactory = useStayReviewsStoreFactory();
-const reviewStore = await reviewStoreFactory.getInstance(stayId);
+const stayReviewsStore = useStayReviewsStore();
+stayReviewsStore.trackStayReviews(stayId);
+const stayReviews = computed(() => stayReviewsStore.reviews.get(stayId));
 
 const promoTooltipShown = ref(false);
 const reviewListComponent = useTemplateRef('review-list');
@@ -43,34 +42,34 @@ let reviewsCount: number | undefined;
 const $emit = defineEmits<{(event: 'reviewSummaryChanged', value: ReviewSummary): void}>();
 
 function refreshReviewSummaryValues(refreshFromStore: boolean = true) {
-  logger.debug('refreshing review summary values', { ctrlKey, numItems: reviewStore.items?.length, status: reviewStore.status, refreshFromStore });
+  logger.debug('refreshing review summary values', { ctrlKey, items: stayReviews.value?.items, status: stayReviews.value?.status, refreshFromStore });
   if(enabled) {
     cumulativeScore = DefaultStayReviewScore;
     reviewsCount = 0;
   } else if(refreshFromStore) {
-    if(reviewStore.items === undefined || reviewStore.status !== 'success') {
+    if(stayReviews.value?.items === undefined || stayReviews.value?.items === LOADING_STATE || stayReviews.value?.status !== 'success') {
       cumulativeScore = undefined;
       reviewsCount = preloadedSummaryInfo?.numReviews;
     } else {
-      cumulativeScore = reviewStore.items.length > 0 ? reviewStore.items.map(r => r.score).reduce((sum, v) => sum + v, 0) : DefaultStayReviewScore;
-      reviewsCount = reviewStore.items.length;
+      cumulativeScore = stayReviews.value.items.length > 0 ? stayReviews.value.items.map(r => r.score).reduce((sum, v) => sum + v, 0) : DefaultStayReviewScore;
+      reviewsCount = stayReviews.value.items.length;
     }
   }
   reviewScore.value = cumulativeScore !== undefined  ? (reviewsCount! > 0 ? cumulativeScore / reviewsCount! : DefaultStayReviewScore) : undefined; 
   reviewsCountText.value = reviewsCount !== undefined ? `${reviewsCount} ${t(getI18nResName3('stayDetailsPage', 'reviews', 'count'), reviewsCount)}` : '';
   scoreClassResName.value = reviewScore.value !== undefined ? getScoreClassResName(reviewScore.value) : undefined;
-  logger.debug('review summary values refreshed', { ctrlKey, numItems: reviewStore.items?.length, status: reviewStore.status, refreshFromStore });
+  logger.debug('review summary values refreshed', { ctrlKey, items: stayReviews.value?.items, status: stayReviews.value?.status, refreshFromStore });
 }
 
 function adjustReviewSummaryValues(currentReviewScore: number | undefined, newReviewScore: number | undefined) {
-  logger.debug('adjusting review summary values', { ctrlKey, numItems: reviewStore.items?.length, status: reviewStore.status, currentReviewScore: currentReviewScore ?? '', newReviewScore: newReviewScore ?? '' });
+  logger.debug('adjusting review summary values', { ctrlKey, items: stayReviews.value?.items, status: stayReviews.value?.status, currentReviewScore: currentReviewScore ?? '', newReviewScore: newReviewScore ?? '' });
   if(cumulativeScore === undefined || reviewsCount === undefined) {
-    logger.warn('cannot adjust uninitialized review summary values', undefined, { ctrlKey, numItems: reviewStore.items?.length, status: reviewStore.status, cumulativeScore, reviewsCount, currentReviewScore: currentReviewScore ?? '', newReviewScore: newReviewScore ?? '' });
+    logger.warn('cannot adjust uninitialized review summary values', undefined, { ctrlKey, items: stayReviews.value?.items, status: stayReviews.value?.status, cumulativeScore, reviewsCount, currentReviewScore: currentReviewScore ?? '', newReviewScore: newReviewScore ?? '' });
     return;
   }
 
   if(currentReviewScore !== undefined && reviewsCount === 0) {
-    logger.warn('failed to adjust empty review summary values', undefined, { ctrlKey, numItems: reviewStore.items?.length, status: reviewStore.status, cumulativeScore, reviewsCount, currentReviewScore: currentReviewScore ?? '', newReviewScore: newReviewScore ?? '' });
+    logger.warn('failed to adjust empty review summary values', undefined, { ctrlKey, items: stayReviews.value?.items, status: stayReviews.value?.status, cumulativeScore, reviewsCount, currentReviewScore: currentReviewScore ?? '', newReviewScore: newReviewScore ?? '' });
     return;
   }
 
@@ -88,7 +87,7 @@ function adjustReviewSummaryValues(currentReviewScore: number | undefined, newRe
     refreshReviewSummaryValues(false);
     $emit('reviewSummaryChanged', { numReviews: reviewsCount, score: reviewsCount > 0 ? (cumulativeScore / reviewsCount) : DefaultStayReviewScore });
   }
-  logger.debug('review summary values adjusted', { ctrlKey, numItems: reviewStore.items?.length, status: reviewStore.status, currentReviewScore: currentReviewScore ?? '', newReviewScore: newReviewScore ?? '' });
+  logger.debug('review summary values adjusted', { ctrlKey, items: stayReviews.value?.items, status: stayReviews.value?.status, currentReviewScore: currentReviewScore ?? '', newReviewScore: newReviewScore ?? '' });
 }
 
 function onUserReviewDeleted (deletedReview: IStayReviewItem) {
@@ -121,7 +120,8 @@ function onUserEditBtnClick() {
 
 function resetUserReviewText () {
   logger.verbose('resetting user review text', ctrlKey);
-  const userReview = reviewStore.getUserReview()?.text.en ?? '';
+  const userReview = (stayReviews.value?.items && stayReviews.value.items !== LOADING_STATE) ? 
+    (stayReviews.value.items.find(i => i.user.id === userAccountStore.userId)?.text.en ?? '') : '';
   editor.value?.setEditedContent(userReview);
 }
 
@@ -133,15 +133,18 @@ async function onSubmitReview (reviewHtml: string, score: number): Promise<void>
     return;
   }
 
-  if(reviewStore.status === 'pending') {
+  if(stayReviews.value?.status === 'pending') {
     logger.verbose('cannot submit review while store is in pending state', { ctrlKey, reviewHtml });
     return;
   }
 
-  const prevUserReviewScore: number | undefined =  (await reviewStore.getUserReview())?.score;
+  const prevUserReviewScore: number | undefined = 
+    (stayReviews.value?.items && stayReviews.value.items !== LOADING_STATE) ? 
+      (stayReviews.value.items.find(i => i.user.id === userAccountStore.userId)?.score) : 
+      undefined;
   try {
     adjustReviewSummaryValues(prevUserReviewScore, score);
-    await reviewStore.createOrUpdateReview(reviewHtml, score);
+    await stayReviewsStore.createOrUpdateReview(stayId, reviewHtml, score);
     reviewListComponent.value?.rewindToTop();  
     scrollToSectionHeading();
   } catch(err: any) {
@@ -157,11 +160,11 @@ function scheduleTooltipAutoHide () {
 }
 
 refreshReviewSummaryValues();
-watch([() => reviewStore.items, () => reviewStore.status], () => {
+watch([() => stayReviews.value?.items, () => stayReviews.value?.status], () => {
   if(cumulativeScore === undefined) {
     refreshReviewSummaryValues();
   }
-  if(reviewStore.status === 'success' && !initialUserReviewReset) {
+  if(stayReviews.value?.status === 'success' && !initialUserReviewReset) {
     initialUserReviewReset = true;
     resetUserReviewText();
   }

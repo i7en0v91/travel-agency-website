@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { toShortForm, type ControlKey } from './../../../helpers/components';
+import type { ControlKey } from './../../../helpers/components';
 import { AppConfig } from '@golobe-demo/shared';
 import { type IPopularCityDto, ApiEndpointPopularCitiesList } from './../../../server/api-definitions';
 import range from 'lodash-es/range';
-import TravelCityCard from './travel-city-card.vue';
 import { usePreviewState } from './../../../composables/preview-state';
 import { getCommonServices } from '../../../helpers/service-accessors';
 import { useCarouselPlayer } from '../../../composables/carousel-player';

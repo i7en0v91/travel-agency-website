@@ -1,7 +1,7 @@
 /* eslint-disable no-case-declarations */
-import { HeaderLocation, AppConfig, localizePath, type IAppLogger, AllHtmlPages, EntityIdPages, HeaderContentType, DefaultLocale, CookieI18nLocale, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, type Locale, AvailableLocaleCodes, spinWait, delay, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD, RestApiAuth } from '@golobe-demo/shared';
+import { TEST_SERVER_PORT, HeaderLocation, AppConfig, localizePath, type IAppLogger, AllHtmlPages, EntityIdPages, HeaderContentType, DefaultLocale, CookieI18nLocale, CookieAuthCallbackUrl, CookieAuthCsrfToken, CookieAuthSessionToken, type Locale, AvailableLocaleCodes, spinWait, delay, CREDENTIALS_TESTUSER_PROFILE as credentialsTestUserProfile, TEST_USER_PASSWORD, RestApiAuth } from '@golobe-demo/shared';
 import { ApiAppEndpointPrefix, ApiEndpointTestingInvlidatePage, type ITestingInvalidateCacheDto } from '../../server/api-definitions';
-import { TEST_SERVER_PORT, createLogger, ScreenshotDir, startWatchingTestFiles, stopWatchingTestFiles } from '../../helpers/testing';
+import { createLogger, ScreenshotDir, startWatchingTestFiles, stopWatchingTestFiles } from '../../helpers/testing';
 import { beforeAll, afterAll, describe, test, type TestOptions } from 'vitest';
 import type { Page, Request, Response } from 'playwright-core';
 import { setup, createPage, createBrowser } from '@nuxt/test-utils/e2e';
