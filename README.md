@@ -14,6 +14,7 @@ https://github.com/user-attachments/assets/36f57566-aca6-4771-a9cf-43636b5ba11b
 - HTML pages & images caching, configurable cache refresh policies on changes (e.g. via CMS)
 - Toolbox for quick lookup & navigation to site pages matching search term
 - UI: adaptive layout, light/dark theme support, input/selected values validation & prompting
+- Vue components binding to [Pinia](https://github.com/vuejs/pinia) stores where possible - async actions for user interaction and reactive getters for displaying current application state
 - Personal account with email confirmation registration flow, reviews, photos uploading, favourites & booking history
 - PDF generation for ticket/booking documents
 - Advanced error handling: error page / popup notification / HTML error stub on problematic component depending on source and severity of error as well as additional logging on server-side and on client-side (via REST endpoint)
@@ -107,7 +108,7 @@ To run e2e tests switch back to browser build.
 
 ## Architecture
 
-![travel-agency-demo](https://github.com/user-attachments/assets/5605a97d-487f-4311-bc60-f75ea1fedd04)
+![travel-agency-demo](https://github.com/user-attachments/assets/41bf637e-0093-409b-a4d2-79c35a5cd655)
 
 ## Tech
 Project uses a number of open source projects to work properly:
